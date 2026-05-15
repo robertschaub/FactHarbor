@@ -11,6 +11,10 @@ import {
 import { buildEvidenceLifecycleIntake } from "@/lib/analyzer-v2/evidence-lifecycle/intake";
 import type { EvidenceLifecycleStartDecision } from "@/lib/analyzer-v2/evidence-lifecycle/types";
 import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
+import {
+  buildStaticEvidenceTaskPolicySnapshot,
+  readStaticEvidenceRetrievalPolicyCatalog,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy";
 import { buildClaimBoundaryV2RunContext, type PipelineRunContext } from "@/lib/analyzer-v2/run-context";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
@@ -156,7 +160,7 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition request", () => {
     const sourceDecision = buildSourceAcquisitionRequest(readyDecision("Plastic recycling is pointless"));
 
     expect(sourceDecision.request?.policySnapshot).toEqual({
-      snapshotVersion: "v2.evidence-lifecycle.source-acquisition-policy.0",
+      snapshotVersion: "v2.evidence-lifecycle.task-policy.0",
       source: "static_contract_only",
       policyStatus: "not_executable",
       plannedTasks: [
@@ -248,5 +252,12 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition request", () => {
     expect(policyComparable(english)).toEqual(policyComparable(german));
     expect(english.request?.intake.detectedLanguage).toBe("en");
     expect(german.request?.intake.detectedLanguage).toBe("de");
+  });
+
+  it("uses the shared task-policy snapshot shape", () => {
+    const sourceDecision = buildSourceAcquisitionRequest(readyDecision("Plastic recycling is pointless"));
+
+    expect(sourceDecision.request?.policySnapshot).toEqual(buildStaticEvidenceTaskPolicySnapshot());
+    expect(sourceDecision.request?.retrievalPolicyCatalog).toEqual(readStaticEvidenceRetrievalPolicyCatalog());
   });
 });
