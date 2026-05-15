@@ -10,9 +10,9 @@
 ## Current Execution Snapshot (2026-05-15)
 
 - **Canonical queue:** `Docs/STATUS/Backlog.md` is authoritative for active execution order. ACTIVE/OPEN rows in the April monitor queue now carry owner and next-action/blocker fields.
-- **V2 implementation state:** 4C3b hidden direct-text source wiring, bounded hidden artifact sink, P1 product-reachability fix, API V2 variant admission, internal artifact inspection route, and 4C3c smoke ledger-scope fix are committed. The public result remains the damaged pre-cutover envelope.
+- **V2 implementation state:** 4C3b hidden direct-text source wiring, bounded hidden artifact sink, P1 product-reachability fix, API V2 variant admission, internal artifact inspection route, 4C3c smoke ledger-scope fix, and 4C4 internal Claim Understanding stage handoff are committed. The public result remains the damaged pre-cutover envelope.
 - **Latest V2 gate:** 4C3c first live smoke passed on `efb1f33f` / job `7b56c24a79ee4ab390cc3a6d5aed8986`; hidden artifact inspection returned one internal artifact and public output stayed damaged/pre-cutover without hidden-artifact values.
-- **Next V2 gate:** 6B.3c-4C4 Claim Understanding accepted-result handoff. Do not start Evidence Lifecycle until the internal `ClaimUnderstandingResult -> ClaimContract -> stage handoff` boundary is typed and guarded. Do not broaden live jobs, public exposure, cache IO, ACS/direct URL dispatch, or V1 cleanup without a later reviewed gate.
+- **Next V2 gate:** Claim Understanding contract-quality diagnosis/fix gate. 4C4 typed the internal handoff at `91ba03c0`, but 4C3c smoke still produced `claim_contract_validation_failed`; do not start Evidence Lifecycle until a reviewed gate proves direct-text Claim Understanding can produce an accepted `ClaimContract` or explicitly chooses an ACS-only downstream path. Do not broaden live jobs, public exposure, cache IO, ACS/direct URL dispatch, prompt/config/model changes, or V1 cleanup without a later reviewed gate.
 - **V1 posture:** V1 analyzer tasks remain maintenance-only for correctness, integrity, observability, and safety. Do not interpret V1 monitor work as a plan to continue or preserve V1 beyond V2 cutover.
 - **Open planning risk:** Static `CAPTAIN_APPROVAL` remains planned temporary debt until UCM/task-policy-derived activation authority exists.
 

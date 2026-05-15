@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C4 Claim Understanding Accepted-Result Handoff Gate
 
 **Date:** 2026-05-15
-**Status:** docs/contract gate prepared after post-4C3c deputy-team debate
+**Status:** source slice implemented at `91ba03c0`
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `5e0ecb87` (`docs: update v2 guardrails after 4c3c smoke`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -135,6 +135,32 @@ Verification commands:
 - `git diff --check`
 
 No live job is required or justified for the structural 4C4 source slice.
+
+## 8.1 Source Implementation Result
+
+Implementation commit: `91ba03c0` (`feat: add v2 claim understanding handoff`).
+
+Implemented source:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/stage-handoff.ts`
+- `apps/web/src/lib/analyzer-v2/orchestrator.ts`
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/stage-handoff.test.ts`
+
+Implemented contract:
+
+- `ClaimUnderstandingStageHandoff` is built from `ClaimUnderstandingRuntimeState`;
+- accepted states preserve the internal `ClaimContract`;
+- blocked and damaged states never fabricate a `ClaimContract`;
+- every handoff blocks Evidence Lifecycle start with `evidenceLifecycleStatus: "blocked_precutover"`;
+- public damaged-envelope diagnostics are derived only through sanitized preparation diagnostics;
+- hidden runtime/provider details remain outside the public envelope.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/stage-handoff.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` - passed, 47 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime` - passed, 25 files / 208 tests.
+- `npm -w apps/web run build` - passed.
+- `git diff --check` - passed.
 
 ## 8. Later Gates
 
