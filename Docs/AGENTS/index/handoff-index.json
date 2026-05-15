@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T08:47:54.110Z",
-  "count": 490,
+  "generatedAt": "2026-05-15T08:56:10.244Z",
+  "count": 491,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10608,6 +10608,24 @@
       ],
       "files_touched": [],
       "summary": "Implement the Evidence Corpus pre-execution build-decision boundary"
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_Slice_7G_Source_Acquisition_Port_Gate.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7g",
+        "source",
+        "acquisition",
+        "port",
+        "gate"
+      ],
+      "files_touched": [],
+      "summary": "Define source-acquisition execution ownership and provider/search/fetch port boundaries"
     },
     {
       "file": "2026-05-15_Senior_Developer_V2_Pre_Slice7_Context_Diagnostics.md",

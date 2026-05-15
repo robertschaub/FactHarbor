@@ -1,7 +1,7 @@
 # V2 Slice 7G Source Acquisition Execution Ownership And Port Design
 
 **Date:** 2026-05-15
-**Status:** approved by deputy-team review; docs-only; no source authorization
+**Status:** approved docs-only at `47c531f2` (`docs: define v2 source acquisition port gate`); no source authorization
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `399d2027` (`docs: record v2 evidence corpus build decision`)
 **Prior source gate:** 7F `b8a97413` (`feat: add v2 evidence corpus build decision`)
