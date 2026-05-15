@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T23:02:15.568Z",
-  "count": 510,
+  "generatedAt": "2026-05-15T23:23:41.991Z",
+  "count": 511,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10980,6 +10980,24 @@
       ],
       "files_touched": [],
       "summary": "Lead Architect Handoff: V2 7N-2 Source Package"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_7N3A_Source_IO_Authority_Boundary_Package.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "7n3a",
+        "source",
+        "io",
+        "authority",
+        "boundary",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "Lead Architect Handoff: V2 7N-3A Source-IO Authority Boundary Package"
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_7N_Post_7M1_Consolidation.md",
