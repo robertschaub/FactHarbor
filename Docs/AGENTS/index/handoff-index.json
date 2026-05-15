@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T21:55:39.596Z",
-  "count": 505,
+  "generatedAt": "2026-05-15T22:19:43.361Z",
+  "count": 506,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10932,6 +10932,22 @@
         "apps/web/src/lib/analyzer-v2/result-envelope.ts"
       ],
       "summary": "Address Senior Architect review findings A1/A2 before Slice 7 while preserving the V2 pre-cutover gate."
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_7L1_Approval_Metadata_Dedup.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "7l1",
+        "approval",
+        "metadata",
+        "dedup"
+      ],
+      "files_touched": [],
+      "summary": "Lead Architect Handoff: V2 7L-1 Approval Metadata Deduplication"
     }
   ]
 }

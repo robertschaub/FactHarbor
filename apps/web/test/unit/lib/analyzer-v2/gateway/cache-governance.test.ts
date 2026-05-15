@@ -12,6 +12,7 @@ import {
   validateAnalyzerV2ClaimUnderstandingCacheKeyInput,
   validateAnalyzerV2CacheKeyInput,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 
 const completeBaseInput = {
@@ -99,11 +100,7 @@ describe("analyzer-v2 cache governance", () => {
       optionalDimensions: [
         "adapterVersion",
       ],
-      approval: {
-        status: "approved",
-        reviewer: "Captain",
-        approvedAt: "2026-05-15T20:43:42.6482362Z",
-      },
+      approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
     });
 
     expect(validateAnalyzerV2CacheKeyInput(

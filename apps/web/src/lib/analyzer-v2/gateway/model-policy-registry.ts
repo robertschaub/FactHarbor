@@ -2,17 +2,12 @@ import type {
   AnalyzerV2GatewayTaskId,
   AnalyzerV2TaskModelPolicy,
 } from "@/lib/analyzer-v2/gateway/types";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 
 const MISSING_APPROVAL = {
   status: "missing",
   reviewer: null,
   approvedAt: null,
-} as const;
-
-const CAPTAIN_APPROVAL_7L1 = {
-  status: "approved",
-  reviewer: "Captain",
-  approvedAt: "2026-05-15T20:43:42.6482362Z",
 } as const;
 
 export const ANALYZER_V2_TASK_MODEL_POLICIES = [
@@ -46,7 +41,7 @@ export const ANALYZER_V2_TASK_MODEL_POLICIES = [
     fallbackBehavior: "none_fail_closed",
     escalationBehavior: "surface_provider_failure",
     execution: "blocked_until_prompt_model_cache_approval",
-    approval: CAPTAIN_APPROVAL_7L1,
+    approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   },
 ] as const satisfies readonly AnalyzerV2TaskModelPolicy[];
 

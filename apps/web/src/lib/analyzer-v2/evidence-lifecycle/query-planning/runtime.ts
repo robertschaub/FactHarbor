@@ -17,6 +17,7 @@ import {
   type EvidenceQueryPlanningResult,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import { ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import {
   canExecuteAnalyzerV2GatewayTask,
@@ -258,6 +259,8 @@ function validateRuntimeProviderSnapshot(request: RunEvidenceQueryPlanningRuntim
 }
 
 function isApproved7L1ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
+  // Intentionally exact for 7L-1: future policy changes must update this
+  // validator and its tests so prompt/model execution remains fail-closed.
   return policy.policyId === "v2.model.evidence_query_planning.0"
     && policy.gatewayTaskId === "evidence_query_planning"
     && policy.modelTask === "understand"
@@ -271,9 +274,9 @@ function isApproved7L1ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
     && policy.fallbackBehavior === "none_fail_closed"
     && policy.escalationBehavior === "surface_provider_failure"
     && policy.execution === "blocked_until_prompt_model_cache_approval"
-    && policy.approval.status === "approved"
-    && policy.approval.reviewer === "Captain"
-    && policy.approval.approvedAt === "2026-05-15T20:43:42.6482362Z";
+    && policy.approval.status === ANALYZER_V2_7L1_CAPTAIN_APPROVAL.status
+    && policy.approval.reviewer === ANALYZER_V2_7L1_CAPTAIN_APPROVAL.reviewer
+    && policy.approval.approvedAt === ANALYZER_V2_7L1_CAPTAIN_APPROVAL.approvedAt;
 }
 
 function buildTaskPolicySnapshot(params: {

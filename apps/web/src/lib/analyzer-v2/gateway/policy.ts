@@ -8,6 +8,7 @@ import {
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import {
   EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS,
@@ -27,12 +28,6 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
   status: "missing",
   reviewer: null,
   approvedAt: null,
-};
-
-const CAPTAIN_APPROVAL_7L1: AnalyzerV2PolicyApproval = {
-  status: "approved",
-  reviewer: "Captain",
-  approvedAt: "2026-05-15T20:43:42.6482362Z",
 };
 
 export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
@@ -140,7 +135,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "retrievalPolicyCatalogJson",
       "sourceAcquisitionTraceJson",
     ],
-    promptApproval: CAPTAIN_APPROVAL_7L1,
+    promptApproval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
     queryPlanningCache: true,
     notes: "Owns V2 Evidence Lifecycle query planning after prompt/model/cache policy approval.",
   }),

@@ -6,6 +6,7 @@ import {
   getAnalyzerV2GatewayTask,
   isAnalyzerV2GatewayTaskEligibleForExecutableStatus,
 } from "@/lib/analyzer-v2/gateway/policy";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
@@ -137,6 +138,7 @@ describe("analyzer-v2 gateway policy registry", () => {
 
   it("declares the exact Captain-approved query-planning model policy", () => {
     const policy = getAnalyzerV2TaskModelPolicy("evidence_query_planning");
+    const gatewayTask = getAnalyzerV2GatewayTask("evidence_query_planning");
 
     expect(policy).toMatchObject({
       policyId: "v2.model.evidence_query_planning.0",
@@ -152,12 +154,12 @@ describe("analyzer-v2 gateway policy registry", () => {
       fallbackBehavior: "none_fail_closed",
       escalationBehavior: "surface_provider_failure",
       execution: "blocked_until_prompt_model_cache_approval",
-      approval: {
-        status: "approved",
-        reviewer: "Captain",
-        approvedAt: "2026-05-15T20:43:42.6482362Z",
-      },
+      approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
     });
+    expect(policy?.approval).toBe(ANALYZER_V2_7L1_CAPTAIN_APPROVAL);
+    expect(gatewayTask.promptPolicy?.approval).toBe(ANALYZER_V2_7L1_CAPTAIN_APPROVAL);
+    expect(gatewayTask.modelPolicy?.approval).toBe(ANALYZER_V2_7L1_CAPTAIN_APPROVAL);
+    expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_7L1_CAPTAIN_APPROVAL);
   });
 
   it("does not allow executable status without approved prompt, model, and cache policies", () => {

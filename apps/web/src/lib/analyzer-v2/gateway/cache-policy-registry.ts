@@ -3,17 +3,12 @@ import type {
   AnalyzerV2CachePolicy,
   AnalyzerV2PolicyApproval,
 } from "@/lib/analyzer-v2/gateway/types";
+import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 
 const PENDING_APPROVAL: AnalyzerV2PolicyApproval = {
   status: "pending",
   reviewer: null,
   approvedAt: null,
-};
-
-const CAPTAIN_APPROVAL_7L1: AnalyzerV2PolicyApproval = {
-  status: "approved",
-  reviewer: "Captain",
-  approvedAt: "2026-05-15T20:43:42.6482362Z",
 };
 
 export const ANALYZER_V2_BASE_SEMANTIC_CACHE_DIMENSIONS = [
@@ -95,5 +90,5 @@ export const ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY: AnalyzerV2CachePo
   optionalDimensions: [
     "adapterVersion",
   ],
-  approval: CAPTAIN_APPROVAL_7L1,
+  approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
 };
