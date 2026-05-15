@@ -3027,3 +3027,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7J-1 Non-Executable Evidence Task Contracts -- [Significant] [open-items: yes]
 **For next agent:** Implemented Captain-approved 7J-1 at `1a874b8d`: inert Evidence Lifecycle prompt sections in `claimboundary-v2`, strict task-result schemas, categorical missing-evidence dimensions, non-executable task-policy metadata, and boundary/static verifier tests. No prompt seeding, approval flips, provider/search/fetch execution, cache IO, SR integration, public exposure, live jobs, or V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7J1_NonExecutable_Evidence_Task_Contracts.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7J-2 Evidence Readiness Alignment -- [Standard] [open-items: yes]
+**For next agent:** Implemented inert post-7J-1 alignment at `f49c69cd`: gateway metadata now matches the four Evidence Lifecycle task contracts while remaining blocked/non-executable, and extraction accepted results now support honest `no_extractable_evidence` with empty `evidenceItems`. Next gate should be docs-only 7K execution design, not source execution.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7J2_Evidence_Readiness_Alignment.md
