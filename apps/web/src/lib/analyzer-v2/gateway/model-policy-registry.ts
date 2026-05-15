@@ -9,6 +9,12 @@ const MISSING_APPROVAL = {
   approvedAt: null,
 } as const;
 
+const CAPTAIN_APPROVAL_7L1 = {
+  status: "approved",
+  reviewer: "Captain",
+  approvedAt: "2026-05-15T20:43:42.6482362Z",
+} as const;
+
 export const ANALYZER_V2_TASK_MODEL_POLICIES = [
   {
     policyId: "v2.model.claim_understanding_gate1.0",
@@ -25,6 +31,22 @@ export const ANALYZER_V2_TASK_MODEL_POLICIES = [
     escalationBehavior: "surface_damaged_claim_understanding",
     execution: "blocked_until_prompt_model_cache_approval",
     approval: MISSING_APPROVAL,
+  },
+  {
+    policyId: "v2.model.evidence_query_planning.0",
+    gatewayTaskId: "evidence_query_planning",
+    modelTask: "understand",
+    modelTier: "standard",
+    providerPolicy: "from_config_snapshot",
+    temperature: 0.1,
+    maxCalls: 1,
+    schemaRetryCount: 0,
+    timeoutMs: 90000,
+    maxOutputTokens: 4000,
+    fallbackBehavior: "none_fail_closed",
+    escalationBehavior: "surface_provider_failure",
+    execution: "blocked_until_prompt_model_cache_approval",
+    approval: CAPTAIN_APPROVAL_7L1,
   },
 ] as const satisfies readonly AnalyzerV2TaskModelPolicy[];
 

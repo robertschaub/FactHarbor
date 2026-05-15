@@ -10,6 +10,12 @@ const PENDING_APPROVAL: AnalyzerV2PolicyApproval = {
   approvedAt: null,
 };
 
+const CAPTAIN_APPROVAL_7L1: AnalyzerV2PolicyApproval = {
+  status: "approved",
+  reviewer: "Captain",
+  approvedAt: "2026-05-15T20:43:42.6482362Z",
+};
+
 export const ANALYZER_V2_BASE_SEMANTIC_CACHE_DIMENSIONS = [
   "promptProfile",
   "promptSectionId",
@@ -67,4 +73,27 @@ export const ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY: AnalyzerV2CachePolicy
     "adapterVersion",
   ],
   approval: PENDING_APPROVAL,
+};
+
+export const ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.evidence-query-planning",
+  requiredDimensions: [
+    "promptProfile",
+    "promptSectionId",
+    "promptContentHash",
+    "modelTask",
+    "provider",
+    "modelName",
+    "temperature",
+    "outputSchemaVersion",
+    "configSnapshotHash",
+    "resultSchemaVersion",
+    "inputIdentityHash",
+    "languageContextHash",
+    "currentDateBucket",
+  ],
+  optionalDimensions: [
+    "adapterVersion",
+  ],
+  approval: CAPTAIN_APPROVAL_7L1,
 };

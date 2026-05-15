@@ -39,6 +39,7 @@ const evidenceLifecycleSourceAcquisitionRoot = path.resolve(evidenceLifecycleRoo
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
+const evidenceLifecycleQueryPlanningRoot = path.resolve(evidenceLifecycleRoot, "query-planning");
 const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
 const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
@@ -1743,6 +1744,7 @@ describe("analyzer-v2 boundary guard", () => {
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskPolicyRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskContractsRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExecutionReadinessRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleQueryPlanningRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionPortRoot)}/`)
     );
@@ -1790,6 +1792,24 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
+  });
+
+  it("keeps Evidence Lifecycle subdirectory ownership explicit", () => {
+    const subdirectories = readdirSync(evidenceLifecycleRoot)
+      .map((entry) => path.join(evidenceLifecycleRoot, entry))
+      .filter((entryPath) => statSync(entryPath).isDirectory())
+      .map((entryPath) => toPosix(path.relative(webRoot, entryPath)))
+      .sort();
+
+    expect(subdirectories).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus",
+      "src/lib/analyzer-v2/evidence-lifecycle/execution-readiness",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port",
+      "src/lib/analyzer-v2/evidence-lifecycle/task-contracts",
+      "src/lib/analyzer-v2/evidence-lifecycle/task-policy",
+    ]);
   });
 
   it("keeps Evidence Lifecycle source-acquisition contract-only before provider wiring", () => {
@@ -2057,6 +2077,79 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps Evidence Lifecycle query-planning runtime inside the approved hidden execution boundary", () => {
+    const queryPlanningFiles = collectFiles(evidenceLifecycleQueryPlanningRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const violations: string[] = [];
+
+    expect(queryPlanningFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/model-adapter.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts",
+    ]);
+
+    for (const sourcePath of queryPlanningFiles) {
+      const sourceFile = parseSource(sourcePath);
+      const normalizedSourcePath = toPosix(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Claim Understanding model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Claim Understanding prompt loader ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Claim Understanding runtime dispatch ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports network/parser dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (
+          isCacheIoImport(specifier)
+          && !(normalizedSourcePath.endsWith("/query-planning/prompt-loader.ts") && specifier === "node:fs/promises")
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps Evidence Lifecycle evidence-corpus build decision contract-only before source execution", () => {
     const evidenceCorpusFiles = collectFiles(evidenceLifecycleEvidenceCorpusRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
@@ -2278,11 +2371,15 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps production source from constructing executable gateway task state", () => {
+  it("keeps production source from constructing unapproved executable gateway task state", () => {
     const violations: string[] = [];
 
     for (const sourcePath of v2SourceFiles) {
       for (const location of collectForbiddenExecutableStatusMutations(parseSource(sourcePath))) {
+        const normalizedLocation = toPosix(location);
+        if (normalizedLocation.startsWith(toPosix(analyzerV2GatewayPolicyPath))) {
+          continue;
+        }
         violations.push(`${toPosix(path.relative(webRoot, location))} constructs executable gateway task state`);
       }
     }

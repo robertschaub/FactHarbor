@@ -3,6 +3,7 @@ import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
   buildAnalyzerV2ClaimUnderstandingCacheDecision,
   buildAnalyzerV2ClaimUnderstandingCacheKeyParts,
@@ -75,6 +76,50 @@ describe("analyzer-v2 cache governance", () => {
       },
     );
     expect(completeSourceAware.valid).toBe(true);
+  });
+
+  it("declares exact approved cache-policy metadata for evidence query planning", () => {
+    expect(ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY).toEqual({
+      policyId: "v2.semantic.evidence-query-planning",
+      requiredDimensions: [
+        "promptProfile",
+        "promptSectionId",
+        "promptContentHash",
+        "modelTask",
+        "provider",
+        "modelName",
+        "temperature",
+        "outputSchemaVersion",
+        "configSnapshotHash",
+        "resultSchemaVersion",
+        "inputIdentityHash",
+        "languageContextHash",
+        "currentDateBucket",
+      ],
+      optionalDimensions: [
+        "adapterVersion",
+      ],
+      approval: {
+        status: "approved",
+        reviewer: "Captain",
+        approvedAt: "2026-05-15T20:43:42.6482362Z",
+      },
+    });
+
+    expect(validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
+      completeBaseInput,
+    )).toMatchObject({
+      valid: false,
+      missingDimensions: ["languageContextHash"],
+    });
+    expect(validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
+      {
+        ...completeBaseInput,
+        languageContextHash: "language-hash",
+      },
+    ).valid).toBe(true);
   });
 
   it("validates ACS-backed claim-understanding cache keys with ACS and input-grounding dimensions", () => {

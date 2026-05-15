@@ -5,6 +5,7 @@ import {
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
@@ -15,6 +16,7 @@ import {
 import type {
   AnalyzerV2GatewayTask,
   AnalyzerV2GatewayTaskId,
+  AnalyzerV2GatewayTaskStatus,
   AnalyzerV2ModelPolicy,
   AnalyzerV2ModelTask,
   AnalyzerV2PolicyApproval,
@@ -27,21 +29,29 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
   approvedAt: null,
 };
 
+const CAPTAIN_APPROVAL_7L1: AnalyzerV2PolicyApproval = {
+  status: "approved",
+  reviewer: "Captain",
+  approvedAt: "2026-05-15T20:43:42.6482362Z",
+};
+
 export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "claim_understanding_gate1",
+  "evidence_query_planning",
 ] as const satisfies readonly AnalyzerV2GatewayTaskId[];
 
 function blockedPrompt(
   sectionId: string,
   outputSchemaVersion: string,
   requiredVariables: readonly string[] = [],
+  approval: AnalyzerV2PolicyApproval = MISSING_APPROVAL,
 ): AnalyzerV2PromptPolicy {
   return {
     profile: "claimboundary-v2",
     sectionId,
     requiredVariables,
     outputSchemaVersion,
-    approval: MISSING_APPROVAL,
+    approval,
   };
 }
 
@@ -59,33 +69,39 @@ function blockedModel(
     tokenBudgetPolicy: "from_model_task_registry",
     timeoutPolicy: "from_model_task_registry",
     retryPolicy: "from_model_task_registry",
-    approval: MISSING_APPROVAL,
+    approval: taskModelPolicy?.approval ?? MISSING_APPROVAL,
   };
 }
 
 function task(params: {
   id: AnalyzerV2GatewayTaskId;
   owner: string;
+  status?: AnalyzerV2GatewayTaskStatus;
   modelTask: AnalyzerV2ModelTask;
   promptSectionId: string;
   outputSchemaVersion: string;
   requiredVariables?: readonly string[];
+  promptApproval?: AnalyzerV2PolicyApproval;
   claimUnderstandingCache?: boolean;
+  queryPlanningCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
   return {
     id: params.id,
     owner: params.owner,
-    status: "blockedUntilPromptApproved",
+    status: params.status ?? "blockedUntilPromptApproved",
     promptPolicy: blockedPrompt(
       params.promptSectionId,
       params.outputSchemaVersion,
       params.requiredVariables,
+      params.promptApproval,
     ),
     modelPolicy: blockedModel(params.id, params.modelTask),
     cachePolicy: params.claimUnderstandingCache
       ? ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY
+      : params.queryPlanningCache
+      ? ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY
       : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
@@ -114,9 +130,18 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "evidence_query_planning",
     owner: "evidence_lifecycle",
+    status: "executable",
     modelTask: "understand",
     promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_query_planning,
     outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_query_planning,
+    requiredVariables: [
+      "claimContractJson",
+      "taskPolicySnapshotJson",
+      "retrievalPolicyCatalogJson",
+      "sourceAcquisitionTraceJson",
+    ],
+    promptApproval: CAPTAIN_APPROVAL_7L1,
+    queryPlanningCache: true,
     notes: "Owns V2 Evidence Lifecycle query planning after prompt/model/cache policy approval.",
   }),
   {

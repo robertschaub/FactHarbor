@@ -16,7 +16,7 @@ import {
 import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 
 describe("analyzer-v2 gateway policy registry", () => {
-  it("declares owned, verified, non-executable gateway tasks", () => {
+  it("declares owned, verified gateway tasks with only the approved query-planning task executable", () => {
     expect(ANALYZER_V2_GATEWAY_TASKS.length).toBeGreaterThan(0);
 
     for (const task of ANALYZER_V2_GATEWAY_TASKS) {
@@ -24,20 +24,36 @@ describe("analyzer-v2 gateway policy registry", () => {
       expect(task.owner).toBeTruthy();
       expect(task.verifier).toBeTruthy();
       expect(task.outputSchemaVersion).toMatch(/^v2\./);
-      expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+      expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(task.id === "evidence_query_planning");
     }
   });
 
-  it("keeps all prompt-backed tasks blocked until prompt approval", () => {
+  it("keeps prompt-backed tasks blocked except the Captain-approved query-planning slice", () => {
     const promptBackedTasks = ANALYZER_V2_GATEWAY_TASKS.filter((task) => task.promptPolicy);
 
     expect(promptBackedTasks.length).toBeGreaterThan(0);
     for (const task of promptBackedTasks) {
-      expect(task.status).toBe("blockedUntilPromptApproved");
       expect(task.promptPolicy?.profile).toBe("claimboundary-v2");
-      expect(task.promptPolicy?.approval.status).not.toBe("approved");
-      expect(task.modelPolicy?.approval.status).not.toBe("approved");
-      expect(task.cachePolicy?.approval.status).not.toBe("approved");
+      if (task.id === "evidence_query_planning") {
+        expect(task.status).toBe("executable");
+        expect(task.promptPolicy?.approval).toMatchObject({
+          status: "approved",
+          reviewer: "Captain",
+        });
+        expect(task.modelPolicy?.approval).toMatchObject({
+          status: "approved",
+          reviewer: "Captain",
+        });
+        expect(task.cachePolicy?.approval).toMatchObject({
+          status: "approved",
+          reviewer: "Captain",
+        });
+      } else {
+        expect(task.status).toBe("blockedUntilPromptApproved");
+        expect(task.promptPolicy?.approval.status).not.toBe("approved");
+        expect(task.modelPolicy?.approval.status).not.toBe("approved");
+        expect(task.cachePolicy?.approval.status).not.toBe("approved");
+      }
     }
   });
 
@@ -83,7 +99,7 @@ describe("analyzer-v2 gateway policy registry", () => {
     });
   });
 
-  it("aligns Evidence Lifecycle gateway metadata with the 7J task contracts without enabling execution", () => {
+  it("aligns Evidence Lifecycle gateway metadata and only enables query planning", () => {
     const evidenceTaskKeys: readonly EvidenceLifecycleTaskKey[] = [
       "evidence_query_planning",
       "evidence_applicability",
@@ -95,14 +111,53 @@ describe("analyzer-v2 gateway policy registry", () => {
       const task = getAnalyzerV2GatewayTask(taskKey);
 
       expect(task.owner).toBe("evidence_lifecycle");
-      expect(task.status).toBe("blockedUntilPromptApproved");
       expect(task.promptPolicy?.sectionId).toBe(EVIDENCE_TASK_PROMPT_SECTION_IDS[taskKey]);
       expect(task.promptPolicy?.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
       expect(task.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
-      expect(task.modelPolicy?.registryPolicyId).toBe("unregistered");
-      expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(false);
-      expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+      if (taskKey === "evidence_query_planning") {
+        expect(task.status).toBe("executable");
+        expect(task.promptPolicy?.requiredVariables).toEqual([
+          "claimContractJson",
+          "taskPolicySnapshotJson",
+          "retrievalPolicyCatalogJson",
+          "sourceAcquisitionTraceJson",
+        ]);
+        expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.evidence_query_planning.0");
+        expect(task.cachePolicy?.policyId).toBe("v2.semantic.evidence-query-planning");
+        expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
+        expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
+      } else {
+        expect(task.status).toBe("blockedUntilPromptApproved");
+        expect(task.modelPolicy?.registryPolicyId).toBe("unregistered");
+        expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(false);
+        expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+      }
     }
+  });
+
+  it("declares the exact Captain-approved query-planning model policy", () => {
+    const policy = getAnalyzerV2TaskModelPolicy("evidence_query_planning");
+
+    expect(policy).toMatchObject({
+      policyId: "v2.model.evidence_query_planning.0",
+      gatewayTaskId: "evidence_query_planning",
+      modelTask: "understand",
+      modelTier: "standard",
+      providerPolicy: "from_config_snapshot",
+      temperature: 0.1,
+      maxCalls: 1,
+      schemaRetryCount: 0,
+      timeoutMs: 90000,
+      maxOutputTokens: 4000,
+      fallbackBehavior: "none_fail_closed",
+      escalationBehavior: "surface_provider_failure",
+      execution: "blocked_until_prompt_model_cache_approval",
+      approval: {
+        status: "approved",
+        reviewer: "Captain",
+        approvedAt: "2026-05-15T20:43:42.6482362Z",
+      },
+    });
   });
 
   it("does not allow executable status without approved prompt, model, and cache policies", () => {
@@ -137,22 +192,25 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(canExecuteAnalyzerV2GatewayTask(executable)).toBe(true);
   });
 
-  it("keeps only claim_understanding_gate1 structurally eligible for future execution", () => {
+  it("keeps only claim understanding and query planning structurally eligible for execution", () => {
     const approved = {
       status: "approved" as const,
       reviewer: "LLM Expert",
       approvedAt: "2026-05-14T00:00:00.000Z",
     };
 
-    expect(ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS).toEqual(["claim_understanding_gate1"]);
+    expect(ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS).toEqual([
+      "claim_understanding_gate1",
+      "evidence_query_planning",
+    ]);
 
     for (const task of ANALYZER_V2_GATEWAY_TASKS) {
       expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(
-        task.id === "claim_understanding_gate1",
+        task.id === "claim_understanding_gate1" || task.id === "evidence_query_planning",
       );
     }
 
-    const laterPromptBackedTask = getAnalyzerV2GatewayTask("evidence_query_planning");
+    const laterPromptBackedTask = getAnalyzerV2GatewayTask("evidence_applicability");
     expect(canExecuteAnalyzerV2GatewayTask({
       ...laterPromptBackedTask,
       status: "executable",
@@ -168,5 +226,6 @@ describe("analyzer-v2 gateway policy registry", () => {
     })).toBe(false);
 
     expect(getAnalyzerV2GatewayTask("claim_understanding_gate1").status).toBe("blockedUntilPromptApproved");
+    expect(getAnalyzerV2GatewayTask("evidence_query_planning").status).toBe("executable");
   });
 });
