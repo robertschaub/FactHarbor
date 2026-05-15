@@ -554,6 +554,87 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     ]);
   });
 
+  it("records hidden adapter attempt diagnostics when direct-text schema validation fails", async () => {
+    const inputValue = "Plastic recycling is pointless";
+    const input: ClaimBoundaryV2Ingress = {
+      runIdHint: "job-runtime-direct-hidden-invalid-schema",
+      submitted: {
+        kind: "text",
+        value: inputValue,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    };
+    const ledgerId = "job-runtime-direct-hidden-invalid-schema:ledger";
+    const { context, activation } = activationFor({
+      input,
+      ledgerId,
+      providerCall: async () => ({
+        output: {
+          schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+          status: "accepted",
+          claimContract: {
+            legacyContext: "not allowed",
+          },
+          integrityEvents: [],
+          blockedReason: null,
+          damagedReason: null,
+        },
+        telemetry: {
+          providerId: "anthropic",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 101,
+          outputTokens: 49,
+          totalTokens: 150,
+          durationMs: 250,
+        },
+      }),
+    });
+
+    const state = await runClaimUnderstandingRuntimeStage(input, context, { activation });
+    const artifact = readClaimUnderstandingRuntimeArtifacts(ledgerId)[0];
+
+    expect(state).toMatchObject({
+      inputSource: "direct_input",
+      status: "runtime_dispatch_completed",
+      result: {
+        status: "damaged",
+        damagedReason: "claim_contract_validation_failed",
+      },
+    });
+    expect(artifact).toMatchObject({
+      executionStatus: "completed",
+      schemaOutcome: {
+        status: "damaged",
+        damagedReason: "claim_contract_validation_failed",
+      },
+      adapterAttemptDiagnostics: [
+        {
+          attemptNumber: 1,
+          status: "invalid_schema",
+          promptContentHash: expect.any(String),
+          providerTelemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+          },
+          failureMessage: expect.stringContaining("claimContract"),
+        },
+        {
+          attemptNumber: 2,
+          status: "invalid_schema",
+          promptContentHash: expect.any(String),
+          providerTelemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+          },
+          failureMessage: expect.stringContaining("claimContract"),
+        },
+      ],
+    });
+    expect(JSON.stringify(artifact.adapterAttemptDiagnostics)).not.toContain(inputValue);
+    expect(JSON.stringify(artifact.adapterAttemptDiagnostics)).not.toContain("renderedPrompt");
+  });
+
   it("fails hidden direct-text activation closed when the provider reports invalid telemetry", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-invalid-telemetry",

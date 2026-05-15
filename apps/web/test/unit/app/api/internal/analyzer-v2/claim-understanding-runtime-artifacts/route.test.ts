@@ -41,6 +41,22 @@ function artifact(ledgerId: string): ClaimUnderstandingRuntimeArtifact {
       blockedReason: null,
       failureMessage: null,
     },
+    adapterAttemptDiagnostics: [
+      {
+        attemptNumber: 1,
+        status: "invalid_schema",
+        promptContentHash: "prompt-hash",
+        providerTelemetry: {
+          providerId: "anthropic",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+          durationMs: 250,
+        },
+        failureMessage: "schema path claimContract.input.selectedAtomicClaimIds is required",
+      },
+    ],
     cacheDecision: {
       reason: "runtime_no_store",
       canRead: false,
@@ -83,6 +99,13 @@ describe("Analyzer V2 internal Claim Understanding runtime artifact route", () =
         visibility: "internal_admin_only",
         publicPointerExposure: "forbidden",
         warningMateriality: "admin_only_internal",
+        adapterAttemptDiagnostics: [
+          expect.objectContaining({
+            attemptNumber: 1,
+            status: "invalid_schema",
+            failureMessage: "schema path claimContract.input.selectedAtomicClaimIds is required",
+          }),
+        ],
         cacheDecision: {
           reason: "runtime_no_store",
           canRead: false,

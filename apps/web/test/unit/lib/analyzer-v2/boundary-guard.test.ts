@@ -131,6 +131,7 @@ const ownerOnlyResultSurfaceTerms = [
   "sideEffects",
   "providerTelemetry",
   "cacheDecision",
+  "adapterAttemptDiagnostics",
   "keyParts",
   "renderedPrompt",
   "renderedPromptHash",
@@ -288,6 +289,7 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
     new Set([
       "CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION",
       "ClaimUnderstandingRuntimeArtifact",
+      "ClaimUnderstandingRuntimeArtifactAttemptDiagnostic",
     ]),
   ],
 ]);

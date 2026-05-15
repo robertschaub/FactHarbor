@@ -6,9 +6,17 @@ import type {
 } from "@/lib/analyzer-v2/gateway/types";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION =
-  "v2.claim-understanding.runtime-artifact-sink.0";
+  "v2.claim-understanding.runtime-artifact-sink.1";
 export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT = 64;
 export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER = 16;
+
+export type ClaimUnderstandingRuntimeArtifactAttemptDiagnostic = {
+  attemptNumber: number;
+  status: "accepted" | "invalid_schema" | "parse_failure" | "provider_failure";
+  promptContentHash: string;
+  providerTelemetry: ClaimUnderstandingProviderTelemetry | null;
+  failureMessage: string | null;
+};
 
 export type ClaimUnderstandingRuntimeArtifact = {
   artifactVersion: typeof CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION;
@@ -35,6 +43,7 @@ export type ClaimUnderstandingRuntimeArtifact = {
     blockedReason: string | null;
     failureMessage: string | null;
   };
+  adapterAttemptDiagnostics: readonly ClaimUnderstandingRuntimeArtifactAttemptDiagnostic[];
   cacheDecision: Pick<AnalyzerV2CacheDecision, "reason" | "canRead" | "canWrite"> | null;
   warningMateriality: "admin_only_internal";
 };

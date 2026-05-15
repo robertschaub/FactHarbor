@@ -38,6 +38,7 @@ function artifact(
       blockedReason: "runtime_activation_disabled",
       failureMessage: null,
     },
+    adapterAttemptDiagnostics: [],
     cacheDecision: null,
     warningMateriality: "admin_only_internal",
   };

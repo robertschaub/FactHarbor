@@ -41,6 +41,7 @@ import {
 import {
   CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
   type ClaimUnderstandingRuntimeArtifact,
+  type ClaimUnderstandingRuntimeArtifactAttemptDiagnostic,
 } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION = "v2.claim-understanding.runtime-stage.0";
@@ -345,6 +346,25 @@ function artifactSchemaOutcome(
   };
 }
 
+function boundedFailureMessage(message: string | null): string | null {
+  if (!message) {
+    return null;
+  }
+  return message.length > 500 ? `${message.slice(0, 500)}...` : message;
+}
+
+function artifactAttemptDiagnostics(
+  dispatchResult: ClaimUnderstandingRuntimeDispatchResult | null,
+): ClaimUnderstandingRuntimeArtifactAttemptDiagnostic[] {
+  return (dispatchResult?.adapterOutcome?.attempts ?? []).map((attempt) => ({
+    attemptNumber: attempt.attemptNumber,
+    status: attempt.status,
+    promptContentHash: attempt.promptContentHash,
+    providerTelemetry: attempt.providerTelemetry,
+    failureMessage: boundedFailureMessage(attempt.failureMessage),
+  }));
+}
+
 async function recordRuntimeArtifact(params: {
   context: PipelineRunContext;
   activation: ClaimUnderstandingRuntimeActivationState;
@@ -410,6 +430,7 @@ async function recordRuntimeArtifact(params: {
       blockedReason: params.blockedReason,
       failureMessage: params.failureMessage,
     },
+    adapterAttemptDiagnostics: artifactAttemptDiagnostics(dispatchResult),
     cacheDecision,
     warningMateriality: "admin_only_internal",
   });
