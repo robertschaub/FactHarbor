@@ -384,6 +384,14 @@ Plan-review clarification, 2026-05-15: the activation source is no longer unreso
 - the smoke input is one Captain-defined direct-text input, used verbatim;
 - the expected hidden artifact inspection path is prepared before submission.
 
+4C3c hidden-artifact inspection path:
+
+- `GET /api/internal/analyzer-v2/claim-understanding-runtime-artifacts?ledgerId=<encoded-ledger-id>`;
+- protected by the existing admin-key check;
+- reads only the V2-owned in-memory `v2_observability_ledger`;
+- returns only internal artifact records for the requested ledger id;
+- does not write job events/history, result JSON, report markdown, exports, UI state, or compatibility-view data.
+
 4C3c acceptance requires proof that:
 
 - the hidden direct-text Claim Understanding runtime executed and wrote an inspectable internal `v2_observability_ledger` artifact;

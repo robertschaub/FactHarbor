@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T06:10:58.301Z",
-  "count": 477,
+  "generatedAt": "2026-05-15T06:20:58.937Z",
+  "count": 478,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10272,6 +10272,27 @@
         "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md"
       ],
       "summary": "For 4C3c, inspect the bounded `readClaimUnderstandingRuntimeArtifacts(...)` path after runtime refresh. If more durable inspection is needed, create a reviewed artifact-storage gate instead of writing to existing job event/history endpoints."
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_4C3c_Smoke_Inspection_Path.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "4c3c",
+        "smoke",
+        "inspection",
+        "path"
+      ],
+      "files_touched": [
+        "apps/web/src/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.ts",
+        "apps/web/test/unit/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md"
+      ],
+      "summary": "After committing and refreshing the runtime, enable the V2 shell gate and dedicated runtime kill switch, submit one Captain-defined direct-text `claimboundary-v2` job, then inspect `GET /api/internal/analyzer-v2/claim-understanding-runtime-artifacts?ledgerId=<jobId%3Aprecutover-observability>` with "
     },
     {
       "file": "2026-05-15_Lead_Architect_V2_Slice_6B3c4C2b_Provider_Factory_Source.md",

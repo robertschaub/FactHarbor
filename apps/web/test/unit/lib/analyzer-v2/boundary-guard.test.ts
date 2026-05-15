@@ -7,6 +7,10 @@ const webRoot = process.cwd();
 const srcRoot = path.resolve(webRoot, "src");
 const appRoot = path.resolve(srcRoot, "app");
 const componentsRoot = path.resolve(srcRoot, "components");
+const analyzerV2RuntimeArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -380,6 +384,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(claimUnderstandingRuntimeStagePath),
     new Set([
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
+      "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeArtifactInspectionRoutePath),
+    new Set([
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
     ]),
   ],
