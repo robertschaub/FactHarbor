@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C3 Product Activation Approval Package
 
 **Date:** 2026-05-15
-**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b hidden direct-text wiring, 4C3c live smoke, product activation source, approval flips, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
+**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b docs-only package created at `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`; 4C3b source wiring requires Captain confirmation; 4C3c live smoke, broader product activation source, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `88787787` (`docs: record v2 provider factory source`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -319,3 +319,17 @@ Verification:
 - `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime` passed 22 files / 187 tests;
 - `npm -w apps/web run build` passed, with prompt/config reseed unchanged;
 - static scan found no V1 analyzer import, V1 prompt reference, config/cache IO, runtime dispatch, prompt loader, provider factory import, provider SDK import, `process.env`, executable gateway construction, or approved execution marker in the 4C3a contract source.
+
+## 15. 4C3b Package Result
+
+The 4C3b debate consolidated into a docs-only hidden direct-text wiring package:
+
+- `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`
+
+Deputy consensus:
+
+- docs-only package may proceed;
+- source wiring is blocked until Captain confirmation;
+- existing job events/history are not a safe hidden artifact sink;
+- the recommended sink is a V2-owned `v2_observability_ledger`, with an internal local smoke artifact adapter only for later committed/refreshed 4C3c inspection;
+- direct-text-only, no public exposure, no cache IO, no live jobs, no V1 reuse, no V1 cleanup.

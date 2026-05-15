@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; 6B.3c-4C3a activation-authority contract complete; public product runtime exposure remains blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; 6B.3c-4C3a activation-authority contract complete; 6B.3c-4C3b docs-only hidden wiring package complete; public product runtime exposure remains blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -447,6 +447,15 @@ Post-4C2b product-activation consolidation:
 - `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime` passed 22 files / 187 tests;
 - `npm -w apps/web run build` passed with prompt/config reseed unchanged;
 - static scan found no V1 analyzer import, V1 prompt reference, config/cache IO, runtime dispatch, prompt loader, provider factory import, provider SDK import, `process.env`, executable gateway construction, or approved execution marker in the 4C3a contract source.
+
+Post-4C3a hidden-wiring debate:
+
+- 4C3b docs-only package is complete at `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`;
+- deputy consensus approved docs-only package creation but blocked source wiring until Captain confirmation;
+- source wiring is high-risk because it would enable real hidden prompt/model/provider execution and executable gateway state inside an approved owner;
+- existing job event/history endpoints are not an acceptable hidden artifact sink for provider telemetry, prompt hashes, runtime provenance, or hidden artifact pointers;
+- recommended hidden sink is a V2-owned `v2_observability_ledger`, with internal local smoke artifact support only for later committed/refreshed 4C3c inspection;
+- 4C3b source remains direct-text-only and must not add cache IO, public API/UI/report/export/compatibility exposure, ACS/direct URL execution, live jobs, V1 reuse, or V1 cleanup.
 
 ## 8. Approval Gate Before Code
 
