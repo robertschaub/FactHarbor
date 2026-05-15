@@ -10,7 +10,8 @@
       "Bash(npm test)",
       "Bash(node scripts/build-index.mjs)",
       "Read(//c/DEV/FactHarbor-internal/Operations/Finance/Finanzierung/**)",
-      "Read(//c/DEV/FactHarbor-internal/**)"
+      "Read(//c/DEV/FactHarbor-internal/**)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "defaultMode": "bypassPermissions"
   },
