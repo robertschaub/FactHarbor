@@ -146,6 +146,19 @@ function maxAttemptsFromPolicy(policy: AnalyzerV2TaskModelPolicy): number {
   return Math.max(1, Math.min(policy.maxCalls, policy.schemaRetryCount + 1));
 }
 
+function parseProviderOutputText(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (directParseError) {
+    const trimmed = text.trim();
+    const fencedJson = trimmed.match(/^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i);
+    if (!fencedJson) {
+      throw directParseError;
+    }
+    return JSON.parse(fencedJson[1]);
+  }
+}
+
 function coerceProviderOutput(output: unknown): { status: "parsed"; value: unknown } | { status: "parse_failure"; message: string } {
   if (typeof output !== "string") {
     return {
@@ -157,7 +170,7 @@ function coerceProviderOutput(output: unknown): { status: "parsed"; value: unkno
   try {
     return {
       status: "parsed",
-      value: JSON.parse(output),
+      value: parseProviderOutputText(output),
     };
   } catch (error) {
     return {

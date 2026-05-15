@@ -227,6 +227,32 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
     expect(outcome.telemetry.cacheDecision.reason).toBe("no_store_until_execution_approved");
   });
 
+  it("accepts a whole-response fenced JSON object as structural provider output", async () => {
+    const calls: ClaimUnderstandingProviderCallRequest[] = [];
+    const outcome = await executeClaimUnderstandingModelAdapter(baseRequest(async (request) => {
+      calls.push(request);
+      return {
+        output: `\`\`\`json\n${JSON.stringify(acceptedResult())}\n\`\`\``,
+        telemetry: providerTelemetry(),
+      };
+    }));
+
+    expect(calls).toHaveLength(1);
+    expect(outcome.executionStatus).toBe("completed");
+    expect(outcome.claimUnderstandingResult?.status).toBe("accepted");
+    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["accepted"]);
+  });
+
+  it("accepts an unlabeled whole-response fenced JSON object as structural provider output", async () => {
+    const outcome = await executeClaimUnderstandingModelAdapter(baseRequest(async () => ({
+      output: `\`\`\`\n${JSON.stringify(acceptedResult())}\n\`\`\``,
+      telemetry: providerTelemetry(),
+    })));
+
+    expect(outcome.claimUnderstandingResult?.status).toBe("accepted");
+    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["accepted"]);
+  });
+
   it("uses only structural retry with identical prompt bytes and prompt hash", async () => {
     const calls: ClaimUnderstandingProviderCallRequest[] = [];
     const prompt = renderedPrompt(`Claim Understanding\n${GERMAN_INPUT}`);
@@ -299,6 +325,35 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
       expect.stringContaining("JSON parse error"),
       expect.stringContaining("JSON parse error"),
     ]);
+  });
+
+  it.each([
+    [
+      "prose-wrapped fenced JSON",
+      `Here is the result:\n\`\`\`json\n${JSON.stringify(acceptedResult())}\n\`\`\``,
+    ],
+    [
+      "multiple fenced JSON blocks",
+      `\`\`\`json\n${JSON.stringify(acceptedResult())}\n\`\`\`\n\`\`\`json\n${JSON.stringify(acceptedResult())}\n\`\`\``,
+    ],
+    [
+      "malformed fenced JSON",
+      "```json\n{\"schemaVersion\":\n```",
+    ],
+  ])("keeps %s as parse failure instead of broad JSON extraction", async (_label, output) => {
+    const calls: ClaimUnderstandingProviderCallRequest[] = [];
+    const outcome = await executeClaimUnderstandingModelAdapter(baseRequest(async (request) => {
+      calls.push(request);
+      return {
+        output,
+        telemetry: providerTelemetry(),
+      };
+    }));
+
+    expect(calls).toHaveLength(2);
+    expect(outcome.claimUnderstandingResult?.status).toBe("damaged");
+    expect(outcome.claimUnderstandingResult?.damagedReason).toBe("claim_contract_validation_failed");
+    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["parse_failure", "parse_failure"]);
   });
 
   it("rejects malformed enums and extra keys through the production schema before returning accepted output", async () => {
