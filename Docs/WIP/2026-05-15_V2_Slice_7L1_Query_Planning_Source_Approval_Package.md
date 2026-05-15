@@ -1,7 +1,7 @@
 # V2 Slice 7L-1 Query-Planning Source Approval Package
 
 **Date:** 2026-05-15
-**Status:** docs-only source approval package; no source implementation yet
+**Status:** approved and implemented at `6162e057` (`feat: add v2 query planning runtime`)
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `16168076` (`docs: record tightened v2 query planning gate`)
 **Parent gate:** 7L `497ea732`, tightened at `a3fc9eaf`
@@ -12,7 +12,7 @@
 
 Define the exact source slice that would implement the first V2 Evidence Lifecycle query-planning prompt/model execution surface.
 
-This package is an approval request, not an implementation. It authorizes no source edits until Captain approval is explicit.
+This package began as an approval request and became the controlling implementation boundary after explicit Captain approval. It must not be broadened retroactively; later source execution, product wiring, public exposure, live jobs, or V1 cleanup still require a new reviewed gate.
 
 The target implementation is narrow:
 
@@ -26,6 +26,19 @@ The target implementation is narrow:
 - no provider/search/fetch/parser/network implementation;
 - no product/orchestrator/runner wiring;
 - no live jobs.
+
+## 1.1 Implementation Record
+
+Implementation commit: `6162e057f8cfb5921cea5f8efd0d035c5d5a03d3` (`feat: add v2 query planning runtime`).
+
+Captain approval pointer:
+
+- conversation message: `Approved`;
+- approval timestamp recorded in code: `2026-05-15T20:43:42.6482362Z`;
+- local time basis: `2026-05-15T22:43:42.6482362+02:00`;
+- approved artifact: this package path.
+
+The implementation stayed inside the allowed production/test envelope with one intentional test-envelope addition: `apps/web/test/unit/lib/analyzer-v2/gateway/cache-governance.test.ts` verifies the exported query-planning cache-policy metadata. It added no provider SDK import, search/fetch/parser/network call, Source Reliability call, UCM/default JSON change, prompt text edit, product/orchestrator/runner wiring, public surface, live job, ACS/direct URL execution, V1 reuse, or V1 cleanup.
 
 ## 2. Review Basis
 
