@@ -37,6 +37,7 @@ const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy
 const evidenceLifecycleRoot = path.resolve(v2AnalyzerRoot, "evidence-lifecycle");
 const evidenceLifecycleSourceAcquisitionRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition");
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
+const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-boundary.contract.ts",
@@ -1695,6 +1696,7 @@ describe("analyzer-v2 boundary guard", () => {
       [".ts", ".tsx"].includes(path.extname(filePath))
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskPolicyRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
     );
     const violations: string[] = [];
 
@@ -1854,6 +1856,73 @@ describe("analyzer-v2 boundary guard", () => {
         }
         if (isTestOrMockImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Evidence Lifecycle evidence-corpus build decision contract-only before source execution", () => {
+    const evidenceCorpusFiles = collectFiles(evidenceLifecycleEvidenceCorpusRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const violations: string[] = [];
+
+    expect(evidenceCorpusFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/build-decision.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/types.ts",
+    ]);
+
+    for (const sourcePath of evidenceCorpusFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
+        }
+        if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports cache governance ${specifier}`);
+        }
+        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports gateway policy ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports runtime dispatch ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
         }
       }
     }
