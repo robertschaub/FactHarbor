@@ -3326,3 +3326,7 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-16 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 C0-S1A Gate Register C0-S1 Blocker Hardening -- [Significant] [open-items: yes]
 **For next agent:** After C0-S1, deputies did not fully consent on a runtime C0-S2 next step, so the consolidated safe path was audit-only. C0-S1A hardens `scripts/validate-v2-gate-register.mjs --self-test` so the research-acquisition row cannot silently drop the C0-S1 source package, `parser-worker execution` blocked surface, or `C0-S1` / `P0` note tokens. No app runtime source, parser execution, 2D-C, source IO, product/public/live wiring, cache/SR/storage, Evidence Lifecycle behavior, prompts/config/models/schemas, ACS/direct URL, V1 reuse, or V1 cleanup was changed.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_C0-S1A_Gate_Register_C0S1_Blocker_Hardening.md
+
+---
+### 2026-05-16 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 C0-S1A Status Sync -- [Standard] [open-items: yes]
+**For next agent:** Synced `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` with the committed C0-S1A audit-only validator hardening. The canonical status now says the gate register remains audit-only/runtime-unconsumed/live-job blocked and self-tests C0-S1 source package, `parser-worker execution`, `C0-S1`, `P0`, and `2D-C remains blocked` drift. This is documentation/status synchronization only; no runtime source or gate behavior changed.
