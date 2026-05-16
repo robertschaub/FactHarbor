@@ -112,6 +112,10 @@ const analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath
   analyzerV2RuntimeRoot,
   "hidden-direct-text-source-acquisition-readiness-composition.ts",
 );
+const analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-source-acquisition-execution-gate.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-authority.ts",
@@ -2512,6 +2516,7 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath,
       analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath,
       analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath,
+      analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath,
     ].map(toPosix));
     const filesToScan = Array.from(new Set([
       ...adapterForbiddenProductPaths,
@@ -3779,7 +3784,9 @@ describe("analyzer-v2 boundary guard", () => {
       "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION",
       "HiddenDirectTextSourceAcquisitionReadinessCompositionRequest",
       "HiddenDirectTextSourceAcquisitionReadinessCompositionResult",
+      "HiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult",
       "buildHiddenDirectTextSourceAcquisitionReadinessComposition",
+      "readHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult",
     ].sort());
     expect(importBindings.map((entry) => entry.specifier).sort()).toEqual([
       "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
@@ -3911,6 +3918,145 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (sourceContent.includes(forbiddenText)) {
         violations.push(`X7-D composition contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 10_000);
+
+  it("keeps X7-F source-acquisition execution gate closed, no-IO, and summary-only", () => {
+    const sourcePath = analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "hidden-direct-text-source-acquisition-execution-gate.test.ts",
+    );
+    const sourceFile = parseSource(sourcePath);
+    const sourceContent = readFileSync(sourcePath, "utf8");
+    const importBindings = collectImportBindings(sourceFile);
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(sourcePath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+    expect(collectExportedNames(sourceFile)).toEqual([
+      "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_EXECUTION_GATE_VERSION",
+      "HiddenDirectTextSourceAcquisitionExecutionGateRequest",
+      "HiddenDirectTextSourceAcquisitionExecutionGateResult",
+      "buildHiddenDirectTextSourceAcquisitionExecutionGate",
+    ].sort());
+    expect(importBindings.map((entry) => entry.specifier)).toEqual([
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+    ]);
+    expect(importBindings[0].names.sort()).toEqual([
+      "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION",
+      "HiddenDirectTextSourceAcquisitionReadinessCompositionResult",
+      "readHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult",
+    ].sort());
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (specifier !== "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition") {
+        violations.push(`X7-F execution gate imports unapproved module ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-transport")) {
+        violations.push(`X7-F execution gate imports network transport ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-factory")) {
+        violations.push(`X7-F execution gate imports network factory ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X7-F execution gate imports content/parser owner ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-candidate-runtime")) {
+        violations.push(`X7-F execution gate imports candidate runtime ${specifier}`);
+      }
+      if (isV1AnalyzerImport(sourcePath, specifier)) {
+        violations.push(`X7-F execution gate imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X7-F execution gate imports search/fetch provider ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-F execution gate imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-F execution gate imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-F execution gate imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-F execution gate imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-F execution gate imports public surface ${specifier}`);
+      }
+      if (
+        specifier === "@/lib/analyzer-v2/orchestrator"
+        || specifier === "@/lib/analyzer-v2/pipeline-shell"
+        || specifier === "@/lib/analyzer-v2/runner-ingress"
+        || specifier === "@/lib/analyzer-v2"
+      ) {
+        violations.push(`X7-F execution gate imports product/orchestrator surface ${specifier}`);
+      }
+    }
+
+    for (const sourceRoot of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
+        if (toPosix(importedPath) === toPosix(sourcePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches X7-F execution gate`);
+        }
+      }
+    }
+
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const entry of collectExportBindings(sourceFile)) {
+      if (entry.specifier) {
+        violations.push(`X7-F execution gate re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "runHiddenDirectTextCandidateAcquisitionHarness",
+      "executeSourceAcquisitionCandidateRuntime",
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "executeSourceAcquisitionNetworkTransport",
+      "source-acquisition-network-transport",
+      "source-acquisition-network-factory",
+      "source-acquisition-content-transport",
+      "source-acquisition-content-parser",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesRead: 1",
+      "candidateRecords: 1",
+      "retries: 1",
+      "parserRuns: 1",
+      "liveJobs: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "ready_to_execute",
+      "\"status\": \"executable\"",
+      "\"executionStatus\": \"executable\"",
+      "source_acquired",
+      "ready_not_executable",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "source_material_ready",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+    ]) {
+      if (sourceContent.includes(forbiddenText)) {
+        violations.push(`X7-F execution gate contains forbidden text ${forbiddenText}`);
       }
     }
 

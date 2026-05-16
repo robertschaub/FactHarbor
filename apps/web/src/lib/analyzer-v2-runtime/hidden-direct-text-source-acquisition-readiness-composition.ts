@@ -82,6 +82,46 @@ export type HiddenDirectTextSourceAcquisitionReadinessCompositionResult = ZeroCo
     }
 );
 
+export type HiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult =
+  HiddenDirectTextSourceAcquisitionReadinessCompositionResult;
+
+const RESULT_KEYS = [
+  "blockedReason",
+  "bytesRead",
+  "cacheTouched",
+  "candidateAcquisition",
+  "candidateRecords",
+  "compositionVersion",
+  "evidenceCorpus",
+  "executionStatus",
+  "extractionInput",
+  "liveJobs",
+  "networkCalls",
+  "networkExecution",
+  "providerCalls",
+  "providerNetworkExecution",
+  "providerNetworkReadiness",
+  "publicExposure",
+  "retries",
+  "sourceMaterial",
+  "sourceMaterialReadiness",
+  "sourceReliabilityTouched",
+  "status",
+  "visibility",
+].sort();
+const BLOCKED_REASONS = new Set<string>([
+  "request_malformed",
+  "x6_malformed",
+  "x6_not_runtime_owned",
+  "x6_not_completed",
+  "public_cutover_not_blocked_precutover",
+  "source_material_readiness_blocked",
+  "source_material_absence_contract_invalid",
+  "evidence_corpus_guard_not_negative",
+  "provider_network_readiness_blocked",
+]);
+const runtimeOwnedReadinessCompositionResults = new WeakSet<object>();
+
 function zeroCostProof(): ZeroCostProof {
   return {
     networkExecution: false,
@@ -112,7 +152,7 @@ function blocked(
   sourceMaterialReadiness: SourceMaterialReadinessDecision | null = null,
   providerNetworkReadiness: SourceAcquisitionProviderNetworkReadinessDecision | null = null,
 ): HiddenDirectTextSourceAcquisitionReadinessCompositionResult {
-  return {
+  return markHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult({
     compositionVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION,
     visibility: "internal_only",
     status: "blocked_pre_execution",
@@ -122,7 +162,7 @@ function blocked(
     providerNetworkReadiness,
     ...zeroCostProof(),
     ...nullOutputs(),
-  };
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -172,6 +212,80 @@ function candidateRuntimeHasSafeShape(candidateRuntime: unknown): boolean {
     )
     && Array.isArray(candidateRuntime.candidates)
     && Array.isArray(candidateRuntime.queryOutcomes);
+}
+
+function resultHasZeroCostAndNullOutputs(value: Record<string, unknown>): boolean {
+  return value.networkExecution === false
+    && value.providerCalls === 0
+    && value.networkCalls === 0
+    && value.bytesRead === 0
+    && value.candidateRecords === 0
+    && value.retries === 0
+    && value.cacheTouched === false
+    && value.sourceReliabilityTouched === false
+    && value.publicExposure === false
+    && value.liveJobs === false
+    && value.providerNetworkExecution === null
+    && value.candidateAcquisition === null
+    && value.sourceMaterial === null
+    && value.extractionInput === null
+    && value.evidenceCorpus === null;
+}
+
+function resultHasSafeShape(value: Record<string, unknown>): boolean {
+  if (
+    !hasExactKeys(value, RESULT_KEYS)
+    || value.compositionVersion !== ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION
+    || value.visibility !== "internal_only"
+    || value.executionStatus !== "blocked_no_io"
+    || !resultHasZeroCostAndNullOutputs(value)
+  ) {
+    return false;
+  }
+
+  if (value.status === "composition_not_executable_pre_live_gate") {
+    return value.blockedReason === null
+      && isRecord(value.sourceMaterialReadiness)
+      && value.sourceMaterialReadiness.status === "not_ready_pre_execution"
+      && isRecord(value.providerNetworkReadiness)
+      && value.providerNetworkReadiness.status === "not_executable_pre_live_gate";
+  }
+
+  if (value.status === "blocked_pre_execution") {
+    return typeof value.blockedReason === "string"
+      && BLOCKED_REASONS.has(value.blockedReason)
+      && (
+        value.sourceMaterialReadiness === null
+        || isRecord(value.sourceMaterialReadiness)
+      )
+      && (
+        value.providerNetworkReadiness === null
+        || isRecord(value.providerNetworkReadiness)
+      );
+  }
+
+  return false;
+}
+
+function markHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult(
+  result: HiddenDirectTextSourceAcquisitionReadinessCompositionResult,
+): HiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult {
+  runtimeOwnedReadinessCompositionResults.add(result);
+  return result;
+}
+
+export function readHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult(
+  value: unknown,
+): HiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult | null {
+  if (
+    !isRecord(value)
+    || !runtimeOwnedReadinessCompositionResults.has(value)
+    || !resultHasSafeShape(value)
+  ) {
+    return null;
+  }
+
+  return value as unknown as HiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult;
 }
 
 function classifyX6Input(
@@ -265,7 +379,7 @@ export function buildHiddenDirectTextSourceAcquisitionReadinessComposition(
     );
   }
 
-  return {
+  return markHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult({
     compositionVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION,
     visibility: "internal_only",
     status: "composition_not_executable_pre_live_gate",
@@ -275,5 +389,5 @@ export function buildHiddenDirectTextSourceAcquisitionReadinessComposition(
     providerNetworkReadiness,
     ...zeroCostProof(),
     ...nullOutputs(),
-  };
+  });
 }
