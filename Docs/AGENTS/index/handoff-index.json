@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T23:46:04.186Z",
-  "count": 570,
+  "generatedAt": "2026-05-16T23:58:05.654Z",
+  "count": 571,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12341,6 +12341,30 @@
         "Docs/WIP/2026-05-17_V2_Slice_X7-G1_Downstream_No_Corpus_Denial_Source_Package.md"
       ],
       "summary": "Implement X7-G1 only if the worktree is clean and the diff stays exactly within the approved envelope."
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-G2_Runtime_Downstream_No_Corpus_Denial_Adapter_Source_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-g2",
+        "runtime",
+        "downstream",
+        "no",
+        "corpus",
+        "denial",
+        "adapter",
+        "source",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-G2_Runtime_Downstream_No_Corpus_Denial_Adapter_Source_Package.md"
+      ],
+      "summary": "The next low-risk implementation candidate is X7-G2 under `Docs/WIP/2026-05-17_V2_Slice_X7-G2_Runtime_Downstream_No_Corpus_Denial_Adapter_Source_Package.md`, but only if you implement exactly the reviewed envelope: producer marking for X7-F/C0-S3 results, dedicated provenance sidecars/readers, addit"
     },
     {
       "file": "2026-05-17_Lead_Architect_V2_X7-G_Downstream_Evidence_Lifecycle_No_Corpus_Denial_Package.md",
