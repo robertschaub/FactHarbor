@@ -123,6 +123,10 @@ const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
 const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = "7566fa5c";
 const RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S1_P0_Parser_Worker_Admission_Source_Package.md";
+const RESEARCH_ACQUISITION_C0_S2_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S2_Parser_Admission_Provenance_Source_Package.md";
+const RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S3_Parser_Admission_Parsed_Material_Denial_Source_Package.md";
 const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
   "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
@@ -130,6 +134,8 @@ const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md",
   RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE,
+  RESEARCH_ACQUISITION_C0_S2_SOURCE_PACKAGE,
+  RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE,
 ];
 const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "source-acquisition execution admission",
@@ -137,6 +143,8 @@ const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "real network/search/fetch execution",
   "source-material population",
   "evidence-corpus building",
+  "parsed-material creation",
+  "parser-output creation",
   "real fetched-byte parser consumption",
   "parser-worker execution",
   "2D-C parser source implementation",
@@ -149,6 +157,9 @@ const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
   "parser_isolation_unavailable",
   "B3",
   "C0-S1",
+  "C0-S2",
+  "C0-S3",
+  "no parsed material",
   "P0",
   "2D-C remains blocked",
   "audit-only",
@@ -937,6 +948,24 @@ async function runSelfTest(context) {
       },
     ],
     [
+      "research acquisition drops C0-S2 parser admission provenance source package",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
+          ref !== RESEARCH_ACQUISITION_C0_S2_SOURCE_PACKAGE
+        );
+      },
+    ],
+    [
+      "research acquisition drops C0-S3 parsed-material denial source package",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
+          ref !== RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE
+        );
+      },
+    ],
+    [
       "research acquisition drops parser-worker execution blocker",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
@@ -946,10 +975,40 @@ async function runSelfTest(context) {
       },
     ],
     [
+      "research acquisition drops parsed-material creation blocker",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.blockedSurfaces = row.blockedSurfaces.filter((surface) =>
+          surface !== "parsed-material creation"
+        );
+      },
+    ],
+    [
       "research acquisition drops C0-S1 note token",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.notes = row.notes.replace("C0-S1", "C0 parser");
+      },
+    ],
+    [
+      "research acquisition drops C0-S2 note token",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("C0-S2", "parser provenance");
+      },
+    ],
+    [
+      "research acquisition drops C0-S3 note token",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("C0-S3", "parser denial");
+      },
+    ],
+    [
+      "research acquisition drops parsed-material denial note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("no parsed material", "blocked output");
       },
     ],
     [
