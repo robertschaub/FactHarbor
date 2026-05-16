@@ -8,7 +8,7 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 
 ---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2B Parser/Sink Source -- [Significant] [open-items: yes]
-**For next agent:** 7N-3B3-2B is implemented at `13ff68d3` and hardened at `6e71bbea` as fixture/control-only parser/sink source. `createSourceAcquisitionContentFixturePacket(...)` now rejects ordinary caller bytes and uses only module-owned committed fixture material; parser terminal paths dispose valid packets; disposed packet references no longer validate; boundary guards block non-owner parser/sink imports/re-exports. Next gate is post-2B review/consolidation, then a separate 7N-3B3-2C package only if real transport-byte handoff is still needed. Product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+**For next agent:** 7N-3B3-2B is implemented at `13ff68d3` and hardened at `6e71bbea` / `3a4c7308` as fixture/control-only parser/sink source. `createSourceAcquisitionContentFixturePacket(...)` now rejects ordinary caller bytes and uses only module-owned committed fixture material; parser terminal paths dispose valid packets; disposed packet references no longer validate; active packet metadata is module-private-state-backed and frozen against caller mutation; boundary guards block non-owner parser/sink imports/re-exports. Next gate is post-2B review/consolidation, then a separate 7N-3B3-2C package only if real transport-byte handoff is still needed. Product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2B_Parser_Sink_Source.md
 
 ---

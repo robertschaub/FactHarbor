@@ -6,7 +6,7 @@
 **Parent gate:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`
 **Implementation baseline:** `267bfb9e` (`feat: add v2 content dereference boundary`)
 **Isolation baseline:** `a2c27cda` (`docs: harden v2 parser sink package`)
-**Package approval / source commits:** `d6b13b95` package re-review approval, `13ff68d3` implementation, `6e71bbea` debt-guard hardening
+**Package approval / source commits:** `d6b13b95` package re-review approval, `13ff68d3` implementation, `6e71bbea` debt-guard hardening, `3a4c7308` packet-state hardening
 
 ## 1. Purpose
 
@@ -62,13 +62,14 @@ Those modifications were applied before implementation. Re-review approved sourc
 
 ## 2.2 Implementation Result
 
-7N-3B3-2B source implementation is complete at `13ff68d3` with corrective hardening at `6e71bbea`.
+7N-3B3-2B source implementation is complete at `13ff68d3` with corrective hardening at `6e71bbea` and packet-state hardening at `3a4c7308`.
 
-The hardening commit addressed the post-implementation debt-guard review findings:
+The hardening commits addressed the post-implementation debt-guard and deputy re-review findings:
 
 - ordinary caller `Uint8Array` ingress is rejected; fixture packets can only be created from a module-owned committed fixture catalog bound by opaque fixture id, expected byte count, expected digest, parser policy id, content-type policy id, and packet-sink authority snapshot;
 - valid packets are disposed on success, request failure, policy mismatch, timeout, and cancellation;
 - disposed packet references no longer validate as active fixture packets and are scrubbed to structural disposal status only;
+- active fixture packet public metadata is getter-backed from module-private state and the packet object is frozen, so caller mutation cannot bypass disposal or retained-byte quota release;
 - non-owner runtime/barrel imports and re-exports now also block parser/sink owner files.
 
 7N-3B3-2B remains fixture/control-only. It does not approve real transport-byte handoff, product/public wiring, live jobs, cache IO, Source Reliability integration, evidence/report generation, ACS/direct URL execution, or V1 cleanup.
