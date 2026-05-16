@@ -1,7 +1,7 @@
 # V2 Slice 7N-3B3-1 Content Dereference Source Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; implementation blocked until approved
+**Status:** approved source package; implementation may proceed inside exact file envelope only
 **Owner role:** Lead Architect / Captain deputy
 **Parent gate:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3_Content_Packet_Parser_Package.md`
 **Baseline:** `ba096ead` (`docs: draft v2 content packet boundary`)
@@ -38,7 +38,13 @@ Required modifications applied:
 - connection must pin to a prevalidated safe address or equivalent custom lookup, screen all A/AAAA answers, reject all-unsafe answers, and reject final-address mismatch before request headers/body bytes are sent;
 - host/path/query/locator values must use non-reversible opaque policy ids or keyed HMAC values; bare deterministic hashes are forbidden.
 
-This package remains unapproved for implementation until re-review returns `approve`.
+Re-review at `8194d56d` returned:
+
+- Security reviewer: `APPROVE`.
+- Pipeline/LLM-quality reviewer: `APPROVE`.
+- Test/Ops/Cost reviewer: `APPROVE`.
+
+Consolidated verdict: approved for implementation inside the exact file envelope only. This approval does not cover parser/sink implementation, product/public wiring, live jobs, cache/SR integration, evidence/report generation, V1 reuse/cleanup, or Captain canaries.
 
 ## 2. Non-Negotiable Scope
 
