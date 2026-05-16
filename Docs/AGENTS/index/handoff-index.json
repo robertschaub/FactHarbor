@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-16T02:29:36.898Z",
+  "generatedAt": "2026-05-16T02:38:21.782Z",
   "count": 516,
   "entries": [
     {
@@ -11087,7 +11087,7 @@
         "Docs/STATUS/Current_Status.md",
         "Docs/STATUS/Backlog.md"
       ],
-      "summary": "Start with the 7N-3B2 package draft and return `approve`, `modify`, or `reject`. Focus on SSRF/DNS/final-address controls, redirects/proxies, response type/size/decompression limits, timeout/cancellation, hidden artifact leakage, rollback, and cost controls."
+      "summary": "Start with the amended 7N-3B2 package draft and return `approve`, `modify`, or `reject`. Focus on exact files/imports/exports, SDK-free Node-core HTTPS transport, SSRF/DNS/final-address controls, redirect denial, proxy bypass prevention, endpoint snapshot schema, default-closed authority, hidden art"
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_7N3B_Source_IO_Preflight_Gate.md",

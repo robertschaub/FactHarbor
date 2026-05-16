@@ -1,7 +1,7 @@
 # V2 Slice 7N-3B2 Candidate Provider Network Source Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; implementation blocked until approved
+**Status:** draft for deputy review; `modify` returned; implementation blocked until approved
 **Owner role:** Lead Architect / Captain deputy
 **Prerequisite:** `Docs/WIP/2026-05-16_V2_Slice_7N3B1_Post_Implementation_Consolidation.md`
 **Baseline:** `3d8573ea` plus 7N-3B1 hardening commit `3d05583e`
@@ -48,6 +48,100 @@ Still forbidden:
 - V1 analyzer, prompt, type, or helper reuse;
 - V1 cleanup.
 
+## 2.1 Review Result
+
+Deputy review result:
+
+- Architecture/source-IO reviewer: `MODIFY`.
+- Security/code reviewer: `MODIFY`.
+
+Required modifications recorded here:
+
+- exact implementation file envelope is mandatory before code;
+- provider SDK use is rejected for 7N-3B2;
+- transport must be Node-runtime-only and SDK-free;
+- endpoint allowlist snapshot schema must be structural and raw-URL-free;
+- 7N-3B2 needs a concrete default-closed provider-network authority;
+- redirects are denied for this slice, not revalidated;
+- exact pre-code test names and leakage assertions are required.
+
+This package remains unapproved for implementation until a subsequent review returns `approve`.
+
+## 2.2 Exact File Envelope
+
+No source edits are allowed outside this envelope unless deputy review amends this list before implementation.
+
+Allowed new production files:
+
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-authority.ts`
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-envelope.ts`
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts`
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-factory.ts`
+
+Allowed existing production files:
+
+- none.
+
+Allowed test files:
+
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-authority.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+
+Forbidden edits:
+
+- product/orchestrator/runner/API/UI/report/export files;
+- cache or Source Reliability files;
+- V1 analyzer files under `apps/web/src/lib/analyzer/`;
+- prompt files;
+- config defaults or config schemas;
+- database, API, or UI public surfaces.
+
+Required boundary-guard updates:
+
+- exact export list for every new 7N-3B2 production file;
+- exact import allowlist for every new 7N-3B2 production file;
+- no barrel re-export of 7N-3B2 runtime files;
+- no product/public transitive reachability;
+- no V1 analyzer/prompt/type/helper imports;
+- no cache/SR imports;
+- no provider SDK, `fetch`, `undici`, axios, got, ky, node-fetch, proxy-agent, browser/network abstraction imports;
+- Node-core network imports allowed only in `source-acquisition-network-transport.ts`.
+
+## 2.3 Exact Export Intent
+
+The implementation package must define exact exported names before code. Minimum expected export groups:
+
+`source-acquisition-network-authority.ts`:
+
+- `SOURCE_ACQUISITION_NETWORK_AUTHORITY_VERSION`;
+- `type SourceAcquisitionNetworkAuthoritySnapshot`;
+- `type SourceAcquisitionNetworkAuthority`;
+- `createSourceAcquisitionNetworkAuthority`;
+- `isSourceAcquisitionNetworkAuthority`;
+- `readSourceAcquisitionNetworkAuthoritySnapshot`.
+
+`source-acquisition-network-envelope.ts`:
+
+- endpoint allowlist snapshot types and validators;
+- network budget snapshot types and validators;
+- structural request/response envelope types;
+- hidden network diagnostic types;
+- no raw URL or raw payload fields.
+
+`source-acquisition-network-transport.ts`:
+
+- Node-core HTTPS transport types;
+- one factory or function for executing a single approved endpoint request;
+- structural transport outcome types.
+
+`source-acquisition-network-factory.ts`:
+
+- provider-boundary factory that returns the existing 7N-3B1 `SourceAcquisitionCandidateProviderBoundary`;
+- no product/runtime/orchestrator wiring.
+
 ## 3. Package Split
 
 Do not combine these gates:
@@ -69,11 +163,83 @@ If reviewers believe candidate-provider network and content dereference cannot b
 - no `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`, process env proxy behavior, or hidden SDK proxy behavior can bypass the allowlist;
 - DNS and final connected address are validated at connection time, not only before request creation;
 - IPv4, IPv6, IPv4-mapped IPv6, localhost, private, link-local, multicast, loopback, and reserved ranges are blocked;
+- metadata service addresses, including `169.254.169.254`, IPv6 link-local equivalents, and cloud metadata host aliases, are explicitly blocked;
 - IDNA/punycode host normalization is explicit and test-covered;
-- redirects are disabled, or each redirect target is revalidated with the same rules before connection;
+- redirects are denied for 7N-3B2;
 - the final connected host/address/protocol/port are captured as internal structural diagnostics only.
 
 Do not reuse V1 `retrieval.ts` or V1 network helpers. Backlog still records DNS TOCTOU as a residual V1 retrieval risk; V2 must not inherit it.
+
+### Transport Shape
+
+7N-3B2 must be SDK-free.
+
+Forbidden transport dependencies:
+
+- provider SDKs;
+- `fetch`;
+- `globalThis.fetch`;
+- `undici`;
+- axios;
+- got;
+- ky;
+- node-fetch;
+- proxy-agent packages;
+- browser network APIs.
+
+Allowed transport implementation:
+
+- Node runtime only;
+- dedicated Node-core HTTPS transport in `source-acquisition-network-transport.ts`;
+- explicit DNS lookup owned by the transport;
+- explicit IDNA normalization before lookup;
+- explicit proxy bypass, ignoring uppercase and lowercase proxy env vars;
+- redirect denial;
+- socket final-address validation against the validated DNS answer and blocked ranges;
+- streaming response read with byte caps;
+- controlled decompression only when allowed by endpoint snapshot;
+- `AbortSignal` cancellation.
+
+If this shape cannot be implemented safely in the current Next/Node runtime, reject 7N-3B2 implementation and return to design.
+
+### Endpoint Snapshot Schema
+
+The endpoint allowlist snapshot must be structural and raw-URL-free.
+
+Required fields:
+
+- snapshot version;
+- approval status, approver, package path, package commit/hash;
+- endpoint id, structural and opaque;
+- provider id, structural and canonical;
+- canonical ASCII hostname only;
+- protocol exactly `https`;
+- fixed port;
+- fixed path;
+- fixed method;
+- allowed request parameters by structural key, not arbitrary strings;
+- allowed request headers by structural key, with no secret values;
+- credentials state without secret values;
+- redirect policy exactly `deny`;
+- proxy policy exactly `none`;
+- response content type policy;
+- response sniff policy;
+- compressed byte cap;
+- decompressed byte cap;
+- total byte cap;
+- timeout cap;
+- no-cache/no-SR/no-product/no-public flags.
+
+Forbidden endpoint snapshot fields:
+
+- raw URL;
+- endpoint URL;
+- query string template;
+- secret value;
+- bearer token;
+- API key;
+- provider-specific opaque endpoint object;
+- raw request body.
 
 ### Response Type And Sniffing
 
@@ -124,6 +290,25 @@ The provider network implementation must integrate with the 7N-3B1 shell without
 
 Provider output must be validated before it reaches 7N-3B1 decisions.
 
+## 5.1 Provider-Network Authority
+
+7N-3B2 must define a new non-serializable provider-network authority.
+
+Required behavior:
+
+- default closed;
+- module-private WeakSet or equivalent private-brand membership;
+- derived from a valid 7N-3B1 candidate-runtime authority;
+- bound to endpoint allowlist snapshot hash;
+- bound to network budget snapshot hash;
+- bound to 7N-3B1 candidate authority hashes;
+- records all public/cache/SR/product/live/ACS/direct-URL capabilities as disabled;
+- existing 7N-3B1 authority alone is insufficient to authorize network;
+- copied/plain/JSON-round-tripped/stale authority blocks before network;
+- controlled-harness-only authority blocks before network.
+
+The activation state must be concrete in the implementation package. A prose statement that activation is "default closed" is insufficient.
+
 ## 6. Hidden Artifact Rules
 
 7N-3B2 may define hidden internal inspection artifacts only.
@@ -160,6 +345,17 @@ Forbidden diagnostics:
 - report prose;
 - secret, header, token, stack, or cause.
 
+Required leakage tests:
+
+- returned candidate decisions;
+- hidden diagnostics;
+- thrown errors;
+- provider telemetry;
+- `JSON.stringify(...)` of every public and hidden return object;
+- `console.debug`, `console.info`, `console.warn`, and `console.error` spies.
+
+These tests must prove no raw provider payload, raw URL, source name, title, snippet, cache key, Source Reliability field, secret, stack, or cause leaks.
+
 ## 7. Cost Controls
 
 7N-3B2 must be budget-fail-closed:
@@ -182,11 +378,12 @@ The package must state expected cost before any live smoke. Safe local tests rem
 Deputy reviewers must answer:
 
 1. Is the provider-network scope narrow enough, or should another docs-only design pass happen first?
-2. Can the implementation safely avoid provider SDKs, or is an SDK needed and auditable?
-3. If an SDK is proposed, can it prove connection-time final-address validation, redirect policy, proxy behavior, response caps, cancellation, and no hidden retries?
+2. Does the SDK-free Node-core transport shape provide enough control for implementation?
+3. Is the endpoint snapshot schema precise enough to avoid raw URLs, hidden endpoints, proxy bypasses, and credential leakage?
 4. Should duplicated 7N-3B1 structural validators be consolidated before implementation?
-5. Are hidden artifact fields sufficient for diagnosis without public leakage?
-6. Are cost and timeout controls sufficient before live smoke?
+5. Is the provider-network authority concrete enough to keep 7N-3B1 authority insufficient by itself?
+6. Are hidden artifact fields and leakage tests sufficient for diagnosis without public leakage?
+7. Are cost and timeout controls sufficient before live smoke?
 
 If any answer is uncertain, return `modify` or `reject`; do not implement.
 
@@ -197,13 +394,22 @@ A future implementation package must include tests for:
 - endpoint allowlist acceptance/rejection;
 - DNS rebinding/final-address rejection;
 - IPv4/IPv6/private/loopback/link-local/reserved range blocking;
-- redirect disabled or revalidated;
+- IPv4-mapped IPv6 blocking;
+- metadata-service address blocking;
+- IDNA/punycode/trailing-dot host normalization;
+- final socket `remoteAddress` mismatch rejection;
+- redirect rejection;
 - proxy env bypass prevention;
+- uppercase and lowercase Windows proxy env var bypass prevention;
 - content-type and sniff mismatch rejection;
+- non-JSON/executable/unknown response rejection;
+- chunked response overrun;
 - byte cap and decompressed cap enforcement;
+- compression bomb rejection;
 - timeout and cancellation outcomes;
 - provider thrown errors without stack/cause leakage;
 - raw URL/source/snippet/title/cache/SR/evidence/warning/verdict/report leakage rejection;
+- no raw body/secret/error stack leakage through returned objects, hidden diagnostics, telemetry, `JSON.stringify(...)`, or `console.*`;
 - exact query coverage and no silent query loss;
 - no cache key construction;
 - no product/public transitive reachability;
@@ -225,9 +431,9 @@ No live jobs are part of 7N-3B2 verification.
 
 7N-3B2 must default closed.
 
-The package must define:
+The implementation package must define:
 
-- kill switch or authority state required for provider network activation;
+- concrete provider-network authority or kill switch state required for provider network activation;
 - activation proof;
 - rollback target commit;
 - runtime refresh/reseed checklist when relevant;
@@ -240,7 +446,7 @@ If activation cannot be made default-closed and observable, reject the implement
 
 Use this prompt for deputy review:
 
-> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md` as a V2 source-IO package draft. Return `approve`, `modify`, or `reject`. Check whether it is safe to proceed to implementation of candidate-provider network calls only. Verify it does not combine content dereference, parser execution, live jobs, product/public wiring, cache IO, Source Reliability, prompt/config/model/schema changes, ACS/direct URL execution, V1 reuse, or V1 cleanup. Pay special attention to SSRF/DNS/final-address controls, redirect/proxy bypasses, response type/byte/decompression limits, timeout/cancellation semantics, hidden artifact leakage, cost controls, rollback, and whether provider SDK use is acceptable.
+> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md` as a V2 source-IO package draft. Return `approve`, `modify`, or `reject`. Check whether it is safe to proceed to implementation of candidate-provider network calls only. Verify it does not combine content dereference, parser execution, live jobs, product/public wiring, cache IO, Source Reliability, prompt/config/model/schema changes, ACS/direct URL execution, V1 reuse, or V1 cleanup. Pay special attention to the exact file envelope, SDK-free Node-core transport, SSRF/DNS/final-address controls, redirect denial, proxy bypass prevention, endpoint snapshot schema, response type/byte/decompression limits, timeout/cancellation semantics, concrete provider-network authority, hidden artifact leakage tests, cost controls, and rollback.
 
 ## 12. Current Recommendation
 
@@ -250,5 +456,6 @@ Current deputy recommendation before package-specific review:
 - do not implement yet;
 - do not run live canaries;
 - keep 7N-3B2 candidate-provider network only;
+- keep 7N-3B2 SDK-free unless a later package explicitly changes this after security review;
 - reserve content packet/parser for 7N-3B3;
 - reserve live smoke for 7N-3C.

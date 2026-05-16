@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B2 Review Modifications -- [Standard] [open-items: yes]
+**For next agent:** First deputy review of `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md` returned `MODIFY`. The amended draft now requires exact files/imports/exports, SDK-free Node-core HTTPS transport, structural raw-URL-free endpoint snapshots, concrete provider-network authority, redirect denial, and exact leakage/security tests. Implementation remains blocked until re-review returns `approve`.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B2_Review_Modifications.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B1 Consolidation And 7N-3B2 Draft -- [Standard] [open-items: yes]
 **For next agent:** 7N-3B1 is consolidated and `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md` is drafted for review only. Next action is deputy review of 7N-3B2; no provider/network implementation, content dereference/parser, live jobs, cache/SR, product/public wiring, or V1 cleanup is approved.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B1_Consolidation_7N3B2_Draft.md
