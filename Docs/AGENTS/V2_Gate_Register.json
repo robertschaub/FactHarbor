@@ -1,0 +1,595 @@
+{
+  "schemaVersion": "v2-gate-register.v0",
+  "lastUpdated": "2026-05-16",
+  "authority": "audit_only",
+  "canApproveExecution": false,
+  "consumedByRuntime": false,
+  "notes": [
+    "This register is a structural audit view over V2 gate state. It does not approve execution.",
+    "Runtime authority remains in reviewed source packages, ANALYZER_V2_GATEWAY_TASKS, canExecuteAnalyzerV2GatewayTask(...), UCM/task policy, and Captain/deputy approvals.",
+    "V0 intentionally blocks live-job eligibility for every row."
+  ],
+  "entries": [
+    {
+      "id": "gate.claim_understanding_gate1",
+      "sliceId": "6B3c4C3b",
+      "gateType": "gateway_task",
+      "taskId": "claim_understanding_gate1",
+      "owner": "claim_understanding",
+      "state": "implemented_hidden_runtime_blocked_by_gateway_policy",
+      "status": "implemented_hidden_runtime_blocked_by_gateway_policy",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_CLAIM_UNDERSTANDING_GATE1",
+      "outputSchemaVersion": "v2.claim_understanding_result.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "v2.model.claim_understanding_gate1.0",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.claim-understanding",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
+        "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md"
+      ],
+      "sourcePackage": "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md",
+      "approvalPointer": "Captain-approved 4C3b hidden direct-text wiring package; gateway execution remains blocked until prompt/model/cache policy approval.",
+      "implementationCommit": "d915e0b5",
+      "allowedFiles": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/**",
+        "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-*",
+        "apps/web/src/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/**"
+      ],
+      "blockedSurfaces": [
+        "public API result",
+        "UI/report/export",
+        "cache IO",
+        "ACS dispatch",
+        "V1 analyzer or prompt reuse",
+        "live jobs outside reviewed smoke gate"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime test/unit/lib/analyzer-v2",
+        "npm -w apps/web run build"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "V0 register is not a live-smoke gate; public result remains damaged pre-cutover.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Runtime activation has separate guarded behavior; this row mirrors gateway policy and does not grant execution."
+    },
+    {
+      "id": "gate.evidence_query_planning",
+      "sliceId": "7L1",
+      "gateType": "gateway_task",
+      "taskId": "evidence_query_planning",
+      "owner": "evidence_lifecycle",
+      "state": "executable_hidden_gateway_task_with_known_policy_metadata_drift",
+      "status": "executable_hidden_gateway_task_with_known_policy_metadata_drift",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_EVIDENCE_QUERY_PLANNING",
+      "outputSchemaVersion": "v2.evidence_query_planning_result.0",
+      "observedGatewayStatus": "executable",
+      "gatewayPolicyStatus": "executable",
+      "observedPromptApprovalSource": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z",
+      "promptApprovalId": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL",
+      "observedModelPolicyId": "v2.model.evidence_query_planning.0",
+      "observedModelApprovalSource": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z",
+      "modelApprovalId": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL",
+      "observedCachePolicyId": "v2.semantic.evidence-query-planning",
+      "observedCacheApprovalSource": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z",
+      "cacheApprovalId": "ANALYZER_V2_7L1_CAPTAIN_APPROVAL",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
+        "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md"
+      ],
+      "sourcePackage": "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
+      "approvalPointer": "Captain-approved 7L-1 query-planning source package and approval metadata.",
+      "implementationCommit": "6162e057",
+      "allowedFiles": [
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/**",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/task-contracts/**",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts"
+      ],
+      "blockedSurfaces": [
+        "source fetch execution",
+        "EvidenceItem generation",
+        "EvidenceCorpus generation",
+        "public API result",
+        "UI/report/export",
+        "live jobs outside reviewed smoke gate"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": false,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning test/unit/lib/analyzer-v2/gateway",
+        "npm -w apps/web run build"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "Hidden executable gateway task only; no live-smoke gate currently approves job submission.",
+      "knownDrift": [
+        "static_task_policy_symbolic_not_executable",
+        "prompt_frontmatter_required_sections_lag"
+      ],
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "This row must keep exposing query-planning policy drift until V2-X3 repairs it."
+    },
+    {
+      "id": "gate.research_acquisition",
+      "sliceId": "7N3B3-2D-A",
+      "gateType": "gateway_task",
+      "taskId": "research_acquisition",
+      "owner": "source_acquisition",
+      "state": "implemented_hidden_source_components_gateway_not_implemented",
+      "status": "implemented_hidden_source_components_gateway_not_implemented",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus reviewed source-acquisition packages",
+      "registerGrantsExecution": false,
+      "promptProfile": null,
+      "promptSectionId": null,
+      "outputSchemaVersion": "v2.research_acquisition.0",
+      "observedGatewayStatus": "notImplemented",
+      "gatewayPolicyStatus": "notImplemented",
+      "observedPromptApprovalSource": "not_applicable",
+      "promptApprovalId": "not_applicable",
+      "observedModelPolicyId": "not_applicable",
+      "observedModelApprovalSource": "not_applicable",
+      "modelApprovalId": "not_applicable",
+      "observedCachePolicyId": "not_applicable",
+      "observedCacheApprovalSource": "not_applicable",
+      "cacheApprovalId": "not_applicable",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md"
+      ],
+      "sourcePackage": "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md",
+      "approvalPointer": "Deputy-approved 2D-A source package; implementation committed as fixture/control-only parser runner harness.",
+      "implementationCommit": "b76a571",
+      "allowedFiles": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-*",
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-*",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/**"
+      ],
+      "blockedSurfaces": [
+        "real fetched-byte parser consumption",
+        "transport-owned packet/frame parser input",
+        "product/orchestrator/runner/API/UI/report/export wiring",
+        "cache IO",
+        "Source Reliability integration",
+        "evidence/report/verdict generation",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port",
+        "npm -w apps/web run build"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "Source acquisition hidden components are not product-wired and the gateway task is not implemented.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "7N source packages are hidden components; this gateway task remains not implemented."
+    },
+    {
+      "id": "gate.evidence_applicability",
+      "sliceId": "future-evidence-applicability",
+      "gateType": "gateway_task",
+      "taskId": "evidence_applicability",
+      "owner": "evidence_lifecycle",
+      "state": "planned_blocked_until_prompt_model_cache_and_real_content_gate",
+      "status": "planned_blocked_until_prompt_model_cache_and_real_content_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_EVIDENCE_APPLICABILITY",
+      "outputSchemaVersion": "v2.evidence_applicability_result.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for executable evidence applicability.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "parsed real content",
+        "LLM applicability execution",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.evidence_extraction",
+      "sliceId": "future-evidence-extraction",
+      "gateType": "gateway_task",
+      "taskId": "evidence_extraction",
+      "owner": "evidence_lifecycle",
+      "state": "planned_blocked_until_prompt_model_cache_and_real_content_gate",
+      "status": "planned_blocked_until_prompt_model_cache_and_real_content_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_EVIDENCE_EXTRACTION",
+      "outputSchemaVersion": "v2.evidence_extraction_result.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for executable evidence extraction.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "EvidenceItem generation",
+        "EvidenceScope generation",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.evidence_sufficiency",
+      "sliceId": "future-evidence-sufficiency",
+      "gateType": "gateway_task",
+      "taskId": "evidence_sufficiency",
+      "owner": "evidence_lifecycle",
+      "state": "planned_blocked_until_prompt_model_cache_and_evidence_corpus_gate",
+      "status": "planned_blocked_until_prompt_model_cache_and_evidence_corpus_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_EVIDENCE_SUFFICIENCY_GATE",
+      "outputSchemaVersion": "v2.evidence_sufficiency_assessment.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for executable sufficiency assessment.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "EvidenceCorpus sufficiency decision",
+        "warning materialization",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.boundary_clustering",
+      "sliceId": "future-boundary-clustering",
+      "gateType": "gateway_task",
+      "taskId": "boundary_clustering",
+      "owner": "boundary_clustering",
+      "state": "planned_blocked_until_evidence_corpus_gate",
+      "status": "planned_blocked_until_evidence_corpus_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_BOUNDARY_CLUSTERING",
+      "outputSchemaVersion": "v2.boundary_clustering.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for V2 ClaimAssessmentBoundary clustering.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "boundary formation",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.verdict_debate",
+      "sliceId": "future-verdict-debate",
+      "gateType": "gateway_task",
+      "taskId": "verdict_debate",
+      "owner": "verdict_generation",
+      "state": "planned_blocked_until_boundary_and_evidence_gates",
+      "status": "planned_blocked_until_boundary_and_evidence_gates",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_VERDICT_DEBATE",
+      "outputSchemaVersion": "v2.verdict_debate.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for V2 verdict debate.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "verdict generation",
+        "truth/confidence",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.verdict_validation",
+      "sliceId": "future-verdict-validation",
+      "gateType": "gateway_task",
+      "taskId": "verdict_validation",
+      "owner": "verdict_validation",
+      "state": "planned_blocked_until_verdict_debate_gate",
+      "status": "planned_blocked_until_verdict_debate_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_VERDICT_VALIDATION",
+      "outputSchemaVersion": "v2.verdict_validation.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for V2 verdict validation.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "grounding validation execution",
+        "direction validation execution",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    },
+    {
+      "id": "gate.aggregation_narrative",
+      "sliceId": "future-aggregation-narrative",
+      "gateType": "gateway_task",
+      "taskId": "aggregation_narrative",
+      "owner": "aggregation",
+      "state": "planned_blocked_until_verdict_set_gate",
+      "status": "planned_blocked_until_verdict_set_gate",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus future approved source package",
+      "registerGrantsExecution": false,
+      "promptProfile": "claimboundary-v2",
+      "promptSectionId": "V2_AGGREGATION_NARRATIVE",
+      "outputSchemaVersion": "v2.aggregation_narrative.0",
+      "observedGatewayStatus": "blockedUntilPromptApproved",
+      "gatewayPolicyStatus": "blockedUntilPromptApproved",
+      "observedPromptApprovalSource": "missing",
+      "promptApprovalId": "missing",
+      "observedModelPolicyId": "unregistered",
+      "observedModelApprovalSource": "missing",
+      "modelApprovalId": "missing",
+      "observedCachePolicyId": "v2.semantic.source-aware",
+      "observedCacheApprovalSource": "pending",
+      "cacheApprovalId": "pending",
+      "sourceOfTruthRefs": [
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts"
+      ],
+      "sourcePackage": "not_started",
+      "approvalPointer": "No approved source package for V2 aggregation and report narrative.",
+      "implementationCommit": null,
+      "allowedFiles": [
+        "not_started"
+      ],
+      "blockedSurfaces": [
+        "aggregation",
+        "report narrative",
+        "public result",
+        "live jobs"
+      ],
+      "blockedSurfaceFlags": {
+        "productWiring": true,
+        "publicExposure": true,
+        "liveJobs": true,
+        "cacheIo": true,
+        "sourceReliability": true,
+        "v1Reuse": true,
+        "realByteParserConsumption": true
+      },
+      "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2"
+      ],
+      "liveJobEligibility": "blocked",
+      "liveJobBlockReason": "No approved executable gate.",
+      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
+      "notes": "Future row placeholder mirrors gateway policy only."
+    }
+  ]
+}
