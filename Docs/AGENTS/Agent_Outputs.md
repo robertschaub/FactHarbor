@@ -3208,7 +3208,7 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 
 ---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2D Parser Isolation Design -- [Standard] [open-items: yes]
-**For next agent:** Drafted docs-only 2D parser-isolation package after deputy PASS on 2C-A consolidation and a three-agent debate. Direction: parser isolation before source-acquisition execution wiring; proposed first model is one-shot child-process parser runner plus staged inert content-type allowlist. Source implementation, parser consumption, product/public wiring, live jobs, cache/SR/storage, prompts/models/config/schema edits, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked pending deputy package review.
+**For next agent:** Drafted docs-only 2D parser-isolation package after deputy PASS on 2C-A consolidation and a three-agent debate. First deputy package review returned Security `MODIFY` and Senior Developer / LLM-Evidence `APPROVE`; the package was tightened so child-process parser work is fixture/control protocol-only, while parser execution over real fetched bytes requires a later reviewed container, separate OS user, OS sandbox, or equivalent OS-level denial boundary. Source implementation, parser consumption of real fetched bytes, product/public wiring, live jobs, cache/SR/storage, prompts/models/config/schema edits, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked pending deputy security re-review.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2D_Parser_Isolation_Design.md
 
 ---

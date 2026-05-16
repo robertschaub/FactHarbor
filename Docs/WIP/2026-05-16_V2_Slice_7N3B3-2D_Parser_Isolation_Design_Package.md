@@ -1,22 +1,24 @@
 # V2 Slice 7N-3B3-2D Parser Isolation Design Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; source implementation blocked
+**Status:** draft after first deputy review; source implementation blocked pending security re-review
 **Owner role:** Lead Architect / Captain deputy
 **Parent consolidation:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2C-A_Post_Implementation_Consolidation.md`
 **Baseline:** `beee0953` (`docs: consolidate v2 hidden byte handoff`)
 
 ## 0. Debate Result
 
-Deputy debate converged on `ADOPT_WITH_SCOPE_TIGHTENING`:
+Deputy debate converged on `ADOPT_WITH_SCOPE_TIGHTENING`, then formal deputy review returned `MODIFY` from Security and `APPROVE` from Senior Developer and LLM/Evidence Lifecycle review.
 
 - parser isolation is the correct next gate before source-acquisition execution wiring;
-- the first practical isolation direction is a dedicated one-shot child process plus a staged content-type allowlist;
+- a dedicated one-shot child process plus staged content-type allowlist is acceptable only as a protocol/harness direction;
 - in-process parsing, Node `vm`, and worker threads are rejected as the security boundary for real fetched bytes;
-- container/sandbox isolation remains the stronger long-term option, but is deferred unless child-process verifiers cannot prove no network/file/env leakage;
+- container, separate OS user, OS sandbox, or equivalent reviewed OS-level denial boundary is mandatory before executing parser code over real fetched bytes;
 - the next gate remains docs-only and authorizes no source edits.
 
 One implementation caveat is mandatory for any later source package: `apps/web` is TypeScript `noEmit`, so a parser worker entrypoint must be built and available in tests and deployed Next runtime without relying on `npx tsx`, `ts-node`, or another dev-only loader.
+
+Security review resolution: Node permission flags and a child process are useful defense-in-depth, but they are not a malicious-code sandbox. A child-process-only 2D-A source package may implement the parser runner protocol with fixture/control bytes only. It must not parse real fetched bytes unless a reviewed OS-level isolation boundary is also present.
 
 ## 1. Purpose
 
@@ -60,15 +62,16 @@ The answer must balance:
 The recommended direction is a staged parser-isolation gate:
 
 1. **2D:** approve parser-isolation design only; no source edits.
-2. **2D-A:** if approved later, implement a hidden parser runner protocol and isolation harness only, still without product wiring or live jobs.
-3. **2D-B:** if 2D-A is review-clean, add the first minimal structural parser for inert text/JSON/HTML bytes only within the approved content-type allowlist.
-4. **Later gate:** wire parsed-content output into Evidence Lifecycle execution only after parser isolation, parsed-content lifecycle, hidden artifact inspection, and no-public-leak proof are complete.
+2. **2D-A:** if approved later, implement a hidden parser runner protocol and child-process harness only over fixture/control bytes, still without product wiring or live jobs.
+3. **2D-B:** define and review the OS-level isolation boundary required for real fetched bytes: container, separate OS user, OS sandbox, or equivalent reviewed denial boundary.
+4. **2D-C:** if 2D-B is approved and verifiers pass, add the first minimal structural parser for inert text/JSON/HTML bytes only within the approved content-type allowlist.
+5. **Later gate:** wire parsed-content output into Evidence Lifecycle execution only after parser isolation, parsed-content lifecycle, hidden artifact inspection, and no-public-leak proof are complete.
 
-The first real-byte parser implementation should not start with PDF, office documents, browser automation, JavaScript execution, subresource loading, or broad content-type support.
+The first real-byte parser implementation must not start with PDF, office documents, browser automation, JavaScript execution, subresource loading, or broad content-type support.
 
 ## 5. Isolation Model
 
-Preferred first implementation model for review:
+Preferred protocol harness model for review:
 
 - a one-shot child-process parser runner launched with `process.execPath`, `shell: false`, `windowsHide: true`, and explicit pipe/IPC stdio only;
 - stripped environment except explicitly approved non-secret structural settings;
@@ -83,9 +86,11 @@ Preferred first implementation model for review:
 - terminal disposal on success, parser failure, timeout, cancellation, overrun, kill switch, and rollback.
 - Node permission flags should be used where available to deny filesystem write, arbitrary filesystem read, child process spawning, worker creation, native addons, and WASI; if they are unavailable or insufficient in the target runtime, equivalent static and runtime denial tests must be required.
 
-Important limitation:
+Hard limitation:
 
-- A child process is fault and lifecycle isolation, not a complete OS security sandbox. If reviewers require hard OS-level denial of filesystem and network access against parser compromise, the package must move to a container/sandbox design before implementation.
+- A child process is fault and lifecycle isolation, not a complete OS security sandbox. It is not approval to execute parser code over real fetched bytes.
+- Before real fetched bytes are parsed, a later reviewed package must add container, separate OS user, OS sandbox, or equivalent OS-level denial for network, filesystem, env/secret, child/worker, native addon, and writable-path access.
+- If the repo cannot provide that OS-level boundary in the Windows development and deployment environment, real-byte parser execution remains blocked.
 
 Rejected for the first real-byte parser gate:
 
@@ -171,6 +176,8 @@ A later source package must define an explicit parser runner protocol:
 
 The parent process must treat every parser runner result as untrusted until schema validation and provenance checks pass.
 
+For real fetched bytes, the runner protocol is necessary but not sufficient. It must be paired with the approved OS-level isolation boundary from 2D-B.
+
 ## 9. Filesystem, Env, Network, And Secrets
 
 Minimum rules for a later source package:
@@ -186,6 +193,7 @@ Minimum rules for a later source package:
 - do not pass open file descriptors except the approved runner message channel;
 - no network imports or calls from parser owner files;
 - no arbitrary filesystem read/write imports from parser owner files unless the isolation package explicitly names a safe runner bootstrap file and verifier.
+- for real fetched bytes, OS-level denial of network and arbitrary filesystem access is mandatory; static import checks and Node permission flags alone are not sufficient.
 
 Required proof:
 
@@ -228,11 +236,15 @@ Expected candidate tests:
 
 No source package may edit outside its exact reviewed file envelope.
 
+The 2D-A harness source envelope may use fixture/control bytes only. A real fetched-byte source envelope must first name the approved OS-level isolation owner and runtime/deployment mechanism.
+
 ## 12. Required Tests For Later Implementation
 
 A later source package must include tests for:
 
 - default-closed parser consumption;
+- child-process-only harness cannot receive real fetched bytes;
+- real fetched-byte parser execution rejects unless the approved OS-level isolation boundary is present and verified;
 - rejected parser consumption without a valid 2C-A packet/frame provenance;
 - copied/plain/JSON-round-tripped/replayed/disposed packet references reject;
 - wrong authority, target hash, budget hash, fetch attempt id, byte digest, byte count, packet sink authority, parser policy, package id, and version reject;
@@ -269,18 +281,19 @@ No expensive tests and no live jobs are approved by 7N-3B3-2D.
 Deputy reviewers must answer:
 
 1. Is parser isolation the correct next gate after 2C-A?
-2. Is an out-of-process runner the right first isolation direction, or is a container/sandbox required before any real-byte parser source work?
-3. Is limiting first parser support to inert text/plain, application/json, and optionally passive text/html acceptable?
-4. Are the no-env/no-secret/no-network/no-cache/no-SR/no-product/no-public/no-V1 constraints strong enough?
-5. Are parsed text and parser metadata clearly blocked from evidence/report semantics?
-6. Is the later source envelope narrow enough?
-7. Are the verifiers sufficient before implementation?
+2. Is the child-process harness correctly limited to protocol/fixture-control work?
+3. Is container, separate OS user, OS sandbox, or equivalent OS-level denial now explicit enough as mandatory before real fetched-byte parser execution?
+4. Is limiting first parser support to inert text/plain, application/json, and optionally passive text/html acceptable?
+5. Are the no-env/no-secret/no-network/no-cache/no-SR/no-product/no-public/no-V1 constraints strong enough?
+6. Are parsed text and parser metadata clearly blocked from evidence/report semantics?
+7. Is the later source envelope narrow enough?
+8. Are the verifiers sufficient before implementation?
 
 If any answer is uncertain, return `modify` or `reject`; do not implement source.
 
 ## 15. Reviewer Prompt
 
-> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Parser_Isolation_Design_Package.md` as a proposed docs-only V2 parser-isolation design package after 7N-3B3-2C-A. Return `approve`, `modify`, or `reject`. Confirm that it authorizes no source implementation, product/public wiring, live jobs, cache IO, Source Reliability, prompt/model/config/schema edits, ACS/direct URL execution, V1 reuse, or V1 cleanup. Check whether the recommended staged direction is right: parser isolation first, source-acquisition execution wiring later, first real-byte parser scope limited to inert text/plain, application/json, and optionally passive text/html, parser output structural/hidden only, and no evidence/report semantics. Pay special attention to whether the proposed one-shot child-process runner is sufficient, whether the TypeScript noEmit/deployed-worker-entrypoint caveat is explicit enough, or whether a container/sandbox must be required before any real-byte parser source implementation.
+> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Parser_Isolation_Design_Package.md` as a proposed docs-only V2 parser-isolation design package after 7N-3B3-2C-A. Return `approve`, `modify`, or `reject`. Confirm that it authorizes no source implementation, product/public wiring, live jobs, cache IO, Source Reliability, prompt/model/config/schema edits, ACS/direct URL execution, V1 reuse, or V1 cleanup. Check whether the revised staged direction is right: parser isolation first, source-acquisition execution wiring later, child-process harness only for protocol/fixture-control work, real fetched-byte parser execution blocked until container/separate OS user/OS sandbox/equivalent OS-level denial is reviewed, first real-byte parser scope limited to inert text/plain, application/json, and optionally passive text/html, parser output structural/hidden only, and no evidence/report semantics. Pay special attention to whether the security MODIFY finding is resolved and whether the TypeScript noEmit/deployed-worker-entrypoint caveat is explicit enough.
 
 ## 16. Stop Conditions
 
