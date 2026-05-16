@@ -8,7 +8,7 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 
 ---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-1 Consolidation And 7N-3B3-2A Draft -- [Standard] [open-items: yes]
-**For next agent:** 7N-3B3-1 is consolidated as byte-free hidden/internal content dereference at `267bfb9e`, and `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md` is drafted for deputy review. The hard blocker is explicit: real fetched-byte parser/sink materialization requires a reviewed owner-only handoff from `source-acquisition-content-transport.ts`; parser/sink files alone cannot safely parse real transport bytes. Parser/sink source implementation, real byte handoff, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+**For next agent:** 7N-3B3-1 is consolidated as byte-free hidden/internal content dereference at `267bfb9e`, and `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md` is drafted for deputy review. The hard blocker is explicit: real fetched-byte parser/sink materialization requires a reviewed owner-only HMAC/provenance-bound handoff from `source-acquisition-content-transport.ts`; parser/sink files alone cannot safely parse real transport bytes. Security-review hardening for HMAC/provenance mismatch rejection, terminal-path disposal, and mandatory isolation for real bytes is applied. Parser/sink source implementation, real byte handoff, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-1_Consolidation_7N3B3-2A_Draft.md
 
 ---

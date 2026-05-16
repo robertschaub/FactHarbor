@@ -94,6 +94,13 @@ Required properties:
 - no id embedding of URLs, domains, source names, query text, claim text, language labels, or semantic labels;
 - no raw payload in returned objects, diagnostics, telemetry, thrown errors, `JSON.stringify(...)`, or `console.*`.
 
+Disposal requirements:
+
+- disposal must run on every terminal path: success, parser failure, timeout, cancellation, byte cap overrun, memory cap overrun, sink cap overrun, kill switch, rollback, and implementation-defined abort;
+- disposed sink references are permanently invalid;
+- disposed sink references must not resurrect bytes, parsed material, diagnostics, parser output, or packet metadata beyond the allowed structural disposal status;
+- disposal failure is a structural failure outcome and cannot be treated as successful packet materialization.
+
 Allowed structural packet envelope fields:
 
 - opaque content packet id;
@@ -137,7 +144,8 @@ Required behavior:
 
 - handoff object is created only by the content transport owner;
 - handoff is private-branded or equivalent and rejects copied/plain/JSON-round-tripped objects;
-- handoff is bound to content authority, target envelope hash, budget hash, fetch attempt id, and packet sink authority;
+- handoff is HMAC/provenance-bound to content authority, target envelope hash, budget hash, fetch attempt id, packet sink authority, byte counts, byte digest, and the parent provider-network/content-authority chain;
+- parser/sink must reject handoffs unless they were created by the transport owner and verified against that HMAC/provenance binding;
 - handoff exposes bytes only to the approved packet sink/parser owner;
 - handoff cannot be logged, stringified, serialized, or returned;
 - handoff disposal is observable only as structural status;
@@ -170,7 +178,9 @@ Parser isolation requirements:
 
 Node `vm` is not sufficient as a parser sandbox.
 
-If implementation proposes a worker or process boundary, the package must name:
+Real transport-byte parsing requires a reviewed worker, process, or container isolation boundary. In-process parsing is allowed only for fixture/control-only work with no real transport-byte handoff.
+
+If implementation proposes a worker, process, or container boundary, the package must name:
 
 - launch owner;
 - env stripping behavior;
@@ -252,11 +262,14 @@ A later implementation package must include tests for:
 - parser receives bytes only through approved owner-only handoff or approved immutable fixtures;
 - arbitrary byte source objects are rejected;
 - copied/plain/JSON-round-tripped byte handoffs are rejected;
+- HMAC/provenance mismatch rejects stale authority, wrong target hash, wrong budget hash, wrong fetch attempt id, wrong byte digest, wrong byte count, wrong sink authority, wrong parent provider-network authority chain, wrong content authority chain, copied object, JSON round-trip, and replay after disposal;
 - parser cannot access network, env, secrets, cache, Source Reliability, product imports, arbitrary filesystem reads, or filesystem writes;
 - parser cannot read or leak an unapproved sentinel file/secret;
 - parser timeout/hang and parser failure produce structural outcomes only;
 - packet ids and sink refs are opaque and non-dereferenceable;
 - disposal clears retained bytes and parsed material;
+- disposal runs on success, parser failure, timeout, cancellation, byte cap overrun, memory cap overrun, sink cap overrun, kill switch, rollback, and implementation-defined abort;
+- disposed sink references are invalid and cannot resurrect bytes or parsed material;
 - sink caps bound retained packet count and retained byte count;
 - serialized return objects, hidden diagnostics, telemetry, thrown errors, `JSON.stringify(...)`, and `console.*` leak no forbidden payload;
 - output contains no evidence items, source records, applicability, extraction, probative values, Source Reliability scores, scarcity/sufficiency, warnings, verdicts, confidence, report fields, or public prose;
