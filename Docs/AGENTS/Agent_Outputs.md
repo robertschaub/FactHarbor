@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2C-A Source Package Approval -- [Significant] [open-items: yes]
+**For next agent:** 7N-3B3-2C-A is deputy-approved for source implementation in `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2C-A_Real_Byte_Handoff_Source_Package.md`. Scope is exact: `source-acquisition-content-transport.ts`, `source-acquisition-content-packet-sink.ts`, focused transport/sink tests, and boundary guards only. Implement transport-owner real bytes into hidden packet sink with byte-free public transport outcomes, separate 2C-A packet sink authority, sink-owned HMAC sealing, explicit disposal, concrete kill switch, and no parser consumption. Product/public wiring, live jobs, cache/SR/storage, evidence/report/warning generation, prompt/model/config/schema changes, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2C-A_Source_Package_Approval.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2C Real Byte Handoff Design -- [Significant] [open-items: yes]
 **For next agent:** 7N-3B3-2C is review-approved as docs-only real transport-byte handoff design in `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2C_Real_Byte_Handoff_Design_Package.md`. It authorizes no source edits. The next implementation step is drafting a separate 7N-3B3-2C-A source package, limited to owner-created real bytes from `source-acquisition-content-transport.ts` into hidden packet materialization in `source-acquisition-content-packet-sink.ts`; parser consumption of real fetched bytes remains blocked until a later parser-isolation package. Product/public wiring, live jobs, cache/SR/storage, evidence/report/warning generation, prompt/model/config/schema changes, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2C_Real_Byte_Handoff_Design.md
