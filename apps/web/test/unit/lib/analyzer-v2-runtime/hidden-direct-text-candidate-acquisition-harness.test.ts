@@ -43,6 +43,10 @@ import {
   runHiddenDirectTextCandidateAcquisitionHarness,
   type HiddenDirectTextCandidateAcquisitionHarnessRequest,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness";
+import {
+  isHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult,
+  readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance";
 
 const STATEMENT = "Entity A made assertion B.";
 const CONFIG_SNAPSHOT_HASH = "c".repeat(64);
@@ -500,8 +504,20 @@ describe("Analyzer V2 hidden direct-text candidate-acquisition harness", () => {
       queryText: "hidden-x6-query-token",
       allowedProviderIds: ["test_provider"],
     });
+    expect(isHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBe(true);
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBe(result);
+    expect(Object.keys(result).sort()).toEqual([
+      "blockedReason",
+      "candidateAcquisitionRuntime",
+      "harnessVersion",
+      "publicEnvelope",
+      "status",
+      "visibility",
+      "x5Integration",
+    ]);
 
     const serializedPublic = publicJson(result);
+    const serializedResult = JSON.stringify(result);
     for (const forbidden of [
       "CANDIDATE_RUN_X6",
       "test_provider",
@@ -527,6 +543,36 @@ describe("Analyzer V2 hidden direct-text candidate-acquisition harness", () => {
     ]) {
       expect(serializedPublic).not.toContain(forbidden);
     }
+    for (const forbidden of [
+      "runtimeOwned",
+      "WeakSet",
+      "brand",
+      "provenance",
+    ]) {
+      expect(serializedResult).not.toContain(forbidden);
+    }
+  });
+
+  it("keeps runtime ownership in-process and invisible to object copies", async () => {
+    const x5Result = await buildX5();
+    const { request } = harnessRequest(x5Result);
+    const result = await runHiddenDirectTextCandidateAcquisitionHarness(request);
+
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBe(result);
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({ ...result })).toBeNull();
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(
+      JSON.parse(JSON.stringify(result)),
+    )).toBeNull();
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(
+      structuredClone(result),
+    )).toBeNull();
+
+    const mutableResult = result as unknown as { harnessVersion: string };
+    const originalVersion = mutableResult.harnessVersion;
+    mutableResult.harnessVersion = "v2.hidden-direct-text-candidate-acquisition-harness.forged";
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBeNull();
+    mutableResult.harnessVersion = originalVersion;
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBe(result);
   });
 
   it("does not call candidate provider when X5 is not completed", async () => {
@@ -544,6 +590,8 @@ describe("Analyzer V2 hidden direct-text candidate-acquisition harness", () => {
       blockedReason: "x5_not_completed",
       candidateAcquisitionRuntime: null,
     });
+    expect(isHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(result)).toBe(true);
+    expect(readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({ ...result })).toBeNull();
     expect(calls).toHaveLength(0);
   });
 

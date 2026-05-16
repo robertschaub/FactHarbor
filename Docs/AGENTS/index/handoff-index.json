@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T20:16:33.486Z",
-  "count": 553,
+  "generatedAt": "2026-05-16T20:29:08.878Z",
+  "count": 554,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11841,6 +11841,26 @@
         "apps/web/src/lib/analyzer-v2/hidden-integration-harness.ts"
       ],
       "summary": "Continue the V2 rebuild by implementing the reviewed X5 hidden integration harness without product runner, UI/API, report/export, live-job, source-execution, prompt, config, cache, Source Reliability,"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_X6-P_Hidden_Candidate_Acquisition_Provenance.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x6-p",
+        "hidden",
+        "candidate",
+        "acquisition",
+        "provenance"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance.ts"
+      ],
+      "summary": "X6-P adds a provenance-only sidecar for X6 hidden candidate-acquisition harness results. `runHiddenDirectTextCandidateAcquisitionHarness(...)` now marks every returned completed or blocked result in a module-private `WeakSet`; spread copies, JSON round trips, and structured clones are not owned. Thi"
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_X6_Hidden_Direct_Text_Candidate_Acquisition_Harness.md",

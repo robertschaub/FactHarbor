@@ -100,6 +100,10 @@ const analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath = path.re
   analyzerV2RuntimeRoot,
   "hidden-direct-text-candidate-acquisition-harness.ts",
 );
+const analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-candidate-acquisition-harness-provenance.ts",
+);
 const analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath = path.resolve(
   analyzerV2RuntimeRoot,
   "hidden-direct-text-source-material-readiness-harness.ts",
@@ -3385,6 +3389,7 @@ describe("analyzer-v2 boundary guard", () => {
     const allowedHarnessImports = new Set([
       "@/lib/analyzer-v2/result-envelope",
       "@/lib/analyzer-v2/hidden-integration-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance",
       "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
       "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
     ]);
@@ -3473,6 +3478,103 @@ describe("analyzer-v2 boundary guard", () => {
       }
       if (isProviderSdkImport(specifier)) {
         violations.push(`X6 test imports provider SDK ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 10_000);
+
+  it("keeps the X6 candidate-acquisition provenance sidecar private and owner-marked only by X6", () => {
+    const sidecarPath = analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessProvenancePath;
+    const sidecarFile = parseSource(sidecarPath);
+    const sidecarContent = readFileSync(sidecarPath, "utf8");
+    const violations: string[] = [];
+
+    expect(existsSync(sidecarPath)).toBe(true);
+    expect(collectExportedNames(sidecarFile)).toEqual([
+      "HiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult",
+      "isHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult",
+      "markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult",
+      "readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult",
+    ].sort());
+    expect(collectImportBindings(sidecarFile).map((entry) => entry.specifier).sort()).toEqual([
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+    ]);
+
+    for (const specifier of collectModuleSpecifiers(sidecarFile)) {
+      if (
+        specifier !== "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness"
+      ) {
+        violations.push(`X6 provenance sidecar imports unapproved module ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-candidate-runtime")) {
+        violations.push(`X6 provenance sidecar imports candidate runtime ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network")) {
+        violations.push(`X6 provenance sidecar imports network owner ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X6 provenance sidecar imports content/parser owner ${specifier}`);
+      }
+      if (isV1AnalyzerImport(sidecarPath, specifier)) {
+        violations.push(`X6 provenance sidecar imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X6 provenance sidecar imports search/fetch provider ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X6 provenance sidecar imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X6 provenance sidecar imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X6 provenance sidecar imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X6 provenance sidecar imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X6 provenance sidecar imports public surface ${specifier}`);
+      }
+    }
+
+    const runtimeFiles = collectFiles(analyzerV2RuntimeRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    for (const runtimePath of runtimeFiles) {
+      const runtimeFile = parseSource(runtimePath);
+      for (const entry of collectImportBindings(runtimeFile)) {
+        if (
+          !entry.names.includes("markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult")
+        ) {
+          continue;
+        }
+        if (toPosix(runtimePath) !== toPosix(analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, runtimePath))} imports the X6 owner-only mark function`);
+        }
+      }
+    }
+
+    for (const forbiddenText of [
+      "source-acquisition-candidate-runtime",
+      "source-acquisition-network",
+      "source-acquisition-content",
+      "fetch(",
+      "globalThis.fetch",
+      "@/app",
+      "@/components",
+      "@/lib/analyzer/",
+      "Object.defineProperty",
+      "Object.freeze",
+      "Object.seal",
+      "Symbol(",
+      "register",
+      "forge",
+      "testOnly",
+    ]) {
+      if (sidecarContent.includes(forbiddenText)) {
+        violations.push(`X6 provenance sidecar contains forbidden text ${forbiddenText}`);
       }
     }
 

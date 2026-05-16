@@ -7,6 +7,9 @@ import type {
   SourceAcquisitionCandidateRunRequest,
   SourceAcquisitionCandidateRuntimeDecision,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope";
+import {
+  markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance";
 
 export const ANALYZER_V2_HIDDEN_DIRECT_TEXT_CANDIDATE_ACQUISITION_HARNESS_VERSION =
   "v2.hidden-direct-text-candidate-acquisition-harness.x6";
@@ -52,7 +55,7 @@ function blocked(
   blockedReason: HiddenDirectTextCandidateAcquisitionHarnessBlockedReason,
   candidateAcquisitionRuntime: SourceAcquisitionCandidateRuntimeDecision | null = null,
 ): HiddenDirectTextCandidateAcquisitionHarnessResult {
-  return {
+  return markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({
     harnessVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_CANDIDATE_ACQUISITION_HARNESS_VERSION,
     visibility: "internal_only",
     status: "blocked",
@@ -60,7 +63,7 @@ function blocked(
     publicEnvelope: request.x5Integration.publicEnvelope,
     x5Integration: request.x5Integration,
     candidateAcquisitionRuntime,
-  };
+  });
 }
 
 function allowlistIsTestInjectedOnly(
@@ -116,7 +119,7 @@ export async function runHiddenDirectTextCandidateAcquisitionHarness(
     return blocked(request, "candidate_runtime_damaged", candidateAcquisitionRuntime);
   }
 
-  return {
+  return markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({
     harnessVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_CANDIDATE_ACQUISITION_HARNESS_VERSION,
     visibility: "internal_only",
     status: "completed",
@@ -124,5 +127,5 @@ export async function runHiddenDirectTextCandidateAcquisitionHarness(
     publicEnvelope: request.x5Integration.publicEnvelope,
     x5Integration: request.x5Integration,
     candidateAcquisitionRuntime,
-  };
+  });
 }
