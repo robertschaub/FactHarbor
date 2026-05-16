@@ -28,6 +28,8 @@ Deputy review returned `approve` after one modification round:
 
 Consensus approval is limited to implementing 7N-3B3-2C-A inside this source envelope. Parser consumption of real fetched bytes, product/public wiring, live jobs, cache/SR/storage, evidence/report/warning generation, prompt/model/config/schema changes, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked by later gates.
 
+Post-implementation review amendment: the first implementation review found that a hidden function-property byte-state factory still allowed arbitrary byte ingress by any caller that could import the sealing function. The accepted correction removes that hidden property and makes the positive transport-success path explicit through `sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess(...)`, with the symbol added to the packet-sink export list and to the exact transport-to-sink import guard. Direct `sealSourceAcquisitionContentTransportOwnedByteFrame(...)` remains a negative/direct-boundary entrypoint that rejects caller-created byte-state objects.
+
 ## 2. Source Decision
 
 If approved, 2C-A may implement only the owner-only real-byte handoff from `source-acquisition-content-transport.ts` into `source-acquisition-content-packet-sink.ts`.
@@ -114,6 +116,7 @@ Exact packet-sink exports allowed by 2C-A:
 - `SourceAcquisitionContentTransportPacketDisposalOutcome` type;
 - `createSourceAcquisitionContentTransportPacketSinkAuthority(...)`;
 - `sealSourceAcquisitionContentTransportOwnedByteFrame(...)`;
+- `sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess(...)`;
 - `materializeSourceAcquisitionContentTransportOwnedPacket(...)`;
 - `disposeSourceAcquisitionContentTransportOwnedPacket(...)`.
 
@@ -125,6 +128,7 @@ Exact transport imports from `./source-acquisition-content-packet-sink`:
 - `SourceAcquisitionContentTransportPacketMaterializationOutcome` type;
 - `SourceAcquisitionContentTransportPacketDisposalOutcome` type;
 - `sealSourceAcquisitionContentTransportOwnedByteFrame`;
+- `sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess`;
 - `materializeSourceAcquisitionContentTransportOwnedPacket`;
 - `disposeSourceAcquisitionContentTransportOwnedPacket`.
 
