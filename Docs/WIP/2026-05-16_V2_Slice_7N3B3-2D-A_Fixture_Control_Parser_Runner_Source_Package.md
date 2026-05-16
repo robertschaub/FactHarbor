@@ -1,7 +1,7 @@
 # V2 Slice 7N-3B3-2D-A Fixture/Control Parser Runner Source Package
 
 **Date:** 2026-05-16
-**Status:** draft after first deputy review; source implementation blocked pending re-review
+**Status:** deputy-approved source package; implementation may proceed only inside this exact envelope
 **Owner role:** Lead Architect / Captain deputy
 **Design parent:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Parser_Isolation_Design_Package.md`
 **Design consolidation:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Post_Review_Consolidation.md`
@@ -43,6 +43,14 @@ Required modifications applied in this draft:
 - child-process launch must strip inherited environment with `env: {}` or a reviewed minimal non-secret allowlist;
 - worker guard requirements now include CommonJS-specific source scans, not only TypeScript import analysis;
 - packet-sink fixture-byte consumption callback is narrowed to structural runner outcome only, with sanitized callback-exception handling.
+
+Final deputy re-review:
+
+- Security reviewer: `APPROVE`; prior blockers resolved by stripped env, CommonJS worker source scans, and narrowed callback contract.
+- Senior Developer reviewer: `APPROVE`; `env: {}` launch requirement is implementable on Windows with `process.execPath`, and checked-in `.cjs` is acceptable for this non-product slice.
+- LLM/Evidence Lifecycle reviewer: `APPROVE`; hardening does not create semantic or Evidence Lifecycle leakage.
+
+Consensus approval is limited to implementing 2D-A inside this exact source envelope. Real fetched-byte parser execution, transport-owned packet/frame input, product/public/live wiring, cache/SR/storage, prompt/model/config/schema edits, evidence/report semantics, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked by later gates.
 
 ## 2. Package Decision
 
