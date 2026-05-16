@@ -77,6 +77,17 @@ The orchestrator controls sequence and typed handoff only. It does not own promp
 | **Aggregation + Result Writer** | Create the one canonical public result. | ##ReportResult##
 | **External Adapters** | Preserve UI/API/export/validation behavior without reinterpreting verdicts. | ##CompatibilityView##
 
+== Input Capability Roadmap ==
+
+V2 production readiness is staged by input type. A ready V2 pipeline does not automatically mean every input surface is ready.
+
+|= Capability |= Earliest readiness |= Required gates
+| Direct text analysis | First production target | Core V2 analytical sequence, cutover guards, report-quality gates
+| Simple web page text/HTML analysis | Later | Source acquisition, content dereference, parser worker, passive text/HTML parser package, isolation proof, parsed-material lifecycle, Evidence Lifecycle intake gate
+| PDF analysis | Later high-risk package | Stronger isolation, separate PDF parser package, parser-library approval, malformed/adversarial PDF tests, resource-exhaustion limits
+
+The first V2 production path should be direct text. Simple web pages may follow once the parser-worker and Evidence Lifecycle gates are accepted. PDF parsing must not be bundled into first web-page support.
+
 == Current Implementation State ==
 
 |= Slice |= Status |= Notes

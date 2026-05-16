@@ -19,6 +19,7 @@
 - P0 cannot consume real fetched bytes, 2C-A packets, arbitrary URLs, HTML fetched from the network, PDFs, office docs, archives, browser-rendered pages, executable content, production traffic, or staging traffic.
 - P1/P2 proof gates remain required before local-only real-byte or deployment-candidate parser work.
 - After Architect/Security review, corrected the diagram and worker-contract wording so P0 starts only from fixture/control or synthetic inert local input and explicitly rejects 2C-A transport-owned packet/frame provenance.
+- Added the explicit input capability roadmap: direct text first, simple web pages only after parser-worker/isolation/Evidence Lifecycle gates, PDFs only through a later high-risk package.
 
 **Warnings:**
 - This package authorizes no source edits.

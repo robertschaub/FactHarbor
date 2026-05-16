@@ -41,9 +41,18 @@ flowchart TB
 |= Step |= Semantic owner |= Structural owner |= Output
 | Query planning | LLM proposes search intent for selected AtomicClaims and possible evidence dimensions. | Prompt/model gateway validates variables, model policy, cache dimensions, and budget. | QueryPlan
 | Source acquisition | Search strings are provider-facing; provider ranking is not treated as verdict truth. | Provider calls, retries, rate limits, fetch status, source IDs, trace events. | SourceCandidate list
+| Content dereference and parser intake | None; fetched bytes and parser output are structural custody material only. | Fetch target envelope, byte packet custody, parser-worker profile, content-type policy, isolation proof, parsed-material packet lifecycle. | Hidden parsed-material packet, or blocked structural status
 | Applicability | LLM decides whether a source or excerpt is relevant and applicable to the claim and evidence need. | URL/source identity, fetch status, content availability, dedupe by structural identity. | ApplicabilityResult
 | Evidence extraction | LLM extracts EvidenceItems, EvidenceScopes, claim direction, probativeValue, and source-type rationale. | Schema validation, stable IDs, citation/source reference checks. | EvidenceItem list
 | Sufficiency | LLM-owned where adequacy is semantic; policy records continue/refine/caveat/damage. | Gate status, warning events, missing-dimension list, run ledger entry. | SufficiencyAssessment
+
+== Input-Type Readiness ==
+
+Direct text is the first V2 production target and does not need parser-worker isolation.
+
+Simple web page text/HTML analysis is a later capability. It requires source acquisition, content dereference, parser worker, passive text/HTML parser package, isolation proof, parsed-material lifecycle, and an Evidence Lifecycle intake gate. Parser output is hidden custody material, not evidence.
+
+PDF analysis is later and higher risk. It requires a separate PDF parser package, stronger isolation, parser-library approval, malformed/adversarial PDF tests, and resource-exhaustion limits.
 
 == EvidenceCorpus Contract ==
 

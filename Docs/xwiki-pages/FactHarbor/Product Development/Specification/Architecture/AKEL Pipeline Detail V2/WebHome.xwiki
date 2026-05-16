@@ -55,6 +55,18 @@ Routine recovered operations are silent or admin-only. System failures, analytic
 
 Analysis-affecting cache keys include every value that can change the semantic answer: prompt section and content hash, model task, provider, model, temperature profile, output schema version, config snapshot hash, result schema version, evidence/source identity when applicable, language/search context, current-date bucket, and adapter version when cached output feeds public projection.
 
+== Parser Worker And Input Types ==
+
+V2 separates input capability from analytical pipeline readiness.
+
+Direct text does not require a parser worker and is the first production target.
+
+Web page support requires a parser-worker seam before parsed source text can enter Evidence Lifecycle. The first web parser package may target only passive text/HTML behavior: no script execution, no subresource loading, no link following, no browser rendering, and no active content execution.
+
+PDF support is a separate high-risk path. It requires stronger isolation and a dedicated PDF parser package. PDF parsing must not be treated as a side effect of simple web-page support.
+
+The provisional parser profile ##P0_PROVISIONAL_LOCAL_INERT## is for fixture/control or synthetic inert local/test work only. It is not a security boundary, cannot consume 2C-A transport-owned packets, and cannot support production or staging traffic.
+
 == Report Generation Regression Control ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}

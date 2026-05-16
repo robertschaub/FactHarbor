@@ -24,6 +24,8 @@ Infomaniak deployment note: if production remains on Infomaniak managed Node.js 
 
 Provisional parser architecture: `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md` defines a parser-worker contract and P0/P1/P2 isolation profile ladder. P0 may support only fixture/control or synthetic inert local/test work and must be labelled `provisional_local_inert_only_not_security_boundary`; it cannot consume 2C-A packets, real fetched bytes, production/staging traffic, or unlock product/public/live/Evidence behavior. P1/P2 proof gates remain required before any real-byte local-only or deployment-candidate parser source package.
 
+Input capability roadmap: V2 direct-text analysis is the first production-ready path. Simple web page text/HTML analysis requires source acquisition, content dereference, parser worker, passive text/HTML parser package, isolation proof, parsed-material lifecycle, and Evidence Lifecycle intake gates. PDF analysis is later and higher risk; it requires a separate PDF parser package, stronger isolation, parser-library approval, malformed/adversarial PDF tests, and resource-exhaustion limits.
+
 **See Also**:
 - `Docs/STATUS/Current_Status.md` for the current high-level snapshot
 - `Docs/ARCHIVE/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` for a historical pre-QLT-2 root-cause baseline (active state lives in Current_Status + this Backlog)

@@ -183,7 +183,22 @@ Preferred deployment architecture:
 
 If production remains on Infomaniak managed Node.js hosting without an isolated parser worker or equivalent denied-authority boundary, real fetched-byte parser execution remains disabled in deployment.
 
-## 10. Required Guardrails
+## 10. Capability Roadmap
+
+V2 capability readiness is staged. "Pipeline ready" does not mean every input type is ready.
+
+| Capability | Earliest profile | Required gates | Public/product status |
+|---|---|---|---|
+| Direct text analysis | Core V2 pipeline | Claim Understanding, Evidence Lifecycle, Sufficiency, Boundary, Verdict, Result Writer, cutover gates | First production target |
+| Fixture/control parser-interface tests | P0 | C0 architecture plus later reviewed P0 source package | Hidden local/test only |
+| Synthetic inert parser tests | P0 | Same as fixture/control; no 2C-A packet provenance | Hidden local/test only |
+| Simple web page text/HTML parsing | P1 or P2 | Source acquisition, content dereference, parser worker, passive text/HTML parser source package, isolation proof, parsed-material lifecycle, Evidence Lifecycle intake gate | Not available until reviewed parser and Evidence Lifecycle gates pass |
+| Production local parsing of hostile web pages | P2 | Deployment-candidate isolated parser worker, accepted proof, no-public-leak proof, operational deployment decision | Before broader release if web-page input is part of the release promise |
+| PDF parsing | Later high-risk profile | Separate PDF parser package, stronger isolation, parser-library approval, malformed/adversarial PDF tests, resource-exhaustion limits | Later than simple web pages |
+
+Direct text should remain the first production-ready V2 path. Simple web page support can follow once parser-worker and Evidence Lifecycle gates are reviewed. PDF support must not be bundled into the first web-page parser package.
+
+## 11. Required Guardrails
 
 Any later source package must preserve:
 
@@ -199,7 +214,7 @@ Any later source package must preserve:
 
 Parser code is structural plumbing only. Meaning stays LLM-owned in later Evidence Lifecycle gates.
 
-## 11. Review Questions
+## 12. Review Questions
 
 Reviewers must answer:
 
@@ -208,15 +223,16 @@ Reviewers must answer:
 3. Is the parser worker contract useful and stable enough to avoid future refactoring?
 4. Are P1/P2 upgrade paths clear?
 5. Is the Infomaniak production path framed clearly enough?
-6. Are source stop conditions strong enough?
+6. Is the direct-text -> web page -> PDF capability sequence explicit enough?
+7. Are source stop conditions strong enough?
 
 Return `approve`, `modify`, or `reject`. If review returns `modify` or `reject`, do not draft the P0 source package until this architecture is corrected and re-reviewed.
 
-## 12. Reviewer Prompt
+## 13. Reviewer Prompt
 
-> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md` as a docs-only architecture package. Return `approve`, `modify`, or `reject`. Confirm that it creates a parser-worker seam and a P0 provisional profile without authorizing real hostile fetched-byte parsing or production deployment. Verify that P0 is clearly not a security boundary, is limited to fixture/control or synthetic inert inputs, and cannot consume 2C-A packets. Confirm that P1/P2 remain required for local-only real-byte or deployment-candidate parser work, that Infomaniak deployment implications are preserved, and that product/public/live/cache/SR/Evidence/V1 behavior remains blocked.
+> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md` as a docs-only architecture package. Return `approve`, `modify`, or `reject`. Confirm that it creates a parser-worker seam and a P0 provisional profile without authorizing real hostile fetched-byte parsing or production deployment. Verify that P0 is clearly not a security boundary, is limited to fixture/control or synthetic inert inputs, and cannot consume 2C-A packets. Confirm that P1/P2 remain required for local-only real-byte or deployment-candidate parser work, that Infomaniak deployment implications are preserved, and that product/public/live/cache/SR/Evidence/V1 behavior remains blocked. Verify that capability readiness is explicitly staged: direct text first, simple web pages only after parser-worker/isolation/Evidence Lifecycle gates, PDFs only through a later high-risk package.
 
-## 13. Stop Conditions
+## 14. Stop Conditions
 
 Stop before any:
 
