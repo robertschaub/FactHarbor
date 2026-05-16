@@ -6,6 +6,7 @@
 **Parent gate:** `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Post_Implementation_Consolidation.md`
 **Implementation baseline:** `54b8af1a` (`feat: add v2 provider network boundary`)
 **Documentation baseline:** `b3df3190` (`docs: record v2 provider network boundary`)
+**Post-7N-3B3-1 baseline:** `267bfb9e` (`feat: add v2 content dereference boundary`)
 
 ## 1. Purpose
 
@@ -73,14 +74,24 @@ Post-fix deputy review at `ba096ead` returned:
 
 Consolidated verdict: approved as a docs-only boundary package. The next low-risk step is a separate `7N-3B3-1` source package for content-dereference authority, content target envelope, and content transport only. Parser/sink remains `7N-3B3-2`; live smoke remains `7N-3C`.
 
+## 2.2 Post-7N-3B3-1 Review Result
+
+7N-3B3-1 is implemented at `267bfb9e` and consolidated in `Docs/WIP/2026-05-16_V2_Slice_7N3B3-1_Post_Implementation_Consolidation.md`.
+
+Post-implementation deputy review found one sequencing constraint for the next package: 7N-3B3-1 transport success outcomes are intentionally byte-free and expose only sanitized structural diagnostics. Parser/sink source files cannot safely materialize real fetched bytes unless a reviewed source envelope also adds an owner-only byte handoff from `source-acquisition-content-transport.ts`.
+
+Consolidated decision: before any parser/sink source implementation, draft and review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`. That package must keep parser/sink source implementation blocked until reviewers approve the exact byte-handoff, sink-lifetime, parser-isolation, no-public-leak, and verifier boundaries.
+
 ## 3. Required Package Split
 
 Do not combine these gates:
 
 1. **7N-3B3:** docs-only content packet and parser boundary package.
 2. **7N-3B3-1:** later source implementation package for content target envelope and content-dereference authority, if approved.
-3. **7N-3B3-2:** later source implementation package for parser isolation and hidden packet sink, if approved.
-4. **7N-3C:** later hidden live smoke after committed source, runtime refresh, no-public-leak proof, rollback, and Captain-approved canaries.
+3. **7N-3B3-2A:** docs/review package for parser/sink isolation and owner-only byte handoff design.
+4. **7N-3B3-2B:** later source implementation package for parser isolation and hidden packet sink, if approved.
+5. **7N-3B3-2C:** later source package for real transport-byte handoff, only if reviewers approve editing the transport owner.
+6. **7N-3C:** later hidden live smoke after committed source, runtime refresh, no-public-leak proof, rollback, and Captain-approved canaries.
 
 If reviewers conclude content dereference and parser isolation cannot be safely separated, stop and return to architecture review before source implementation.
 
@@ -428,10 +439,17 @@ Expected candidate production files for **7N-3B3-2 parser isolation and packet s
 - `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-parser.ts`
 - `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.ts`
 
+If the approved parser/sink package must materialize bytes from the real 7N-3B3-1 transport, the exact reviewed source envelope must also include:
+
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-transport.ts`
+
+That transport edit may only define an owner-only raw-byte handoff/callback into the packet sink while keeping public transport outcomes byte-free.
+
 Expected candidate test files for **7N-3B3-2**:
 
 - `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-content-transport.test.ts` only if transport byte handoff is amended;
 - `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
 
 No implementation package may edit outside its exact reviewed file envelope.
@@ -459,6 +477,9 @@ A future **7N-3B3-2** implementation package must include tests for:
 - parser cannot read or leak an unapproved sentinel file/secret;
 - parser timeout/hang and parser failure produce structural outcomes only;
 - content packet ids and sink refs are opaque and non-dereferenceable;
+- real fetched bytes, if used, reach the parser/sink only through an owner-created non-serializable byte handoff from the transport owner;
+- copied/plain/JSON-round-tripped byte handoffs are rejected;
+- sink disposal clears retained bytes and parsed material;
 - serialized return objects, hidden diagnostics, telemetry, thrown errors, `JSON.stringify(...)`, and `console.*` leak no forbidden payload;
 - output contains no evidence items, source records, applicability, extraction, probative values, Source Reliability scores, scarcity/sufficiency, warnings, verdicts, confidence, report fields, or public prose;
 - non-English content and source-language policy produce the same structural behavior except unchanged pass-through provenance.

@@ -7,6 +7,16 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-1 Consolidation And 7N-3B3-2A Draft -- [Standard] [open-items: yes]
+**For next agent:** 7N-3B3-1 is consolidated as byte-free hidden/internal content dereference at `267bfb9e`, and `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md` is drafted for deputy review. The hard blocker is explicit: real fetched-byte parser/sink materialization requires a reviewed owner-only handoff from `source-acquisition-content-transport.ts`; parser/sink files alone cannot safely parse real transport bytes. Parser/sink source implementation, real byte handoff, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-1_Consolidation_7N3B3-2A_Draft.md
+
+---
+### 2026-05-16 | Senior Developer | Codex (GPT-5) | V2 7N-3B3-2 Parser/Sink Boundary Review -- [Standard] [open-items: yes]
+**For next agent:** Reviewed commit `267bfb9e` and current 7N-3B3/7N-3B3-1 docs. Recommendation is `MODIFY` before any 7N-3B3-2 implementation: do not combine real parser execution with product/live/cache/SR/storage wiring. The next package should either be a narrower byte-transfer/content-packet sink gate, or explicitly amend the file envelope to include a reviewed owner-only raw-byte handoff from `source-acquisition-content-transport.ts`; current 7N-3B3-1 success outcomes expose diagnostics only, so parser/sink materialization cannot safely happen from the two new files alone. Public/product reachability, cache/SR/durable storage, live jobs, ACS/direct URL, semantic extraction/evidence/report generation, and V1 reuse/cleanup remain blocked.
+**Warnings:** Hard blockers for source work are unresolved raw-byte authority/provenance ownership, parser isolation model proof, sink lifetime/disposal policy, sentinel secret/file leakage tests, HMAC key-sourcing rules, exact export/import guards for parser and packet sink, and no-public-reach proof after allowing parser/sink files.
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-1 Content Dereference Boundary -- [Significant] [open-items: yes]
 **For next agent:** 7N-3B3-1 is implemented as hidden/internal content dereference only: private content authority derived from 7N-3B2, raw-URL-free target/budget envelope, HMAC-bound owner-created ephemeral targets, Node-core HTTPS transport with DNS/final-address/redirect/type-sniff/byte/decompression/timeout/cancellation controls, sanitized diagnostics, and boundary guards. Parser/sink, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse/cleanup, and Captain canaries remain blocked pending separate reviewed gates.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-1_Content_Dereference_Boundary.md
