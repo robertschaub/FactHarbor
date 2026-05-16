@@ -1,14 +1,14 @@
 # V2 Slice 7N-3B3-2D Parser Isolation Design Package
 
 **Date:** 2026-05-16
-**Status:** draft after first deputy review; source implementation blocked pending security re-review
+**Status:** review-clean docs-only design; source implementation blocked pending separate 2D-A package
 **Owner role:** Lead Architect / Captain deputy
 **Parent consolidation:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2C-A_Post_Implementation_Consolidation.md`
 **Baseline:** `beee0953` (`docs: consolidate v2 hidden byte handoff`)
 
 ## 0. Debate Result
 
-Deputy debate converged on `ADOPT_WITH_SCOPE_TIGHTENING`, then formal deputy review returned `MODIFY` from Security and `APPROVE` from Senior Developer and LLM/Evidence Lifecycle review.
+Deputy debate converged on `ADOPT_WITH_SCOPE_TIGHTENING`. Formal deputy review first returned `MODIFY` from Security and `APPROVE` from Senior Developer and LLM/Evidence Lifecycle review. After the security modification was incorporated, all three deputy re-reviewers returned `APPROVE`.
 
 - parser isolation is the correct next gate before source-acquisition execution wiring;
 - a dedicated one-shot child process plus staged content-type allowlist is acceptable only as a protocol/harness direction;
@@ -19,6 +19,14 @@ Deputy debate converged on `ADOPT_WITH_SCOPE_TIGHTENING`, then formal deputy rev
 One implementation caveat is mandatory for any later source package: `apps/web` is TypeScript `noEmit`, so a parser worker entrypoint must be built and available in tests and deployed Next runtime without relying on `npx tsx`, `ts-node`, or another dev-only loader.
 
 Security review resolution: Node permission flags and a child process are useful defense-in-depth, but they are not a malicious-code sandbox. A child-process-only 2D-A source package may implement the parser runner protocol with fixture/control bytes only. It must not parse real fetched bytes unless a reviewed OS-level isolation boundary is also present.
+
+Final 2D review result:
+
+- Security: `APPROVE`; prior `MODIFY` resolved by making OS-level denial mandatory before real fetched-byte parser execution.
+- Senior Developer: `APPROVE`; staged 2D-A/2D-B/2D-C sequencing and `noEmit` worker-entrypoint caveat are implementable enough for a docs-only design.
+- LLM/Evidence Lifecycle: `APPROVE`; parser output remains structural/hidden and carries no evidence/report semantics.
+
+2D authorizes design state only. The next allowed action is to draft a separate 2D-A source package for a fixture/control parser runner protocol harness. It does not authorize source edits by itself.
 
 ## 1. Purpose
 
