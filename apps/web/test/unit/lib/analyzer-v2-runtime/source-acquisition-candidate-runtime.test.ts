@@ -95,6 +95,16 @@ function parentAuthority() {
   return createSourceAcquisitionRuntimeAuthority(parentAuthoritySnapshot());
 }
 
+function staleParentAuthority() {
+  return createSourceAcquisitionRuntimeAuthority({
+    ...parentAuthoritySnapshot(),
+    configSnapshot: {
+      ...parentAuthoritySnapshot().configSnapshot,
+      configSnapshotHash: "stale-parent-config-hash",
+    },
+  });
+}
+
 function candidateAuthority() {
   return createSourceAcquisitionCandidateRuntimeAuthority({
     parentAuthority: parentAuthority(),
@@ -450,12 +460,6 @@ describe("Analyzer V2 source-acquisition candidate runtime", () => {
       { ...validAuthority },
       JSON.parse(JSON.stringify(validAuthority)),
       SOURCE_ACQUISITION_CONTROLLED_HARNESS_AUTHORITY,
-      createSourceAcquisitionCandidateRuntimeAuthority({
-        parentAuthority: parentAuthority(),
-        configSnapshotHash: "config-hash-7n3b1",
-        providerAllowlistSnapshotHash: "stale-allowlist-hash",
-        budgetSnapshotHash: "budget-hash-7n3b1",
-      }),
     ]) {
       const runRequest = request({ authority });
       const decision = await executeSourceAcquisitionCandidateRuntime(runRequest);
@@ -466,6 +470,19 @@ describe("Analyzer V2 source-acquisition candidate runtime", () => {
       });
       expect(runRequest.calls).toHaveLength(0);
     }
+
+    expect(() => createSourceAcquisitionCandidateRuntimeAuthority({
+      parentAuthority: parentAuthority(),
+      configSnapshotHash: "config-hash-7n3b1",
+      providerAllowlistSnapshotHash: "stale-allowlist-hash",
+      budgetSnapshotHash: "budget-hash-7n3b1",
+    })).toThrow(/parent authority provenance/);
+    expect(() => createSourceAcquisitionCandidateRuntimeAuthority({
+      parentAuthority: staleParentAuthority(),
+      configSnapshotHash: "config-hash-7n3b1",
+      providerAllowlistSnapshotHash: "allowlist-hash-7n3b1",
+      budgetSnapshotHash: "budget-hash-7n3b1",
+    })).toThrow(/parent authority provenance/);
   });
 
   it("blocks unsafe allowlists and off-allowlist provider results before public or cache leakage", async () => {
@@ -585,8 +602,55 @@ describe("Analyzer V2 source-acquisition candidate runtime", () => {
     expect(JSON.stringify(decision)).not.toContain("sk_test_secret");
   });
 
+  it("enforces provider timeouts without waiting for late provider results", async () => {
+    const readyHandoff = handoff();
+    const readySourceDecision = sourceDecision();
+    const timeoutCalls: SourceAcquisitionCandidateProviderAttemptRequest[] = [];
+    const runRequest = request({
+      handoffDecision: readyHandoff,
+      sourceAcquisitionStartDecision: readySourceDecision,
+      budget: budget(readyHandoff, readySourceDecision, {
+        providerTimeoutMs: 5,
+        totalCandidateAcquisitionTimeoutMs: 10,
+      }),
+      providerBoundary: {
+        acquireCandidates: async (attemptRequest) => {
+          timeoutCalls.push(attemptRequest);
+          return new Promise<SourceAcquisitionCandidateProviderAttemptResult>((resolve) => {
+            setTimeout(() => resolve(providerResult(attemptRequest, timeoutCalls.length - 1)), 50);
+          });
+        },
+      },
+    });
+
+    const decision = await executeSourceAcquisitionCandidateRuntime(runRequest);
+
+    expect(timeoutCalls).toHaveLength(2);
+    expect(decision).toMatchObject({
+      status: "completed_structural",
+      queryOutcomes: [
+        {
+          queryId: "EQ_001",
+          status: "timed_out",
+          structuralReason: "provider_timeout",
+          providerAttemptId: null,
+          candidateCount: 0,
+        },
+        {
+          queryId: "EQ_002",
+          status: "timed_out",
+          structuralReason: "provider_timeout",
+          providerAttemptId: null,
+          candidateCount: 0,
+        },
+      ],
+      candidates: [],
+    });
+  });
+
   it("rejects raw payload, public URL, source identity, cache key, SR field, and secret leakage in provider results", async () => {
     const leakingResults: Array<Partial<SourceAcquisitionCandidateProviderAttemptResult>> = [
+      { providerAttemptId: "https://example.test/sk_test_secret" },
       { sanitizedProviderTelemetry: { rawPayloadIncluded: true, secretIncluded: false, publicPayloadIncluded: false } as never },
       { sanitizedProviderTelemetry: { rawPayloadIncluded: false, secretIncluded: true, publicPayloadIncluded: false } as never },
       { candidates: [{ ...candidate({ queryId: "EQ_001", retrievalPolicyKey: "baseline_research", providerAttemptId: "ATT_1" }), url: "https://example.test" } as never] },
@@ -617,6 +681,31 @@ describe("Analyzer V2 source-acquisition candidate runtime", () => {
       expect(serialized).not.toContain("sourceReliabilityScore");
       expect(serialized).not.toContain("not allowed");
     }
+  });
+
+  it("rejects non-success provider results that carry hidden candidates", async () => {
+    const runRequest = request({
+      providerBoundary: {
+        acquireCandidates: (attemptRequest) => providerResult(attemptRequest, 0, {
+          structuralStatus: "provider_failure",
+          candidates: [
+            candidate({
+              queryId: attemptRequest.queryId,
+              retrievalPolicyKey: attemptRequest.retrievalPolicyKey,
+              providerAttemptId: "ATT_1",
+            }),
+          ],
+        }),
+      },
+    });
+
+    const decision = await executeSourceAcquisitionCandidateRuntime(runRequest);
+
+    expect(decision).toMatchObject({
+      status: "damaged_structural",
+      stopReason: "provider_result_invalid",
+    });
+    expect(JSON.stringify(decision)).not.toContain("OPAQUE_SOURCE_CANDIDATE_1");
   });
 
   it("does not cache candidate results between identical valid runs", async () => {

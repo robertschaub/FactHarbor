@@ -205,6 +205,10 @@ function candidateAuthoritySnapshotIsValid(
     && isRecord(snapshot.parentAuthoritySnapshot)
     && snapshot.parentAuthoritySnapshot.kind === "source_acquisition_runtime_authority_7n3a"
     && snapshot.parentAuthoritySnapshot.futureGate === "requires_7n3b_concrete_io_gate"
+    && isRecord(snapshot.parentAuthoritySnapshot.configSnapshot)
+    && snapshot.parentAuthoritySnapshot.configSnapshot.configSnapshotHash === snapshot.configSnapshotHash
+    && snapshot.parentAuthoritySnapshot.configSnapshot.providerAllowlistSnapshotHash === snapshot.providerAllowlistSnapshotHash
+    && snapshot.parentAuthoritySnapshot.configSnapshot.budgetSnapshotHash === snapshot.budgetSnapshotHash
     && hashValueIsValid(snapshot.configSnapshotHash)
     && hashValueIsValid(snapshot.providerAllowlistSnapshotHash)
     && hashValueIsValid(snapshot.budgetSnapshotHash)
@@ -223,6 +227,14 @@ export function createSourceAcquisitionCandidateRuntimeAuthority(params: {
   }
 
   const parentAuthoritySnapshot = readSourceAcquisitionRuntimeAuthoritySnapshot(params.parentAuthority);
+  if (
+    parentAuthoritySnapshot.configSnapshot.configSnapshotHash !== params.configSnapshotHash
+    || parentAuthoritySnapshot.configSnapshot.providerAllowlistSnapshotHash !== params.providerAllowlistSnapshotHash
+    || parentAuthoritySnapshot.configSnapshot.budgetSnapshotHash !== params.budgetSnapshotHash
+  ) {
+    throw new Error("V2 source-acquisition candidate authority hashes do not match parent authority provenance.");
+  }
+
   const snapshot: SourceAcquisitionCandidateRuntimeAuthoritySnapshot = {
     kind: "source_acquisition_candidate_runtime_authority_7n3b1",
     source: "v2_7n3b1_candidate_runtime_source_package",
@@ -632,6 +644,37 @@ function outcomeFromProviderResult(
   }
 }
 
+async function acquireCandidatesWithTimeout(
+  providerBoundary: SourceAcquisitionCandidateRunRequest["providerBoundary"],
+  attempt: Parameters<SourceAcquisitionCandidateRunRequest["providerBoundary"]["acquireCandidates"]>[0],
+  timeoutMs: number,
+): Promise<
+  | { readonly status: "returned"; readonly result: SourceAcquisitionCandidateProviderAttemptResult }
+  | { readonly status: "timed_out" }
+  | { readonly status: "failed" }
+> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const providerCall = Promise.resolve()
+      .then(() => providerBoundary.acquireCandidates(attempt))
+      .then((result) => ({ status: "returned" as const, result }));
+    const timeout = new Promise<{ readonly status: "timed_out" }>((resolve) => {
+      timeoutHandle = setTimeout(() => resolve({ status: "timed_out" }), timeoutMs);
+    });
+    const result = await Promise.race([providerCall, timeout]);
+
+    return result.status === "timed_out"
+      ? { status: "timed_out" }
+      : result;
+  } catch {
+    return { status: "failed" };
+  } finally {
+    if (timeoutHandle !== undefined) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
 export async function executeSourceAcquisitionCandidateRuntime(
   request: SourceAcquisitionCandidateRunRequest,
 ): Promise<SourceAcquisitionCandidateRuntimeDecision> {
@@ -683,18 +726,18 @@ export async function executeSourceAcquisitionCandidateRuntime(
   const candidates: SourceAcquisitionHiddenCandidateRecord[] = [];
 
   for (const queryEntry of handoff.queryEntries) {
-    let providerResult: SourceAcquisitionCandidateProviderAttemptResult;
-    try {
-      providerResult = await request.providerBoundary.acquireCandidates(
-        attemptRequest({
-          candidateRunId: request.candidateRunId,
-          queryEntry,
-          handoff,
-          providerAllowlist: request.providerAllowlist,
-          budget: request.budget,
-        }),
-      );
-    } catch {
+    const providerAttempt = await acquireCandidatesWithTimeout(
+      request.providerBoundary,
+      attemptRequest({
+        candidateRunId: request.candidateRunId,
+        queryEntry,
+        handoff,
+        providerAllowlist: request.providerAllowlist,
+        budget: request.budget,
+      }),
+      request.budget.providerTimeoutMs,
+    );
+    if (providerAttempt.status === "failed") {
       queryOutcomes.push({
         queryId: queryEntry.queryId,
         status: "failed",
@@ -704,6 +747,18 @@ export async function executeSourceAcquisitionCandidateRuntime(
       });
       continue;
     }
+    if (providerAttempt.status === "timed_out") {
+      queryOutcomes.push({
+        queryId: queryEntry.queryId,
+        status: "timed_out",
+        structuralReason: "provider_timeout",
+        providerAttemptId: null,
+        candidateCount: 0,
+      });
+      continue;
+    }
+
+    const providerResult = providerAttempt.result;
 
     const validation = validateSourceAcquisitionCandidateProviderAttemptResult(providerResult, {
       queryId: queryEntry.queryId,
@@ -745,6 +800,17 @@ export async function executeSourceAcquisitionCandidateRuntime(
     }
 
     const outcomeState = outcomeFromProviderResult(providerResult);
+    if (providerResult.structuralStatus !== "success") {
+      queryOutcomes.push({
+        queryId: queryEntry.queryId,
+        status: outcomeState.status,
+        structuralReason: outcomeState.structuralReason,
+        providerAttemptId: providerResult.providerAttemptId,
+        candidateCount: 0,
+      });
+      continue;
+    }
+
     queryOutcomes.push({
       queryId: queryEntry.queryId,
       status: outcomeState.status,

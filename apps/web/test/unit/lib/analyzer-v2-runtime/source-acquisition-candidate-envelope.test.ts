@@ -236,7 +236,10 @@ describe("Analyzer V2 source-acquisition candidate envelope", () => {
     for (const invalidResult of [
       providerResult({ providerId: "off_allowlist" }),
       providerResult({ providerId: "https://example.test" }),
+      providerResult({ providerAttemptId: "https://example.test/sk_test_secret" }),
+      providerResult({ providerAttemptId: "ATT_SECRET" }),
       providerResult({ queryId: "EQ_EXTRA" }),
+      providerResult({ structuralStatus: "provider_failure", candidates: [candidate()] }),
       providerResult({
         sanitizedProviderTelemetry: {
           rawPayloadIncluded: true,

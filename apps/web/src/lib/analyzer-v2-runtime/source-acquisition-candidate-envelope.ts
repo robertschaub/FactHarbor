@@ -449,6 +449,12 @@ function hiddenLocatorIdIsOpaque(value: unknown): value is string {
     && /^[A-Z0-9_]+$/.test(value);
 }
 
+function providerAttemptIdIsOpaque(value: unknown): value is string {
+  return isNonBlankString(value)
+    && value === value.trim()
+    && /^ATT_[0-9]+$/.test(value);
+}
+
 function metadataIsStructural(value: unknown): value is SourceAcquisitionHiddenCandidateRecord["hiddenMetadata"] {
   return isRecord(value)
     && Object.keys(value).length === 5
@@ -484,6 +490,7 @@ function candidateRecordIsValid(
     && candidate.queryId === expected.queryId
     && candidate.retrievalPolicyKey === expected.retrievalPolicyKey
     && candidate.providerId === expected.providerId
+    && providerAttemptIdIsOpaque(candidate.providerAttemptId)
     && candidate.providerAttemptId === expected.providerAttemptId
     && Number.isInteger(candidate.providerRank)
     && candidate.providerRank >= 1
@@ -532,8 +539,7 @@ export function validateSourceAcquisitionCandidateProviderAttemptResult(
     result.queryId !== expected.queryId
     || !isCanonicalProviderId(result.providerId)
     || !expected.allowedProviderIds.includes(result.providerId)
-    || !isNonBlankString(result.providerAttemptId)
-    || result.providerAttemptId !== result.providerAttemptId.trim()
+    || !providerAttemptIdIsOpaque(result.providerAttemptId)
   ) {
     blockedReasons.push("provider_identity_invalid");
   }
@@ -563,6 +569,9 @@ export function validateSourceAcquisitionCandidateProviderAttemptResult(
 
   if (!Array.isArray(result.candidates) || result.candidates.length > expected.maxCandidateRecords) {
     blockedReasons.push("candidate_count_invalid");
+  }
+  if (result.structuralStatus !== "success" && Array.isArray(result.candidates) && result.candidates.length > 0) {
+    blockedReasons.push("non_success_candidates_invalid");
   }
 
   for (const candidate of Array.isArray(result.candidates) ? result.candidates : []) {
