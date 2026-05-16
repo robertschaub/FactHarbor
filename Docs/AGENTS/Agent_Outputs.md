@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B2 Provider Network Boundary -- [Significant] [open-items: yes]
+**For next agent:** 7N-3B2 is implemented at `54b8af1a` as a hidden/internal SDK-free candidate-provider network boundary only: private provider-network authority, raw-URL-free endpoint/budget snapshots, Node-core HTTPS transport, SSRF/final-address checks, redirect denial, streaming byte/decompression caps, timeout/abort handling, hidden diagnostics, and adapter wiring back into the injected 7N-3B1 provider boundary. Product/public wiring, live jobs, content dereference/parser execution, cache/SR, ACS/direct URL, prompt/config/model/schema changes, public result exposure, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B2_Provider_Network_Boundary.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B2 Review Modifications -- [Standard] [open-items: yes]
 **For next agent:** First deputy review of `Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md` returned `MODIFY`. The amended draft now requires exact files/imports/exports, SDK-free Node-core HTTPS transport, structural raw-URL-free endpoint snapshots, concrete provider-network authority, redirect denial, and exact leakage/security tests. Implementation remains blocked until re-review returns `approve`.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B2_Review_Modifications.md

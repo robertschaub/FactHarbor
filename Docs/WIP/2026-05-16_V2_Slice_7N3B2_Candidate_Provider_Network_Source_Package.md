@@ -1,10 +1,11 @@
 # V2 Slice 7N-3B2 Candidate Provider Network Source Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; `modify` returned; implementation blocked until approved
+**Status:** implemented at `54b8af1a` after deputy re-review approval and post-implementation hardening
 **Owner role:** Lead Architect / Captain deputy
 **Prerequisite:** `Docs/WIP/2026-05-16_V2_Slice_7N3B1_Post_Implementation_Consolidation.md`
 **Baseline:** `3d8573ea` plus 7N-3B1 hardening commit `3d05583e`
+**Implementation commit:** `54b8af1a`
 
 ## 1. Purpose
 
@@ -20,7 +21,7 @@ Define the next candidate source-acquisition package after 7N-3B1.
 - no product/orchestrator/runner/API/UI/report/export wiring;
 - no live jobs.
 
-This document is a source package draft. It is not implementation approval until deputy review explicitly approves it.
+This document is the source package and implementation record for 7N-3B2. It authorized only the hidden/internal candidate-provider network boundary implemented at `54b8af1a`; later source content dereference, parser execution, live smoke, product/public wiring, cache/SR integration, and V1 cleanup remain blocked by separate reviewed gates.
 
 ## 2. Non-Negotiable Scope
 
@@ -65,7 +66,14 @@ Required modifications recorded here:
 - redirects are denied for this slice, not revalidated;
 - exact pre-code test names and leakage assertions are required.
 
-This package remains unapproved for implementation until a subsequent review returns `approve`.
+Subsequent deputy re-review approved implementation after these modifications were added.
+
+Post-implementation review returned `MODIFY` on four concrete hardening points; all were fixed before `54b8af1a`:
+
+- no transport outcome may expose raw parsed provider JSON or raw payload details through returned objects or `JSON.stringify(...)`;
+- decompression caps must be enforced during streaming inflate, not after full decompression;
+- DNS resolution and provider calls must be timeout/abort bounded;
+- the provider factory must enforce provider/query/total budget limits before dispatch.
 
 ## 2.2 Exact File Envelope
 
@@ -450,12 +458,11 @@ Use this prompt for deputy review:
 
 ## 12. Current Recommendation
 
-Current deputy recommendation before package-specific review:
+Current deputy recommendation after implementation:
 
-- draft 7N-3B2 now;
-- do not implement yet;
-- do not run live canaries;
-- keep 7N-3B2 candidate-provider network only;
+- treat `54b8af1a` as the landed 7N-3B2 provider-network boundary;
+- do not run live canaries from 7N-3B2;
+- keep the implementation candidate-provider network only;
 - keep 7N-3B2 SDK-free unless a later package explicitly changes this after security review;
 - reserve content packet/parser for 7N-3B3;
 - reserve live smoke for 7N-3C.
