@@ -3,7 +3,8 @@
 **Date:** 2026-05-16
 **Status:** draft review package; docs-only; no source edits approved
 **Owner role:** Lead Architect / Captain deputy
-**Baseline:** `cdd5f934` (`feat: add v2 oci parser isolation proof`)
+**B2 source baseline:** `cdd5f934` (`feat: add v2 oci parser isolation proof`)
+**Current audit baseline:** `9b7db8d5` (`test: harden v2 parser gate register`)
 **Predecessor:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md`
 
 ## 1. Purpose
@@ -16,9 +17,9 @@ B3 does not approve 2D-C parser source. It only approves collecting proof eviden
 
 ## 2. Current State
 
-- Current workspace `C:\DEV\FactHarbor` is clean after B2 and governance commits.
+- Current workspace `C:\DEV\FactHarbor` is clean on `main` after the B2, C0-S1, C0-S2, C0-S3, and C0-S3A parser-governance commits.
 - B2 source is committed at `cdd5f934`.
-- Governance artifacts are committed separately at `16e865dc`.
+- Later parser adjuncts are tracked as non-executing context only: C0-S1 parser-worker admission (`c7c5e73b`), C0-S2 runtime-owned parser-admission provenance (`cc0c011b`), C0-S3 parsed-material denial (`ac7ce468`), and C0-S3A gate-register hardening (`9b7db8d5`).
 - Local `docker` and `podman` commands are unavailable on this machine.
 - Therefore no positive `deployment_candidate` proof has been recorded.
 - 2D-C remains blocked.
