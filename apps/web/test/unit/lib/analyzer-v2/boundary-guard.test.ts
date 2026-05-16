@@ -16,6 +16,7 @@ const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
 const analyzerV2IndexPath = path.resolve(v2AnalyzerRoot, "index.ts");
 const analyzerV2ExecutionSelectionPath = path.resolve(v2AnalyzerRoot, "execution-selection.ts");
+const analyzerV2HiddenIntegrationHarnessPath = path.resolve(v2AnalyzerRoot, "hidden-integration-harness.ts");
 const analyzerV2OrchestratorPath = path.resolve(v2AnalyzerRoot, "orchestrator.ts");
 const analyzerV2PipelineShellPath = path.resolve(v2AnalyzerRoot, "pipeline-shell.ts");
 const analyzerV2RunnerIngressPath = path.resolve(v2AnalyzerRoot, "runner-ingress.ts");
@@ -3075,6 +3076,78 @@ describe("analyzer-v2 boundary guard", () => {
         if (forbiddenTargets.has(toPosix(importedPath))) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches ${toPosix(path.relative(webRoot, importedPath))}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the hidden V2 integration harness internal and away from source execution", () => {
+    const forbiddenTargets = new Set([
+      evidenceLifecycleSourceAcquisitionExecutionContractPath,
+      evidenceLifecycleSourceAcquisitionStructuralExecutorPath,
+    ].map(toPosix));
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+    ]));
+    const violations: string[] = [];
+    const sourceFile = parseSource(analyzerV2HiddenIntegrationHarnessPath);
+
+    for (const specifier of collectModuleSpecifiers(parseSource(analyzerV2IndexPath))) {
+      const resolved = resolveAnalyzerV2SourceImport(analyzerV2IndexPath, specifier);
+      if (resolved && toPosix(resolved) === toPosix(analyzerV2HiddenIntegrationHarnessPath)) {
+        violations.push(`analyzer-v2 barrel exports hidden harness ${specifier}`);
+      }
+    }
+
+    for (const sourcePath of scanRoots) {
+      for (const importedPath of collectTransitiveAnalyzerV2Imports(sourcePath)) {
+        if (toPosix(importedPath) === toPosix(analyzerV2HiddenIntegrationHarnessPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches hidden harness`);
+        }
+      }
+    }
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      const resolved = resolveAnalyzerV2SourceImport(analyzerV2HiddenIntegrationHarnessPath, specifier);
+      if (resolved && forbiddenTargets.has(toPosix(resolved))) {
+        violations.push(`hidden harness reaches source executor target ${toPosix(path.relative(webRoot, resolved))}`);
+      }
+      if (isV1AnalyzerImport(analyzerV2HiddenIntegrationHarnessPath, specifier)) {
+        violations.push(`hidden harness imports V1 analyzer ${specifier}`);
+      }
+      if (isAnalyzerV2RuntimeImport(analyzerV2HiddenIntegrationHarnessPath, specifier)) {
+        violations.push(`hidden harness imports analyzer-v2-runtime ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`hidden harness imports search/fetch provider ${specifier}`);
+      }
+      if (isNetworkParserImport(specifier)) {
+        violations.push(`hidden harness imports network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`hidden harness imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`hidden harness imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`hidden harness imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`hidden harness imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`hidden harness imports public surface ${specifier}`);
+      }
+      if (
+        specifier === "@/lib/analyzer-v2/orchestrator"
+        || specifier === "@/lib/analyzer-v2/pipeline-shell"
+        || specifier === "@/lib/analyzer-v2/runner-ingress"
+        || specifier === "@/lib/analyzer-v2"
+      ) {
+        violations.push(`hidden harness imports product/orchestrator surface ${specifier}`);
       }
     }
 
