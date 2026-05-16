@@ -8,6 +8,9 @@ import {
   evaluateSourceAcquisitionParserWorkerAdmission,
   type SourceAcquisitionParserWorkerAdmissionRequest,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission";
+import {
+  readSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance";
 
 function digest(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -86,6 +89,7 @@ describe("Analyzer V2 parser-worker C0/P0 admission", () => {
     expect(serialized).not.toContain("https://");
     expect(serialized).not.toContain("reportMarkdown");
     expect(serialized).not.toContain("truthPercentage");
+    expect(readSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision(decision)).toBe(decision);
   });
 
   it("admits structural synthetic inert metadata without treating P0 as a security boundary", () => {

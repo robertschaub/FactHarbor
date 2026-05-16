@@ -1,3 +1,7 @@
+import {
+  markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance";
+
 export const SOURCE_ACQUISITION_PARSER_WORKER_CONTRACT_VERSION =
   "v2.source-acquisition.parser-worker-contract.c0";
 export const SOURCE_ACQUISITION_PARSER_WORKER_ADMISSION_VERSION =
@@ -220,17 +224,17 @@ function baseDecision(params: {
 function blocked(
   blockedReason: SourceAcquisitionParserWorkerAdmissionBlockedReason,
 ): SourceAcquisitionParserWorkerAdmissionDecision {
-  return {
+  return markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision({
     status: "blocked_pre_parser_execution",
     blockedReason,
     ...baseDecision(),
-  };
+  });
 }
 
 function admitted(
   inputProvenance: SourceAcquisitionParserWorkerP0InputProvenance,
 ): SourceAcquisitionParserWorkerAdmissionDecision {
-  return {
+  return markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision({
     status: "p0_admitted_fixture_or_synthetic_inert",
     blockedReason: null,
     ...baseDecision({
@@ -240,7 +244,7 @@ function admitted(
       admittedByteCount: inputProvenance.byteCount,
       admittedByteDigest: inputProvenance.byteDigest,
     }),
-  };
+  });
 }
 
 function limitsAreValid(value: unknown): value is SourceAcquisitionParserWorkerAdmissionRequest["limits"] {

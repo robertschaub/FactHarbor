@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T21:49:08.798Z",
-  "count": 560,
+  "generatedAt": "2026-05-16T22:03:50.440Z",
+  "count": 561,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11730,6 +11730,26 @@
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission.ts"
       ],
       "summary": "C0-S1 adds `evaluateSourceAcquisitionParserWorkerAdmission(...)` as a hidden/internal structural admission contract for the provisional P0 parser-worker profile. It admits only fixture/control or synthetic inert metadata as `p0_admitted_fixture_or_synthetic_inert`, while returning `executionStatus: "
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_C0-S2_Parser_Admission_Provenance_Implementation.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "c0-s2",
+        "parser",
+        "admission",
+        "provenance",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance.ts"
+      ],
+      "summary": "C0-S2 is implementation-complete. It adds `source-acquisition-parser-worker-admission-provenance.ts` as a process-local runtime-owned sidecar and updates C0-S1 admission decisions so the C0-S1 owner marks every admitted/blocked decision. Readers accept only the exact runtime-owned object while its m"
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_C0-S2_Parser_Admission_Provenance_Source_Package.md",

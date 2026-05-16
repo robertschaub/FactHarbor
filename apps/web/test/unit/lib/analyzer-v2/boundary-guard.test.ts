@@ -156,6 +156,10 @@ const analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionPath = path.resolve
   analyzerV2RuntimeRoot,
   "source-acquisition-parser-worker-admission.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-parser-worker-admission-provenance.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser-runner-protocol.ts",
@@ -3928,6 +3932,118 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   }, 10_000);
 
+  it("keeps C0-S2 parser-worker admission provenance process-local and non-executing", () => {
+    const sourcePath = analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionProvenancePath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "source-acquisition-parser-worker-admission-provenance.test.ts",
+    );
+    const sourceFile = parseSource(sourcePath);
+    const sourceContent = readFileSync(sourcePath, "utf8");
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(sourcePath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+    expect(collectExportedNames(sourceFile)).toEqual([
+      "SOURCE_ACQUISITION_PARSER_WORKER_ADMISSION_PROVENANCE_VERSION",
+      "SourceAcquisitionParserWorkerAdmissionProvenanceInspection",
+      "SourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+      "inspectSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+      "isSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+      "markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+      "readSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+    ].sort());
+    expect(collectModuleSpecifiers(sourceFile)).toEqual([]);
+
+    const runtimeFiles = collectFiles(analyzerV2RuntimeRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    for (const runtimePath of runtimeFiles) {
+      const runtimeFile = parseSource(runtimePath);
+      for (const entry of collectImportBindings(runtimeFile)) {
+        if (
+          !entry.names.includes("markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision")
+        ) {
+          continue;
+        }
+        if (toPosix(runtimePath) !== toPosix(analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, runtimePath))} imports the C0-S2 owner-only mark function`);
+        }
+      }
+    }
+
+    for (const sourceRoot of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
+        if (toPosix(importedPath) === toPosix(sourcePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches C0-S2 parser admission provenance`);
+        }
+      }
+    }
+
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+      violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const entry of collectExportBindings(sourceFile)) {
+      if (entry.specifier) {
+        violations.push(`C0-S2 parser admission provenance re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "parseSourceAcquisitionContentFixturePacket",
+      "executeSourceAcquisitionContentParserRunnerProtocol",
+      "consumeSourceAcquisitionContentFixturePacketForParserRunner",
+      "source-acquisition-parser-worker-admission\"",
+      "source-acquisition-content-parser",
+      "source-acquisition-content-packet-sink",
+      "source-acquisition-content-transport",
+      "source-acquisition-network-transport",
+      "source-acquisition-network-factory",
+      "node:child_process",
+      "node:fs",
+      "node:http",
+      "node:https",
+      "undici",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesConsumed: true",
+      "parserExecution: true",
+      "workerSpawned: true",
+      "transportPacketAccepted: true",
+      "transportFrameAccepted: true",
+      "realFetchedBytesAccepted: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "liveJobs: true",
+      "\"status\": \"executable\"",
+      "\"executionStatus\": \"executable\"",
+      "source_acquired",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+    ]) {
+      if (sourceContent.includes(forbiddenText)) {
+        violations.push(`C0-S2 parser admission provenance contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 30_000);
+
   it("keeps C0-S1 parser-worker P0 admission structural and non-executing", () => {
     const sourcePath = analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionPath;
     const testPath = path.resolve(
@@ -3955,7 +4071,12 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionParserWorkerAdmissionRequest",
       "evaluateSourceAcquisitionParserWorkerAdmission",
     ].sort());
-    expect(collectModuleSpecifiers(sourceFile)).toEqual([]);
+    expect(collectImportBindings(sourceFile).map((entry) => entry.specifier)).toEqual([
+      "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance",
+    ]);
+    expect(collectImportBindings(sourceFile)[0].names).toEqual([
+      "markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
+    ]);
 
     for (const sourceRoot of scanRoots) {
       for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
