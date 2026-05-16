@@ -80,7 +80,7 @@ Consolidated verdict: approved as a docs-only boundary package. The next low-ris
 
 Post-implementation deputy review found one sequencing constraint for the next package: 7N-3B3-1 transport success outcomes are intentionally byte-free and expose only sanitized structural diagnostics. Parser/sink source files cannot safely materialize real fetched bytes unless a reviewed source envelope also adds an owner-only byte handoff from `source-acquisition-content-transport.ts`.
 
-Consolidated decision: before any parser/sink source implementation, draft and review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`. That package must keep parser/sink source implementation blocked until reviewers approve the exact byte-handoff, sink-lifetime, parser-isolation, no-public-leak, and verifier boundaries.
+Consolidated decision: before any parser/sink source implementation, draft and review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`. That package was approved as a docs-only isolation boundary after security hardening. The next package is deputy review of `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md`; it must keep source implementation blocked until approved and must remain fixture/control-only unless a later 7N-3B3-2C package explicitly approves a real transport-byte handoff.
 
 ## 3. Required Package Split
 
@@ -89,7 +89,7 @@ Do not combine these gates:
 1. **7N-3B3:** docs-only content packet and parser boundary package.
 2. **7N-3B3-1:** later source implementation package for content target envelope and content-dereference authority, if approved.
 3. **7N-3B3-2A:** docs/review package for parser/sink isolation and owner-only byte handoff design.
-4. **7N-3B3-2B:** later source implementation package for parser isolation and hidden packet sink, if approved.
+4. **7N-3B3-2B:** source package for parser isolation and hidden packet sink, draft for deputy review and fixture/control-only unless approved otherwise.
 5. **7N-3B3-2C:** later source package for real transport-byte handoff, only if reviewers approve editing the transport owner.
 6. **7N-3C:** later hidden live smoke after committed source, runtime refresh, no-public-leak proof, rollback, and Captain-approved canaries.
 

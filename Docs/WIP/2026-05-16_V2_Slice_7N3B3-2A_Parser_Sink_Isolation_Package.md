@@ -1,7 +1,7 @@
 # V2 Slice 7N-3B3-2A Parser/Sink Isolation Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; source implementation blocked
+**Status:** approved docs-only boundary; source implementation blocked pending 7N-3B3-2B source-package review
 **Owner role:** Lead Architect / Captain deputy
 **Parent gate:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-1_Post_Implementation_Consolidation.md`
 **Implementation baseline:** `267bfb9e` (`feat: add v2 content dereference boundary`)
@@ -14,6 +14,25 @@ Define the safe next parser/sink boundary after 7N-3B3-1.
 
 - treating parser/sink source files as if they can materialize real fetched bytes without an approved owner-only handoff from the 7N-3B3-1 transport;
 - turning structural content parsing into evidence extraction, source reliability, warning materiality, or report content.
+
+## 1.1 Review Result
+
+Deputy review converged after one security hardening pass:
+
+- LLM / Evidence Lifecycle reviewer: `APPROVE`.
+- Security reviewer initial pass: `MODIFY`.
+- Security re-review after hardening: `APPROVE`.
+- Senior Developer implementation-envelope review: `APPROVE` to draft a separate 7N-3B3-2B source package; not approval to implement source.
+
+Security hardening applied before approval:
+
+- future real-byte handoff must be HMAC/provenance-bound to content authority, target hash, budget hash, fetch attempt id, packet sink authority, byte count, byte digest, and parent provider-network/content-authority chain;
+- parser/sink must reject stale authority, wrong target/budget hash, wrong fetch attempt id, wrong byte digest/count, wrong sink authority, copied objects, JSON round-trips, and replay after disposal;
+- real transport-byte parsing requires a reviewed worker, process, or container isolation boundary;
+- in-process parsing is allowed only for fixture/control-only work with no real transport-byte handoff;
+- sink disposal must run on every terminal path, and disposed references must not resurrect bytes, parsed material, diagnostics, parser output, or packet metadata beyond structural disposal status.
+
+Consolidated decision: 7N-3B3-2B may be drafted as a source package for review only. It must be fixture/control-only unless a later 7N-3B3-2C package explicitly approves a transport-owner real-byte handoff through `source-acquisition-content-transport.ts`.
 
 ## 2. Non-Negotiable Scope
 

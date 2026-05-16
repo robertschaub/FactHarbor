@@ -1,0 +1,16 @@
+---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2A Approval And 7N-3B3-2B Draft
+**Task:** Continue the V2 pipeline rebuild after 7N-3B3-2A review by recording deputy approval and preparing the next parser/sink source-package review gate.
+**Files touched:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`; `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md`; `Docs/WIP/2026-05-16_V2_Slice_7N3B3_Content_Packet_Parser_Package.md`; `Docs/STATUS/Current_Status.md`; `Docs/STATUS/Backlog.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; `Docs/AGENTS/index/handoff-index.json`.
+**Key decisions:** 7N-3B3-2A is approved as a docs-only parser/sink isolation boundary after security hardening and re-review. 7N-3B3-2B is drafted for deputy review as a source package only, not implementation approval. The proposed 2B source envelope is deliberately fixture/control-only: `source-acquisition-content-parser.ts`, `source-acquisition-content-packet-sink.ts`, focused tests, and boundary guards. Real transport-byte handoff from `source-acquisition-content-transport.ts` is reserved for a separate 7N-3B3-2C package if reviewers later approve it.
+**Open items:** Deputy review of `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md` is next. Parser/sink source implementation, real transport-byte handoff, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL execution, V1 reuse, and V1 cleanup remain blocked.
+**Warnings:** Do not treat 7N-3B3-2B as implementation approval. If implementation cannot remain fixture/control-only, stop and draft 7N-3B3-2C with the transport owner file in scope. `Docs/AGENTS/Agent_Outputs.md` still has a separate pre-existing unstaged "Daily Bug Scan V2 Re-review" hunk; do not stage it accidentally.
+**For next agent:** Start with the reviewer prompt in 7N-3B3-2B. If it returns `approve`, only then implement the exact 2B source envelope. If it returns `modify`, patch the package first. Do not edit `source-acquisition-content-transport.ts` under 2B.
+**Learnings:** Not appended. The durable learning is captured in the 2A/2B docs: fixture/control-only parser/sink work is separable from real transport-byte handoff; real bytes require a separate transport-owner approval package.
+
+**Verification:**
+- Preflight: `fhAgentKnowledge.preflight_task` returned the current 7N-3B3-2A handoff as relevant context and warned against treating docs-only gates as source approval.
+- Deputy review of 7N-3B3-2A: LLM/Evidence Lifecycle reviewer approved; Security reviewer required hardening and then approved; Senior Developer implementation-envelope reviewer approved drafting 7N-3B3-2B only.
+- `rg -n "<stale 7N-3B3-2A queue patterns>" Docs/STATUS Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md Docs/WIP` -> no stale matches.
+- `npm run index` -> rebuilt `Docs/AGENTS/index/handoff-index.json`.
+- `git diff --check` -> passed.
