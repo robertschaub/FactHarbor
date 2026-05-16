@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T19:40:26.655Z",
-  "count": 551,
+  "generatedAt": "2026-05-16T19:58:39.790Z",
+  "count": 552,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11904,6 +11904,26 @@
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/contract.ts"
       ],
       "summary": "X7-B is a hidden/internal negative guard only. It consumes X7-A source-material readiness as absence/rejection and proves absent, malformed, copied, JSON-round-tripped, or source-like source-material input cannot become corpus-buildable. Continue with a reviewed follow-up package before any provider"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_X7-C_Hidden_Provider_Network_Readiness.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-c",
+        "hidden",
+        "provider",
+        "network",
+        "readiness"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness.ts"
+      ],
+      "summary": "X7-C is hidden/internal readiness only. It validates existing 7N-3B2 provider-network authority, endpoint, and budget prerequisites plus X7-A/X7-B source-material absence input, then returns `not_executable_pre_live_gate` or `blocked_pre_execution`. It does not call transport/factory, acquire candid"
     },
     {
       "file": "2026-05-16_Lead_Developer_V2_7N3B3-2D-B2_OCI_Proof_Completion.md",

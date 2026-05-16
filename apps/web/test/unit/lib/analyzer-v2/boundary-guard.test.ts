@@ -120,6 +120,10 @@ const analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-factory.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-provider-network-readiness.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionContentAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-authority.ts",
@@ -550,6 +554,7 @@ const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
   "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
   "@/lib/analyzer-v2-runtime/source-acquisition-network-transport",
   "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+  "@/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-authority",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
@@ -2348,6 +2353,9 @@ describe("analyzer-v2 boundary guard", () => {
       if (toPosix(sourcePath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentAuthorityPath)) {
         continue;
       }
+      if (toPosix(sourcePath) === toPosix(analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath)) {
+        continue;
+      }
 
       for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
         if (
@@ -2368,12 +2376,133 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-C provider-network readiness hidden, non-executable, and away from transport", () => {
+    const sourceFile = parseSource(analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath);
+    const sourceContent = readFileSync(analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath, "utf8");
+    const importBindings = collectImportBindings(sourceFile);
+    const violations: string[] = [];
+
+    expect(existsSync(analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath)).toBe(true);
+    expect(collectExportedNames(sourceFile)).toEqual([
+      "SOURCE_ACQUISITION_PROVIDER_NETWORK_READINESS_VERSION",
+      "SourceAcquisitionProviderNetworkReadinessDecision",
+      "SourceAcquisitionProviderNetworkReadinessRequest",
+      "buildSourceAcquisitionProviderNetworkReadiness",
+    ].sort());
+    expect(importBindings.map((entry) => entry.specifier).sort()).toEqual([
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-guard",
+    ].sort());
+
+    const expectedImports = new Map<string, string[]>([
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-guard",
+        [
+          "EvidenceCorpusSourceMaterialGuardStatus",
+          "buildEvidenceCorpusSourceMaterialGuard",
+        ].sort(),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+        [
+          "SourceAcquisitionNetworkAuthority",
+          "isSourceAcquisitionNetworkAuthority",
+          "readSourceAcquisitionNetworkAuthoritySnapshot",
+        ].sort(),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+        [
+          "SourceAcquisitionNetworkBudgetSnapshot",
+          "SourceAcquisitionNetworkEndpointSnapshot",
+          "validateSourceAcquisitionNetworkBudgetSnapshot",
+          "validateSourceAcquisitionNetworkEndpointSnapshot",
+        ].sort(),
+      ],
+    ]);
+
+    for (const entry of importBindings) {
+      expect(entry.names.sort()).toEqual(expectedImports.get(entry.specifier));
+    }
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (specifier.includes("source-acquisition-network-transport")) {
+        violations.push(`X7-C readiness imports network transport ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-factory")) {
+        violations.push(`X7-C readiness imports network factory ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X7-C readiness imports content/parser owner ${specifier}`);
+      }
+      if (isV1AnalyzerImport(analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath, specifier)) {
+        violations.push(`X7-C readiness imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X7-C readiness imports search/fetch provider ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-C readiness imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-C readiness imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-C readiness imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-C readiness imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-C readiness imports public surface ${specifier}`);
+      }
+    }
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const entry of collectExportBindings(sourceFile)) {
+      if (entry.specifier) {
+        violations.push(`X7-C readiness re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "executeSourceAcquisitionNetworkTransport",
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesRead: 1",
+      "candidateRecords: 1",
+      "retries: 1",
+      "liveJobs: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "ready_to_execute",
+      "source_acquired",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+    ]) {
+      if (sourceContent.includes(forbiddenText)) {
+        violations.push(`X7-C readiness contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps product and public surfaces from transitively reaching provider-network source-acquisition files", () => {
     const forbiddenTargetPaths = new Set([
       analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath,
       analyzerV2RuntimeSourceAcquisitionNetworkEnvelopePath,
       analyzerV2RuntimeSourceAcquisitionNetworkTransportPath,
       analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath,
+      analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath,
     ].map(toPosix));
     const filesToScan = Array.from(new Set([
       ...adapterForbiddenProductPaths,
