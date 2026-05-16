@@ -323,9 +323,9 @@ Deputy reviewers must answer:
 
 Return `approve`, `modify`, or `reject`. If any answer is uncertain, do not implement source.
 
-## 11. Reviewer Prompt
+## 11. Original Reviewer Prompt
 
-Use this prompt for deputy review:
+This was the deputy-review prompt used before implementation approval. It is retained for traceability; it is not the current next action.
 
 > Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md` as a proposed V2 parser/sink source package. Return `approve`, `modify`, or `reject`. Check that it authorizes no implementation until review approval, and that the proposed source envelope is limited to fixture/control-only `source-acquisition-content-parser.ts`, `source-acquisition-content-packet-sink.ts`, focused tests, and boundary guards. Verify that real transport-byte handoff from `source-acquisition-content-transport.ts` is explicitly reserved for a later 7N-3B3-2C package; no product/public wiring, live jobs, cache IO, durable storage, Source Reliability, prompt/config/model/schema edits, ACS/direct URL execution, evidence/report generation, V1 reuse, or V1 cleanup is allowed. Pay special attention to packet sink lifetime/disposal, no-public-leak tests, no semantic relevance/applicability/probative/sufficiency decisions, multilingual neutrality, and exact import/export guards.
 
