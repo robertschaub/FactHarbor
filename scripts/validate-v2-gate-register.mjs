@@ -115,6 +115,35 @@ const REQUIRED_QUERY_PLANNING_DRIFT_MARKERS = [
 const REPAIRED_QUERY_PLANNING_DRIFT_MARKERS = [
   "static_task_policy_symbolic_not_executable",
 ];
+const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-E";
+const RESEARCH_ACQUISITION_CURRENT_STATE =
+  "implemented_hidden_direct_text_readiness_gateway_not_implemented";
+const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md";
+const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = "ce9bfe74";
+const REQUIRED_RESEARCH_ACQUISITION_REFS = [
+  RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md",
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md",
+];
+const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
+  "provider-network execution",
+  "real network/search/fetch execution",
+  "source-material population",
+  "evidence-corpus building",
+  "real fetched-byte parser consumption",
+  "2D-C parser source implementation",
+  "product/orchestrator/runner/API/UI/report/export wiring",
+  "live jobs",
+];
+const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
+  "X7-E",
+  "parser_isolation_unavailable",
+  "B3",
+  "2D-C remains blocked",
+  "audit-only",
+];
 
 function makeDriftCollector() {
   const drifts = [];
@@ -684,6 +713,59 @@ function validateRegisterAgainstGateway(register, gatewayTasks, gatewayTaskIds, 
       }
     }
   }
+
+  const researchAcquisition = entriesByTaskId.get("research_acquisition")?.entry;
+  validateResearchAcquisitionAuditState(researchAcquisition, drift);
+}
+
+function requireArrayIncludes(value, expected, where, field, drift) {
+  if (!Array.isArray(value) || !value.includes(expected)) {
+    drift(where, `${field} must include ${expected}`);
+  }
+}
+
+function requireTextIncludes(value, token, where, field, drift) {
+  if (typeof value !== "string" || !value.includes(token)) {
+    drift(where, `${field} must mention ${token}`);
+  }
+}
+
+function validateResearchAcquisitionAuditState(entry, drift) {
+  const where = `${REGISTER_PATH}:research_acquisition`;
+  if (!entry) {
+    drift(where, "research_acquisition row is required");
+    return;
+  }
+
+  if (entry.sliceId !== RESEARCH_ACQUISITION_CURRENT_SLICE_ID) {
+    drift(where, `sliceId must be ${RESEARCH_ACQUISITION_CURRENT_SLICE_ID}`);
+  }
+  if (entry.state !== RESEARCH_ACQUISITION_CURRENT_STATE) {
+    drift(where, `state must be ${RESEARCH_ACQUISITION_CURRENT_STATE}`);
+  }
+  if (entry.status !== RESEARCH_ACQUISITION_CURRENT_STATE) {
+    drift(where, `status must be ${RESEARCH_ACQUISITION_CURRENT_STATE}`);
+  }
+  if (entry.sourcePackage !== RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE) {
+    drift(where, `sourcePackage must be ${RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE}`);
+  }
+  if (entry.implementationCommit !== RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT) {
+    drift(where, `implementationCommit must be ${RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT}`);
+  }
+  requireTextIncludes(entry.approvalPointer, "X7-E", where, "approvalPointer", drift);
+  requireTextIncludes(entry.approvalPointer, "source execution remains blocked", where, "approvalPointer", drift);
+
+  for (const requiredRef of REQUIRED_RESEARCH_ACQUISITION_REFS) {
+    requireArrayIncludes(entry.sourceOfTruthRefs, requiredRef, where, "sourceOfTruthRefs", drift);
+  }
+  for (const blockedSurface of REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES) {
+    requireArrayIncludes(entry.blockedSurfaces, blockedSurface, where, "blockedSurfaces", drift);
+  }
+  for (const noteToken of REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS) {
+    requireTextIncludes(entry.notes, noteToken, where, "notes", drift);
+  }
+  requireTextIncludes(entry.liveJobBlockReason, "X7-E", where, "liveJobBlockReason", drift);
+  requireTextIncludes(entry.liveJobBlockReason, "not implemented", where, "liveJobBlockReason", drift);
 }
 
 function validateRegister(register, context) {
@@ -818,6 +900,29 @@ async function runSelfTest(context) {
       "register grants execution",
       (candidate) => {
         candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").registerGrantsExecution = true;
+      },
+    ],
+    [
+      "research acquisition drifts from X7-E",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "research_acquisition").sourcePackage =
+          "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md";
+      },
+    ],
+    [
+      "research acquisition drops B2 parser blocker",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
+          ref !== "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md"
+        );
+      },
+    ],
+    [
+      "research acquisition drops 2D-C blocked note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("2D-C remains blocked", "parser work is deferred");
       },
     ],
   ];

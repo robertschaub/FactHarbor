@@ -143,12 +143,12 @@
     },
     {
       "id": "gate.research_acquisition",
-      "sliceId": "7N3B3-2D-A",
+      "sliceId": "X7-E",
       "gateType": "gateway_task",
       "taskId": "research_acquisition",
       "owner": "source_acquisition",
-      "state": "implemented_hidden_source_components_gateway_not_implemented",
-      "status": "implemented_hidden_source_components_gateway_not_implemented",
+      "state": "implemented_hidden_direct_text_readiness_gateway_not_implemented",
+      "status": "implemented_hidden_direct_text_readiness_gateway_not_implemented",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus reviewed source-acquisition packages",
       "registerGrantsExecution": false,
       "promptProfile": null,
@@ -166,20 +166,35 @@
       "cacheApprovalId": "not_applicable",
       "sourceOfTruthRefs": [
         "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
-        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md"
+        "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md",
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md"
       ],
-      "sourcePackage": "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md",
-      "approvalPointer": "Deputy-approved 2D-A source package; implementation committed as fixture/control-only parser runner harness.",
-      "implementationCommit": "b76a571",
+      "sourcePackage": "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
+      "approvalPointer": "Deputy-approved X7-E audit/runtime-readiness hardening; composition remains hidden, no-IO, non-executable, and source execution remains blocked.",
+      "implementationCommit": "ce9bfe74",
       "allowedFiles": [
+        "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-*",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-*",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/**",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/**",
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/**"
       ],
       "blockedSurfaces": [
+        "provider-network execution",
+        "real network/search/fetch execution",
+        "source-material population",
+        "extraction input creation",
+        "evidence-corpus building",
         "real fetched-byte parser consumption",
+        "2D-C parser source implementation",
         "transport-owned packet/frame parser input",
         "product/orchestrator/runner/API/UI/report/export wiring",
         "cache IO",
@@ -197,14 +212,15 @@
         "realByteParserConsumption": true
       },
       "verifierCommands": [
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition.test.ts test/unit/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts",
         "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime",
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2",
         "npm -w apps/web run build"
       ],
       "liveJobEligibility": "blocked",
-      "liveJobBlockReason": "Source acquisition hidden components are not product-wired and the gateway task is not implemented.",
+      "liveJobBlockReason": "X7-E is hidden no-IO readiness only; source execution is not product-wired and the research_acquisition gateway task is not implemented.",
       "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
-      "notes": "7N source packages are hidden components; this gateway task remains not implemented."
+      "notes": "Latest direct-text hidden state is X7-E. It rejects copied/non-runtime-owned X6 inputs before readiness composition. Parser B2 remains locally parser_isolation_unavailable, B3 requires provisioned rootless OCI proof, and 2D-C remains blocked. Register remains audit-only and grants no execution."
     },
     {
       "id": "gate.evidence_applicability",
