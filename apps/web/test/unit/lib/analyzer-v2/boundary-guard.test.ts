@@ -636,6 +636,34 @@ function collectImportBindings(sourceFile: ts.SourceFile): Array<{ specifier: st
   return imports;
 }
 
+function collectExportBindings(sourceFile: ts.SourceFile): Array<{ specifier: string | null; names: string[] }> {
+  const exports: Array<{ specifier: string | null; names: string[] }> = [];
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isExportDeclaration(statement)) {
+      continue;
+    }
+
+    const names: string[] = [];
+    if (!statement.exportClause) {
+      names.push("*");
+    } else if (ts.isNamedExports(statement.exportClause)) {
+      for (const element of statement.exportClause.elements) {
+        names.push(element.name.text);
+      }
+    }
+
+    exports.push({
+      specifier: statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)
+        ? statement.moduleSpecifier.text
+        : null,
+      names,
+    });
+  }
+
+  return exports;
+}
+
 function collectExportedNames(sourceFile: ts.SourceFile): string[] {
   const names: string[] = [];
 
@@ -2202,6 +2230,11 @@ describe("analyzer-v2 boundary guard", () => {
       );
       for (const entry of importBindings) {
         expect(entry.names.sort()).toEqual(approved?.get(entry.specifier));
+      }
+      for (const entry of collectExportBindings(sourceFile)) {
+        if (entry.specifier) {
+          violations.push(`${relativeOwnerPath} re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+        }
       }
 
       for (const specifier of collectModuleSpecifiers(sourceFile)) {

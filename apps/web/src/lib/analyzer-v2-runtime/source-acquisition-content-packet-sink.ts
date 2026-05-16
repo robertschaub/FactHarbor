@@ -83,6 +83,18 @@ type MutableFixturePacket = {
   -readonly [Key in keyof SourceAcquisitionContentFixturePacket]: SourceAcquisitionContentFixturePacket[Key];
 };
 
+type FixturePacketPublicMetadata = Pick<
+  SourceAcquisitionContentFixturePacket,
+  | "fixturePacketId"
+  | "packetSinkAuthoritySnapshotHash"
+  | "parserPolicyId"
+  | "contentTypePolicyId"
+  | "byteCount"
+  | "byteDigest"
+  | "lifecycleStatus"
+  | "disposalStatus"
+>;
+
 type PacketSinkAuthorityState = {
   retainedPackets: number;
   retainedBytes: number;
@@ -92,6 +104,7 @@ type FixturePacketState = {
   authority: SourceAcquisitionContentPacketSinkAuthority;
   bytes: Uint8Array;
   disposed: boolean;
+  publicMetadata: FixturePacketPublicMetadata;
 };
 
 const packetSinkAuthorities = new WeakSet<object>();
@@ -199,15 +212,68 @@ function fixtureBytesFor(fixturePacketId: string): Uint8Array | null {
   return approved ? new Uint8Array(approved) : null;
 }
 
-function scrubDisposedPacket(packet: MutableFixturePacket): void {
-  packet.fixturePacketId = "OPAQUE_FIXTURE_PACKET_DISPOSED";
-  packet.packetSinkAuthoritySnapshotHash = "0".repeat(64);
-  packet.parserPolicyId = "POLICY_DISPOSED";
-  packet.contentTypePolicyId = "POLICY_DISPOSED";
-  packet.byteCount = 0;
-  packet.byteDigest = "0".repeat(64);
-  packet.lifecycleStatus = "disposed";
-  packet.disposalStatus = "disposed";
+function disposedPublicMetadata(): FixturePacketPublicMetadata {
+  return {
+    fixturePacketId: "OPAQUE_FIXTURE_PACKET_DISPOSED",
+    packetSinkAuthoritySnapshotHash: "0".repeat(64),
+    parserPolicyId: "POLICY_DISPOSED",
+    contentTypePolicyId: "POLICY_DISPOSED",
+    byteCount: 0,
+    byteDigest: "0".repeat(64),
+    lifecycleStatus: "disposed",
+    disposalStatus: "disposed",
+  };
+}
+
+function activePublicMetadata(params: {
+  readonly fixturePacketId: string;
+  readonly packetSinkAuthoritySnapshotHash: string;
+  readonly parserPolicyId: string;
+  readonly contentTypePolicyId: string;
+  readonly byteCount: number;
+  readonly byteDigest: string;
+}): FixturePacketPublicMetadata {
+  return {
+    fixturePacketId: params.fixturePacketId,
+    packetSinkAuthoritySnapshotHash: params.packetSinkAuthoritySnapshotHash,
+    parserPolicyId: params.parserPolicyId,
+    contentTypePolicyId: params.contentTypePolicyId,
+    byteCount: params.byteCount,
+    byteDigest: params.byteDigest,
+    lifecycleStatus: "fixture_control_materialized",
+    disposalStatus: "not_disposed",
+  };
+}
+
+function readPacketPublicMetadata(packet: object): FixturePacketPublicMetadata {
+  return fixturePacketStates.get(packet)?.publicMetadata ?? disposedPublicMetadata();
+}
+
+function defineFixturePacketProperties(packet: MutableFixturePacket): void {
+  Object.defineProperties(packet, {
+    kind: { enumerable: true, value: "source_acquisition_content_fixture_packet_7n3b3_2b" },
+    source: { enumerable: true, value: "fixture_control_only_7n3b3_2b" },
+    visibility: { enumerable: true, value: "internal_only" },
+    fixturePacketId: { enumerable: true, get: () => readPacketPublicMetadata(packet).fixturePacketId },
+    packetSinkAuthoritySnapshotHash: {
+      enumerable: true,
+      get: () => readPacketPublicMetadata(packet).packetSinkAuthoritySnapshotHash,
+    },
+    parserPolicyId: { enumerable: true, get: () => readPacketPublicMetadata(packet).parserPolicyId },
+    contentTypePolicyId: { enumerable: true, get: () => readPacketPublicMetadata(packet).contentTypePolicyId },
+    byteCount: { enumerable: true, get: () => readPacketPublicMetadata(packet).byteCount },
+    byteDigest: { enumerable: true, get: () => readPacketPublicMetadata(packet).byteDigest },
+    lifecycleStatus: { enumerable: true, get: () => readPacketPublicMetadata(packet).lifecycleStatus },
+    disposalStatus: { enumerable: true, get: () => readPacketPublicMetadata(packet).disposalStatus },
+    rawPayloadIncluded: { enumerable: true, value: false },
+    extractedTextIncluded: { enumerable: true, value: false },
+    publicPayloadIncluded: { enumerable: true, value: false },
+    evidenceItemIncluded: { enumerable: true, value: false },
+    sourceRecordIncluded: { enumerable: true, value: false },
+    warningIncluded: { enumerable: true, value: false },
+    verdictIncluded: { enumerable: true, value: false },
+    reportProseIncluded: { enumerable: true, value: false },
+  });
 }
 
 export function createSourceAcquisitionContentPacketSinkAuthority(params: {
@@ -327,34 +393,24 @@ export function createSourceAcquisitionContentFixturePacket(params: {
     return { status: "rejected", packet: null, blockedReasons: ["retained_byte_cap_exceeded"] };
   }
 
-  const packet: MutableFixturePacket = {
-    kind: "source_acquisition_content_fixture_packet_7n3b3_2b",
-    source: "fixture_control_only_7n3b3_2b",
-    visibility: "internal_only",
-    fixturePacketId: params.fixturePacketId,
-    packetSinkAuthoritySnapshotHash: params.authority.packetSinkAuthoritySnapshotHash,
-    parserPolicyId: params.parserPolicyId,
-    contentTypePolicyId: params.contentTypePolicyId,
-    byteCount,
-    byteDigest,
-    lifecycleStatus: "fixture_control_materialized",
-    disposalStatus: "not_disposed",
-    rawPayloadIncluded: false,
-    extractedTextIncluded: false,
-    publicPayloadIncluded: false,
-    evidenceItemIncluded: false,
-    sourceRecordIncluded: false,
-    warningIncluded: false,
-    verdictIncluded: false,
-    reportProseIncluded: false,
-  } as MutableFixturePacket;
+  const packet = {} as MutableFixturePacket;
+  defineFixturePacketProperties(packet);
 
   fixturePackets.add(packet);
   fixturePacketStates.set(packet, {
     authority: params.authority,
     bytes,
     disposed: false,
+    publicMetadata: activePublicMetadata({
+      fixturePacketId: params.fixturePacketId,
+      packetSinkAuthoritySnapshotHash: params.authority.packetSinkAuthoritySnapshotHash,
+      parserPolicyId: params.parserPolicyId,
+      contentTypePolicyId: params.contentTypePolicyId,
+      byteCount,
+      byteDigest,
+    }),
   });
+  Object.freeze(packet);
   state.retainedPackets += 1;
   state.retainedBytes += byteCount;
   return {
@@ -378,11 +434,11 @@ export function disposeSourceAcquisitionContentFixturePacket(
   packet: SourceAcquisitionContentFixturePacket,
 ): SourceAcquisitionContentPacketSinkOutcome {
   const packetState = isRecord(packet) ? fixturePacketStates.get(packet) : undefined;
+  if (!packetState) {
+    return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_invalid"] };
+  }
   if (packetState?.disposed) {
     return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_disposed"] };
-  }
-  if (!isSourceAcquisitionContentFixturePacket(packet) || !packetState) {
-    return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_invalid"] };
   }
   const authorityState = packetSinkAuthorityStates.get(packetState.authority);
   if (!authorityState) {
@@ -390,11 +446,11 @@ export function disposeSourceAcquisitionContentFixturePacket(
   }
 
   authorityState.retainedPackets = Math.max(0, authorityState.retainedPackets - 1);
-  authorityState.retainedBytes = Math.max(0, authorityState.retainedBytes - packet.byteCount);
+  authorityState.retainedBytes = Math.max(0, authorityState.retainedBytes - packetState.bytes.byteLength);
   packetState.bytes = new Uint8Array();
   packetState.disposed = true;
+  packetState.publicMetadata = disposedPublicMetadata();
   fixturePackets.delete(packet);
-  scrubDisposedPacket(packet as MutableFixturePacket);
 
   return {
     status: "disposed",

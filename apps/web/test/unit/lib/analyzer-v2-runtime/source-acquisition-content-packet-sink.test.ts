@@ -204,6 +204,37 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
     expect(isSourceAcquisitionContentFixturePacket(packet)).toBe(false);
     expect(packet.fixturePacketId).toBe("OPAQUE_FIXTURE_PACKET_DISPOSED");
     expect(packet.byteCount).toBe(0);
+    expect(packet.lifecycleStatus).toBe("disposed");
+    expect(packet.disposalStatus).toBe("disposed");
     expect(JSON.stringify(packet)).not.toContain("fixture-control-material-alpha");
+  });
+
+  it("prevents packet tampering from bypassing disposal and quota release", () => {
+    const authority = createSourceAcquisitionContentPacketSinkAuthority({
+      maxRetainedPackets: 1,
+      maxRetainedBytes: 16,
+    });
+    const first = createSourceAcquisitionContentFixturePacket({
+      authority,
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_003"),
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+    });
+    const packet = first.packet as SourceAcquisitionContentFixturePacket;
+
+    expect(() => {
+      (packet as { byteCount: number }).byteCount = 999;
+    }).toThrow();
+    expect(disposeSourceAcquisitionContentFixturePacket(packet)).toMatchObject({
+      status: "disposed",
+      packet: null,
+    });
+
+    expect(createSourceAcquisitionContentFixturePacket({
+      authority,
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_004"),
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+    }).status).toBe("accepted");
   });
 });
