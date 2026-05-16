@@ -1,7 +1,7 @@
 # V2 Slice 7N-3B3-2D-A Fixture/Control Parser Runner Source Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; source implementation blocked
+**Status:** draft after first deputy review; source implementation blocked pending re-review
 **Owner role:** Lead Architect / Captain deputy
 **Design parent:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Parser_Isolation_Design_Package.md`
 **Design consolidation:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Post_Review_Consolidation.md`
@@ -31,6 +31,18 @@ Source approval required before coding:
 - This 2D-A package must receive explicit deputy review approval.
 - The review result, reviewer roles, reviewer verdicts, and any required modifications must be recorded here before source implementation starts.
 - If review returns `modify` or `reject`, do not implement source.
+
+Initial deputy review:
+
+- LLM/Evidence Lifecycle reviewer: `APPROVE`.
+- Security reviewer: `MODIFY`.
+- Senior Developer reviewer: `MODIFY`.
+
+Required modifications applied in this draft:
+
+- child-process launch must strip inherited environment with `env: {}` or a reviewed minimal non-secret allowlist;
+- worker guard requirements now include CommonJS-specific source scans, not only TypeScript import analysis;
+- packet-sink fixture-byte consumption callback is narrowed to structural runner outcome only, with sanitized callback-exception handling.
 
 ## 2. Package Decision
 
@@ -114,9 +126,24 @@ This API must:
 - reject copied, plain-objected, JSON-round-tripped, disposed, arbitrary byte, transport-owned, provider JSON, product/API, and V1 inputs;
 - accept only parser policy and content-type policy ids that match the fixture packet;
 - provide a fresh bounded byte copy only to a callback owned by `source-acquisition-content-parser.ts`;
+- use a narrow callback signature that receives only immutable fixture-runner material and returns only the reviewed structural runner outcome;
+- forbid generic callback return passthrough, `unknown`, `any`, or caller-shaped return objects;
+- catch callback exceptions, dispose the packet, and map the exception to a sanitized structural failure outcome;
 - never return bytes, base64, text, raw content, parsed text, URLs, headers, provider JSON, source names, titles, snippets, secrets, file paths, evidence, warnings, verdicts, confidence, or report prose;
 - dispose the fixture packet in a `finally`-equivalent terminal path;
 - scrub retained packet material and release retained-byte counters on every terminal path.
+
+The callback material may contain only:
+
+- a fresh `Uint8Array` copy of the committed fixture/control bytes;
+- fixture packet id;
+- parser attempt id;
+- parser policy id;
+- content-type policy id;
+- byte count;
+- byte digest.
+
+The callback return type must be a named V2 structural outcome with fixed boolean no-leak fields. Packet sink code must not return arbitrary callback values directly.
 
 Boundary guards must allow imports of this API only from `source-acquisition-content-parser.ts`. No other production file may import it.
 
@@ -129,7 +156,8 @@ Transport-owned packet and frame APIs remain forbidden parser inputs. 2D-A must 
 Allowed responsibilities:
 
 - build a bounded fixture/control runner request;
-- launch a one-shot child process with `process.execPath`, `shell: false`, `windowsHide: true`, and pipe stdio only;
+- launch a one-shot child process with `process.execPath`, `shell: false`, `windowsHide: true`, `env: {}` by default, and pipe stdio only;
+- use a reviewed minimal non-secret environment allowlist only if `env: {}` is proven incompatible on the target Windows runtime, with every allowed key named in this package before implementation;
 - pass fixture/control request material through stdin only;
 - parse a bounded stdout response;
 - kill the child on timeout, cancellation, malformed response, oversized response, worker crash, or parent-side rollback;
@@ -195,6 +223,8 @@ The worker file must not:
 
 - import any module except built-in structural primitives explicitly approved by boundary guards;
 - read `process.env`;
+- read `process.argv`;
+- call `process.cwd`;
 - perform network calls;
 - read or write files;
 - spawn child processes or workers;
@@ -202,6 +232,8 @@ The worker file must not:
 - call provider SDKs;
 - import packet sink, transport, Evidence Lifecycle, product/public, cache/storage/config, Source Reliability, prompt/model, ACS/direct URL, or V1 modules;
 - execute scripts, load subresources, follow links, render browser content, parse PDF/office/binary formats, or run active content.
+
+The only allowed `process` members in the worker are `stdin`, `stdout`, `stderr`, `exitCode`, and `exit`. If implementation needs any other `process` member, stop and patch this package before coding.
 
 Because this source package is still fixture/control-only and not product-wired, it does not claim deployed Next standalone readiness. It must prove the worker entrypoint is a checked-in executable file available to unit tests and `npm -w apps/web run build`. Before any product/deployed runtime wiring, a later package must add an explicit Next standalone/artifact tracing verifier or replace the entrypoint mechanism with a reviewed deployment-safe runner.
 
@@ -253,6 +285,8 @@ Exact new import allowed for `source-acquisition-content-parser.ts`:
 
 `source-acquisition-content-parser-runner.worker.cjs` must not be imported by production modules. It may only be launched as the reviewed child-process entrypoint by `source-acquisition-content-parser-runner-protocol.ts`.
 
+The worker source must contain no `require`, `module.require`, dynamic `import`, `eval`, `Function`, `process.env`, `process.argv`, `process.cwd`, `node:fs`, `fs`, `node:http`, `http`, `node:https`, `https`, `undici`, `child_process`, `worker_threads`, `cluster`, `vm`, `node:vm`, `ffi`, `node-gyp`, native-addon loading, provider SDK, prompt/model, cache/storage/config, Source Reliability, product/public, Evidence Lifecycle, ACS/direct URL, or V1 module references. Boundary guards must scan the `.cjs` file as raw source text in addition to AST import checks for TypeScript files.
+
 No barrel export is allowed.
 
 ## 9. Boundary Guard Updates
@@ -265,7 +299,9 @@ Boundary guards must prove:
 - no source-acquisition transport-to-parser, parser-to-transport, runner-to-transport, or transport-to-runner imports;
 - only `source-acquisition-content-parser.ts` imports the packet-sink fixture runner consumption API;
 - only `source-acquisition-content-parser-runner-protocol.ts` uses `node:child_process`;
+- runner protocol launch uses `env: {}` or an explicitly reviewed minimal non-secret env allowlist;
 - the worker file imports no network, filesystem, env, child/worker, native addon, provider SDK, prompt/model, cache/storage/config, Source Reliability, product/public, Evidence Lifecycle, ACS/direct URL, or V1 modules;
+- the `.cjs` worker text contains no `require`, `module.require`, dynamic `import`, `eval`, `Function`, `process.env`, `process.argv`, `process.cwd`, disallowed module specifiers, or unapproved `process` member access;
 - no V1 analyzer/prompt/type/helper import or reuse;
 - no prompt/model/config/schema edits;
 - no live-job/product exposure.
@@ -282,7 +318,11 @@ The source package must add or update tests proving:
 - timeout, cancellation, malformed response, oversized response, stderr output, non-zero exit, signal termination, and worker crash map to structural failure outcomes;
 - no orphan child process remains on Windows after timeout/cancellation/failure;
 - stdout and stderr are bounded and sanitized;
+- child process receives no inherited secrets through environment by default;
+- sentinel env-secret tests prove stdout, stderr, errors, logs, diagnostics, and returned outcomes do not expose inherited or allowlisted env values;
 - worker entrypoint exists as a checked-in `.cjs` file and does not rely on dev loaders;
+- worker `.cjs` source scans reject `require`, `module.require`, dynamic `import`, `eval`, `Function`, `process.env`, `process.argv`, `process.cwd`, disallowed module specifiers, and unapproved `process` member access;
+- callback-thrown errors and callback-returned request-derived content cannot leak bytes, base64, raw text, parsed text, secrets, URLs, paths, evidence, warnings, verdicts, confidence, report prose, or V1 identifiers;
 - serialized requests are not returned, logged, thrown, or included in diagnostics;
 - serialized outcomes contain no bytes, base64, raw text, parsed text, URLs, headers, provider JSON, source names, titles, snippets, secrets, paths, evidence, warnings, verdicts, confidence, report prose, or V1 identifiers;
 - packet material is disposed and retained-byte counters release on every terminal path;
@@ -314,16 +354,19 @@ Deputy reviewers must answer:
 2. Is the packet-sink fixture runner consumption API safe enough, or does it expose too broad a byte capability?
 3. Is the child-process protocol owner acceptable for fixture/control only?
 4. Is the checked-in `.cjs` worker entrypoint an acceptable answer to the TypeScript `noEmit` caveat for this non-product slice?
-5. Are real fetched-byte parser execution and transport-owned packet/frame consumption clearly blocked until 2D-B/2D-C?
-6. Are the import/export guards and tests sufficient to prevent product/public/cache/SR/storage/prompt/model/V1 reachability?
-7. Are no-semantic-leak and multilingual-neutrality requirements sufficient?
-8. Are the verifiers sufficient before implementation?
+5. Does the explicit stripped-env launch requirement close inherited-secret risk?
+6. Are the CommonJS worker source-scan guard requirements sufficient?
+7. Is the callback exception/return contract narrow enough?
+8. Are real fetched-byte parser execution and transport-owned packet/frame consumption clearly blocked until 2D-B/2D-C?
+9. Are the import/export guards and tests sufficient to prevent product/public/cache/SR/storage/prompt/model/V1 reachability?
+10. Are no-semantic-leak and multilingual-neutrality requirements sufficient?
+11. Are the verifiers sufficient before implementation?
 
 Return `approve`, `modify`, or `reject`. If any answer is uncertain, do not implement source.
 
 ## 13. Reviewer Prompt
 
-> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md` as a proposed V2 source package. Return `approve`, `modify`, or `reject`. Confirm that it authorizes no source implementation until deputy approval is recorded. Verify that the source envelope is limited to `source-acquisition-content-parser.ts`, `source-acquisition-content-packet-sink.ts`, a new `source-acquisition-content-parser-runner-protocol.ts`, a checked-in `source-acquisition-content-parser-runner.worker.cjs`, focused tests, and boundary guards. Check that it remains fixture/control-only: no real fetched-byte parser execution, no transport-owned packet/frame consumption, no source-acquisition execution wiring, no product/public/API/UI/report/export wiring, no live jobs, no cache/SR/storage, no prompt/model/config/schema edits, no evidence/report/warning/verdict/confidence generation, no semantic text analysis, no ACS/direct URL, no V1 reuse, and no V1 cleanup. Pay special attention to the packet-sink fixture byte consumption API, child-process lifecycle on Windows, sanitized stdout/stderr/errors, no dev loader dependency, no-public-leak proof, and whether this should be modified before source implementation.
+> Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md` as a proposed V2 source package. Return `approve`, `modify`, or `reject`. Confirm that it authorizes no source implementation until deputy approval is recorded. Verify that the source envelope is limited to `source-acquisition-content-parser.ts`, `source-acquisition-content-packet-sink.ts`, a new `source-acquisition-content-parser-runner-protocol.ts`, a checked-in `source-acquisition-content-parser-runner.worker.cjs`, focused tests, and boundary guards. Check that it remains fixture/control-only: no real fetched-byte parser execution, no transport-owned packet/frame consumption, no source-acquisition execution wiring, no product/public/API/UI/report/export wiring, no live jobs, no cache/SR/storage, no prompt/model/config/schema edits, no evidence/report/warning/verdict/confidence generation, no semantic text analysis, no ACS/direct URL, no V1 reuse, and no V1 cleanup. Pay special attention to whether the prior MODIFY findings are resolved: stripped child-process environment, sentinel env-secret tests, CommonJS worker source scans, narrowed callback return contract, callback exception sanitization, child-process lifecycle on Windows, sanitized stdout/stderr/errors, no dev loader dependency, no-public-leak proof, and whether this should be modified before source implementation.
 
 ## 14. Stop Conditions
 
