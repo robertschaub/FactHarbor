@@ -86,6 +86,14 @@ const analyzerV2RuntimeSourceAcquisitionProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-provider-boundary.contract.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-candidate-envelope.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-candidate-runtime.ts",
+);
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -286,6 +294,8 @@ const runtimeScaffoldOptionOwnerPaths = new Set([
   claimUnderstandingRuntimeDispatchPath,
   analyzerV2RuntimeActivationPath,
   analyzerV2RuntimeArtifactSinkPath,
+  analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath,
+  analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
 ].map(toPosix));
 const runtimeScaffoldOptionTerms = [
   "claimUnderstandingRuntime",
@@ -470,6 +480,8 @@ const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
   "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
   "@/lib/analyzer-v2-runtime/source-acquisition-runtime-config.contract",
   "@/lib/analyzer-v2-runtime/source-acquisition-provider-boundary.contract",
+  "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+  "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
 ]);
 
 function toPosix(value: string): string {
@@ -576,6 +588,39 @@ function collectImportBindings(sourceFile: ts.SourceFile): Array<{ specifier: st
   }
 
   return imports;
+}
+
+function collectExportedNames(sourceFile: ts.SourceFile): string[] {
+  const names: string[] = [];
+
+  for (const statement of sourceFile.statements) {
+    const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
+    const isExported = modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false;
+    if (!isExported) {
+      continue;
+    }
+
+    if (
+      (ts.isFunctionDeclaration(statement)
+        || ts.isTypeAliasDeclaration(statement)
+        || ts.isInterfaceDeclaration(statement)
+        || ts.isClassDeclaration(statement))
+      && statement.name
+    ) {
+      names.push(statement.name.text);
+      continue;
+    }
+
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name)) {
+          names.push(declaration.name.text);
+        }
+      }
+    }
+  }
+
+  return names.sort();
 }
 
 function propertyNameText(name: ts.PropertyName): string | null {
@@ -866,6 +911,47 @@ function collectTransitiveAnalyzerV2Imports(sourcePath: string, seen = new Set<s
     }
     imports.push(resolved);
     imports.push(...collectTransitiveAnalyzerV2Imports(resolved, seen));
+  }
+
+  return imports;
+}
+
+function resolveSrcImport(filePath: string, specifier: string): string | null {
+  if (specifier.startsWith("@/")) {
+    return resolveExistingTypeScriptFile(path.resolve(srcRoot, specifier.slice("@/".length)));
+  }
+
+  if (!specifier.startsWith(".")) {
+    return null;
+  }
+
+  const resolved = resolveExistingTypeScriptFile(path.resolve(path.dirname(filePath), specifier));
+  if (!resolved) {
+    return null;
+  }
+
+  const normalizedRoot = toPosix(srcRoot);
+  const normalizedResolved = toPosix(resolved);
+  return normalizedResolved === normalizedRoot || normalizedResolved.startsWith(`${normalizedRoot}/`)
+    ? resolved
+    : null;
+}
+
+function collectTransitiveSrcImports(sourcePath: string, seen = new Set<string>()): string[] {
+  const normalizedSourcePath = toPosix(sourcePath);
+  if (seen.has(normalizedSourcePath)) {
+    return [];
+  }
+  seen.add(normalizedSourcePath);
+
+  const imports: string[] = [];
+  for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+    const resolved = resolveSrcImport(sourcePath, specifier);
+    if (!resolved) {
+      continue;
+    }
+    imports.push(resolved);
+    imports.push(...collectTransitiveSrcImports(resolved, seen));
   }
 
   return imports;
@@ -1565,6 +1651,12 @@ describe("analyzer-v2 boundary guard", () => {
     expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
       "src/lib/analyzer-v2-runtime/source-acquisition-provider-boundary.contract.ts",
     );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope.ts",
+    );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
+    );
 
     for (const sourcePath of analyzerV2RuntimeSourceFiles) {
       const sourceFile = parseSource(sourcePath);
@@ -1657,6 +1749,230 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(violations).toEqual([]);
   });
+
+  it("keeps the 7N-3B1 candidate runtime shell inside its exact source envelope", () => {
+    const violations: string[] = [];
+    const candidateRuntimePaths = [
+      analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath,
+      analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
+    ];
+    const expectedEnvelopeExports = [
+      "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_COMMIT",
+      "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_PATH",
+      "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_VERSION",
+      "SourceAcquisitionCandidateBudgetSnapshot",
+      "SourceAcquisitionCandidateProviderAllowlistSnapshot",
+      "SourceAcquisitionCandidateProviderAttemptRequest",
+      "SourceAcquisitionCandidateProviderAttemptResult",
+      "SourceAcquisitionCandidateProviderBoundary",
+      "SourceAcquisitionCandidateProviderEndpointKind",
+      "SourceAcquisitionCandidateProviderId",
+      "SourceAcquisitionCandidateQueryOutcome",
+      "SourceAcquisitionCandidateRunRequest",
+      "SourceAcquisitionCandidateRuntimeApproval",
+      "SourceAcquisitionCandidateRuntimeDecision",
+      "SourceAcquisitionCandidateRuntimeStopReason",
+      "SourceAcquisitionCandidateValidationResult",
+      "SourceAcquisitionHiddenCandidateRecord",
+      "sourceAcquisitionCandidateRuntimeDecisionHasExactQueryCoverage",
+      "validateSourceAcquisitionCandidateBudgetSnapshot",
+      "validateSourceAcquisitionCandidateProviderAllowlistSnapshot",
+      "validateSourceAcquisitionCandidateProviderAttemptResult",
+    ].sort();
+    const expectedRuntimeExports = [
+      "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_AUTHORITY_VERSION",
+      "SourceAcquisitionCandidateRuntimeAuthority",
+      "SourceAcquisitionCandidateRuntimeAuthoritySnapshot",
+      "createSourceAcquisitionCandidateRuntimeAuthority",
+      "executeSourceAcquisitionCandidateRuntime",
+      "isSourceAcquisitionCandidateRuntimeAuthority",
+      "readSourceAcquisitionCandidateRuntimeAuthoritySnapshot",
+    ].sort();
+    const approvedRuntimeImports = new Map<string, string[]>([
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+        [
+          "SourceAcquisitionRuntimeAuthority",
+          "SourceAcquisitionRuntimeAuthoritySnapshot",
+          "isSourceAcquisitionRuntimeAuthority",
+          "readSourceAcquisitionRuntimeAuthoritySnapshot",
+        ].sort(),
+      ],
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff",
+        [
+          "QUERY_PLAN_SOURCE_ACQUISITION_HANDOFF_VERSION",
+          "QueryPlanSourceAcquisitionHandoff",
+          "QueryPlanSourceAcquisitionHandoffDecision",
+          "QueryPlanSourceAcquisitionHandoffQueryEntry",
+        ].sort(),
+      ],
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types",
+        [
+          "SOURCE_ACQUISITION_REQUEST_VERSION",
+          "SourceAcquisitionRequest",
+          "SourceAcquisitionStartDecision",
+        ].sort(),
+      ],
+      [
+        "./source-acquisition-candidate-envelope",
+        [
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_COMMIT",
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_PATH",
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_VERSION",
+          "SourceAcquisitionCandidateBudgetSnapshot",
+          "SourceAcquisitionCandidateProviderAllowlistSnapshot",
+          "SourceAcquisitionCandidateProviderAttemptResult",
+          "SourceAcquisitionCandidateQueryOutcome",
+          "SourceAcquisitionCandidateRunRequest",
+          "SourceAcquisitionCandidateRuntimeApproval",
+          "SourceAcquisitionCandidateRuntimeDecision",
+          "SourceAcquisitionCandidateRuntimeStopReason",
+          "SourceAcquisitionHiddenCandidateRecord",
+          "sourceAcquisitionCandidateRuntimeDecisionHasExactQueryCoverage",
+          "validateSourceAcquisitionCandidateBudgetSnapshot",
+          "validateSourceAcquisitionCandidateProviderAllowlistSnapshot",
+          "validateSourceAcquisitionCandidateProviderAttemptResult",
+        ].sort(),
+      ],
+    ]);
+
+    for (const ownerPath of candidateRuntimePaths) {
+      expect(existsSync(ownerPath)).toBe(true);
+    }
+
+    expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath))).toEqual(
+      expectedEnvelopeExports,
+    );
+    expect(collectModuleSpecifiers(parseSource(analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath))).toEqual([]);
+    expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath))).toEqual(
+      expectedRuntimeExports,
+    );
+
+    const runtimeImports = collectImportBindings(parseSource(analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath));
+    expect(runtimeImports.map((entry) => entry.specifier).sort()).toEqual(
+      Array.from(approvedRuntimeImports.keys()).sort(),
+    );
+    for (const entry of runtimeImports) {
+      expect(entry.names.sort()).toEqual(approvedRuntimeImports.get(entry.specifier));
+    }
+
+    for (const ownerPath of candidateRuntimePaths) {
+      const sourceFile = parseSource(ownerPath);
+      const relativeOwnerPath = toPosix(path.relative(webRoot, ownerPath));
+      const content = readFileSync(ownerPath, "utf8");
+
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(ownerPath, specifier)) {
+          violations.push(`${relativeOwnerPath} imports V1 analyzer ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports provider SDK ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports network/parser dependency ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports cache/storage dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports Source Reliability ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${relativeOwnerPath} imports test/mock/fixture module ${specifier}`);
+        }
+      }
+
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+      for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+        violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+      }
+
+      for (const forbiddenText of [
+        "globalThis.fetch",
+        "new Request",
+        "XMLHttpRequest",
+        "WebSocket",
+        "EventSource",
+        "node:http",
+        "node:https",
+        "node:http2",
+        "node:dns",
+        "node:net",
+        "node:tls",
+        "undici",
+        "@/lib/web-search",
+        "search-provider-utils",
+        "research-acquisition-stage",
+        "@/lib/retrieval",
+        "claimboundary.prompt",
+        "CBClaimUnderstanding",
+        "PreparedStage1Snapshot",
+      ]) {
+        if (content.includes(forbiddenText)) {
+          violations.push(`${relativeOwnerPath} references forbidden text ${forbiddenText}`);
+        }
+      }
+    }
+
+    for (const sourcePath of collectFiles(analyzerV2RuntimeRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    )) {
+      if (toPosix(sourcePath) === toPosix(analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath)) {
+        continue;
+      }
+
+      for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+        if (
+          specifier === "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope"
+          || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime"
+          || specifier === "./source-acquisition-candidate-envelope"
+          || specifier === "./source-acquisition-candidate-runtime"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} re-exports or imports candidate runtime ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps product and public surfaces from transitively reaching candidate source-acquisition runtime files", () => {
+    const forbiddenTargetPaths = new Set([
+      analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath,
+      analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
+    ].map(toPosix));
+    const filesToScan = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    for (const sourcePath of filesToScan) {
+      const directAndTransitive = [
+        ...collectModuleSpecifiers(parseSource(sourcePath))
+          .map((specifier) => resolveSrcImport(sourcePath, specifier))
+          .filter((resolved): resolved is string => resolved !== null),
+        ...collectTransitiveSrcImports(sourcePath),
+      ];
+
+      for (const importedPath of directAndTransitive) {
+        if (forbiddenTargetPaths.has(toPosix(importedPath))) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} reaches ${toPosix(path.relative(webRoot, importedPath))}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 20000);
 
   it("keeps the 4C2b provider factory as the only runtime provider SDK import location", () => {
     const violations: string[] = [];

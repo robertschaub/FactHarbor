@@ -104,6 +104,7 @@ No other production or test files are approved unless deputy review explicitly a
 - `type SourceAcquisitionCandidateValidationResult`;
 - `validateSourceAcquisitionCandidateProviderAllowlistSnapshot`;
 - `validateSourceAcquisitionCandidateBudgetSnapshot`;
+- `validateSourceAcquisitionCandidateProviderAttemptResult`;
 - `sourceAcquisitionCandidateRuntimeDecisionHasExactQueryCoverage`.
 
 `source-acquisition-candidate-envelope.ts` may have no production imports.
