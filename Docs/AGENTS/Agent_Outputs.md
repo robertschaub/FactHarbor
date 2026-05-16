@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-1 Content Dereference Boundary -- [Significant] [open-items: yes]
+**For next agent:** 7N-3B3-1 is implemented as hidden/internal content dereference only: private content authority derived from 7N-3B2, raw-URL-free target/budget envelope, HMAC-bound owner-created ephemeral targets, Node-core HTTPS transport with DNS/final-address/redirect/type-sniff/byte/decompression/timeout/cancellation controls, sanitized diagnostics, and boundary guards. Parser/sink, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse/cleanup, and Captain canaries remain blocked pending separate reviewed gates.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-1_Content_Dereference_Boundary.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-1 Approval -- [Standard] [open-items: yes]
 **For next agent:** 7N-3B3-1 is approved for implementation inside the exact package envelope only: content-dereference authority, raw-URL-free target envelope, content transport, focused tests, and boundary guards. Parser/sink, live jobs, product/public wiring, cache/SR, evidence/report generation, V1 reuse/cleanup, and Captain canaries remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-1_Approval.md
