@@ -22,6 +22,24 @@ Define the first source implementation package after the approved docs-only 7N-3
 
 This package is a source package draft. It is not implementation approval until deputy review explicitly approves it.
 
+## 1.1 Draft Review Result
+
+Initial deputy review returned:
+
+- Pipeline/LLM-quality reviewer: `APPROVE`.
+- Security reviewer: `MODIFY`.
+- Test/Ops/Cost reviewer: `MODIFY`.
+
+Required modifications applied:
+
+- transport tests must be hermetic with fake DNS/socket/HTTPS fixtures or an approved local harness; no external internet, provider, or ambient DNS dependency;
+- package ceilings now bound target count, attempts, concurrency, byte caps, and timeouts;
+- implementation must define commit-first provenance, exact rollback target, refresh/reseed criteria, kill-switch verification, hidden artifact samples, and static public-route reachability proof before activation;
+- connection must pin to a prevalidated safe address or equivalent custom lookup, screen all A/AAAA answers, reject all-unsafe answers, and reject final-address mismatch before request headers/body bytes are sent;
+- host/path/query/locator values must use non-reversible opaque policy ids or keyed HMAC values; bare deterministic hashes are forbidden.
+
+This package remains unapproved for implementation until re-review returns `approve`.
+
 ## 2. Non-Negotiable Scope
 
 Allowed only if approved by review:
@@ -147,8 +165,8 @@ Required fields:
 - endpoint/content policy id;
 - opaque runtime locator id;
 - canonical scheme policy id;
-- canonical hostname policy id or hash when host-based dereference is approved;
-- fixed or approved path policy id or hash;
+- canonical hostname policy id or keyed HMAC when host-based dereference is approved;
+- fixed or approved path policy id or keyed HMAC;
 - redirect policy;
 - content type policy;
 - byte and timeout policy ids;
@@ -171,7 +189,7 @@ Forbidden fields:
 - raw provider JSON;
 - raw content body.
 
-Content target envelopes must carry opaque policy ids or hashes only. Concrete normalized host, path, query, and locator values may exist only inside the transport owner's ephemeral execution state. They must not appear in serialized envelopes, authority snapshots, hidden diagnostics, telemetry, test snapshots, returned objects, thrown errors, `JSON.stringify(...)`, or `console.*`.
+Content target envelopes must carry non-reversible opaque policy ids or keyed HMAC values only. Bare deterministic hashes of host, path, query, or locator values are forbidden because they are dictionary-attackable. Concrete normalized host, path, query, and locator values may exist only inside the transport owner's ephemeral execution state. They must not appear in serialized envelopes, authority snapshots, hidden diagnostics, telemetry, test snapshots, returned objects, thrown errors, `JSON.stringify(...)`, or `console.*`.
 
 If a provider supplies a URL-like locator, the runtime owner must convert it into an approved structural target or block. The raw locator must not cross into Analyzer V2 core, public surfaces, hidden diagnostics, serialized return objects, or test snapshots.
 
@@ -199,6 +217,12 @@ Allowed transport implementation:
 - Node runtime only;
 - dedicated Node-core HTTPS transport in `source-acquisition-content-transport.ts`;
 - explicit DNS lookup owned by the transport;
+- all A/AAAA answers screened before connection;
+- unsafe answers rejected and all-unsafe answer sets blocked;
+- connection pinned to a selected prevalidated safe address or equivalent custom lookup;
+- no request headers or body bytes written before the final connected `remoteAddress` is validated;
+- final `remoteAddress` mismatch rejected before request emission;
+- DNS rebinding and unvalidated-final-address cases blocked;
 - explicit IDNA normalization before lookup;
 - explicit proxy bypass, ignoring uppercase and lowercase proxy env vars;
 - redirect denial by default;
@@ -216,20 +240,24 @@ If redirects are allowed in a later package, every hop must be re-authorized thr
 
 Required controls:
 
+- max content targets per run <= 3;
+- max content targets per candidate <= 1;
+- max fetch attempts per target = 1;
+- max concurrent content fetches = 1;
 - declared content type policy;
 - sniffed content type policy;
 - mismatch rejection;
-- declared byte cap;
-- streaming byte cap;
-- compressed byte cap;
-- decompressed byte cap enforced during decompression;
-- total byte cap;
-- per-fetch timeout;
-- total content-dereference timeout;
+- declared byte cap <= 1 MiB;
+- streaming byte cap <= 1 MiB;
+- compressed byte cap <= 1 MiB;
+- decompressed byte cap <= 2 MiB and enforced during decompression;
+- total byte cap per run <= 3 MiB;
+- per-fetch timeout <= 5000 ms;
+- total content-dereference timeout <= 15000 ms;
 - cancellation state;
 - retry policy `none` unless a later reviewed budget explicitly allows retry.
 
-`Content-Length` absence or understatement must not bypass limits. Chunked overrun, compression bombs, slowloris/stall, timeout, and cancellation cases must be tested.
+These ceilings are package maxima. Implementation may choose lower values. Any higher value requires a new reviewed budget snapshot before implementation. `Content-Length` absence or understatement must not bypass limits. Chunked overrun, compression bombs, slowloris/stall, timeout, and cancellation cases must be tested.
 
 ## 9. Structural Outcome Shape
 
@@ -352,12 +380,22 @@ Implementation must include tests for:
 - 7N-3B2 provider-network authority alone cannot dereference content;
 - raw URL, provider URL, user URL, ACS/direct URL, query text, and public route input cannot authorize dereference;
 - content target envelope validates structural fields and rejects raw URL/source/title/snippet/secret fields;
-- content target envelope fields carry opaque policy ids/hashes only, while concrete host/path/query/locator values remain ephemeral and leak-forbidden;
+- content target envelope fields carry non-reversible opaque policy ids or keyed HMAC values only, while concrete host/path/query/locator values remain ephemeral and leak-forbidden;
+- bare deterministic hashes of host/path/query/locator values are rejected;
 - scheme, DNS, IDNA, final-address, proxy bypass, metadata address, IPv4/IPv6/private/loopback/link-local/reserved range, and IPv4-mapped IPv6 blocking;
+- all A/AAAA answers are screened and all-unsafe answer sets are rejected;
+- DNS lookup timeout and cancellation are enforced;
+- connection uses a selected prevalidated safe address or equivalent custom lookup;
+- final `remoteAddress` mismatch is rejected before request headers/body bytes are sent;
+- DNS-rebinding and unvalidated-final-address cases block structurally;
 - redirect denial;
 - declared byte cap, streaming byte cap, decompression cap, chunked overrun, compression bomb, slowloris/stall, timeout, and cancellation cases;
+- package ceilings for targets, attempts, concurrency, byte caps, and timeouts are enforced;
 - no parser is imported or invoked;
+- unit tests are hermetic: they must use fake DNS/socket/HTTPS fixtures or an approved local harness, with no external internet, real provider, or ambient DNS dependency;
 - serialized return objects, hidden diagnostics, telemetry, thrown errors, `JSON.stringify(...)`, and `console.*` leak no forbidden target, host, path, query, locator, or payload data;
+- hidden artifact samples prove sanitized structural diagnostics without raw payload leakage;
+- static route/reachability proof shows public/product/API/UI/report/export surfaces cannot reach content authority/envelope/transport owner files;
 - output contains no evidence items, source records, applicability, extraction, probative values, Source Reliability scores, scarcity/sufficiency, warnings, verdicts, confidence, report fields, or public prose.
 
 ## 14. Boundary Guard Updates
@@ -397,14 +435,16 @@ No expensive tests and no live jobs are approved by 7N-3B3-1.
 
 ## 16. Runtime Refresh, Rollback, And Kill Switch
 
-A future implementation must define:
+Implementation must define before activation:
 
+- commit-first provenance: source must be committed before any hidden activation or validation run;
+- exact rollback target commit, normally the last commit before 7N-3B3-1 implementation;
 - default-closed activation state;
 - kill switch behavior that fails closed to 7N-3B2 candidate-only posture;
-- rollback target commit;
-- runtime refresh/reseed checklist if source code or runtime config changes;
-- hidden artifact inspection proof;
+- runtime refresh/reseed criteria for source, config, or environment changes;
+- hidden artifact inspection proof with implemented sample artifacts;
 - no-public-leak verification before and after activation;
+- static public-route reachability proof before activation;
 - disable criteria for provider failures, fetch failures, timeouts, cancellation, memory/byte overrun, or disposal failure.
 
 ## 17. Review Questions
