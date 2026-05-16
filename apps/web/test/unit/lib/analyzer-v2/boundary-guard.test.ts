@@ -104,6 +104,10 @@ const analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath = path
   analyzerV2RuntimeRoot,
   "hidden-direct-text-source-material-readiness-harness.ts",
 );
+const analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-source-acquisition-readiness-composition.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-authority.ts",
@@ -2503,6 +2507,7 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeSourceAcquisitionNetworkTransportPath,
       analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath,
       analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath,
+      analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath,
     ].map(toPosix));
     const filesToScan = Array.from(new Set([
       ...adapterForbiddenProductPaths,
@@ -3643,6 +3648,162 @@ describe("analyzer-v2 boundary guard", () => {
       }
       if (isProviderSdkImport(specifier)) {
         violations.push(`X7-A test imports provider SDK ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 10_000);
+
+  it("keeps X7-D source-acquisition readiness composition hidden, no-IO, and summary-only", () => {
+    const sourcePath = analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "hidden-direct-text-source-acquisition-readiness-composition.test.ts",
+    );
+    const sourceFile = parseSource(sourcePath);
+    const sourceContent = readFileSync(sourcePath, "utf8");
+    const importBindings = collectImportBindings(sourceFile);
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(sourcePath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+    expect(collectExportedNames(sourceFile)).toEqual([
+      "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION",
+      "HiddenDirectTextSourceAcquisitionReadinessCompositionRequest",
+      "HiddenDirectTextSourceAcquisitionReadinessCompositionResult",
+      "buildHiddenDirectTextSourceAcquisitionReadinessComposition",
+    ].sort());
+    expect(importBindings.map((entry) => entry.specifier).sort()).toEqual([
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness",
+      "@/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness",
+    ].sort());
+
+    const expectedImports = new Map<string, string[]>([
+      [
+        "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+        ["HiddenDirectTextCandidateAcquisitionHarnessResult"],
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness",
+        ["runHiddenDirectTextSourceMaterialReadinessHarness"],
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness",
+        [
+          "SourceAcquisitionProviderNetworkReadinessDecision",
+          "SourceAcquisitionProviderNetworkReadinessRequest",
+          "buildSourceAcquisitionProviderNetworkReadiness",
+        ].sort(),
+      ],
+    ]);
+
+    for (const entry of importBindings) {
+      expect(entry.names.sort()).toEqual(expectedImports.get(entry.specifier));
+    }
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (!expectedImports.has(specifier)) {
+        violations.push(`X7-D composition imports unapproved module ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-transport")) {
+        violations.push(`X7-D composition imports network transport ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-factory")) {
+        violations.push(`X7-D composition imports network factory ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X7-D composition imports content/parser owner ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-candidate-runtime")) {
+        violations.push(`X7-D composition imports candidate runtime ${specifier}`);
+      }
+      if (isV1AnalyzerImport(sourcePath, specifier)) {
+        violations.push(`X7-D composition imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X7-D composition imports search/fetch provider ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-D composition imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-D composition imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-D composition imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-D composition imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-D composition imports public surface ${specifier}`);
+      }
+      if (
+        specifier === "@/lib/analyzer-v2/orchestrator"
+        || specifier === "@/lib/analyzer-v2/pipeline-shell"
+        || specifier === "@/lib/analyzer-v2/runner-ingress"
+        || specifier === "@/lib/analyzer-v2"
+      ) {
+        violations.push(`X7-D composition imports product/orchestrator surface ${specifier}`);
+      }
+    }
+
+    for (const sourceRoot of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
+        if (toPosix(importedPath) === toPosix(sourcePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches X7-D hidden composition`);
+        }
+      }
+    }
+
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const entry of collectExportBindings(sourceFile)) {
+      if (entry.specifier) {
+        violations.push(`X7-D composition re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "runHiddenV2IntegrationHarness",
+      "runHiddenDirectTextCandidateAcquisitionHarness",
+      "executeSourceAcquisitionCandidateRuntime",
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "executeSourceAcquisitionNetworkTransport",
+      "source-acquisition-network-transport",
+      "source-acquisition-network-factory",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesRead: 1",
+      "candidateRecords: 1",
+      "retries: 1",
+      "liveJobs: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "ready_to_execute",
+      "\"status\": \"executable\"",
+      "\"executionStatus\": \"executable\"",
+      "source_acquired",
+      "ready_not_executable",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+    ]) {
+      if (sourceContent.includes(forbiddenText)) {
+        violations.push(`X7-D composition contains forbidden text ${forbiddenText}`);
       }
     }
 
