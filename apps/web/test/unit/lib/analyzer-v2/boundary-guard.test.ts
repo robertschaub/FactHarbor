@@ -2433,9 +2433,12 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionContentLowLevelRequest",
       "SourceAcquisitionContentLowLevelResponse",
       "SourceAcquisitionContentLowLevelTransport",
+      "SourceAcquisitionContentTransportPacketHandoffOutcome",
+      "SourceAcquisitionContentTransportPacketHandoffRequest",
       "SourceAcquisitionContentResolvedAddress",
       "SourceAcquisitionContentTransportRequest",
       "classifySourceAcquisitionContentIpAddress",
+      "executeSourceAcquisitionContentTransportPacketHandoff",
       "executeSourceAcquisitionContentTransport",
       "normalizeSourceAcquisitionContentHostname",
     ].sort();
@@ -2448,17 +2451,29 @@ describe("analyzer-v2 boundary guard", () => {
     ].sort();
     const expectedPacketSinkExports = [
       "SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION",
+      "SOURCE_ACQUISITION_CONTENT_TRANSPORT_PACKET_SINK_VERSION",
       "SourceAcquisitionContentFixturePacket",
       "SourceAcquisitionContentPacketLifecycleStatus",
       "SourceAcquisitionContentPacketSinkAuthority",
       "SourceAcquisitionContentPacketSinkAuthoritySnapshot",
       "SourceAcquisitionContentPacketSinkOutcome",
+      "SourceAcquisitionContentTransportOwnedByteFrame",
+      "SourceAcquisitionContentTransportPacketDisposalOutcome",
+      "SourceAcquisitionContentTransportPacketMaterializationOutcome",
+      "SourceAcquisitionContentTransportPacketSealingOutcome",
+      "SourceAcquisitionContentTransportPacketSinkAuthority",
+      "SourceAcquisitionContentTransportPacketSinkAuthoritySnapshot",
       "createSourceAcquisitionContentFixturePacket",
       "createSourceAcquisitionContentPacketSinkAuthority",
+      "createSourceAcquisitionContentTransportPacketSinkAuthority",
       "disposeSourceAcquisitionContentFixturePacket",
+      "disposeSourceAcquisitionContentTransportOwnedPacket",
       "isSourceAcquisitionContentFixturePacket",
       "isSourceAcquisitionContentPacketSinkAuthority",
+      "materializeSourceAcquisitionContentTransportOwnedPacket",
       "readSourceAcquisitionContentPacketSinkAuthoritySnapshot",
+      "sealSourceAcquisitionContentTransportOwnedByteFrame",
+      "sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess",
     ].sort();
     const approvedImports = new Map<string, Map<string, string[]>>([
       [
@@ -2522,12 +2537,26 @@ describe("analyzer-v2 boundary guard", () => {
               "readSourceAcquisitionContentAuthoritySnapshot",
             ].sort(),
           ],
+          [
+            "./source-acquisition-content-packet-sink",
+            [
+              "SourceAcquisitionContentTransportOwnedByteFrame",
+              "SourceAcquisitionContentTransportPacketDisposalOutcome",
+              "SourceAcquisitionContentTransportPacketMaterializationOutcome",
+              "SourceAcquisitionContentTransportPacketSealingOutcome",
+              "SourceAcquisitionContentTransportPacketSinkAuthority",
+              "disposeSourceAcquisitionContentTransportOwnedPacket",
+              "materializeSourceAcquisitionContentTransportOwnedPacket",
+              "sealSourceAcquisitionContentTransportOwnedByteFrame",
+              "sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess",
+            ].sort(),
+          ],
         ]),
       ],
       [
         toPosix(analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath),
         new Map([
-          ["node:crypto", ["createHash"]],
+          ["node:crypto", ["createHash", "createHmac", "randomBytes"]],
           [
             "./source-acquisition-content-envelope",
             ["SOURCE_ACQUISITION_CONTENT_RUNTIME_VERSION"],
@@ -2589,6 +2618,10 @@ describe("analyzer-v2 boundary guard", () => {
     expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath))).toEqual(
       expectedPacketSinkExports,
     );
+    expect(readFileSync(analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath, "utf8"))
+      .not.toContain("createTransportSuccessByteState");
+    expect(readFileSync(analyzerV2RuntimeSourceAcquisitionContentTransportPath, "utf8"))
+      .not.toContain("createTransportSuccessByteState");
     expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserPath))).toEqual(
       expectedParserExports,
     );
@@ -2616,6 +2649,9 @@ describe("analyzer-v2 boundary guard", () => {
       }
 
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        const isApprovedTransportToPacketSinkImport =
+          toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentTransportPath)
+          && specifier === "./source-acquisition-content-packet-sink";
         if (isV1AnalyzerImport(ownerPath, specifier)) {
           violations.push(`${relativeOwnerPath} imports V1 analyzer ${specifier}`);
         }
@@ -2651,6 +2687,7 @@ describe("analyzer-v2 boundary guard", () => {
         }
         if (
           toPosix(ownerPath) !== toPosix(analyzerV2RuntimeSourceAcquisitionContentParserPath)
+          && !isApprovedTransportToPacketSinkImport
           && (
             specifier === "./source-acquisition-content-parser"
             || specifier === "./source-acquisition-content-packet-sink"
@@ -2670,6 +2707,15 @@ describe("analyzer-v2 boundary guard", () => {
           )
         ) {
           violations.push(`${relativeOwnerPath} imports unapproved content dereference owner ${specifier}`);
+        }
+        if (
+          toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath)
+          && (
+            specifier === "./source-acquisition-content-transport"
+            || specifier.includes("source-acquisition-content-transport")
+          )
+        ) {
+          violations.push(`${relativeOwnerPath} imports transport owner ${specifier}`);
         }
       }
       for (const location of collectDirectFetchCallLocations(sourceFile)) {

@@ -34,10 +34,15 @@ import {
   classifySourceAcquisitionContentIpAddress,
   createSourceAcquisitionContentEphemeralTarget,
   executeSourceAcquisitionContentTransport,
+  executeSourceAcquisitionContentTransportPacketHandoff,
   normalizeSourceAcquisitionContentHostname,
   type SourceAcquisitionContentEphemeralTarget,
   type SourceAcquisitionContentLowLevelTransport,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-content-transport";
+import {
+  createSourceAcquisitionContentPacketSinkAuthority,
+  createSourceAcquisitionContentTransportPacketSinkAuthority,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink";
 
 const CONTENT_POLICY_BINDING_KEY = {
   keyId: "POLICY_CONTENT_HMAC_KEY_001",
@@ -668,6 +673,180 @@ describe("Analyzer V2 source-acquisition content-dereference transport", () => {
       expect(serialized).not.toContain("sk_secret");
       expect(serialized).not.toContain("stack");
       expect(["cancelled", "transport_failure"]).toContain(outcome.diagnostic.stopReason);
+    }
+  });
+
+  it("keeps transport-packet handoff disabled by default without executing DNS or requests", async () => {
+    let dnsCalled = false;
+    let requestCalled = false;
+    const outcome = await executeSourceAcquisitionContentTransportPacketHandoff({
+      authority: contentAuthority(),
+      target: target(),
+      budget: budget(),
+      executionTarget: executionTarget(),
+      packetSinkAuthority: createSourceAcquisitionContentTransportPacketSinkAuthority(),
+      lowLevelTransport: fakeTransport({
+        resolve: async () => {
+          dnsCalled = true;
+          return [{ address: "93.184.216.34", family: 4 }];
+        },
+        request: async () => {
+          requestCalled = true;
+          throw new Error("must_not_request");
+        },
+      }),
+    });
+
+    expect(outcome).toMatchObject({
+      status: "disabled",
+      transportOutcome: null,
+      sealingOutcome: null,
+      materializationOutcome: null,
+      blockedReasons: ["transport_packet_handoff_disabled"],
+      rawPayloadIncluded: false,
+      extractedTextIncluded: false,
+      parserPayloadIncluded: false,
+      evidenceItemIncluded: false,
+      warningIncluded: false,
+      verdictIncluded: false,
+      reportProseIncluded: false,
+    });
+    expect(dnsCalled).toBe(false);
+    expect(requestCalled).toBe(false);
+  });
+
+  it("materializes a hidden transport packet only after validated successful transport", async () => {
+    const packetSinkAuthority = createSourceAcquisitionContentTransportPacketSinkAuthority();
+    const outcome = await executeSourceAcquisitionContentTransportPacketHandoff({
+      authority: contentAuthority(),
+      target: target(),
+      budget: budget(),
+      executionTarget: executionTarget(),
+      packetSinkAuthority,
+      transportPacketHandoffMode: "enabled_hidden_transport_to_sink_7n3b3_2c_a",
+      lowLevelTransport: fakeTransport({
+        headers: { "content-type": "text/html", "content-length": "43" },
+        body: Buffer.from("<html><title>Hidden Title</title></html>", "utf8"),
+      }),
+    });
+    const serialized = JSON.stringify(outcome);
+
+    expect(outcome.status).toBe("accepted");
+    expect(outcome.transportOutcome).toMatchObject({
+      status: "success",
+      diagnostic: {
+        stopReason: "not_stopped",
+        rawPayloadIncluded: false,
+        extractedTextIncluded: false,
+        parserPayloadIncluded: false,
+        evidenceItemIncluded: false,
+        warningIncluded: false,
+        verdictIncluded: false,
+        reportProseIncluded: false,
+      },
+    });
+    expect(outcome.sealingOutcome?.status).toBe("accepted");
+    expect(outcome.materializationOutcome?.status).toBe("accepted");
+    expect(outcome.disposalOutcome?.status).toBe("disposed");
+    expect(outcome.frame).toBeNull();
+    expect(outcome.materializationOutcome?.packet?.parserAuthorizationStatus).toBe("not_authorized");
+    expect(outcome.materializationOutcome?.packet?.lifecycleStatus).toBe("disposed");
+    expect(outcome.materializationOutcome?.packet?.byteCount).toBe(0);
+    expect(serialized).not.toContain("Hidden Title");
+    expect(serialized).not.toContain("content.example.com");
+    expect(serialized).not.toContain("/approved-content");
+    expect(serialized).not.toContain("https://");
+    expect(serialized).not.toContain("hmacKeyMaterial");
+  });
+
+  it("creates no transport packet for blocked transport controls or wrong sink authority", async () => {
+    let requestCalled = false;
+    const blocked = await executeSourceAcquisitionContentTransportPacketHandoff({
+      authority: contentAuthority(),
+      target: target(),
+      budget: budget(),
+      executionTarget: executionTarget(),
+      packetSinkAuthority: createSourceAcquisitionContentTransportPacketSinkAuthority(),
+      transportPacketHandoffMode: "enabled_hidden_transport_to_sink_7n3b3_2c_a",
+      lowLevelTransport: fakeTransport({
+        resolvedAddress: "127.0.0.1",
+        request: async () => {
+          requestCalled = true;
+          throw new Error("must_not_request");
+        },
+      }),
+    });
+
+    expect(blocked).toMatchObject({
+      status: "blocked",
+      sealingOutcome: null,
+      materializationOutcome: null,
+      blockedReasons: ["dns_address_blocked"],
+    });
+    expect(requestCalled).toBe(false);
+
+    let wrongAuthorityDnsCalled = false;
+    let wrongAuthorityRequestCalled = false;
+    const wrongAuthority = await executeSourceAcquisitionContentTransportPacketHandoff({
+      authority: contentAuthority(),
+      target: target(),
+      budget: budget(),
+      executionTarget: executionTarget(),
+      packetSinkAuthority: createSourceAcquisitionContentPacketSinkAuthority() as unknown as ReturnType<
+        typeof createSourceAcquisitionContentTransportPacketSinkAuthority
+      >,
+      transportPacketHandoffMode: "enabled_hidden_transport_to_sink_7n3b3_2c_a",
+      lowLevelTransport: fakeTransport({
+        resolve: async () => {
+          wrongAuthorityDnsCalled = true;
+          return [{ address: "93.184.216.34", family: 4 }];
+        },
+        request: async () => {
+          wrongAuthorityRequestCalled = true;
+          throw new Error("must_not_request");
+        },
+      }),
+    });
+
+    expect(wrongAuthority).toMatchObject({
+      status: "rejected",
+      sealingOutcome: {
+        status: "rejected",
+        blockedReasons: ["authority_invalid"],
+      },
+      materializationOutcome: null,
+      blockedReasons: ["authority_invalid"],
+    });
+    expect(wrongAuthority.transportOutcome).toBeNull();
+    expect(wrongAuthorityDnsCalled).toBe(false);
+    expect(wrongAuthorityRequestCalled).toBe(false);
+    expect(JSON.stringify(wrongAuthority)).not.toContain("hidden");
+  });
+
+  it("releases hidden transport-packet capacity on accepted terminal handoff", async () => {
+    const packetSinkAuthority = createSourceAcquisitionContentTransportPacketSinkAuthority({
+      maxRetainedPackets: 1,
+      maxRetainedBytes: 16,
+    });
+
+    for (const [fetchAttemptId, body] of [["ATT_1", "first"], ["ATT_2", "second"]] as const) {
+      const outcome = await executeSourceAcquisitionContentTransportPacketHandoff({
+        authority: contentAuthority(),
+        target: target(),
+        budget: budget(),
+        executionTarget: executionTarget({ fetchAttemptId }),
+        packetSinkAuthority,
+        transportPacketHandoffMode: "enabled_hidden_transport_to_sink_7n3b3_2c_a",
+        lowLevelTransport: fakeTransport({
+          headers: { "content-type": "text/plain", "content-length": String(body.length) },
+          body: Buffer.from(body, "utf8"),
+        }),
+      });
+
+      expect(outcome.status).toBe("accepted");
+      expect(outcome.disposalOutcome?.status).toBe("disposed");
+      expect(outcome.materializationOutcome?.packet?.lifecycleStatus).toBe("disposed");
+      expect(JSON.stringify(outcome)).not.toContain(body);
     }
   });
 });

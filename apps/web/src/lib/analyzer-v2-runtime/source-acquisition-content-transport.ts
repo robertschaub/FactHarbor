@@ -21,6 +21,17 @@ import {
   readSourceAcquisitionContentAuthoritySnapshot,
   type SourceAcquisitionContentDereferenceAuthority,
 } from "./source-acquisition-content-authority";
+import {
+  disposeSourceAcquisitionContentTransportOwnedPacket,
+  materializeSourceAcquisitionContentTransportOwnedPacket,
+  sealSourceAcquisitionContentTransportOwnedByteFrame,
+  sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess,
+  type SourceAcquisitionContentTransportOwnedByteFrame,
+  type SourceAcquisitionContentTransportPacketDisposalOutcome,
+  type SourceAcquisitionContentTransportPacketMaterializationOutcome,
+  type SourceAcquisitionContentTransportPacketSealingOutcome,
+  type SourceAcquisitionContentTransportPacketSinkAuthority,
+} from "./source-acquisition-content-packet-sink";
 
 export type SourceAcquisitionContentResolvedAddress = {
   readonly address: string;
@@ -89,6 +100,53 @@ export type SourceAcquisitionContentTransportRequest = {
   readonly executionTarget: SourceAcquisitionContentEphemeralTarget;
   readonly signal?: AbortSignal;
   readonly lowLevelTransport?: SourceAcquisitionContentLowLevelTransport;
+};
+
+export type SourceAcquisitionContentTransportPacketHandoffRequest =
+  SourceAcquisitionContentTransportRequest & {
+    readonly packetSinkAuthority: SourceAcquisitionContentTransportPacketSinkAuthority;
+    readonly transportPacketHandoffMode?: "disabled" | "enabled_hidden_transport_to_sink_7n3b3_2c_a";
+  };
+
+export type SourceAcquisitionContentTransportPacketHandoffOutcome = {
+  readonly status: "accepted" | "disabled" | "blocked" | "failed" | "timed_out" | "cancelled" | "rejected";
+  readonly transportOutcome: SourceAcquisitionContentTransportOutcome | null;
+  readonly sealingOutcome: SourceAcquisitionContentTransportPacketSealingOutcome | null;
+  readonly materializationOutcome: SourceAcquisitionContentTransportPacketMaterializationOutcome | null;
+  readonly disposalOutcome: SourceAcquisitionContentTransportPacketDisposalOutcome | null;
+  readonly frame: SourceAcquisitionContentTransportOwnedByteFrame | null;
+  readonly blockedReasons: readonly string[];
+  readonly rawPayloadIncluded: false;
+  readonly extractedTextIncluded: false;
+  readonly parserPayloadIncluded: false;
+  readonly publicPayloadIncluded: false;
+  readonly evidenceItemIncluded: false;
+  readonly sourceRecordIncluded: false;
+  readonly warningIncluded: false;
+  readonly verdictIncluded: false;
+  readonly reportProseIncluded: false;
+};
+
+type SourceAcquisitionContentTransportSuccessByteState = {
+  readonly bytes: Uint8Array;
+  readonly contentTypePolicyId: string;
+  readonly contentTypeState: "accepted";
+};
+
+type SourceAcquisitionContentTransportSealingProvenance = {
+  readonly contentAuthoritySnapshotHash: string;
+  readonly providerNetworkAuthoritySnapshotHash: string;
+  readonly contentTargetSnapshotHash: string;
+  readonly contentBudgetSnapshotHash: string;
+  readonly fetchAttemptId: string;
+  readonly executionTargetCanonicalHostnameReference: string;
+  readonly executionTargetFixedPathReference: string;
+  readonly executionTargetQueryReference: string;
+};
+
+type SourceAcquisitionContentTransportCoreOutcome = SourceAcquisitionContentTransportOutcome & {
+  readonly transportByteState?: SourceAcquisitionContentTransportSuccessByteState;
+  readonly sealingProvenance?: SourceAcquisitionContentTransportSealingProvenance;
 };
 
 const IPV6_MAX = (1n << 128n) - 1n;
@@ -190,7 +248,13 @@ function cloneOpaqueReference(
     : {
         kind: reference.kind,
         value: reference.value,
-      };
+    };
+}
+
+function canonicalOpaqueReference(reference: SourceAcquisitionContentOpaqueReference): string {
+  return reference.kind === "keyed_hmac"
+    ? `keyed_hmac:${reference.algorithm}:${reference.keyId}:${reference.value}`
+    : `policy_id:${reference.value}`;
 }
 
 function opaqueReferenceEquals(
@@ -529,6 +593,89 @@ export function createSourceAcquisitionContentEphemeralTarget(params: {
 
   ephemeralTargetBindings.set(executionTarget, bindingFromTarget(params.target));
   return executionTarget;
+}
+
+function byteFreeTransportOutcome(
+  outcome: SourceAcquisitionContentTransportCoreOutcome,
+): SourceAcquisitionContentTransportOutcome {
+  return {
+    status: outcome.status,
+    diagnostic: outcome.diagnostic,
+  };
+}
+
+function disabledPacketHandoffOutcome(): SourceAcquisitionContentTransportPacketHandoffOutcome {
+  return {
+    status: "disabled",
+    transportOutcome: null,
+    sealingOutcome: null,
+    materializationOutcome: null,
+    disposalOutcome: null,
+    frame: null,
+    blockedReasons: ["transport_packet_handoff_disabled"],
+    rawPayloadIncluded: false,
+    extractedTextIncluded: false,
+    parserPayloadIncluded: false,
+    publicPayloadIncluded: false,
+    evidenceItemIncluded: false,
+    sourceRecordIncluded: false,
+    warningIncluded: false,
+    verdictIncluded: false,
+    reportProseIncluded: false,
+  };
+}
+
+function probeTransportPacketSinkAuthority(
+  authority: SourceAcquisitionContentTransportPacketSinkAuthority,
+): SourceAcquisitionContentTransportPacketSealingOutcome {
+  return sealSourceAcquisitionContentTransportOwnedByteFrame({
+    authority,
+    provenance: {
+      contentAuthoritySnapshotHash: "1".repeat(64),
+      providerNetworkAuthoritySnapshotHash: "2".repeat(64),
+      contentTargetSnapshotHash: "3".repeat(64),
+      contentBudgetSnapshotHash: "4".repeat(64),
+      fetchAttemptId: "ATT_PROBE",
+      executionTargetCanonicalHostnameReference: "keyed_hmac:hmac_sha256:OPAQUE:HMAC_SHA256_PROBE",
+      executionTargetFixedPathReference: "keyed_hmac:hmac_sha256:OPAQUE:HMAC_SHA256_PROBE",
+      executionTargetQueryReference: "keyed_hmac:hmac_sha256:OPAQUE:HMAC_SHA256_PROBE",
+    },
+    transportByteState: null as unknown as {
+      readonly kind: "source_acquisition_content_transport_success_byte_state_7n3b3_2c_a";
+      readonly bytes: Uint8Array;
+      readonly contentTypePolicyId: string;
+      readonly contentTypeState: "accepted";
+    },
+  });
+}
+
+function packetHandoffOutcome(params: {
+  readonly status: SourceAcquisitionContentTransportPacketHandoffOutcome["status"];
+  readonly transportOutcome: SourceAcquisitionContentTransportOutcome | null;
+  readonly sealingOutcome?: SourceAcquisitionContentTransportPacketSealingOutcome | null;
+  readonly materializationOutcome?: SourceAcquisitionContentTransportPacketMaterializationOutcome | null;
+  readonly disposalOutcome?: SourceAcquisitionContentTransportPacketDisposalOutcome | null;
+  readonly frame?: SourceAcquisitionContentTransportOwnedByteFrame | null;
+  readonly blockedReasons?: readonly string[];
+}): SourceAcquisitionContentTransportPacketHandoffOutcome {
+  return {
+    status: params.status,
+    transportOutcome: params.transportOutcome,
+    sealingOutcome: params.sealingOutcome ?? null,
+    materializationOutcome: params.materializationOutcome ?? null,
+    disposalOutcome: params.disposalOutcome ?? null,
+    frame: params.frame ?? null,
+    blockedReasons: params.blockedReasons ?? [],
+    rawPayloadIncluded: false,
+    extractedTextIncluded: false,
+    parserPayloadIncluded: false,
+    publicPayloadIncluded: false,
+    evidenceItemIncluded: false,
+    sourceRecordIncluded: false,
+    warningIncluded: false,
+    verdictIncluded: false,
+    reportProseIncluded: false,
+  };
 }
 
 async function defaultResolve(hostname: string): Promise<readonly SourceAcquisitionContentResolvedAddress[]> {
@@ -907,9 +1054,9 @@ function executionTargetIsValid(
     && bindingMatchesTarget(binding, target);
 }
 
-export async function executeSourceAcquisitionContentTransport(
+async function executeSourceAcquisitionContentTransportCore(
   input: SourceAcquisitionContentTransportRequest,
-): Promise<SourceAcquisitionContentTransportOutcome> {
+): Promise<SourceAcquisitionContentTransportCoreOutcome> {
   const transport = input.lowLevelTransport ?? defaultTransport();
   const startedAt = now(transport);
 
@@ -1202,6 +1349,21 @@ export async function executeSourceAcquisitionContentTransport(
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
       }),
+      transportByteState: {
+        bytes: new Uint8Array(response.body),
+        contentTypePolicyId: input.target.endpointContentPolicyId,
+        contentTypeState: "accepted",
+      },
+      sealingProvenance: {
+        contentAuthoritySnapshotHash: input.target.contentAuthoritySnapshotHash,
+        providerNetworkAuthoritySnapshotHash: input.target.providerNetworkAuthoritySnapshotHash,
+        contentTargetSnapshotHash: input.target.contentTargetSnapshotHash,
+        contentBudgetSnapshotHash: input.budget.contentBudgetSnapshotHash,
+        fetchAttemptId: input.executionTarget.fetchAttemptId,
+        executionTargetCanonicalHostnameReference: canonicalOpaqueReference(input.target.canonicalHostnameReference),
+        executionTargetFixedPathReference: canonicalOpaqueReference(input.target.fixedPathReference),
+        executionTargetQueryReference: canonicalOpaqueReference(input.target.queryReference),
+      },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -1263,4 +1425,96 @@ export async function executeSourceAcquisitionContentTransport(
       dnsAddressCount: resolved.length,
     });
   }
+}
+
+export async function executeSourceAcquisitionContentTransport(
+  input: SourceAcquisitionContentTransportRequest,
+): Promise<SourceAcquisitionContentTransportOutcome> {
+  return byteFreeTransportOutcome(await executeSourceAcquisitionContentTransportCore(input));
+}
+
+export async function executeSourceAcquisitionContentTransportPacketHandoff(
+  input: SourceAcquisitionContentTransportPacketHandoffRequest,
+): Promise<SourceAcquisitionContentTransportPacketHandoffOutcome> {
+  if ((input.transportPacketHandoffMode ?? "disabled") !== "enabled_hidden_transport_to_sink_7n3b3_2c_a") {
+    return disabledPacketHandoffOutcome();
+  }
+  const authorityProbe = probeTransportPacketSinkAuthority(input.packetSinkAuthority);
+  if (
+    authorityProbe.status !== "rejected"
+    || !authorityProbe.blockedReasons.includes("transport_byte_state_invalid")
+  ) {
+    return packetHandoffOutcome({
+      status: "rejected",
+      transportOutcome: null,
+      sealingOutcome: authorityProbe,
+      blockedReasons: authorityProbe.blockedReasons.length > 0
+        ? authorityProbe.blockedReasons
+        : ["packet_sink_authority_invalid"],
+    });
+  }
+
+  const coreOutcome = await executeSourceAcquisitionContentTransportCore(input);
+  const transportOutcome = byteFreeTransportOutcome(coreOutcome);
+  if (coreOutcome.status !== "success" || !coreOutcome.transportByteState || !coreOutcome.sealingProvenance) {
+    return packetHandoffOutcome({
+      status: coreOutcome.status === "success" ? "rejected" : coreOutcome.status,
+      transportOutcome,
+      blockedReasons: [
+        coreOutcome.status === "success"
+          ? "transport_success_byte_state_missing"
+          : coreOutcome.diagnostic.stopReason,
+      ],
+    });
+  }
+
+  const sealingOutcome = sealSourceAcquisitionContentTransportOwnedByteFrameFromTransportSuccess({
+    authority: input.packetSinkAuthority,
+    provenance: coreOutcome.sealingProvenance,
+    transportBytes: coreOutcome.transportByteState.bytes,
+    contentTypePolicyId: coreOutcome.transportByteState.contentTypePolicyId,
+    contentTypeState: coreOutcome.transportByteState.contentTypeState,
+  });
+  if (sealingOutcome.status !== "accepted") {
+    return packetHandoffOutcome({
+      status: "rejected",
+      transportOutcome,
+      sealingOutcome,
+      blockedReasons: sealingOutcome.blockedReasons,
+    });
+  }
+
+  const materializationOutcome = materializeSourceAcquisitionContentTransportOwnedPacket({
+    authority: input.packetSinkAuthority,
+    frame: sealingOutcome.frame,
+  });
+  if (materializationOutcome.status !== "accepted") {
+    return packetHandoffOutcome({
+      status: materializationOutcome.status === "disposed" ? "rejected" : materializationOutcome.status,
+      transportOutcome,
+      sealingOutcome,
+      materializationOutcome,
+      blockedReasons: materializationOutcome.blockedReasons,
+    });
+  }
+  const disposalOutcome = disposeSourceAcquisitionContentTransportOwnedPacket(materializationOutcome.packet);
+  if (disposalOutcome.status !== "disposed") {
+    return packetHandoffOutcome({
+      status: "rejected",
+      transportOutcome,
+      sealingOutcome,
+      materializationOutcome,
+      disposalOutcome,
+      blockedReasons: disposalOutcome.blockedReasons,
+    });
+  }
+
+  return packetHandoffOutcome({
+    status: "accepted",
+    transportOutcome,
+    sealingOutcome,
+    materializationOutcome,
+    disposalOutcome,
+    frame: null,
+  });
 }

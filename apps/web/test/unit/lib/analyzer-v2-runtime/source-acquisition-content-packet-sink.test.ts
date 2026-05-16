@@ -2,12 +2,15 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION,
+  SOURCE_ACQUISITION_CONTENT_TRANSPORT_PACKET_SINK_VERSION,
   createSourceAcquisitionContentFixturePacket,
   createSourceAcquisitionContentPacketSinkAuthority,
+  createSourceAcquisitionContentTransportPacketSinkAuthority,
   disposeSourceAcquisitionContentFixturePacket,
   isSourceAcquisitionContentFixturePacket,
   isSourceAcquisitionContentPacketSinkAuthority,
   readSourceAcquisitionContentPacketSinkAuthoritySnapshot,
+  sealSourceAcquisitionContentTransportOwnedByteFrame,
   type SourceAcquisitionContentFixturePacket,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink";
 
@@ -42,6 +45,32 @@ function createPacket(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001") {
     parserPolicyId: "POLICY_PARSER_FIXTURE_001",
     contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
   });
+}
+
+function transportProvenance(overrides: Record<string, string> = {}) {
+  return {
+    contentAuthoritySnapshotHash: "1".repeat(64),
+    providerNetworkAuthoritySnapshotHash: "2".repeat(64),
+    contentTargetSnapshotHash: "3".repeat(64),
+    contentBudgetSnapshotHash: "4".repeat(64),
+    fetchAttemptId: "ATT_1",
+    executionTargetCanonicalHostnameReference:
+      "keyed_hmac:hmac_sha256:POLICY_CONTENT_HMAC_KEY_001:HMAC_SHA256_HOST",
+    executionTargetFixedPathReference:
+      "keyed_hmac:hmac_sha256:POLICY_CONTENT_HMAC_KEY_001:HMAC_SHA256_PATH",
+    executionTargetQueryReference:
+      "keyed_hmac:hmac_sha256:POLICY_CONTENT_HMAC_KEY_001:HMAC_SHA256_QUERY",
+    ...overrides,
+  };
+}
+
+function transportByteState(value = "Geheimer Titel ohne semantische Auswertung") {
+  return {
+    kind: "source_acquisition_content_transport_success_byte_state_7n3b3_2c_a" as const,
+    bytes: bytes(value),
+    contentTypePolicyId: "POLICY_CONTENT_ENDPOINT_001",
+    contentTypeState: "accepted" as const,
+  };
 }
 
 describe("Analyzer V2 source-acquisition content packet sink", () => {
@@ -236,5 +265,76 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     }).status).toBe("accepted");
+  });
+
+  it("creates a distinct transport-packet sink authority without exposing HMAC key material", () => {
+    const authority = createSourceAcquisitionContentTransportPacketSinkAuthority({
+      packetSinkAuthorityId: "OPAQUE_TRANSPORT_PACKET_SINK_AUTHORITY_002",
+      hmacKeyId: "OPAQUE_TRANSPORT_PACKET_HMAC_KEY_002",
+      maxRetainedPackets: 2,
+      maxRetainedBytes: 128,
+    });
+    const serialized = JSON.stringify(authority);
+
+    expect(authority.authorityVersion).toBe(SOURCE_ACQUISITION_CONTENT_TRANSPORT_PACKET_SINK_VERSION);
+    expect(authority.capabilityScope).toMatchObject({
+      fixtureControlOnly: false,
+      realTransportBytes: true,
+      productRuntime: false,
+      publicExposure: false,
+      cacheRead: false,
+      cacheWrite: false,
+      durableStorage: false,
+      sourceReliability: false,
+      semanticInterpretation: false,
+    });
+    expect(Object.keys(authority)).not.toContain("hmacKeyMaterial");
+    expect(serialized).not.toContain("hmacKeyMaterial");
+    expect(serialized).not.toContain("secret");
+    expect(serialized).not.toContain("PRIVATE");
+  });
+
+  it("rejects caller-created transport byte states at the sink boundary", () => {
+    const authority = createSourceAcquisitionContentTransportPacketSinkAuthority();
+    const sealing = sealSourceAcquisitionContentTransportOwnedByteFrame({
+      authority,
+      provenance: transportProvenance(),
+      transportByteState: transportByteState(),
+    });
+    const serialized = JSON.stringify(sealing);
+
+    expect(sealing).toMatchObject({
+      status: "rejected",
+      frame: null,
+      blockedReasons: ["transport_byte_state_invalid"],
+    });
+    expect(Object.getOwnPropertyNames(sealSourceAcquisitionContentTransportOwnedByteFrame))
+      .not.toContain("createTransportSuccessByteState");
+    expect(serialized).not.toContain("Geheimer Titel");
+    expect(serialized).not.toContain("content.example.com");
+    expect(serialized).not.toContain("/approved-content");
+    expect(serialized).not.toContain("https://");
+    expect(serialized).not.toContain("hmacKeyMaterial");
+  });
+
+  it("rejects wrong-authority and malformed direct transport-packet sealing", () => {
+    const authority = createSourceAcquisitionContentTransportPacketSinkAuthority();
+
+    expect(sealSourceAcquisitionContentTransportOwnedByteFrame({
+      authority,
+      provenance: transportProvenance({ fetchAttemptId: "https://source.example/attempt" }),
+      transportByteState: transportByteState(),
+    })).toMatchObject({
+      status: "rejected",
+      blockedReasons: ["provenance_invalid"],
+    });
+    expect(sealSourceAcquisitionContentTransportOwnedByteFrame({
+      authority: createSourceAcquisitionContentPacketSinkAuthority() as unknown as typeof authority,
+      provenance: transportProvenance(),
+      transportByteState: transportByteState(),
+    })).toMatchObject({
+      status: "rejected",
+      blockedReasons: ["authority_invalid"],
+    });
   });
 });
