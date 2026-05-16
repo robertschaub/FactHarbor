@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T08:35:51.121Z",
-  "count": 533,
+  "generatedAt": "2026-05-16T11:37:26.868Z",
+  "count": 534,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11516,6 +11516,22 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-16_Lead_Developer_V2_7N3B3-2D-B2_OCI_Proof_Completion.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "7n3b3-2d-b2",
+        "oci",
+        "proof",
+        "completion"
+      ],
+      "files_touched": [],
+      "summary": "Preserve B2 as hidden proof infrastructure."
     },
     {
       "file": "2026-05-16_V2_Slice_7N2_Source_Acquisition_Structural_Executor_Implementation.md",

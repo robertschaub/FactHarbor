@@ -131,6 +131,14 @@ const analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath = path.r
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser-runner-protocol.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionContentParserIsolationProofPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-content-parser-isolation-proof.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-content-parser-oci-container-proof.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionContentParserRunnerWorkerPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser-runner.worker.cjs",
@@ -536,6 +544,8 @@ const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
   "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+  "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-isolation-proof",
+  "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-oci-container-proof",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink",
 ]);
@@ -2387,6 +2397,8 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeSourceAcquisitionContentEnvelopePath,
       analyzerV2RuntimeSourceAcquisitionContentTransportPath,
       analyzerV2RuntimeSourceAcquisitionContentParserPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserIsolationProofPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath,
       analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath,
       analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath,
     ];
@@ -2469,6 +2481,30 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionContentParserRunnerRequest",
       "SourceAcquisitionContentParserRunnerResponse",
       "executeSourceAcquisitionContentParserRunnerProtocol",
+    ].sort();
+    const expectedParserIsolationProofExports = [
+      "PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID",
+      "PARSER_ISOLATION_PROOF_CONTRACT_VERSION",
+      "ParserIsolationDeniedAuthorityMap",
+      "ParserIsolationProofApprovedOptions",
+      "ParserIsolationProofOptionsValidation",
+      "ParserIsolationProofResult",
+      "ParserIsolationProofScope",
+      "ParserIsolationProofStatus",
+      "ParserIsolationRuntimeAuthority",
+      "ParserIsolationRuntimeKind",
+      "buildParserIsolationProofResult",
+      "buildParserIsolationUnavailableResult",
+      "mapParserIsolationProbeOutput",
+      "validateParserIsolationProofOptions",
+    ].sort();
+    const expectedParserOciContainerProofExports = [
+      "OCI_PARSER_ISOLATION_PROOF_VERSION",
+      "OciParserIsolationChildProcess",
+      "OciParserIsolationProcessSpawner",
+      "OciParserIsolationProofRunOptions",
+      "OciParserIsolationSpawnRequest",
+      "runOciParserIsolationProof",
     ].sort();
     const expectedPacketSinkExports = [
       "SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION",
@@ -2614,6 +2650,31 @@ describe("analyzer-v2 boundary guard", () => {
           ["node:url", ["fileURLToPath"]],
         ]),
       ],
+      [
+        toPosix(analyzerV2RuntimeSourceAcquisitionContentParserIsolationProofPath),
+        new Map([
+          ["node:crypto", ["createHash"]],
+        ]),
+      ],
+      [
+        toPosix(analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath),
+        new Map([
+          ["node:child_process", ["spawn"]],
+          [
+            "./source-acquisition-content-parser-isolation-proof",
+            [
+              "PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID",
+              "PARSER_ISOLATION_PROOF_CONTRACT_VERSION",
+              "ParserIsolationProofApprovedOptions",
+              "ParserIsolationProofResult",
+              "buildParserIsolationProofResult",
+              "buildParserIsolationUnavailableResult",
+              "mapParserIsolationProbeOutput",
+              "validateParserIsolationProofOptions",
+            ].sort(),
+          ],
+        ]),
+      ],
     ]);
     const contentProductionFiles = collectFiles(analyzerV2RuntimeRoot, (filePath) =>
       [".ts", ".tsx", ".cjs"].includes(path.extname(filePath))
@@ -2631,6 +2692,8 @@ describe("analyzer-v2 boundary guard", () => {
       "src/lib/analyzer-v2-runtime/source-acquisition-content-authority.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-envelope.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.ts",
+      "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-isolation-proof.ts",
+      "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-oci-container-proof.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner.worker.cjs",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-parser.ts",
@@ -2640,6 +2703,8 @@ describe("analyzer-v2 boundary guard", () => {
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-authority.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-envelope.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.test.ts",
+      "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser-isolation-proof.test.ts",
+      "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser-oci-container-proof.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-transport.test.ts",
@@ -2668,12 +2733,20 @@ describe("analyzer-v2 boundary guard", () => {
     expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath))).toEqual(
       expectedParserRunnerProtocolExports,
     );
+    expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserIsolationProofPath))).toEqual(
+      expectedParserIsolationProofExports,
+    );
+    expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath))).toEqual(
+      expectedParserOciContainerProofExports,
+    );
 
     for (const ownerPath of [
       analyzerV2RuntimeSourceAcquisitionContentAuthorityPath,
       analyzerV2RuntimeSourceAcquisitionContentTransportPath,
       analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath,
       analyzerV2RuntimeSourceAcquisitionContentParserPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserIsolationProofPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath,
       analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath,
     ]) {
       const sourceFile = parseSource(ownerPath);
@@ -2699,6 +2772,9 @@ describe("analyzer-v2 boundary guard", () => {
         const isApprovedTransportToPacketSinkImport =
           toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentTransportPath)
           && specifier === "./source-acquisition-content-packet-sink";
+        const isApprovedOciProofToIsolationProofImport =
+          toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentParserOciContainerProofPath)
+          && specifier === "./source-acquisition-content-parser-isolation-proof";
         if (isV1AnalyzerImport(ownerPath, specifier)) {
           violations.push(`${relativeOwnerPath} imports V1 analyzer ${specifier}`);
         }
@@ -2735,6 +2811,7 @@ describe("analyzer-v2 boundary guard", () => {
         if (
           toPosix(ownerPath) !== toPosix(analyzerV2RuntimeSourceAcquisitionContentParserPath)
           && !isApprovedTransportToPacketSinkImport
+          && !isApprovedOciProofToIsolationProofImport
           && (
             specifier === "./source-acquisition-content-parser"
             || specifier === "./source-acquisition-content-packet-sink"
