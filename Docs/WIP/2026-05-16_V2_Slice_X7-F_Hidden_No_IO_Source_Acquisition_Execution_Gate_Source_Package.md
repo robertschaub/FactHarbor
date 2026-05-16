@@ -1,7 +1,7 @@
 # V2 Slice X7-F Hidden No-IO Source-Acquisition Execution Gate Source Package
 
 **Date:** 2026-05-16
-**Status:** implemented, pending final commit hash registration
+**Status:** implemented
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `908bb7a2` (`docs: refresh v2 source acquisition gate register`)
 **Parent context:** X7-E hidden source-acquisition readiness composition with X6 provenance gate; X8 audit-register refresh
@@ -77,7 +77,7 @@ X7-F does not:
 
 - state/status `implemented_hidden_direct_text_execution_gate_closed_no_io`;
 - source package this file;
-- `implementationCommit: null` until this package is committed, then replace with the resulting commit hash in the final amend;
+- `implementationCommit: "7566fa5c"` as the implementation pointer;
 - source-of-truth references to X7-F, X7-E, B2, B3, and C0;
 - blocked surfaces including source-acquisition execution admission, provider-network execution, source-material population, evidence-corpus building, real fetched-byte parser consumption, 2D-C parser source implementation, product/public wiring, cache/SR/storage, evidence/report/verdict generation, and live jobs.
 

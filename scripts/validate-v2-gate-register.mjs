@@ -120,7 +120,7 @@ const RESEARCH_ACQUISITION_CURRENT_STATE =
   "implemented_hidden_direct_text_execution_gate_closed_no_io";
 const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md";
-const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = null;
+const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = "7566fa5c";
 const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
   "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",

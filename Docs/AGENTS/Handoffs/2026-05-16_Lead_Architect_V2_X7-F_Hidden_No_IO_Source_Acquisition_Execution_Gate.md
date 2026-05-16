@@ -8,6 +8,7 @@
 **Approval/source context:**
 - Source package: `Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md`
 - Baseline: `908bb7a2` (`docs: refresh v2 source acquisition gate register`)
+- Implementation source commit pointer: `7566fa5c`
 - Deputy review: Architect, Security/runtime, and Lead Developer reviewers converged on X7-F as the lowest-risk next step after X8. Parser C0-S1 does not need to precede X7-F because X7-F stays no-IO and non-executable; C0-S1 remains required before any real fetched-byte/parser path.
 
 **Files touched:**
@@ -58,7 +59,7 @@ Debt accepted and removal trigger: process-local X7-D ownership is not durable a
 Residual debt: `research_acquisition` gateway policy remains `notImplemented`; X7-F grants no execution.
 
 **Next step recommendation:**
-- Run index and diff checks, commit, then amend `Docs/AGENTS/V2_Gate_Register.json` and `scripts/validate-v2-gate-register.mjs` with the resulting commit hash.
+- The implementation source commit pointer is recorded in the gate register and validator. Preserve that pointer unless the X7-F source commit itself is replaced.
 - After X7-F, choose between parser-worker C0-S1/P0 contract work or the next hidden no-IO source-material/evidence-corpus transition contract. Do not start source execution, provider-network calls, parser 2D-C, product/public/live wiring, cache/SR/storage, prompt/config/model/schema edits, ACS/direct URL, or V1 cleanup without a separate reviewed gate.
 
 **Warnings:**

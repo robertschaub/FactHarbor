@@ -174,7 +174,7 @@
       ],
       "sourcePackage": "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md",
       "approvalPointer": "Deputy-approved X7-F hidden no-IO execution-denial gate; readiness composition can be admitted only to a closed gateway-not-implemented result and source execution remains blocked.",
-      "implementationCommit": null,
+      "implementationCommit": "7566fa5c",
       "allowedFiles": [
         "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance.ts",
         "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate.ts",
