@@ -15,7 +15,7 @@ export type SourceAcquisitionPortContract = {
   contractVersion: typeof SOURCE_ACQUISITION_PORT_CONTRACT_VERSION;
   source: "static_contract_only";
   contractStatus: "not_executable";
-  queryPlanning: "llm_task_not_wired";
+  queryPlanning: "hidden_internal_query_planning_available";
   semanticTaskExecution: "llm_task_not_wired";
   promptModelExecution: "not_approved";
   providerSearchFetchExecution: "not_wired";

@@ -89,8 +89,10 @@ describe("analyzer-v2 evidence query-planning input envelope", () => {
     expect(envelope.batchInputEnvelope).toMatchObject({
       envelopeVersion: "v2.evidence-lifecycle.execution-readiness.0",
       taskKey: "evidence_query_planning",
+      executionScope: "query_planning_hidden_internal_prompt_model_only_no_search_fetch",
       selectedAtomicClaimIds: ["AC_001"],
       sourcePacketIds: [],
+      previousTaskResultHashes: [],
     });
     expect(promptClaimContract.atomicClaims.map((claim) => claim.id)).toEqual(["AC_001"]);
     expect(envelope.promptPackets.claimContractJson).not.toContain("Entity C made assertion D.");

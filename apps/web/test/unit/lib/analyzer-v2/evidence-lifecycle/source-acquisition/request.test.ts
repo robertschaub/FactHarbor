@@ -156,22 +156,22 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition request", () => {
     expect(sourceDecision.request?.claimContract).toBe(claim);
   });
 
-  it("keeps the policy snapshot static and non-executable", () => {
+  it("keeps the policy snapshot static with query-planning as the only executable task", () => {
     const sourceDecision = buildSourceAcquisitionRequest(readyDecision("Plastic recycling is pointless"));
 
     expect(sourceDecision.request?.policySnapshot).toEqual({
       snapshotVersion: "v2.evidence-lifecycle.task-policy.0",
       source: "static_contract_only",
-      policyStatus: "not_executable",
+      policyStatus: "query_planning_hidden_internal_executable",
       plannedTasks: [
         {
           taskKey: "evidence_query_planning",
-          status: "symbolic_not_executable",
+          status: "hidden_internal_executable",
           promptSectionId: "V2_EVIDENCE_QUERY_PLANNING",
           outputSchemaVersion: "v2.evidence_query_planning_result.0",
-          promptApprovalStatus: "missing",
-          modelPolicyStatus: "not_approved",
-          executionAuthority: "not_executable",
+          promptApprovalStatus: "approved",
+          modelPolicyStatus: "approved",
+          executionAuthority: "gateway_executable_hidden_internal",
         },
         {
           taskKey: "evidence_applicability",
@@ -210,10 +210,10 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition request", () => {
       ],
       cachePolicy: "no_store_no_read",
       providerExecution: "not_wired",
-      promptModelExecution: "not_approved",
+      promptModelExecution: "query_planning_approved_only",
       publicExposure: "forbidden",
       sourceReliabilityIntegration: "thin_port_pending",
-      sourceLanguagePolicy: "source_language_first_planned_not_executable",
+      sourceLanguagePolicy: "source_language_first_query_planning_approved",
     });
   });
 

@@ -181,7 +181,7 @@ export function buildEvidenceQueryPlanningInputEnvelope(
   const batchInputEnvelope: EvidenceTaskBatchInputEnvelope = {
     envelopeVersion: EVIDENCE_EXECUTION_READINESS_CONTRACT_VERSION,
     taskKey: "evidence_query_planning",
-    executionScope: "inert_contract_only_no_prompt_model_provider_execution",
+    executionScope: "query_planning_hidden_internal_prompt_model_only_no_search_fetch",
     selectedAtomicClaimIds,
     claimContractHash,
     sourcePacketIds: [],

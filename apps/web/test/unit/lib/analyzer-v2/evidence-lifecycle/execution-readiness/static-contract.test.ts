@@ -8,22 +8,22 @@ import {
 import { buildStaticEvidenceExecutionReadinessContract } from "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/static-contract";
 
 describe("analyzer-v2 Evidence Lifecycle execution-readiness contract", () => {
-  it("declares the exact static non-executable readiness contract", () => {
+  it("declares the exact hidden query-planning readiness contract", () => {
     expect(buildStaticEvidenceExecutionReadinessContract()).toEqual({
       contractVersion: "v2.evidence-lifecycle.execution-readiness.0",
       source: "static_contract_only",
-      contractStatus: "not_executable",
-      executionScope: "inert_contract_only_no_prompt_model_provider_execution",
+      contractStatus: "query_planning_hidden_internal_executable",
+      executionScope: "query_planning_hidden_internal_prompt_model_only_no_search_fetch",
       tasks: [
         {
           taskKey: "evidence_query_planning",
-          readinessStatus: "not_ready_not_executable",
+          readinessStatus: "ready_hidden_internal",
           promptSectionId: "V2_EVIDENCE_QUERY_PLANNING",
           outputSchemaVersion: "v2.evidence_query_planning_result.0",
-          batchInputEnvelope: "contract_only",
-          preCallValidation: "contract_only",
-          provenanceEnvelope: "contract_only",
-          promptModelExecution: "not_approved",
+          batchInputEnvelope: "query_planning_input_envelope",
+          preCallValidation: "runtime_pre_call_validation",
+          provenanceEnvelope: "runtime_provenance",
+          promptModelExecution: "approved_hidden_internal",
           providerSearchFetchExecution: "not_wired",
           cachePolicy: "no_store_no_read",
           sourceReliabilityIntegration: "thin_port_pending",
@@ -104,7 +104,7 @@ describe("analyzer-v2 Evidence Lifecycle execution-readiness contract", () => {
     const batchEnvelope: EvidenceTaskBatchInputEnvelope = {
       envelopeVersion: EVIDENCE_EXECUTION_READINESS_CONTRACT_VERSION,
       taskKey: "evidence_query_planning",
-      executionScope: "inert_contract_only_no_prompt_model_provider_execution",
+      executionScope: "query_planning_hidden_internal_prompt_model_only_no_search_fetch",
       selectedAtomicClaimIds: ["AC_001"],
       claimContractHash: null,
       sourcePacketIds: [],
@@ -146,7 +146,7 @@ describe("analyzer-v2 Evidence Lifecycle execution-readiness contract", () => {
       },
     };
 
-    expect(batchEnvelope.executionScope).toBe("inert_contract_only_no_prompt_model_provider_execution");
+    expect(batchEnvelope.executionScope).toBe("query_planning_hidden_internal_prompt_model_only_no_search_fetch");
     expect(blockedReadiness.status).toBe("blocked");
     expect(provenance.promptContentHash).toBeNull();
     expect(provenance.provider.providerId).toBeNull();

@@ -35,7 +35,7 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition port contract", () =
       contractVersion: "v2.evidence-lifecycle.source-acquisition-port-contract.0",
       source: "static_contract_only",
       contractStatus: "not_executable",
-      queryPlanning: "llm_task_not_wired",
+      queryPlanning: "hidden_internal_query_planning_available",
       semanticTaskExecution: "llm_task_not_wired",
       promptModelExecution: "not_approved",
       providerSearchFetchExecution: "not_wired",
@@ -85,7 +85,7 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition port contract", () =
 
   it("keeps authority values blocked and non-executable", () => {
     const values = collectStringValues(readStaticSourceAcquisitionPortContract());
-    const forbiddenExecutableValues = [
+    const forbiddenSourceAcquisitionValues = [
       "enabled",
       "approved",
       "wired",
@@ -97,11 +97,12 @@ describe("analyzer-v2 Evidence Lifecycle source-acquisition port contract", () =
       "product_wired",
     ];
 
-    for (const forbiddenValue of forbiddenExecutableValues) {
+    for (const forbiddenValue of forbiddenSourceAcquisitionValues) {
       expect(values).not.toContain(forbiddenValue);
     }
     expect(values).toEqual(expect.arrayContaining([
       "not_executable",
+      "hidden_internal_query_planning_available",
       "llm_task_not_wired",
       "not_approved",
       "not_wired",

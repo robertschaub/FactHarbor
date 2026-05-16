@@ -109,6 +109,12 @@ const REQUIRED_BLOCKED_SURFACE_FLAGS = [
   "v1Reuse",
   "realByteParserConsumption",
 ];
+const REQUIRED_QUERY_PLANNING_DRIFT_MARKERS = [
+  "prompt_frontmatter_required_sections_lag",
+];
+const REPAIRED_QUERY_PLANNING_DRIFT_MARKERS = [
+  "static_task_policy_symbolic_not_executable",
+];
 
 function makeDriftCollector() {
   const drifts = [];
@@ -661,14 +667,19 @@ function validateRegisterAgainstGateway(register, gatewayTasks, gatewayTaskIds, 
   const queryPlanning = entriesByTaskId.get("evidence_query_planning")?.entry;
   if (queryPlanning?.observedGatewayStatus === "executable") {
     const driftMarkers = Array.isArray(queryPlanning.knownDrift) ? queryPlanning.knownDrift : [];
-    for (const marker of [
-      "static_task_policy_symbolic_not_executable",
-      "prompt_frontmatter_required_sections_lag",
-    ]) {
+    for (const marker of REQUIRED_QUERY_PLANNING_DRIFT_MARKERS) {
       if (!driftMarkers.includes(marker)) {
         drift(
           `${REGISTER_PATH}:evidence_query_planning`,
           `known drift marker ${marker} must be present until X3 repairs query-planning policy drift`,
+        );
+      }
+    }
+    for (const marker of REPAIRED_QUERY_PLANNING_DRIFT_MARKERS) {
+      if (driftMarkers.includes(marker)) {
+        drift(
+          `${REGISTER_PATH}:evidence_query_planning`,
+          `known drift marker ${marker} was repaired by X3-A and must not remain in the register`,
         );
       }
     }
@@ -734,6 +745,21 @@ function expectMutationFails(name, baseRegister, context, mutate) {
 async function runSelfTest(context) {
   const base = context.register;
   const mutations = [
+    [
+      "missing prompt metadata drift marker",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").knownDrift = [];
+      },
+    ],
+    [
+      "repaired static policy drift marker retained",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").knownDrift = [
+          "static_task_policy_symbolic_not_executable",
+          "prompt_frontmatter_required_sections_lag",
+        ];
+      },
+    ],
     [
       "missing executable row",
       (candidate) => {

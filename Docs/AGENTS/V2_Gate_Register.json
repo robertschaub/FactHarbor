@@ -79,8 +79,8 @@
       "gateType": "gateway_task",
       "taskId": "evidence_query_planning",
       "owner": "evidence_lifecycle",
-      "state": "executable_hidden_gateway_task_with_known_policy_metadata_drift",
-      "status": "executable_hidden_gateway_task_with_known_policy_metadata_drift",
+      "state": "executable_hidden_gateway_task_with_prompt_metadata_drift",
+      "status": "executable_hidden_gateway_task_with_prompt_metadata_drift",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
       "registerGrantsExecution": false,
       "promptProfile": "claimboundary-v2",
@@ -136,11 +136,10 @@
       "liveJobEligibility": "blocked",
       "liveJobBlockReason": "Hidden executable gateway task only; no live-smoke gate currently approves job submission.",
       "knownDrift": [
-        "static_task_policy_symbolic_not_executable",
         "prompt_frontmatter_required_sections_lag"
       ],
       "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
-      "notes": "This row must keep exposing query-planning policy drift until V2-X3 repairs it."
+      "notes": "Static task-policy/readiness metadata is aligned in X3-A. Prompt frontmatter/text drift remains until X3-B receives explicit prompt approval."
     },
     {
       "id": "gate.research_acquisition",

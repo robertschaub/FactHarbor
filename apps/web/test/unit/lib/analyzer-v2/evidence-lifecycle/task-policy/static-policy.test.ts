@@ -5,20 +5,20 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy";
 
 describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
-  it("builds the exact non-executable policy snapshot", () => {
+  it("builds the exact hidden query-planning policy snapshot", () => {
     expect(buildStaticEvidenceTaskPolicySnapshot()).toEqual({
       snapshotVersion: "v2.evidence-lifecycle.task-policy.0",
       source: "static_contract_only",
-      policyStatus: "not_executable",
+      policyStatus: "query_planning_hidden_internal_executable",
       plannedTasks: [
         {
           taskKey: "evidence_query_planning",
-          status: "symbolic_not_executable",
+          status: "hidden_internal_executable",
           promptSectionId: "V2_EVIDENCE_QUERY_PLANNING",
           outputSchemaVersion: "v2.evidence_query_planning_result.0",
-          promptApprovalStatus: "missing",
-          modelPolicyStatus: "not_approved",
-          executionAuthority: "not_executable",
+          promptApprovalStatus: "approved",
+          modelPolicyStatus: "approved",
+          executionAuthority: "gateway_executable_hidden_internal",
         },
         {
           taskKey: "evidence_applicability",
@@ -57,10 +57,10 @@ describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
       ],
       cachePolicy: "no_store_no_read",
       providerExecution: "not_wired",
-      promptModelExecution: "not_approved",
+      promptModelExecution: "query_planning_approved_only",
       publicExposure: "forbidden",
       sourceReliabilityIntegration: "thin_port_pending",
-      sourceLanguagePolicy: "source_language_first_planned_not_executable",
+      sourceLanguagePolicy: "source_language_first_query_planning_approved",
     });
   });
 
@@ -84,7 +84,7 @@ describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
     expect(second[0]?.policyKey).toBe("baseline_research");
   });
 
-  it("keeps real runtime authority identifiers out of the static snapshot", () => {
+  it("keeps unrelated runtime authority identifiers out of the static snapshot", () => {
     const serialized = JSON.stringify(buildStaticEvidenceTaskPolicySnapshot());
 
     expect(serialized).not.toContain("claim_understanding_gate1");

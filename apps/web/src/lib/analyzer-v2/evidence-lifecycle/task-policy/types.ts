@@ -17,12 +17,12 @@ export type EvidenceRetrievalPolicyCatalogKey =
 
 export type EvidenceTaskPolicyPlannedTask = {
   taskKey: EvidenceTaskPolicyPlannedTaskKey;
-  status: "symbolic_not_executable";
+  status: "symbolic_not_executable" | "hidden_internal_executable";
   promptSectionId: EvidenceLifecycleTaskPromptSectionId;
   outputSchemaVersion: EvidenceLifecycleTaskOutputSchemaVersion;
-  promptApprovalStatus: "missing";
-  modelPolicyStatus: "not_approved";
-  executionAuthority: "not_executable";
+  promptApprovalStatus: "missing" | "approved";
+  modelPolicyStatus: "not_approved" | "approved";
+  executionAuthority: "not_executable" | "gateway_executable_hidden_internal";
 };
 
 export type EvidenceRetrievalPolicyCatalogEntry = {
@@ -34,13 +34,15 @@ export type EvidenceRetrievalPolicyCatalogEntry = {
 export type EvidenceTaskPolicySnapshot = {
   snapshotVersion: typeof EVIDENCE_TASK_POLICY_SNAPSHOT_VERSION;
   source: "static_contract_only";
-  policyStatus: "not_executable";
+  policyStatus: "not_executable" | "query_planning_hidden_internal_executable";
   plannedTasks: readonly EvidenceTaskPolicyPlannedTask[];
   retrievalPolicyCatalog: readonly EvidenceRetrievalPolicyCatalogEntry[];
   cachePolicy: "no_store_no_read";
   providerExecution: "not_wired";
-  promptModelExecution: "not_approved";
+  promptModelExecution: "not_approved" | "query_planning_approved_only";
   publicExposure: "forbidden";
   sourceReliabilityIntegration: "thin_port_pending";
-  sourceLanguagePolicy: "source_language_first_planned_not_executable";
+  sourceLanguagePolicy:
+    | "source_language_first_planned_not_executable"
+    | "source_language_first_query_planning_approved";
 };
