@@ -7,6 +7,8 @@
 **Design consolidation:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D_Post_Review_Consolidation.md`
 **Baseline:** `00b98611` (`docs: approve v2 parser isolation design`)
 
+**Historical status note (2026-05-16):** This source package was subsequently implemented at `b76a571` and recorded as complete in `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md`. Keep this file as the reviewed approval envelope and implementation trace, not as an active pending package.
+
 ## 1. Purpose
 
 Define the exact source package that may later implement a hidden parser runner protocol harness over fixture/control packets only.

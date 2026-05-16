@@ -3233,6 +3233,16 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Executable_Action_Plan.md
 
 ---
+### 2026-05-16 | Lead Architect + LLM Expert | Codex (GPT-5) | V2 Pipeline Leadership Execution Bridge -- [Significant] [open-items: yes]
+**For next agent:** Rebuilt the V2 leadership presentation as a 12-slide execution bridge. It now leads with the decision "fund the next gates, not a cutover", shows current state as done/ready/blocked, maps leadership levers to X1-X5 work orders and evidence artifacts, gives three leadership asks, and ends with five yes/no steering questions. Saved-PPTX previews and package QA passed after fixing wrapping defects on the state snapshot, runway, and 30/60/90 slides.
+-> Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Leadership_Execution_Bridge.md
+
+---
+### 2026-05-16 | External Advisor / Senior Architect / LLM Expert | Codex (GPT-5) | V2 Pipeline Immediate Execution Update -- [Significant] [open-items: yes]
+**For next agent:** Created Revision B leadership deck and an X4 acceptance/next-gate execution packet after refreshing current status. X4 is implementation-complete and must be framed as a fail-closed public guard, not cutover. Immediate decision: explicit X3-B prompt approval yes/no; if no, choose the next low-risk source package from the reviewed action plan using the negative screen in `Docs/WIP/2026-05-16_V2_X4_Acceptance_and_Next_Gate_Execution_Packet.md`.
+-> Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Immediate_Execution_Update.md
+
+---
 ### 2026-05-16 | Lead Developer | Codex (GPT-5.5) | V2 7N-3B3-2D-B2 OCI Proof Completion -- [Significant] [open-items: yes]
 **For next agent:** Completed B2 as a hidden, proof-only OCI parser-isolation check inside the approved envelope. It adds a structural internal-only proof contract, OCI proof owner, explicit runtime/image approval checks, rootless deployment-candidate distinction, sanitized denial-result mapping, timeout/cancel/failure handling, focused tests, and boundary guards. Architect/Security P1 review found the env-present positive verifier branch was a no-op; it is fixed so explicit sandbox env now runs the real OCI proof and requires `parser_isolation_verified`, while no-env local behavior remains `parser_isolation_unavailable`. Local Docker/Podman is unavailable, so the final local proof state is `parser_isolation_unavailable`; no `local_only` or `deployment_candidate` proof was recorded. 2D-C remains blocked until a positive deployment-candidate rootless OCI proof passes on a provisioned host and a separate reviewed package approves parser work. No live jobs, product/public wiring, prompt/config/model/schema edits, cache/SR/storage, parser byte consumption, evidence/report behavior, ACS/direct URL execution, or V1 reuse/cleanup were done.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Developer_V2_7N3B3-2D-B2_OCI_Proof_Completion.md

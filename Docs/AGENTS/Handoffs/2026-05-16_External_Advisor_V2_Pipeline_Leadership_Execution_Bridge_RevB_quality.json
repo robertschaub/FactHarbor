@@ -1,0 +1,17 @@
+{
+  "pptx": "Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Leadership_Execution_Bridge_RevB.pptx",
+  "exists": true,
+  "bytes": 45062,
+  "slideCount": 10,
+  "mediaCount": 0,
+  "previewCount": 10,
+  "previewMontage": "Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Leadership_Execution_Bridge_RevB_preview.png",
+  "missingRelationshipTargets": [],
+  "visiblePlaceholderIssues": [],
+  "pptxPackageCheck": "pass",
+  "notes": [
+    "Regenerated without manual notes-part scrubbing after desktop PowerPoint reported a repair prompt on the scrubbed package.",
+    "Saved PPTX was imported by artifact-tool and rendered to PNG previews.",
+    "Standard hidden notes-master slide-number placeholders are preserved for desktop PowerPoint compatibility; visible slide XML has no placeholder issues."
+  ]
+}
