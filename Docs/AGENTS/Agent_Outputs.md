@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3 Approval And 7N-3B3-1 Draft -- [Standard] [open-items: yes]
+**For next agent:** 7N-3B3 is approved as docs-only boundary work; `Docs/WIP/2026-05-16_V2_Slice_7N3B3-1_Content_Dereference_Source_Package.md` is drafted for deputy review. It may approve only content-dereference authority, raw-URL-free target envelope, and content transport; parser/sink, live jobs, product/public wiring, cache/SR, evidence/report generation, V1 reuse/cleanup, and Captain canaries remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3_Approval_7N3B3-1_Draft.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B2 Consolidation And 7N-3B3 Draft -- [Standard] [open-items: yes]
 **For next agent:** 7N-3B2 is consolidated as hidden/internal candidate-provider-network only, and `Docs/WIP/2026-05-16_V2_Slice_7N3B3_Content_Packet_Parser_Package.md` is drafted for docs-only deputy review. The draft keeps source implementation blocked and splits later content dereference (`7N-3B3-1`) from parser/sink (`7N-3B3-2`); live jobs, product/public wiring, cache/SR, evidence/report generation, V1 reuse/cleanup, and Captain canaries remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B2_Consolidation_7N3B3_Draft.md
