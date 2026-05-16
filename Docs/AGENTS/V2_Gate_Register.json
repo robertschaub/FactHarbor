@@ -170,7 +170,8 @@
         "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
         "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md",
         "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
-        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md"
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md",
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S1_P0_Parser_Worker_Admission_Source_Package.md"
       ],
       "sourcePackage": "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md",
       "approvalPointer": "Deputy-approved X7-F hidden no-IO execution-denial gate; readiness composition can be admitted only to a closed gateway-not-implemented result and source execution remains blocked.",
@@ -183,6 +184,7 @@
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission.ts",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-*",
         "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-*",
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/**",
@@ -196,6 +198,7 @@
         "source-material population",
         "extraction input creation",
         "evidence-corpus building",
+        "parser-worker execution",
         "real fetched-byte parser consumption",
         "2D-C parser source implementation",
         "transport-owned packet/frame parser input",
@@ -223,7 +226,7 @@
       "liveJobEligibility": "blocked",
       "liveJobBlockReason": "X7-F is hidden no-IO execution-denial only; source execution is not product-wired and the research_acquisition gateway task is not implemented.",
       "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
-      "notes": "Latest direct-text hidden state is X7-F. It consumes runtime-owned X7-E readiness composition only and returns gate_closed_no_io with research_acquisition_gateway_not_implemented, or fails closed for blocked/copied/malformed/non-no-IO readiness. Parser B2 remains locally parser_isolation_unavailable, B3 requires provisioned rootless OCI proof, and 2D-C remains blocked. Register remains audit-only and grants no execution."
+      "notes": "Latest direct-text hidden state is X7-F. It consumes runtime-owned X7-E readiness composition only and returns gate_closed_no_io with research_acquisition_gateway_not_implemented, or fails closed for blocked/copied/malformed/non-no-IO readiness. Parser B2 remains locally parser_isolation_unavailable, B3 requires provisioned rootless OCI proof, and C0-S1 adds a P0 admission contract labelled not a security boundary without parser execution. 2D-C remains blocked. Register remains audit-only and grants no execution."
     },
     {
       "id": "gate.evidence_applicability",

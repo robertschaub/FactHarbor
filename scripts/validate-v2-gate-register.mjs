@@ -121,12 +121,15 @@ const RESEARCH_ACQUISITION_CURRENT_STATE =
 const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md";
 const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = "7566fa5c";
+const RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S1_P0_Parser_Worker_Admission_Source_Package.md";
 const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
   "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0_Parser_Worker_Architecture_And_Provisional_Isolation.md",
+  RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE,
 ];
 const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "source-acquisition execution admission",
@@ -135,6 +138,7 @@ const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "source-material population",
   "evidence-corpus building",
   "real fetched-byte parser consumption",
+  "parser-worker execution",
   "2D-C parser source implementation",
   "product/orchestrator/runner/API/UI/report/export wiring",
   "live jobs",
@@ -144,6 +148,8 @@ const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
   "gate_closed_no_io",
   "parser_isolation_unavailable",
   "B3",
+  "C0-S1",
+  "P0",
   "2D-C remains blocked",
   "audit-only",
 ];
@@ -918,6 +924,15 @@ async function runSelfTest(context) {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
           ref !== "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md"
+        );
+      },
+    ],
+    [
+      "research acquisition drops C0-S1 parser admission source package",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
+          ref !== RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE
         );
       },
     ],

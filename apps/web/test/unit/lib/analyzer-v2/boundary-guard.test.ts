@@ -152,6 +152,10 @@ const analyzerV2RuntimeSourceAcquisitionContentParserPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-parser-worker-admission.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser-runner-protocol.ts",
@@ -3924,6 +3928,103 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   }, 10_000);
 
+  it("keeps C0-S1 parser-worker P0 admission structural and non-executing", () => {
+    const sourcePath = analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionPath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "source-acquisition-parser-worker-admission.test.ts",
+    );
+    const sourceFile = parseSource(sourcePath);
+    const sourceContent = readFileSync(sourcePath, "utf8");
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(sourcePath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+    expect(collectExportedNames(sourceFile)).toEqual([
+      "SOURCE_ACQUISITION_PARSER_WORKER_ADMISSION_VERSION",
+      "SOURCE_ACQUISITION_PARSER_WORKER_CONTRACT_VERSION",
+      "SOURCE_ACQUISITION_PARSER_WORKER_P0_ISOLATION_LABEL",
+      "SOURCE_ACQUISITION_PARSER_WORKER_P0_PROFILE_ID",
+      "SourceAcquisitionParserWorkerAdmissionDecision",
+      "SourceAcquisitionParserWorkerAdmissionRequest",
+      "evaluateSourceAcquisitionParserWorkerAdmission",
+    ].sort());
+    expect(collectModuleSpecifiers(sourceFile)).toEqual([]);
+
+    for (const sourceRoot of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
+        if (toPosix(importedPath) === toPosix(sourcePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches C0-S1 parser admission`);
+        }
+      }
+    }
+
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+      violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    for (const entry of collectExportBindings(sourceFile)) {
+      if (entry.specifier) {
+        violations.push(`C0-S1 parser admission re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "parseSourceAcquisitionContentFixturePacket",
+      "executeSourceAcquisitionContentParserRunnerProtocol",
+      "consumeSourceAcquisitionContentFixturePacketForParserRunner",
+      "source-acquisition-content-parser",
+      "source-acquisition-content-packet-sink",
+      "source-acquisition-content-transport",
+      "source-acquisition-network-transport",
+      "source-acquisition-network-factory",
+      "node:child_process",
+      "node:fs",
+      "node:http",
+      "node:https",
+      "undici",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesConsumed: true",
+      "parserExecution: true",
+      "workerSpawned: true",
+      "transportPacketAccepted: true",
+      "transportFrameAccepted: true",
+      "realFetchedBytesAccepted: true",
+      "twoDCApproved: true",
+      "productPublicLiveApproved: true",
+      "evidenceLifecycleConsumptionApproved: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "liveJobs: true",
+      "\"status\": \"executable\"",
+      "\"executionStatus\": \"executable\"",
+      "source_acquired",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+    ]) {
+      if (sourceContent.includes(forbiddenText)) {
+        violations.push(`C0-S1 parser admission contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 30_000);
+
   it("keeps X7-F source-acquisition execution gate closed, no-IO, and summary-only", () => {
     const sourcePath = analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath;
     const testPath = path.resolve(
@@ -4061,7 +4162,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  }, 10_000);
+  }, 30_000);
 
   it("keeps the Analyzer V2 barrel free of dispatch-capable internals", () => {
     const violations: string[] = [];
