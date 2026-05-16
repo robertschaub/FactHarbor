@@ -126,6 +126,14 @@ const analyzerV2RuntimeSourceAcquisitionContentParserPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-parser.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-content-parser-runner-protocol.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionContentParserRunnerWorkerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-content-parser-runner.worker.cjs",
+);
 const analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-content-packet-sink.ts",
@@ -527,6 +535,7 @@ const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
   "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+  "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink",
 ]);
 
@@ -1735,13 +1744,16 @@ describe("analyzer-v2 boundary guard", () => {
     for (const sourcePath of analyzerV2RuntimeSourceFiles) {
       const sourceFile = parseSource(sourcePath);
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        const isApprovedParserRunnerProtocolFileImport =
+          toPosix(sourcePath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath)
+          && specifier === "node:fs";
         if (isV1AnalyzerImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
         }
         if (isProviderSdkImport(specifier) && !isApprovedProviderFactorySdkImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
-        if (isCacheIoImport(specifier)) {
+        if (isCacheIoImport(specifier) && !isApprovedParserRunnerProtocolFileImport) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
         }
         if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
@@ -2374,6 +2386,7 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeSourceAcquisitionContentEnvelopePath,
       analyzerV2RuntimeSourceAcquisitionContentTransportPath,
       analyzerV2RuntimeSourceAcquisitionContentParserPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath,
       analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath,
     ];
     const allowedNodeCoreTransportSpecifiers = new Set([
@@ -2449,6 +2462,13 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionContentParserStructuralStatus",
       "parseSourceAcquisitionContentFixturePacket",
     ].sort();
+    const expectedParserRunnerProtocolExports = [
+      "SOURCE_ACQUISITION_CONTENT_PARSER_RUNNER_PROTOCOL_VERSION",
+      "SourceAcquisitionContentParserRunnerOutcome",
+      "SourceAcquisitionContentParserRunnerRequest",
+      "SourceAcquisitionContentParserRunnerResponse",
+      "executeSourceAcquisitionContentParserRunnerProtocol",
+    ].sort();
     const expectedPacketSinkExports = [
       "SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION",
       "SOURCE_ACQUISITION_CONTENT_TRANSPORT_PACKET_SINK_VERSION",
@@ -2463,6 +2483,7 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionContentTransportPacketSealingOutcome",
       "SourceAcquisitionContentTransportPacketSinkAuthority",
       "SourceAcquisitionContentTransportPacketSinkAuthoritySnapshot",
+      "consumeSourceAcquisitionContentFixturePacketForParserRunner",
       "createSourceAcquisitionContentFixturePacket",
       "createSourceAcquisitionContentPacketSinkAuthority",
       "createSourceAcquisitionContentTransportPacketSinkAuthority",
@@ -2571,15 +2592,30 @@ describe("analyzer-v2 boundary guard", () => {
             [
               "SourceAcquisitionContentFixturePacket",
               "SourceAcquisitionContentPacketLifecycleStatus",
+              "consumeSourceAcquisitionContentFixturePacketForParserRunner",
               "disposeSourceAcquisitionContentFixturePacket",
               "isSourceAcquisitionContentFixturePacket",
             ].sort(),
           ],
+          [
+            "./source-acquisition-content-parser-runner-protocol",
+            [
+              "executeSourceAcquisitionContentParserRunnerProtocol",
+            ].sort(),
+          ],
+        ]),
+      ],
+      [
+        toPosix(analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath),
+        new Map([
+          ["node:child_process", ["spawn"]],
+          ["node:fs", ["existsSync"]],
+          ["node:url", ["fileURLToPath"]],
         ]),
       ],
     ]);
     const contentProductionFiles = collectFiles(analyzerV2RuntimeRoot, (filePath) =>
-      [".ts", ".tsx"].includes(path.extname(filePath))
+      [".ts", ".tsx", ".cjs"].includes(path.extname(filePath))
       && path.basename(filePath).startsWith("source-acquisition-content-")
     ).map((filePath) => toPosix(path.relative(webRoot, filePath))).sort();
     const contentTestFiles = collectFiles(analyzerV2RuntimeUnitTestRoot, (filePath) =>
@@ -2594,6 +2630,8 @@ describe("analyzer-v2 boundary guard", () => {
       "src/lib/analyzer-v2-runtime/source-acquisition-content-authority.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-envelope.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.ts",
+      "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol.ts",
+      "src/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner.worker.cjs",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-parser.ts",
       "src/lib/analyzer-v2-runtime/source-acquisition-content-transport.ts",
     ]);
@@ -2601,6 +2639,7 @@ describe("analyzer-v2 boundary guard", () => {
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-authority.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-envelope.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.test.ts",
+      "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser.test.ts",
       "test/unit/lib/analyzer-v2-runtime/source-acquisition-content-transport.test.ts",
     ]);
@@ -2625,12 +2664,16 @@ describe("analyzer-v2 boundary guard", () => {
     expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserPath))).toEqual(
       expectedParserExports,
     );
+    expect(collectExportedNames(parseSource(analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath))).toEqual(
+      expectedParserRunnerProtocolExports,
+    );
 
     for (const ownerPath of [
       analyzerV2RuntimeSourceAcquisitionContentAuthorityPath,
       analyzerV2RuntimeSourceAcquisitionContentTransportPath,
       analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath,
       analyzerV2RuntimeSourceAcquisitionContentParserPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath,
     ]) {
       const sourceFile = parseSource(ownerPath);
       const relativeOwnerPath = toPosix(path.relative(webRoot, ownerPath));
@@ -2649,6 +2692,9 @@ describe("analyzer-v2 boundary guard", () => {
       }
 
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        const isApprovedParserRunnerProtocolFileImport =
+          toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath)
+          && specifier === "node:fs";
         const isApprovedTransportToPacketSinkImport =
           toPosix(ownerPath) === toPosix(analyzerV2RuntimeSourceAcquisitionContentTransportPath)
           && specifier === "./source-acquisition-content-packet-sink";
@@ -2661,7 +2707,7 @@ describe("analyzer-v2 boundary guard", () => {
         if (isSearchFetchProviderImport(specifier)) {
           violations.push(`${relativeOwnerPath} imports search/fetch provider ${specifier}`);
         }
-        if (isCacheIoImport(specifier)) {
+        if (isCacheIoImport(specifier) && !isApprovedParserRunnerProtocolFileImport) {
           violations.push(`${relativeOwnerPath} imports cache/storage dependency ${specifier}`);
         }
         if (isSourceReliabilityImport(specifier)) {
@@ -2755,6 +2801,38 @@ describe("analyzer-v2 boundary guard", () => {
       }
     }
 
+    const workerSource = readFileSync(analyzerV2RuntimeSourceAcquisitionContentParserRunnerWorkerPath, "utf8");
+    for (const forbiddenText of [
+      "require(",
+      "module.require",
+      "import(",
+      "eval(",
+      "Function(",
+      "process.env",
+      "process.argv",
+      "process.cwd",
+      "node:fs",
+      "node:http",
+      "node:https",
+      "undici",
+      "child_process",
+      "worker_threads",
+      "node:vm",
+      "@/lib/analyzer",
+      "source-acquisition-content-transport",
+      "sourceReliability",
+      "claimboundary.prompt",
+    ]) {
+      if (workerSource.includes(forbiddenText)) {
+        violations.push(`source-acquisition-content-parser-runner.worker.cjs references forbidden text ${forbiddenText}`);
+      }
+    }
+    for (const processMember of workerSource.matchAll(/process\.([a-zA-Z0-9_]+)/g)) {
+      if (!["stdin", "stdout", "stderr", "exitCode", "exit"].includes(processMember[1])) {
+        violations.push(`source-acquisition-content-parser-runner.worker.cjs uses unapproved process member ${processMember[1]}`);
+      }
+    }
+
     for (const sourcePath of collectFiles(analyzerV2RuntimeRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     )) {
@@ -2768,11 +2846,13 @@ describe("analyzer-v2 boundary guard", () => {
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-transport"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-parser"
+          || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink"
           || specifier === "./source-acquisition-content-authority"
           || specifier === "./source-acquisition-content-envelope"
           || specifier === "./source-acquisition-content-transport"
           || specifier === "./source-acquisition-content-parser"
+          || specifier === "./source-acquisition-content-parser-runner-protocol"
           || specifier === "./source-acquisition-content-packet-sink"
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} re-exports or imports 7N-3B3 content source file ${specifier}`);
@@ -2789,6 +2869,7 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeSourceAcquisitionContentEnvelopePath,
       analyzerV2RuntimeSourceAcquisitionContentTransportPath,
       analyzerV2RuntimeSourceAcquisitionContentParserPath,
+      analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath,
       analyzerV2RuntimeSourceAcquisitionContentPacketSinkPath,
     ].map(toPosix));
     const filesToScan = Array.from(new Set([

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION,
   SOURCE_ACQUISITION_CONTENT_TRANSPORT_PACKET_SINK_VERSION,
+  consumeSourceAcquisitionContentFixturePacketForParserRunner,
   createSourceAcquisitionContentFixturePacket,
   createSourceAcquisitionContentPacketSinkAuthority,
   createSourceAcquisitionContentTransportPacketSinkAuthority,
@@ -45,6 +46,36 @@ function createPacket(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001") {
     parserPolicyId: "POLICY_PARSER_FIXTURE_001",
     contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
   });
+}
+
+type ParserRunnerCallbackOutcome =
+  Extract<
+    Awaited<ReturnType<typeof consumeSourceAcquisitionContentFixturePacketForParserRunner>>,
+    { readonly status: "completed" }
+  >["outcome"];
+
+function runnerOutcome(overrides: Partial<ParserRunnerCallbackOutcome> = {}) {
+  return {
+    status: "success",
+    structuralStatus: "parsed_structural",
+    parserAttemptId: "PARSER_ATT_001",
+    runnerVersion: "v2.source-acquisition.content-parser-runner-protocol.7n3b3-2d-a",
+    observedByteCount: 30,
+    decodedTextLength: 30,
+    blockedReasons: [],
+    rawPayloadIncluded: false,
+    extractedTextIncluded: false,
+    publicPayloadIncluded: false,
+    evidenceItemIncluded: false,
+    sourceRecordIncluded: false,
+    applicabilityIncluded: false,
+    probativeValueIncluded: false,
+    sourceReliabilityTouched: false,
+    warningIncluded: false,
+    verdictIncluded: false,
+    reportProseIncluded: false,
+    ...overrides,
+  } satisfies ParserRunnerCallbackOutcome;
 }
 
 function transportProvenance(overrides: Record<string, string> = {}) {
@@ -127,6 +158,136 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
     expect(serialized).not.toContain("fixture-control-material-beta");
     expect(serialized).not.toContain("https://");
     expect(serialized).not.toContain("source.example");
+  });
+
+  it("consumes fixture packets for the parser runner without returning bytes and always disposes", async () => {
+    const outcome = createPacket("OPAQUE_FIXTURE_PACKET_002");
+    const packet = outcome.packet as SourceAcquisitionContentFixturePacket;
+    let callbackByteCount = 0;
+
+    const consumed = await consumeSourceAcquisitionContentFixturePacketForParserRunner({
+      packet,
+      parserAttemptId: "PARSER_ATT_001",
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+      consume: (material) => {
+        callbackByteCount = material.bytes.length;
+        return runnerOutcome({
+          observedByteCount: material.byteCount,
+          decodedTextLength: material.byteCount,
+        });
+      },
+    });
+
+    const serialized = JSON.stringify(consumed);
+    expect(consumed).toMatchObject({
+      status: "completed",
+      disposalStatus: "disposed",
+      outcome: {
+        status: "success",
+        rawPayloadIncluded: false,
+        evidenceItemIncluded: false,
+        reportProseIncluded: false,
+      },
+    });
+    expect(callbackByteCount).toBe(bytes("fixture-control-material-beta").byteLength);
+    expect(isSourceAcquisitionContentFixturePacket(packet)).toBe(false);
+    expect(serialized).not.toContain("fixture-control-material-beta");
+    expect(serialized).not.toContain("https://");
+    expect(serialized).not.toContain("secret");
+  });
+
+  it("passes runtime-immutable fixture material to the parser runner callback", async () => {
+    const outcome = createPacket("OPAQUE_FIXTURE_PACKET_002");
+    const packet = outcome.packet as SourceAcquisitionContentFixturePacket;
+    let mutationBlocked = false;
+
+    const consumed = await consumeSourceAcquisitionContentFixturePacketForParserRunner({
+      packet,
+      parserAttemptId: "PARSER_ATT_001",
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+      consume: (material) => {
+        expect(Object.isFrozen(material)).toBe(true);
+        expect(Object.isFrozen(material.bytes)).toBe(true);
+        expect(() => {
+          (material.bytes as number[])[0] = 255;
+        }).toThrow();
+        mutationBlocked = true;
+        return runnerOutcome({
+          observedByteCount: material.byteCount,
+          decodedTextLength: material.byteCount,
+        });
+      },
+    });
+
+    expect(mutationBlocked).toBe(true);
+    expect(consumed).toMatchObject({
+      status: "completed",
+      disposalStatus: "disposed",
+    });
+    expect(isSourceAcquisitionContentFixturePacket(packet)).toBe(false);
+  });
+
+  it("sanitizes parser-runner callback exceptions and invalid callback outcomes", async () => {
+    const exceptionPacket = createPacket("OPAQUE_FIXTURE_PACKET_003").packet as SourceAcquisitionContentFixturePacket;
+    const invalidOutcomePacket = createPacket("OPAQUE_FIXTURE_PACKET_004").packet as SourceAcquisitionContentFixturePacket;
+    const leakingStringPacket = createPacket("OPAQUE_FIXTURE_PACKET_005").packet as SourceAcquisitionContentFixturePacket;
+
+    await expect(consumeSourceAcquisitionContentFixturePacketForParserRunner({
+      packet: exceptionPacket,
+      parserAttemptId: "PARSER_ATT_001",
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+      consume: () => {
+        throw new Error("fixture-control-material-alpha https://source.example/sk_secret");
+      },
+    })).resolves.toMatchObject({
+      status: "rejected",
+      disposalStatus: "disposed",
+      blockedReasons: ["runner_callback_exception"],
+    });
+    expect(isSourceAcquisitionContentFixturePacket(exceptionPacket)).toBe(false);
+
+    const invalid = await consumeSourceAcquisitionContentFixturePacketForParserRunner({
+      packet: invalidOutcomePacket,
+      parserAttemptId: "PARSER_ATT_001",
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+      consume: () => ({
+        ...runnerOutcome(),
+        rawPayloadIncluded: true,
+      } as unknown as ParserRunnerCallbackOutcome),
+    });
+
+    expect(invalid).toMatchObject({
+      status: "rejected",
+      disposalStatus: "disposed",
+      blockedReasons: ["runner_callback_outcome_invalid"],
+    });
+    expect(JSON.stringify(invalid)).not.toContain("first");
+    expect(JSON.stringify(invalid)).not.toContain("second");
+    expect(isSourceAcquisitionContentFixturePacket(invalidOutcomePacket)).toBe(false);
+
+    const leaking = await consumeSourceAcquisitionContentFixturePacketForParserRunner({
+      packet: leakingStringPacket,
+      parserAttemptId: "PARSER_ATT_001",
+      parserPolicyId: "POLICY_PARSER_FIXTURE_001",
+      contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
+      consume: () => ({
+        ...runnerOutcome(),
+        runnerVersion: "fixture-control-material-over-byte-cap",
+        blockedReasons: ["fixture_control_material_over_byte_cap"],
+      } as unknown as ParserRunnerCallbackOutcome),
+    });
+
+    expect(leaking).toMatchObject({
+      status: "rejected",
+      disposalStatus: "disposed",
+      blockedReasons: ["runner_callback_outcome_invalid"],
+    });
+    expect(JSON.stringify(leaking)).not.toContain("fixture-control-material-over-byte-cap");
+    expect(isSourceAcquisitionContentFixturePacket(leakingStringPacket)).toBe(false);
   });
 
   it("rejects arbitrary byte-like, copied, and mismatched fixture material", () => {

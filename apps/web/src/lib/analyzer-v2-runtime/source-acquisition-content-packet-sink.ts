@@ -85,6 +85,84 @@ export type SourceAcquisitionContentPacketSinkOutcome =
       readonly blockedReasons: readonly string[];
     };
 
+const SOURCE_ACQUISITION_CONTENT_FIXTURE_PARSER_RUNNER_PROTOCOL_VERSION =
+  "v2.source-acquisition.content-parser-runner-protocol.7n3b3-2d-a";
+const fixtureParserRunnerBlockedReasons = new Set([
+  "request_invalid",
+  "request_too_large",
+  "signal_aborted",
+  "worker_unavailable",
+  "runner_start_failed",
+  "runner_timed_out",
+  "runner_cancelled",
+  "runner_stdout_oversized",
+  "runner_stderr_output",
+  "runner_stderr_oversized",
+  "runner_response_malformed",
+  "runner_failed",
+]);
+
+type SourceAcquisitionContentFixtureParserRunnerStructuralStatus =
+  | "parsed_structural"
+  | "request_invalid"
+  | "runner_unavailable"
+  | "runner_start_failed"
+  | "runner_timed_out"
+  | "runner_cancelled"
+  | "runner_stdout_oversized"
+  | "runner_stderr_output"
+  | "runner_stderr_oversized"
+  | "runner_response_malformed"
+  | "runner_failed";
+
+type SourceAcquisitionContentFixtureParserRunnerBlockedReason =
+  typeof fixtureParserRunnerBlockedReasons extends Set<infer Reason> ? Reason : never;
+
+type SourceAcquisitionContentFixtureParserRunnerMaterial = {
+  readonly bytes: readonly number[];
+  readonly fixturePacketId: string;
+  readonly parserAttemptId: string;
+  readonly parserPolicyId: string;
+  readonly contentTypePolicyId: string;
+  readonly byteCount: number;
+  readonly byteDigest: string;
+};
+
+type SourceAcquisitionContentFixtureParserRunnerCallbackOutcome = {
+  readonly status: "success" | "blocked" | "timed_out" | "cancelled";
+  readonly structuralStatus: SourceAcquisitionContentFixtureParserRunnerStructuralStatus;
+  readonly parserAttemptId: string;
+  readonly runnerVersion: typeof SOURCE_ACQUISITION_CONTENT_FIXTURE_PARSER_RUNNER_PROTOCOL_VERSION | null;
+  readonly observedByteCount: number;
+  readonly decodedTextLength: number;
+  readonly blockedReasons: readonly SourceAcquisitionContentFixtureParserRunnerBlockedReason[];
+  readonly rawPayloadIncluded: false;
+  readonly extractedTextIncluded: false;
+  readonly publicPayloadIncluded: false;
+  readonly evidenceItemIncluded: false;
+  readonly sourceRecordIncluded: false;
+  readonly applicabilityIncluded: false;
+  readonly probativeValueIncluded: false;
+  readonly sourceReliabilityTouched: false;
+  readonly warningIncluded: false;
+  readonly verdictIncluded: false;
+  readonly reportProseIncluded: false;
+};
+
+type SourceAcquisitionContentFixtureParserRunnerConsumptionOutcome =
+  | {
+      readonly status: "completed";
+      readonly outcome: SourceAcquisitionContentFixtureParserRunnerCallbackOutcome;
+      readonly disposalStatus: "disposed";
+      readonly blockedReasons: readonly [];
+    }
+  | {
+      readonly status: "rejected";
+      readonly outcome: null;
+      readonly disposalStatus: "disposed" | "not_applicable" | "not_disposed";
+      readonly blockedReasons: readonly string[];
+    };
+
 export type SourceAcquisitionContentTransportPacketSinkAuthoritySnapshot = {
   readonly kind: "source_acquisition_content_transport_packet_sink_authority_7n3b3_2c_a";
   readonly source: "v2_7n3b3_2c_a_transport_packet_sink";
@@ -312,6 +390,13 @@ const approvedFixtureMaterial = new Map<string, Uint8Array>([
   ["OPAQUE_FIXTURE_PACKET_003", new TextEncoder().encode("first")],
   ["OPAQUE_FIXTURE_PACKET_004", new TextEncoder().encode("second")],
   ["OPAQUE_FIXTURE_PACKET_005", new TextEncoder().encode("fixture-control-material-over-byte-cap")],
+  ["OPAQUE_FIXTURE_PACKET_STDERR", new TextEncoder().encode("fixture-control-stderr")],
+  ["OPAQUE_FIXTURE_PACKET_NONZERO", new TextEncoder().encode("fixture-control-nonzero")],
+  ["OPAQUE_FIXTURE_PACKET_MALFORMED", new TextEncoder().encode("fixture-control-malformed")],
+  ["OPAQUE_FIXTURE_PACKET_OVERSIZED_STDOUT", new TextEncoder().encode("fixture-control-oversized-stdout")],
+  ["OPAQUE_FIXTURE_PACKET_OVERSIZED_STDERR", new TextEncoder().encode("fixture-control-oversized-stderr")],
+  ["OPAQUE_FIXTURE_PACKET_STALL", new TextEncoder().encode("fixture-control-stall")],
+  ["OPAQUE_FIXTURE_PACKET_UNICODE", new TextEncoder().encode("pruefung-multilingual-control")],
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -366,6 +451,79 @@ function validSha256(value: unknown): value is string {
 
 function validHmacValue(value: unknown): value is string {
   return typeof value === "string" && /^[A-F0-9]{64}$/.test(value);
+}
+
+function parserRunnerOutcomeIsValid(
+  value: unknown,
+): value is SourceAcquisitionContentFixtureParserRunnerCallbackOutcome {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const keys = Object.keys(value).sort();
+  const expectedKeys = [
+    "applicabilityIncluded",
+    "blockedReasons",
+    "decodedTextLength",
+    "evidenceItemIncluded",
+    "extractedTextIncluded",
+    "observedByteCount",
+    "parserAttemptId",
+    "probativeValueIncluded",
+    "publicPayloadIncluded",
+    "rawPayloadIncluded",
+    "reportProseIncluded",
+    "runnerVersion",
+    "sourceRecordIncluded",
+    "sourceReliabilityTouched",
+    "status",
+    "structuralStatus",
+    "verdictIncluded",
+    "warningIncluded",
+  ].sort();
+  const observedByteCount = value.observedByteCount;
+  const decodedTextLength = value.decodedTextLength;
+  return keys.length === expectedKeys.length
+    && keys.every((key, index) => key === expectedKeys[index])
+    && ["success", "blocked", "timed_out", "cancelled"].includes(value.status as string)
+    && [
+      "parsed_structural",
+      "request_invalid",
+      "runner_unavailable",
+      "runner_start_failed",
+      "runner_timed_out",
+      "runner_cancelled",
+      "runner_stdout_oversized",
+      "runner_stderr_output",
+      "runner_stderr_oversized",
+      "runner_response_malformed",
+      "runner_failed",
+    ].includes(value.structuralStatus as string)
+    && validOpaqueId(value.parserAttemptId, "PARSER_ATT_")
+    && (
+      value.runnerVersion === null
+      || value.runnerVersion === SOURCE_ACQUISITION_CONTENT_FIXTURE_PARSER_RUNNER_PROTOCOL_VERSION
+    )
+    && typeof observedByteCount === "number"
+    && Number.isInteger(observedByteCount)
+    && observedByteCount >= 0
+    && typeof decodedTextLength === "number"
+    && Number.isInteger(decodedTextLength)
+    && decodedTextLength >= 0
+    && Array.isArray(value.blockedReasons)
+    && value.blockedReasons.every((reason) =>
+      typeof reason === "string" && fixtureParserRunnerBlockedReasons.has(reason)
+    )
+    && value.rawPayloadIncluded === false
+    && value.extractedTextIncluded === false
+    && value.publicPayloadIncluded === false
+    && value.evidenceItemIncluded === false
+    && value.sourceRecordIncluded === false
+    && value.applicabilityIncluded === false
+    && value.probativeValueIncluded === false
+    && value.sourceReliabilityTouched === false
+    && value.warningIncluded === false
+    && value.verdictIncluded === false
+    && value.reportProseIncluded === false;
 }
 
 function authoritySnapshotSeed(params: {
@@ -1201,4 +1359,102 @@ export function disposeSourceAcquisitionContentFixturePacket(
     packet: null,
     blockedReasons: [],
   };
+}
+
+export async function consumeSourceAcquisitionContentFixturePacketForParserRunner(params: {
+  readonly packet: SourceAcquisitionContentFixturePacket;
+  readonly parserAttemptId: string;
+  readonly parserPolicyId: string;
+  readonly contentTypePolicyId: string;
+  readonly consume: (
+    material: SourceAcquisitionContentFixtureParserRunnerMaterial,
+  ) =>
+    | SourceAcquisitionContentFixtureParserRunnerCallbackOutcome
+    | Promise<SourceAcquisitionContentFixtureParserRunnerCallbackOutcome>;
+}): Promise<SourceAcquisitionContentFixtureParserRunnerConsumptionOutcome> {
+  if (
+    !validOpaqueId(params.parserAttemptId, "PARSER_ATT_")
+    || !validPolicyId(params.parserPolicyId)
+    || !validPolicyId(params.contentTypePolicyId)
+    || typeof params.consume !== "function"
+  ) {
+    const disposalStatus = isSourceAcquisitionContentFixturePacket(params.packet)
+      ? disposeSourceAcquisitionContentFixturePacket(params.packet).status === "disposed" ? "disposed" : "not_disposed"
+      : "not_applicable";
+    return {
+      status: "rejected",
+      outcome: null,
+      disposalStatus,
+      blockedReasons: ["runner_consumption_request_invalid"],
+    };
+  }
+
+  if (!isSourceAcquisitionContentFixturePacket(params.packet)) {
+    return {
+      status: "rejected",
+      outcome: null,
+      disposalStatus: "not_applicable",
+      blockedReasons: ["fixture_packet_invalid"],
+    };
+  }
+
+  if (
+    params.packet.parserPolicyId !== params.parserPolicyId
+    || params.packet.contentTypePolicyId !== params.contentTypePolicyId
+  ) {
+    const disposed = disposeSourceAcquisitionContentFixturePacket(params.packet);
+    return {
+      status: "rejected",
+      outcome: null,
+      disposalStatus: disposed.status === "disposed" ? "disposed" : "not_disposed",
+      blockedReasons: ["policy_mismatch"],
+    };
+  }
+
+  const packetState = fixturePacketStates.get(params.packet);
+  if (!packetState || packetState.disposed) {
+    return {
+      status: "rejected",
+      outcome: null,
+      disposalStatus: "not_applicable",
+      blockedReasons: ["fixture_packet_state_missing"],
+    };
+  }
+
+  const material: SourceAcquisitionContentFixtureParserRunnerMaterial = {
+    bytes: Object.freeze(Array.from(packetState.bytes)),
+    fixturePacketId: params.packet.fixturePacketId,
+    parserAttemptId: params.parserAttemptId,
+    parserPolicyId: params.parserPolicyId,
+    contentTypePolicyId: params.contentTypePolicyId,
+    byteCount: params.packet.byteCount,
+    byteDigest: params.packet.byteDigest,
+  };
+
+  try {
+    const callbackOutcome = await params.consume(Object.freeze(material));
+    const disposed = disposeSourceAcquisitionContentFixturePacket(params.packet);
+    if (!parserRunnerOutcomeIsValid(callbackOutcome)) {
+      return {
+        status: "rejected",
+        outcome: null,
+        disposalStatus: disposed.status === "disposed" ? "disposed" : "not_disposed",
+        blockedReasons: ["runner_callback_outcome_invalid"],
+      };
+    }
+    return {
+      status: "completed",
+      outcome: callbackOutcome,
+      disposalStatus: "disposed",
+      blockedReasons: [],
+    };
+  } catch {
+    const disposed = disposeSourceAcquisitionContentFixturePacket(params.packet);
+    return {
+      status: "rejected",
+      outcome: null,
+      disposalStatus: disposed.status === "disposed" ? "disposed" : "not_disposed",
+      blockedReasons: ["runner_callback_exception"],
+    };
+  }
 }
