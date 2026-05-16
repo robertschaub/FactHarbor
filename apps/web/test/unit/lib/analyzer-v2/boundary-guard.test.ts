@@ -2609,6 +2609,11 @@ describe("analyzer-v2 boundary guard", () => {
       for (const entry of importBindings) {
         expect(entry.names.sort()).toEqual(approved?.get(entry.specifier));
       }
+      for (const entry of collectExportBindings(sourceFile)) {
+        if (entry.specifier) {
+          violations.push(`${relativeOwnerPath} re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+        }
+      }
 
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isV1AnalyzerImport(ownerPath, specifier)) {
