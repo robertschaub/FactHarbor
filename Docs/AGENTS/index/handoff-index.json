@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T23:05:02.296Z",
-  "count": 566,
+  "generatedAt": "2026-05-16T23:15:57.290Z",
+  "count": 567,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12256,6 +12256,29 @@
         "Docs/WIP/2026-05-17_V2_Slice_7N3B3-2D-B3A_Provisioned_OCI_Proof_Intake_Runbook.md"
       ],
       "summary": "If a provisioned host becomes available, use B3A as the intake/rejection checklist before running the existing B2 positive verifier. Do not accept image self-approval, rootful/Docker Desktop/local-only proof, unreviewed later verifier drift, pull/build, host repo mount, env forwarding, socket mount,"
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x3-b",
+        "query",
+        "planning",
+        "prompt",
+        "frontmatter",
+        "text",
+        "approval",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md"
+      ],
+      "summary": "If Captain explicitly approves the package wording, implement X3-B exactly under the package file envelope and stop on any semantic prompt change or new capability."
     }
   ]
 }
