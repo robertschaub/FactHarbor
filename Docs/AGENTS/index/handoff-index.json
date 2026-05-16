@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T14:47:30.191Z",
-  "count": 544,
+  "generatedAt": "2026-05-16T15:03:17.309Z",
+  "count": 545,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11611,6 +11611,26 @@
       ],
       "files_touched": [],
       "summary": "Lead Architect Handoff: V2 7N Post-7M-1 Consolidation"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_7N3B3-2D-B3_Provisioned_OCI_Proof_Package.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "7n3b3-2d-b3",
+        "provisioned",
+        "oci",
+        "proof",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md"
+      ],
+      "summary": "Review `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md`."
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_Slice_7N3B3-2C-A_Hidden_Real_Byte_Handoff_Source.md",
