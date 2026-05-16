@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B1 Candidate Runtime Hardening -- [Standard] [open-items: yes]
+**For next agent:** Post-review blockers in 7N-3B1 are fixed at `3d05583e`: child authority now matches parent 7N-3A snapshot hashes, provider attempt IDs are opaque `ATT_<digits>`, non-success provider outcomes cannot carry candidates, and injected provider calls enforce timeout outcomes. Concrete provider/source IO and live jobs still need a later reviewed package.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B1_Candidate_Runtime_Hardening.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B1 Candidate Acquisition Runtime Shell -- [Significant] [open-items: yes]
 **For next agent:** 7N-3B1 is implemented at `878ba6ba` as a hidden/internal candidate-acquisition runtime shell only: package-scoped authority, injected provider boundary, structural allowlist/budget validation, hidden candidate records, exact query coverage, and boundary guards. Concrete provider/source IO, content dereference, parser/network execution, Source Reliability, cache IO, product/public wiring, and live jobs remain blocked until a separate reviewed package.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B1_Candidate_Acquisition_Runtime_Shell.md
