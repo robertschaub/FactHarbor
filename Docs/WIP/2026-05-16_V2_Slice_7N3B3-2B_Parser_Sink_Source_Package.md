@@ -42,6 +42,23 @@ It must not propose source implementation for:
 
 If implementation cannot stay fixture/control-only, stop. Draft 7N-3B3-2C first and include the transport owner file in the reviewed envelope.
 
+## 2.1 Review Result
+
+Initial deputy review returned:
+
+- Security reviewer: `APPROVE`.
+- LLM / Evidence Lifecycle reviewer: `APPROVE`.
+- Senior Developer / implementation-envelope reviewer: `MODIFY`.
+
+Implementation-envelope modifications required before source implementation:
+
+- enumerate exact exports and import allowlists for both new production files;
+- define the exact fixture/control-only byte-bearing entrypoint and its owner brand;
+- narrow timeout/hang requirements to a minimal structural timeout outcome for 2B, without adding a worker, injectable parser engine, or real parser isolation surface;
+- explicitly require boundary-guard updates that replace current parser/sink absence assertions with parser/sink owner-file allowlists and product/public transitive reachability bans.
+
+Those modifications are applied in this package. Re-review is required before implementation.
+
 ## 3. Exact Source Envelope
 
 Allowed production files for 7N-3B3-2B:
@@ -81,7 +98,7 @@ The parser boundary must be structural only.
 
 Allowed parser inputs:
 
-- approved immutable fixture/control bytes created inside tests;
+- an approved 2B fixture/control packet created only by `createSourceAcquisitionContentFixturePacket(...)`;
 - opaque packet material references created by the approved packet sink owner;
 - parser policy id;
 - content type policy id;
@@ -156,6 +173,18 @@ Required safeguards:
 
 If a later package needs real fetched bytes, real-byte parsing requires reviewed worker/process/container isolation and a 7N-3B3-2C transport-owner handoff package.
 
+The exact 2B fixture ingress must be:
+
+- `createSourceAcquisitionContentFixturePacket(params)` in `source-acquisition-content-packet-sink.ts`;
+- available only for immutable, bounded fixture/control bytes in tests;
+- private-branded with a module-private `WeakSet` or equivalent owner-only brand;
+- bound to explicit `fixturePacketId`, `parserPolicyId`, `contentTypePolicyId`, byte count, byte digest, and packet sink authority snapshot hash;
+- rejected if copied, plain, JSON-round-tripped, constructed outside the packet-sink owner, disposed, over cap, or missing the expected digest/count/policy binding;
+- structurally marked as `source: "fixture_control_only_7n3b3_2b"`;
+- impossible to create from `SourceAcquisitionContentTransportOutcome`, content transport diagnostics, arbitrary `Uint8Array`, `Buffer`, string, provider JSON, or product/API input.
+
+2B fixture ingress is not a future compatibility surface. It is a bounded test/control mechanism that must be deleted or replaced by 7N-3B3-2C if real transport bytes are later approved.
+
 ## 7. Import And Export Constraints
 
 `source-acquisition-content-parser.ts` may import only:
@@ -170,7 +199,42 @@ If a later package needs real fetched bytes, real-byte parsing requires reviewed
 - V2 runtime content-envelope types or validation helpers needed for structural IDs and outcomes;
 - V2-owned local utilities that are explicitly allowed by boundary guards.
 
-Both files must export only exact reviewed functions/types. No barrel export is allowed.
+Both files must export only the functions/types listed below. No barrel export is allowed.
+
+Exact exports for `source-acquisition-content-packet-sink.ts`:
+
+- `SOURCE_ACQUISITION_CONTENT_PACKET_SINK_VERSION`
+- `SourceAcquisitionContentPacketSinkAuthoritySnapshot`
+- `SourceAcquisitionContentPacketSinkAuthority`
+- `SourceAcquisitionContentFixturePacket`
+- `SourceAcquisitionContentPacketLifecycleStatus`
+- `SourceAcquisitionContentPacketSinkOutcome`
+- `createSourceAcquisitionContentPacketSinkAuthority`
+- `isSourceAcquisitionContentPacketSinkAuthority`
+- `readSourceAcquisitionContentPacketSinkAuthoritySnapshot`
+- `createSourceAcquisitionContentFixturePacket`
+- `isSourceAcquisitionContentFixturePacket`
+- `disposeSourceAcquisitionContentFixturePacket`
+
+Exact exports for `source-acquisition-content-parser.ts`:
+
+- `SOURCE_ACQUISITION_CONTENT_PARSER_VERSION`
+- `SourceAcquisitionContentParserRequest`
+- `SourceAcquisitionContentParserOutcome`
+- `SourceAcquisitionContentParserStructuralStatus`
+- `parseSourceAcquisitionContentFixturePacket`
+
+Exact import allowlist for `source-acquisition-content-packet-sink.ts`:
+
+- `node:crypto` with `createHash` only;
+- `./source-acquisition-content-envelope` for `SOURCE_ACQUISITION_CONTENT_RUNTIME_VERSION` and content-envelope types only.
+
+Exact import allowlist for `source-acquisition-content-parser.ts`:
+
+- `./source-acquisition-content-packet-sink` for the exact packet/sink types and validators needed to consume a fixture packet and dispose it;
+- `./source-acquisition-content-envelope` for content-envelope types only.
+
+If implementation needs any other import or export, stop and patch this package before coding.
 
 Forbidden imports:
 
@@ -199,10 +263,22 @@ The source package must add or update tests proving:
 - sink caps bound retained packet count and retained byte count;
 - disposal clears retained bytes and parsed material on every terminal path;
 - disposed references cannot resurrect bytes or parsed material;
-- parser timeout/hang and parser failure produce structural outcomes only;
+- parser failure and the minimal 2B structural timeout/abort path produce structural outcomes only;
 - serialized return objects, hidden diagnostics, telemetry, thrown errors, `JSON.stringify(...)`, and `console.*` leak no forbidden payload;
 - outputs contain no evidence items, source records, applicability, extraction, probative values, Source Reliability scores, scarcity/sufficiency, warnings, verdicts, confidence, report fields, or public prose;
 - non-English fixture/control content receives the same structural behavior except unchanged pass-through provenance.
+
+The minimal 2B timeout/abort path must not add a worker, subprocess, parser plugin engine, injectable parser callback, network/browser parser, or real isolation surface. It may only validate a supplied `startedAt` / `timeoutMs` / `now` structural request field or an `AbortSignal` state before bounded in-process fixture parsing, then return a structural `timed_out` or `cancelled` outcome before reading packet material.
+
+Boundary guard updates must explicitly replace the current 7N-3B3-1 parser/sink absence assertion with:
+
+- parser/sink production files present only at the exact two owner paths;
+- parser/sink test files present only at the exact two focused test paths;
+- parser/sink owner imports match the exact allowlists above;
+- parser/sink exports match the exact export lists above;
+- `source-acquisition-content-transport.ts` remains excluded from 2B edits and cannot import parser/sink files;
+- product/public/orchestrator/runner/API/UI/report/export files cannot import or transitively reach parser/sink owner files;
+- existing content-dereference files cannot import parser/sink files except through a later 7N-3B3-2C package.
 
 ## 9. Minimum Verifiers For Implementation
 
