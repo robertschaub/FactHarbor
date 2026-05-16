@@ -95,6 +95,10 @@ const analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-candidate-runtime.ts",
 );
+const analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-candidate-acquisition-harness.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-authority.ts",
@@ -350,6 +354,7 @@ const runtimeScaffoldOptionOwnerPaths = new Set([
   analyzerV2RuntimeArtifactSinkPath,
   analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath,
   analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
+  analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath,
 ].map(toPosix));
 const runtimeScaffoldOptionTerms = [
   "claimUnderstandingRuntime",
@@ -2027,6 +2032,7 @@ describe("analyzer-v2 boundary guard", () => {
       if ([
         analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath,
         analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath,
+        analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath,
       ].map(toPosix).includes(toPosix(sourcePath))) {
         continue;
       }
@@ -3225,6 +3231,109 @@ describe("analyzer-v2 boundary guard", () => {
         || specifier === "@/lib/analyzer-v2"
       ) {
         violations.push(`hidden harness imports product/orchestrator surface ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the X6 hidden candidate-acquisition harness runtime-owned and test-injected only", () => {
+    const harnessPath = analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "hidden-direct-text-candidate-acquisition-harness.test.ts",
+    );
+    const allowedHarnessImports = new Set([
+      "@/lib/analyzer-v2/result-envelope",
+      "@/lib/analyzer-v2/hidden-integration-harness",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+    ]);
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(harnessPath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+
+    for (const sourcePath of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourcePath)) {
+        if (toPosix(importedPath) === toPosix(harnessPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches X6 hidden harness`);
+        }
+      }
+    }
+
+    const sourceFile = parseSource(harnessPath);
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (!allowedHarnessImports.has(specifier)) {
+        violations.push(`X6 hidden harness imports unapproved module ${specifier}`);
+      }
+      if (isV1AnalyzerImport(harnessPath, specifier)) {
+        violations.push(`X6 hidden harness imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X6 hidden harness imports search/fetch provider ${specifier}`);
+      }
+      if (isNetworkParserImport(specifier) || specifier.includes("source-acquisition-network")) {
+        violations.push(`X6 hidden harness imports network/parser dependency ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X6 hidden harness imports content/parser owner ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X6 hidden harness imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X6 hidden harness imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X6 hidden harness imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X6 hidden harness imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X6 hidden harness imports public surface ${specifier}`);
+      }
+      if (
+        specifier === "@/lib/analyzer-v2/orchestrator"
+        || specifier === "@/lib/analyzer-v2/pipeline-shell"
+        || specifier === "@/lib/analyzer-v2/runner-ingress"
+        || specifier === "@/lib/analyzer-v2"
+      ) {
+        violations.push(`X6 hidden harness imports product/orchestrator surface ${specifier}`);
+      }
+    }
+
+    const harnessContent = readFileSync(harnessPath, "utf8");
+    if (harnessContent.includes("runHiddenV2IntegrationHarness")) {
+      violations.push("X6 hidden harness invokes X5 instead of accepting an upstream X5 result");
+    }
+    if (harnessContent.includes("providerCall") || harnessContent.includes("EvidenceQueryPlanningProviderCall")) {
+      violations.push("X6 hidden harness exposes a query-planning/model callback path");
+    }
+    if (harnessContent.includes("candidate_search_api_future")) {
+      violations.push("X6 hidden harness allows future network-capable candidate provider kind");
+    }
+    for (const location of collectDirectFetchCallLocations(sourceFile)) {
+      violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const testFile = parseSource(testPath);
+    for (const specifier of collectModuleSpecifiers(testFile)) {
+      if (specifier.includes("source-acquisition-network")) {
+        violations.push(`X6 test imports network owner ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X6 test imports content/parser owner ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X6 test imports provider SDK ${specifier}`);
       }
     }
 
