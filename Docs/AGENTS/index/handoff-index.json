@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T20:29:08.878Z",
-  "count": 554,
+  "generatedAt": "2026-05-16T20:41:13.903Z",
+  "count": 555,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11967,6 +11967,29 @@
         "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition.ts"
       ],
       "summary": "X7-D is hidden/internal, no-IO composition only. It consumes an already-created X6 candidate-acquisition harness result, derives X7-A source-material readiness through the existing adapter, then calls X7-C provider-network readiness, which internally applies the X7-B negative guard. It returns `comp"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-e",
+        "hidden",
+        "source",
+        "acquisition",
+        "composition",
+        "x6",
+        "provenance",
+        "gate"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition.ts"
+      ],
+      "summary": "X7-E is a narrow hidden hardening slice. `buildHiddenDirectTextSourceAcquisitionReadinessComposition(...)` now imports only `readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(...)` from the X6-P sidecar and fails closed as `x6_not_runtime_owned` for spread copies, JSON round trips, s"
     },
     {
       "file": "2026-05-16_Lead_Developer_V2_7N3B3-2D-B2_OCI_Proof_Completion.md",

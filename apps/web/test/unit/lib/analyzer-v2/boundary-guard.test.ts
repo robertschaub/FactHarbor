@@ -3783,6 +3783,7 @@ describe("analyzer-v2 boundary guard", () => {
     ].sort());
     expect(importBindings.map((entry) => entry.specifier).sort()).toEqual([
       "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance",
       "@/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness",
       "@/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness",
     ].sort());
@@ -3791,6 +3792,10 @@ describe("analyzer-v2 boundary guard", () => {
       [
         "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
         ["HiddenDirectTextCandidateAcquisitionHarnessResult"],
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance",
+        ["readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult"],
       ],
       [
         "@/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness",

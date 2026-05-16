@@ -2,6 +2,9 @@ import type {
   HiddenDirectTextCandidateAcquisitionHarnessResult,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness";
 import {
+  readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance";
+import {
   runHiddenDirectTextSourceMaterialReadinessHarness,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-material-readiness-harness";
 import {
@@ -25,6 +28,7 @@ type SourceMaterialReadinessDecision = ReturnType<
 type HiddenDirectTextSourceAcquisitionReadinessCompositionBlockedReason =
   | "request_malformed"
   | "x6_malformed"
+  | "x6_not_runtime_owned"
   | "x6_not_completed"
   | "public_cutover_not_blocked_precutover"
   | "source_material_readiness_blocked"
@@ -190,16 +194,24 @@ function classifyX6Input(
   ) {
     return "x6_malformed";
   }
-  if (x6CandidateAcquisition.status !== "completed") {
+
+  const runtimeOwnedX6 = readHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult(
+    x6CandidateAcquisition,
+  );
+  if (!runtimeOwnedX6) {
+    return "x6_not_runtime_owned";
+  }
+
+  if (runtimeOwnedX6.status !== "completed") {
     return "x6_not_completed";
   }
-  if (x6CandidateAcquisition.blockedReason !== null) {
+  if (runtimeOwnedX6.blockedReason !== null) {
     return "x6_malformed";
   }
-  if (!publicCutoverIsBlocked(x6CandidateAcquisition)) {
+  if (!publicCutoverIsBlocked(runtimeOwnedX6)) {
     return "public_cutover_not_blocked_precutover";
   }
-  if (!candidateRuntimeHasSafeShape(x6CandidateAcquisition.candidateAcquisitionRuntime)) {
+  if (!candidateRuntimeHasSafeShape(runtimeOwnedX6.candidateAcquisitionRuntime)) {
     return "x6_malformed";
   }
   return null;

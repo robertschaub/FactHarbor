@@ -4,6 +4,9 @@ import type {
   HiddenDirectTextCandidateAcquisitionHarnessResult,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness";
 import {
+  markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness-provenance";
+import {
   createSourceAcquisitionCandidateRuntimeAuthority,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime";
 import {
@@ -54,7 +57,7 @@ function completedX6(
   envelope: ClaimBoundaryV2Envelope = publicEnvelope(),
   runtimeStatus: "completed_structural" | "blocked" | "damaged_structural" = "completed_structural",
 ): HiddenDirectTextCandidateAcquisitionHarnessResult {
-  return {
+  return markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({
     harnessVersion: "v2.hidden-direct-text-candidate-acquisition-harness.x6",
     visibility: "internal_only",
     status: "completed",
@@ -95,16 +98,16 @@ function completedX6(
         },
       ],
     },
-  } as unknown as HiddenDirectTextCandidateAcquisitionHarnessResult;
+  } as unknown as HiddenDirectTextCandidateAcquisitionHarnessResult);
 }
 
 function blockedX6(): HiddenDirectTextCandidateAcquisitionHarnessResult {
-  return {
+  return markHiddenDirectTextCandidateAcquisitionHarnessRuntimeOwnedResult({
     ...completedX6(),
     status: "blocked",
     blockedReason: "x5_not_completed",
     candidateAcquisitionRuntime: null,
-  } as unknown as HiddenDirectTextCandidateAcquisitionHarnessResult;
+  } as unknown as HiddenDirectTextCandidateAcquisitionHarnessResult);
 }
 
 function parentAuthoritySnapshot(): SourceAcquisitionRuntimeAuthoritySnapshot {
@@ -335,6 +338,26 @@ describe("Analyzer V2 hidden direct-text source-acquisition readiness compositio
       "reportMarkdown",
     ]) {
       expect(serialized).not.toContain(forbidden);
+    }
+  });
+
+  it("fails closed when an otherwise valid X6 result is copied outside runtime ownership", () => {
+    const runtimeOwnedX6 = completedX6();
+    const copiedInputs: HiddenDirectTextCandidateAcquisitionHarnessResult[] = [
+      { ...runtimeOwnedX6 } as HiddenDirectTextCandidateAcquisitionHarnessResult,
+      JSON.parse(JSON.stringify(runtimeOwnedX6)) as HiddenDirectTextCandidateAcquisitionHarnessResult,
+      structuredClone(runtimeOwnedX6),
+    ];
+
+    for (const copiedX6 of copiedInputs) {
+      expect(buildHiddenDirectTextSourceAcquisitionReadinessComposition(request({
+        x6CandidateAcquisition: copiedX6,
+      }))).toMatchObject({
+        status: "blocked_pre_execution",
+        blockedReason: "x6_not_runtime_owned",
+        sourceMaterialReadiness: null,
+        providerNetworkReadiness: null,
+      });
     }
   });
 
