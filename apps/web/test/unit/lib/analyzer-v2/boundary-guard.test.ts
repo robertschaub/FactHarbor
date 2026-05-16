@@ -2683,9 +2683,13 @@ describe("analyzer-v2 boundary guard", () => {
           specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-authority"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-transport"
+          || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-parser"
+          || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink"
           || specifier === "./source-acquisition-content-authority"
           || specifier === "./source-acquisition-content-envelope"
           || specifier === "./source-acquisition-content-transport"
+          || specifier === "./source-acquisition-content-parser"
+          || specifier === "./source-acquisition-content-packet-sink"
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} re-exports or imports 7N-3B3 content source file ${specifier}`);
         }

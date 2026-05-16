@@ -70,7 +70,7 @@ export type SourceAcquisitionContentPacketSinkOutcome =
     }
   | {
       readonly status: "disposed";
-      readonly packet: SourceAcquisitionContentFixturePacket;
+      readonly packet: null;
       readonly blockedReasons: readonly [];
     }
   | {
@@ -79,9 +79,8 @@ export type SourceAcquisitionContentPacketSinkOutcome =
       readonly blockedReasons: readonly string[];
     };
 
-type MutableFixturePacket = Omit<SourceAcquisitionContentFixturePacket, "lifecycleStatus" | "disposalStatus"> & {
-  lifecycleStatus: SourceAcquisitionContentPacketLifecycleStatus;
-  disposalStatus: "not_disposed" | "disposed";
+type MutableFixturePacket = {
+  -readonly [Key in keyof SourceAcquisitionContentFixturePacket]: SourceAcquisitionContentFixturePacket[Key];
 };
 
 type PacketSinkAuthorityState = {
@@ -99,6 +98,13 @@ const packetSinkAuthorities = new WeakSet<object>();
 const packetSinkAuthorityStates = new WeakMap<object, PacketSinkAuthorityState>();
 const fixturePackets = new WeakSet<object>();
 const fixturePacketStates = new WeakMap<object, FixturePacketState>();
+const approvedFixtureMaterial = new Map<string, Uint8Array>([
+  ["OPAQUE_FIXTURE_PACKET_001", new TextEncoder().encode("fixture-control-material-alpha")],
+  ["OPAQUE_FIXTURE_PACKET_002", new TextEncoder().encode("fixture-control-material-beta")],
+  ["OPAQUE_FIXTURE_PACKET_003", new TextEncoder().encode("first")],
+  ["OPAQUE_FIXTURE_PACKET_004", new TextEncoder().encode("second")],
+  ["OPAQUE_FIXTURE_PACKET_005", new TextEncoder().encode("fixture-control-material-over-byte-cap")],
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -134,13 +140,6 @@ function validPolicyId(value: unknown): value is string {
 
 function validSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-function validBytes(value: unknown): value is Uint8Array {
-  return value instanceof Uint8Array
-    && Object.getPrototypeOf(value) === Uint8Array.prototype
-    && value.byteLength > 0
-    && value.byteLength <= 64 * 1024;
 }
 
 function authoritySnapshotSeed(params: {
@@ -193,6 +192,22 @@ function packetIsShaped(value: SourceAcquisitionContentFixturePacket): boolean {
     && value.warningIncluded === false
     && value.verdictIncluded === false
     && value.reportProseIncluded === false;
+}
+
+function fixtureBytesFor(fixturePacketId: string): Uint8Array | null {
+  const approved = approvedFixtureMaterial.get(fixturePacketId);
+  return approved ? new Uint8Array(approved) : null;
+}
+
+function scrubDisposedPacket(packet: MutableFixturePacket): void {
+  packet.fixturePacketId = "OPAQUE_FIXTURE_PACKET_DISPOSED";
+  packet.packetSinkAuthoritySnapshotHash = "0".repeat(64);
+  packet.parserPolicyId = "POLICY_DISPOSED";
+  packet.contentTypePolicyId = "POLICY_DISPOSED";
+  packet.byteCount = 0;
+  packet.byteDigest = "0".repeat(64);
+  packet.lifecycleStatus = "disposed";
+  packet.disposalStatus = "disposed";
 }
 
 export function createSourceAcquisitionContentPacketSinkAuthority(params: {
@@ -272,7 +287,6 @@ export function readSourceAcquisitionContentPacketSinkAuthoritySnapshot(
 export function createSourceAcquisitionContentFixturePacket(params: {
   readonly authority: SourceAcquisitionContentPacketSinkAuthority;
   readonly fixturePacketId: string;
-  readonly bytes: Uint8Array;
   readonly expectedByteCount: number;
   readonly expectedByteDigest: string;
   readonly parserPolicyId: string;
@@ -284,15 +298,20 @@ export function createSourceAcquisitionContentFixturePacket(params: {
   if (!validOpaqueId(params.fixturePacketId, "OPAQUE_FIXTURE_PACKET_")) {
     return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_id_invalid"] };
   }
-  if (!validBytes(params.bytes)) {
-    return { status: "rejected", packet: null, blockedReasons: ["fixture_bytes_invalid"] };
+  if ("bytes" in params || "rawBytes" in params || "payload" in params) {
+    return { status: "rejected", packet: null, blockedReasons: ["fixture_bytes_unapproved"] };
   }
   if (!validPolicyId(params.parserPolicyId) || !validPolicyId(params.contentTypePolicyId)) {
     return { status: "rejected", packet: null, blockedReasons: ["policy_id_invalid"] };
   }
 
-  const byteCount = params.bytes.byteLength;
-  const byteDigest = sha256Bytes(params.bytes);
+  const bytes = fixtureBytesFor(params.fixturePacketId);
+  if (!bytes) {
+    return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_id_unapproved"] };
+  }
+
+  const byteCount = bytes.byteLength;
+  const byteDigest = sha256Bytes(bytes);
   if (params.expectedByteCount !== byteCount || params.expectedByteDigest !== byteDigest) {
     return { status: "rejected", packet: null, blockedReasons: ["fixture_byte_binding_mismatch"] };
   }
@@ -333,7 +352,7 @@ export function createSourceAcquisitionContentFixturePacket(params: {
   fixturePackets.add(packet);
   fixturePacketStates.set(packet, {
     authority: params.authority,
-    bytes: new Uint8Array(params.bytes),
+    bytes,
     disposed: false,
   });
   state.retainedPackets += 1;
@@ -348,20 +367,22 @@ export function createSourceAcquisitionContentFixturePacket(params: {
 export function isSourceAcquisitionContentFixturePacket(
   value: unknown,
 ): value is SourceAcquisitionContentFixturePacket {
+  const state = isRecord(value) ? fixturePacketStates.get(value) : undefined;
   return isRecord(value)
     && fixturePackets.has(value)
+    && state?.disposed === false
     && packetIsShaped(value as SourceAcquisitionContentFixturePacket);
 }
 
 export function disposeSourceAcquisitionContentFixturePacket(
   packet: SourceAcquisitionContentFixturePacket,
 ): SourceAcquisitionContentPacketSinkOutcome {
-  if (!isSourceAcquisitionContentFixturePacket(packet)) {
-    return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_invalid"] };
-  }
-  const packetState = fixturePacketStates.get(packet);
-  if (!packetState || packetState.disposed) {
+  const packetState = isRecord(packet) ? fixturePacketStates.get(packet) : undefined;
+  if (packetState?.disposed) {
     return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_disposed"] };
+  }
+  if (!isSourceAcquisitionContentFixturePacket(packet) || !packetState) {
+    return { status: "rejected", packet: null, blockedReasons: ["fixture_packet_invalid"] };
   }
   const authorityState = packetSinkAuthorityStates.get(packetState.authority);
   if (!authorityState) {
@@ -372,12 +393,12 @@ export function disposeSourceAcquisitionContentFixturePacket(
   authorityState.retainedBytes = Math.max(0, authorityState.retainedBytes - packet.byteCount);
   packetState.bytes = new Uint8Array();
   packetState.disposed = true;
-  (packet as MutableFixturePacket).lifecycleStatus = "disposed";
-  (packet as MutableFixturePacket).disposalStatus = "disposed";
+  fixturePackets.delete(packet);
+  scrubDisposedPacket(packet as MutableFixturePacket);
 
   return {
     status: "disposed",
-    packet,
+    packet: null,
     blockedReasons: [],
   };
 }

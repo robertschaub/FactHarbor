@@ -9,10 +9,11 @@ import {
   createSourceAcquisitionContentFixturePacket,
   createSourceAcquisitionContentPacketSinkAuthority,
   disposeSourceAcquisitionContentFixturePacket,
+  isSourceAcquisitionContentFixturePacket,
   type SourceAcquisitionContentFixturePacket,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink";
 
-function bytes(value = "fixture parser material"): Uint8Array {
+function bytes(value: string): Uint8Array {
   return new TextEncoder().encode(value);
 }
 
@@ -20,13 +21,26 @@ function digest(value: Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function packet(currentBytes = bytes()): SourceAcquisitionContentFixturePacket {
-  const outcome = createSourceAcquisitionContentFixturePacket({
-    authority: createSourceAcquisitionContentPacketSinkAuthority(),
-    fixturePacketId: "OPAQUE_FIXTURE_PACKET_001",
-    bytes: currentBytes,
+function fixtureSpec(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001") {
+  const materialById: Record<string, string> = {
+    OPAQUE_FIXTURE_PACKET_001: "fixture-control-material-alpha",
+    OPAQUE_FIXTURE_PACKET_002: "fixture-control-material-beta",
+    OPAQUE_FIXTURE_PACKET_003: "first",
+    OPAQUE_FIXTURE_PACKET_004: "second",
+    OPAQUE_FIXTURE_PACKET_005: "fixture-control-material-over-byte-cap",
+  };
+  const currentBytes = bytes(materialById[fixturePacketId] ?? "");
+  return {
+    fixturePacketId,
     expectedByteCount: currentBytes.byteLength,
     expectedByteDigest: digest(currentBytes),
+  };
+}
+
+function packet(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001"): SourceAcquisitionContentFixturePacket {
+  const outcome = createSourceAcquisitionContentFixturePacket({
+    authority: createSourceAcquisitionContentPacketSinkAuthority(),
+    ...fixtureSpec(fixturePacketId),
     parserPolicyId: "POLICY_PARSER_FIXTURE_001",
     contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
   });
@@ -52,9 +66,8 @@ function request(
 }
 
 describe("Analyzer V2 source-acquisition content parser", () => {
-  it("parses only structural metadata from a branded fixture packet", () => {
-    const currentBytes = bytes("Strukturelles Material ohne Semantik");
-    const currentPacket = packet(currentBytes);
+  it("parses only structural metadata from a branded fixture packet and disposes it", () => {
+    const currentPacket = packet("OPAQUE_FIXTURE_PACKET_002");
     const outcome = parseSourceAcquisitionContentFixturePacket(request({ packet: currentPacket }));
     const serialized = JSON.stringify(outcome);
 
@@ -63,8 +76,10 @@ describe("Analyzer V2 source-acquisition content parser", () => {
       visibility: "internal_only",
       status: "success",
       structuralStatus: "parsed_structural",
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_001",
-      observedByteCount: currentBytes.byteLength,
+      fixturePacketId: null,
+      packetLifecycleStatus: "disposed",
+      disposalStatus: "disposed",
+      observedByteCount: 0,
       parserOutputByteCount: 0,
       rawPayloadIncluded: false,
       extractedTextIncluded: false,
@@ -78,7 +93,8 @@ describe("Analyzer V2 source-acquisition content parser", () => {
       verdictIncluded: false,
       reportProseIncluded: false,
     });
-    expect(serialized).not.toContain("Strukturelles");
+    expect(isSourceAcquisitionContentFixturePacket(currentPacket)).toBe(false);
+    expect(serialized).not.toContain("fixture-control-material-beta");
     expect(serialized).not.toContain("https://");
     expect(serialized).not.toContain("source.example");
   });
@@ -104,56 +120,67 @@ describe("Analyzer V2 source-acquisition content parser", () => {
   it("blocks disposed packets and policy mismatches without material reuse", () => {
     const disposedPacket = packet();
     expect(disposeSourceAcquisitionContentFixturePacket(disposedPacket).status).toBe("disposed");
+    expect(isSourceAcquisitionContentFixturePacket(disposedPacket)).toBe(false);
     expect(parseSourceAcquisitionContentFixturePacket(request({
       packet: disposedPacket,
     }))).toMatchObject({
       status: "blocked",
-      structuralStatus: "fixture_packet_disposed",
-      disposalStatus: "disposed",
+      structuralStatus: "fixture_packet_invalid",
+      disposalStatus: "not_applicable",
     });
 
+    const mismatchPacket = packet();
     expect(parseSourceAcquisitionContentFixturePacket(request({
-      packet: packet(),
+      packet: mismatchPacket,
       parserPolicyId: "POLICY_PARSER_OTHER_001",
     }))).toMatchObject({
       status: "blocked",
       structuralStatus: "policy_mismatch",
+      disposalStatus: "disposed",
       parserOutputByteCount: 0,
     });
+    expect(isSourceAcquisitionContentFixturePacket(mismatchPacket)).toBe(false);
   });
 
-  it("returns minimal structural timeout and cancellation outcomes before reading packet material", () => {
+  it("disposes valid packets on timeout and cancellation before reporting structural outcomes", () => {
     const controller = new AbortController();
     controller.abort();
+    const timeoutPacket = packet();
+    const cancelledPacket = packet("OPAQUE_FIXTURE_PACKET_002");
 
     expect(parseSourceAcquisitionContentFixturePacket(request({
-      packet: bytes("not read when timed out") as unknown as SourceAcquisitionContentFixturePacket,
+      packet: timeoutPacket,
       nowMs: 250,
       timeoutMs: 100,
     }))).toMatchObject({
       status: "timed_out",
       structuralStatus: "timed_out",
       fixturePacketId: null,
+      packetLifecycleStatus: "disposed",
+      disposalStatus: "disposed",
       observedByteCount: 0,
     });
+    expect(isSourceAcquisitionContentFixturePacket(timeoutPacket)).toBe(false);
 
     expect(parseSourceAcquisitionContentFixturePacket(request({
-      packet: bytes("not read when cancelled") as unknown as SourceAcquisitionContentFixturePacket,
+      packet: cancelledPacket,
       signal: controller.signal,
     }))).toMatchObject({
       status: "cancelled",
       structuralStatus: "cancelled",
       fixturePacketId: null,
+      packetLifecycleStatus: "disposed",
+      disposalStatus: "disposed",
       observedByteCount: 0,
     });
+    expect(isSourceAcquisitionContentFixturePacket(cancelledPacket)).toBe(false);
   });
 
-  it("sanitizes invalid request ids and can dispose after structural parsing", () => {
+  it("sanitizes invalid request ids and disposes valid packet material on request failure", () => {
     const currentPacket = packet();
     const parsed = parseSourceAcquisitionContentFixturePacket(request({
       packet: currentPacket,
       parserAttemptId: "https://source.example/sk_secret",
-      disposeAfterParse: true,
     }));
 
     expect(parsed).toMatchObject({
@@ -161,19 +188,9 @@ describe("Analyzer V2 source-acquisition content parser", () => {
       structuralStatus: "request_invalid",
       parserAttemptId: "PARSER_ATT_REDACTED",
       fixturePacketId: null,
-    });
-
-    const validDispose = parseSourceAcquisitionContentFixturePacket(request({
-      packet: currentPacket,
-      disposeAfterParse: true,
-    }));
-    expect(validDispose).toMatchObject({
-      status: "success",
-      structuralStatus: "parsed_structural",
+      packetLifecycleStatus: "disposed",
       disposalStatus: "disposed",
     });
-    expect(parseSourceAcquisitionContentFixturePacket(request({
-      packet: currentPacket,
-    })).structuralStatus).toBe("fixture_packet_disposed");
+    expect(isSourceAcquisitionContentFixturePacket(currentPacket)).toBe(false);
   });
 });

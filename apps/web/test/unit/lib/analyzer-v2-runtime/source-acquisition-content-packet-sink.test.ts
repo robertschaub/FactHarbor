@@ -11,7 +11,7 @@ import {
   type SourceAcquisitionContentFixturePacket,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink";
 
-function bytes(value = "fixture control material"): Uint8Array {
+function bytes(value: string): Uint8Array {
   return new TextEncoder().encode(value);
 }
 
@@ -19,13 +19,26 @@ function digest(value: Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function createPacket(currentBytes = bytes()) {
-  return createSourceAcquisitionContentFixturePacket({
-    authority: createSourceAcquisitionContentPacketSinkAuthority(),
-    fixturePacketId: "OPAQUE_FIXTURE_PACKET_001",
-    bytes: currentBytes,
+function fixtureSpec(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001") {
+  const materialById: Record<string, string> = {
+    OPAQUE_FIXTURE_PACKET_001: "fixture-control-material-alpha",
+    OPAQUE_FIXTURE_PACKET_002: "fixture-control-material-beta",
+    OPAQUE_FIXTURE_PACKET_003: "first",
+    OPAQUE_FIXTURE_PACKET_004: "second",
+    OPAQUE_FIXTURE_PACKET_005: "fixture-control-material-over-byte-cap",
+  };
+  const currentBytes = bytes(materialById[fixturePacketId] ?? "");
+  return {
+    fixturePacketId,
     expectedByteCount: currentBytes.byteLength,
     expectedByteDigest: digest(currentBytes),
+  };
+}
+
+function createPacket(fixturePacketId = "OPAQUE_FIXTURE_PACKET_001") {
+  return createSourceAcquisitionContentFixturePacket({
+    authority: createSourceAcquisitionContentPacketSinkAuthority(),
+    ...fixtureSpec(fixturePacketId),
     parserPolicyId: "POLICY_PARSER_FIXTURE_001",
     contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
   });
@@ -61,9 +74,9 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
     });
   });
 
-  it("materializes only digest-bound fixture/control packets without serializing payload", () => {
-    const currentBytes = bytes("Mehrsprachiges Strukturmaterial");
-    const outcome = createPacket(currentBytes);
+  it("materializes only catalogued fixture/control packets without serializing payload", () => {
+    const spec = fixtureSpec("OPAQUE_FIXTURE_PACKET_002");
+    const outcome = createPacket("OPAQUE_FIXTURE_PACKET_002");
 
     expect(outcome.status).toBe("accepted");
     expect(outcome.packet).not.toBeNull();
@@ -74,28 +87,24 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
     expect(isSourceAcquisitionContentFixturePacket({ ...packet })).toBe(false);
     expect(isSourceAcquisitionContentFixturePacket(JSON.parse(serialized))).toBe(false);
     expect(packet.source).toBe("fixture_control_only_7n3b3_2b");
-    expect(packet.byteCount).toBe(currentBytes.byteLength);
-    expect(packet.byteDigest).toBe(digest(currentBytes));
+    expect(packet.byteCount).toBe(spec.expectedByteCount);
+    expect(packet.byteDigest).toBe(spec.expectedByteDigest);
     expect(packet.rawPayloadIncluded).toBe(false);
     expect(packet.extractedTextIncluded).toBe(false);
     expect(packet.evidenceItemIncluded).toBe(false);
     expect(packet.warningIncluded).toBe(false);
     expect(packet.verdictIncluded).toBe(false);
     expect(packet.reportProseIncluded).toBe(false);
-    expect(serialized).not.toContain("Mehrsprachiges");
+    expect(serialized).not.toContain("fixture-control-material-beta");
     expect(serialized).not.toContain("https://");
     expect(serialized).not.toContain("source.example");
   });
 
   it("rejects arbitrary byte-like, copied, and mismatched fixture material", () => {
     const authority = createSourceAcquisitionContentPacketSinkAuthority();
-    const currentBytes = bytes();
     const valid = {
       authority,
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_001",
-      bytes: currentBytes,
-      expectedByteCount: currentBytes.byteLength,
-      expectedByteDigest: digest(currentBytes),
+      ...fixtureSpec(),
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     };
@@ -103,22 +112,32 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
     expect(createSourceAcquisitionContentFixturePacket({
       ...valid,
       bytes: Buffer.from("buffer is not approved fixture bytes") as unknown as Uint8Array,
-      expectedByteCount: 36,
-      expectedByteDigest: digest(new Uint8Array(Buffer.from("buffer is not approved fixture bytes"))),
-    }).status).toBe("rejected");
+    } as Parameters<typeof createSourceAcquisitionContentFixturePacket>[0])).toMatchObject({
+      status: "rejected",
+      blockedReasons: ["fixture_bytes_unapproved"],
+    });
     expect(createSourceAcquisitionContentFixturePacket({
       ...valid,
       bytes: [1, 2, 3] as unknown as Uint8Array,
-      expectedByteCount: 3,
-    }).status).toBe("rejected");
+    } as Parameters<typeof createSourceAcquisitionContentFixturePacket>[0])).toMatchObject({
+      status: "rejected",
+      blockedReasons: ["fixture_bytes_unapproved"],
+    });
     expect(createSourceAcquisitionContentFixturePacket({
       ...valid,
-      expectedByteCount: currentBytes.byteLength + 1,
+      expectedByteCount: valid.expectedByteCount + 1,
     }).status).toBe("rejected");
     expect(createSourceAcquisitionContentFixturePacket({
       ...valid,
       expectedByteDigest: "0".repeat(64),
     }).status).toBe("rejected");
+    expect(createSourceAcquisitionContentFixturePacket({
+      ...valid,
+      fixturePacketId: "OPAQUE_FIXTURE_PACKET_UNAPPROVED",
+    })).toMatchObject({
+      status: "rejected",
+      blockedReasons: ["fixture_packet_id_unapproved"],
+    });
     expect(createSourceAcquisitionContentFixturePacket({
       ...valid,
       fixturePacketId: "https://source.example/item",
@@ -130,23 +149,15 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
       maxRetainedPackets: 1,
       maxRetainedBytes: 16,
     });
-    const firstBytes = bytes("first");
-    const secondBytes = bytes("second");
     const first = createSourceAcquisitionContentFixturePacket({
       authority,
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_001",
-      bytes: firstBytes,
-      expectedByteCount: firstBytes.byteLength,
-      expectedByteDigest: digest(firstBytes),
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_003"),
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     });
     const secondBlocked = createSourceAcquisitionContentFixturePacket({
       authority,
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_002",
-      bytes: secondBytes,
-      expectedByteCount: secondBytes.byteLength,
-      expectedByteDigest: digest(secondBytes),
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_004"),
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     });
@@ -161,22 +172,15 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
 
     const secondAccepted = createSourceAcquisitionContentFixturePacket({
       authority,
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_002",
-      bytes: secondBytes,
-      expectedByteCount: secondBytes.byteLength,
-      expectedByteDigest: digest(secondBytes),
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_004"),
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     });
     expect(secondAccepted.status).toBe("accepted");
 
-    const oversizedBytes = bytes("this material exceeds cap");
     expect(createSourceAcquisitionContentFixturePacket({
       authority: createSourceAcquisitionContentPacketSinkAuthority({ maxRetainedBytes: 8 }),
-      fixturePacketId: "OPAQUE_FIXTURE_PACKET_003",
-      bytes: oversizedBytes,
-      expectedByteCount: oversizedBytes.byteLength,
-      expectedByteDigest: digest(oversizedBytes),
+      ...fixtureSpec("OPAQUE_FIXTURE_PACKET_005"),
       parserPolicyId: "POLICY_PARSER_FIXTURE_001",
       contentTypePolicyId: "POLICY_CONTENT_TYPE_TEXT_001",
     })).toMatchObject({
@@ -191,16 +195,15 @@ describe("Analyzer V2 source-acquisition content packet sink", () => {
 
     expect(disposeSourceAcquisitionContentFixturePacket(packet)).toMatchObject({
       status: "disposed",
-      packet: {
-        lifecycleStatus: "disposed",
-        disposalStatus: "disposed",
-      },
+      packet: null,
     });
     expect(disposeSourceAcquisitionContentFixturePacket(packet)).toMatchObject({
       status: "rejected",
       blockedReasons: ["fixture_packet_disposed"],
     });
-    expect(isSourceAcquisitionContentFixturePacket(packet)).toBe(true);
-    expect(JSON.stringify(packet)).not.toContain("fixture control material");
+    expect(isSourceAcquisitionContentFixturePacket(packet)).toBe(false);
+    expect(packet.fixturePacketId).toBe("OPAQUE_FIXTURE_PACKET_DISPOSED");
+    expect(packet.byteCount).toBe(0);
+    expect(JSON.stringify(packet)).not.toContain("fixture-control-material-alpha");
   });
 });

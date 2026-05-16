@@ -26,7 +26,6 @@ export type SourceAcquisitionContentParserRequest = {
   readonly nowMs: number;
   readonly timeoutMs: number;
   readonly signal?: AbortSignal;
-  readonly disposeAfterParse?: boolean;
 };
 
 export type SourceAcquisitionContentParserOutcome = {
@@ -77,8 +76,9 @@ function outcome(params: {
   readonly status: SourceAcquisitionContentParserOutcome["status"];
   readonly structuralStatus: SourceAcquisitionContentParserStructuralStatus;
   readonly parserAttemptId: string;
-  readonly packet?: SourceAcquisitionContentFixturePacket;
+  readonly packetLifecycleStatus?: SourceAcquisitionContentParserOutcome["packetLifecycleStatus"];
   readonly disposalStatus?: SourceAcquisitionContentParserOutcome["disposalStatus"];
+  readonly observedByteCount?: number;
 }): SourceAcquisitionContentParserOutcome {
   return {
     version: SOURCE_ACQUISITION_CONTENT_PARSER_VERSION,
@@ -88,10 +88,10 @@ function outcome(params: {
     parserAttemptId: parserAttemptIdIsValid(params.parserAttemptId)
       ? params.parserAttemptId
       : "PARSER_ATT_REDACTED",
-    fixturePacketId: params.packet?.fixturePacketId ?? null,
-    packetLifecycleStatus: params.packet?.lifecycleStatus ?? "not_available",
-    disposalStatus: params.disposalStatus ?? params.packet?.disposalStatus ?? "not_applicable",
-    observedByteCount: params.packet?.byteCount ?? 0,
+    fixturePacketId: null,
+    packetLifecycleStatus: params.packetLifecycleStatus ?? "not_available",
+    disposalStatus: params.disposalStatus ?? "not_applicable",
+    observedByteCount: params.observedByteCount ?? 0,
     parserOutputByteCount: 0,
     rawPayloadIncluded: false,
     extractedTextIncluded: false,
@@ -107,6 +107,13 @@ function outcome(params: {
   };
 }
 
+function disposeValidPacket(
+  packet: SourceAcquisitionContentFixturePacket,
+): SourceAcquisitionContentParserOutcome["disposalStatus"] {
+  const disposed = disposeSourceAcquisitionContentFixturePacket(packet);
+  return disposed.status === "disposed" ? "disposed" : "not_disposed";
+}
+
 export function parseSourceAcquisitionContentFixturePacket(
   request: SourceAcquisitionContentParserRequest,
 ): SourceAcquisitionContentParserOutcome {
@@ -120,26 +127,41 @@ export function parseSourceAcquisitionContentFixturePacket(
     || request.timeoutMs <= 0
     || request.nowMs < request.startedAtMs
   ) {
+    const disposalStatus = isSourceAcquisitionContentFixturePacket(request.packet)
+      ? disposeValidPacket(request.packet)
+      : "not_applicable";
     return outcome({
       status: "blocked",
       structuralStatus: "request_invalid",
       parserAttemptId: request.parserAttemptId,
+      packetLifecycleStatus: disposalStatus === "disposed" ? "disposed" : "not_available",
+      disposalStatus,
     });
   }
 
   if (request.signal?.aborted) {
+    const disposalStatus = isSourceAcquisitionContentFixturePacket(request.packet)
+      ? disposeValidPacket(request.packet)
+      : "not_applicable";
     return outcome({
       status: "cancelled",
       structuralStatus: "cancelled",
       parserAttemptId: request.parserAttemptId,
+      packetLifecycleStatus: disposalStatus === "disposed" ? "disposed" : "not_available",
+      disposalStatus,
     });
   }
 
   if (request.nowMs - request.startedAtMs >= request.timeoutMs) {
+    const disposalStatus = isSourceAcquisitionContentFixturePacket(request.packet)
+      ? disposeValidPacket(request.packet)
+      : "not_applicable";
     return outcome({
       status: "timed_out",
       structuralStatus: "timed_out",
       parserAttemptId: request.parserAttemptId,
+      packetLifecycleStatus: disposalStatus === "disposed" ? "disposed" : "not_available",
+      disposalStatus,
     });
   }
 
@@ -156,7 +178,8 @@ export function parseSourceAcquisitionContentFixturePacket(
       status: "blocked",
       structuralStatus: "fixture_packet_disposed",
       parserAttemptId: request.parserAttemptId,
-      packet: request.packet,
+      packetLifecycleStatus: "disposed",
+      disposalStatus: "disposed",
     });
   }
 
@@ -164,29 +187,22 @@ export function parseSourceAcquisitionContentFixturePacket(
     request.packet.parserPolicyId !== request.parserPolicyId
     || request.packet.contentTypePolicyId !== request.contentTypePolicyId
   ) {
+    const disposalStatus = disposeValidPacket(request.packet);
     return outcome({
       status: "blocked",
       structuralStatus: "policy_mismatch",
       parserAttemptId: request.parserAttemptId,
-      packet: request.packet,
+      packetLifecycleStatus: disposalStatus === "disposed" ? "disposed" : "not_available",
+      disposalStatus,
     });
   }
 
-  if (request.disposeAfterParse === true) {
-    const disposed = disposeSourceAcquisitionContentFixturePacket(request.packet);
-    return outcome({
-      status: "success",
-      structuralStatus: "parsed_structural",
-      parserAttemptId: request.parserAttemptId,
-      packet: disposed.packet ?? request.packet,
-      disposalStatus: disposed.status === "disposed" ? "disposed" : "not_disposed",
-    });
-  }
-
+  const disposalStatus = disposeValidPacket(request.packet);
   return outcome({
     status: "success",
     structuralStatus: "parsed_structural",
     parserAttemptId: request.parserAttemptId,
-    packet: request.packet,
+    packetLifecycleStatus: disposalStatus === "disposed" ? "disposed" : "not_available",
+    disposalStatus,
   });
 }
