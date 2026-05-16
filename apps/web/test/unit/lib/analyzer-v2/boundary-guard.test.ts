@@ -50,6 +50,7 @@ const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
 const evidenceLifecycleQueryPlanningRoot = path.resolve(evidenceLifecycleRoot, "query-planning");
 const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
+const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
 const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -98,6 +99,10 @@ const analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath = path.resolve(
 const analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath = path.resolve(
   analyzerV2RuntimeRoot,
   "hidden-direct-text-candidate-acquisition-harness.ts",
+);
+const analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-source-material-readiness-harness.ts",
 );
 const analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -3338,7 +3343,181 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  });
+  }, 10_000);
+
+  it("keeps X7-A source-material readiness runtime-adapted and non-executable", () => {
+    const coreFiles = collectFiles(evidenceLifecycleSourceMaterialRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const harnessPath = analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath;
+    const testPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "hidden-direct-text-source-material-readiness-harness.test.ts",
+    );
+    const allowedHarnessImports = new Set([
+      "@/lib/analyzer-v2/result-envelope",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/readiness",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/types",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+    ]);
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(coreFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material/readiness.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material/types.ts",
+    ]);
+    expect(existsSync(harnessPath)).toBe(true);
+    expect(existsSync(testPath)).toBe(true);
+
+    for (const sourcePath of coreFiles) {
+      const sourceFile = parseSource(sourcePath);
+      const sourceContent = readFileSync(sourcePath, "utf8");
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier) || specifier.includes("source-acquisition-network")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports network/parser dependency ${specifier}`);
+        }
+        if (specifier.includes("source-acquisition-content")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports content/parser owner ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+      for (const forbiddenTerm of [
+        "EvidenceItem",
+        "warning",
+        "verdict",
+        "truthPercentage",
+        "confidence",
+        "reportMarkdown",
+        "sourceReliability",
+        "cacheKey",
+        "https://",
+        "fetch(",
+      ]) {
+        if (sourceContent.includes(forbiddenTerm)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} contains forbidden X7-A term ${forbiddenTerm}`);
+        }
+      }
+    }
+
+    for (const sourcePath of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourcePath)) {
+        if (toPosix(importedPath) === toPosix(harnessPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches X7-A hidden harness`);
+        }
+      }
+    }
+
+    const sourceFile = parseSource(harnessPath);
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (!allowedHarnessImports.has(specifier)) {
+        violations.push(`X7-A hidden harness imports unapproved module ${specifier}`);
+      }
+      if (isV1AnalyzerImport(harnessPath, specifier)) {
+        violations.push(`X7-A hidden harness imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier)) {
+        violations.push(`X7-A hidden harness imports search/fetch provider ${specifier}`);
+      }
+      if (isNetworkParserImport(specifier) || specifier.includes("source-acquisition-network")) {
+        violations.push(`X7-A hidden harness imports network/parser dependency ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X7-A hidden harness imports content/parser owner ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-A hidden harness imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-A hidden harness imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-A hidden harness imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-A hidden harness imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-A hidden harness imports public surface ${specifier}`);
+      }
+      if (
+        specifier === "@/lib/analyzer-v2/orchestrator"
+        || specifier === "@/lib/analyzer-v2/pipeline-shell"
+        || specifier === "@/lib/analyzer-v2/runner-ingress"
+        || specifier === "@/lib/analyzer-v2"
+      ) {
+        violations.push(`X7-A hidden harness imports product/orchestrator surface ${specifier}`);
+      }
+    }
+
+    const harnessContent = readFileSync(harnessPath, "utf8");
+    for (const forbiddenCall of [
+      "runHiddenV2IntegrationHarness",
+      "runHiddenDirectTextCandidateAcquisitionHarness",
+      "executeSourceAcquisitionCandidateRuntime",
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "executeSourceAcquisitionNetworkTransport",
+      "fetch(",
+    ]) {
+      if (harnessContent.includes(forbiddenCall)) {
+        violations.push(`X7-A hidden harness contains forbidden execution call ${forbiddenCall}`);
+      }
+    }
+
+    const testFile = parseSource(testPath);
+    for (const specifier of collectModuleSpecifiers(testFile)) {
+      if (specifier.includes("source-acquisition-network")) {
+        violations.push(`X7-A test imports network owner ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content")) {
+        violations.push(`X7-A test imports content/parser owner ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-A test imports provider SDK ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 10_000);
 
   it("keeps the Analyzer V2 barrel free of dispatch-capable internals", () => {
     const violations: string[] = [];
@@ -3444,6 +3623,7 @@ describe("analyzer-v2 boundary guard", () => {
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExecutionReadinessRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleQueryPlanningRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceMaterialRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionPortRoot)}/`)
     );
     const violations: string[] = [];
@@ -3505,6 +3685,7 @@ describe("analyzer-v2 boundary guard", () => {
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material",
       "src/lib/analyzer-v2/evidence-lifecycle/task-contracts",
       "src/lib/analyzer-v2/evidence-lifecycle/task-policy",
     ]);
