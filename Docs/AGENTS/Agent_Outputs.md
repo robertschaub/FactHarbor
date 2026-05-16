@@ -3330,3 +3330,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ---
 ### 2026-05-16 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 C0-S1A Status Sync -- [Standard] [open-items: yes]
 **For next agent:** Synced `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` with the committed C0-S1A audit-only validator hardening. The canonical status now says the gate register remains audit-only/runtime-unconsumed/live-job blocked and self-tests C0-S1 source package, `parser-worker execution`, `C0-S1`, `P0`, and `2D-C remains blocked` drift. This is documentation/status synchronization only; no runtime source or gate behavior changed.
+
+---
+### 2026-05-16 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 C0-S2 Parser Admission Provenance Source Package -- [Significant] [open-items: yes]
+**For next agent:** Drafted the docs-only C0-S2 source package after six-agent deputy debate converged on package-first and blocked implementation. The package defines a future process-local runtime-owned C0-S1 admission provenance sidecar so future gates can reject copied/JSON/structured-clone/reconstructed admission objects. It authorizes no source edits now and explicitly keeps parser execution, worker spawn, byte consumption, packet/frame consumption, parsed material, source material, Evidence Lifecycle behavior, product/public/live wiring, cache/SR/storage, prompt/config/model/schema edits, ACS/direct URL, V1 reuse, V1 cleanup, and 2D-C blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_C0-S2_Parser_Admission_Provenance_Source_Package.md
