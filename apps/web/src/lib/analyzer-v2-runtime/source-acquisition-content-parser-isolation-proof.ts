@@ -50,6 +50,7 @@ export type ParserIsolationProofApprovedOptions = {
   readonly runtimeAuthority: ParserIsolationRuntimeAuthority;
   readonly approvedImageReferences: readonly string[];
   readonly imageReference: string;
+  readonly imageApprovalSource: string;
   readonly nodeRestrictionProfileId: typeof PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID;
   readonly timeoutMs: number;
 };
@@ -196,6 +197,18 @@ function digestPinnedImageReference(value: unknown): value is string {
     && value === value.trim()
     && /^[a-z0-9._/-]+@sha256:[a-f0-9]{64}$/.test(value)
     && !serializedHasForbiddenLeak(value);
+}
+
+function independentImageApprovalSource(
+  value: unknown,
+  imageReference: string,
+  approvedImageReferences: readonly string[],
+): value is string {
+  return typeof value === "string"
+    && value === value.trim()
+    && value.length > 0
+    && value !== imageReference
+    && !approvedImageReferences.includes(value);
 }
 
 function runtimeExecutablePathIsAbsolute(value: string): boolean {
@@ -351,6 +364,11 @@ export function validateParserIsolationProofOptions(
     || !Array.isArray(value.approvedImageReferences)
     || !value.approvedImageReferences.every(digestPinnedImageReference)
     || !value.approvedImageReferences.includes(value.imageReference)
+    || !independentImageApprovalSource(
+      value.imageApprovalSource,
+      value.imageReference,
+      value.approvedImageReferences,
+    )
   ) {
     return {
       status: "blocked",
@@ -390,6 +408,7 @@ export function validateParserIsolationProofOptions(
       runtimeAuthority: value.runtimeAuthority,
       approvedImageReferences: [...value.approvedImageReferences],
       imageReference: value.imageReference,
+      imageApprovalSource: value.imageApprovalSource,
       nodeRestrictionProfileId: value.nodeRestrictionProfileId,
       timeoutMs: value.timeoutMs,
     },

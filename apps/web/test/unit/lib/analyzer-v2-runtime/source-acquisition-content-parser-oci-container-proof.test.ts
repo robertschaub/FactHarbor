@@ -15,6 +15,8 @@ import {
 const APPROVED_IMAGE =
   "registry.example/fh-node@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const RUNTIME_PATH = "C:\\Program Files\\Podman\\podman.exe";
+const IMAGE_APPROVAL_SOURCE =
+  "Docs/AGENTS/Handoffs/example-independent-image-approval.md";
 
 class FakeChild implements OciParserIsolationChildProcess {
   private readonly events = new EventEmitter();
@@ -108,6 +110,7 @@ function options(overrides: Parameters<typeof runOciParserIsolationProof>[0] = {
     runtimeAuthority: "rootless_oci" as const,
     approvedImageReferences: [APPROVED_IMAGE],
     imageReference: APPROVED_IMAGE,
+    imageApprovalSource: IMAGE_APPROVAL_SOURCE,
     nodeRestrictionProfileId: PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID,
     timeoutMs: 1_000,
     ...overrides,
@@ -145,6 +148,61 @@ function runtimeKindFromExecutablePath(value: string): "podman" | "docker" | nul
     return "docker";
   }
   return null;
+}
+
+type PositiveSandboxProofEnv = {
+  readonly proofMode?: string;
+  readonly runtimeExecutablePath?: string;
+  readonly imageReference?: string;
+  readonly approvedImageReference?: string;
+  readonly imageApprovalSource?: string;
+};
+
+type CompletePositiveSandboxProofEnv = {
+  readonly proofMode: string;
+  readonly runtimeExecutablePath: string;
+  readonly imageReference: string;
+  readonly approvedImageReference: string;
+  readonly imageApprovalSource: string;
+};
+
+function readPositiveSandboxProofEnv(env: NodeJS.ProcessEnv = process.env): PositiveSandboxProofEnv {
+  return {
+    proofMode: env.FH_ANALYZER_V2_PARSER_SANDBOX_PROOF,
+    runtimeExecutablePath: env.FH_ANALYZER_V2_PARSER_SANDBOX_RUNTIME,
+    imageReference: env.FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE,
+    approvedImageReference: env.FH_ANALYZER_V2_PARSER_SANDBOX_APPROVED_IMAGE,
+    imageApprovalSource: env.FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE_APPROVAL_SOURCE,
+  };
+}
+
+function nonBlankEnvValue(value: string | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function positiveSandboxProofEnvIsComplete(
+  value: PositiveSandboxProofEnv,
+): value is CompletePositiveSandboxProofEnv {
+  if (
+    value.proofMode !== "oci_container"
+    || !nonBlankEnvValue(value.runtimeExecutablePath)
+    || !nonBlankEnvValue(value.imageReference)
+    || !nonBlankEnvValue(value.approvedImageReference)
+    || !nonBlankEnvValue(value.imageApprovalSource)
+  ) {
+    return false;
+  }
+  return value.approvedImageReference === value.imageReference
+    && value.imageApprovalSource !== value.imageReference
+    && value.imageApprovalSource !== value.approvedImageReference;
+}
+
+function positiveSandboxProofEnvIsAbsent(value: PositiveSandboxProofEnv): boolean {
+  return !nonBlankEnvValue(value.proofMode)
+    && !nonBlankEnvValue(value.runtimeExecutablePath)
+    && !nonBlankEnvValue(value.imageReference)
+    && !nonBlankEnvValue(value.approvedImageReference)
+    && !nonBlankEnvValue(value.imageApprovalSource);
 }
 
 describe("Analyzer V2 OCI parser isolation proof", () => {
@@ -355,30 +413,67 @@ describe("Analyzer V2 OCI parser isolation proof", () => {
     expect(cancelSpawner.children[0].killed).toBe(true);
   });
 
-  it("keeps positive sandbox proof gated by explicit env in test code only", async () => {
-    const proofMode = process.env.FH_ANALYZER_V2_PARSER_SANDBOX_PROOF;
-    const runtimeExecutablePath = process.env.FH_ANALYZER_V2_PARSER_SANDBOX_RUNTIME;
-    const imageReference = process.env.FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE;
-    const hasPositiveVerifierEnv = Boolean(proofMode && runtimeExecutablePath && imageReference);
+  it("requires independent image approval env before positive sandbox proof can run", () => {
+    expect(positiveSandboxProofEnvIsAbsent({})).toBe(true);
+    expect(positiveSandboxProofEnvIsAbsent({
+      proofMode: "oci_container",
+      runtimeExecutablePath: RUNTIME_PATH,
+      imageReference: APPROVED_IMAGE,
+    })).toBe(false);
+    expect(positiveSandboxProofEnvIsComplete({
+      proofMode: "oci_container",
+      runtimeExecutablePath: RUNTIME_PATH,
+      imageReference: APPROVED_IMAGE,
+    })).toBe(false);
+    expect(positiveSandboxProofEnvIsComplete({
+      proofMode: "oci_container",
+      runtimeExecutablePath: RUNTIME_PATH,
+      imageReference: APPROVED_IMAGE,
+      approvedImageReference: APPROVED_IMAGE,
+      imageApprovalSource: APPROVED_IMAGE,
+    })).toBe(false);
+    expect(positiveSandboxProofEnvIsComplete({
+      proofMode: "oci_container",
+      runtimeExecutablePath: RUNTIME_PATH,
+      imageReference: APPROVED_IMAGE,
+      approvedImageReference: "registry.example/fh-node@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      imageApprovalSource: "Docs/AGENTS/Handoffs/example-independent-approval.md",
+    })).toBe(false);
+    expect(positiveSandboxProofEnvIsComplete({
+      proofMode: "oci_container",
+      runtimeExecutablePath: RUNTIME_PATH,
+      imageReference: APPROVED_IMAGE,
+      approvedImageReference: APPROVED_IMAGE,
+      imageApprovalSource: "Docs/AGENTS/Handoffs/example-independent-approval.md",
+    })).toBe(true);
+  });
 
-    if (!hasPositiveVerifierEnv) {
+  it("keeps positive sandbox proof gated by explicit env in test code only", async () => {
+    const positiveSandboxProofEnv = readPositiveSandboxProofEnv();
+
+    if (positiveSandboxProofEnvIsAbsent(positiveSandboxProofEnv)) {
       await expect(runOciParserIsolationProof()).resolves.toMatchObject({
         status: "parser_isolation_unavailable",
       });
       return;
     }
+    if (!positiveSandboxProofEnvIsComplete(positiveSandboxProofEnv)) {
+      throw new Error(
+        "Incomplete B3 OCI proof env: set PROOF, RUNTIME, IMAGE, APPROVED_IMAGE, and IMAGE_APPROVAL_SOURCE; old 3-env image self-approval is not valid B3 evidence.",
+      );
+    }
 
-    expect(proofMode).toBe("oci_container");
-    const runtimeKind = runtimeKindFromExecutablePath(runtimeExecutablePath ?? "");
+    const runtimeKind = runtimeKindFromExecutablePath(positiveSandboxProofEnv.runtimeExecutablePath);
     expect(runtimeKind).not.toBeNull();
 
     const result = await runOciParserIsolationProof({
       proofScope: "deployment_candidate",
       runtimeKind: runtimeKind ?? "podman",
-      runtimeExecutablePath: runtimeExecutablePath ?? "",
+      runtimeExecutablePath: positiveSandboxProofEnv.runtimeExecutablePath,
       runtimeAuthority: "rootless_oci",
-      approvedImageReferences: [imageReference ?? ""],
-      imageReference: imageReference ?? "",
+      approvedImageReferences: [positiveSandboxProofEnv.approvedImageReference],
+      imageReference: positiveSandboxProofEnv.imageReference,
+      imageApprovalSource: positiveSandboxProofEnv.imageApprovalSource,
       nodeRestrictionProfileId: PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID,
       timeoutMs: 30_000,
     });

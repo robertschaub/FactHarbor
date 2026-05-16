@@ -84,12 +84,14 @@ The test harness must set only these host-side environment variables:
 $env:FH_ANALYZER_V2_PARSER_SANDBOX_PROOF = "oci_container"
 $env:FH_ANALYZER_V2_PARSER_SANDBOX_RUNTIME = "<absolute-rootless-oci-runtime-path>"
 $env:FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE = "<approved-node-image@sha256:...>"
+$env:FH_ANALYZER_V2_PARSER_SANDBOX_APPROVED_IMAGE = "<same-approved-node-image@sha256:...>"
+$env:FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE_APPROVAL_SOURCE = "<independent-approval-record-or-handoff-reference>"
 npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser-oci-container-proof.test.ts
 ```
 
-The image reference must exactly match the approved image list supplied to the B2 proof runner by the test branch. A digest-pinned but unapproved image is not acceptable.
+The image reference in `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE` must exactly match `FH_ANALYZER_V2_PARSER_SANDBOX_APPROVED_IMAGE`, and the latter must be copied from the independent pre-run approval record. A digest-pinned but unapproved image is not acceptable.
 
-The approved image list must come from an independent pre-run approval record, not from `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE` itself. A run is rejected for B3 acceptance if the only evidence of image approval is the same environment value echoed into the B2 test's `approvedImageReferences` option.
+The approved image list must come from an independent pre-run approval record, not from `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE` itself. The test branch must not run the positive proof unless `FH_ANALYZER_V2_PARSER_SANDBOX_APPROVED_IMAGE` is present, exactly matches the configured image, and `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE_APPROVAL_SOURCE` is present as a separate approval-record or handoff reference. A run is rejected for B3 acceptance if the only evidence of image approval is the same environment value echoed into the B2 test's `approvedImageReferences` option.
 
 The runtime path must be absolute. A by-name command such as `podman` or `docker` is not enough for a positive real verifier result.
 
@@ -101,7 +103,7 @@ The proof handoff must record:
 - absolute runtime executable path, but not secrets or host-private paths beyond the runtime path needed for audit;
 - runtime authority classification;
 - image reference and digest;
-- independent image approval source and exact-match comparison against the configured env image;
+- approved image env reference, independent image approval source, and exact-match comparison against the configured env image;
 - verifier command used;
 - whether the test process attempted any image pull/build; expected answer: no;
 - final proof status;
@@ -139,6 +141,7 @@ B3 is accepted only if:
 
 - the positive verifier ran on a provisioned host with rootless OCI authority;
 - an independent pre-run image approval record exists and exactly matches the configured env image;
+- the positive verifier used `FH_ANALYZER_V2_PARSER_SANDBOX_APPROVED_IMAGE` as the approved-image input and did not self-derive the allowlist from `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE`;
 - final status is `parser_isolation_verified`;
 - proof scope is `deployment_candidate`;
 - runtime authority is `rootless_oci`;

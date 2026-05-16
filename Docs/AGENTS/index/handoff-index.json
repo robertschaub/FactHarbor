@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T18:38:19.777Z",
-  "count": 549,
+  "generatedAt": "2026-05-16T19:11:55.095Z",
+  "count": 551,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11670,6 +11670,25 @@
       ],
       "files_touched": [],
       "summary": "Lead Architect Handoff: V2 7N Post-7M-1 Consolidation"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_B3_Image_Approval_Hardening.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "b3",
+        "image",
+        "approval",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-parser-isolation-proof.ts"
+      ],
+      "summary": "Do not treat this as a positive B3 proof. It only hardens the verifier."
     },
     {
       "file": "2026-05-16_Lead_Architect_V2_Slice_7N3B3-2C-A_Hidden_Real_Byte_Handoff_Source.md",

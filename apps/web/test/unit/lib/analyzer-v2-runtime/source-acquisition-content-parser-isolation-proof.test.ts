@@ -12,6 +12,8 @@ import {
 const APPROVED_IMAGE =
   "registry.example/fh-node@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const RUNTIME_PATH = "C:\\Program Files\\Podman\\podman.exe";
+const IMAGE_APPROVAL_SOURCE =
+  "Docs/AGENTS/Handoffs/example-independent-image-approval.md";
 
 function deniedAuthorities(overrides: Partial<ParserIsolationDeniedAuthorityMap> = {}): ParserIsolationDeniedAuthorityMap {
   return {
@@ -41,6 +43,7 @@ function options(overrides: Partial<ParserIsolationProofApprovedOptions> = {}): 
     runtimeAuthority: "rootless_oci",
     approvedImageReferences: [APPROVED_IMAGE],
     imageReference: APPROVED_IMAGE,
+    imageApprovalSource: IMAGE_APPROVAL_SOURCE,
     nodeRestrictionProfileId: PARSER_ISOLATION_NODE_RESTRICTION_PROFILE_ID,
     timeoutMs: 1_000,
     ...overrides,
@@ -95,6 +98,21 @@ describe("Analyzer V2 parser isolation proof contract", () => {
     expect(validateParserIsolationProofOptions({
       ...options(),
       imageReference: "registry.example/fh-node@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    }).result.status).toBe("parser_isolation_image_unapproved");
+
+    const withoutApprovalSource = { ...options() } as Record<string, unknown>;
+    delete withoutApprovalSource.imageApprovalSource;
+    expect(validateParserIsolationProofOptions(withoutApprovalSource).result.status)
+      .toBe("parser_isolation_image_unapproved");
+
+    expect(validateParserIsolationProofOptions({
+      ...options(),
+      imageApprovalSource: "",
+    }).result.status).toBe("parser_isolation_image_unapproved");
+
+    expect(validateParserIsolationProofOptions({
+      ...options(),
+      imageApprovalSource: APPROVED_IMAGE,
     }).result.status).toBe("parser_isolation_image_unapproved");
   });
 

@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 B3 Image Approval Hardening -- [Significant] [open-items: yes]
+**For next agent:** High B3 verifier finding is closed: the OCI positive proof path can no longer self-approve `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE`. The proof contract now requires an independent `imageApprovalSource`; the positive env branch requires `PROOF`, `RUNTIME`, `IMAGE`, `APPROVED_IMAGE`, and `IMAGE_APPROVAL_SOURCE`; zero env still returns `parser_isolation_unavailable`, but legacy/partial env now fails loudly. This is verifier hardening only, not a positive B3 proof. 2D-C, parser execution, product/public/live wiring, cache/SR/storage, evidence/report behavior, ACS/direct URL, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_B3_Image_Approval_Hardening.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2C-A Source Package Approval -- [Significant] [open-items: yes]
 **For next agent:** 7N-3B3-2C-A is deputy-approved for source implementation in `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2C-A_Real_Byte_Handoff_Source_Package.md`. Scope is exact: `source-acquisition-content-transport.ts`, `source-acquisition-content-packet-sink.ts`, focused transport/sink tests, and boundary guards only. Implement transport-owner real bytes into hidden packet sink with byte-free public transport outcomes, separate 2C-A packet sink authority, sink-owned HMAC sealing, explicit disposal, concrete kill switch, and no parser consumption. Product/public wiring, live jobs, cache/SR/storage, evidence/report/warning generation, prompt/model/config/schema changes, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2C-A_Source_Package_Approval.md
