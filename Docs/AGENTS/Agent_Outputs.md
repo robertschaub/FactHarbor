@@ -3212,7 +3212,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2D_Parser_Isolation_Design.md
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2D-A Fixture/Control Parser Runner Source Package -- [Standard] [open-items: yes]
+**For next agent:** Drafted `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md` for deputy review. It proposes a fixture/control-only child-process parser runner protocol harness, exact file/import/export envelope, a checked-in `.cjs` worker entrypoint, and verifiers. It authorizes no source edits until review approval is recorded. Real fetched-byte parser execution, transport-owned packet/frame consumption, product/public/live wiring, cache/SR/storage, prompt/model/config/schema edits, evidence/report semantics, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2D-A_Fixture_Control_Parser_Runner_Source_Package.md
+
+---
 ### 2026-05-16 | Senior Developer | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: no]
 **For next agent:** Scanned code-bearing commits since `2026-05-15T06:01:35Z`, with attention to `7a263cbf`, `57dc2308`, `f49c69cd`, `6162e057`, `e24a2816`, `107366ab`, `3d05583e`, `13ff68d3`, and `6e71bbea`. Concrete verification stayed clean: `dotnet test apps/api.Tests/FactHarbor.Api.Tests.csproj --filter AnalyzeInputValidatorTests`; focused web suites for parser sink/parser, boundary guard, candidate/runtime/network/content transport, gateway policy/cache governance, task-contract schemas, and query-plan inspection/handoff; plus `npm -w apps/web run build`. No failing test, build break, or diff-backed regression remained after the same-window follow-up fixes, so no patch was applied. If a later issue is reported against this window, start with the parser-sink boundary pair (`13ff68d3` -> `6e71bbea`) and distinguish committed state from the current dirty worktree in `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.ts`, `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.test.ts`, `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`, and `Docs/AGENTS/Agent_Outputs.md`.
 **Warnings:** Repo worktree was already dirty in the latest parser-sink files and `Docs/AGENTS/Agent_Outputs.md`; this scan did not treat those uncommitted edits as bug evidence and did not revert them.
 **Learnings:** no
+
+---
+### 2026-05-16 | Lead Architect + LLM Expert | Codex (GPT-5) | V2 Pipeline Leadership Assessment -- [Significant] [open-items: yes]
+**For next agent:** Produced a leadership deck and advisory synthesis for the V2 pipeline. Recommendation: continue V2, but do not cut over or expose public V2 until UCM/task-policy authority, parser isolation, hidden end-to-end evidence flow, ReportResult authority, public cutover gating, and comparator validation are complete. Highest-leverage next improvement is a machine-readable V2 Gate Register joining prompt section, schema, gateway/model/cache policy, approval, active hash, allowed files, blocked surfaces, verifiers, and live-job eligibility.
+-> Docs/AGENTS/Handoffs/2026-05-16_External_Advisor_V2_Pipeline_Leadership_Assessment.md
