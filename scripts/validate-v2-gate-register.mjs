@@ -937,6 +937,29 @@ async function runSelfTest(context) {
       },
     ],
     [
+      "research acquisition drops parser-worker execution blocker",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.blockedSurfaces = row.blockedSurfaces.filter((surface) =>
+          surface !== "parser-worker execution"
+        );
+      },
+    ],
+    [
+      "research acquisition drops C0-S1 note token",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("C0-S1", "C0 parser");
+      },
+    ],
+    [
+      "research acquisition drops P0 note token",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("P0", "provisional");
+      },
+    ],
+    [
       "research acquisition drops 2D-C blocked note",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
