@@ -31,6 +31,7 @@
       "required": [
         "schemaVersion",
         "pipeline",
+        "publicCutoverStatus",
         "resultContractVersion",
         "runId",
         "generatedUtc",
@@ -45,6 +46,12 @@
         },
         "pipeline": {
           "const": "claimboundary-v2"
+        },
+        "publicCutoverStatus": {
+          "enum": [
+            "blocked_precutover",
+            "approved"
+          ]
         },
         "resultContractVersion": {
           "const": 1

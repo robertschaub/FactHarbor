@@ -28,6 +28,7 @@ describe("analyzer-v2 shell", () => {
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
         pipeline: "claimboundary-v2",
+        publicCutoverStatus: "blocked_precutover",
         runId: "job-v2-shell",
       },
       verdict: {
@@ -64,10 +65,11 @@ describe("analyzer-v2 shell", () => {
       schemaKind: "v2",
       schemaVersion: "4.0.0-cb-precutover",
       pipeline: "claimboundary-v2",
-      verdictLabel: "UNVERIFIED",
-      truthPercentage: 50,
-      confidence: 0,
-      confidenceTier: "none",
+      publicCutoverStatus: "blocked_precutover",
+      verdictLabel: null,
+      truthPercentage: null,
+      confidence: null,
+      confidenceTier: null,
       primaryIssue: {
         code: "report_damaged",
       },
@@ -78,14 +80,11 @@ describe("analyzer-v2 shell", () => {
         selected: true,
       }),
     ]);
-    expect(view.qualityGates).toMatchObject({
-      gate4Stats: {
-        insufficient: 1,
-      },
-      summary: {
-        damagedReport: true,
-      },
-    });
+    expect(view.claimBoundaries).toEqual([]);
+    expect(view.claimVerdicts).toEqual([]);
+    expect(view.evidenceItems).toEqual([]);
+    expect(view.sources).toEqual([]);
+    expect(view.qualityGates).toBeNull();
   });
 
   it("does not expose internal Claim Understanding runtime state in the public result JSON", async () => {

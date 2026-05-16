@@ -10,10 +10,47 @@ function readFixture<T>(fileName: string): T {
   return JSON.parse(readFileSync(path.join(fixturesDir, fileName), "utf8")) as T;
 }
 
+function approvedV2Fixture(source: Record<string, any>): Record<string, any> {
+  const approved = structuredClone(source);
+  approved._schemaVersion = "4.0.0-cb";
+  approved.meta.schemaVersion = "4.0.0-cb";
+  approved.meta.publicCutoverStatus = "approved";
+  return approved;
+}
+
 describe("generateHtmlReport analyzer-v2 compatibility", () => {
-  it("renders a V2 result through the legacy report surface model", () => {
+  it("does not emit public verdict metadata for blocked V2 results", () => {
     const v2Fixture = readFixture<Record<string, unknown>>("report-result-v2.fixture.json");
     const surface = toLegacyReportSurfaceModel(v2Fixture);
+
+    const html = generateHtmlReport({
+      job: {
+        jobId: "fixture-job-v2",
+        status: "SUCCEEDED",
+        inputValue: "Structural V2 fixture input",
+        createdUtc: "2026-05-13T00:00:00.000Z",
+        updatedUtc: "2026-05-13T00:01:00.000Z",
+      },
+      result: surface,
+      claimVerdicts: surface.claimVerdicts as any[],
+      claimBoundaries: surface.claimBoundaries as any[],
+      evidenceItems: surface.evidenceItems as any[],
+      sources: surface.citedSources as any[],
+      allSources: surface.sources as any[],
+      searchQueries: surface.searchQueries as any[],
+      qualityGates: surface.qualityGates,
+    });
+
+    expect(html).not.toContain('meta name="fh:verdict"');
+    expect(html).not.toContain('meta name="fh:truth" content="50"');
+    expect(html).not.toContain('meta name="fh:confidence" content="0"');
+    expect(html).not.toContain("Structural V2 compatibility fixture only.");
+    expect(html).not.toContain("Cited Sources");
+  });
+
+  it("renders approved V2 results through the legacy report surface model", () => {
+    const v2Fixture = readFixture<Record<string, any>>("report-result-v2.fixture.json");
+    const surface = toLegacyReportSurfaceModel(approvedV2Fixture(v2Fixture));
 
     const html = generateHtmlReport({
       job: {

@@ -1,4 +1,9 @@
 export type ResultSchemaKind = "v2" | "legacy-v1" | "unknown";
+export type V2PublicCutoverStatus = "blocked_precutover" | "approved";
+
+export const V2_PUBLIC_CUTOVER_BLOCKED_ISSUE_CODE = "v2_public_cutover_blocked";
+export const V2_PUBLIC_CUTOVER_BLOCKED_ISSUE_MESSAGE =
+  "Analyzer V2 result is not approved for public cutover.";
 
 export type CompatibilityWarning = {
   type: string;
@@ -25,6 +30,7 @@ export type ResultCompatibilityView = {
   schemaKind: ResultSchemaKind;
   schemaVersion: string | null;
   pipeline: string | null;
+  publicCutoverStatus: V2PublicCutoverStatus | null;
   verdictLabel: string | null;
   truthPercentage: number | null;
   confidence: number | null;
@@ -107,6 +113,20 @@ function readSchemaVersion(result: Record<string, unknown>): string | null {
   return asString(result._schemaVersion) ?? asString(meta?.schemaVersion);
 }
 
+function readV2PublicCutoverStatus(meta: Record<string, unknown>): V2PublicCutoverStatus | null {
+  const status = asString(meta.publicCutoverStatus);
+  return status === "blocked_precutover" || status === "approved" ? status : null;
+}
+
+function isV2PublicCutoverApproved(
+  schemaVersion: string | null,
+  meta: Record<string, unknown>,
+): boolean {
+  return schemaVersion === "4.0.0-cb" &&
+    asString(meta.pipeline) === "claimboundary-v2" &&
+    readV2PublicCutoverStatus(meta) === "approved";
+}
+
 export function getResultSchemaKind(resultJson: unknown): ResultSchemaKind {
   const result = asRecord(resultJson);
   if (!result) return "unknown";
@@ -180,6 +200,13 @@ function firstPrimaryIssue(warnings: CompatibilityWarning[]): CompatibilityPrima
   return primary ? { code: primary.type, message: primary.message } : null;
 }
 
+function blockedV2PrimaryIssue(warnings: CompatibilityWarning[]): CompatibilityPrimaryIssue {
+  return firstPrimaryIssue(warnings) ?? {
+    code: V2_PUBLIC_CUTOVER_BLOCKED_ISSUE_CODE,
+    message: V2_PUBLIC_CUTOVER_BLOCKED_ISSUE_MESSAGE,
+  };
+}
+
 function mapV2Claims(claims: unknown[]): CompatibilityClaim[] {
   return claims.map((claim) => {
     const item = asRecord(claim) ?? {};
@@ -247,6 +274,7 @@ function buildEmptyCompatibilityView(): ResultCompatibilityView {
     schemaKind: "unknown",
     schemaVersion: null,
     pipeline: null,
+    publicCutoverStatus: null,
     verdictLabel: null,
     truthPercentage: null,
     confidence: null,
@@ -275,6 +303,9 @@ function buildEmptyCompatibilityView(): ResultCompatibilityView {
 
 function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompatibilityView {
   const meta = asRecord(result.meta) ?? {};
+  const schemaVersion = readSchemaVersion(result);
+  const publicCutoverApproved = isV2PublicCutoverApproved(schemaVersion, meta);
+  const publicCutoverStatus = readV2PublicCutoverStatus(meta);
   const input = asRecord(result.input) ?? {};
   const claimsGroup = asRecord(result.claims) ?? {};
   const evidenceGroup = asRecord(result.evidence) ?? {};
@@ -285,6 +316,41 @@ function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompat
   const narrativeSections = asRecord(narrative.sections) ?? {};
   const fallbackFields = readV2FallbackFields(result);
   const warnings = mapV2Warnings(asArray(result.warnings));
+  const selectedAtomicClaimIds = toStringArray(input.selectedAtomicClaimIds);
+  const claims = mapV2Claims(asArray(claimsGroup.atomicClaims));
+
+  if (!publicCutoverApproved) {
+    return {
+      schemaKind: "v2",
+      schemaVersion,
+      pipeline: asString(meta.pipeline),
+      publicCutoverStatus,
+      verdictLabel: null,
+      truthPercentage: null,
+      confidence: null,
+      confidenceTier: null,
+      selectedAtomicClaimIds,
+      claims,
+      claimBoundaries: [],
+      claimVerdicts: [],
+      evidenceItems: [],
+      sources: [],
+      citedSources: [],
+      searchQueries: [],
+      coverageMatrix: null,
+      qualityGates: null,
+      warnings,
+      primaryIssue: blockedV2PrimaryIssue(warnings),
+      narrative: {
+        markdown: null,
+        headline: null,
+        keyFinding: null,
+        evidenceBaseSummary: null,
+        limitations: null,
+      },
+    };
+  }
+
   const sources = asArray(sourcesGroup.items);
   const fallbackBoundaries = asArray(fallbackFields.claimBoundaries);
   const boundaries = fallbackBoundaries.length > 0
@@ -294,8 +360,9 @@ function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompat
 
   return {
     schemaKind: "v2",
-    schemaVersion: readSchemaVersion(result),
+    schemaVersion,
     pipeline: asString(meta.pipeline),
+    publicCutoverStatus,
     verdictLabel: asString(verdict.label),
     truthPercentage: asNumber(verdict.truthPercentage),
     confidence: asNumber(verdict.confidence),
@@ -332,6 +399,7 @@ function buildLegacyCompatibilityView(result: Record<string, unknown>, reportMar
     schemaKind: "legacy-v1",
     schemaVersion: readSchemaVersion(result),
     pipeline: asString(meta.pipeline),
+    publicCutoverStatus: null,
     verdictLabel: asString(result.verdict),
     truthPercentage: asNumber(result.truthPercentage),
     confidence: asNumber(result.confidence),

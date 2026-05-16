@@ -1,14 +1,21 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace FactHarbor.Api.Services;
 
 public static class ResultCompatibility
 {
     private const string ClaimBoundaryV2Pipeline = "claimboundary-v2";
+    private const string ClaimBoundaryV2PrecutoverSchema = "4.0.0-cb-precutover";
+    private const string ClaimBoundaryV2CutoverSchema = "4.0.0-cb";
+    private const string PublicCutoverApproved = "approved";
+    private const string PublicCutoverBlocked = "blocked_precutover";
+    private const string PublicCutoverBlockedIssueCode = "v2_public_cutover_blocked";
+    private const string PublicCutoverBlockedIssueMessage = "Analyzer V2 result is not approved for public cutover.";
     private static readonly HashSet<string> ClaimBoundaryV2Schemas = new(StringComparer.Ordinal)
     {
-        "4.0.0-cb-precutover",
-        "4.0.0-cb",
+        ClaimBoundaryV2PrecutoverSchema,
+        ClaimBoundaryV2CutoverSchema,
     };
 
     public sealed record ResultQuickFields(string? VerdictLabel, int? TruthPercentage, int? Confidence);
@@ -57,8 +64,40 @@ public static class ResultCompatibility
         }
     }
 
+    public static JsonNode? BuildPublicResultJson(string? resultJson, bool isAdmin)
+    {
+        if (string.IsNullOrWhiteSpace(resultJson))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(resultJson);
+            var root = doc.RootElement;
+
+            if (isAdmin || !IsClaimBoundaryV2(root) || IsClaimBoundaryV2PublicCutoverApproved(root))
+                return JsonNode.Parse(resultJson);
+
+            return BuildBlockedV2PublicProjection(root);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    public static string? BuildPublicReportMarkdown(string? resultJson, string? reportMarkdown, bool isAdmin)
+    {
+        if (isAdmin || !IsBlockedClaimBoundaryV2(resultJson))
+            return reportMarkdown;
+
+        return null;
+    }
+
     private static ResultQuickFields ExtractV2QuickFields(JsonElement root)
     {
+        if (!IsClaimBoundaryV2PublicCutoverApproved(root))
+            return new ResultQuickFields(null, null, null);
+
         if (!TryGetObject(root, "verdict", out var verdict))
             return new ResultQuickFields(null, null, null);
 
@@ -93,7 +132,9 @@ public static class ResultCompatibility
         if (!root.TryGetProperty("warnings", out var warnings) ||
             warnings.ValueKind != JsonValueKind.Array)
         {
-            return new PrimaryAnalysisIssue(null, null);
+            return IsClaimBoundaryV2PublicCutoverApproved(root)
+                ? new PrimaryAnalysisIssue(null, null)
+                : new PrimaryAnalysisIssue(PublicCutoverBlockedIssueCode, PublicCutoverBlockedIssueMessage);
         }
 
         foreach (var warning in warnings.EnumerateArray())
@@ -114,7 +155,9 @@ public static class ResultCompatibility
             return new PrimaryAnalysisIssue(type, message);
         }
 
-        return new PrimaryAnalysisIssue(null, null);
+        return IsClaimBoundaryV2PublicCutoverApproved(root)
+            ? new PrimaryAnalysisIssue(null, null)
+            : new PrimaryAnalysisIssue(PublicCutoverBlockedIssueCode, PublicCutoverBlockedIssueMessage);
     }
 
     private static PrimaryAnalysisIssue ExtractLegacyPrimaryAnalysisIssue(JsonElement root)
@@ -152,6 +195,65 @@ public static class ResultCompatibility
         return string.Equals(pipeline, ClaimBoundaryV2Pipeline, StringComparison.Ordinal) &&
             schemaVersion is not null &&
             ClaimBoundaryV2Schemas.Contains(schemaVersion);
+    }
+
+    private static bool IsBlockedClaimBoundaryV2(string? resultJson)
+    {
+        if (string.IsNullOrWhiteSpace(resultJson))
+            return false;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(resultJson);
+            var root = doc.RootElement;
+            return IsClaimBoundaryV2(root) && !IsClaimBoundaryV2PublicCutoverApproved(root);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsClaimBoundaryV2PublicCutoverApproved(JsonElement root)
+    {
+        var schemaVersion = TryGetString(root, "_schemaVersion") ??
+            TryGetString(root, "meta", "schemaVersion");
+        var pipeline = TryGetString(root, "meta", "pipeline");
+        var publicCutoverStatus = TryGetString(root, "meta", "publicCutoverStatus");
+
+        return string.Equals(schemaVersion, ClaimBoundaryV2CutoverSchema, StringComparison.Ordinal) &&
+            string.Equals(pipeline, ClaimBoundaryV2Pipeline, StringComparison.Ordinal) &&
+            string.Equals(publicCutoverStatus, PublicCutoverApproved, StringComparison.Ordinal);
+    }
+
+    private static JsonNode BuildBlockedV2PublicProjection(JsonElement root)
+    {
+        var meta = CloneProperty(root, "meta") as JsonObject ?? new JsonObject();
+        meta["publicCutoverStatus"] = PublicCutoverBlocked;
+
+        var projection = new JsonObject
+        {
+            ["_schemaVersion"] = TryGetString(root, "_schemaVersion") ??
+                TryGetString(root, "meta", "schemaVersion") ??
+                ClaimBoundaryV2PrecutoverSchema,
+            ["meta"] = meta,
+        };
+
+        var input = CloneProperty(root, "input");
+        if (input is not null)
+            projection["input"] = input;
+
+        var warnings = CloneProperty(root, "warnings");
+        projection["warnings"] = warnings ?? new JsonArray();
+
+        return projection;
+    }
+
+    private static JsonNode? CloneProperty(JsonElement root, string propertyName)
+    {
+        return root.TryGetProperty(propertyName, out var value)
+            ? JsonNode.Parse(value.GetRawText())
+            : null;
     }
 
     private static bool TryGetObject(JsonElement root, string propertyName, out JsonElement value)

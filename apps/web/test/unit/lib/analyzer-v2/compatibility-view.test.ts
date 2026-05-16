@@ -14,6 +14,14 @@ function readFixture<T>(fileName: string): T {
   return JSON.parse(readFileSync(path.join(fixturesDir, fileName), "utf8")) as T;
 }
 
+function approvedV2Fixture(source: Record<string, any>): Record<string, any> {
+  const approved = structuredClone(source);
+  approved._schemaVersion = "4.0.0-cb";
+  approved.meta.schemaVersion = "4.0.0-cb";
+  approved.meta.publicCutoverStatus = "approved";
+  return approved;
+}
+
 describe("analyzer-v2 result compatibility view", () => {
   const v2Fixture = readFixture<Record<string, any>>("report-result-v2.fixture.json");
   const legacyFixture = readFixture<Record<string, any>>("report-result-v1-legacy.fixture.json");
@@ -24,31 +32,31 @@ describe("analyzer-v2 result compatibility view", () => {
     expect(getResultSchemaKind({ _schemaVersion: "unknown" })).toBe("unknown");
   });
 
-  it("maps the V2 canonical result fields without legacy derivation", () => {
+  it("detects blocked V2 results without exposing public verdict metrics", () => {
     const view = toResultCompatibilityView(v2Fixture);
 
     expect(view).toMatchObject({
       schemaKind: "v2",
       schemaVersion: "4.0.0-cb-precutover",
       pipeline: "claimboundary-v2",
-      verdictLabel: "UNVERIFIED",
-      truthPercentage: 50,
-      confidence: 0,
-      confidenceTier: "none",
+      publicCutoverStatus: "blocked_precutover",
+      verdictLabel: null,
+      truthPercentage: null,
+      confidence: null,
+      confidenceTier: null,
       selectedAtomicClaimIds: ["AC_01"],
     });
     expect(view.claims).toEqual([
       expect.objectContaining({ id: "AC_01", selected: true }),
     ]);
-    expect(view.claimBoundaries).toHaveLength(1);
-    expect(view.claimVerdicts).toHaveLength(1);
-    expect(view.evidenceItems).toHaveLength(1);
-    expect(view.sources).toHaveLength(1);
+    expect(view.claimBoundaries).toEqual([]);
+    expect(view.claimVerdicts).toEqual([]);
+    expect(view.evidenceItems).toEqual([]);
+    expect(view.sources).toEqual([]);
+    expect(view.citedSources).toEqual([]);
     expect(view.searchQueries).toEqual([]);
-    expect(view.qualityGates).toMatchObject({
-      gate1Stats: { total: 1, passed: 1 },
-      gate4Stats: { total: 1, insufficient: 1 },
-    });
+    expect(view.coverageMatrix).toBeNull();
+    expect(view.qualityGates).toBeNull();
     expect(view.warnings).toEqual([
       expect.objectContaining({
         type: "source_fetch_degradation",
@@ -61,12 +69,15 @@ describe("analyzer-v2 result compatibility view", () => {
         }),
       }),
     ]);
-    expect(view.primaryIssue).toBeNull();
-    expect(view.narrative.markdown).toContain("Structural fixture only");
+    expect(view.primaryIssue).toEqual({
+      code: "v2_public_cutover_blocked",
+      message: "Analyzer V2 result is not approved for public cutover.",
+    });
+    expect(view.narrative.markdown).toBeNull();
   });
 
-  it("keeps the V2 verdict label authoritative even when percentage would imply another legacy label", () => {
-    const contradictory = structuredClone(v2Fixture);
+  it("keeps the approved V2 verdict label authoritative even when percentage would imply another legacy label", () => {
+    const contradictory = approvedV2Fixture(v2Fixture);
     contradictory.verdict.label = "FALSE";
     contradictory.verdict.truthPercentage = 93;
     contradictory.verdict.confidence = 91;
@@ -78,7 +89,7 @@ describe("analyzer-v2 result compatibility view", () => {
     expect(view.confidence).toBe(91);
   });
 
-  it("projects V2 fixtures into a legacy report surface model for UI/export parity tests", () => {
+  it("blocks V2 fixtures from the legacy report surface before public cutover", () => {
     const surface = toLegacyReportSurfaceModel(v2Fixture);
 
     expect(surface).toMatchObject({
@@ -88,13 +99,45 @@ describe("analyzer-v2 result compatibility view", () => {
         pipeline: "claimboundary-v2",
         runId: "fixture-run-v2",
       },
-      truthPercentage: 50,
-      verdict: "UNVERIFIED",
-      confidence: 0,
+      truthPercentage: null,
+      verdict: null,
+      confidence: null,
     });
     expect(surface.understanding.atomicClaims).toEqual([
       expect.objectContaining({ id: "AC_01", selected: true }),
     ]);
+    expect(surface.claimBoundaries).toEqual([]);
+    expect(surface.claimVerdicts).toEqual([]);
+    expect(surface.evidenceItems).toEqual([]);
+    expect(surface.sources).toEqual([]);
+    expect(surface.citedSources).toEqual([]);
+    expect(surface.coverageMatrix).toBeNull();
+    expect(surface.qualityGates).toBeNull();
+    expect(surface.analysisWarnings[0]).toMatchObject({
+      type: "source_fetch_degradation",
+      displaySeverity: "info",
+      details: expect.objectContaining({
+        stage: "evidence_lifecycle",
+        fixtureOnly: true,
+      }),
+    });
+  });
+
+  it("projects approved V2 fixtures into a legacy report surface model for UI/export parity tests", () => {
+    const surface = toLegacyReportSurfaceModel(approvedV2Fixture(v2Fixture));
+
+    expect(surface).toMatchObject({
+      _schemaVersion: "4.0.0-cb",
+      meta: {
+        schemaVersion: "4.0.0-cb",
+        pipeline: "claimboundary-v2",
+        publicCutoverStatus: "approved",
+        runId: "fixture-run-v2",
+      },
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+      confidence: 0,
+    });
     expect(surface.claimBoundaries).toHaveLength(1);
     expect(surface.claimVerdicts).toEqual([
       expect.objectContaining({ claimId: "AC_01", truthPercentage: 50 }),
@@ -123,8 +166,24 @@ describe("analyzer-v2 result compatibility view", () => {
     });
   });
 
-  it("projects canonical V2 quick fields without re-deriving the verdict label", () => {
+  it("blocks canonical V2 quick fields before public cutover", () => {
     const contradictory = structuredClone(v2Fixture);
+    contradictory.verdict.label = "FALSE";
+    contradictory.verdict.truthPercentage = 93;
+    contradictory.verdict.confidence = 91;
+
+    expect(toJobQuickFields(contradictory)).toEqual({
+      schemaKind: "v2",
+      verdictLabel: null,
+      truthPercentage: null,
+      confidence: null,
+      analysisIssueCode: "v2_public_cutover_blocked",
+      analysisIssueMessage: "Analyzer V2 result is not approved for public cutover.",
+    });
+  });
+
+  it("projects approved canonical V2 quick fields without re-deriving the verdict label", () => {
+    const contradictory = approvedV2Fixture(v2Fixture);
     contradictory.verdict.label = "FALSE";
     contradictory.verdict.truthPercentage = 93;
     contradictory.verdict.confidence = 91;
@@ -139,6 +198,25 @@ describe("analyzer-v2 result compatibility view", () => {
     });
   });
 
+  it("fails closed when V2 public cutover status is missing, invalid, or on the precutover schema", () => {
+    const missingStatus = structuredClone(v2Fixture);
+    delete missingStatus.meta.publicCutoverStatus;
+    const invalidStatus = structuredClone(v2Fixture);
+    invalidStatus.meta.publicCutoverStatus = "unexpected";
+    const precutoverApproved = structuredClone(v2Fixture);
+    precutoverApproved.meta.publicCutoverStatus = "approved";
+
+    for (const result of [missingStatus, invalidStatus, precutoverApproved]) {
+      expect(toJobQuickFields(result)).toMatchObject({
+        schemaKind: "v2",
+        verdictLabel: null,
+        truthPercentage: null,
+        confidence: null,
+        analysisIssueCode: "v2_public_cutover_blocked",
+      });
+    }
+  });
+
   it("maps the legacy V1 result fields for historical report reads", () => {
     const view = toResultCompatibilityView(legacyFixture, {
       reportMarkdown: "Legacy markdown report",
@@ -148,6 +226,7 @@ describe("analyzer-v2 result compatibility view", () => {
       schemaKind: "legacy-v1",
       schemaVersion: "3.2.0-cb",
       pipeline: "claimboundary",
+      publicCutoverStatus: null,
       verdictLabel: "UNVERIFIED",
       truthPercentage: 50,
       confidence: 0,
@@ -231,6 +310,9 @@ describe("analyzer-v2 result compatibility view", () => {
       message: "Fixture damaged report.",
     });
     expect(toJobQuickFields(damagedV2)).toMatchObject({
+      verdictLabel: null,
+      truthPercentage: null,
+      confidence: null,
       analysisIssueCode: "report_damaged",
       analysisIssueMessage: "Fixture damaged report.",
     });

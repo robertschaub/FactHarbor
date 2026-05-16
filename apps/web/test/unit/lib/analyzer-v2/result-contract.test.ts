@@ -167,6 +167,7 @@ describe("analyzer-v2 JSON contract fixtures", () => {
     expect(reportV2._schemaVersion).toBe("4.0.0-cb-precutover");
     expect((reportV2.meta as Record<string, JsonValue>).schemaVersion).toBe(reportV2._schemaVersion);
     expect((reportV2.meta as Record<string, JsonValue>).pipeline).toBe("claimboundary-v2");
+    expect((reportV2.meta as Record<string, JsonValue>).publicCutoverStatus).toBe("blocked_precutover");
     expect(reportV2.reportGeneration).toEqual(expect.objectContaining({
       profileId: "claimboundary-v2-precutover-fixture",
       reportWriterVersion: "v2.fixture.0",
@@ -194,6 +195,7 @@ describe("analyzer-v2 JSON contract fixtures", () => {
 
     expectValid(reportV2Schema, resultJson);
     expect((resultJson.meta as Record<string, JsonValue>).runId).toBe("job-v2-contract-shell");
+    expect((resultJson.meta as Record<string, JsonValue>).publicCutoverStatus).toBe("blocked_precutover");
     expect((resultJson.meta as Record<string, JsonValue>).generatedUtc).toBe("2026-05-13T12:34:56.000Z");
     expect((resultJson.qualityGates as Record<string, JsonValue>).damagedReport).toBe(true);
     expect((resultJson.narrative as Record<string, JsonValue>).reportQualityStatus).toBe("damaged");

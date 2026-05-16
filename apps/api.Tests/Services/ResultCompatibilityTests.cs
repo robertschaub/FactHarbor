@@ -8,22 +8,32 @@ namespace FactHarbor.Api.Tests.Services;
 
 public sealed class ResultCompatibilityTests
 {
+    private static JsonObject ApprovedV2Fixture()
+    {
+        var root = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        root["_schemaVersion"] = "4.0.0-cb";
+        var meta = root["meta"]!.AsObject();
+        meta["schemaVersion"] = "4.0.0-cb";
+        meta["publicCutoverStatus"] = "approved";
+        return root;
+    }
+
     [Fact]
-    public void ExtractQuickFields_V2Fixture_UsesCanonicalVerdictFields()
+    public void ExtractQuickFields_V2Fixture_BlocksPublicVerdictFieldsBeforeCutover()
     {
         var json = FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json");
 
         var quickFields = ResultCompatibility.ExtractQuickFields(json);
 
-        Assert.Equal("UNVERIFIED", quickFields.VerdictLabel);
-        Assert.Equal(50, quickFields.TruthPercentage);
-        Assert.Equal(0, quickFields.Confidence);
+        Assert.Null(quickFields.VerdictLabel);
+        Assert.Null(quickFields.TruthPercentage);
+        Assert.Null(quickFields.Confidence);
     }
 
     [Fact]
-    public void ExtractQuickFields_V2_DoesNotDeriveLabelFromTruthPercentage()
+    public void ExtractQuickFields_ApprovedV2_DoesNotDeriveLabelFromTruthPercentage()
     {
-        var root = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        var root = ApprovedV2Fixture();
         var verdict = root["verdict"]!.AsObject();
         verdict["label"] = "FALSE";
         verdict["truthPercentage"] = 93;
@@ -34,6 +44,28 @@ public sealed class ResultCompatibilityTests
         Assert.Equal("FALSE", quickFields.VerdictLabel);
         Assert.Equal(93, quickFields.TruthPercentage);
         Assert.Equal(91, quickFields.Confidence);
+    }
+
+    [Fact]
+    public void ExtractQuickFields_V2_FailsClosedForMissingInvalidAndPrecutoverApprovedStatus()
+    {
+        var missing = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        missing["meta"]!.AsObject().Remove("publicCutoverStatus");
+
+        var invalid = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        invalid["meta"]!.AsObject()["publicCutoverStatus"] = "unexpected";
+
+        var precutoverApproved = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        precutoverApproved["meta"]!.AsObject()["publicCutoverStatus"] = "approved";
+
+        foreach (var root in new[] { missing, invalid, precutoverApproved })
+        {
+            var quickFields = ResultCompatibility.ExtractQuickFields(root.ToJsonString());
+
+            Assert.Null(quickFields.VerdictLabel);
+            Assert.Null(quickFields.TruthPercentage);
+            Assert.Null(quickFields.Confidence);
+        }
     }
 
     [Fact]
@@ -131,11 +163,20 @@ public sealed class ResultCompatibilityTests
     }
 
     [Fact]
-    public void ExtractPrimaryAnalysisIssue_V2_IgnoresIneligibleWarnings()
+    public void ExtractPrimaryAnalysisIssue_BlockedV2_SynthesizesPublicCutoverIssueWhenNoEligibleWarningExists()
     {
         var json = FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json");
 
         var issue = ResultCompatibility.ExtractPrimaryAnalysisIssue(json);
+
+        Assert.Equal("v2_public_cutover_blocked", issue.Code);
+        Assert.Equal("Analyzer V2 result is not approved for public cutover.", issue.Message);
+    }
+
+    [Fact]
+    public void ExtractPrimaryAnalysisIssue_ApprovedV2_IgnoresIneligibleWarnings()
+    {
+        var issue = ResultCompatibility.ExtractPrimaryAnalysisIssue(ApprovedV2Fixture().ToJsonString());
 
         Assert.Null(issue.Code);
         Assert.Null(issue.Message);
@@ -180,5 +221,46 @@ public sealed class ResultCompatibilityTests
 
         Assert.Null(issue.Code);
         Assert.Null(issue.Message);
+    }
+
+    [Fact]
+    public void BuildPublicResultJson_BlockedV2_RemovesCanonicalVerdictAndAnalyticalContent()
+    {
+        var root = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        var verdict = root["verdict"]!.AsObject();
+        verdict["label"] = "TRUE";
+        verdict["truthPercentage"] = 90;
+        verdict["confidence"] = 80;
+
+        var publicJson = ResultCompatibility.BuildPublicResultJson(root.ToJsonString(), isAdmin: false)!.AsObject();
+        var meta = publicJson["meta"]!.AsObject();
+
+        Assert.Equal("blocked_precutover", meta["publicCutoverStatus"]!.GetValue<string>());
+        Assert.False(publicJson.ContainsKey("verdict"));
+        Assert.False(publicJson.ContainsKey("evidence"));
+        Assert.False(publicJson.ContainsKey("sources"));
+        Assert.False(publicJson.ContainsKey("boundaries"));
+        Assert.False(publicJson.ContainsKey("narrative"));
+    }
+
+    [Fact]
+    public void BuildPublicResultJson_AdminKeepsRawBlockedV2ForDiagnostics()
+    {
+        var json = FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json");
+
+        var adminJson = ResultCompatibility.BuildPublicResultJson(json, isAdmin: true)!.AsObject();
+
+        Assert.True(adminJson.ContainsKey("verdict"));
+        Assert.True(adminJson.ContainsKey("evidence"));
+        Assert.True(adminJson.ContainsKey("narrative"));
+    }
+
+    [Fact]
+    public void BuildPublicReportMarkdown_BlockedV2_IsHiddenForNonAdmin()
+    {
+        var json = FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json");
+
+        Assert.Null(ResultCompatibility.BuildPublicReportMarkdown(json, "# V2 report", isAdmin: false));
+        Assert.Equal("# V2 report", ResultCompatibility.BuildPublicReportMarkdown(json, "# V2 report", isAdmin: true));
     }
 }

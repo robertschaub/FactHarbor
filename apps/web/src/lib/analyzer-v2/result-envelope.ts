@@ -3,6 +3,7 @@ import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
 export const CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION = "4.0.0-cb-precutover";
 export const CLAIMBOUNDARY_V2_PIPELINE = "claimboundary-v2";
+export const CLAIMBOUNDARY_V2_PUBLIC_CUTOVER_STATUS_BLOCKED = "blocked_precutover";
 export const CLAIMBOUNDARY_V2_SHELL_PLACEHOLDER_CLAIM_ID = CLAIM_UNDERSTANDING_SHELL_ONLY_PLACEHOLDER_CLAIM_IDS[0];
 
 export type ClaimBoundaryV2Result = Record<string, unknown>;
@@ -160,6 +161,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
       meta: {
         schemaVersion: CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION,
         pipeline: CLAIMBOUNDARY_V2_PIPELINE,
+        publicCutoverStatus: CLAIMBOUNDARY_V2_PUBLIC_CUTOVER_STATUS_BLOCKED,
         resultContractVersion: 1,
         runId: context.runId,
         generatedUtc: context.generatedUtc,
@@ -243,9 +245,9 @@ export function buildDamagedClaimBoundaryV2Envelope(
           schemaVersion: "3.2.0-cb",
           adapterOnly: true,
           fallbackFields: {
-            truthPercentage: 50,
-            verdict: "UNVERIFIED",
-            confidence: 0,
+            truthPercentage: null,
+            verdict: null,
+            confidence: null,
             claimBoundaries: [],
             claimVerdicts: [],
             searchQueries: [],

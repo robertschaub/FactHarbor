@@ -71,10 +71,18 @@ function calcDuration(created: string, updated: string): string {
 }
 
 function norm(v: unknown): number {
+  return maybeNorm(v) ?? 50;
+}
+
+function maybeNorm(v: unknown): number | null {
   const n = Number(v);
-  if (!Number.isFinite(n)) return 50;
+  if (!Number.isFinite(n)) return null;
   const pct = n >= 0 && n <= 1 ? n * 100 : n;
   return Math.max(0, Math.min(100, Math.round(pct)));
+}
+
+function metaTag(name: string, content: string | number | null): string {
+  return content === null || content === "" ? "" : `\n<meta name="${name}" content="${esc(content)}">`;
 }
 
 // Verdict → CSS class/color mappings
@@ -383,19 +391,20 @@ function buildHeader(input: HtmlReportInput): string {
 
 function buildVerdictBanner(input: HtmlReportInput): string {
   const { result, claimVerdicts } = input;
-  const truthPct = norm(result?.truthPercentage ?? claimVerdicts[0]?.truthPercentage);
-  const conf = norm(result?.confidence ?? claimVerdicts[0]?.confidence);
-  const verdict = result?.overallVerdict ||
+  const truthPct = maybeNorm(result?.truthPercentage ?? claimVerdicts[0]?.truthPercentage);
+  const conf = maybeNorm(result?.confidence ?? claimVerdicts[0]?.confidence);
+  const explicitVerdict = result?.overallVerdict ||
     result?.verdict ||
-    (typeof claimVerdicts[0]?.verdict === "string" ? claimVerdicts[0].verdict : null) ||
-    verdictFromPct(truthPct, conf);
+    (typeof claimVerdicts[0]?.verdict === "string" ? claimVerdicts[0].verdict : null);
+  const verdict = explicitVerdict || (truthPct === null ? "NO PUBLIC VERDICT" : verdictFromPct(truthPct, conf ?? 0));
   const v = vs(verdict);
   const narrative = result?.verdictNarrative;
   const keyFinding = narrative?.keyFinding || "";
 
-  const displayPct = isFalseBand(verdict) ? 100 - truthPct : truthPct;
-  const displayWord = isFalseBand(verdict) ? "false" : "true";
-  const displayRange = result?.truthPercentageRange
+  const displayPct = truthPct === null
+    ? null
+    : isFalseBand(verdict) ? 100 - truthPct : truthPct;
+  const displayRange = result?.truthPercentageRange && displayPct !== null
     ? (isFalseBand(verdict)
         ? { min: 100 - result.truthPercentageRange.max, max: 100 - result.truthPercentageRange.min }
         : result.truthPercentageRange)
@@ -411,18 +420,18 @@ function buildVerdictBanner(input: HtmlReportInput): string {
     </div>
     <div class="meter-group">
       <div class="meter">
-        <div class="meter-value ${v.color}">${esc(formatVerdictText(displayPct, verdict))}</div>
-        <div class="meter-bar"><div class="meter-fill" style="width:${displayPct}%;background:${v.fill}"></div></div>
+        <div class="meter-value ${v.color}">${displayPct === null ? "—" : esc(formatVerdictText(displayPct, verdict))}</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:${displayPct ?? 0}%;background:${v.fill}"></div></div>
       </div>
       <div class="meter meter-conf">
-        <div class="meter-value" style="color:#a0aec0">${esc(getConfidenceTierLabel(conf))}</div>
-        <div class="meter-label" title="${conf}% confidence">confidence</div>
-        <div class="meter-bar"><div class="meter-fill" style="width:${conf}%;background:#4a5568"></div></div>
+        <div class="meter-value" style="color:#a0aec0">${conf === null ? "—" : esc(getConfidenceTierLabel(conf))}</div>
+        <div class="meter-label" title="${conf === null ? "No public confidence" : `${conf}% confidence`}">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:${conf ?? 0}%;background:#4a5568"></div></div>
       </div>
     </div>
     
     <div style="margin-top:20px">
-      ${buildVisualTruthMeter(displayPct, displayRange)}
+      ${displayPct === null ? "" : buildVisualTruthMeter(displayPct, displayRange)}
     </div>
 
     ${keyFinding && keyFinding.length > 120 ? `<div style="max-width:380px">
@@ -900,8 +909,8 @@ export function generateHtmlReport(input: HtmlReportInput): string {
     result?.verdict ||
     (typeof input.claimVerdicts?.[0]?.verdict === "string" ? input.claimVerdicts[0].verdict : "") ||
     "";
-  const truthPct = norm(result?.truthPercentage ?? input.claimVerdicts?.[0]?.truthPercentage);
-  const confPct = norm(result?.confidence ?? input.claimVerdicts?.[0]?.confidence);
+  const truthPct = maybeNorm(result?.truthPercentage ?? input.claimVerdicts?.[0]?.truthPercentage);
+  const confPct = maybeNorm(result?.confidence ?? input.claimVerdicts?.[0]?.confidence);
   const dateStr = job.createdUtc ? new Date(job.createdUtc).toISOString().slice(0, 10) : "";
   const usedModelsLabel = formatUsedModels(collectUsedModels(result)) || String(meta.llmModel || meta.model || "");
 
@@ -911,9 +920,9 @@ export function generateHtmlReport(input: HtmlReportInput): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="fh:claim" content="${esc(job.inputValue)}">
-<meta name="fh:verdict" content="${esc(overallVerdict)}">
-<meta name="fh:truth" content="${truthPct}">
-<meta name="fh:confidence" content="${confPct}">
+${metaTag("fh:verdict", overallVerdict)}
+${metaTag("fh:truth", truthPct)}
+${metaTag("fh:confidence", confPct)}
 <meta name="fh:date" content="${esc(dateStr)}">
 <meta name="fh:model" content="${esc(usedModelsLabel)}">
 <title>FactHarbor Report — ${esc(job.inputValue)}</title>

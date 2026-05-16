@@ -57,6 +57,7 @@ public sealed class JobsController : ControllerBase
             jobs = items.Select(j =>
             {
                 var analysisIssue = ResultCompatibility.ExtractPrimaryAnalysisIssue(j.ResultJson);
+                var quickFields = ResultCompatibility.ExtractQuickFields(j.ResultJson);
                 var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
                 return new
                 {
@@ -68,9 +69,9 @@ public sealed class JobsController : ControllerBase
                 inputType = j.InputType,
                 inputPreview = j.InputPreview,
                 pipelineVariant = j.PipelineVariant,
-                verdictLabel = j.VerdictLabel,
-                truthPercentage = j.TruthPercentage,
-                confidence = j.Confidence,
+                verdictLabel = quickFields.VerdictLabel,
+                truthPercentage = quickFields.TruthPercentage,
+                confidence = quickFields.Confidence,
                 isHidden = j.IsHidden,
                 analysisIssueCode = analysisIssue.Code,
                 analysisIssueMessage = analysisIssue.Message,
@@ -100,13 +101,10 @@ public sealed class JobsController : ControllerBase
 
         var j = readableJob.job!;
 
-        object? resultObj = null;
-        if (!string.IsNullOrWhiteSpace(j.ResultJson))
-        {
-            try { resultObj = JsonSerializer.Deserialize<object>(j.ResultJson); } catch { }
-        }
-
+        var resultObj = ResultCompatibility.BuildPublicResultJson(j.ResultJson, isAdmin);
+        var publicReportMarkdown = ResultCompatibility.BuildPublicReportMarkdown(j.ResultJson, j.ReportMarkdown, isAdmin);
         var analysisIssue = ResultCompatibility.ExtractPrimaryAnalysisIssue(j.ResultJson);
+        var quickFields = ResultCompatibility.ExtractQuickFields(j.ResultJson);
         var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
 
         return Ok(new
@@ -120,9 +118,9 @@ public sealed class JobsController : ControllerBase
             inputValue = j.InputValue,
             inputPreview = j.InputPreview,
             pipelineVariant = j.PipelineVariant,
-            verdictLabel = j.VerdictLabel,
-            truthPercentage = j.TruthPercentage,
-            confidence = j.Confidence,
+            verdictLabel = quickFields.VerdictLabel,
+            truthPercentage = quickFields.TruthPercentage,
+            confidence = quickFields.Confidence,
             isHidden = j.IsHidden,
             analysisIssueCode = analysisIssue.Code,
             analysisIssueMessage = analysisIssue.Message,
@@ -136,7 +134,7 @@ public sealed class JobsController : ControllerBase
             preparedStage1Json = isAdmin ? j.PreparedStage1Json : null,
             claimSelectionJson = isAdmin ? j.ClaimSelectionJson : null,
             resultJson = resultObj,
-            reportMarkdown = j.ReportMarkdown
+            reportMarkdown = publicReportMarkdown
         });
     }
 

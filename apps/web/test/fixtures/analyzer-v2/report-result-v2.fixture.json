@@ -3,6 +3,7 @@
   "meta": {
     "schemaVersion": "4.0.0-cb-precutover",
     "pipeline": "claimboundary-v2",
+    "publicCutoverStatus": "blocked_precutover",
     "resultContractVersion": 1,
     "runId": "fixture-run-v2",
     "generatedUtc": "2026-05-13T00:00:00.000Z",
@@ -187,9 +188,9 @@
       "schemaVersion": "3.2.0-cb",
       "adapterOnly": true,
       "fallbackFields": {
-        "truthPercentage": 50,
-        "verdict": "UNVERIFIED",
-        "confidence": 0,
+        "truthPercentage": null,
+        "verdict": null,
+        "confidence": null,
         "claimBoundaries": [
           {
             "id": "CB_01",
