@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B1 Candidate Acquisition Runtime Shell -- [Significant] [open-items: yes]
+**For next agent:** 7N-3B1 is implemented at `878ba6ba` as a hidden/internal candidate-acquisition runtime shell only: package-scoped authority, injected provider boundary, structural allowlist/budget validation, hidden candidate records, exact query coverage, and boundary guards. Concrete provider/source IO, content dereference, parser/network execution, Source Reliability, cache IO, product/public wiring, and live jobs remain blocked until a separate reviewed package.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B1_Candidate_Acquisition_Runtime_Shell.md
+
+---
 ### 2026-05-12 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Specification Plan -- [Standard] [open-items: yes]
 **For next agent:** Phase 0 is deputy-approved and Phase 1 context is captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`. Start Phase 2 reverse-engineering from that file plus the Plan V2 Baseline; Captain delegated normal decision gates to a Captain Deputy agent team, escalating only for high risk or no consent.
 -> Docs/AGENTS/Handoffs/2026-05-12_Lead_Architect_Pipeline_Rebuild_Specification_Plan.md
