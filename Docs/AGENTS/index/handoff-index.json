@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T19:12:33.307Z",
-  "count": 550,
+  "generatedAt": "2026-05-16T19:40:26.655Z",
+  "count": 551,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -11883,6 +11883,27 @@
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/types.ts"
       ],
       "summary": "X7-A is a hidden/internal contract only. It proves X6 candidate-acquisition output is not source material, not evidence, and not extraction input. Continue with a reviewed follow-up package before any provider-network readiness, real source IO, source-material population, extraction, evidence-corpus"
+    },
+    {
+      "file": "2026-05-16_Lead_Architect_V2_X7-B_Source_Material_Evidence_Corpus_Guard.md",
+      "date": "2026-05-16",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-b",
+        "source",
+        "material",
+        "evidence",
+        "corpus",
+        "guard"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/contract.ts"
+      ],
+      "summary": "X7-B is a hidden/internal negative guard only. It consumes X7-A source-material readiness as absence/rejection and proves absent, malformed, copied, JSON-round-tripped, or source-like source-material input cannot become corpus-buildable. Continue with a reviewed follow-up package before any provider"
     },
     {
       "file": "2026-05-16_Lead_Developer_V2_7N3B3-2D-B2_OCI_Proof_Completion.md",

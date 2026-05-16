@@ -3369,6 +3369,7 @@ describe("analyzer-v2 boundary guard", () => {
     const violations: string[] = [];
 
     expect(coreFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material/contract.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-material/readiness.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-material/types.ts",
     ]);
@@ -4079,11 +4080,13 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(evidenceCorpusFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/build-decision.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-guard.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/types.ts",
     ]);
 
     for (const sourcePath of evidenceCorpusFiles) {
       const sourceFile = parseSource(sourcePath);
+      const sourceContent = readFileSync(sourcePath, "utf8");
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isV1AnalyzerImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
@@ -4131,6 +4134,25 @@ describe("analyzer-v2 boundary guard", () => {
           || specifier === "@/lib/analyzer-v2"
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+      for (const forbiddenTerm of [
+        "EvidenceItem",
+        "warning",
+        "verdict",
+        "truthPercentage",
+        "confidence",
+        "reportMarkdown",
+        "sourceReliability",
+        "cacheKey",
+        "https://",
+        "fetch(",
+      ]) {
+        if (sourceContent.includes(forbiddenTerm)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} contains forbidden evidence-corpus guard term ${forbiddenTerm}`);
         }
       }
     }
