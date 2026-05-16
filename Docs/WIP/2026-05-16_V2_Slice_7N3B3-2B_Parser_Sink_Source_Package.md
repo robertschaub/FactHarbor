@@ -1,17 +1,18 @@
 # V2 Slice 7N-3B3-2B Parser/Sink Source Package
 
 **Date:** 2026-05-16
-**Status:** draft for deputy review; implementation not approved
+**Status:** implemented and hardened; post-implementation review/consolidation pending
 **Owner role:** Lead Architect / Captain deputy
 **Parent gate:** `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2A_Parser_Sink_Isolation_Package.md`
 **Implementation baseline:** `267bfb9e` (`feat: add v2 content dereference boundary`)
 **Isolation baseline:** `a2c27cda` (`docs: harden v2 parser sink package`)
+**Package approval / source commits:** `d6b13b95` package re-review approval, `13ff68d3` implementation, `6e71bbea` debt-guard hardening
 
 ## 1. Purpose
 
 Define the exact source package that may later implement a hidden parser boundary and content-packet sink after the approved 7N-3B3-2A isolation design.
 
-This package is not source approval until deputy review returns `approve`. It intentionally keeps real fetched-byte parsing out of scope. The current 7N-3B3-1 content transport returns only byte-free structural outcomes; it does not expose raw transport bytes to parser/sink files.
+This package was source-approved after deputy re-review and implemented in the commits listed above. It intentionally keeps real fetched-byte parsing out of scope. The current 7N-3B3-1 content transport returns only byte-free structural outcomes; it does not expose raw transport bytes to parser/sink files.
 
 ## 2. Package Decision
 
@@ -57,7 +58,20 @@ Implementation-envelope modifications required before source implementation:
 - narrow timeout/hang requirements to a minimal structural timeout outcome for 2B, without adding a worker, injectable parser engine, or real parser isolation surface;
 - explicitly require boundary-guard updates that replace current parser/sink absence assertions with parser/sink owner-file allowlists and product/public transitive reachability bans.
 
-Those modifications are applied in this package. Re-review is required before implementation.
+Those modifications were applied before implementation. Re-review approved source implementation inside this exact envelope.
+
+## 2.2 Implementation Result
+
+7N-3B3-2B source implementation is complete at `13ff68d3` with corrective hardening at `6e71bbea`.
+
+The hardening commit addressed the post-implementation debt-guard review findings:
+
+- ordinary caller `Uint8Array` ingress is rejected; fixture packets can only be created from a module-owned committed fixture catalog bound by opaque fixture id, expected byte count, expected digest, parser policy id, content-type policy id, and packet-sink authority snapshot;
+- valid packets are disposed on success, request failure, policy mismatch, timeout, and cancellation;
+- disposed packet references no longer validate as active fixture packets and are scrubbed to structural disposal status only;
+- non-owner runtime/barrel imports and re-exports now also block parser/sink owner files.
+
+7N-3B3-2B remains fixture/control-only. It does not approve real transport-byte handoff, product/public wiring, live jobs, cache IO, Source Reliability integration, evidence/report generation, ACS/direct URL execution, or V1 cleanup.
 
 ## 3. Exact Source Envelope
 

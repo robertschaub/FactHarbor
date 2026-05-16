@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2B Parser/Sink Source -- [Significant] [open-items: yes]
+**For next agent:** 7N-3B3-2B is implemented at `13ff68d3` and hardened at `6e71bbea` as fixture/control-only parser/sink source. `createSourceAcquisitionContentFixturePacket(...)` now rejects ordinary caller bytes and uses only module-owned committed fixture material; parser terminal paths dispose valid packets; disposed packet references no longer validate; boundary guards block non-owner parser/sink imports/re-exports. Next gate is post-2B review/consolidation, then a separate 7N-3B3-2C package only if real transport-byte handoff is still needed. Product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2B_Parser_Sink_Source.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2A Approval And 7N-3B3-2B Draft -- [Standard] [open-items: yes]
 **For next agent:** 7N-3B3-2A is approved as a docs-only parser/sink isolation boundary after security hardening and re-review. `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md` is drafted for deputy review only and amended after initial 2B review: fixture/control-only parser/sink source package, exact files `source-acquisition-content-parser.ts` and `source-acquisition-content-packet-sink.ts`, exact exports/imports, branded fixture ingress, minimal non-worker timeout/abort path, focused tests, and boundary guards. Real transport-byte handoff from `source-acquisition-content-transport.ts` is reserved for later 7N-3B3-2C. Parser/sink implementation, real byte handoff, product/public wiring, live jobs, cache/SR, evidence/report generation, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked pending 2B re-review.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_7N3B3-2A_Approval_7N3B3-2B_Draft.md

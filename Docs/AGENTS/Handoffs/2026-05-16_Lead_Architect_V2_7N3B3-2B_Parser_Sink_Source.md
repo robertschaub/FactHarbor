@@ -1,0 +1,21 @@
+---
+### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 7N-3B3-2B Parser/Sink Source
+**Task:** Implement the approved 7N-3B3-2B fixture/control-only parser/sink source package, address post-implementation debt-guard review findings, and preserve the V2 clean-room/source-acquisition gates.
+**Files touched:** `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.ts`; `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-content-parser.ts`; focused parser/sink tests; `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`; `Docs/WIP/2026-05-16_V2_Slice_7N3B3-2B_Parser_Sink_Source_Package.md`; `Docs/STATUS/Current_Status.md`; `Docs/STATUS/Backlog.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`.
+**Key decisions:** 7N-3B3-2B is implemented at `13ff68d3` and hardened at `6e71bbea`. The final boundary is fixture/control-only: ordinary caller `Uint8Array` ingress is rejected, fixture packets come only from a module-owned committed fixture catalog, valid packets are disposed on all terminal parser paths, disposed references no longer validate as active fixture packets, and boundary guards block non-owner parser/sink imports or re-exports.
+**Open items:** Post-2B review/consolidation is the next gate. Real transport-byte handoff remains a separate 7N-3B3-2C decision and must include `source-acquisition-content-transport.ts` in a reviewed envelope if pursued.
+**Warnings:** Do not treat 7N-3B3-2B as parser execution over fetched content. It does not approve product/orchestrator/runner/API/UI/report/export wiring, live jobs, cache IO, Source Reliability integration, evidence/report generation, ACS/direct URL execution, V1 reuse, or V1 cleanup.
+**For next agent:** Start from `6e71bbea` and the 2B package. Continue with post-2B review/consolidation; only draft 7N-3B3-2C if real transport-byte handoff remains necessary. Keep 2B fixture/control-only and do not import parser/sink from product/public/non-owner runtime paths.
+**Learnings:** No new role learning appended; this was an expected bounded source slice plus review hardening.
+
+DEBT-GUARD RESULT
+Classification: `missing-capability` for the approved parser/sink boundary, followed by `incomplete-existing-mechanism` after review found byte-ingress and lifecycle contract gaps.
+Chosen option: add the approved fixture/control-only parser/sink, then amend the same mechanism in place after review instead of adding a parallel path.
+Rejected path and why: revert/delete was worse because the package and core mechanism were approved and verifier-clean apart from contained lifecycle/ingress gaps; adding another fixture channel would have stacked mechanisms.
+What was removed/simplified: removed exported ordinary byte ingress, removed caller-controlled `disposeAfterParse`, removed the test expectation that disposed packets remain valid, and tightened non-owner parser/sink import guards.
+What was added: module-owned committed fixture catalog, automatic terminal-path disposal, disposed metadata scrubbing, focused tests for valid-packet cleanup on success/failure/timeout/cancellation, and parser/sink re-export guard coverage.
+Net mechanism count: increases by one approved fixture/control parser/sink boundary; no extra parallel mechanism after hardening.
+Budget reconciliation: actual files stayed inside the 2B source envelope plus required status/handoff docs.
+Verification: `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-content-parser.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-content-packet-sink.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` (3 files / 65 tests); `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime` (20 files / 113 tests); `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition` (4 files / 31 tests); `npm -w apps/web run test -- test/unit/lib/analyzer-v2` (54 files / 380 tests); `npm -w apps/web run build`; `git diff --check`.
+Debt accepted and removal trigger: 2B fixture catalog is planned temporary test/control debt; delete or replace it when 7N-3B3-2C approves real transport-byte handoff.
+Residual debt: byte zeroization cannot be proven beyond removing module-owned dereference paths and scrubbing returned references; real parser isolation is still deferred to 7N-3B3-2C.
