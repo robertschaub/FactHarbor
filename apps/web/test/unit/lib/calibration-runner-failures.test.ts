@@ -47,6 +47,12 @@ function v2ResultWithVerdict(
   confidence: number,
 ): Record<string, any> {
   const result = structuredClone(readFixture<Record<string, any>>("report-result-v2.fixture.json"));
+  result._schemaVersion = "4.0.0-cb";
+  result.meta = {
+    ...result.meta,
+    schemaVersion: "4.0.0-cb",
+    publicCutoverStatus: "approved",
+  };
   result.verdict = {
     ...result.verdict,
     label: verdict,

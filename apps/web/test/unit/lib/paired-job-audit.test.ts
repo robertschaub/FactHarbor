@@ -41,10 +41,11 @@ function makeJobBody(overrides?: Partial<{
 
 function makeV2JobResult(truthPercentage: number): Record<string, unknown> {
   return {
-    _schemaVersion: "4.0.0-cb-precutover",
+    _schemaVersion: "4.0.0-cb",
     meta: {
-      schemaVersion: "4.0.0-cb-precutover",
+      schemaVersion: "4.0.0-cb",
       pipeline: "claimboundary-v2",
+      publicCutoverStatus: "approved",
     },
     verdict: {
       label: "UNVERIFIED",
