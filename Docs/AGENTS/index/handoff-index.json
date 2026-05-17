@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T14:01:29.030Z",
-  "count": 609,
+  "generatedAt": "2026-05-17T14:19:39.920Z",
+  "count": 610,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13278,6 +13278,31 @@
       ],
       "files_touched": [],
       "summary": "Handoff: V2 X7-S Product-Internal Query Planning Execution Package"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-T-R_Runtime_Gate_Refresh_Rerun_Addendum.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-t-r",
+        "runtime",
+        "gate",
+        "refresh",
+        "rerun",
+        "addendum"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-T-R_Runtime_Gate_Refresh_Rerun_Addendum.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit the X7-T-R docs/status/handoff/index package only. Then refresh the runtime from the committed revision with all three gates visible in the actual port-3000 process ancestry, rerun the four-route hidden artifact preflight, run the clean/idle checkpoint, and submit the German canary first. Sub"
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_X7-T_Query_Planning_Runtime_Live_Smoke_Package.md",
