@@ -10,6 +10,10 @@ import {
   clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts,
   readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink";
+import {
+  clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts,
+  readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -124,6 +128,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     const ledgerId = "job-v2-x7s-orchestrator:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -172,6 +177,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     );
     const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
+    const candidateAdmissionArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -227,6 +234,40 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         }),
       }),
     ]);
+    expect(candidateAdmissionArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        candidateRuntimeAdmission: expect.objectContaining({
+          status: "admission_ready_no_runtime_execution",
+          blockedReason: null,
+          handoffStatus: "ready_not_executable",
+          requestStatus: "source_acquisition_ready_not_executable",
+          intakeStatus: "intake_ready_not_executable",
+          queryEntryCount: 1,
+          sourceLanguageSignal: "present",
+        }),
+        productExecution: expect.objectContaining({
+          queryPlanningRuntimeInvoked: true,
+          sourceAcquisitionIntakeObserved: true,
+          candidateRuntimeAdmissionObserved: true,
+          candidateRuntimeExecuted: false,
+          candidateProviderInvoked: false,
+          providerNetworkExecuted: false,
+          searchFetchCalled: false,
+          contentDereferenceCalled: false,
+          parserExecuted: false,
+          sourceMaterialCreated: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          publicSurfaceWritten: false,
+          providerAttemptCount: 0,
+          candidateCount: 0,
+          bytesRead: 0,
+        }),
+      }),
+    ]);
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
@@ -246,6 +287,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     const ledgerId = "job-v2-x7s-direct-no-selected:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -292,6 +334,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
 
     const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
+    const candidateAdmissionArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     expect(artifacts[0]).toMatchObject({
       selectedAtomicClaimIds: ["AC_001"],
       sourceAcquisitionHandoff: {
@@ -325,6 +369,25 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         publicSurfaceWritten: false,
       }),
     });
+    expect(candidateAdmissionArtifacts[0]).toMatchObject({
+      candidateRuntimeAdmission: {
+        status: "admission_ready_no_runtime_execution",
+        blockedReason: null,
+        selectedAtomicClaimCount: 1,
+        queryEntryCount: 1,
+        sourceLanguageSignal: "present",
+      },
+      productExecution: expect.objectContaining({
+        candidateRuntimeExecuted: false,
+        candidateProviderInvoked: false,
+        providerNetworkExecuted: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+        providerAttemptCount: 0,
+        candidateCount: 0,
+        bytesRead: 0,
+      }),
+    });
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {
@@ -332,6 +395,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     const ledgerId = "job-v2-x7s-closed:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -364,5 +428,6 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(factoryCalls).toBe(0);
     expect(readEvidenceQueryPlanningRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId)).toEqual([]);
+    expect(readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId)).toEqual([]);
   });
 });
