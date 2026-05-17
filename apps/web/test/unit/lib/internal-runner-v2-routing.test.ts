@@ -176,19 +176,23 @@ describe("internal runner V2 shell routing", () => {
     expect(resultBodies[0].resultJson.meta.pipelineVariantRequested).toBeUndefined();
   });
 
-  it("falls back to V1 when V2 is requested but disabled", async () => {
-    const { resultBodies } = await runQueuedJobHarness({
+  it("fails closed when V2 is requested but disabled", async () => {
+    const { statusBodies, resultBodies } = await runQueuedJobHarness({
       jobId: "job-v2-disabled",
       pipelineVariant: "claimboundary-v2",
     });
 
-    expect(runClaimBoundaryAnalysis).toHaveBeenCalledTimes(1);
+    expect(runClaimBoundaryAnalysis).not.toHaveBeenCalled();
     expect(runClaimBoundaryV2Shell).not.toHaveBeenCalled();
-    expect(resultBodies[0].resultJson.meta).toMatchObject({
-      pipelineVariant: "claimboundary",
-      pipelineVariantRequested: "claimboundary-v2",
-      pipelineVariantFallbackReason: "v2-shell-disabled",
-    });
+    expect(resultBodies).toHaveLength(0);
+    expect(statusBodies).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        status: "FAILED",
+        message: expect.stringContaining(
+          "Analyzer execution blocked for requested pipeline claimboundary-v2: v2-shell-disabled",
+        ),
+      }),
+    ]));
   });
 
   it("routes to the V2 shell only when both stored variant and env flag are present", async () => {
@@ -252,6 +256,27 @@ describe("internal runner V2 shell routing", () => {
       expect.objectContaining({
         status: "FAILED",
         message: expect.stringContaining("V2 shell unexpected test failure"),
+      }),
+    ]));
+  });
+
+  it("fails closed for unsupported stored variants without running V1", async () => {
+    process.env.FH_ANALYZER_V2_SHELL = "enabled";
+
+    const { statusBodies, resultBodies } = await runQueuedJobHarness({
+      jobId: "job-unsupported-variant",
+      pipelineVariant: "legacy-removed",
+    });
+
+    expect(runClaimBoundaryAnalysis).not.toHaveBeenCalled();
+    expect(runClaimBoundaryV2Shell).not.toHaveBeenCalled();
+    expect(resultBodies).toHaveLength(0);
+    expect(statusBodies).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        status: "FAILED",
+        message: expect.stringContaining(
+          "Analyzer execution blocked for requested pipeline legacy-removed: unsupported-variant",
+        ),
       }),
     ]));
   });

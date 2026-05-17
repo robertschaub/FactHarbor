@@ -36,11 +36,11 @@ describe("analyzer-v2 execution selection", () => {
     });
   });
 
-  it("falls back to V1 when V2 is requested but the shell flag is disabled", () => {
+  it("blocks execution when V2 is requested but the shell flag is disabled", () => {
     expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V2_VARIANT, {})).toEqual({
-      path: "claimboundary-v1",
+      path: "blocked",
       requestedVariant: CLAIMBOUNDARY_V2_VARIANT,
-      executedVariant: CLAIMBOUNDARY_V1_VARIANT,
+      executedVariant: null,
       fallbackReason: "v2-shell-disabled",
       v2ShellEnabled: false,
       runtimeActivationStatus: "kill_switch_closed",
@@ -92,13 +92,13 @@ describe("analyzer-v2 execution selection", () => {
     }).path).toBe("claimboundary-v2-shell");
   });
 
-  it("falls back to V1 for unsupported stored variants", () => {
+  it("blocks execution for unsupported stored variants", () => {
     expect(resolveAnalyzerExecutionSelection("legacy-removed", {
       FH_ANALYZER_V2_SHELL: "enabled",
     })).toEqual({
-      path: "claimboundary-v1",
+      path: "blocked",
       requestedVariant: "legacy-removed",
-      executedVariant: CLAIMBOUNDARY_V1_VARIANT,
+      executedVariant: null,
       fallbackReason: "unsupported-variant",
       v2ShellEnabled: true,
       runtimeActivationStatus: "kill_switch_closed",

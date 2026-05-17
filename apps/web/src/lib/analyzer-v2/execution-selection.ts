@@ -7,21 +7,35 @@ export type AnalyzerV2RuntimeActivationStatus =
   | "kill_switch_closed"
   | "enabled_hidden_direct_text";
 
-export type AnalyzerExecutionPath = "claimboundary-v1" | "claimboundary-v2-shell";
+export type AnalyzerExecutionPath = "claimboundary-v1" | "claimboundary-v2-shell" | "blocked";
 export type AnalyzerExecutedVariant =
   | typeof CLAIMBOUNDARY_V1_VARIANT
   | typeof CLAIMBOUNDARY_V2_VARIANT;
 export type AnalyzerFallbackReason = "v2-shell-disabled" | "unsupported-variant";
 
-export type AnalyzerExecutionSelection = {
-  path: AnalyzerExecutionPath;
+type AnalyzerExecutionSelectionBase = {
   requestedVariant: string;
-  executedVariant: AnalyzerExecutedVariant;
-  fallbackReason: AnalyzerFallbackReason | null;
   v2ShellEnabled: boolean;
   runtimeActivationStatus: AnalyzerV2RuntimeActivationStatus;
   runtimeActivationEnabled: boolean;
 };
+
+export type AnalyzerExecutionSelection =
+  | (AnalyzerExecutionSelectionBase & {
+    path: "claimboundary-v1";
+    executedVariant: typeof CLAIMBOUNDARY_V1_VARIANT;
+    fallbackReason: null;
+  })
+  | (AnalyzerExecutionSelectionBase & {
+    path: "claimboundary-v2-shell";
+    executedVariant: typeof CLAIMBOUNDARY_V2_VARIANT;
+    fallbackReason: null;
+  })
+  | (AnalyzerExecutionSelectionBase & {
+    path: "blocked";
+    executedVariant: null;
+    fallbackReason: AnalyzerFallbackReason;
+  });
 
 function normalizeRequestedVariant(value: unknown): string {
   return typeof value === "string" && value.trim().length > 0
@@ -66,9 +80,9 @@ export function resolveAnalyzerExecutionSelection(
     }
 
     return {
-      path: "claimboundary-v1",
+      path: "blocked",
       requestedVariant,
-      executedVariant: CLAIMBOUNDARY_V1_VARIANT,
+      executedVariant: null,
       fallbackReason: "v2-shell-disabled",
       v2ShellEnabled,
       runtimeActivationStatus: "kill_switch_closed",
@@ -78,9 +92,9 @@ export function resolveAnalyzerExecutionSelection(
 
   if (requestedVariant !== CLAIMBOUNDARY_V1_VARIANT) {
     return {
-      path: "claimboundary-v1",
+      path: "blocked",
       requestedVariant,
-      executedVariant: CLAIMBOUNDARY_V1_VARIANT,
+      executedVariant: null,
       fallbackReason: "unsupported-variant",
       v2ShellEnabled,
       runtimeActivationStatus: "kill_switch_closed",

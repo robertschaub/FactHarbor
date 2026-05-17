@@ -415,6 +415,11 @@ async function runJobBackground(jobId: string) {
     }
 
     const executionSelection = resolveAnalyzerExecutionSelection(requestedVariant);
+    if (executionSelection.path === "blocked") {
+      throw new Error(
+        `Analyzer execution blocked for requested pipeline ${executionSelection.requestedVariant}: ${executionSelection.fallbackReason}`,
+      );
+    }
 
     await emit("info", `Preparing input (pipeline: ${executionSelection.executedVariant})`, 5);
 
@@ -442,9 +447,6 @@ async function runJobBackground(jobId: string) {
       result.resultJson.meta.executedWebGitCommitHash = executedWebGitCommitHash;
       if (executionSelection.requestedVariant !== executionSelection.executedVariant) {
         result.resultJson.meta.pipelineVariantRequested = executionSelection.requestedVariant;
-      }
-      if (executionSelection.fallbackReason) {
-        result.resultJson.meta.pipelineVariantFallbackReason = executionSelection.fallbackReason;
       }
     }
 
