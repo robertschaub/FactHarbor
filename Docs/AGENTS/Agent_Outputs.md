@@ -3652,3 +3652,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** X7-U0 does not authorize source/search/fetch/parser/SR/cache IO, EvidenceCorpus/evidence/report/verdict/confidence generation, public output, ACS/direct URL, V1 reuse, or V1 cleanup. The latest Captain instruction authorizes prompt implementation/live jobs with a max-8 ceiling, but the diagnostic evidence step should happen before any prompt surgery.
 **Learnings:** When hidden runtime schema validation fails, exposing bounded adapter-attempt diagnostics from the existing artifact surface is lower risk than blind prompt repair.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U0_Query_Planning_Adapter_Diagnostics_Implementation.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-U1 Query Planning Diagnostic Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** X7-U1 is a docs-only package for exactly one German diagnostic canary on committed X7-U0 diagnostics code. It is meant to capture sanitized `adapterAttemptDiagnostics` before prompt/schema/adapter/provider repair selection. Commit the package, refresh runtime with exact V2 gates, run the listed safe verifiers and hidden-route preflight, then submit one `claimboundary-v2` job using `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+**Warnings:** No prompt/schema/config/model/provider/source/public/V1 changes are authorized inside X7-U1. No English canary, replacement job, validation batch, retries, or repair attempt belongs in this package.
+**Learnings:** Keep diagnostic live smoke and repair implementation as separate commits/gates so live evidence maps to the source that produced it.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U1_Query_Planning_Diagnostic_Live_Smoke_Package.md
