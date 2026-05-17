@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-J Intake Artifact Ledger ID Route Hygiene -- [Standard] [open-items: no]
+**For next agent:** Committed the pre-existing X7-J intake-artifact route/test hygiene fix separately from X7-M. The admin-only route now accepts `.` in bounded single `ledgerId` values so default timestamped V2 observability ledger IDs can be inspected; route tests cover that shape while preserving auth, no-store, not-found, and malformed query rejection. This does not authorize live jobs.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-J_Intake_Artifact_Ledger_Id_Route_Hygiene.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-M Claim Understanding Prompt/Contract Repair Implementation -- [Significant] [open-items: yes]
 **For next agent:** X7-M prompt/contract repair is implemented after explicit Captain authorization and final prompt-diff review. `V2_CLAIM_UNDERSTANDING_GATE1` now uses schema-exact nested direct-input and prepared-snapshot `ClaimContract` guidance, forbids literal flat dotted keys, and clarifies topic-neutral externally assessable direct-question handling without deciding truth/fairness/legal/compliance outcomes. Strict schemas remain unchanged and focused/broad Analyzer V2 tests plus build/gates passed. Live jobs remain blocked until a separate reviewed post-repair smoke package.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-M_Claim_Understanding_Prompt_Repair_Implementation.md

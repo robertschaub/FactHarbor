@@ -24,7 +24,7 @@ function readLedgerId(req: Request): string | null {
   if (ledgerId.length === 0 || ledgerId.length > EVIDENCE_LIFECYCLE_INTAKE_ARTIFACT_MAX_LEDGER_ID_LENGTH) {
     return null;
   }
-  if (!/^[A-Za-z0-9:_-]+$/.test(ledgerId)) {
+  if (!/^[A-Za-z0-9:._-]+$/.test(ledgerId)) {
     return null;
   }
   return ledgerId;

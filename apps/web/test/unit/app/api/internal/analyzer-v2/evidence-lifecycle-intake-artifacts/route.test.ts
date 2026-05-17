@@ -82,9 +82,9 @@ function acceptedHandoff(): Extract<ClaimUnderstandingStageHandoff, { status: "a
   };
 }
 
-function seedArtifact(runId = "job-v2-x7j-route") {
+function seedArtifact(runId?: string) {
   const context = buildClaimBoundaryV2RunContext({
-    runIdHint: runId,
+    ...(runId ? { runIdHint: runId } : {}),
     submitted: {
       kind: "text",
       value: "route input",
@@ -110,7 +110,7 @@ afterEach(() => {
 
 describe("Analyzer V2 internal Evidence Lifecycle intake artifact route", () => {
   it("returns internal-only artifacts for an authenticated ledger read", async () => {
-    const ledgerId = seedArtifact();
+    const ledgerId = seedArtifact("job-v2-x7j-route");
     process.env.FH_ADMIN_KEY = "test-admin-key";
     const { GET } = await import("@/app/api/internal/analyzer-v2/evidence-lifecycle-intake-artifacts/route");
 
@@ -142,6 +142,26 @@ describe("Analyzer V2 internal Evidence Lifecycle intake artifact route", () => 
       }),
     ]);
     expect(JSON.stringify(body)).not.toContain("route claim text");
+  });
+
+  it("accepts the default timestamped V2 ledger id shape", async () => {
+    const ledgerId = seedArtifact();
+    process.env.FH_ADMIN_KEY = "test-admin-key";
+    const { GET } = await import("@/app/api/internal/analyzer-v2/evidence-lifecycle-intake-artifacts/route");
+
+    const response = await GET(new Request(
+      `http://localhost/api/internal/analyzer-v2/evidence-lifecycle-intake-artifacts?ledgerId=${encodeURIComponent(ledgerId)}`,
+      { headers: { "x-admin-key": "test-admin-key" } },
+    ));
+    const body = await response.json();
+
+    expect(ledgerId).toContain(".");
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: true,
+      ledgerId,
+      artifactCount: 1,
+    });
   });
 
   it("requires admin authentication", async () => {
