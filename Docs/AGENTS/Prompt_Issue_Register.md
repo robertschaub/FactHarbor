@@ -75,7 +75,7 @@ Entries not re-confirmed under newer prompt/runtime provenance become `status: u
 - **Coverage:** BLOB-EXACT
 - **First seen:** commit `6ca35b35eb3a202c966fea504069a7abcdf071fd` — 2026-05-17
 - **Last confirmed:** commit `6ca35b35eb3a202c966fea504069a7abcdf071fd` — 2026-05-17
-- **Status:** open
+- **Status:** resolved
 - **Description:** The executable Query Planning prompt section named `integrityEvents` as task events but did not render the required task-event object fields. The strict TypeScript/Zod contract requires `type`, `severity`, `message`, and `references`, so the model could emit an alias (`eventType`) and omit `references`.
 - **Observed behavior:** X7-U1 job `83c76b93bea746e9b4848c020c8f34a1` reached hidden Query Planning runtime/model execution but returned `schema_validation_failed`. Adapter diagnostics reported `integrityEvents.0.type` required, `integrityEvents.0.references` required, and unrecognized `eventType`.
 - **Recommended fix:** Add a generic task-event object contract to the rendered `V2_EVIDENCE_QUERY_PLANNING` section, explicitly require `type`, `severity`, `message`, and `references`, forbid alternate event field names, and preserve strict schema/adapter rejection of malformed events.
@@ -91,8 +91,9 @@ Entries not re-confirmed under newer prompt/runtime provenance become `status: u
 - **Coverage:** BLOB-EXACT
 - **First seen:** commit `606e776240443104f33e30a609a4a6c5098ce93c` — 2026-05-17
 - **Last confirmed:** commit `606e776240443104f33e30a609a4a6c5098ce93c` — 2026-05-17
-- **Status:** open
+- **Status:** resolved
 - **Description:** The rendered Query Planning prompt did not separate the planning task's own acceptance criteria from the downstream Source Acquisition execution gate. The model could therefore return a schema-valid `blocked` envelope with `source_acquisition_not_executable` even though the TypeScript handoff expects accepted query plans to become Source Acquisition `ready_not_executable`.
 - **Observed behavior:** X7-U2 job `3f75f309c9a8484381fb6c596589296c` reached hidden Query Planning runtime/model execution on the repaired task-event prompt, produced one accepted adapter attempt with zero schema issues, then returned `status: blocked`, `blockedReason: source_acquisition_not_executable`, zero query entries, and Source Acquisition handoff `query_planning_not_accepted`.
 - **Recommended fix:** Add a generic downstream-execution-posture rule to `V2_EVIDENCE_QUERY_PLANNING`: when Query Planning inputs are valid enough to plan retrieval intent, return an accepted bounded `queryPlan` even if downstream Source Acquisition is closed; reserve `source_acquisition_not_executable` for missing/malformed/provenance-preventing source-acquisition trace packets.
-- **Mitigation applied:** 2026-05-17 X7-U3 prompt clarification adds the downstream-posture rule and focused prompt tests. A committed/refreshed post-repair live canary is still required before this issue can be marked resolved.
+- **Mitigation applied:** 2026-05-17 X7-U3 prompt clarification adds the downstream-posture rule and focused prompt tests. Post-repair live job `9d70aa3a2ac54edaa44df8b0935e961c` ran on commit `8e1ea52ee07b700b31129b152d7aaf1241f4faa8` with prompt hash `8621b011ed1fabf694cc1fd67650562efff57ce6c02cd6ecdb5ff7bcffb2bd12`; Query Planning returned `accepted`, produced 3 query entries, and Source Acquisition handoff was `ready_not_executable`.
+- **Resolved at:** commit `8e1ea52ee07b700b31129b152d7aaf1241f4faa8`, prompt hash `8621b011ed1fabf694cc1fd67650562efff57ce6c02cd6ecdb5ff7bcffb2bd12`
