@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T02:32:45.828Z",
-  "count": 580,
+  "generatedAt": "2026-05-17T02:37:41.673Z",
+  "count": 581,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12559,6 +12559,30 @@
       ],
       "files_touched": [],
       "summary": "Lead Architect Handoff: V2 X7-K Live Smoke Result"
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-L_CU_Live_Result_Diagnosis.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-l",
+        "cu",
+        "live",
+        "result",
+        "diagnosis"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-L_Claim_Understanding_Live_Result_Diagnosis.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start from the X7-L diagnosis. X3-B is separate Query Planning metadata/prompt drift and does not fix these Claim Understanding failures."
     }
   ]
 }

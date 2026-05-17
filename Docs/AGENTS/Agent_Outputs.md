@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-L Claim Understanding Live-Result Diagnosis -- [Significant] [open-items: yes]
+**For next agent:** X7-L diagnoses the Claim Understanding blocker exposed by X7-K without source/prompt edits. German canary job `0e3901f2c5e74af8bbde2383297d1b5e` failed schema validation because the model emitted flat `input.selectedAtomicClaimIds` under `claimContract` instead of nested `claimContract.input.selectedAtomicClaimIds`; Bolsonaro canary job `7da66e060e104e88a958c858533f22c2` returned schema-valid `no_valid_claim`. Recommended next step is a Captain-gated Claim Understanding prompt/contract repair approval package; do not relax schemas, run more live jobs, continue downstream, or edit prompts without explicit approval.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-L_CU_Live_Result_Diagnosis.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-K Direct-Text X7-J Intake Artifact Live Smoke Result -- [Significant] [open-items: yes]
 **For next agent:** X7-K passed its narrow objective on committed runtime `6a728471`: jobs `0e3901f2c5e74af8bbde2383297d1b5e` and `7da66e060e104e88a958c858533f22c2` both executed `claimboundary-v2`, stayed public `4.0.0-cb-precutover` / `blocked_precutover`, wrote one Claim Understanding artifact and one X7-J intake artifact each, and exposed no X7-J/runtime artifact markers publicly. Important blocker: Claim Understanding still did not produce an accepted ClaimContract; job 1 was damaged (`claim_contract_validation_failed`) and job 2 was blocked (`no_valid_claim`). X3-B prompt edits, Query Planning execution, source/provider/parser execution, EvidenceCorpus/report/verdict behavior, cache/SR/storage, public exposure, ACS/direct URL, B3/2D-C, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-K_Live_Smoke_Result.md
