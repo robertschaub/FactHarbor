@@ -3563,3 +3563,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Verification:** Focused X7-Q tests passed (7 files / 137 tests), Claim Understanding slice passed (9 files / 95 tests), Analyzer V2 slice passed (76 files / 550 tests), build passed, V2 gate validator/self-test passed, and `git diff --check` passed.
 
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-Q_Language_Metadata_Repair_Implementation.md
+
+---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-R Post-X7-Q X7-O Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** Drafted and deputy-approved `Docs/WIP/2026-05-17_V2_Slice_X7-R_Post_X7Q_X7O_Live_Smoke_Package.md`. It authorizes exactly one product-route direct-text live job using the same Captain-defined legal-question input as X7-P after package commit, runtime refresh, and preflight. The proof target is narrow: accepted Claim Understanding without blank/`und` direct-input language metadata, X7-J `intake_ready`, and X7-O `structural_prerequisites_observed_not_executed_precutover` with `sourceLanguageSignal=present` and all execution flags false.
+**Warnings:** X7-R allows only the already-approved hidden Claim Understanding runtime/model call for that one job. Query Planning/source/provider/search/fetch/parser/cache/SR/report/verdict/public/V1 work remains blocked. The Claim Understanding artifact route no-store gap is carried as a bounded follow-up; X7-J and X7-O no-store remain mandatory.
+**Learnings:** A post-repair live smoke should record both the implementation commit and the docs-only execution package commit; the job hash should point to the execution package commit descended from the implementation commit.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-R_Post_X7Q_Live_Smoke_Package.md
