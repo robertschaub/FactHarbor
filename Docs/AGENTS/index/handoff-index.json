@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T14:33:48.254Z",
-  "count": 612,
+  "generatedAt": "2026-05-17T14:37:43.873Z",
+  "count": 613,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13391,6 +13391,32 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-U0_Query_Planning_Adapter_Diagnostics_Source_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-u0",
+        "query",
+        "planning",
+        "adapter",
+        "diagnostics",
+        "source",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-U0_Query_Planning_Adapter_Diagnostics_Source_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Implement the diagnostics in the artifact sink only if possible. Keep diagnostics bounded, sanitized, admin-only, no-store, and non-public. Do not include raw provider output, rendered prompt text, user input text, source URLs/content, secrets, stack traces, or unbounded strings. After source commit"
     },
     {
       "file": "2026-05-17_Unassigned_Dominant_Proposition_V2_Reclassification.md",

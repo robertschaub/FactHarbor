@@ -3635,3 +3635,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Public output stayed `4.0.0-cb-precutover` / `blocked_precutover` with zero hidden marker leaks, and source/search/fetch/parser/SR/cache/evidence/report/verdict/confidence execution flags stayed false. No English canary was submitted, and no more X7-T/X7-T-R/X7-T-S jobs are authorized.
 **Learnings:** The corrected launcher path is proven enough to reach hidden Query Planning runtime; the next problem is Query Planning schema-output alignment, which needs a separate X7-U diagnosis/repair package.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-T-S_Final_Launcher_Exact_Gate_Smoke_Result.md
+
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-U0 Query Planning Adapter Diagnostics Source Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-17_V2_Slice_X7-U0_Query_Planning_Adapter_Diagnostics_Source_Package.md` after X7-T-S exposed `schema_validation_failed` without adapter failure detail. Deputy reviewers agreed diagnostics must come before prompt repair. The package authorizes a narrow source/test change to add bounded, sanitized, admin-only adapter attempt diagnostics to the hidden X7-S Query Planning runtime artifact, preferably deriving from existing `adapterOutcome.attempts` in the artifact sink.
+**Warnings:** Do not patch the prompt yet. X7-U0 does not authorize live jobs, retries, model escalation, source/search/fetch/parser/SR/cache IO, public output changes, prompt/config/model/schema edits, ACS/direct URL, V1 reuse, or V1 cleanup. If the artifact sink cannot derive diagnostics safely, stop and draft a revised package.
+**Learnings:** The Query Planning runtime path is reachable; the current blocker is under-instrumented schema failure, not launch gating.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U0_Query_Planning_Adapter_Diagnostics_Source_Package.md
