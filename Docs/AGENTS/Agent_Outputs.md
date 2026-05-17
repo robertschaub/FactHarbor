@@ -3549,3 +3549,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This result is not evidence/report/legal/fairness/verdict quality. It is a structural contract gap: accepted direct-text Claim Understanding can still leave X7-O without a usable language signal.
 **Learnings:** Do not let observer-live-smoke pass criteria drift after execution. If the observer reaches the product route but blocks on a structural prerequisite, record it as useful partial evidence and repair the prerequisite contract before rerun.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-P_X7O_Live_Smoke_Result.md
+
+---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-Q Claim Understanding Language-Metadata Repair Package Draft -- [Significant] [open-items: yes]
+**For next agent:** Prepared and deputy-approved `Docs/WIP/2026-05-17_V2_Slice_X7-Q_Claim_Understanding_Language_Metadata_Repair_Package.md` after X7-P exposed `language_signal_unavailable` in an otherwise accepted direct-text path. The approved package authorizes a narrow prompt/schema/test repair: Claim Understanding must use LLM-owned source-language inference from direct input when the seed is `und`, and global `ClaimContractSchema` validation must reject direct-input blank/`und` language metadata before accepted handoff. X7-O and Query Planning input-envelope raw invalid direct-input cases should block as `claim_contract_invalid`.
+**Warnings:** X7-Q is not a live-smoke package and does not authorize Query Planning execution, source/provider/parser execution, public output changes, or another X7-P rerun. Code may only validate structural blank/non-`und` contract values and must not add deterministic language detection.
+**Learnings:** Repairing only an observer fallback would create divergence from later Query Planning input-envelope preconditions; accepted direct-input language metadata belongs in the Claim Understanding contract.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-Q_Language_Metadata_Repair_Package.md
