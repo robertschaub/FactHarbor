@@ -59,7 +59,8 @@ W2 uses Wikimedia Core REST Search as the first narrow candidate provider becaus
 - path: `/core/v1/wikipedia/en/search/page`;
 - method: `GET`;
 - required query parameter: `q`, sourced from Query Planning query text;
-- fixed query parameter: `limit=3`, aligned with the W2 candidate cap to avoid fetching avoidable provider payload;
+- provider-side result limiting is not controlled in W2 because the existing 7N-3B2 endpoint contract does not support fixed literal request parameters;
+- local materialization remains capped at three hidden candidate records per query, with byte/time caps bounding provider payload exposure;
 - response candidate array field: `pages`;
 - network endpoint credential posture: `not_required`;
 - candidate-provider credential posture: `not_required_for_approved_network_provider`;
@@ -204,6 +205,7 @@ Fail closed if:
 - candidate-provider allowlist is not the exact approved W2 allowlist;
 - candidate-provider credentials state is anything other than `not_required_for_approved_network_provider`;
 - network endpoint credentials state is anything other than `not_required`;
+- endpoint request parameters include anything other than `q` sourced from query text;
 - redirect policy is not `deny`;
 - proxy policy is not `none`;
 - runtime returns damaged output;
@@ -221,9 +223,7 @@ protocol: https
 port: 443
 path: /core/v1/wikipedia/en/search/page
 method: GET
-allowedRequestParameters:
-  - key: q
-    valueSource: query_text
+allowedRequestParameters: [{ key: q, valueSource: query_text }]
   - key: limit
     value: 3
 allowedRequestHeaders:
@@ -243,7 +243,7 @@ The package intentionally does not approve:
 - Authorization headers;
 - API keys;
 - cookies;
-- query string templates beyond exact `q` and fixed `limit=3`;
+- query string templates beyond exact `q`;
 - raw URLs;
 - provider-returned URLs as dereference targets;
 - redirect following;
@@ -330,6 +330,8 @@ The W2 artifact must include sanitized timing/cost telemetry:
 
 Candidate-quality observation in W2 is structural only: candidate records may be counted as shape-valid or shape-dropped. W2 must not score semantic source quality, relevance, authority, probative value, or report suitability.
 
+Provider-side result limiting with fixed literal request parameters is deferred. If focused W2 verification shows that no-provider-limit Wikimedia responses routinely exceed byte/time caps or prevent the hidden proof from completing, stop and split a narrow 7N-3B2 network-envelope capability package for fixed literal request parameters. Do not add that mechanism inside W2.
+
 ## 10. Artifact Contract
 
 The W2 artifact and route may expose only sanitized structural data:
@@ -410,6 +412,7 @@ Focused W2 tests must cover:
 - exact endpoint snapshot and credential posture;
 - exact candidate-provider allowlist snapshot, disabled-provider shape, and allowlist hash inputs;
 - W2 blocks if the endpoint host/path/provider id changes;
+- W2 blocks if the endpoint request parameter set includes anything other than `q` sourced from query text;
 - W2 blocks if candidate-provider credentials state is not `not_required_for_approved_network_provider`;
 - W2 blocks if network endpoint credentials state is not `not_required`;
 - W2 blocks if redirect policy is not `deny`;
@@ -420,6 +423,7 @@ Focused W2 tests must cover:
 - W2 blocks if Query Planning hands off more than two query entries;
 - exact W2 budget snapshots and fixed zero-dollar-cost telemetry;
 - W2 maps transport DNS/SSRF/final-address/redirect/content-type/sniff/byte/decompression/timeout/cancel failures to structural outcomes only;
+- W2 materializes at most three hidden candidates from a larger fake `pages` array and records dropped structural counts without raw provider payload leakage;
 - successful provider result creates hidden candidates but no source material;
 - downstream source-material gate remains closed;
 - hidden artifact route requires admin auth, returns production `401` for missing/wrong admin key, sets `Cache-Control: no-store` on every response, rejects malformed/duplicate ledger identifiers, blocks listing/enumeration/cross-ledger reads, does not echo requested ledger ids on not-found/error paths, and returns generic errors;
@@ -544,6 +548,7 @@ Check whether implementation may proceed inside the exact envelope. Pay special 
 - using Wikimedia Core REST Search as the first no-credential hidden candidate provider;
 - treating Wikimedia as a time-bound hidden proof dependency with a required pre-implementation deprecation/status re-check;
 - avoiding OpenAlex because current docs require an API key;
+- relying on local candidate caps and byte/time caps in W2, while deferring fixed literal request parameters to a later network-envelope package only if W2 verification proves they are needed;
 - preserving redirect `deny`, proxy `none`, SDK-free transport, SSRF/final-address controls, byte/decompression caps, timeout/cancel behavior, and no ambient internet in tests;
 - preventing raw query text, provider payload, titles, excerpts, URLs, page keys, headers, secrets, source material, EvidenceCorpus, warnings, verdicts, confidence, report prose, cache/SR fields, stack, and causes from leaking;
 - keeping content dereference/parser/source-material/EvidenceCorpus/report/public/live jobs blocked;
