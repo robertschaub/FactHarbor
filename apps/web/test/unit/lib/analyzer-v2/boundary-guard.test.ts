@@ -3903,7 +3903,9 @@ describe("analyzer-v2 boundary guard", () => {
       "normalizeSourceAcquisitionNetworkHostname",
     ].sort();
     const expectedFactoryExports = [
+      "SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION",
       "SourceAcquisitionCandidateNetworkProviderFactory",
+      "SourceAcquisitionNetworkAttemptTelemetryRecord",
       "buildSourceAcquisitionCandidateNetworkProviderBoundary",
     ].sort();
     const approvedImports = new Map<string, Map<string, string[]>>([
@@ -3986,6 +3988,7 @@ describe("analyzer-v2 boundary guard", () => {
               "SourceAcquisitionNetworkBudgetSnapshot",
               "SourceAcquisitionNetworkEndpointSnapshot",
               "SourceAcquisitionNetworkRequestEnvelope",
+              "SourceAcquisitionNetworkStopReason",
               "SourceAcquisitionNetworkTransportOutcome",
               "validateSourceAcquisitionNetworkBudgetSnapshot",
               "validateSourceAcquisitionNetworkEndpointSnapshot",

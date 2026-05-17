@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T21:58:22.828Z",
-  "count": 639,
+  "generatedAt": "2026-05-17T22:26:03.563Z",
+  "count": 640,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13235,6 +13235,31 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat X7-R as passed. Do not rerun X7-P or X7-R. Any next live job, Query Planning execution, source/provider/parser execution, public output, or V1 cleanup needs a separate reviewed package."
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_7N3B2-T1_Network_Attempt_Telemetry_Projection.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "7n3b2",
+        "telemetry",
+        "provider-network",
+        "source-acquisition"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-factory.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-17_V2_Slice_7N3B2-T1_Network_Attempt_Telemetry_Projection_Source_Package.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_7N3B2-T1_Network_Attempt_Telemetry_Projection.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start W2 implementation only from the committed T1 state and `Docs/WIP/2026-05-17_V2_Slice_X7-W2_Product_Internal_Candidate_Provider_Network_Source_Package.md` as corrected by `f0311f47`; wire one hidden product-internal provider-network candidate path and pass `attemptTelemetrySink` from the W2 own"
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_7N3B2_Provider_Network_Provenance_Repair.md",

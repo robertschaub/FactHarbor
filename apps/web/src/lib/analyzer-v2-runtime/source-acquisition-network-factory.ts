@@ -11,6 +11,7 @@ import {
   type SourceAcquisitionNetworkBudgetSnapshot,
   type SourceAcquisitionNetworkEndpointSnapshot,
   type SourceAcquisitionNetworkRequestEnvelope,
+  type SourceAcquisitionNetworkStopReason,
   type SourceAcquisitionNetworkTransportOutcome,
 } from "./source-acquisition-network-envelope";
 import {
@@ -27,11 +28,37 @@ export type SourceAcquisitionCandidateNetworkProviderFactory = {
   readonly buildProvider: () => SourceAcquisitionCandidateProviderBoundary;
 };
 
+export const SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION =
+  "v2.source-acquisition.provider-network-attempt-telemetry.7n3b2-t1";
+
+export type SourceAcquisitionNetworkAttemptTelemetryRecord = {
+  readonly telemetryVersion: typeof SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION;
+  readonly visibility: "internal_only";
+  readonly providerId: string;
+  readonly endpointId: string;
+  readonly attemptOrdinal: number;
+  readonly structuralStatus: SourceAcquisitionCandidateProviderAttemptResult["structuralStatus"];
+  readonly stopReason: SourceAcquisitionNetworkStopReason;
+  readonly durationMs: number;
+  readonly timeoutMs: number;
+  readonly candidateCount: number;
+  readonly compressedBytes: number;
+  readonly decompressedBytes: number;
+  readonly byteCountState: "observed" | "not_reached";
+  readonly rawPayloadIncluded: false;
+  readonly secretIncluded: false;
+  readonly publicPayloadIncluded: false;
+  readonly errorTraceIncluded: false;
+  readonly cacheKeyConstructed: false;
+  readonly sourceReliabilityTouched: false;
+};
+
 type FactoryParams = {
   readonly authority: SourceAcquisitionNetworkAuthority;
   readonly endpoints: readonly SourceAcquisitionNetworkEndpointSnapshot[];
   readonly budget: SourceAcquisitionNetworkBudgetSnapshot;
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
+  readonly attemptTelemetrySink?: (record: SourceAcquisitionNetworkAttemptTelemetryRecord) => void;
 };
 
 type FactoryState =
@@ -53,6 +80,60 @@ function isNonBlankString(value: unknown): value is string {
 
 function providerAttemptId(index: number): string {
   return `ATT_${index}`;
+}
+
+function finiteNonNegativeInteger(value: number): number {
+  return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : 0;
+}
+
+function byteCountState(outcome: SourceAcquisitionNetworkTransportOutcome): "observed" | "not_reached" {
+  return outcome.diagnostic.contentTypeState === "not_reached" ? "not_reached" : "observed";
+}
+
+function telemetryFromOutcome(params: {
+  readonly endpoint: SourceAcquisitionNetworkEndpointSnapshot;
+  readonly attemptOrdinal: number;
+  readonly structuralStatus: SourceAcquisitionCandidateProviderAttemptResult["structuralStatus"];
+  readonly candidateCount: number;
+  readonly timeoutMs: number;
+  readonly outcome: SourceAcquisitionNetworkTransportOutcome;
+}): SourceAcquisitionNetworkAttemptTelemetryRecord {
+  const state = byteCountState(params.outcome);
+  return {
+    telemetryVersion: SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION,
+    visibility: "internal_only",
+    providerId: params.endpoint.providerId,
+    endpointId: params.endpoint.endpointId,
+    attemptOrdinal: finiteNonNegativeInteger(params.attemptOrdinal),
+    structuralStatus: params.structuralStatus,
+    stopReason: params.outcome.diagnostic.stopReason,
+    durationMs: finiteNonNegativeInteger(params.outcome.diagnostic.durationMs),
+    timeoutMs: finiteNonNegativeInteger(params.timeoutMs),
+    candidateCount: finiteNonNegativeInteger(params.candidateCount),
+    compressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.compressedBytes) : 0,
+    decompressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.decompressedBytes) : 0,
+    byteCountState: state,
+    rawPayloadIncluded: false,
+    secretIncluded: false,
+    publicPayloadIncluded: false,
+    errorTraceIncluded: false,
+    cacheKeyConstructed: false,
+    sourceReliabilityTouched: false,
+  };
+}
+
+function emitTelemetry(
+  sink: FactoryParams["attemptTelemetrySink"],
+  record: SourceAcquisitionNetworkAttemptTelemetryRecord,
+): void {
+  if (!sink) {
+    return;
+  }
+  try {
+    sink(record);
+  } catch {
+    // Telemetry is observational only and must not affect provider/network behavior.
+  }
 }
 
 function failureResult(
@@ -256,6 +337,14 @@ export function buildSourceAcquisitionCandidateNetworkProviderBoundary(
         lowLevelTransport: state.lowLevelTransport,
       }).finally(() => clearTimeout(timeout));
       const structuralStatus = structuralStatusFromTransport(outcome);
+      emitTelemetry(params.attemptTelemetrySink, telemetryFromOutcome({
+        endpoint,
+        attemptOrdinal: attemptCounter,
+        structuralStatus,
+        candidateCount: outcome.candidateCount,
+        timeoutMs,
+        outcome,
+      }));
       if (structuralStatus !== "success") {
         return failureResult(
           request,

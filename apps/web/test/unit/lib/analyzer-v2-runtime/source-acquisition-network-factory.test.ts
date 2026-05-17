@@ -18,7 +18,9 @@ import {
   createSourceAcquisitionNetworkAuthority,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-authority";
 import {
+  SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION,
   buildSourceAcquisitionCandidateNetworkProviderBoundary,
+  type SourceAcquisitionNetworkAttemptTelemetryRecord,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
 import type { SourceAcquisitionNetworkLowLevelTransport } from "@/lib/analyzer-v2-runtime/source-acquisition-network-transport";
 import type { SourceAcquisitionCandidateProviderAttemptRequest } from "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope";
@@ -190,15 +192,18 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
     const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
       authority: networkAuthority(),
       endpoints: [endpoint()],
       budget: budget(),
       lowLevelTransport: lowLevelTransport(),
+      attemptTelemetrySink: (record) => telemetry.push(record),
     });
 
     const result = await provider.acquireCandidates(attempt());
     const serialized = JSON.stringify(result);
+    const serializedTelemetry = JSON.stringify(telemetry);
 
     expect(result).toMatchObject({
       queryId: "EQ_001",
@@ -212,6 +217,32 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
       },
     });
     expect(result.candidates).toHaveLength(2);
+    expect(telemetry).toEqual([
+      expect.objectContaining({
+        telemetryVersion: SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION,
+        visibility: "internal_only",
+        providerId: "test_provider",
+        endpointId: "ep_candidate_search",
+        attemptOrdinal: 1,
+        structuralStatus: "success",
+        stopReason: "not_stopped",
+        timeoutMs: 250,
+        candidateCount: 2,
+        byteCountState: "observed",
+        rawPayloadIncluded: false,
+        secretIncluded: false,
+        publicPayloadIncluded: false,
+        errorTraceIncluded: false,
+        cacheKeyConstructed: false,
+        sourceReliabilityTouched: false,
+      }),
+    ]);
+    expect(Number.isInteger(telemetry[0]?.durationMs)).toBe(true);
+    expect(Number.isInteger(telemetry[0]?.compressedBytes)).toBe(true);
+    expect(Number.isInteger(telemetry[0]?.decompressedBytes)).toBe(true);
+    expect(telemetry[0]?.durationMs).toBeGreaterThanOrEqual(0);
+    expect(telemetry[0]?.compressedBytes).toBeGreaterThan(0);
+    expect(telemetry[0]?.decompressedBytes).toBeGreaterThan(0);
     expect(result.candidates[0]).toMatchObject({
       candidateId: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
       hiddenLocatorId: "HIDDEN_SOURCE_LOCATOR_ATT_1_1",
@@ -221,12 +252,45 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     expect(serialized).not.toContain("raw title");
     expect(serialized).not.toContain("https://example.test");
     expect(serialized).not.toContain("\"snippet\":\"raw\"");
+    expect(serializedTelemetry).not.toContain("raw title");
+    expect(serializedTelemetry).not.toContain("https://example.test");
+    expect(serializedTelemetry).not.toContain("\"snippet\":\"raw\"");
+    expect(serializedTelemetry).not.toContain("queryText");
+    expect(serializedTelemetry).not.toContain("queryId");
+    expect(serializedTelemetry).not.toContain("retrievalPolicyKey");
+    expect(serializedTelemetry).not.toContain("requestParameters");
+    expect(serializedTelemetry).not.toContain("headers");
+    expect(serializedTelemetry).not.toContain("cacheKey\":\"");
+    expect(serializedTelemetry).not.toContain("cacheValue");
+    expect(serializedTelemetry).not.toContain("sourceReliabilityScore");
+    expect(serializedTelemetry).not.toContain("sourceReliabilityField");
     expect(serialized).not.toContain("cache");
     expect(serialized).not.toContain("sourceReliability");
     expect(debug).not.toHaveBeenCalled();
     expect(info).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
+  });
+
+  it("keeps telemetry observer failures isolated from provider results", async () => {
+    const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
+      authority: networkAuthority(),
+      endpoints: [endpoint()],
+      budget: budget(),
+      lowLevelTransport: lowLevelTransport(),
+      attemptTelemetrySink: () => {
+        throw new Error("telemetry sink should be isolated");
+      },
+    });
+
+    await expect(provider.acquireCandidates(attempt())).resolves.toMatchObject({
+      structuralStatus: "success",
+      candidates: expect.arrayContaining([
+        expect.objectContaining({
+          candidateStructuralStatus: "candidate_acquired",
+        }),
+      ]),
+    });
   });
 
   it("passes abort signals to transport and enforces provider query and total network budgets", async () => {
@@ -299,10 +363,12 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
       { ...networkAuthority() },
       JSON.parse(JSON.stringify(networkAuthority())),
     ]) {
+      const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
       const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
         authority: authority as never,
         endpoints: [endpoint()],
         budget: budget(),
+        attemptTelemetrySink: (record) => telemetry.push(record),
         lowLevelTransport: lowLevelTransport({
           request: async () => {
             throw new Error("network should not run");
@@ -316,14 +382,17 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
         structuralStatus: "provider_failure",
         candidates: [],
       });
+      expect(telemetry).toEqual([]);
     }
   });
 
   it("maps transport blocks and non-candidate JSON to non-success results with zero candidates", async () => {
+    const redirectTelemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
     const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
       authority: networkAuthority(),
       endpoints: [endpoint()],
       budget: budget(),
+      attemptTelemetrySink: (record) => redirectTelemetry.push(record),
       lowLevelTransport: lowLevelTransport({
         request: async () => ({
           statusCode: 302,
@@ -339,12 +408,24 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
       structuralStatus: "search_failure",
       candidates: [],
     });
+    expect(redirectTelemetry).toEqual([
+      expect.objectContaining({
+        structuralStatus: "search_failure",
+        stopReason: "redirect_denied",
+        byteCountState: "not_reached",
+        compressedBytes: 0,
+        decompressedBytes: 0,
+      }),
+    ]);
     expect(JSON.stringify(redirect)).not.toContain("redirect.example");
+    expect(JSON.stringify(redirectTelemetry)).not.toContain("redirect.example");
 
+    const missingTelemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
     const noItems = buildSourceAcquisitionCandidateNetworkProviderBoundary({
       authority: networkAuthority(),
       endpoints: [endpoint()],
       budget: budget(),
+      attemptTelemetrySink: (record) => missingTelemetry.push(record),
       lowLevelTransport: lowLevelTransport({
         request: async () => ({
           statusCode: 200,
@@ -360,5 +441,84 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
       structuralStatus: "search_failure",
       candidates: [],
     });
+    expect(missingTelemetry).toEqual([
+      expect.objectContaining({
+        structuralStatus: "search_failure",
+        stopReason: "content_sniff_rejected",
+        byteCountState: "observed",
+      }),
+    ]);
+    expect(missingTelemetry[0]?.compressedBytes).toBeGreaterThan(0);
+    expect(missingTelemetry[0]?.decompressedBytes).toBeGreaterThan(0);
+
+    const dnsTelemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const dnsFailure = buildSourceAcquisitionCandidateNetworkProviderBoundary({
+      authority: networkAuthority(),
+      endpoints: [endpoint()],
+      budget: budget(),
+      attemptTelemetrySink: (record) => dnsTelemetry.push(record),
+      lowLevelTransport: lowLevelTransport({
+        resolve: async () => {
+          throw new Error("dns poison https://example.invalid/sk_test");
+        },
+      }),
+    });
+    const dns = await dnsFailure.acquireCandidates(attempt());
+
+    expect(dns).toMatchObject({
+      structuralStatus: "provider_failure",
+      candidates: [],
+    });
+    expect(dnsTelemetry).toEqual([
+      expect.objectContaining({
+        structuralStatus: "provider_failure",
+        stopReason: "dns_resolution_failed",
+        byteCountState: "not_reached",
+        compressedBytes: 0,
+        decompressedBytes: 0,
+      }),
+    ]);
+    expect(JSON.stringify(dnsTelemetry)).not.toContain("example.invalid");
+    expect(JSON.stringify(dnsTelemetry)).not.toContain("sk_test");
+
+    const byteTelemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const byteCappedEndpoint = endpoint({
+      compressedByteCap: 8,
+      decompressedByteCap: 8,
+      totalByteCap: 8,
+    });
+    const byteCappedBudget = budget({
+      endpointSnapshotHash: byteCappedEndpoint.endpointSnapshotHash,
+    });
+    const byteCapProvider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
+      authority: networkAuthority(byteCappedEndpoint, byteCappedBudget),
+      endpoints: [byteCappedEndpoint],
+      budget: byteCappedBudget,
+      attemptTelemetrySink: (record) => byteTelemetry.push(record),
+      lowLevelTransport: lowLevelTransport({
+        request: async () => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from("{\"items\":[{\"secret\":\"sk_test_raw\"}]}", "utf8"),
+        }),
+      }),
+    });
+    const byteCap = await byteCapProvider.acquireCandidates(attempt());
+
+    expect(byteCap).toMatchObject({
+      structuralStatus: "search_failure",
+      candidates: [],
+    });
+    expect(byteTelemetry).toEqual([
+      expect.objectContaining({
+        structuralStatus: "search_failure",
+        stopReason: "compressed_byte_cap_exceeded",
+        byteCountState: "observed",
+        decompressedBytes: 0,
+      }),
+    ]);
+    expect(byteTelemetry[0]?.compressedBytes).toBeGreaterThan(0);
+    expect(JSON.stringify(byteTelemetry)).not.toContain("sk_test_raw");
   });
 });
