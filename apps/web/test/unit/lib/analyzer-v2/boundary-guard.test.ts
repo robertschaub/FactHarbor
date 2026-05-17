@@ -15,6 +15,10 @@ const analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath = path.resolv
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-intake-artifacts/route.ts",
 );
+const analyzerV2EvidenceQueryPlanningPreexecutionObservationArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-query-planning-preexecution-observation-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -53,6 +57,10 @@ const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "tas
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
 const evidenceLifecycleQueryPlanningRoot = path.resolve(evidenceLifecycleRoot, "query-planning");
+const evidenceLifecycleQueryPlanningPreexecutionObservationPath = path.resolve(
+  evidenceLifecycleQueryPlanningRoot,
+  "preexecution-observation.ts",
+);
 const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -80,6 +88,10 @@ const analyzerV2RuntimeArtifactSinkPath = path.resolve(
 const analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-intake-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-query-planning-preexecution-observation-artifact-sink.ts",
 );
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -581,6 +593,16 @@ const analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkApprovedImports = new 
     new Set(["PipelineRunContext"]),
   ],
 ]);
+const analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/evidence-lifecycle/query-planning/preexecution-observation",
+    new Set([
+      "EvidenceQueryPlanningPreexecutionObservation",
+      "EvidenceQueryPlanningPreexecutionObservationBlockedReason",
+      "EvidenceQueryPlanningPreexecutionObservationStatus",
+    ]),
+  ],
+]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -588,6 +610,7 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
     ]),
   ],
   [
@@ -607,6 +630,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceQueryPlanningPreexecutionObservationArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
     ]),
   ],
 ]);
@@ -1928,6 +1957,272 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
         violations.push(`X7-J intake artifact path references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the X7-O Query Planning pre-execution observation path internal-only and non-executing", () => {
+    expect(existsSync(evidenceLifecycleQueryPlanningPreexecutionObservationPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkPath)).toBe(true);
+    expect(existsSync(analyzerV2EvidenceQueryPlanningPreexecutionObservationArtifactInspectionRoutePath)).toBe(true);
+    const violations: string[] = [];
+
+    const builderSourceFile = parseSource(evidenceLifecycleQueryPlanningPreexecutionObservationPath);
+    const builderImports = collectModuleSpecifiers(builderSourceFile).sort();
+    expect(builderImports).toEqual([
+      "@/lib/analyzer-v2/claim-understanding/schemas",
+      "@/lib/analyzer-v2/claim-understanding/types",
+      "@/lib/analyzer-v2/evidence-lifecycle/types",
+    ]);
+    const builderContent = readFileSync(evidenceLifecycleQueryPlanningPreexecutionObservationPath, "utf8");
+
+    for (const specifier of builderImports) {
+      if (isV1AnalyzerImport(evidenceLifecycleQueryPlanningPreexecutionObservationPath, specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports V1 analyzer ${specifier}`);
+      }
+      if (isAnalyzerV2RuntimeImport(evidenceLifecycleQueryPlanningPreexecutionObservationPath, specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports analyzer-v2-runtime ${specifier}`);
+      }
+      if (
+        specifier.includes("/query-planning/input-envelope")
+        || specifier.includes("/query-planning/runtime")
+        || specifier.includes("/query-planning/prompt-loader")
+        || specifier.includes("/query-planning/model-adapter")
+        || specifier.includes("/query-planning/inspection")
+      ) {
+        violations.push(`X7-O pre-execution observation builder imports Query Planning execution owner ${specifier}`);
+      }
+      if (specifier.includes("/source-acquisition")) {
+        violations.push(`X7-O pre-execution observation builder imports source-acquisition owner ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-O pre-execution observation builder imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-O pre-execution observation builder imports public surface ${specifier}`);
+      }
+    }
+    for (const location of collectDirectFetchCallLocations(builderSourceFile)) {
+      violations.push(`X7-O pre-execution observation builder makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    for (const requiredText of [
+      "v2.evidence-query-planning.preexecution-observation.x7o",
+      "structural_prerequisites_observed_not_executed_precutover",
+      "blocked_pre_query_planning",
+      "direct_text_claim_contract_required",
+      "language_signal_unavailable",
+      "queryPlanningExecuted: false",
+      "promptLoaded: false",
+      "promptRendered: false",
+      "modelCalled: false",
+      "providerCallbackCreated: false",
+      "providerSearchFetchCalled: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "sourceReliabilityCalled: false",
+      "product_invocation_blocked_precutover",
+      "hidden_task_policy_observed_not_invoked",
+    ]) {
+      if (!builderContent.includes(requiredText)) {
+        violations.push(`X7-O pre-execution observation builder missing required text ${requiredText}`);
+      }
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames =
+        analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`X7-O pre-execution observation artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `X7-O pre-execution observation artifact sink imports unapproved symbol ${importedName} from ${specifier}`,
+          );
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkPath, specifier)) {
+        violations.push(`X7-O pre-execution observation artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-O pre-execution observation artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-O pre-execution observation artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-O pre-execution observation artifact sink imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-O pre-execution observation artifact sink imports Source Reliability ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-O pre-execution observation artifact sink imports public surface ${specifier}`);
+      }
+    }
+
+    const sinkContent = readFileSync(
+      analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkPath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_SERIALIZED_BYTES = 16_384",
+      "queryPlanningRuntimeInvoked: false",
+      "promptLoaded: false",
+      "promptRendered: false",
+      "modelCalled: false",
+      "providerCallbackCreated: false",
+      "providerSearchFetchCalled: false",
+      "sourceAcquisitionExecuted: false",
+      "parserExecuted: false",
+      "evidenceCorpusCreated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`X7-O pre-execution observation artifact sink missing required text ${requiredText}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "ClaimContract",
+      "EvidenceLifecycleStartDecision",
+      "PipelineRunContext",
+      "getAnalyzerV2GatewayTask",
+      "getAnalyzerV2TaskModelPolicy",
+      "promptProfile",
+      "modelPolicy",
+      "configSnapshot",
+      "providerTelemetry",
+      "cacheDecision",
+      "claimContractHash",
+      "batchInputEnvelope",
+      "promptPackets",
+      "retrievalPolicyCatalogJson",
+      "sourceAcquisitionTraceJson",
+    ]) {
+      if (sinkContent.includes(forbiddenText)) {
+        violations.push(`X7-O pre-execution observation artifact sink references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const routeSourceFile = parseSource(analyzerV2EvidenceQueryPlanningPreexecutionObservationArtifactInspectionRoutePath);
+    const routeImports = collectModuleSpecifiers(routeSourceFile).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(routeSourceFile)) {
+      violations.push(`X7-O pre-execution observation route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    const routeContent = readFileSync(
+      analyzerV2EvidenceQueryPlanningPreexecutionObservationArtifactInspectionRoutePath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "export const runtime = \"nodejs\"",
+      "\"Cache-Control\": \"no-store\"",
+      "checkAdminKey(req)",
+      "params.getAll(\"ledgerId\").length !== 1",
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "error: \"Not found\"",
+    ]) {
+      if (!routeContent.includes(requiredText)) {
+        violations.push(`X7-O pre-execution observation route missing required text ${requiredText}`);
+      }
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    expect(orchestratorImports).toContain(
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/preexecution-observation",
+    );
+    expect(orchestratorImports).toContain(
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
+    );
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2/hidden-integration-harness",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/model-adapter",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-O downstream execution module ${forbiddenSpecifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "buildEvidenceQueryPlanningInputEnvelope",
+      "EvidenceQueryPlanningInputEnvelope",
+      "runEvidenceQueryPlanningRuntime",
+      "loadAndRenderEvidenceQueryPlanningPrompt",
+      "executeEvidenceQueryPlanningModelAdapter",
+      "promptPackets",
+      "claimContractHash",
+      "batchInputEnvelope",
+      "retrievalPolicyCatalogJson",
+      "sourceAcquisitionTraceJson",
+      "promptProvenance",
+      "cacheDecision",
+      "queryPlanInspection",
+      "runHiddenV2IntegrationHarness",
+      "providerCall:",
+      "fetch(",
+      "EvidenceItem",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "insufficient_evidence",
+      "source_quality",
+      "public_ready",
+      "ready_hidden_internal",
+      "eligible_not_executed_precutover",
+      "query_planning_ready",
+      "query_plan_ready",
+      "search_ready",
+      "sources_ready",
+      "evidence_available",
+      "live_eligible",
+    ]) {
+      if (builderContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+        violations.push(`X7-O pre-execution observation path references forbidden text ${forbiddenText}`);
       }
     }
 
@@ -5316,6 +5611,7 @@ describe("analyzer-v2 boundary guard", () => {
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/model-adapter.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/preexecution-observation.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts",
     ]);

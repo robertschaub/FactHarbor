@@ -6,6 +6,10 @@ import {
   clearEvidenceLifecycleIntakeRuntimeArtifacts,
   readEvidenceLifecycleIntakeRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink";
+import {
+  clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts,
+  readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink";
 
 function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -165,6 +169,62 @@ describe("analyzer-v2 shell", () => {
     expect(serialized).not.toContain("not_executable_precutover");
   });
 
+  it("records product-internal Query Planning pre-execution observation without public exposure", async () => {
+    const ledgerId = "job-v2-shell-x7o:precutover-observability";
+    clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(ledgerId);
+
+    const result = await runClaimBoundaryV2Shell({
+      jobId: "job-v2-shell-x7o",
+      inputType: "text",
+      inputValue: "Using hydrogen for cars is more efficient than using electricity",
+    });
+    const serialized = JSON.stringify(result.resultJson);
+    const keys = collectKeys(result.resultJson);
+
+    expect(readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(ledgerId)).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        ledgerId,
+        preexecutionObservation: expect.objectContaining({
+          status: "blocked_pre_query_planning",
+          blockedReason: "evidence_lifecycle_intake_blocked",
+          sourceIntakeStatus: "blocked",
+          inputScope: "not_applicable",
+          sourceLanguageSignal: "unavailable",
+        }),
+        productExecution: {
+          queryPlanningRuntimeInvoked: false,
+          promptLoaded: false,
+          promptRendered: false,
+          modelCalled: false,
+          providerCallbackCreated: false,
+          providerSearchFetchCalled: false,
+          sourceAcquisitionExecuted: false,
+          parserExecuted: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+        },
+        publicCutoverStatus: "blocked_precutover",
+      }),
+    ]);
+    expect(keys).not.toEqual(expect.arrayContaining([
+      "preexecutionObservation",
+      "productExecution",
+      "artifactVersion",
+      "artifactId",
+      "ledgerId",
+      "runId",
+    ]));
+    expect(serialized).not.toContain("job-v2-shell-x7o:precutover-observability");
+    expect(serialized).not.toContain("preexecutionObservation");
+    expect(serialized).not.toContain("structural_prerequisites_observed_not_executed_precutover");
+    expect(serialized).not.toContain("blocked_pre_query_planning");
+    expect(serialized).not.toContain("queryPlanningEligibility");
+    expect(serialized).not.toContain("eligibility");
+  });
+
   it("keeps public damaged output unchanged when intake artifact recording fails", async () => {
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink", () => ({
@@ -200,6 +260,50 @@ describe("analyzer-v2 shell", () => {
       expect(JSON.stringify(result.resultJson)).not.toContain("not_executable_precutover");
     } finally {
       vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink");
+      vi.resetModules();
+    }
+  });
+
+  it("keeps public damaged output unchanged when Query Planning observation artifact recording fails", async () => {
+    vi.resetModules();
+    vi.doMock(
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
+      () => ({
+        recordEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact: () => {
+          throw new Error("simulated X7-O sink failure");
+        },
+      }),
+    );
+
+    try {
+      const { runClaimBoundaryV2Shell: runWithFailingSink } = await import("@/lib/analyzer-v2/pipeline-shell");
+      const result = await runWithFailingSink({
+        jobId: "job-v2-shell-x7o-sink-failure",
+        inputType: "text",
+        inputValue: "Plastic recycling is pointless",
+      });
+
+      expect(result.resultJson).toMatchObject({
+        _schemaVersion: "4.0.0-cb-precutover",
+        meta: {
+          pipeline: "claimboundary-v2",
+          publicCutoverStatus: "blocked_precutover",
+          runId: "job-v2-shell-x7o-sink-failure",
+        },
+        qualityGates: {
+          damagedReport: true,
+        },
+        verdict: {
+          label: "UNVERIFIED",
+          confidenceTier: "none",
+        },
+      });
+      expect(JSON.stringify(result.resultJson)).not.toContain("simulated X7-O sink failure");
+      expect(JSON.stringify(result.resultJson)).not.toContain("preexecutionObservation");
+    } finally {
+      vi.doUnmock(
+        "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink",
+      );
       vi.resetModules();
     }
   });

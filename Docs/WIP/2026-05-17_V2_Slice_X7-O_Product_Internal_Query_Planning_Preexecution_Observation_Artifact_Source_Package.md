@@ -1,11 +1,15 @@
 # V2 Slice X7-O Product-Internal Query Planning Pre-Execution Observation Artifact Source Package
 
 **Date:** 2026-05-17
-**Status:** reviewer-approved source package; docs-only; source implementation not yet started
+**Status:** implementation-complete; focused and broader local verifiers passed; no live jobs
 **Owner role:** Lead Architect / Captain Deputy
 **Baseline:** `8136f12f` (`docs: record v2 x7n-d live smoke result`)
 **Decision source:** post-X7-N-D next-step debate. Architect, Security/runtime, Code/package, LLM/semantic, and Claude Opus reviewers converged on a no-provider product-internal Query Planning pre-execution structural observation artifact before any Query Planning execution or source-acquisition expansion.
 **Review result:** Architect APPROVE, Security/runtime APPROVE, Code/package APPROVE, LLM/semantic APPROVE, and Claude Opus APPROVE after replacing readiness/eligibility terminology, forbidding Query Planning input-envelope/prompt-packet/hash construction, requiring configured-key and production-missing-key route tests, restricting sink/route APIs to sanitized projections, and making prior prompt authorization explicitly consumed by X7-M/X3-B.
+
+**Implementation result:** X7-O now adds the reviewed product-internal pre-execution structural observation after X7-J intake, writes a bounded process-local admin-only artifact, and exposes it only through the authenticated internal no-store route. The public V2 envelope remains damaged/precutover and contains no X7-O artifact body, ledger id, or observation state. Query Planning runtime execution, input-envelope/prompt-packet/hash construction, prompt rendering, model/provider calls, source/provider/parser work, cache/SR/storage, public output changes, live jobs, prompt/config/model/schema edits, approval flips, ACS/direct URL, V1 work, and V1 cleanup remain blocked.
+
+**Implementation verification:** focused X7-O verifier passed (5 files / 97 tests); `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime` passed (36 files / 214 tests); `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed (76 files / 539 tests); `npm -w apps/web run build`, `npm run validate:v2-gates`, `node scripts/validate-v2-gate-register.mjs --self-test`, and `git diff --check` passed.
 
 ## 1. Purpose
 
