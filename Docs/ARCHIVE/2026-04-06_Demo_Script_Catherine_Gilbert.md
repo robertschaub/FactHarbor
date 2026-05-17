@@ -2,7 +2,7 @@
 
 **Ziel:** Vertrauen aufbauen, Tool zeigen, ihre Praxis verstehen, Netzwerk-Türen öffnen.
 **Dauer:** 30 Min. Nicht pitchen — zeigen und zuhören.
-**Ergänzend lesen:** `Docs/WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`
+**Ergänzend lesen:** `FactHarbor-internal/Operations/Cooperations/Gilbert/Meetings/Call_Prep_Catherine_Gilbert.md`
 
 ---
 
@@ -154,7 +154,7 @@ Catherine kennt durch ihre 5 Jahre Keystone-SDA und die Faktencheck-Schulungen p
 - [ ] Report durchgehen und 2-3 interessante Stellen markieren
 - [ ] Teams-Link testen: https://teams.live.com/meet/9393095268313?p=YZOWLHb0VmMEf8eSMI
 - [ ] Dieses Script nochmal durchlesen
-- [ ] Call Prep lesen: `Docs/WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`
+- [ ] Call Prep lesen: `FactHarbor-internal/Operations/Cooperations/Gilbert/Meetings/Call_Prep_Catherine_Gilbert.md`
 
 ## Nach dem Call
 

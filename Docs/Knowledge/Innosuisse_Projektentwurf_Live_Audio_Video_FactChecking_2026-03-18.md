@@ -514,7 +514,7 @@ Diese Punkte sollten vor einer echten Antragseinreichung ergänzt oder validiert
 
 ### FactHarbor-interne Quellen
 
-- `Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md`
+- `FactHarbor-internal/Operations/Cooperations/UZH Cooperation/Meetings/Meeting_Prep_Schimanski_2026-03-18.md`
 - `Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md`
 - `Docs/Knowledge/Global_FactChecking_Landscape_2026.md`
 - `Docs/Knowledge/Factiverse_Lessons_for_FactHarbor.md`

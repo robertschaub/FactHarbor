@@ -91,12 +91,12 @@ The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, grounding/bounda
 
 ## Organizational / Partnership
 
-- [2026-03-24_Innosuisse_Partnership_Research_Briefing.md](2026-03-24_Innosuisse_Partnership_Research_Briefing.md) — Innosuisse partner identification (ZHAW recommended; Innovation Cheque, SwissText 2026 pending)
+- [2026-03-24_Innosuisse_Partnership_Research_Briefing.md](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/UZH%20Cooperation/Innosuisse/2026-03-24_Innosuisse_Partnership_Research_Briefing.md) — Innosuisse partner identification (ZHAW recommended; Innovation Cheque, SwissText 2026 pending)
 
 ### LiveCheck / Innosuisse future track
-- [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
-- [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
-- [LiveCheck_State_of_the_Art_Research_2026-03-18.md](../Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md)
+- [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/UZH%20Cooperation/Innosuisse/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
+- [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/UZH%20Cooperation/Innosuisse/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
+- [LiveCheck_State_of_the_Art_Research_2026-03-18.md](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/UZH%20Cooperation/Innosuisse/LiveCheck_State_of_the_Art_Research_2026-03-18.md)
 
 ---
 

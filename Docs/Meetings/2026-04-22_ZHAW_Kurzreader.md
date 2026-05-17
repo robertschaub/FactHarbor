@@ -8,7 +8,7 @@ Kompakte Vorbereitung für das Meeting am 22. April 2026. Lesezeit: ~15 Minuten.
 
 ## 1/4: Meeting-Prep — das Wichtigste auf einen Blick
 
-> Vollversion: [Meeting-Prep](2026-04-22_ZHAW_Meeting_Prep.md)
+> Vollversion: [Meeting-Prep](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Meetings/2026-04-22_ZHAW_Meeting_Prep.md)
 
 ### Die drei Leute
 
