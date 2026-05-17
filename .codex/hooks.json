@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const {spawnSync}=require('child_process');const path=require('path');const root=spawnSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).stdout.trim();const r=spawnSync(process.execPath,[path.join(root,'scripts/hooks/codex-pre-tool-use.cjs')],{stdio:'inherit'});process.exit(r.status??1);\"",
+            "timeout": 30,
+            "statusMessage": "Checking FactHarbor safety policy"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const {spawnSync}=require('child_process');const path=require('path');const root=spawnSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).stdout.trim();const r=spawnSync(process.execPath,[path.join(root,'scripts/hooks/rebuild-index-on-change.cjs')],{stdio:'inherit'});process.exit(r.status??1);\"",
+            "timeout": 30,
+            "statusMessage": "Refreshing FactHarbor indexes"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+# Project-scoped Codex config for FactHarbor.
+# Keep personal sandbox, approval, and model preferences in ~/.codex/config.toml.
+
+# The root AGENTS.md plus path-specific AGENTS.md files exceed Codex's default 32 KiB
+# project-doc cap. Raise it so Codex/GPT sessions can load the full instruction set.
+project_doc_max_bytes = 131072
+
+[features]
+hooks = true

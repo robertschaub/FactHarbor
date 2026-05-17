@@ -614,7 +614,7 @@ API endpoint, configuration parameter, or pipeline stage:
 
 > **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve.
 
-### 6.1 High-Capability Models (e.g., Claude Opus 4.6, GPT-o3, Gemini 2.0 Pro)
+### 6.1 High-Capability Models (e.g., GPT-5.5, Claude Opus 4.6, Gemini latest Pro such as 3.1 Pro Preview)
 
 **Strengths:** Deep reasoning, complex analysis, nuanced understanding, large context
 **Best For:** Architecture decisions, complex investigations, quality gates, trade-off analysis
@@ -622,9 +622,11 @@ API endpoint, configuration parameter, or pipeline stage:
 - Reserve for high-stakes decisions and ambiguous problem spaces
 - Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
-- Claude Code: only tier that supports `CLAUDE_CODE_EFFORT_LEVEL=max`
+- Use for the primary implementation agent when the task combines deep reasoning, repository edits, and verification.
+- Use as reviewer/advisor models when an independent architecture, prompt, or quality judgment is needed.
+- For Claude reviewer/advisor calls initiated by GPT/Codex, prefer `claude-opus-4-6` over other Claude models unless the Captain explicitly requests another Claude model or Opus 4.6 is unavailable.
 
-### 6.2 Mid-Tier Models (e.g., Claude Sonnet 4.6, GPT-4.1, Gemini 2.0 Flash)
+### 6.2 Mid-Tier Models (e.g., GPT-5.4, Claude Sonnet 4.6, current Gemini Flash family)
 
 **Strengths:** Balanced cost/capability, good reasoning, fast iteration
 **Best For:** Standard reviews, documentation, routine implementation, iterative review cycles
@@ -632,9 +634,9 @@ API endpoint, configuration parameter, or pipeline stage:
 - Well-suited for following structured protocols
 - Efficient for documentation tasks
 - Good default for most development work
-- Claude Code default for this project (`CLAUDE_CODE_EFFORT_LEVEL=high` set in settings)
+- Good default for routine review or implementation when the task has clear boundaries.
 
-### 6.3 Lightweight Models (e.g., Claude Haiku 4.5, GPT-4.1 mini, Kimi K2, Gemini 1.5 Flash)
+### 6.3 Lightweight Models (e.g., GPT-5.4-mini or GPT-5.3-Codex-Spark, Claude Haiku 4.5, Gemini Flash-Lite/current fast variants)
 
 **Strengths:** Fast, cost-effective, good for bulk operations
 **Best For:** Fast iterations, autonomous workflows (Cline), bulk operations, extract/understand tasks
@@ -661,16 +663,22 @@ The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversari
 
 | Role | Tier | Rationale |
 |---|---|---|
-| Advocate, Challenger | Mid-tier (Sonnet) | Reasoning-intensive argument construction |
-| Consistency Probes, Validator | Lightweight (Haiku) | Classification and structural checking |
-| Reconciler (FULL only) | Top-tier (Opus) | High-stakes synthesis requiring nuanced judgment |
-| Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
+| Advocate, Challenger | Mid-tier or high-capability | Reasoning-intensive argument construction; use high-capability when the decision affects architecture, prompt/config behavior, or cross-stage contracts |
+| Consistency Probes, Validator | Lightweight or mid-tier | Classification and structural checking |
+| Reconciler (FULL only) | High-capability | High-stakes synthesis requiring nuanced judgment |
+| Reconciler (STANDARD/LITE) | Mid-tier or high-capability | Bounded decision space; raise tier when causality is contested or validation failed |
 
 Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
 
 ### 6.5 Debt Guard Across Model Tiers
 
 `/debt-guard` (`.claude/skills/debt-guard/SKILL.md`) is mandatory for every bugfixing task across all agent tools and model tiers. Lightweight models may use the compact path for obvious single-site fixes, but they still must load the skill before editing. Higher-capability models should use the full path when ownership, prior failed attempts, public contracts, prompt/config behavior, or net mechanism increases are involved.
+
+### 6.6 Current Tool Assignment Defaults
+
+In Robert's current workflow, Codex/GPT-5.5 is the default executor for repo-local implementation, verification, and direct file edits. Claude Opus 4.6 and Gemini Pro are normally review and secondary-advice surfaces unless the Captain explicitly assigns implementation.
+
+Tool-specific defaults do not override role activation, Captain assignment, mandatory workflows, or path-specific `AGENTS.md` files.
 
 ---
 

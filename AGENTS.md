@@ -343,6 +343,8 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 - Do not overwrite `apps/api/factharbor.db` unless asked
 - Platform is Windows. Use PowerShell-compatible commands.
 - **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, `git push --force`, `git clean -f`; no `factharbor.db` writes; no expensive test runs. Main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
+- **Codex hooks** (`.codex/hooks.json`) provide best-effort safety symmetry for the same destructive shell patterns and expensive tests. Codex hook coverage is incomplete by design, so these are guardrails, not enforcement boundaries.
+- **GPT-to-Claude calls** must use `node scripts/agents/invoke-claude.cjs ...`, never bare `claude` / `claude.exe`, so `.claude/settings.json` and its env block are applied consistently. The wrapper defaults to `claude-opus-4-6`; GPT agents should prefer Opus 4.6 over other Claude models unless the Captain explicitly requests another Claude model or Opus 4.6 is unavailable.
 
 ---
 
@@ -408,7 +410,7 @@ For non-Claude tools: read the relevant `.claude/skills/<name>/SKILL.md` and exe
 
 ## Tool Strengths Reference
 
-Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
+Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (current high/mid/lightweight capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
 
 ---
 
@@ -423,13 +425,11 @@ Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/we
 
 ---
 
-## Current State (Pre-release, targeting v1.0)
+## Current State
 
-Pipeline: ClaimAssessmentBoundary (single production pipeline). Monolithic Dynamic removed pre-release. Orchestrated removed in v2.11.0. Monolithic Canonical removed in v2.10.x.
+Current implementation status and active queue live in `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md`. Do not treat this file as a live roadmap snapshot.
 
-LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
-
-For full feature list and known issues, see `Docs/STATUS/Current_Status.md`.
+Runtime LLM/provider/model routing is governed by UCM and `Docs/AGENTS/index/stage-manifest.json`; verify current defaults before changing prompt/model behavior.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|

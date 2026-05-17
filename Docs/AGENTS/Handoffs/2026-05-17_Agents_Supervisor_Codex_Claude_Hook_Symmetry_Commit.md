@@ -1,0 +1,9 @@
+---
+### 2026-05-17 | Agents Supervisor | Codex (GPT-5.5) | Codex and Claude Hook Symmetry Commit
+**Task:** Refactor Claude's inline safety hook to the shared policy, add Codex hook guardrails, keep `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1`, add smoke tests, and commit the tooling/governance changes.
+**Files touched:** `.claude/settings.json`; `.codex/.gitignore`; `.codex/config.toml`; `.codex/hooks.json`; `scripts/hooks/fh-safety-policy.cjs`; `scripts/hooks/claude-pre-tool-use.cjs`; `scripts/hooks/codex-pre-tool-use.cjs`; `scripts/agents/invoke-claude.cjs`; `scripts/test-agent-hooks.mjs`; `package.json`; `AGENTS.md`; `Docs/AGENTS/Policies/Tool_Strengths.md`; `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`; `Docs/AGENTS/README.md`.
+**Key decisions:** Claude and Codex now share one destructive-command policy module. Claude's `PreToolUse` Bash hook delegates to `scripts/hooks/claude-pre-tool-use.cjs`. Codex uses `.codex/hooks.json` with best-effort Bash `PreToolUse` guardrails and edit/index `PostToolUse` refresh. GPT-to-Claude calls are routed through `scripts/agents/invoke-claude.cjs`, which reads `.claude/settings.json`, exports its env block, passes `--settings`, and defaults to `claude-opus-4-6`.
+**Open items:** Codex hooks remain best-effort guardrails because platform coverage is incomplete by design. The repo-local `.codex` layer must be trusted for hooks to run.
+**Warnings:** Claude Opus 4.6 warned that disabled adaptive thinking is deprecated, but `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` was intentionally kept unchanged per Captain instruction. Bare Claude CLI calls are blocked only through shell-hook paths; API-level Claude calls remain outside this mechanism.
+**For next agent:** Use `node scripts/agents/invoke-claude.cjs ...` for GPT/Codex-initiated Claude reviews. Run `npm run test:agent-hooks` after hook-policy or wrapper changes.
+**Learnings:** Not appended to `Role_Learnings.md`; this handoff records the operational rule.

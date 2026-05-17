@@ -55,12 +55,12 @@ See AGENTS.md § Agent Exchange Protocol for when and how to write outputs.
 
 ## Tool-Specific Config Files
 
-All tool configs reference `/AGENTS.md` as the single source of truth. Most are thin pointers; Codex reads `AGENTS.md` natively.
+All tool configs reference `/AGENTS.md` as the single source of truth. Most are thin pointers; Codex reads `AGENTS.md` natively and also has repo-local hook configuration.
 
 | Tool | Config Location | Notes |
 |------|----------------|-------|
 | Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md`; mirrors the shared Named Workflows table |
-| Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly; use its Named Workflows table for shared skills |
+| Codex (GPT) | `/AGENTS.md`, `/.codex/config.toml`, `/.codex/hooks.json` | Reads `AGENTS.md` directly; `.codex/config.toml` raises the project-doc cap and enables hooks; `.codex/hooks.json` provides best-effort safety symmetry |
 | Claude Code | `/CLAUDE.md` | Auto-loaded into system prompt alongside `AGENTS.md` |
 | GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code; includes the mandatory Debt Guard bugfix pointer |
 | Cursor | `/.cursor/rules/*.mdc` | Glob-scoped rules, auto-attached per file type; core rules include the Debt Guard bugfix pointer |
