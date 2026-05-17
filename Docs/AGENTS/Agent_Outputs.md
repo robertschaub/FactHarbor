@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-I Direct-Text Route B Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** X7-I live smoke passed on committed baseline `cc249312`: after clean-worktree runtime refresh and pre-run verifiers, the two Captain-approved direct-text jobs `8af2b1970bf14e0a8e316f15a299e51f` and `c44eb9273946488897e26eb7643d2406` executed `claimboundary-v2`, stayed fail-closed on public schema `4.0.0-cb-precutover` with `publicCutoverStatus: blocked_precutover`, and wrote one internal-admin-only Claim Understanding runtime artifact each. Public result scanning found only schema null placeholders for hidden hash fields. This proves hidden Claim Understanding runtime continuity plus fail-closed public behavior only; X3-B prompt edits, source-provider/search/fetch/content-dereference/provider-network/parser execution, X5-X7 product wiring, EvidenceCorpus/EvidenceItems/report/verdict behavior, cache/SR/storage, ACS/direct URL, B3 proof, 2D-C, V1 work, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-I_Live_Smoke_Result.md
+
+---
 ### 2026-05-16 | Lead Architect | Codex (GPT-5) | V2 B3 Image Approval Hardening -- [Significant] [open-items: yes]
 **For next agent:** High B3 verifier finding is closed: the OCI positive proof path can no longer self-approve `FH_ANALYZER_V2_PARSER_SANDBOX_IMAGE`. The proof contract now requires an independent `imageApprovalSource`; the positive env branch requires `PROOF`, `RUNTIME`, `IMAGE`, `APPROVED_IMAGE`, and `IMAGE_APPROVAL_SOURCE`; zero env still returns `parser_isolation_unavailable`, but legacy/partial env now fails loudly. This is verifier hardening only, not a positive B3 proof. 2D-C, parser execution, product/public/live wiring, cache/SR/storage, evidence/report behavior, ACS/direct URL, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-16_Lead_Architect_V2_B3_Image_Approval_Hardening.md
