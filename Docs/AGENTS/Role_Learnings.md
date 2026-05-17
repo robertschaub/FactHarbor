@@ -116,6 +116,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When adding a new read path for jobs or job events, validate `jobId` on the API side and reuse the same hidden/admin access model as the existing report detail flow. If a Next.js proxy sits in front of that route, it also needs to forward `X-Admin-Key` on admin requests; otherwise hidden-report admin views silently lose data while public callers gain a looser path than intended.
 **Files:** `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/api/fh/jobs/[id]/events/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/events/history/route.ts`
 
+### 2026-05-17 — Later hidden runtime gates must retire stale earlier no-execution assertions
+**Role:** Lead Developer  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** gotcha
+**Learning:** When a later reviewed V2 slice intentionally opens the next hidden runtime step, older boundary guards for previous observer-only slices may still ban that import from the orchestrator. Keep the older artifact path guarded as non-executing, but move the newly approved execution allowance into a slice-specific guard so the test suite documents the transition instead of blocking it.
+**Files:** `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`, `apps/web/src/lib/analyzer-v2/orchestrator.ts`
+
 ## Senior Developer
 
 ### 2026-02-19 — Assistant+user multi-turn messages are untested with AI SDK Output.object() tool calling

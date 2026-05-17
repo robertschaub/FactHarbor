@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T12:29:27.032Z",
-  "count": 606,
+  "generatedAt": "2026-05-17T13:08:52.244Z",
+  "count": 608,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13244,6 +13244,25 @@
       "summary": "2026-05-17 - Lead Developer - V2 X7-S0 Claim Understanding Artifact No-Store Hardening"
     },
     {
+      "file": "2026-05-17_Lead_Developer_V2_X7-S_Query_Planning_Execution_Implementation.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-s",
+        "query",
+        "planning",
+        "execution",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/execution-selection.ts"
+      ],
+      "summary": "Start from this handoff and the X7-S package. If continuing low-risk, draft/review X7-T as a separate live-smoke package after this commit and runtime refresh; do not submit live jobs under X7-S itself."
+    },
+    {
       "file": "2026-05-17_Lead_Developer_V2_X7-S_Query_Planning_Execution_Package.md",
       "date": "2026-05-17",
       "roles": [
@@ -13259,6 +13278,31 @@
       ],
       "files_touched": [],
       "summary": "Handoff: V2 X7-S Product-Internal Query Planning Execution Package"
+    },
+    {
+      "file": "2026-05-17_Unassigned_Dominant_Proposition_V2_Reclassification.md",
+      "date": "2026-05-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "dominant",
+        "proposition",
+        "v2",
+        "reclassification"
+      ],
+      "files_touched": [
+        "Docs/ARCHIVE/PipelineV1/2026-04-20_Dominant_Proposition_Architecture_Plan.md",
+        "Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md",
+        "Docs/WIP/README.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/ARCHIVE/README_ARCHIVE.md",
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-05-17_Unassigned_Dominant_Proposition_V2_Reclassification.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat [2026-05-17_Dominant_Proposition_V2_Disposition.md](/c:/DEV/FactHarbor/Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md) as the current Dominant Proposition decision note. The archived implementation plan now lives at [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/Fac"
     }
   ]
 }

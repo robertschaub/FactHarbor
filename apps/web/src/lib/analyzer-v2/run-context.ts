@@ -15,6 +15,13 @@ export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID =
 export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT = "fc68915d";
 export const CLAIM_UNDERSTANDING_RUNTIME_KILL_SWITCH_CLOSED = "kill_switch_closed";
 export const CLAIM_UNDERSTANDING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT = "enabled_hidden_direct_text";
+export const QUERY_PLANNING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION =
+  "v2.evidence-query-planning.runtime-activation-snapshot.x7s";
+export const QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID =
+  "v2.evidence-query-planning.hidden-direct-text.x7s";
+export const QUERY_PLANNING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT = "68f450cb";
+export const QUERY_PLANNING_RUNTIME_KILL_SWITCH_CLOSED = "kill_switch_closed";
+export const QUERY_PLANNING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT = "enabled_hidden_direct_text";
 
 export type PipelineRunConfigSnapshot = {
   source: "not_loaded_pre_provider_wiring_gate";
@@ -76,6 +83,40 @@ export type PipelineRunClaimUnderstandingRuntimeActivationStatus =
   | typeof CLAIM_UNDERSTANDING_RUNTIME_KILL_SWITCH_CLOSED
   | typeof CLAIM_UNDERSTANDING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT;
 
+export type PipelineRunQueryPlanningRuntimeActivationStatus =
+  | typeof QUERY_PLANNING_RUNTIME_KILL_SWITCH_CLOSED
+  | typeof QUERY_PLANNING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT;
+
+export type PipelineRunQueryPlanningRuntimeActivationSnapshot = {
+  snapshotVersion: typeof QUERY_PLANNING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION;
+  source: "v2_task_policy_snapshot";
+  status: PipelineRunQueryPlanningRuntimeActivationStatus;
+  activationProfileId: typeof QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID;
+  activationSnapshotHash: string;
+  authority: "deputy_approved_temporary_activation_profile";
+  suppliedBy: "product_owned_activation_authority";
+  freezeLocation: "pipeline_run_context";
+  approvalPointer: {
+    sourcePackage: "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md";
+    confirmedBy: "Code/package; LLM/semantic; Security/runtime reviewers";
+    confirmedAt: "2026-05-17";
+  };
+  configProfileHash: string;
+  rollbackTarget: {
+    commit: typeof QUERY_PLANNING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT;
+    behavior: "fail_closed_to_x7o_preexecution_observation";
+  };
+  hiddenArtifactSink: {
+    kind: "v2_evidence_query_planning_runtime_artifact_ledger";
+    visibility: "internal_admin_only";
+    publicPointerExposure: "forbidden";
+  };
+  provider: {
+    providerId: "anthropic";
+    modelId: "claude-haiku-4-5-20251001";
+  };
+};
+
 export type PipelineRunContext = {
   runId: string;
   inputType: ClaimBoundaryV2Ingress["submitted"]["kind"];
@@ -90,6 +131,7 @@ export type PipelineRunContext = {
   modelPolicy: PipelineRunModelPolicySnapshot;
   observabilityLedger: PipelineRunObservabilityLedgerHandle;
   claimUnderstandingRuntimeActivation: PipelineRunClaimUnderstandingRuntimeActivationSnapshot;
+  queryPlanningRuntimeActivation: PipelineRunQueryPlanningRuntimeActivationSnapshot;
 };
 
 export type ClaimBoundaryV2RunContext = PipelineRunContext;
@@ -97,6 +139,7 @@ export type ClaimBoundaryV2RunContext = PipelineRunContext;
 export type BuildClaimBoundaryV2RunContextOptions = {
   now?: () => Date;
   runtimeActivationStatus?: PipelineRunClaimUnderstandingRuntimeActivationStatus;
+  queryPlanningRuntimeActivationStatus?: PipelineRunQueryPlanningRuntimeActivationStatus;
 };
 
 function cloneJson<T>(value: T): T {
@@ -183,6 +226,53 @@ function buildClaimUnderstandingRuntimeActivationSnapshot(
   };
 }
 
+function buildQueryPlanningRuntimeActivationSnapshot(
+  modelPolicy: PipelineRunModelPolicySnapshot,
+  status: PipelineRunQueryPlanningRuntimeActivationStatus =
+    QUERY_PLANNING_RUNTIME_KILL_SWITCH_CLOSED,
+): PipelineRunQueryPlanningRuntimeActivationSnapshot {
+  const configProfileHash = sha256Json({
+    activationProfileId: QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
+    provider: "anthropic",
+    modelId: "claude-haiku-4-5-20251001",
+    modelPolicySnapshotHash: modelPolicy.snapshotHash,
+    sourcePackage: "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md",
+  });
+  const base = {
+    snapshotVersion: QUERY_PLANNING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION,
+    source: "v2_task_policy_snapshot",
+    status,
+    activationProfileId: QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
+    authority: "deputy_approved_temporary_activation_profile",
+    suppliedBy: "product_owned_activation_authority",
+    freezeLocation: "pipeline_run_context",
+    approvalPointer: {
+      sourcePackage: "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md",
+      confirmedBy: "Code/package; LLM/semantic; Security/runtime reviewers",
+      confirmedAt: "2026-05-17",
+    },
+    configProfileHash,
+    rollbackTarget: {
+      commit: QUERY_PLANNING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT,
+      behavior: "fail_closed_to_x7o_preexecution_observation",
+    },
+    hiddenArtifactSink: {
+      kind: "v2_evidence_query_planning_runtime_artifact_ledger",
+      visibility: "internal_admin_only",
+      publicPointerExposure: "forbidden",
+    },
+    provider: {
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+    },
+  } satisfies Omit<PipelineRunQueryPlanningRuntimeActivationSnapshot, "activationSnapshotHash">;
+
+  return {
+    ...base,
+    activationSnapshotHash: sha256Json(base),
+  };
+}
+
 function normalizeSelectedClaimIds(selectedClaimIds: string[] | undefined): string[] {
   const normalized = (selectedClaimIds ?? [])
     .map((claimId) => claimId.trim())
@@ -245,6 +335,10 @@ export function buildClaimBoundaryV2RunContext(
     claimUnderstandingRuntimeActivation: buildClaimUnderstandingRuntimeActivationSnapshot(
       modelPolicy,
       options.runtimeActivationStatus,
+    ),
+    queryPlanningRuntimeActivation: buildQueryPlanningRuntimeActivationSnapshot(
+      modelPolicy,
+      options.queryPlanningRuntimeActivationStatus,
     ),
   };
 }

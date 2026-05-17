@@ -73,6 +73,29 @@ describe("analyzer-v2 run context", () => {
     });
     expect(context.claimUnderstandingRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
     expect(context.claimUnderstandingRuntimeActivation.configProfileHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(context.queryPlanningRuntimeActivation).toMatchObject({
+      source: "v2_task_policy_snapshot",
+      status: "kill_switch_closed",
+      activationProfileId: "v2.evidence-query-planning.hidden-direct-text.x7s",
+      authority: "deputy_approved_temporary_activation_profile",
+      suppliedBy: "product_owned_activation_authority",
+      freezeLocation: "pipeline_run_context",
+      rollbackTarget: {
+        commit: "68f450cb",
+        behavior: "fail_closed_to_x7o_preexecution_observation",
+      },
+      hiddenArtifactSink: {
+        kind: "v2_evidence_query_planning_runtime_artifact_ledger",
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+      },
+      provider: {
+        providerId: "anthropic",
+        modelId: "claude-haiku-4-5-20251001",
+      },
+    });
+    expect(context.queryPlanningRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(context.queryPlanningRuntimeActivation.configProfileHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("freezes product-selected hidden direct-text runtime activation in the run context", () => {
@@ -105,6 +128,41 @@ describe("analyzer-v2 run context", () => {
     expect(enabledContext.claimUnderstandingRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
     expect(enabledContext.claimUnderstandingRuntimeActivation.activationSnapshotHash).not.toBe(
       closedContext.claimUnderstandingRuntimeActivation.activationSnapshotHash,
+    );
+  });
+
+  it("freezes product-selected Query Planning runtime activation separately from Claim Understanding", () => {
+    const closedContext = buildClaimBoundaryV2RunContext({
+      runIdHint: "job-context-query-planning-closed",
+      submitted: {
+        kind: "text",
+        value: "Submitted text",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+    const enabledContext = buildClaimBoundaryV2RunContext(
+      {
+        runIdHint: "job-context-query-planning-enabled",
+        submitted: {
+          kind: "text",
+          value: "Submitted text",
+        },
+        preparedSeed: null,
+        selectedAtomicClaimIds: [],
+      },
+      {
+        queryPlanningRuntimeActivationStatus: "enabled_hidden_direct_text",
+      },
+    );
+
+    expect(closedContext.queryPlanningRuntimeActivation.status).toBe("kill_switch_closed");
+    expect(closedContext.claimUnderstandingRuntimeActivation.status).toBe("kill_switch_closed");
+    expect(enabledContext.queryPlanningRuntimeActivation.status).toBe("enabled_hidden_direct_text");
+    expect(enabledContext.claimUnderstandingRuntimeActivation.status).toBe("kill_switch_closed");
+    expect(enabledContext.queryPlanningRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(enabledContext.queryPlanningRuntimeActivation.activationSnapshotHash).not.toBe(
+      closedContext.queryPlanningRuntimeActivation.activationSnapshotHash,
     );
   });
 });

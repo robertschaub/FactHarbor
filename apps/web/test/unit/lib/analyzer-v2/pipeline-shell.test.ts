@@ -10,6 +10,10 @@ import {
   clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts,
   readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-preexecution-observation-artifact-sink";
+import {
+  clearEvidenceQueryPlanningRuntimeArtifacts,
+  readEvidenceQueryPlanningRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink";
 
 function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -172,6 +176,7 @@ describe("analyzer-v2 shell", () => {
   it("records product-internal Query Planning pre-execution observation without public exposure", async () => {
     const ledgerId = "job-v2-shell-x7o:precutover-observability";
     clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(ledgerId);
+    clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
 
     const result = await runClaimBoundaryV2Shell({
       jobId: "job-v2-shell-x7o",
@@ -209,9 +214,11 @@ describe("analyzer-v2 shell", () => {
         publicCutoverStatus: "blocked_precutover",
       }),
     ]);
+    expect(readEvidenceQueryPlanningRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(keys).not.toEqual(expect.arrayContaining([
       "preexecutionObservation",
       "productExecution",
+      "queryPlanningRuntime",
       "artifactVersion",
       "artifactId",
       "ledgerId",

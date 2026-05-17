@@ -75,12 +75,12 @@
     },
     {
       "id": "gate.evidence_query_planning",
-      "sliceId": "7L1",
+      "sliceId": "X7-S",
       "gateType": "gateway_task",
       "taskId": "evidence_query_planning",
       "owner": "evidence_lifecycle",
-      "state": "executable_hidden_gateway_task",
-      "status": "executable_hidden_gateway_task",
+      "state": "implemented_hidden_product_internal_query_planning_execution",
+      "status": "implemented_hidden_product_internal_query_planning_execution",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
       "registerGrantsExecution": false,
       "promptProfile": "claimboundary-v2",
@@ -101,43 +101,62 @@
         "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
         "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
         "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
-        "Docs/WIP/2026-05-17_V2_Slice_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md"
+        "Docs/WIP/2026-05-17_V2_Slice_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md",
+        "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md"
       ],
-      "sourcePackage": "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
-      "approvalPointer": "Captain-approved 7L-1 query-planning source package and approval metadata.",
-      "implementationCommit": "6162e057",
+      "sourcePackage": "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md",
+      "approvalPointer": "Captain-approved X7-S product-internal hidden Query Planning execution package, following 7L-1/X3-B approvals.",
+      "implementationCommit": null,
       "allowedFiles": [
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/**",
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/task-contracts/**",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts",
+        "apps/web/src/lib/analyzer-v2/orchestrator.ts",
+        "apps/web/src/lib/analyzer-v2/run-context.ts",
+        "apps/web/src/lib/analyzer-v2/execution-selection.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-query-planning-runtime-artifacts/route.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory.ts",
+        "apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink.ts",
         "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
         "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
         "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts"
       ],
       "blockedSurfaces": [
         "source fetch execution",
+        "search provider execution",
+        "candidate provider network execution",
+        "parser execution",
+        "Source Reliability",
+        "cache IO",
         "EvidenceItem generation",
         "EvidenceCorpus generation",
         "public API result",
         "UI/report/export",
-        "live jobs outside reviewed smoke gate"
+        "live jobs",
+        "ACS/direct URL execution",
+        "V1 reuse or cleanup"
       ],
       "blockedSurfaceFlags": {
         "productWiring": true,
         "publicExposure": true,
         "liveJobs": true,
-        "cacheIo": false,
+        "cacheIo": true,
         "sourceReliability": true,
         "v1Reuse": true,
         "realByteParserConsumption": true
       },
       "verifierCommands": [
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning test/unit/lib/analyzer-v2/gateway",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/execution-selection.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/run-context.test.ts test/unit/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract.test.ts test/unit/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-query-planning-runtime-artifacts/route.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "npm run validate:v2-gates",
+        "node scripts/validate-v2-gate-register.mjs --self-test",
         "npm -w apps/web run build"
       ],
       "liveJobEligibility": "blocked",
-      "liveJobBlockReason": "Hidden executable gateway task only; no live-smoke gate currently approves job submission.",
-      "lastVerifiedBy": "Codex GPT-5.5 on 2026-05-17 (X3-B)",
-      "notes": "Static task-policy/readiness metadata is aligned in X3-A. X3-B repaired prompt frontmatter/text drift for the already-approved hidden/internal query-planning loader. Register remains audit-only and grants no execution."
+      "liveJobBlockReason": "X7-S authorizes source implementation only; no live-smoke gate currently approves job submission.",
+      "lastVerifiedBy": "Codex GPT-5.5 on 2026-05-17 (X7-S)",
+      "notes": "X7-S wires hidden product-internal direct-text Query Planning execution behind a separate default-closed activation gate after accepted Claim Understanding and X7-O observation only. It records bounded admin-only internal artifacts. Source/search/fetch/parser/SR/cache IO, public API/UI/report/export exposure, live jobs, ACS/direct URL execution, V1 reuse, and V1 cleanup remain blocked. Register remains audit-only and grants no execution."
     },
     {
       "id": "gate.research_acquisition",

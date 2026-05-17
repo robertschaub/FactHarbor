@@ -437,6 +437,7 @@ async function runJobBackground(jobId: string) {
     result = executionSelection.path === "claimboundary-v2-shell"
       ? await runClaimBoundaryV2Shell(analysisInput, {
         runtimeActivationStatus: executionSelection.runtimeActivationStatus,
+        queryPlanningRuntimeActivationStatus: executionSelection.queryPlanningRuntimeActivationStatus,
       })
       : await runClaimBoundaryAnalysis(analysisInput);
 

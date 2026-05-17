@@ -2,6 +2,8 @@ export const CLAIMBOUNDARY_V1_VARIANT = "claimboundary";
 export const CLAIMBOUNDARY_V2_VARIANT = "claimboundary-v2";
 export const CLAIM_UNDERSTANDING_RUNTIME_FLAG = "FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME";
 export const CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE = "enabled_hidden_direct_text";
+export const QUERY_PLANNING_RUNTIME_FLAG = "FH_ANALYZER_V2_QUERY_PLANNING_RUNTIME";
+export const QUERY_PLANNING_RUNTIME_FLAG_ENABLED_VALUE = "enabled_hidden_direct_text";
 
 export type AnalyzerV2RuntimeActivationStatus =
   | "kill_switch_closed"
@@ -18,6 +20,8 @@ type AnalyzerExecutionSelectionBase = {
   v2ShellEnabled: boolean;
   runtimeActivationStatus: AnalyzerV2RuntimeActivationStatus;
   runtimeActivationEnabled: boolean;
+  queryPlanningRuntimeActivationStatus: AnalyzerV2RuntimeActivationStatus;
+  queryPlanningRuntimeActivationEnabled: boolean;
 };
 
 export type AnalyzerExecutionSelection =
@@ -53,6 +57,12 @@ export function isAnalyzerV2ClaimUnderstandingRuntimeEnabled(
   return env[CLAIM_UNDERSTANDING_RUNTIME_FLAG] === CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE;
 }
 
+export function isAnalyzerV2QueryPlanningRuntimeEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env[QUERY_PLANNING_RUNTIME_FLAG] === QUERY_PLANNING_RUNTIME_FLAG_ENABLED_VALUE;
+}
+
 function runtimeActivationStatus(enabled: boolean): AnalyzerV2RuntimeActivationStatus {
   return enabled ? "enabled_hidden_direct_text" : "kill_switch_closed";
 }
@@ -64,10 +74,12 @@ export function resolveAnalyzerExecutionSelection(
   const requestedVariant = normalizeRequestedVariant(requestedVariantValue);
   const v2ShellEnabled = isAnalyzerV2ShellEnabled(env);
   const runtimeFlagEnabled = isAnalyzerV2ClaimUnderstandingRuntimeEnabled(env);
+  const queryPlanningRuntimeFlagEnabled = isAnalyzerV2QueryPlanningRuntimeEnabled(env);
 
   if (requestedVariant === CLAIMBOUNDARY_V2_VARIANT) {
     if (v2ShellEnabled) {
       const runtimeActivationEnabled = runtimeFlagEnabled;
+      const queryPlanningRuntimeActivationEnabled = queryPlanningRuntimeFlagEnabled;
       return {
         path: "claimboundary-v2-shell",
         requestedVariant,
@@ -76,6 +88,8 @@ export function resolveAnalyzerExecutionSelection(
         v2ShellEnabled,
         runtimeActivationStatus: runtimeActivationStatus(runtimeActivationEnabled),
         runtimeActivationEnabled,
+        queryPlanningRuntimeActivationStatus: runtimeActivationStatus(queryPlanningRuntimeActivationEnabled),
+        queryPlanningRuntimeActivationEnabled,
       };
     }
 
@@ -87,6 +101,8 @@ export function resolveAnalyzerExecutionSelection(
       v2ShellEnabled,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     };
   }
 
@@ -99,6 +115,8 @@ export function resolveAnalyzerExecutionSelection(
       v2ShellEnabled,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     };
   }
 
@@ -110,5 +128,7 @@ export function resolveAnalyzerExecutionSelection(
     v2ShellEnabled,
     runtimeActivationStatus: "kill_switch_closed",
     runtimeActivationEnabled: false,
+    queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+    queryPlanningRuntimeActivationEnabled: false,
   };
 }

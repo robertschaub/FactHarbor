@@ -113,6 +113,53 @@ const REPAIRED_QUERY_PLANNING_DRIFT_MARKERS = [
   "static_task_policy_symbolic_not_executable",
   "prompt_frontmatter_required_sections_lag",
 ];
+const QUERY_PLANNING_CURRENT_SLICE_ID = "X7-S";
+const QUERY_PLANNING_CURRENT_STATE =
+  "implemented_hidden_product_internal_query_planning_execution";
+const QUERY_PLANNING_X7S_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md";
+const REQUIRED_QUERY_PLANNING_REFS = [
+  "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
+  "Docs/WIP/2026-05-17_V2_Slice_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md",
+  QUERY_PLANNING_X7S_SOURCE_PACKAGE,
+];
+const REQUIRED_QUERY_PLANNING_ALLOWED_FILES = [
+  "apps/web/src/lib/analyzer-v2/orchestrator.ts",
+  "apps/web/src/lib/analyzer-v2/run-context.ts",
+  "apps/web/src/lib/analyzer-v2/execution-selection.ts",
+  "apps/web/src/lib/internal-runner-queue.ts",
+  "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-query-planning-runtime-artifacts/route.ts",
+  "apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract.ts",
+  "apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory.ts",
+  "apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink.ts",
+];
+const REQUIRED_QUERY_PLANNING_BLOCKED_SURFACES = [
+  "source fetch execution",
+  "search provider execution",
+  "candidate provider network execution",
+  "parser execution",
+  "Source Reliability",
+  "cache IO",
+  "EvidenceItem generation",
+  "EvidenceCorpus generation",
+  "public API result",
+  "UI/report/export",
+  "live jobs",
+  "ACS/direct URL execution",
+  "V1 reuse or cleanup",
+];
+const REQUIRED_QUERY_PLANNING_NOTE_TOKENS = [
+  "hidden product-internal direct-text Query Planning execution",
+  "separate default-closed activation gate",
+  "bounded admin-only internal artifacts",
+  "Source/search/fetch/parser/SR/cache IO",
+  "public API/UI/report/export exposure",
+  "live jobs",
+  "ACS/direct URL execution",
+  "V1 reuse",
+  "V1 cleanup",
+  "audit-only",
+];
 const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-F";
 const RESEARCH_ACQUISITION_CURRENT_STATE =
   "implemented_hidden_direct_text_execution_gate_closed_no_io";
@@ -723,6 +770,7 @@ function validateRegisterAgainstGateway(register, gatewayTasks, gatewayTaskIds, 
       }
     }
   }
+  validateQueryPlanningAuditState(queryPlanning, drift);
 
   const researchAcquisition = entriesByTaskId.get("research_acquisition")?.entry;
   validateResearchAcquisitionAuditState(researchAcquisition, drift);
@@ -738,6 +786,58 @@ function requireTextIncludes(value, token, where, field, drift) {
   if (typeof value !== "string" || !value.includes(token)) {
     drift(where, `${field} must mention ${token}`);
   }
+}
+
+function validateQueryPlanningAuditState(entry, drift) {
+  const where = `${REGISTER_PATH}:evidence_query_planning`;
+  if (!entry) {
+    drift(where, "evidence_query_planning row is required");
+    return;
+  }
+
+  if (entry.sliceId !== QUERY_PLANNING_CURRENT_SLICE_ID) {
+    drift(where, `sliceId must be ${QUERY_PLANNING_CURRENT_SLICE_ID}`);
+  }
+  if (entry.state !== QUERY_PLANNING_CURRENT_STATE) {
+    drift(where, `state must be ${QUERY_PLANNING_CURRENT_STATE}`);
+  }
+  if (entry.status !== QUERY_PLANNING_CURRENT_STATE) {
+    drift(where, `status must be ${QUERY_PLANNING_CURRENT_STATE}`);
+  }
+  if (entry.sourcePackage !== QUERY_PLANNING_X7S_SOURCE_PACKAGE) {
+    drift(where, `sourcePackage must be ${QUERY_PLANNING_X7S_SOURCE_PACKAGE}`);
+  }
+  if (entry.liveJobEligibility !== "blocked") {
+    drift(where, "liveJobEligibility must remain blocked");
+  }
+
+  for (const ref of REQUIRED_QUERY_PLANNING_REFS) {
+    requireArrayIncludes(entry.sourceOfTruthRefs, ref, where, "sourceOfTruthRefs", drift);
+  }
+  for (const allowedFile of REQUIRED_QUERY_PLANNING_ALLOWED_FILES) {
+    requireArrayIncludes(entry.allowedFiles, allowedFile, where, "allowedFiles", drift);
+  }
+  for (const blockedSurface of REQUIRED_QUERY_PLANNING_BLOCKED_SURFACES) {
+    requireArrayIncludes(entry.blockedSurfaces, blockedSurface, where, "blockedSurfaces", drift);
+  }
+  for (const flag of [
+    "productWiring",
+    "publicExposure",
+    "liveJobs",
+    "cacheIo",
+    "sourceReliability",
+    "v1Reuse",
+    "realByteParserConsumption",
+  ]) {
+    if (entry.blockedSurfaceFlags?.[flag] !== true) {
+      drift(where, `blockedSurfaceFlags.${flag} must remain true for X7-S audit state`);
+    }
+  }
+  for (const token of REQUIRED_QUERY_PLANNING_NOTE_TOKENS) {
+    requireTextIncludes(entry.notes, token, where, "notes", drift);
+  }
+  requireTextIncludes(entry.approvalPointer, "Captain-approved X7-S", where, "approvalPointer", drift);
+  requireTextIncludes(entry.liveJobBlockReason, "no live-smoke gate", where, "liveJobBlockReason", drift);
 }
 
 function validateResearchAcquisitionAuditState(entry, drift) {
@@ -912,6 +1012,42 @@ async function runSelfTest(context) {
       "register grants execution",
       (candidate) => {
         candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").registerGrantsExecution = true;
+      },
+    ],
+    [
+      "query planning drifts from X7-S",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").sourcePackage =
+          "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md";
+      },
+    ],
+    [
+      "query planning drops X7-S package ref",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "evidence_query_planning");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) => ref !== QUERY_PLANNING_X7S_SOURCE_PACKAGE);
+      },
+    ],
+    [
+      "query planning drops hidden artifact route",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "evidence_query_planning");
+        row.allowedFiles = row.allowedFiles.filter((file) =>
+          file !== "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-query-planning-runtime-artifacts/route.ts"
+        );
+      },
+    ],
+    [
+      "query planning unblocks cache IO",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").blockedSurfaceFlags.cacheIo = false;
+      },
+    ],
+    [
+      "query planning drops default-closed note",
+      (candidate) => {
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").notes =
+          "X7-S records bounded admin-only internal artifacts.";
       },
     ],
     [

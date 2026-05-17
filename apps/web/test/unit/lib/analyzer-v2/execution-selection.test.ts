@@ -4,7 +4,10 @@ import {
   CLAIMBOUNDARY_V2_VARIANT,
   CLAIM_UNDERSTANDING_RUNTIME_FLAG,
   CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE,
+  QUERY_PLANNING_RUNTIME_FLAG,
+  QUERY_PLANNING_RUNTIME_FLAG_ENABLED_VALUE,
   isAnalyzerV2ClaimUnderstandingRuntimeEnabled,
+  isAnalyzerV2QueryPlanningRuntimeEnabled,
   isAnalyzerV2ShellEnabled,
   resolveAnalyzerExecutionSelection,
 } from "@/lib/analyzer-v2/execution-selection";
@@ -19,6 +22,8 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: false,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 
@@ -33,6 +38,8 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: true,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 
@@ -45,6 +52,8 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: false,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 
@@ -59,6 +68,8 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: true,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 
@@ -77,11 +88,37 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: true,
       runtimeActivationStatus: "enabled_hidden_direct_text",
       runtimeActivationEnabled: true,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
     expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V1_VARIANT, env)).toMatchObject({
       path: "claimboundary-v1",
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
+    });
+  });
+
+  it("opens Query Planning only behind the V2 shell and dedicated X7-S kill switch", () => {
+    const env = {
+      FH_ANALYZER_V2_SHELL: "enabled",
+      [CLAIM_UNDERSTANDING_RUNTIME_FLAG]: CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE,
+      [QUERY_PLANNING_RUNTIME_FLAG]: QUERY_PLANNING_RUNTIME_FLAG_ENABLED_VALUE,
+    };
+
+    expect(isAnalyzerV2QueryPlanningRuntimeEnabled(env)).toBe(true);
+    expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V2_VARIANT, env)).toMatchObject({
+      path: "claimboundary-v2-shell",
+      runtimeActivationStatus: "enabled_hidden_direct_text",
+      runtimeActivationEnabled: true,
+      queryPlanningRuntimeActivationStatus: "enabled_hidden_direct_text",
+      queryPlanningRuntimeActivationEnabled: true,
+    });
+    expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V1_VARIANT, env)).toMatchObject({
+      path: "claimboundary-v1",
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 
@@ -103,6 +140,8 @@ describe("analyzer-v2 execution selection", () => {
       v2ShellEnabled: true,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
+      queryPlanningRuntimeActivationStatus: "kill_switch_closed",
+      queryPlanningRuntimeActivationEnabled: false,
     });
   });
 });
