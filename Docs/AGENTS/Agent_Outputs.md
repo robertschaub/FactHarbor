@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-D Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** X7-N-D passed its narrow clean-provenance objective on package/runtime `92c9fff6`: job `fbccbbc9dc234991bb74c0990664e8ba` used the exact legal/fair-trial Captain input, first prepared `pipeline: claimboundary-v2`, recorded clean executed hash `92c9fff60e0d5f745667d793bbe149d7ef844e1f`, reached `SUCCEEDED`, wrote accepted internal Claim Understanding and X7-J intake artifacts, kept public output `4.0.0-cb-precutover` / `blocked_precutover` with `report_damaged`, and leaked no hidden markers in non-admin public inspection. X7-N-D does not approve truth/legal/fairness/report conclusions, live expansion, Query Planning execution, source/provider/parser execution, public cutover, or V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-D_Live_Smoke_Result.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-D Clean Legal Rerun Package -- [Significant] [open-items: yes]
 **For next agent:** X7-N-D is a reviewer-approved docs-only execution package for exactly one clean-provenance rerun of the Captain-approved Bolsonaro/fair-trial direct-text input after X7-N-C failed its post-inspection clean-worktree checkpoint. It authorizes no prompt edits and no downstream/source/parser/public behavior. It may run only after package commit, runtime refresh with explicit V2 gates, verifier/admin-route preflight pass, and a 60-second clean/idle checkpoint stays clean.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-D_Clean_Legal_Rerun_Package.md
@@ -3504,3 +3509,7 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-A Route-Selection Hard-Fail Repair -- [Significant] [open-items: yes]
 **For next agent:** X7-N-A job `29b8f95866964b3c805e7df243f004ea` is a hard fail, not pass: despite stored `claimboundary-v2` and clean hash `e7d0834619b7a8d947bb75723c6a18e03632b2ff`, it emitted `Preparing input (pipeline: claimboundary)` and ran V1 search/fetch/XLSX parsing/Source Reliability/verdict work before cancellation. The repair amends `resolveAnalyzerExecutionSelection(...)` and `internal-runner-queue.ts` so explicit V2-disabled and unsupported variants fail closed before V1 or V2 analysis calls; normal `claimboundary` still runs V1. X7-N-A is spent; any clean rerun needs a new reviewed package after this repair is committed and runtime-refreshed.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-A_Route_Selection_Hard_Fail_Repair.md
+
+---
+### 2026-05-17 | Senior Developer | Codex (GPT-5) | Cursor Worktree Cleanup Executed -- [Standard] [open-items: no]
+**For next agent:** User explicitly kept `C:/DEV/FH-quality_before_decline` and then also kept `C:/DEV/FH_best_monolithic_canonical`. Removed only the remaining stale Cursor worktrees `C:/Users/rober/.cursor/worktrees/FactHarbor/tvb` and `C:/Users/rober/.cursor/worktrees/FactHarbor/wxa` via `git worktree remove --force`. Final verification: both Cursor paths are absent and unregistered; kept paths `C:/DEV/FH-quality_before_decline` and `C:/DEV/FH_best_monolithic_canonical` still exist and remain registered; current registry contains four worktrees: `C:/DEV/FactHarbor`, `C:/DEV/FactHarbor-main-before-v2-rehome`, `C:/DEV/FH_best_monolithic_canonical`, and `C:/DEV/FH-quality_before_decline`. `git worktree prune --dry-run --verbose` returned empty.
