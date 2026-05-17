@@ -47,6 +47,10 @@ describe("analyzer-v2 evidence query-planning prompt loader", () => {
     expect(rendered.renderedPrompt).toContain("Integrity event object");
     expect(rendered.renderedPrompt).toContain("`references`: string array");
     expect(rendered.renderedPrompt).toContain("Do not emit alternate event field names such as `eventType`");
+    expect(rendered.renderedPrompt).toContain("Downstream Source Acquisition posture");
+    expect(rendered.renderedPrompt).toContain("return `status: accepted` with a bounded `queryPlan`");
+    expect(rendered.renderedPrompt).toContain("`not_wired_in_7L1`");
+    expect(rendered.renderedPrompt).toContain("It is not, by itself, a Query Planning block");
     expect(rendered.renderedPrompt).toContain("Packet: claimContractJson");
     expect(rendered.renderedPrompt).toContain("Entity A machte Aussage B.");
     expect(rendered.renderedPrompt).toContain("\"detectedLanguage\":\"de\"");

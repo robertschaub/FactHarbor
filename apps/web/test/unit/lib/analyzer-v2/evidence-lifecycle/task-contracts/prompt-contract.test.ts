@@ -110,6 +110,18 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event");
   });
 
+  it("keeps closed downstream source acquisition from blocking query planning by itself", () => {
+    const content = readPrompt();
+    const section = readSection(content, EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_query_planning);
+
+    expect(section).toContain("Downstream Source Acquisition posture");
+    expect(section).toContain("return `status: accepted` with a bounded `queryPlan`");
+    expect(section).toContain("`not_wired_in_7L1`");
+    expect(section).toContain("`ready_not_executable` Source Acquisition handoff");
+    expect(section).toContain("It is not, by itself, a Query Planning block");
+    expect(section).toContain("do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable");
+  });
+
   it("keeps Evidence Lifecycle prompt sections generic and free of Captain canary terms", () => {
     const content = readPrompt();
 

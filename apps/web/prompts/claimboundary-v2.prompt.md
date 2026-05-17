@@ -254,6 +254,13 @@ Accepted `queryPlan` payload:
 - `sourceLanguagePolicy.rationale`: concise rationale without English defaulting.
 - `queries`: bounded query entries. Each entry has `queryId`, `retrievalPolicyKey`, `queryText`, `targetAtomicClaimIds`, and `rationale`.
 
+Downstream Source Acquisition posture:
+
+- Query Planning creates retrieval intent only. It does not authorize or perform provider search, fetch, parsing, cache access, source reliability lookup, evidence extraction, report generation, or public output.
+- If `claimContractJson`, `taskPolicySnapshotJson`, `retrievalPolicyCatalogJson`, and `sourceAcquisitionTraceJson` are valid enough to plan retrieval intent, return `status: accepted` with a bounded `queryPlan` even when `sourceAcquisitionTraceJson.status` indicates downstream execution is closed, such as `not_wired`, `not_executable`, `ready_not_executable`, or `not_wired_in_7L1`.
+- Closed downstream execution is represented after this task by a `ready_not_executable` Source Acquisition handoff. It is not, by itself, a Query Planning block.
+- Use `blockedReason: source_acquisition_not_executable` only when the source-acquisition trace packet is missing, malformed, or explicitly prevents constructing planning provenance; do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable.
+
 Integrity event object:
 
 - `type`: one of `task_policy_blocked`, `prompt_not_approved`, `input_contract_invalid`, `source_acquisition_not_executable`, `source_content_missing`, `schema_validation_failed`, `provider_unavailable`, or `task_contract_validation_failed`.

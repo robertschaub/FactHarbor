@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T15:47:59.739Z",
-  "count": 621,
+  "generatedAt": "2026-05-17T15:57:45.095Z",
+  "count": 622,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13573,6 +13573,33 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Run the committed/refreshed post-repair live rerun using the exact German Captain-defined input from X7-U1 if the verifier set is clean. Commit before live execution, reseed/refresh prompt runtime, prove exact V2 gates, then submit one job and inspect hidden Query Planning artifacts. Count that job "
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-U3_Query_Planning_Downstream_Gate_Posture_Prompt_Clarification.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-u3",
+        "query",
+        "planning",
+        "downstream",
+        "gate",
+        "posture",
+        "prompt",
+        "clarification"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary-v2.prompt.md",
+        "Docs/AGENTS/Prompt_Issue_Register.md",
+        "Docs/WIP/2026-05-17_V2_Slice_X7-U3_Query_Planning_Downstream_Gate_Posture_Prompt_Clarification.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit this implementation package, reseed/refresh runtime from that commit with the three exact V2 gates, and run one German live canary using `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. Count it against the current max-8 live-job authorization."
     },
     {
       "file": "2026-05-17_Unassigned_Daily_Bug_Scan_No_Commit_Bugs.md",
