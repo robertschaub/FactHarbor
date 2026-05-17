@@ -3833,3 +3833,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Do not rerun under LS1, do not treat W2 as provider-network-executed, and do not raise the W2 cap reactively. No source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence behavior, public cutover, broader provider expansion, ACS/direct URL, V1 reuse/work/cleanup is authorized.
 **Learnings:** Before another W2 live attempt, measure Query Planning query-count distribution offline over Captain-defined inputs and fix future live polling to match scalar event messages.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS1_Live_Result.md
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-QC1 Query Planning Query-Count Estimation Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W2-QC1_Query_Planning_Query_Count_Estimation_Package.md` as the safe next step after LS1. QC1 is docs-only and defines the evidence needed before choosing a compatible W2 canary or a reviewed W2 cap-alignment source package.
+**Warnings:** QC1 does not authorize live jobs, W2/source/provider/network execution, W2 cap changes, source material, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/public behavior, prompt/config/schema/model/provider/source/test/script edits, ACS/direct URL, or V1 work/cleanup.
+**Learnings:** W2 should not spend another live slot until upstream Query Planning cardinality is understood against W2's current cap.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC1_Query_Count_Estimation_Package.md
