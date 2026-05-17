@@ -26,7 +26,7 @@ No product/public behavior changed. No prompt, model, schema, config, cache, Sou
 After X7-R passed, the next-step debate recommended:
 
 1. close the Claim Understanding artifact route no-store gap;
-2. address API-created hash provenance as a separate follow-up;
+2. inspect API-created hash provenance before deciding whether a source repair exists;
 3. only then draft a reviewed X7-S product-internal hidden Query Planning execution package.
 
 This handoff closes item 1 only.
@@ -39,7 +39,7 @@ Net mechanism count: unchanged.
 
 Verification: targeted route plus boundary tests, internal V2 artifact route tests, full Analyzer V2 unit slice, V2 gate validator, web build, and diff hygiene passed.
 
-Residual debt: API-created job hash fields can still be null while result metadata records the executed web hash; keep this as a separate provenance-observability follow-up before broader live/execution expansion.
+Residual debt: none for this route patch. Follow-up admin reinspection of X7-R through both API and web proxy returned non-null `gitCommitHash`, `createdGitCommitHash`, and `executedWebGitCommitHash` matching the X7-R package commit, so no API-created hash source repair is currently needed.
 
 ## Verification
 
@@ -67,4 +67,4 @@ Observed results:
 
 Do not start product Query Planning execution directly from this patch.
 
-The next low-risk implementation candidate is a narrow API-created hash provenance repair package. The next capability package after that should be a reviewed X7-S product-internal hidden Query Planning execution package. X7-S must still block source/provider/search/fetch/parser/cache/SR/report/verdict/public/V1 work and requires review before implementation.
+The next capability package should be a reviewed X7-S product-internal hidden Query Planning execution package. X7-S must still block source/provider/search/fetch/parser/cache/SR/report/verdict/public/V1 work and requires review before implementation.
