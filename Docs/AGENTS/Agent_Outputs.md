@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-M Claim Understanding Prompt/Contract Repair Approval Package -- [Significant] [open-items: yes]
+**For next agent:** X7-M is reviewer-approved as a docs-only, non-authorizing approval package for the X7-K/X7-L Claim Understanding failures. It proposes a future repair limited to `V2_CLAIM_UNDERSTANDING_GATE1` wording and focused prompt/contract tests: schema-exact nested `ClaimContract` skeletons, prepared-snapshot preservation, topic-neutral externally assessable question handling, strict rejection of flat dotted keys, and no hidden artifact/raw-payload expansion. Implementation remains blocked until explicit Captain approval of the package wording, then final prompt diff review by LLM Expert plus Architect scope acceptance.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-M_Claim_Understanding_Prompt_Repair_Approval_Package.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-L Claim Understanding Live-Result Diagnosis -- [Significant] [open-items: yes]
 **For next agent:** X7-L diagnoses the Claim Understanding blocker exposed by X7-K without source/prompt edits. German canary job `0e3901f2c5e74af8bbde2383297d1b5e` failed schema validation because the model emitted flat `input.selectedAtomicClaimIds` under `claimContract` instead of nested `claimContract.input.selectedAtomicClaimIds`; Bolsonaro canary job `7da66e060e104e88a958c858533f22c2` returned schema-valid `no_valid_claim`. Recommended next step is a Captain-gated Claim Understanding prompt/contract repair approval package; do not relax schemas, run more live jobs, continue downstream, or edit prompts without explicit approval.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-L_CU_Live_Result_Diagnosis.md

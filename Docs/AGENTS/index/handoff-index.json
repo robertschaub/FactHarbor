@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T02:37:41.673Z",
-  "count": 581,
+  "generatedAt": "2026-05-17T02:48:49.029Z",
+  "count": 582,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12583,6 +12583,32 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Start from the X7-L diagnosis. X3-B is separate Query Planning metadata/prompt drift and does not fix these Claim Understanding failures."
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-M_Claim_Understanding_Prompt_Repair_Approval_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-m",
+        "claim",
+        "understanding",
+        "prompt",
+        "repair",
+        "approval",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-M_Claim_Understanding_Prompt_Contract_Repair_Approval_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start from `Docs/WIP/2026-05-17_V2_Slice_X7-M_Claim_Understanding_Prompt_Contract_Repair_Approval_Package.md`. If Captain approves section 2 wording, implement only the approved prompt/test envelope and preserve strict schema rejection of flat dotted-key outputs."
     }
   ]
 }
