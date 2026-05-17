@@ -11,6 +11,9 @@ import {
   SOURCE_ACQUISITION_PARSER_ADMISSION_PARSED_MATERIAL_DENIAL_VERSION,
   buildSourceAcquisitionParserAdmissionParsedMaterialDenial,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial";
+import {
+  readSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial-provenance";
 
 function digest(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -91,6 +94,7 @@ describe("Analyzer V2 parser-admission parsed-material denial", () => {
       extractionInput: null,
       evidenceCorpus: null,
     });
+    expect(readSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult(result)).toBe(result);
   });
 
   it("keeps runtime-owned blocked parser admission denial-only and output-null", () => {
@@ -120,6 +124,7 @@ describe("Analyzer V2 parser-admission parsed-material denial", () => {
       extractionInput: null,
       evidenceCorpus: null,
     });
+    expect(readSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult(result)).toBe(result);
   });
 
   it("rejects copied, serialized, cloned, and reconstructed admission-shaped objects", () => {

@@ -12,6 +12,9 @@ import {
   type HiddenDirectTextSourceAcquisitionExecutionGateRequest,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate";
 import {
+  readHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance";
+import {
   buildHiddenDirectTextSourceAcquisitionReadinessComposition,
   type HiddenDirectTextSourceAcquisitionReadinessCompositionResult,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition";
@@ -284,6 +287,7 @@ describe("Analyzer V2 hidden direct-text source-acquisition execution gate", () 
       parserInput: null,
       parserOutput: null,
     });
+    expect(readHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult(result)).toBe(result);
   });
 
   it("blocks runtime-owned X7-E readiness compositions that were already blocked", () => {
@@ -303,6 +307,7 @@ describe("Analyzer V2 hidden direct-text source-acquisition execution gate", () 
       bytesRead: 0,
       parserRuns: 0,
     });
+    expect(readHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult(result)).toBe(result);
   });
 
   it("rejects malformed, copied, or non-no-IO readiness compositions before admission", () => {

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { buildDownstreamNoCorpusDenial } from "@/lib/analyzer-v2/evidence-lifecycle/downstream-denial/no-corpus-denial";
 import {
   DOWNSTREAM_NO_CORPUS_DENIAL_VERSION,
+  DOWNSTREAM_NO_CORPUS_STRUCTURAL_INPUT_VERSION,
   type DownstreamNoCorpusDenialDecision,
+  type DownstreamNoCorpusStructuralInput,
 } from "@/lib/analyzer-v2/evidence-lifecycle/downstream-denial/types";
 import {
   buildEvidenceCorpusSourceMaterialGuard,
@@ -49,6 +51,23 @@ function sourceMaterialGuard(overrides: Partial<CandidateSourceMaterialReadiness
   return buildEvidenceCorpusSourceMaterialGuard(
     buildCandidateSourceMaterialReadinessDecision(validTrace(overrides)),
   );
+}
+
+function structuralInput(
+  overrides: Partial<DownstreamNoCorpusStructuralInput> = {},
+): DownstreamNoCorpusStructuralInput {
+  return {
+    inputVersion: DOWNSTREAM_NO_CORPUS_STRUCTURAL_INPUT_VERSION,
+    visibility: "internal_only",
+    structuralSource: "x7f_source_acquisition_gate",
+    status: "structural_source_acquisition_closed",
+    blockedReason: "runtime_source_acquisition_gate_closed",
+    sourceMaterial: null,
+    parsedMaterial: null,
+    extractionInput: null,
+    evidenceCorpus: null,
+    ...overrides,
+  };
 }
 
 function expectDownstreamOutputsDenied(decision: DownstreamNoCorpusDenialDecision): void {
@@ -160,6 +179,50 @@ describe("Analyzer V2 downstream no-corpus denial", () => {
     }
   });
 
+  it("maps strict structural no-corpus input to downstream blocked no corpus", () => {
+    const decision = buildDownstreamNoCorpusDenial(structuralInput());
+
+    expect(decision).toMatchObject({
+      status: "downstream_blocked_no_evidence_corpus",
+      blockedReason: "runtime_source_acquisition_gate_closed",
+      sourceMaterialGuardVersion: null,
+      sourceMaterialGuardStatus: null,
+      sourceMaterialGuardReason: null,
+    });
+    expectDownstreamOutputsDenied(decision);
+  });
+
+  it("fails closed for malformed structural no-corpus input", () => {
+    const cases: unknown[] = [
+      { ...structuralInput(), inputVersion: "wrong-version" },
+      { ...structuralInput(), extraField: "not approved" },
+      { ...structuralInput(), status: "structural_no_parsed_material" },
+      { ...structuralInput(), parsedMaterial: { text: "RAW_PARSED_X7G2" } },
+      {
+        ...structuralInput({
+          structuralSource: "c0s3_parsed_material_denial",
+          status: "structural_input_rejected",
+          blockedReason: "runtime_input_not_owned",
+        }),
+        evidenceCorpus: { evidenceItems: [] },
+      },
+    ];
+
+    for (const input of cases) {
+      const decision = buildDownstreamNoCorpusDenial(input);
+
+      expect(decision).toMatchObject({
+        status: "downstream_blocked_input_invalid",
+        blockedReason: "source_material_guard_input_invalid",
+        sourceMaterialGuardVersion: null,
+        sourceMaterialGuardStatus: null,
+        sourceMaterialGuardReason: null,
+      });
+      expect(JSON.stringify(decision)).not.toContain("RAW_PARSED_X7G2");
+      expectDownstreamOutputsDenied(decision);
+    }
+  });
+
   it("keeps status and reason labels denial-only", () => {
     const decisions = [
       buildDownstreamNoCorpusDenial(sourceMaterialGuard()),
@@ -171,6 +234,7 @@ describe("Analyzer V2 downstream no-corpus denial", () => {
         queryOutcomeCount: 0,
       })),
       buildDownstreamNoCorpusDenial({}),
+      buildDownstreamNoCorpusDenial(structuralInput()),
     ];
 
     for (const decision of decisions) {

@@ -117,6 +117,10 @@ const analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath = path
   analyzerV2RuntimeRoot,
   "hidden-direct-text-source-acquisition-execution-gate.ts",
 );
+const analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGateProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "hidden-direct-text-source-acquisition-execution-gate-provenance.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionNetworkAuthorityPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-authority.ts",
@@ -164,6 +168,14 @@ const analyzerV2RuntimeSourceAcquisitionParserWorkerAdmissionProvenancePath = pa
 const analyzerV2RuntimeSourceAcquisitionParserAdmissionParsedMaterialDenialPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-parser-admission-parsed-material-denial.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionParserAdmissionParsedMaterialDenialProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-parser-admission-parsed-material-denial-provenance.ts",
+);
+const analyzerV2RuntimeDownstreamNoCorpusDenialAdapterPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "downstream-no-corpus-denial-adapter.ts",
 );
 const analyzerV2RuntimeSourceAcquisitionContentParserRunnerProtocolPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -3965,12 +3977,16 @@ describe("analyzer-v2 boundary guard", () => {
     ].sort());
     expect(importBindings.map((entry) => entry.specifier)).toEqual([
       "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance",
+      "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial-provenance",
     ]);
     expect(importBindings[0].names.sort()).toEqual([
       "SourceAcquisitionParserWorkerAdmissionProvenanceInspection",
       "SourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
       "inspectSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
     ].sort());
+    expect(importBindings[1].names.sort()).toEqual([
+      "markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult",
+    ]);
     expect(importBindings[0].names).not.toContain(
       "markSourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision",
     );
@@ -4290,15 +4306,22 @@ describe("analyzer-v2 boundary guard", () => {
     ].sort());
     expect(importBindings.map((entry) => entry.specifier)).toEqual([
       "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance",
     ]);
     expect(importBindings[0].names.sort()).toEqual([
       "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_READINESS_COMPOSITION_VERSION",
       "HiddenDirectTextSourceAcquisitionReadinessCompositionResult",
       "readHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult",
     ].sort());
+    expect(importBindings[1].names.sort()).toEqual([
+      "markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult",
+    ]);
 
     for (const specifier of collectModuleSpecifiers(sourceFile)) {
-      if (specifier !== "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition") {
+      if (
+        specifier !== "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition"
+        && specifier !== "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance"
+      ) {
         violations.push(`X7-F execution gate imports unapproved module ${specifier}`);
       }
       if (specifier.includes("source-acquisition-network-transport")) {
@@ -4396,6 +4419,252 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (sourceContent.includes(forbiddenText)) {
         violations.push(`X7-F execution gate contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  }, 30_000);
+
+  it("keeps X7-G2 runtime downstream no-corpus adapter hidden and producer-provenance-only", () => {
+    const adapterPath = analyzerV2RuntimeDownstreamNoCorpusDenialAdapterPath;
+    const x7fProvenancePath =
+      analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGateProvenancePath;
+    const c0s3ProvenancePath =
+      analyzerV2RuntimeSourceAcquisitionParserAdmissionParsedMaterialDenialProvenancePath;
+    const adapterTestPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "downstream-no-corpus-denial-adapter.test.ts",
+    );
+    const x7fProvenanceTestPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "hidden-direct-text-source-acquisition-execution-gate-provenance.test.ts",
+    );
+    const c0s3ProvenanceTestPath = path.resolve(
+      analyzerV2RuntimeUnitTestRoot,
+      "source-acquisition-parser-admission-parsed-material-denial-provenance.test.ts",
+    );
+    const adapterFile = parseSource(adapterPath);
+    const x7fProvenanceFile = parseSource(x7fProvenancePath);
+    const c0s3ProvenanceFile = parseSource(c0s3ProvenancePath);
+    const adapterContent = readFileSync(adapterPath, "utf8");
+    const x7fProvenanceContent = readFileSync(x7fProvenancePath, "utf8");
+    const c0s3ProvenanceContent = readFileSync(c0s3ProvenancePath, "utf8");
+    const approvedAdapterImports = new Map<string, Set<string>>([
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/downstream-denial/no-corpus-denial",
+        new Set(["buildDownstreamNoCorpusDenial"]),
+      ],
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/downstream-denial/types",
+        new Set([
+          "DOWNSTREAM_NO_CORPUS_STRUCTURAL_INPUT_VERSION",
+          "DownstreamNoCorpusDenialDecision",
+          "DownstreamNoCorpusStructuralInput",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance",
+        new Set(["readHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult"]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial-provenance",
+        new Set(["readSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult"]),
+      ],
+    ]);
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    expect(existsSync(adapterPath)).toBe(true);
+    expect(existsSync(x7fProvenancePath)).toBe(true);
+    expect(existsSync(c0s3ProvenancePath)).toBe(true);
+    expect(existsSync(adapterTestPath)).toBe(true);
+    expect(existsSync(x7fProvenanceTestPath)).toBe(true);
+    expect(existsSync(c0s3ProvenanceTestPath)).toBe(true);
+
+    expect(collectExportedNames(adapterFile)).toEqual([
+      "ANALYZER_V2_RUNTIME_DOWNSTREAM_NO_CORPUS_DENIAL_ADAPTER_VERSION",
+      "RuntimeDownstreamNoCorpusDenialAdapterBlockedReason",
+      "RuntimeDownstreamNoCorpusDenialAdapterResult",
+      "RuntimeDownstreamNoCorpusDenialAdapterStatus",
+      "buildRuntimeDownstreamNoCorpusDenialAdapter",
+    ].sort());
+    expect(collectExportedNames(x7fProvenanceFile)).toEqual([
+      "ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_EXECUTION_GATE_PROVENANCE_VERSION",
+      "HiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult",
+      "markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult",
+      "readHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult",
+    ].sort());
+    expect(collectExportedNames(c0s3ProvenanceFile)).toEqual([
+      "SOURCE_ACQUISITION_PARSER_ADMISSION_PARSED_MATERIAL_DENIAL_PROVENANCE_VERSION",
+      "SourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult",
+      "markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult",
+      "readSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult",
+    ].sort());
+
+    for (const entry of collectImportBindings(adapterFile)) {
+      const approvedNames = approvedAdapterImports.get(entry.specifier);
+      if (!approvedNames) {
+        violations.push(`X7-G2 adapter imports unapproved module ${entry.specifier}`);
+        continue;
+      }
+
+      for (const importedName of entry.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`X7-G2 adapter imports unapproved symbol ${importedName} from ${entry.specifier}`);
+        }
+        if (importedName.startsWith("mark")) {
+          violations.push(`X7-G2 adapter imports owner-only mark symbol ${importedName}`);
+        }
+      }
+    }
+
+    expect(collectImportBindings(x7fProvenanceFile).map((entry) => entry.specifier)).toEqual([
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate",
+    ]);
+    expect(collectImportBindings(c0s3ProvenanceFile).map((entry) => entry.specifier)).toEqual([
+      "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial",
+    ]);
+
+    const productionSourceFiles = collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    for (const productionSourcePath of productionSourceFiles) {
+      const productionSourceFile = parseSource(productionSourcePath);
+      for (const entry of collectImportBindings(productionSourceFile)) {
+        if (
+          entry.names.includes("markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult")
+          && toPosix(productionSourcePath)
+            !== toPosix(analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath)
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, productionSourcePath))} imports the X7-F owner-only mark function`);
+        }
+        if (
+          entry.names.includes("markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult")
+          && toPosix(productionSourcePath)
+            !== toPosix(analyzerV2RuntimeSourceAcquisitionParserAdmissionParsedMaterialDenialPath)
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, productionSourcePath))} imports the C0-S3 owner-only mark function`);
+        }
+      }
+    }
+
+    for (const sourceRoot of scanRoots) {
+      for (const importedPath of collectTransitiveSrcImports(sourceRoot)) {
+        if (toPosix(importedPath) === toPosix(adapterPath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches X7-G2 adapter`);
+        }
+        if (toPosix(importedPath) === toPosix(x7fProvenancePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches X7-F result provenance`);
+        }
+        if (toPosix(importedPath) === toPosix(c0s3ProvenancePath)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourceRoot))} transitively reaches C0-S3 result provenance`);
+        }
+      }
+    }
+
+    for (const guardedPath of [adapterPath, x7fProvenancePath, c0s3ProvenancePath]) {
+      const sourceFile = parseSource(guardedPath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(guardedPath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(guardedPath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(guardedPath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports prompt loader ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports network/parser dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports test/mock/fixture module ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} imports public surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+      for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+        violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+      }
+      for (const entry of collectExportBindings(sourceFile)) {
+        if (entry.specifier) {
+          violations.push(`${toPosix(path.relative(webRoot, guardedPath))} re-exports ${entry.names.join(",")} from ${entry.specifier}`);
+        }
+      }
+    }
+
+    for (const forbiddenText of [
+      "buildHiddenDirectTextSourceAcquisitionExecutionGate(",
+      "buildSourceAcquisitionParserAdmissionParsedMaterialDenial(",
+      "evaluateSourceAcquisitionParserWorkerAdmission(",
+      "parseSourceAcquisitionContentFixturePacket",
+      "executeSourceAcquisitionContentParserRunnerProtocol",
+      "source-acquisition-content-parser",
+      "source-acquisition-network-transport",
+      "source-acquisition-network-factory",
+      "node:child_process",
+      "node:fs",
+      "node:http",
+      "node:https",
+      "undici",
+      "fetch(",
+      "globalThis.fetch",
+      "providerCalls: 1",
+      "networkCalls: 1",
+      "bytesRead: 1",
+      "bytesConsumed: true",
+      "parserExecution: true",
+      "workerSpawned: true",
+      "transportPacketAccepted: true",
+      "transportFrameAccepted: true",
+      "realFetchedBytesAccepted: true",
+      "fixtureBytesParsed: true",
+      "syntheticBytesParsed: true",
+      "cacheTouched: true",
+      "sourceReliabilityTouched: true",
+      "publicExposure: true",
+      "liveJobs: true",
+      "\"status\": \"executable\"",
+      "\"executionStatus\": \"executable\"",
+      "source_acquired",
+      "accepted_source_material",
+      "buildable_evidence_corpus",
+      "parsed_material_ready",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "rawContent",
+      "parsedText",
+    ]) {
+      if (adapterContent.includes(forbiddenText)) {
+        violations.push(`X7-G2 adapter contains forbidden text ${forbiddenText}`);
+      }
+      if (x7fProvenanceContent.includes(forbiddenText)) {
+        violations.push(`X7-F result provenance contains forbidden text ${forbiddenText}`);
+      }
+      if (c0s3ProvenanceContent.includes(forbiddenText)) {
+        violations.push(`C0-S3 result provenance contains forbidden text ${forbiddenText}`);
       }
     }
 

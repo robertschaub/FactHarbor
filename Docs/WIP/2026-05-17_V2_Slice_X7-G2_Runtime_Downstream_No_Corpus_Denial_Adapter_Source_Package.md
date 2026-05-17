@@ -1,12 +1,13 @@
 # V2 Slice X7-G2 Runtime Downstream No-Corpus Denial Adapter Source Package
 
 **Date:** 2026-05-17
-**Status:** approved source package; implementation not started
+**Status:** implementation complete; awaiting focused review/commit
 **Owner role:** Lead Architect / Captain Deputy
 **Baseline:** `fa048201` (`feat: add v2 x7g1 no-corpus denial`)
 **Parent packages:** `Docs/WIP/2026-05-17_V2_Slice_X7-G_Downstream_Evidence_Lifecycle_No_Corpus_Denial_Package.md`, `Docs/WIP/2026-05-17_V2_Slice_X7-G1_Downstream_No_Corpus_Denial_Source_Package.md`
 **Decision source:** post-X7-G1 deputy debate. Architect, Security/runtime, and Code/package recommended X7-G2 package-first. LLM Expert recommended defining live-smoke/readiness semantics before any live job; this package therefore keeps live smoke explicitly out of scope and blocked.
 **Review result:** Architect APPROVE, Security/runtime APPROVE, Code/package APPROVE, LLM Expert APPROVE after adding producer-owned provenance sidecars, package-vs-implementation completion split, and producer-test verifier coverage.
+**Implementation result:** X7-G2 is implemented inside the approved envelope. It adds producer-owned X7-F/C0-S3 result provenance sidecars, producer marking, an additive pure-core structural no-corpus input, and a hidden `analyzer-v2-runtime` adapter. Focused tests, Analyzer V2 runtime tests, Analyzer V2 tests, build, gate validators, and diff hygiene passed locally. Live jobs, source/provider/search/fetch/parser execution, downstream semantic LLM execution, EvidenceCorpus/EvidenceItems, product/public wiring, prompt/config/model/schema edits, cache/SR/storage, ACS/direct URL, B3 proof execution, 2D-C, V1 work, and V1 cleanup remain blocked.
 
 ## 1. Purpose
 
@@ -76,7 +77,9 @@ Allowed runtime source files:
 Allowed tests:
 
 - `apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/downstream-denial/no-corpus-denial.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial-provenance.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2-runtime/downstream-no-corpus-denial-adapter.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`

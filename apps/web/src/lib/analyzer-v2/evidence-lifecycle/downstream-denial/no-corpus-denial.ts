@@ -7,9 +7,14 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-guard";
 import {
   DOWNSTREAM_NO_CORPUS_DENIAL_VERSION,
+  DOWNSTREAM_NO_CORPUS_STRUCTURAL_INPUT_VERSION,
   type DownstreamNoCorpusDenialBlockedReason,
   type DownstreamNoCorpusDenialDecision,
   type DownstreamNoCorpusDenialStatus,
+  type DownstreamNoCorpusStructuralBlockedReason,
+  type DownstreamNoCorpusStructuralInput,
+  type DownstreamNoCorpusStructuralSource,
+  type DownstreamNoCorpusStructuralStatus,
 } from "@/lib/analyzer-v2/evidence-lifecycle/downstream-denial/types";
 
 const SOURCE_MATERIAL_GUARD_KEYS = [
@@ -30,6 +35,18 @@ const SOURCE_MATERIAL_CONTRACT_KEYS = [
   "status",
 ].sort();
 
+const STRUCTURAL_INPUT_KEYS = [
+  "blockedReason",
+  "evidenceCorpus",
+  "extractionInput",
+  "inputVersion",
+  "parsedMaterial",
+  "sourceMaterial",
+  "status",
+  "structuralSource",
+  "visibility",
+].sort();
+
 const SOURCE_MATERIAL_ABSENCE_CONTRACT_VERSION =
   "v2.evidence-lifecycle.source-material-absence-contract.x7b";
 
@@ -43,6 +60,28 @@ const SOURCE_MATERIAL_GUARD_REASONS = new Set<EvidenceCorpusSourceMaterialGuardR
   "source_material_not_available_pre_execution",
   "source_material_contract_invalid",
   "source_material_readiness_blocked",
+]);
+
+const STRUCTURAL_SOURCES = new Set<DownstreamNoCorpusStructuralSource>([
+  "x7b_source_material_guard",
+  "x7f_source_acquisition_gate",
+  "c0s3_parsed_material_denial",
+]);
+
+const STRUCTURAL_STATUSES = new Set<DownstreamNoCorpusStructuralStatus>([
+  "structural_no_evidence_corpus",
+  "structural_source_acquisition_closed",
+  "structural_no_parsed_material",
+  "structural_input_rejected",
+]);
+
+const STRUCTURAL_BLOCKED_REASONS = new Set<DownstreamNoCorpusStructuralBlockedReason>([
+  "source_material_guard_no_corpus",
+  "runtime_source_acquisition_gate_closed",
+  "runtime_source_acquisition_gate_rejected",
+  "runtime_parser_denial_no_parsed_material",
+  "runtime_input_not_owned",
+  "runtime_input_invalid",
 ]);
 
 const STATUS_REASON_CONTRACT_MATCHES = {
@@ -66,6 +105,38 @@ const STATUS_REASON_CONTRACT_MATCHES = {
   }
 >;
 
+const STRUCTURAL_MATCHES: ReadonlyArray<{
+  readonly structuralSource: DownstreamNoCorpusStructuralSource;
+  readonly status: DownstreamNoCorpusStructuralStatus;
+  readonly blockedReason: DownstreamNoCorpusStructuralBlockedReason;
+}> = [
+  {
+    structuralSource: "x7b_source_material_guard",
+    status: "structural_no_evidence_corpus",
+    blockedReason: "source_material_guard_no_corpus",
+  },
+  {
+    structuralSource: "x7f_source_acquisition_gate",
+    status: "structural_source_acquisition_closed",
+    blockedReason: "runtime_source_acquisition_gate_closed",
+  },
+  {
+    structuralSource: "x7f_source_acquisition_gate",
+    status: "structural_input_rejected",
+    blockedReason: "runtime_source_acquisition_gate_rejected",
+  },
+  {
+    structuralSource: "c0s3_parsed_material_denial",
+    status: "structural_no_parsed_material",
+    blockedReason: "runtime_parser_denial_no_parsed_material",
+  },
+  {
+    structuralSource: "c0s3_parsed_material_denial",
+    status: "structural_input_rejected",
+    blockedReason: "runtime_input_not_owned",
+  },
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -86,6 +157,21 @@ function isSourceMaterialGuardReason(value: unknown): value is EvidenceCorpusSou
     && SOURCE_MATERIAL_GUARD_REASONS.has(value as EvidenceCorpusSourceMaterialGuardReason);
 }
 
+function isStructuralSource(value: unknown): value is DownstreamNoCorpusStructuralSource {
+  return typeof value === "string"
+    && STRUCTURAL_SOURCES.has(value as DownstreamNoCorpusStructuralSource);
+}
+
+function isStructuralStatus(value: unknown): value is DownstreamNoCorpusStructuralStatus {
+  return typeof value === "string"
+    && STRUCTURAL_STATUSES.has(value as DownstreamNoCorpusStructuralStatus);
+}
+
+function isStructuralBlockedReason(value: unknown): value is DownstreamNoCorpusStructuralBlockedReason {
+  return typeof value === "string"
+    && STRUCTURAL_BLOCKED_REASONS.has(value as DownstreamNoCorpusStructuralBlockedReason);
+}
+
 function isSourceMaterialContractSummary(
   value: unknown,
 ): value is EvidenceCorpusSourceMaterialContractSummary {
@@ -101,6 +187,42 @@ function isSourceMaterialContractSummary(
       || value.readinessStatus === "blocked_pre_execution"
       || value.readinessStatus === null
     );
+}
+
+function structuralInputMatches(
+  structuralSource: DownstreamNoCorpusStructuralSource,
+  status: DownstreamNoCorpusStructuralStatus,
+  blockedReason: DownstreamNoCorpusStructuralBlockedReason,
+): boolean {
+  return STRUCTURAL_MATCHES.some((match) =>
+    match.structuralSource === structuralSource
+    && match.status === status
+    && match.blockedReason === blockedReason
+  );
+}
+
+function isDownstreamNoCorpusStructuralInput(value: unknown): value is DownstreamNoCorpusStructuralInput {
+  if (
+    !isRecord(value)
+    || !hasExactKeys(value, STRUCTURAL_INPUT_KEYS)
+    || value.inputVersion !== DOWNSTREAM_NO_CORPUS_STRUCTURAL_INPUT_VERSION
+    || value.visibility !== "internal_only"
+    || !isStructuralSource(value.structuralSource)
+    || !isStructuralStatus(value.status)
+    || !isStructuralBlockedReason(value.blockedReason)
+    || value.sourceMaterial !== null
+    || value.parsedMaterial !== null
+    || value.extractionInput !== null
+    || value.evidenceCorpus !== null
+  ) {
+    return false;
+  }
+
+  return structuralInputMatches(
+    value.structuralSource,
+    value.status,
+    value.blockedReason,
+  );
 }
 
 function guardStatusMatchesReasonAndContract(
@@ -184,9 +306,27 @@ function invalidInputDecision(): DownstreamNoCorpusDenialDecision {
   });
 }
 
+function structuralInputDecision(
+  structuralInput: DownstreamNoCorpusStructuralInput,
+): DownstreamNoCorpusDenialDecision {
+  return downstreamDecision({
+    status: structuralInput.blockedReason === "runtime_input_invalid"
+      ? "downstream_blocked_input_invalid"
+      : "downstream_blocked_no_evidence_corpus",
+    blockedReason: structuralInput.blockedReason,
+    sourceMaterialGuardVersion: null,
+    sourceMaterialGuardStatus: null,
+    sourceMaterialGuardReason: null,
+  });
+}
+
 export function buildDownstreamNoCorpusDenial(
   sourceMaterialGuardInput: unknown,
 ): DownstreamNoCorpusDenialDecision {
+  if (isDownstreamNoCorpusStructuralInput(sourceMaterialGuardInput)) {
+    return structuralInputDecision(sourceMaterialGuardInput);
+  }
+
   if (!isSourceMaterialGuardDecision(sourceMaterialGuardInput)) {
     return invalidInputDecision();
   }

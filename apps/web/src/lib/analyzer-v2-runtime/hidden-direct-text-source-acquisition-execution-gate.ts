@@ -3,6 +3,9 @@ import {
   readHiddenDirectTextSourceAcquisitionReadinessCompositionRuntimeOwnedResult,
   type HiddenDirectTextSourceAcquisitionReadinessCompositionResult,
 } from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition";
+import {
+  markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult,
+} from "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate-provenance";
 
 export const ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_EXECUTION_GATE_VERSION =
   "v2.hidden-direct-text-source-acquisition-execution-gate.x7f";
@@ -155,7 +158,7 @@ function blocked(params: {
     | HiddenDirectTextSourceAcquisitionReadinessCompositionResult["blockedReason"]
     | null;
 }): HiddenDirectTextSourceAcquisitionExecutionGateResult {
-  return {
+  return markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult({
     gateVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_EXECUTION_GATE_VERSION,
     visibility: "internal_only",
     status: "blocked_pre_execution",
@@ -168,7 +171,7 @@ function blocked(params: {
     ...zeroCostProof(),
     ...nullOutputs(),
     ...parserAdmissionBlock(),
-  };
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -288,7 +291,7 @@ export function buildHiddenDirectTextSourceAcquisitionExecutionGate(
     });
   }
 
-  return {
+  return markHiddenDirectTextSourceAcquisitionExecutionGateProducerOwnedResult({
     gateVersion: ANALYZER_V2_HIDDEN_DIRECT_TEXT_SOURCE_ACQUISITION_EXECUTION_GATE_VERSION,
     visibility: "internal_only",
     status: "gate_closed_no_io",
@@ -301,5 +304,5 @@ export function buildHiddenDirectTextSourceAcquisitionExecutionGate(
     ...zeroCostProof(),
     ...nullOutputs(),
     ...parserAdmissionBlock(),
-  };
+  });
 }

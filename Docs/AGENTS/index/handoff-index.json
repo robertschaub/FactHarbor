@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-16T23:58:05.654Z",
-  "count": 571,
+  "generatedAt": "2026-05-17T00:26:47.395Z",
+  "count": 572,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12341,6 +12341,26 @@
         "Docs/WIP/2026-05-17_V2_Slice_X7-G1_Downstream_No_Corpus_Denial_Source_Package.md"
       ],
       "summary": "Implement X7-G1 only if the worktree is clean and the diff stays exactly within the approved envelope."
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-G2_Runtime_Downstream_No_Corpus_Denial_Adapter_Implementation.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "x7-g2",
+        "runtime",
+        "downstream",
+        "no",
+        "corpus",
+        "denial",
+        "adapter",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "V2 X7-G2 Runtime Downstream No-Corpus Denial Adapter Implementation"
     },
     {
       "file": "2026-05-17_Lead_Architect_V2_X7-G2_Runtime_Downstream_No_Corpus_Denial_Adapter_Source_Package.md",

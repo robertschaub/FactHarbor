@@ -3,6 +3,9 @@ import {
   type SourceAcquisitionParserWorkerAdmissionProvenanceInspection,
   type SourceAcquisitionParserWorkerAdmissionRuntimeOwnedDecision,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-parser-worker-admission-provenance";
+import {
+  markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-parser-admission-parsed-material-denial-provenance";
 
 export const SOURCE_ACQUISITION_PARSER_ADMISSION_PARSED_MATERIAL_DENIAL_VERSION =
   "v2.source-acquisition.parser-admission-parsed-material-denial.c0-s3";
@@ -126,7 +129,7 @@ function baseResult(params: {
 function blockedNotRuntimeOwned(
   admissionProvenanceStatus: SourceAcquisitionParserWorkerAdmissionProvenanceInspection["status"],
 ): SourceAcquisitionParserAdmissionParsedMaterialDenialResult {
-  return {
+  return markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult({
     ...baseResult({
       admissionProvenanceStatus,
       admissionRuntimeOwned: false,
@@ -134,7 +137,7 @@ function blockedNotRuntimeOwned(
     }),
     status: "blocked_admission_not_runtime_owned",
     blockedReason: "admission_not_runtime_owned",
-  };
+  });
 }
 
 export function buildSourceAcquisitionParserAdmissionParsedMaterialDenial(
@@ -151,7 +154,7 @@ export function buildSourceAcquisitionParserAdmissionParsedMaterialDenial(
     return blockedNotRuntimeOwned(inspection.status);
   }
 
-  return {
+  return markSourceAcquisitionParserAdmissionParsedMaterialDenialProducerOwnedResult({
     ...baseResult({
       admissionProvenanceStatus: inspection.status,
       admissionRuntimeOwned: true,
@@ -159,5 +162,5 @@ export function buildSourceAcquisitionParserAdmissionParsedMaterialDenial(
     }),
     status: "blocked_no_parsed_material",
     blockedReason: "parser_execution_unapproved",
-  };
+  });
 }
