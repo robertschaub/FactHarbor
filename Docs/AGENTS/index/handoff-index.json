@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T06:30:16.845Z",
-  "count": 584,
+  "generatedAt": "2026-05-17T06:42:34.783Z",
+  "count": 585,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12694,6 +12694,29 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-N_Post_X7M_Live_Smoke_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-n",
+        "direct-text",
+        "live-smoke",
+        "claim-understanding"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-N_Post_X7M_Direct_Text_Live_Smoke_Execution_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Execute only under `Docs/WIP/2026-05-17_V2_Slice_X7-N_Post_X7M_Direct_Text_Live_Smoke_Execution_Package.md`: commit package first, refresh runtime, run listed verifiers/admin-route preflight, submit at most the two exact Captain inputs, inspect ledgers `<jobId>:precutover-observability`, and record "
     }
   ]
 }
