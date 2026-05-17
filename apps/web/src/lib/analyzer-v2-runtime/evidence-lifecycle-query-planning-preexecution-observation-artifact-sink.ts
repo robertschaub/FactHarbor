@@ -59,6 +59,10 @@ export type EvidenceQueryPlanningPreexecutionObservationArtifactRecordResult =
   | {
     readonly status: "skipped_artifact_oversize";
     readonly artifact: EvidenceQueryPlanningPreexecutionObservationRuntimeArtifact;
+  }
+  | {
+    readonly status: "skipped_invalid_ledger_id";
+    readonly artifact: null;
   };
 
 type EvidenceQueryPlanningPreexecutionObservationArtifactLedgerGlobal = typeof globalThis & {
@@ -118,6 +122,12 @@ function serializedByteLength(artifact: EvidenceQueryPlanningPreexecutionObserva
   return Buffer.byteLength(JSON.stringify(artifact), "utf8");
 }
 
+function ledgerIdIsBounded(ledgerId: string): boolean {
+  return ledgerId.length > 0
+    && ledgerId.trim() === ledgerId
+    && ledgerId.length <= EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_LEDGER_ID_LENGTH;
+}
+
 function appendBoundedRecord(
   records: EvidenceQueryPlanningPreexecutionObservationRuntimeArtifact[],
   artifact: EvidenceQueryPlanningPreexecutionObservationRuntimeArtifact,
@@ -170,6 +180,10 @@ export function buildEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact
 export function recordEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact(
   projection: EvidenceQueryPlanningPreexecutionObservationArtifactProjection,
 ): EvidenceQueryPlanningPreexecutionObservationArtifactRecordResult {
+  if (!ledgerIdIsBounded(projection.ledgerId)) {
+    return { status: "skipped_invalid_ledger_id", artifact: null };
+  }
+
   const artifact = buildEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact(projection);
   if (serializedByteLength(artifact) > EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_SERIALIZED_BYTES) {
     return { status: "skipped_artifact_oversize", artifact };
@@ -182,9 +196,15 @@ export function recordEvidenceQueryPlanningPreexecutionObservationRuntimeArtifac
 export function readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(
   ledgerId: string,
 ): readonly EvidenceQueryPlanningPreexecutionObservationRuntimeArtifact[] {
+  if (!ledgerIdIsBounded(ledgerId)) {
+    return [];
+  }
   return (runtimeArtifactLedgers().get(ledgerId) ?? []).map(cloneArtifact);
 }
 
 export function clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(ledgerId: string): void {
+  if (!ledgerIdIsBounded(ledgerId)) {
+    return;
+  }
   runtimeArtifactLedgers().delete(ledgerId);
 }

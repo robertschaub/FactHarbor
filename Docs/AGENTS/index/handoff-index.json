@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T10:20:42.933Z",
-  "count": 596,
+  "generatedAt": "2026-05-17T10:34:42.821Z",
+  "count": 597,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13006,6 +13006,23 @@
       ],
       "files_touched": [],
       "summary": "Lead Architect Handoff: V2 X7-O Query Planning Pre-Execution Observation Source Package"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-O_Ledger_Bound_Hardening.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-o",
+        "ledger",
+        "bound",
+        "hardening"
+      ],
+      "files_touched": [],
+      "summary": "Lead Developer Handoff: V2 X7-O Ledger-Bound Hardening"
     }
   ]
 }

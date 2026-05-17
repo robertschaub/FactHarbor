@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_LEDGER_COUNT,
+  EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_LEDGER_ID_LENGTH,
   EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_RECORDS_PER_LEDGER,
   EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_VERSION,
   buildEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact,
@@ -207,13 +208,36 @@ describe("Analyzer V2 Query Planning pre-execution observation artifact sink", (
   });
 
   it("skips oversize artifacts without storing them", () => {
-    const runId = `job-v2-x7o-${"x".repeat(17_000)}`;
-    const ledgerId = `${runId}:precutover-observability`;
-
-    const result = recordFor(ledgerId);
+    const ledgerId = "job-v2-x7o-oversize:precutover-observability";
+    const result = recordEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact({
+      ledgerId,
+      runId: `job-v2-x7o-${"x".repeat(17_000)}`,
+      createdUtc: "2026-05-17T03:00:00.000Z",
+      observation: acceptedObservation(),
+    });
 
     expect(result.status).toBe("skipped_artifact_oversize");
     expect(readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(ledgerId)).toEqual([]);
+  });
+
+  it("rejects blank or overlong ledger ids at the sink boundary", () => {
+    const validLedgerId = "job-v2-x7o-ledger-bounds:precutover-observability";
+    clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(validLedgerId);
+    recordFor(validLedgerId);
+
+    const blankResult = recordFor(" ");
+    const overlongLedgerId = "x".repeat(
+      EVIDENCE_QUERY_PLANNING_PREEXECUTION_OBSERVATION_ARTIFACT_MAX_LEDGER_ID_LENGTH + 1,
+    );
+    const overlongResult = recordFor(overlongLedgerId);
+
+    expect(blankResult).toEqual({ status: "skipped_invalid_ledger_id", artifact: null });
+    expect(overlongResult).toEqual({ status: "skipped_invalid_ledger_id", artifact: null });
+    expect(readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(" ")).toEqual([]);
+    expect(readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(overlongLedgerId)).toEqual([]);
+
+    clearEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(overlongLedgerId);
+    expect(readEvidenceQueryPlanningPreexecutionObservationRuntimeArtifacts(validLedgerId)).toHaveLength(1);
   });
 
   it("builds artifacts by allow-list projection from explicit fields", () => {
