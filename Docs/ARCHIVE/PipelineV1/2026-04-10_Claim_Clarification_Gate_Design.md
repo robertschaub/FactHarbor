@@ -7,6 +7,8 @@ scope: FR1.x / FR1.x.a / FR1.x.b — in-flight AtomicClaim clarification
 requires: Product Strategist sign-off, Lead Developer implementation review
 ---
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1 clarification design, not a current V2 execution plan. See [2026-05-17_Selection_and_Clarification_V2_Disposition.md](../../WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+
 # Claim Clarification Gate — Software Design
 
 ## 1. Purpose & scope

@@ -16,6 +16,8 @@ related:
   - apps/web/src/lib/analyzer/claim-selection-recommendation.ts
 ---
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1 session-preparation follow-on proposal, not a current V2 execution plan. See [2026-05-17_Selection_and_Clarification_V2_Disposition.md](../../WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+
 # Session Preparation Semantics-Preserving Async Proposal
 
 ## 1. Purpose

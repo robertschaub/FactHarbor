@@ -18,6 +18,8 @@ related:
   - apps/web/src/lib/analyzer/types.ts
 ---
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1 implementation design, not a current V2 execution plan. See [2026-05-17_Selection_and_Clarification_V2_Disposition.md](../../WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+
 # Check-Worthiness Recommendation - Consolidated Design
 
 This document consolidates the current repository position on check-worthiness into one implementation-oriented design note for `ACS-CW-1`.

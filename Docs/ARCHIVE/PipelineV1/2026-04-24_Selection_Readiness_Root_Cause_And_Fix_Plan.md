@@ -13,6 +13,8 @@ related:
   - apps/web/src/lib/analyzer/verdict-stage.ts
 ---
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1 readiness-fix plan, not a current V2 execution plan. See [2026-05-17_Selection_and_Clarification_V2_Disposition.md](../../WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+
 # Selection Readiness Root Cause and Fix Plan
 
 ## 1. Purpose

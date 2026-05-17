@@ -23,6 +23,8 @@ related:
   - apps/api/Services/JobService.cs
 ---
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1 implementation spec, not a current V2 execution plan. See [2026-05-17_Selection_and_Clarification_V2_Disposition.md](../../WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+
 # Atomic Claim Selection - v1 Implementation Spec
 
 ## 1. Purpose
