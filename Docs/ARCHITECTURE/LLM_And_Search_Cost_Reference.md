@@ -209,7 +209,7 @@ Budget enforcement: [`budgets.ts`](apps/web/src/lib/analyzer/budgets.ts) (1M tok
 
 ### Open optimization candidates
 
-See [Pipeline_Speed_Cost_Optimization_Plan](../WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) and [LLM_Allocation_and_Cost_fwd](../WIP/LLM_Allocation_and_Cost_fwd.md) for deferred ideas (P1-A clustering downgrade, P2 self-consistency reduction, Rec-B TIGERScore to Haiku, Rec-D batch API).
+See [Pipeline_Speed_Cost_Optimization_Plan](../ARCHIVE/PipelineV1/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) and [LLM_Allocation_and_Cost_fwd](../WIP/LLM_Allocation_and_Cost_fwd.md) for deferred ideas (P1-A clustering downgrade, P2 self-consistency reduction, Rec-B TIGERScore to Haiku, Rec-D batch API).
 
 ---
 

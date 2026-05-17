@@ -4,7 +4,7 @@
 **Status:** Active reference analysis  
 **Role:** Lead Architect  
 **Scope:** AI-agent workflow architecture, not analyzer runtime behavior  
-**Related:** [2026-04-20_Prompt_Split_Plan.md](2026-04-20_Prompt_Split_Plan.md), [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md)
+**Related:** [2026-04-20_Prompt_Split_Plan.md](../ARCHIVE/2026-04-20_Prompt_Split_Plan.md), [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md)
 
 ---
 
@@ -33,7 +33,7 @@ This problem statement was not invented in the abstract. It emerged from the con
    - Rollback-like moves are usually accepted only when the Captain specifies them very precisely.
 
 2. **Recent FactHarbor agent-tooling work**
-   - [2026-04-20_Prompt_Split_Plan.md](2026-04-20_Prompt_Split_Plan.md) concluded that the real issue was not only file size but **behavioral compliance**: competent agents can use targeted reads, but they do not do so consistently.
+   - [2026-04-20_Prompt_Split_Plan.md](../ARCHIVE/2026-04-20_Prompt_Split_Plan.md) concluded that the real issue was not only file size but **behavioral compliance**: competent agents can use targeted reads, but they do not do so consistently.
    - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) identified repeated agent discovery waste and explicitly called out that instruction-based adoption has a meaningful bypass risk.
    - `Docs/AGENTS/Handoffs/2026-04-13_LLM_Expert_Root_Instruction_File_Trim.md` documented community evidence that larger instruction files correlate with compliance decay and bloat.
 
@@ -130,7 +130,7 @@ Once a weak attempt remains present in:
 - the prompt context
 - the agent’s recent-turn memory
 
-later steps reason around it as if it were still a viable part of the solution. At sufficient scale, this context growth can exhaust finite context windows, causing hard mechanical truncation rather than gradual degradation — the [Prompt Split Plan](2026-04-20_Prompt_Split_Plan.md) documents FactHarbor-specific measurements (53K tokens, 13–21% of current model limits from a single prompt file alone).
+later steps reason around it as if it were still a viable part of the solution. At sufficient scale, this context growth can exhaust finite context windows, causing hard mechanical truncation rather than gradual degradation — the [Prompt Split Plan](../ARCHIVE/2026-04-20_Prompt_Split_Plan.md) documents FactHarbor-specific measurements (53K tokens, 13–21% of current model limits from a single prompt file alone).
 
 ### 4.5 Prompt-only governance has a ceiling
 

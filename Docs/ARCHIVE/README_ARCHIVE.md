@@ -2,9 +2,45 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-04-18 (WIP Consolidation #12)
+**Last Updated**: 2026-05-17 (PipelineV1 and WIP cleanup)
 
 ---
+
+### PipelineV1 archival with V2 retained lessons (2026-05-17)
+
+**Description**: Archived V1 pipeline maintenance, report-quality, calibration, optimization, and debate documents that are no longer valid V2 execution plans. V2-relevant lessons were extracted into `Docs/WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md`. `2026-04-04_Source_Provenance_Tracking_Design.md` was deliberately not moved here because it remains a parked future evidence-lifecycle design, not a PipelineV1-only document.
+
+**PipelineV1 files archived** (18):
+
+| File | Reason |
+|------|--------|
+| `2026-04-16_Benchmark_Report_Quality_Status_Matrix.md` | V1 benchmark-family status matrix; expectations now live in benchmark-expectations.json and Captain quality docs. |
+| `2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md` | V1 Phase 7b charter; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` | V1 Phase 7 working baseline; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md` | V1 Phase 7 code/prompt review; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-13_Phase7_Salience_First_Charter.md` | V1 salience-first charter; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-11_Report_Quality_Restoration_Master_Plan.md` | V1 report-quality restoration master plan superseded by later Phase 7 and V2 rebuild work. |
+| `2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md` | V1 Stage 2/3 upstream-quality proposal; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-07_UPQ1_Phase_B_Canary_Measurement.md` | V1 UPQ Phase B measurement record; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md` | V1 quality investigation against historical revisions; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md` | V1 adversarial cross-review against historical revisions; V2 lessons extracted to the retained-lessons note. |
+| `2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` | V1 grounding/boundary stabilization plan; V2 lessons extracted to the retained-lessons note. |
+| `2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md` | Historical V1 claim-local evidence scoping review. |
+| `2026-04-09_Deterministic_Analysis_Hotspots_Review.md` | V1 deterministic-hotspot review; retained as archived input and linked from backlog/V2 retained-lessons note. |
+| `LLM_Triangulation_Assessment_Plan_2026-03-17.md` | V1 aggregation-quality proposal; V2-relevant lesson retained, execution must be re-specified for V2. |
+| `Multi_Agent_Cross_Provider_Debate_2026-02-27.md` | V1 cross-provider verdict-debate proposal; V2-relevant decision points retained, execution must be re-specified for V2. |
+| `2026-03-19_SR_LLM_Calibration_Plan.md` | V1 source-reliability calibration note; live backlog retains SR-1 pointer, V2 calibration requires fresh specification. |
+| `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md` | V1 speed/cost optimization plan; residual ideas are linked from cost reference/backlog and need a fresh V2 baseline. |
+| `Quality_Improvement_Pending_fwd.md` | V1 residual quality backlog extract; active items belong in Backlog/Current_Status rather than WIP. |
+
+**Additional WIP files archived** (4):
+
+| File | Reason |
+|------|--------|
+| `2026-04-20_Prompt_Split_Plan.md` | Implemented prompt-file reading policy; remaining physical split is deferred and referenced from current docs when needed. |
+| `2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` | Retired debate artifact; superseded by the semantics-preserving async/session proposal. |
+| `2026-04-26_ACE_Readiness_Review_And_Debate.md` | Superseded original ACE review; consolidated re-audit is the active governance baseline. |
+| `2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md` | Historical report-quality comparison; canonical expectations live in Captain_Quality_Expectations.md and benchmark-expectations.json. |
 
 ### WIP Consolidation #12 (2026-04-18)
 

@@ -11,7 +11,7 @@
 
 ## Purpose
 
-This audit replaces the informal "44% dead weight" claim from `Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md` with a reproducible, section-level assessment.
+This audit replaces the informal "44% dead weight" claim from `Docs/ARCHIVE/2026-04-26_ACE_Readiness_Review_And_Debate.md` with a reproducible, section-level assessment.
 
 The goal is not to restructure the rules immediately. The goal is to identify which sections are live, duplicated, load-on-demand reference material, dormant, obsolete, or ownership metadata so the Captain can approve targeted cleanup later.
 

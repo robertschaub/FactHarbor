@@ -3,7 +3,7 @@
 **Date:** 2026-05-06
 **Author:** Codex, Senior Developer
 **Status:** Reviewed by Gemini / Claude-style reviewers; approved with blocking amendments captured below
-**Related investigation:** `Docs/WIP/2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md`
+**Related investigation:** `Docs/ARCHIVE/2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md`
 
 ## Purpose
 
@@ -233,7 +233,7 @@ The known architectural gap is not simply "the prompt forgot to say split claims
 | Runtime guard | `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `runSingleClaimAtomicityValidationWithRecheck(...)` | The function returns early when `claims.length !== 1`. |
 | Runtime contract validation | `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `runClaimContractValidation(...)` | Contract validation is the likely place to add a generic multi-claim atomicity / coverage audit. |
 | Prompt loading | `apps/web/src/lib/analyzer/prompt-loader.ts`, `loadAndRenderSection(...)` | Runtime renders a named section. Physical file split would not itself change the model input for a section. |
-| Prompt split plan | `Docs/WIP/2026-04-20_Prompt_Split_Plan.md` | Option E targeted reads are implemented; physical split is explicitly deferred unless the file grows, concurrent editing becomes costly, section-level admin versioning is needed, or model context limits shrink. |
+| Prompt split plan | `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md` | Option E targeted reads are implemented; physical split is explicitly deferred unless the file grows, concurrent editing becomes costly, section-level admin versioning is needed, or model context limits shrink. |
 
 ## Consolidated Agent Assessment
 
@@ -376,7 +376,7 @@ Use this prompt for Claude Opus/Sonnet:
 ```text
 Role: Senior Architect and LLM Pipeline Reviewer.
 
-Review `Docs/WIP/2026-05-06_Prompt_Structure_AtomicClaim_Review_Packet.md` and the referenced investigation doc `Docs/WIP/2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md`.
+Review `Docs/WIP/2026-05-06_Prompt_Structure_AtomicClaim_Review_Packet.md` and the referenced investigation doc `Docs/ARCHIVE/2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md`.
 
 Assess the proposed direction for:
 1. Better prompt structure.

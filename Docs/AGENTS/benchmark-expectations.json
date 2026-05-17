@@ -1,6 +1,6 @@
 {
   "_schemaVersion": "1.0.0",
-  "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
+  "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/ARCHIVE/PipelineV1/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
   "_lastUpdated": "2026-05-12",
   "_sourceHandoffs": [
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",

@@ -8,7 +8,7 @@ requires: Captain approval, Lead Developer implementation review
 related:
   - Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md
   - Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md
-  - Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md
+  - Docs/ARCHIVE/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md
   - Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Text_First_Follow_On_Debate.md
   - apps/web/src/lib/analyzer/claimboundary-pipeline.ts
   - apps/web/src/lib/analyzer/claim-extraction-stage.ts

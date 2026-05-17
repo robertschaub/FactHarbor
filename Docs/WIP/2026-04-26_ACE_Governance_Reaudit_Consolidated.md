@@ -9,13 +9,13 @@
 
 ## Context
 
-This document supersedes the actionable conclusions in `Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md` for governance cleanup planning.
+This document supersedes the actionable conclusions in `Docs/ARCHIVE/2026-04-26_ACE_Readiness_Review_And_Debate.md` for governance cleanup planning.
 
 The earlier ACE review was useful but overconfident in several places. Codex rechecked the current skill files, collaboration rules, handoff corpus, and cited literature, then ran a standard `/debate` between an Advocate, Challenger, and Reconciler.
 
 ## References
 
-- `Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md`
+- `Docs/ARCHIVE/2026-04-26_ACE_Readiness_Review_And_Debate.md`
 - `Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Readiness_Challenge.md`
 - `.claude/skills/debt-guard/SKILL.md`
 - `.claude/skills/context-extension/SKILL.md`
@@ -204,7 +204,7 @@ Do not add a long walkthrough that makes `/debt-guard` harder to follow.
 ## Proposed Next Work Slices
 
 1. **Slice A: ACE Review Correction**
-   - Add a short supersession banner to `Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md`.
+   - Add a short supersession banner to `Docs/ARCHIVE/2026-04-26_ACE_Readiness_Review_And_Debate.md`.
    - Keep original debate history intact.
    - Point readers to this consolidated document for current recommendations.
 

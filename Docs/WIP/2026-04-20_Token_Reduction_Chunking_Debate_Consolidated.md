@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-20
 **Status:** Decision document — awaiting Captain approval before implementation
-**Related:** [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) (existing cost optimization plan)
+**Related:** [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](../ARCHIVE/PipelineV1/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) (existing cost optimization plan)
 
 ---
 
@@ -134,7 +134,7 @@ Add per-stage token counting to the pipeline. Log:
 
 ## 9. Relationship to Existing Optimization Plan
 
-This document extends [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md), which notes:
+This document extends [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](../ARCHIVE/PipelineV1/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md), which notes:
 
 > "remaining work needs a fresh validated benchmark" and "the next optimization decision is a new approval decision, not an automatic continuation"
 

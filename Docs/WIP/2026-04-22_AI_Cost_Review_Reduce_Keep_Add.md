@@ -13,7 +13,7 @@
 **Related:**
 - [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md) — external funding / Batch API / credits track
 - [LLM_Allocation_and_Cost_fwd.md](LLM_Allocation_and_Cost_fwd.md) — residual allocation ideas
-- [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — runtime optimization status
+- [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](../ARCHIVE/PipelineV1/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — runtime optimization status
 - [2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md](2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md) — token-debate outcomes this plan inherits
 
 ---
