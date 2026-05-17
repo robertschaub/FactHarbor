@@ -3682,3 +3682,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This repair does not approve schema relaxation, adapter alias normalization, model/config/provider changes, retries, source/search/fetch/parser/SR/cache IO, evidence/report/verdict/confidence behavior, public output, ACS/direct URL, V1 reuse, or V1 cleanup. A committed/refreshed post-repair live rerun is still required before marking PI-005 resolved.
 **Learnings:** For hidden executable V2 prompts, prompt-contract tests should assert the actual rendered loader section includes strict schema object shapes when the model must emit nested structural arrays.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U2_Query_Planning_Task_Event_Prompt_Contract_Repair.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-U2 Query Planning Task-Event Prompt Contract Live Result -- [Significant] [open-items: yes]
+**For next agent:** X7-U2 live validation passed as `PASS_X7_U2_SCHEMA_REPAIR_VERIFIED`. Job `3f75f309c9a8484381fb6c596589296c` ran on commit/runtime `606e776240443104f33e30a609a4a6c5098ce93c`; Query Planning adapter diagnostics accepted repaired prompt hash `2a78ce4f36869f6099dbd1af0b4626fd08f8b4a15f6a57fdb20df256f4049478` with zero structural issues.
+**Warnings:** Query Planning returned a valid `blocked` result with `source_acquisition_not_executable`, leaving source-acquisition handoff blocked as `query_planning_not_accepted`. That is a separate stage-boundary posture question, not the X7-U1 schema defect. Do not change it without a reviewed package/debate.
+**Learnings:** After prompt/schema repair, a valid blocked envelope can be useful evidence that the next issue is architectural gating posture rather than schema compliance.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U2_Query_Planning_Task_Event_Prompt_Contract_Live_Result.md
