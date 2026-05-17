@@ -208,7 +208,7 @@ $routes = @(
 $ledgerProbe = "x7-w2-ls1-preflight-unknown:precutover-observability"
 $adminHeaders = @{ "X-Admin-Key" = $env:FH_ADMIN_KEY }
 foreach ($route in $routes) {
-  $url = "http://localhost:3000$route?ledgerId=$ledgerProbe"
+  $url = "http://localhost:3000${route}?ledgerId=$ledgerProbe"
   $unauth = Invoke-WebRequest -Uri $url -Method Get -SkipHttpErrorCheck
   if ([int]$unauth.StatusCode -ne 401) {
     throw "Unauthenticated route did not return 401: $route"
@@ -227,7 +227,7 @@ foreach ($route in $routes) {
   }
   foreach ($forbidden in @("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "providerRequest", "providerResponse", "candidateUrl", "queryText")) {
     if ($auth.Content -match $forbidden) {
-      throw "Authenticated unknown-ledger response leaked forbidden marker $forbidden: $route"
+      throw "Authenticated unknown-ledger response leaked forbidden marker ${forbidden}: $route"
     }
   }
 }
