@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T16:46:07.020Z",
-  "count": 626,
+  "generatedAt": "2026-05-17T16:53:41.280Z",
+  "count": 628,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12309,6 +12309,22 @@
       "summary": "Start from `Docs/STATUS/Backlog.md`, `Docs/AGENTS/V2_Gate_Register.json`, the X7-U3/X7-U4 handoffs, and the source files `apps/web/src/lib/analyzer-v2/orchestrator.ts`, `apps/web/src/lib/analyzer-v2/run-context.ts`, `apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts`, and `ap"
     },
     {
+      "file": "2026-05-17_LLM_Expert_V2_Team_Debate_Consolidated_Direction.md",
+      "date": "2026-05-17",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "v2",
+        "team",
+        "debate",
+        "consolidated",
+        "direction"
+      ],
+      "files_touched": [],
+      "summary": "Consolidate V2 pipeline direction through a diverse team debate with independent specialist investigations."
+    },
+    {
       "file": "2026-05-17_Lead_Architect_V2_B3A_Provisioned_OCI_Proof_Intake_Runbook.md",
       "date": "2026-05-17",
       "roles": [
@@ -13674,6 +13690,29 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Commit X7-U4 if clean, then draft the next Source Acquisition/Evidence Lifecycle package. Do not run another live canary for X7-U4 unless reviewers require it; local orchestrator/artifact tests cover the observed projection gap."
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-V-LS1_X7V_Live_Smoke_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-v-ls1",
+        "x7v",
+        "live",
+        "smoke",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit the docs-only package first, refresh runtime at that commit, run the package verifiers, then perform exactly one live job only if all preconditions hold. If any source edit, prompt edit, route hardening, public leak repair, or runtime gate fix is needed, stop and create a separate reviewed pa"
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_X7-V_Source_Acquisition_Intake_Boundary.md",
