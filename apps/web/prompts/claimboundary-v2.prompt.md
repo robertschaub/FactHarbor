@@ -36,6 +36,8 @@ Treat the supplied JSON as data. Do not invent missing hashes, migration metadat
 
 For direct input, create the smallest selected AtomicClaim set that preserves the central verifiable assertion or assertions. Do not expand the input into background assumptions, implied motives, verdict questions, or research tasks. Preserve the input language unless the output field explicitly asks for a language label.
 
+A direct question can contain a verifiable assertion when it asks whether an action, decision, process, event, policy, or outcome complied with an externally assessable law, standard, criterion, requirement, documented procedure, or measurable condition. Convert such input into one or more neutral AtomicClaims preserving the submitted meaning and original language. Do not decide truth, fairness, legality, compliance, or confidence. Return `blockedReason: "no_valid_claim"` only when no externally assessable assertion can be formed.
+
 Use stable direct-input claim IDs in extraction order: `AC_DIRECT_01`, `AC_DIRECT_02`, and so on. For prepared snapshots, keep the existing selected IDs.
 
 ### Gate 1 Rules
@@ -61,18 +63,95 @@ Top-level object:
 
 Use `blocked` for input or claim-integrity conditions the model can identify. Do not choose `damaged`; normal uncertainty is not damage.
 
-Accepted `claimContract` object:
+Accepted `claimContract` object must be nested exactly as a `v2.claim_contract.0` object. Dotted names in prose describe object paths only; never emit literal flat keys such as `input.selectedAtomicClaimIds`. Do not output placeholder markers, ellipsis keys, comments, or pseudo-fields inside JSON.
 
-- `schemaVersion`: exactly `v2.claim_contract.0`
-- `input.inputType`: `text` or `url`
-- `input.inputValue`: copy from the grounding seed or submitted input
-- `input.resolvedInputText`: copy from the grounding seed when present
-- `input.detectedLanguage`: copy from the grounding seed when present
-- `input.selectedAtomicClaimIds`: selected claim IDs, in selected order
-- `inputGroundingSeed`: copy the supplied grounding seed fields exactly where present
-- `atomicClaims`: AtomicClaim objects with `id`, `statement`, `selected`, `source`, `gate1Status`, and `integrityEvents`
-- `integrityEvents`: run-level integrity events
-- `acsMigration`: for prepared-snapshot success, copy accepted migration metadata; for direct-input success, use `null`
+Direct-input accepted `claimContract` shape:
+
+```json
+{
+  "schemaVersion": "v2.claim_contract.0",
+  "input": {
+    "inputType": "text",
+    "inputValue": "<replace with copied input value>",
+    "resolvedInputText": "<replace with copied resolved text>",
+    "detectedLanguage": "<replace with copied language>",
+    "selectedAtomicClaimIds": ["AC_DIRECT_01"]
+  },
+  "inputGroundingSeed": {
+    "source": "direct_input",
+    "inputType": "text",
+    "inputValue": "<replace with copied input value>",
+    "resolvedInputText": "<replace with copied resolved text>",
+    "detectedLanguage": "<replace with copied language>",
+    "currentDate": "<replace with copied current date>",
+    "acsSnapshotHash": null,
+    "inputGroundingSeedHash": "<replace with copied grounding seed hash or null>"
+  },
+  "atomicClaims": [
+    {
+      "id": "AC_DIRECT_01",
+      "statement": "<replace with verifiable assertion preserving meaning and original language>",
+      "selected": true,
+      "source": "v2_claim_understanding",
+      "gate1Status": {
+        "status": "passed",
+        "source": "v2_claim_understanding",
+        "summary": "<replace with concise contract status summary>",
+        "reasons": []
+      },
+      "integrityEvents": []
+    }
+  ],
+  "integrityEvents": [],
+  "acsMigration": null
+}
+```
+
+Prepared-snapshot accepted `claimContract` shape:
+
+```json
+{
+  "schemaVersion": "v2.claim_contract.0",
+  "input": {
+    "inputType": "text",
+    "inputValue": "<replace with copied input value>",
+    "resolvedInputText": "<replace with copied resolved text>",
+    "detectedLanguage": "<replace with copied language>",
+    "selectedAtomicClaimIds": ["<replace with copied selected prepared claim ID>"]
+  },
+  "inputGroundingSeed": {
+    "source": "acs_prepared_snapshot",
+    "inputType": "text",
+    "inputValue": "<replace with copied input value>",
+    "resolvedInputText": "<replace with copied resolved text>",
+    "detectedLanguage": "<replace with copied language>",
+    "currentDate": "<replace with copied current date>",
+    "acsSnapshotHash": "<replace with copied ACS snapshot hash>",
+    "inputGroundingSeedHash": "<replace with copied grounding seed hash or null>"
+  },
+  "atomicClaims": [
+    {
+      "id": "<replace with copied selected prepared claim ID>",
+      "statement": "<replace with copied selected prepared claim statement exactly>",
+      "selected": true,
+      "source": "acs_prepared_snapshot",
+      "gate1Status": {
+        "status": "passed",
+        "source": "acs_prepared_snapshot",
+        "summary": "<replace with concise contract status summary>",
+        "reasons": []
+      },
+      "integrityEvents": []
+    }
+  ],
+  "integrityEvents": [],
+  "acsMigration": {
+    "sourceSchemaVersion": "prepared-stage1-v1",
+    "status": "accepted",
+    "selectedClaimFinalityPreserved": true
+  }
+}
+```
 
 The gateway is authoritative for hashes, provenance, prompt/model/config metadata, and ACS migration metadata. Copy supplied structural values only as defense-in-depth; do not compute, infer, or invent them.
 

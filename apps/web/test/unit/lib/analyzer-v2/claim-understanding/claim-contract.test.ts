@@ -136,6 +136,32 @@ describe("analyzer-v2 claim contract fixture", () => {
     expect(ClaimContractSchema.safeParse(withUnknownKey).success).toBe(false);
     expect(ClaimContractSchema.safeParse(withMalformedEnum).success).toBe(false);
   });
+
+  it("rejects flat dotted selected-claim keys instead of accepting prompt-shape drift", () => {
+    const invalidFlatDottedKeyOutput = {
+      ...directInputClaimContract(),
+      input: {
+        inputType: "text",
+        inputValue: "Plastic recycling is pointless",
+        resolvedInputText: "Plastic recycling is pointless",
+        detectedLanguage: "en",
+      },
+      "input.selectedAtomicClaimIds": ["AC_DIRECT_01"],
+    } satisfies Record<string, unknown>;
+
+    const result = ClaimContractSchema.safeParse(invalidFlatDottedKeyOutput);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const paths = result.error.issues.map((issue) => issue.path.join("."));
+      expect(paths).toContain("input.selectedAtomicClaimIds");
+      expect(result.error.issues.some((issue) => (
+        issue.code === "unrecognized_keys"
+        && "keys" in issue
+        && issue.keys.includes("input.selectedAtomicClaimIds")
+      ))).toBe(true);
+    }
+  });
 });
 
 describe("analyzer-v2 claim understanding result envelope", () => {

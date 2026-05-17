@@ -114,6 +114,16 @@ function captainDefinedAnalysisInputs(): string[] {
   return inputs;
 }
 
+const captainCanaryTopicTerms = [
+  "Bolsonaro",
+  "Brazil",
+  "Brazilian",
+  "Asylbereich",
+  "Schweiz",
+  "Bundesrat",
+  "EU-Vertrag",
+] as const;
+
 describe("V2 Claim Understanding prompt contract", () => {
   it("validates as a non-executable claimboundary-v2 prompt profile", () => {
     const content = readPrompt();
@@ -233,6 +243,42 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(section).toContain("Do not choose `damaged`");
   });
 
+  it("uses schema-exact nested ClaimContract guidance instead of dotted output keys", () => {
+    const section = readSection(readPrompt(), sectionId);
+
+    expect(section).toContain("Accepted `claimContract` object must be nested");
+    expect(section).toContain("never emit literal flat keys such as `input.selectedAtomicClaimIds`");
+    expect(section).toContain('"input": {');
+    expect(section).toContain('"selectedAtomicClaimIds": ["AC_DIRECT_01"]');
+    expect(section).toContain('"source": "direct_input"');
+    expect(section).toContain('"acsMigration": null');
+    expect(section).toContain('"source": "acs_prepared_snapshot"');
+    expect(section).toContain('"selectedAtomicClaimIds": ["<replace with copied selected prepared claim ID>"]');
+    expect(section).toContain('"sourceSchemaVersion": "prepared-stage1-v1"');
+    expect(section).toContain('"selectedClaimFinalityPreserved": true');
+    expect(section).toContain("Do not output placeholder markers");
+    expect(section).not.toMatch(/^- `input\.(inputType|inputValue|resolvedInputText|detectedLanguage|selectedAtomicClaimIds)`:/m);
+    expect(section).not.toContain('"..."');
+  });
+
+  it("pins generic externally assessable direct-question guidance without canary topics", () => {
+    const section = readSection(readPrompt(), sectionId);
+    const abstractMultilingualQuestion = "Hat Handlung A Anforderung B erfuellt?";
+
+    expect(abstractMultilingualQuestion).not.toMatch(/Bolsonaro|Brazil|Asylbereich|Schweiz/i);
+    expect(section).toContain("A direct question can contain a verifiable assertion");
+    expect(section).toContain("externally assessable law, standard, criterion, requirement");
+    expect(section).toContain("measurable condition");
+    expect(section).toContain("neutral AtomicClaims");
+    expect(section).toContain("original language");
+    expect(section).toContain("Do not decide truth, fairness, legality, compliance, or confidence");
+    expect(section).toContain('Return `blockedReason: "no_valid_claim"` only when no externally assessable assertion can be formed');
+
+    for (const term of captainCanaryTopicTerms) {
+      expect(section).not.toContain(term);
+    }
+  });
+
   it("keeps the prompt source clean-room, generic, and not file-seeded", () => {
     const content = readPrompt();
     const registryEntry = getPromptSurfaceRegistryEntry("claimboundary-v2");
@@ -249,6 +295,9 @@ describe("V2 Claim Understanding prompt contract", () => {
 
     for (const captainInput of captainDefinedAnalysisInputs()) {
       expect(content).not.toContain(captainInput);
+    }
+    for (const term of captainCanaryTopicTerms) {
+      expect(content).not.toContain(term);
     }
   });
 });

@@ -1,12 +1,13 @@
 # V2 Slice X7-M Claim Understanding Prompt/Contract Repair Approval Package
 
 **Date:** 2026-05-17
-**Status:** reviewer-approved approval package; docs-only; does not authorize prompt/source edits by itself
+**Status:** implementation complete under explicit Captain authorization; no further prompt/source edits authorized by this package
 **Owner role:** Lead Architect / Captain Deputy
 **Baseline:** `1ec1c75e` (`docs: diagnose v2 x7k claim understanding failures`)
 **Parent packages:** X7-K direct-text X7-J live-smoke result, X7-L Claim Understanding live-result diagnosis.
 **Gate type:** Captain-gated prompt/contract repair proposal.
 **Review result:** LLM Expert APPROVE, Architect APPROVE, Security/runtime APPROVE, Code/package APPROVE after tightening schema-exact skeletons, direct-input versus prepared-snapshot guidance, artifact/raw-payload non-goals, final prompt-diff review, package/file envelopes, cached diff hygiene, and future test assertions.
+**Implementation result:** X7-M prompt/test implementation completed after Captain authorization on 2026-05-17. Final prompt diff received LLM Expert APPROVE, Architect APPROVE, and Code/package APPROVE. Implementation touched only `apps/web/prompts/claimboundary-v2.prompt.md`, `apps/web/test/unit/lib/analyzer-v2/claim-understanding/prompt-contract.test.ts`, `apps/web/test/unit/lib/analyzer-v2/claim-understanding/claim-contract.test.ts`, and status/handoff/index documents.
 
 ## 1. Purpose
 
@@ -315,6 +316,41 @@ git status --short --untracked-files=all
 
 ## 11. Current Recommendation
 
-Commit this reviewed docs-only package.
+X7-M implementation is ready for focused commit after final verifier completion.
 
-Then stop before implementation until the Captain explicitly approves the wording in section 2. After explicit Captain approval, the final prompt diff still needs LLM Expert prompt review and Architect scope acceptance before implementation commit unless the exact final prompt text is already quoted and approved.
+Do not run live jobs under X7-M. If post-repair smoke is needed, create a separate reviewed execution package after the implementation commit.
+
+## 12. Implementation Closeout
+
+Explicit Captain authorization was received in conversation on 2026-05-17:
+
+```text
+Prompt implementation authorized.
+```
+
+Implemented changes:
+
+- `V2_CLAIM_UNDERSTANDING_GATE1` now treats direct questions about externally assessable laws, standards, criteria, requirements, documented procedures, or measurable conditions as potentially verifiable AtomicClaim inputs without deciding truth, fairness, legality, compliance, or confidence.
+- Accepted `claimContract` guidance now uses schema-exact nested direct-input and prepared-snapshot JSON skeletons instead of dotted-field output bullets.
+- Prompt guidance explicitly forbids literal flat dotted keys such as `input.selectedAtomicClaimIds`, placeholder markers, ellipsis keys, comments, or pseudo-fields in JSON output.
+- Prompt contract tests pin nested `ClaimContract` guidance, canary-topic exclusion, generic direct-question wording, and prepared-snapshot/direct-input migration expectations.
+- Claim contract tests pin strict rejection of flat dotted-key output drift.
+
+Final prompt-diff reviews:
+
+- LLM Expert: APPROVE.
+- Architect: APPROVE.
+- Code/package: APPROVE after the fairness wording was aligned and pinned.
+
+Verifier results:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/prompt-contract.test.ts test/unit/lib/analyzer-v2/claim-understanding/claim-contract.test.ts test/unit/lib/analyzer-v2/claim-understanding/model-adapter.test.ts` - PASS, 3 files / 39 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding` - PASS, 9 files / 86 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` - PASS, 74 files / 523 tests.
+- `npm -w apps/web run build` - PASS.
+- `npm run validate:v2-gates` - PASS.
+- `node scripts/validate-v2-gate-register.mjs --self-test` - PASS.
+
+Known worktree caveat:
+
+- Unrelated unstaged X7-J route/test edits exist outside the X7-M envelope and must be excluded from the X7-M commit unless separately reviewed.
