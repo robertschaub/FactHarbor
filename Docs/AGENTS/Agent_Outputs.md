@@ -3542,3 +3542,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Live execution remains blocked until this package is committed and all runtime/preflight verifiers pass.
 **Learnings:** For post-observer live smokes, keep the canary choice tied to prior clean accepted-path evidence, not to semantic breadth; the smoke objective is artifact reachability and public non-leakage.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-P_X7O_Live_Smoke_Package.md
+
+---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-P X7-O Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** Executed the approved one-job X7-P package on clean commit `03e2bafb`. Job `77f2e9f237e34263a09be50264db3682` reached `SUCCEEDED`, first prepared `pipeline: claimboundary-v2`, used clean created/executed hash `03e2bafbded518946ed1c1f41620842a6cfd66c2`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover` with no hidden leak, and produced accepted Claim Understanding plus X7-J `intake_ready` artifacts. It also produced an admin-only/no-store X7-O artifact, but X7-O returned `blocked_pre_query_planning` / `language_signal_unavailable`; therefore classify as `PARTIAL_X7_P_LANGUAGE_SIGNAL_UNAVAILABLE`, not pass. Do not rerun X7-P. Next candidate is a reviewed X7-Q language-metadata repair package; keep Query Planning/source/provider/parser/public/V1 work blocked.
+**Warnings:** This result is not evidence/report/legal/fairness/verdict quality. It is a structural contract gap: accepted direct-text Claim Understanding can still leave X7-O without a usable language signal.
+**Learnings:** Do not let observer-live-smoke pass criteria drift after execution. If the observer reaches the product route but blocks on a structural prerequisite, record it as useful partial evidence and repair the prerequisite contract before rerun.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-P_X7O_Live_Smoke_Result.md
