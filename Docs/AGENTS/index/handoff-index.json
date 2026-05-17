@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T16:05:05.081Z",
-  "count": 623,
+  "generatedAt": "2026-05-17T16:12:34.574Z",
+  "count": 624,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13628,6 +13628,32 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Commit this implementation package, reseed/refresh runtime from that commit with the three exact V2 gates, and run one German live canary using `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. Count it against the current max-8 live-job authorization."
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-U4_Query_Planning_Artifact_Selected_Ids_Diagnostic_Cleanup.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-u4",
+        "query",
+        "planning",
+        "artifact",
+        "selected",
+        "ids",
+        "diagnostic",
+        "cleanup"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink.ts",
+        "Docs/WIP/2026-05-17_V2_Slice_X7-U4_Query_Planning_Artifact_Selected_Ids_Diagnostic_Cleanup.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit X7-U4 if clean, then draft the next Source Acquisition/Evidence Lifecycle package. Do not run another live canary for X7-U4 unless reviewers require it; local orchestrator/artifact tests cover the observed projection gap."
     },
     {
       "file": "2026-05-17_Unassigned_Daily_Bug_Scan_No_Commit_Bugs.md",

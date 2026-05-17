@@ -179,6 +179,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
           status: "completed",
           resultStatus: "accepted",
         }),
+        selectedAtomicClaimIds: ["AC_001"],
         sourceLanguagePolicy: expect.objectContaining({
           primaryLanguage: "de",
         }),
@@ -208,6 +209,74 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(serializedPublic).not.toContain("evidence_query_planning");
     expect(serializedPublic).not.toContain("Asylbereich Schweiz 235000");
     expect(serializedPublic).not.toContain("job-v2-x7s-orchestrator:precutover-observability");
+  });
+
+  it("records ClaimContract-selected ids in hidden Query Planning artifacts for direct ingress without selected ids", async () => {
+    const ledgerId = "job-v2-x7s-direct-no-selected:precutover-observability";
+    clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    vi.resetModules();
+    vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
+      runClaimUnderstandingRuntimeStage: vi.fn(async () => acceptedClaimUnderstandingState()),
+    }));
+    vi.doMock("@/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory", () => ({
+      buildEvidenceQueryPlanningProviderFactory: vi.fn((snapshot) => ({
+        factoryVersion: "v2.evidence-query-planning.provider-factory.x7s",
+        factorySourcePath: "apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory.ts",
+        configSnapshotHash: snapshot.configSnapshotHash,
+        providerId: "anthropic",
+        modelId: snapshot.modelId,
+        providerCall: vi.fn(async () => ({
+          output: acceptedQueryPlanningResult(),
+          telemetry: {
+            providerId: "anthropic",
+            modelId: snapshot.modelId,
+            inputTokens: 100,
+            outputTokens: 50,
+            totalTokens: 150,
+            durationMs: 80,
+          },
+        })),
+      })),
+    }));
+
+    const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
+    await runClaimBoundaryPipelineV2(
+      {
+        runIdHint: "job-v2-x7s-direct-no-selected",
+        submitted: {
+          kind: "text",
+          value: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+        },
+        preparedSeed: null,
+        selectedAtomicClaimIds: [],
+      },
+      {
+        now: () => new Date("2026-05-17T13:05:00.000Z"),
+        runtimeActivationStatus: "enabled_hidden_direct_text",
+        queryPlanningRuntimeActivationStatus: "enabled_hidden_direct_text",
+      },
+    );
+
+    const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    expect(artifacts[0]).toMatchObject({
+      selectedAtomicClaimIds: ["AC_001"],
+      sourceAcquisitionHandoff: {
+        status: "ready_not_executable",
+        blockedReason: null,
+        executionScope: "not_executable",
+      },
+      productExecution: expect.objectContaining({
+        sourceAcquisitionExecuted: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(artifacts[0]?.queryEntries).toEqual([
+      expect.objectContaining({
+        targetAtomicClaimIds: ["AC_001"],
+      }),
+    ]);
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {

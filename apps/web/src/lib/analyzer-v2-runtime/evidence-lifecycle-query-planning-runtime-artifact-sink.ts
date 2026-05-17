@@ -419,6 +419,10 @@ export function buildEvidenceQueryPlanningRuntimeArtifact(
   const handoff = projection.sourceAcquisitionHandoff.status === "ready_not_executable"
     ? projection.sourceAcquisitionHandoff.handoff
     : null;
+  const selectedAtomicClaimIds =
+    handoff?.selectedAtomicClaimIds
+    ?? inspectionSummary?.selectedAtomicClaimIds
+    ?? context.selectedAtomicClaimIds;
 
   return {
     artifactVersion: EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_VERSION,
@@ -448,7 +452,7 @@ export function buildEvidenceQueryPlanningRuntimeArtifact(
       blockedReason: runtimeResult.result.blockedReason,
       damagedReason: runtimeResult.result.damagedReason,
     },
-    selectedAtomicClaimIds: [...context.selectedAtomicClaimIds],
+    selectedAtomicClaimIds: [...selectedAtomicClaimIds],
     queryEntryCount: runtimeResult.result.status === "accepted" ? runtimeResult.result.queryPlan.queries.length : 0,
     queryEntries: boundedQueryEntries(runtimeResult),
     sourceLanguagePolicy: runtimeResult.result.status === "accepted"

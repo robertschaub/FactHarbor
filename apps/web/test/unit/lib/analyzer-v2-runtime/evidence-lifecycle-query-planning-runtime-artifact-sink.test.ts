@@ -257,6 +257,7 @@ describe("Analyzer V2 Evidence Query Planning runtime artifact sink", () => {
         visibility: "internal_admin_only",
         publicPointerExposure: "forbidden",
         ledgerId: "job-v2-x7s-artifact:precutover-observability",
+        selectedAtomicClaimIds: ["AC_001"],
         activation: expect.objectContaining({
           status: "enabled_hidden_direct_text",
           sourcePackage: "Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md",
@@ -283,10 +284,12 @@ describe("Analyzer V2 Evidence Query Planning runtime artifact sink", () => {
       expect.objectContaining({
         queryId: "EQ_001",
         queryText: "Mehr als 235000 Personen Asylbereich Schweiz Statistik",
+        targetAtomicClaimIds: ["AC_001"],
       }),
       expect.objectContaining({
         queryId: "EQ_002",
         queryText: "[redacted_url_like_query_text]",
+        targetAtomicClaimIds: ["AC_001"],
       }),
     ]);
     expect(serialized).not.toContain("Evidence Query Planning prompt bytes");
@@ -366,6 +369,44 @@ describe("Analyzer V2 Evidence Query Planning runtime artifact sink", () => {
     });
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("x".repeat(96));
+  });
+
+  it("projects selected AtomicClaim ids from inspection when run context has no selected ids", () => {
+    const runContext = {
+      ...context(),
+      selectedAtomicClaimIds: [],
+    };
+    const runtimeResult = acceptedRuntimeResult();
+    const inspection = buildEvidenceQueryPlanningInspection({
+      runtimeResult,
+      selectedAtomicClaimIds: ["AC_001"],
+      selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+    });
+    const sourceAcquisitionHandoff = buildQueryPlanSourceAcquisitionHandoff({
+      runtimeResult,
+      selectedAtomicClaimIds: ["AC_001"],
+      selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+    });
+
+    clearEvidenceQueryPlanningRuntimeArtifacts(runContext.observabilityLedger.ledgerId);
+    expect(recordEvidenceQueryPlanningRuntimeArtifact({
+      context: runContext,
+      runtimeResult,
+      inspection,
+      sourceAcquisitionHandoff,
+    }).status).toBe("recorded");
+
+    const artifact = readEvidenceQueryPlanningRuntimeArtifacts(runContext.observabilityLedger.ledgerId)[0];
+    expect(artifact?.selectedAtomicClaimIds).toEqual(["AC_001"]);
+    expect(artifact?.queryEntries.flatMap((queryEntry) => queryEntry.targetAtomicClaimIds)).toEqual([
+      "AC_001",
+      "AC_001",
+    ]);
+    expect(artifact?.sourceAcquisitionHandoff).toMatchObject({
+      status: "ready_not_executable",
+      blockedReason: null,
+      executionScope: "not_executable",
+    });
   });
 
   it("rejects invalid ledger ids at the sink boundary", () => {
