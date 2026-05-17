@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T17:28:09.529Z",
-  "count": 629,
+  "generatedAt": "2026-05-17T17:39:44.893Z",
+  "count": 630,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13760,6 +13760,24 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Continue V2 implementation after X7-U4. Review/debate consensus selected the lower-risk Source Acquisition intake boundary before any structural executor/inert-port work. Implement X7-V exactly as a p"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-W_Candidate_Runtime_Admission_Proposal.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w",
+        "candidate",
+        "runtime",
+        "admission",
+        "proposal"
+      ],
+      "files_touched": [],
+      "summary": "Implement X7-W1A Position A first, as a separate reviewed source package, and include the retirement/demotion target for X6/X7-D in that source package. If a future package wants Position B, require endpoint approval and the full 7N-3B2-grade SSRF matrix before any source edit."
     },
     {
       "file": "2026-05-17_Unassigned_Daily_Bug_Scan_No_Commit_Bugs.md",
