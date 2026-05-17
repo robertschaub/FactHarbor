@@ -86,6 +86,7 @@ describe("Analyzer V2 internal Claim Understanding runtime artifact route", () =
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toMatchObject({
       ok: true,
       sinkKind: "v2_observability_ledger",
@@ -124,6 +125,7 @@ describe("Analyzer V2 internal Claim Understanding runtime artifact route", () =
     const body = await response.json();
 
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toEqual({ ok: false, error: "Unauthorized" });
   });
 
@@ -137,6 +139,7 @@ describe("Analyzer V2 internal Claim Understanding runtime artifact route", () =
     const body = await response.json();
 
     expect(response.status).toBe(400);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body).toEqual({ ok: false, error: "Missing ledgerId" });
   });
 });

@@ -4,6 +4,12 @@ import { readClaimUnderstandingRuntimeArtifacts } from "@/lib/analyzer-v2-runtim
 
 export const runtime = "nodejs";
 
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
+function json(body: unknown, status: number): NextResponse {
+  return NextResponse.json(body, { status, headers: NO_STORE_HEADERS });
+}
+
 function readLedgerId(req: Request): string | null {
   const ledgerId = new URL(req.url).searchParams.get("ledgerId")?.trim() ?? "";
   return ledgerId.length > 0 && ledgerId.length <= 256 ? ledgerId : null;
@@ -11,16 +17,16 @@ function readLedgerId(req: Request): string | null {
 
 export async function GET(req: Request) {
   if (!checkAdminKey(req)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return json({ ok: false, error: "Unauthorized" }, 401);
   }
 
   const ledgerId = readLedgerId(req);
   if (!ledgerId) {
-    return NextResponse.json({ ok: false, error: "Missing ledgerId" }, { status: 400 });
+    return json({ ok: false, error: "Missing ledgerId" }, 400);
   }
 
   const artifacts = readClaimUnderstandingRuntimeArtifacts(ledgerId);
-  return NextResponse.json({
+  return json({
     ok: true,
     sinkKind: "v2_observability_ledger",
     visibility: "internal_admin_only",
@@ -28,5 +34,5 @@ export async function GET(req: Request) {
     ledgerId,
     artifactCount: artifacts.length,
     artifacts,
-  });
+  }, 200);
 }
