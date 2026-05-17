@@ -89,6 +89,16 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
     expect(parseEvidenceQueryPlanningResult(blocked)).toEqual(blocked);
     expect(parseEvidenceQueryPlanningResult(damaged)).toEqual(damaged);
     expect(EvidenceQueryPlanningResultSchema.safeParse(withExtraField(accepted)).success).toBe(false);
+    expect(EvidenceQueryPlanningResultSchema.safeParse({
+      ...damaged,
+      integrityEvents: [
+        {
+          eventType: "schema_validation_failed",
+          severity: "error",
+          message: "Provider output did not match the task result schema.",
+        },
+      ],
+    }).success).toBe(false);
   });
 
   it("validates applicability accepted, blocked, and damaged envelopes", () => {

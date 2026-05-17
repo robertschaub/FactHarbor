@@ -3676,3 +3676,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** The diagnostic localizes the failure to strict Query Planning prompt/schema contract drift: `integrityEvents.0.type` and `.references` were required, while the provider emitted `eventType`. Do not relax schema, add adapter alias normalization, change model, add retries, or start source execution before the X7-U2 prompt contract repair.
 **Learnings:** A schema literal is not enough for executable prompt behavior if the loader renders only a narrow section. The rendered `V2_EVIDENCE_QUERY_PLANNING` section needs the task-event object contract.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U1_Query_Planning_Diagnostic_Live_Smoke_Result.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-U2 Query Planning Task-Event Prompt Contract Repair -- [Significant] [open-items: yes]
+**For next agent:** Implemented X7-U2 by amending the rendered `V2_EVIDENCE_QUERY_PLANNING` section to define the `integrityEvents` task-event object (`type`, `severity`, `message`, `references`) and forbid aliases such as `eventType`. Focused prompt/schema/adapter tests preserve strict rejection rather than normalizing malformed provider output.
+**Warnings:** This repair does not approve schema relaxation, adapter alias normalization, model/config/provider changes, retries, source/search/fetch/parser/SR/cache IO, evidence/report/verdict/confidence behavior, public output, ACS/direct URL, V1 reuse, or V1 cleanup. A committed/refreshed post-repair live rerun is still required before marking PI-005 resolved.
+**Learnings:** For hidden executable V2 prompts, prompt-contract tests should assert the actual rendered loader section includes strict schema object shapes when the model must emit nested structural arrays.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U2_Query_Planning_Task_Event_Prompt_Contract_Repair.md

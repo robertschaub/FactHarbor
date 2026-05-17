@@ -140,6 +140,26 @@ describe("analyzer-v2 evidence query-planning model adapter", () => {
     expect(schemaOutcome.result?.status).toBe("damaged");
   });
 
+  it("keeps malformed integrity events as schema failures instead of normalizing aliases", async () => {
+    const outcome = await executeEvidenceQueryPlanningModelAdapter(adapterRequest(provider({
+      ...acceptedResult(),
+      integrityEvents: [
+        {
+          eventType: "schema_validation_failed",
+          severity: "error",
+          message: "Provider output did not match the task result schema.",
+        },
+      ],
+    })));
+
+    expect(outcome.attempts).toHaveLength(1);
+    expect(outcome.attempts[0]?.status).toBe("invalid_schema");
+    expect(outcome.attempts[0]?.failureMessage).toContain("eventType");
+    expect(outcome.attempts[0]?.failureMessage).toContain("references");
+    expect(outcome.result?.status).toBe("damaged");
+    expect(outcome.result?.damagedReason).toBe("schema_validation_failed");
+  });
+
   it("rejects accepted plans that target unselected claims or exceed the query cap", async () => {
     const unselectedOutcome = await executeEvidenceQueryPlanningModelAdapter(adapterRequest(provider(
       acceptedResult({

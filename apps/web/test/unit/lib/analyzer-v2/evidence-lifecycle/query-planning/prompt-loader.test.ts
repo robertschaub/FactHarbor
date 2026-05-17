@@ -44,6 +44,9 @@ describe("analyzer-v2 evidence query-planning prompt loader", () => {
     expect(rendered.promptContentHash).toHaveLength(64);
     expect(rendered.renderedPrompt).toContain(EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION);
     expect(rendered.renderedPrompt).toContain("The hidden/internal query-planning runtime loader provides these JSON packets");
+    expect(rendered.renderedPrompt).toContain("Integrity event object");
+    expect(rendered.renderedPrompt).toContain("`references`: string array");
+    expect(rendered.renderedPrompt).toContain("Do not emit alternate event field names such as `eventType`");
     expect(rendered.renderedPrompt).toContain("Packet: claimContractJson");
     expect(rendered.renderedPrompt).toContain("Entity A machte Aussage B.");
     expect(rendered.renderedPrompt).toContain("\"detectedLanguage\":\"de\"");

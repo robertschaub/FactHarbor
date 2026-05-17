@@ -96,6 +96,20 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     }
   });
 
+  it("renders the query-planning task-event contract with canonical field names", () => {
+    const content = readPrompt();
+    const section = readSection(content, EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_query_planning);
+
+    expect(section).toContain("Integrity event object");
+    expect(section).toContain("`type`");
+    expect(section).toContain("`severity`");
+    expect(section).toContain("`message`");
+    expect(section).toContain("`references`");
+    expect(section).toContain("Never omit this field");
+    expect(section).toContain("`eventType`");
+    expect(section).toContain("For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event");
+  });
+
   it("keeps Evidence Lifecycle prompt sections generic and free of Captain canary terms", () => {
     const content = readPrompt();
 

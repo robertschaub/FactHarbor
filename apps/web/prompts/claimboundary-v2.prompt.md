@@ -242,7 +242,7 @@ Top-level object:
 - `taskKey`: exactly `evidence_query_planning`
 - `status`: `accepted`, `blocked`, or `damaged`
 - `queryPlan`: accepted payload, otherwise `null`
-- `integrityEvents`: task events
+- `integrityEvents`: task events using the event object contract below
 - `blockedReason`: blocked reason, otherwise `null`
 - `damagedReason`: damaged reason, otherwise `null`
 
@@ -253,6 +253,15 @@ Accepted `queryPlan` payload:
 - `sourceLanguagePolicy.supplementaryLanguageDecision`: `not_needed`, `needed`, `deferred`, or `blocked_not_executable`.
 - `sourceLanguagePolicy.rationale`: concise rationale without English defaulting.
 - `queries`: bounded query entries. Each entry has `queryId`, `retrievalPolicyKey`, `queryText`, `targetAtomicClaimIds`, and `rationale`.
+
+Integrity event object:
+
+- `type`: one of `task_policy_blocked`, `prompt_not_approved`, `input_contract_invalid`, `source_acquisition_not_executable`, `source_content_missing`, `schema_validation_failed`, `provider_unavailable`, or `task_contract_validation_failed`.
+- `severity`: `info`, `warning`, or `error`.
+- `message`: non-empty concise structural explanation.
+- `references`: string array of relevant structural references. Use `[]` when no specific reference applies. Never omit this field.
+
+Do not emit alternate event field names such as `eventType`, `refs`, or `reference`. For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event. For `accepted`, use `[]` when no event applies.
 
 Blocked reasons:
 

@@ -65,3 +65,18 @@ Entries not re-confirmed under newer prompt/runtime provenance become `status: u
 - **Observed behavior:** Job `4070a74a47b04fc3944d785dd68a5a56` for the exact Captain-defined current-versus-historical comparison found direct, high-probative comparator evidence for AC_02, but the final verdict cited direct items `EV_004` and `EV_005` whose `claimDirection` remained `neutral`. The citation integrity guard correctly stripped them as `neutral_claim_direction` and safely downgraded AC_02 to `UNVERIFIED` (`verdict_integrity_failure`).
 - **Recommended fix:** Clarify, in topic-neutral terms, that the target-object comparator/precedent default does not override numeric comparison claims, and that source-native current-side or reference-side values on the stated metric route should be classified directionally when the relationship is clear.
 - **Mitigation applied:** 2026-04-25 prompt revision adds the explicit precedence rule in `EXTRACT_EVIDENCE` and extends `verdict-prompt-contract.test.ts` to guard it. A post-reseed live rerun on prompt hash `dbde5f04ce857665a38a10aeaaa6548d0e70fd09b0644c9bee02a66f356e5448` still reproduced the neutral direct-citation collapse, so the prompt clarification is kept but was insufficient by itself. Follow-up code mitigation adds a narrow LLM-backed citation-direction adjudication fallback before final citation-integrity downgrade when direct, single-claim neutral citations already caused a decisive side collapse. Focused verdict-stage and prompt-contract tests pass. A post-code live rerun is still required before marking this resolved.
+
+## PI-005 — Query Planning task-event object omitted from rendered prompt (P4)
+- **Type:** SYSTEMIC
+- **Severity:** HIGH
+- **Confidence:** CONFIRMED
+- **Prompt:** `claimboundary-v2.prompt.md`, section: `V2_EVIDENCE_QUERY_PLANNING`
+- **Prompt hash:** `6ad2e3146bd545f280730c2391f9364e61a202f3be71bc98acf6fc466427cc2b`
+- **Coverage:** BLOB-EXACT
+- **First seen:** commit `6ca35b35eb3a202c966fea504069a7abcdf071fd` — 2026-05-17
+- **Last confirmed:** commit `6ca35b35eb3a202c966fea504069a7abcdf071fd` — 2026-05-17
+- **Status:** open
+- **Description:** The executable Query Planning prompt section named `integrityEvents` as task events but did not render the required task-event object fields. The strict TypeScript/Zod contract requires `type`, `severity`, `message`, and `references`, so the model could emit an alias (`eventType`) and omit `references`.
+- **Observed behavior:** X7-U1 job `83c76b93bea746e9b4848c020c8f34a1` reached hidden Query Planning runtime/model execution but returned `schema_validation_failed`. Adapter diagnostics reported `integrityEvents.0.type` required, `integrityEvents.0.references` required, and unrecognized `eventType`.
+- **Recommended fix:** Add a generic task-event object contract to the rendered `V2_EVIDENCE_QUERY_PLANNING` section, explicitly require `type`, `severity`, `message`, and `references`, forbid alternate event field names, and preserve strict schema/adapter rejection of malformed events.
+- **Mitigation applied:** 2026-05-17 X7-U2 prompt-contract repair adds the rendered event object contract and focused prompt/schema/adapter tests. A post-repair committed/refreshed live rerun is still required before marking this resolved.
