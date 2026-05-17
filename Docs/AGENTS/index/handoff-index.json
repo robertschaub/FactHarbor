@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T16:53:41.280Z",
-  "count": 628,
+  "generatedAt": "2026-05-17T17:28:09.529Z",
+  "count": 629,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13713,6 +13713,24 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Commit the docs-only package first, refresh runtime at that commit, run the package verifiers, then perform exactly one live job only if all preconditions hold. If any source edit, prompt edit, route hardening, public leak repair, or runtime gate fix is needed, stop and create a separate reviewed pa"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-V-LS1_X7V_Live_Smoke_Result.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-v-ls1",
+        "x7v",
+        "live",
+        "smoke",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Move to the separately scoped X7-W candidate-runtime admission proposal only if continuing. X7-W should remain a reviewed proposal/design package first, with explicit non-goals, unlock/retire criteria, and no implementation or source execution by implication."
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_X7-V_Source_Acquisition_Intake_Boundary.md",
