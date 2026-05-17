@@ -23,6 +23,10 @@ const analyzerV2EvidenceQueryPlanningRuntimeArtifactInspectionRoutePath = path.r
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-query-planning-runtime-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceAcquisitionIntakeArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-intake-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -56,6 +60,10 @@ const evidenceLifecycleSourceAcquisitionExecutionContractPath = path.resolve(
 const evidenceLifecycleSourceAcquisitionStructuralExecutorPath = path.resolve(
   evidenceLifecycleSourceAcquisitionRoot,
   "structural-executor.ts",
+);
+const evidenceLifecycleSourceAcquisitionIntakeBoundaryPath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "intake-boundary.ts",
 );
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
@@ -100,6 +108,10 @@ const analyzerV2RuntimeEvidenceQueryPlanningPreexecutionObservationArtifactSinkP
 const analyzerV2RuntimeEvidenceQueryPlanningRuntimeArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-query-planning-runtime-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-acquisition-intake-artifact-sink.ts",
 );
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -663,6 +675,20 @@ const analyzerV2RuntimeEvidenceQueryPlanningRuntimeArtifactSinkApprovedImports =
     new Set(["isRecord"]),
   ],
 ]);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary",
+      new Set([
+        "SourceAcquisitionIntakeBoundaryBlockedReason",
+        "SourceAcquisitionIntakeBoundaryDecision",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -674,6 +700,7 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory",
       "@/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
     ]),
   ],
   [
@@ -705,6 +732,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceQueryPlanningRuntimeArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionIntakeArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
     ]),
   ],
 ]);
@@ -2552,6 +2585,218 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (orchestratorImports.includes(forbiddenSpecifier)) {
         violations.push(`orchestrator imports forbidden X7-S downstream/source module ${forbiddenSpecifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the X7-V Source Acquisition intake artifact path internal-only and no-IO", () => {
+    expect(existsSync(evidenceLifecycleSourceAcquisitionIntakeBoundaryPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath)).toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleSourceAcquisitionIntakeArtifactInspectionRoutePath)).toBe(true);
+    const violations: string[] = [];
+
+    const builderSourceFile = parseSource(evidenceLifecycleSourceAcquisitionIntakeBoundaryPath);
+    const builderImports = collectModuleSpecifiers(builderSourceFile).sort();
+    expect(builderImports).toEqual([
+      "./query-plan-handoff",
+      "./types",
+    ]);
+    for (const specifier of builderImports) {
+      if (isV1AnalyzerImport(evidenceLifecycleSourceAcquisitionIntakeBoundaryPath, specifier)) {
+        violations.push(`X7-V intake boundary imports V1 analyzer ${specifier}`);
+      }
+      if (isAnalyzerV2RuntimeImport(evidenceLifecycleSourceAcquisitionIntakeBoundaryPath, specifier)) {
+        violations.push(`X7-V intake boundary imports analyzer-v2-runtime ${specifier}`);
+      }
+      if (specifier.includes("structural-executor") || specifier.includes("execution-contract")) {
+        violations.push(`X7-V intake boundary imports source-acquisition execution owner ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-V intake boundary imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-V intake boundary imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-V intake boundary imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-V intake boundary imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-V intake boundary imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    const builderContent = readFileSync(evidenceLifecycleSourceAcquisitionIntakeBoundaryPath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.source-acquisition-intake-boundary.x7v",
+      "intake_ready_not_executable",
+      "blocked_pre_source_acquisition",
+      "sourceExecutionAuthority: \"blocked_precutover\"",
+      "providerNetworkAuthority: \"not_authorized\"",
+      "parserAuthority: \"not_authorized\"",
+      "publicExposure: \"forbidden\"",
+      "sourceAcquisitionExecuted: false",
+      "providerNetworkExecuted: false",
+      "searchFetchCalled: false",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+    ]) {
+      if (!builderContent.includes(requiredText)) {
+        violations.push(`X7-V intake boundary missing required text ${requiredText}`);
+      }
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `X7-V source-acquisition intake artifact sink imports unapproved symbol ${importedName} from ${specifier}`,
+          );
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath, specifier)) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports Source Reliability ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-V source-acquisition intake artifact sink imports public surface ${specifier}`);
+      }
+    }
+
+    const sinkContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_INTAKE_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_INTAKE_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_INTAKE_ARTIFACT_MAX_SERIALIZED_BYTES = 16_384",
+      "queryPlanningRuntimeInvoked: true",
+      "sourceAcquisitionIntakeObserved: true",
+      "sourceAcquisitionExecuted: false",
+      "providerNetworkExecuted: false",
+      "searchFetchCalled: false",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`X7-V source-acquisition intake artifact sink missing required text ${requiredText}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "queryText",
+      "ClaimContract",
+      "EvidenceItem",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "parsedContent",
+      "providerTelemetry",
+      "promptText",
+      "renderedPrompt:",
+      "rawSdkResponse",
+      "public_ready",
+      "live_eligible",
+    ]) {
+      if (sinkContent.includes(forbiddenText)) {
+        violations.push(`X7-V source-acquisition intake artifact sink references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const routeSourceFile = parseSource(analyzerV2EvidenceLifecycleSourceAcquisitionIntakeArtifactInspectionRoutePath);
+    const routeImports = collectModuleSpecifiers(routeSourceFile).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(routeSourceFile)) {
+      violations.push(`X7-V source-acquisition intake route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    const routeContent = readFileSync(analyzerV2EvidenceLifecycleSourceAcquisitionIntakeArtifactInspectionRoutePath, "utf8");
+    for (const requiredText of [
+      "export const runtime = \"nodejs\"",
+      "\"Cache-Control\": \"no-store\"",
+      "checkAdminKey(req)",
+      "params.getAll(\"ledgerId\").length !== 1",
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "error: \"Not found\"",
+    ]) {
+      if (!routeContent.includes(requiredText)) {
+        violations.push(`X7-V source-acquisition intake route missing required text ${requiredText}`);
+      }
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required X7-V import ${requiredSpecifier}`);
+      }
+    }
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/structural-executor",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-V downstream/source execution module ${forbiddenSpecifier}`);
       }
     }
 
@@ -5643,6 +5888,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/structural-executor.ts",

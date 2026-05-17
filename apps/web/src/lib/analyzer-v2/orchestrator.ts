@@ -7,6 +7,8 @@ import { buildEvidenceQueryPlanningPreexecutionObservation } from "@/lib/analyze
 import { buildEvidenceQueryPlanningInspection } from "@/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection";
 import { runEvidenceQueryPlanningRuntime } from "@/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime";
 import { buildQueryPlanSourceAcquisitionHandoff } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff";
+import { buildSourceAcquisitionIntakeBoundaryDecision } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary";
+import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import {
@@ -30,6 +32,9 @@ import {
 import {
   recordEvidenceQueryPlanningRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -127,6 +132,15 @@ export async function runClaimBoundaryPipelineV2(
           runtimeResult,
           inspection,
           sourceAcquisitionHandoff,
+        });
+        const sourceAcquisitionStartDecision = buildSourceAcquisitionRequest(evidenceLifecycleIntake);
+        const sourceAcquisitionIntakeBoundary = buildSourceAcquisitionIntakeBoundaryDecision({
+          handoffDecision: sourceAcquisitionHandoff,
+          sourceAcquisitionStartDecision,
+        });
+        recordEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifact({
+          context,
+          intakeBoundary: sourceAcquisitionIntakeBoundary,
         });
       }
     } catch {

@@ -3706,3 +3706,13 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** X7-U4 does not authorize live jobs, source/search/fetch/provider/parser/SR/cache IO, EvidenceCorpus/evidence/report/verdict/confidence behavior, public output, prompt/schema/model/provider/config changes, ACS/direct URL, V1 reuse, or V1 cleanup. It is diagnostic projection only.
 **Learnings:** Do not use run-context selected IDs as the primary diagnostic source after Claim Understanding has produced the canonical selected ClaimContract; direct API jobs may start with none.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U4_Query_Planning_Artifact_Selected_Ids_Diagnostic_Cleanup.md
+---
+### 2026-05-17 | LLM Expert / Experienced Advisor | Codex (GPT-5) | V2 Pipeline Progress Risk Assessment -- [Significant] [open-items: yes]
+**For next agent:** V2 remains the right strategic path but is not near public/report-quality cutover. Hidden Claim Understanding and Query Planning now pass through X7-U3/X7-U4; Source Acquisition, EvidenceCorpus, sufficiency, boundary formation, verdicting, aggregation/report, public exposure, ACS/direct URL runtime, cache/SR IO, and V1 cleanup remain blocked. Next package should focus on Source Acquisition/Evidence Lifecycle with explicit unlock/retire criteria for gate/provenance artifacts.
+-> Docs/AGENTS/Handoffs/2026-05-17_LLM_Expert_V2_Pipeline_Progress_Risk_Assessment.md
+---
+### 2026-05-17 | Lead Developer | Codex (GPT-5.5) | V2 X7-V Source Acquisition Intake Boundary -- [Significant] [open-items: yes]
+**For next agent:** X7-V is implementation-complete and review-ready as a product-internal, hidden, no-IO Source Acquisition intake boundary. It consumes accepted Query Planning handoff plus the existing Source Acquisition request, records bounded admin-only `intake_ready_not_executable` artifacts, and keeps source execution/public output blocked. Next source-acquisition progress needs a separate reviewed package; do not infer live/source/parser/cache/SR/EvidenceCorpus/report/verdict authority from X7-V.
+**Warnings:** No live job was run for X7-V. Source/search/fetch/provider/parser/SR/cache IO, source material, EvidenceCorpus, evidence/report/verdict/warning/confidence behavior, public exposure, prompt/config/schema/model/provider edits, ACS/direct URL, V1 reuse, and V1 cleanup remain blocked.
+**Learnings:** The product V2 route can now observe Source Acquisition readiness structure after hidden Query Planning without opening execution; future proof artifacts should state what gate they unlock or what older guard they retire.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-V_Source_Acquisition_Intake_Boundary.md

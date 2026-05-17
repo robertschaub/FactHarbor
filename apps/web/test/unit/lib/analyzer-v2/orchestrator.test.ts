@@ -6,6 +6,10 @@ import {
   clearEvidenceQueryPlanningRuntimeArtifacts,
   readEvidenceQueryPlanningRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink";
+import {
+  clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts,
+  readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -119,6 +123,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     let providerCalls = 0;
     const ledgerId = "job-v2-x7s-orchestrator:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -166,6 +171,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       },
     );
     const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -197,6 +203,30 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         }),
       }),
     ]);
+    expect(sourceAcquisitionIntakeArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        sourceAcquisitionIntake: expect.objectContaining({
+          status: "intake_ready_not_executable",
+          blockedReason: null,
+          handoffStatus: "ready_not_executable",
+          requestStatus: "source_acquisition_ready_not_executable",
+          queryEntryCount: 1,
+          sourceLanguageSignal: "present",
+        }),
+        productExecution: expect.objectContaining({
+          queryPlanningRuntimeInvoked: true,
+          sourceAcquisitionIntakeObserved: true,
+          sourceAcquisitionExecuted: false,
+          providerNetworkExecuted: false,
+          searchFetchCalled: false,
+          contentDereferenceCalled: false,
+          parserExecuted: false,
+          publicSurfaceWritten: false,
+        }),
+      }),
+    ]);
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
@@ -207,6 +237,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       },
     });
     expect(serializedPublic).not.toContain("evidence_query_planning");
+    expect(serializedPublic).not.toContain("source_acquisition_intake");
     expect(serializedPublic).not.toContain("Asylbereich Schweiz 235000");
     expect(serializedPublic).not.toContain("job-v2-x7s-orchestrator:precutover-observability");
   });
@@ -214,6 +245,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
   it("records ClaimContract-selected ids in hidden Query Planning artifacts for direct ingress without selected ids", async () => {
     const ledgerId = "job-v2-x7s-direct-no-selected:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -259,6 +291,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     );
 
     const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     expect(artifacts[0]).toMatchObject({
       selectedAtomicClaimIds: ["AC_001"],
       sourceAcquisitionHandoff: {
@@ -277,12 +310,28 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         targetAtomicClaimIds: ["AC_001"],
       }),
     ]);
+    expect(sourceAcquisitionIntakeArtifacts[0]).toMatchObject({
+      sourceAcquisitionIntake: {
+        status: "intake_ready_not_executable",
+        blockedReason: null,
+        selectedAtomicClaimCount: 1,
+        queryEntryCount: 1,
+        sourceLanguageSignal: "present",
+      },
+      productExecution: expect.objectContaining({
+        sourceAcquisitionExecuted: false,
+        providerNetworkExecuted: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+      }),
+    });
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {
     let factoryCalls = 0;
     const ledgerId = "job-v2-x7s-closed:precutover-observability";
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -314,5 +363,6 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
 
     expect(factoryCalls).toBe(0);
     expect(readEvidenceQueryPlanningRuntimeArtifacts(ledgerId)).toEqual([]);
+    expect(readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId)).toEqual([]);
   });
 });

@@ -160,12 +160,12 @@ const REQUIRED_QUERY_PLANNING_NOTE_TOKENS = [
   "V1 cleanup",
   "audit-only",
 ];
-const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-F";
+const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-V";
 const RESEARCH_ACQUISITION_CURRENT_STATE =
-  "implemented_hidden_direct_text_execution_gate_closed_no_io";
+  "implemented_product_internal_source_acquisition_intake_boundary_no_io";
 const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
-  "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md";
-const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = "7566fa5c";
+  "Docs/WIP/2026-05-17_V2_Slice_X7-V_Product_Internal_Source_Acquisition_Intake_Boundary_Source_Package.md";
+const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = null;
 const RESEARCH_ACQUISITION_C0_S1_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S1_P0_Parser_Worker_Admission_Source_Package.md";
 const RESEARCH_ACQUISITION_C0_S2_SOURCE_PACKAGE =
@@ -174,6 +174,7 @@ const RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S3_Parser_Admission_Parsed_Material_Denial_Source_Package.md";
 const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
+  "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_X7-E_Hidden_Source_Acquisition_Composition_X6_Provenance_Gate_Source_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B2_OCI_Parser_Isolation_Proof_Source_Package.md",
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-B3_Provisioned_OCI_Deployment_Candidate_Proof_Package.md",
@@ -197,6 +198,8 @@ const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "live jobs",
 ];
 const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
+  "X7-V",
+  "intake_ready_not_executable",
   "X7-F",
   "gate_closed_no_io",
   "parser_isolation_unavailable",
@@ -862,7 +865,7 @@ function validateResearchAcquisitionAuditState(entry, drift) {
   if (entry.implementationCommit !== RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT) {
     drift(where, `implementationCommit must be ${RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT}`);
   }
-  requireTextIncludes(entry.approvalPointer, "X7-F", where, "approvalPointer", drift);
+  requireTextIncludes(entry.approvalPointer, "X7-V", where, "approvalPointer", drift);
   requireTextIncludes(entry.approvalPointer, "source execution remains blocked", where, "approvalPointer", drift);
 
   for (const requiredRef of REQUIRED_RESEARCH_ACQUISITION_REFS) {
@@ -874,7 +877,7 @@ function validateResearchAcquisitionAuditState(entry, drift) {
   for (const noteToken of REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS) {
     requireTextIncludes(entry.notes, noteToken, where, "notes", drift);
   }
-  requireTextIncludes(entry.liveJobBlockReason, "X7-F", where, "liveJobBlockReason", drift);
+  requireTextIncludes(entry.liveJobBlockReason, "X7-V", where, "liveJobBlockReason", drift);
   requireTextIncludes(entry.liveJobBlockReason, "not implemented", where, "liveJobBlockReason", drift);
 }
 
