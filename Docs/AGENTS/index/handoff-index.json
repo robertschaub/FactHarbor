@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T14:57:05.716Z",
-  "count": 616,
+  "generatedAt": "2026-05-17T15:13:54.859Z",
+  "count": 617,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13518,6 +13518,21 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Treat [2026-05-17_Dominant_Proposition_V2_Disposition.md](/c:/DEV/FactHarbor/Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md) as the current Dominant Proposition decision note. The archived implementation plan now lives at [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/Fac"
+    },
+    {
+      "file": "2026-05-17_Unassigned_V1_Plan_Archive_Followup.md",
+      "date": "2026-05-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "v1",
+        "plan",
+        "archive",
+        "followup"
+      ],
+      "files_touched": [],
+      "summary": "Apply the repo policy follow-up that V1 plans should no longer remain in `Docs/WIP/` while V1 is retiring."
     }
   ]
 }

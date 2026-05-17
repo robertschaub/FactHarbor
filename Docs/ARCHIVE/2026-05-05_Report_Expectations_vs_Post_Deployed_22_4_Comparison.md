@@ -79,7 +79,7 @@ Decision implication: do not keep piling more prompt/code layers on top of the d
 
 ## Direction-Basis Simplification Attempt Addendum: 2026-05-08 Evening
 
-After reviewer debate, Option A from `Docs/WIP/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md` was implemented on `main` in `324efeb1` (`fix(stage2): reduce direction basis authority`). The intended behavior was to stop missing/defaulted `directionBasis` values from carrying authority, prevent basis-only evidence splitting, and soften the Stage 4 direction-basis binding without fully removing explicit LLM self-consistency normalization.
+After reviewer debate, Option A from `Docs/ARCHIVE/PipelineV1/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md` was implemented on `main` in `324efeb1` (`fix(stage2): reduce direction basis authority`). The intended behavior was to stop missing/defaulted `directionBasis` values from carrying authority, prevent basis-only evidence splitting, and soften the Stage 4 direction-basis binding without fully removing explicit LLM self-consistency normalization.
 
 Later focused amendments attempted to address remaining Stage 2 starvation and Stage 4 citation-direction behavior:
 
