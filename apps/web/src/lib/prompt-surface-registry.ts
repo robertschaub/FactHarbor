@@ -47,10 +47,11 @@ export const PROMPT_SURFACE_REGISTRY: PromptSurfaceRegistryEntry[] = [
     runtimeOwners: [
       "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
       "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+      "apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader.ts",
     ],
     sourcePaths: ["apps/web/prompts/claimboundary-v2.prompt.md"],
     notes:
-      "V2 prompt source exists for contract review, but file seeding and runtime execution remain blocked until post-draft review and approvals.",
+      "V2 prompt source exists for contract review and hidden/internal approved V2 loaders; file seeding, public exposure, and unapproved runtime tasks remain blocked until later reviewed approvals.",
   },
   {
     id: "source-reliability-enrichment",

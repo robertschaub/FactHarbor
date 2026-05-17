@@ -61,7 +61,7 @@ function captainDefinedAnalysisInputs(): string[] {
 }
 
 describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
-  it("adds Evidence Lifecycle sections without making them file-seeded or loader-required", () => {
+  it("adds Evidence Lifecycle sections while requiring only approved loader sections", () => {
     const content = readPrompt();
 
     for (const sectionId of evidenceSectionIds) {
@@ -69,6 +69,7 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     }
     expect(readInlineFrontmatterArray(content, "requiredSections")).toEqual([
       "V2_CLAIM_UNDERSTANDING_GATE1",
+      "V2_EVIDENCE_QUERY_PLANNING",
     ]);
     expect(readInlineFrontmatterArray(content, "variables")).toEqual([
       "currentDate",

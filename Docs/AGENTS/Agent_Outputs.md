@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X3-B Query Planning Prompt Metadata Implementation -- [Significant] [open-items: yes]
+**For next agent:** X3-B is implemented after explicit Captain prompt authorization. `claimboundary-v2.prompt.md` now truthfully lists Claim Understanding plus hidden/internal Evidence Query Planning as required sections, the query-planning loader wording no longer says future/non-executable, the Claim Understanding loader accepts additional approved required sections while still requiring its own variables/section, and `gate.evidence_query_planning` no longer carries repaired prompt-frontmatter drift. This grants no live jobs, product/public wiring, source/provider/parser execution, EvidenceCorpus/report/verdict behavior, model/cache/gateway approval flips, ACS/direct URL, or V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X3-B_Query_Planning_Prompt_Metadata_Implementation.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N Post-X7M Direct-Text Live-Smoke Package -- [Significant] [open-items: yes]
 **For next agent:** X7-N is reviewer-approved as a docs-only execution package after X7-M. After package commit, clean worktree, runtime refresh, pre-run verifiers, and admin route preflight, it may run at most the two exact Captain-approved direct-text jobs to verify hidden Claim Understanding `ClaimContract` acceptance while public output remains `4.0.0-cb-precutover` / `blocked_precutover`. It does not approve Query Planning, source/provider/parser execution, EvidenceCorpus/report/verdict/confidence behavior, cache/SR/storage, ACS/direct URL, public cutover, B3/2D-C, V1 work, or V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N_Post_X7M_Live_Smoke_Package.md

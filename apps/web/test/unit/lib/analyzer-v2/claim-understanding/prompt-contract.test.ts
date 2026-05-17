@@ -143,7 +143,10 @@ describe("V2 Claim Understanding prompt contract", () => {
 
     expect(section).toBeTruthy();
     expect(readInlineFrontmatterArray(content, "variables")).toEqual([...expectedVariables]);
-    expect(readInlineFrontmatterArray(content, "requiredSections")).toEqual([sectionId]);
+    expect(readInlineFrontmatterArray(content, "requiredSections")).toEqual([
+      sectionId,
+      "V2_EVIDENCE_QUERY_PLANNING",
+    ]);
     expect(variablesReferencedBy(section)).toEqual([...expectedVariables].sort());
     expect(gatewayTask.promptPolicy?.sectionId).toBe(sectionId);
     expect(gatewayTask.promptPolicy?.requiredVariables).toEqual([...expectedVariables]);

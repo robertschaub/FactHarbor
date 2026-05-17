@@ -92,8 +92,12 @@ describe("prompt surface registry", () => {
         expect(entry.sourcePaths.length).toBeGreaterThan(0);
       }
       if (entry.id === "claimboundary-v2") {
+        expect(entry.runtimeOwners).toContain(
+          "apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader.ts",
+        );
         expect(entry.sourcePaths).toEqual(["apps/web/prompts/claimboundary-v2.prompt.md"]);
         expect(entry.reseedSupported).toBe(false);
+        expect(entry.notes).toContain("hidden/internal approved V2 loaders");
       }
       expect(JSON.stringify(entry)).not.toContain("You are ");
       expect(JSON.stringify(entry)).not.toContain("Return only valid JSON");

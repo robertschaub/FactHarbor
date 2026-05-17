@@ -43,6 +43,7 @@ describe("analyzer-v2 evidence query-planning prompt loader", () => {
     expect(rendered.requiredVariables).toEqual([...EVIDENCE_QUERY_PLANNING_VARIABLES]);
     expect(rendered.promptContentHash).toHaveLength(64);
     expect(rendered.renderedPrompt).toContain(EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION);
+    expect(rendered.renderedPrompt).toContain("The hidden/internal query-planning runtime loader provides these JSON packets");
     expect(rendered.renderedPrompt).toContain("Packet: claimContractJson");
     expect(rendered.renderedPrompt).toContain("Entity A machte Aussage B.");
     expect(rendered.renderedPrompt).toContain("\"detectedLanguage\":\"de\"");

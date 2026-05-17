@@ -1,6 +1,6 @@
 {
   "schemaVersion": "v2-gate-register.v0",
-  "lastUpdated": "2026-05-16",
+  "lastUpdated": "2026-05-17",
   "authority": "audit_only",
   "canApproveExecution": false,
   "consumedByRuntime": false,
@@ -79,8 +79,8 @@
       "gateType": "gateway_task",
       "taskId": "evidence_query_planning",
       "owner": "evidence_lifecycle",
-      "state": "executable_hidden_gateway_task_with_prompt_metadata_drift",
-      "status": "executable_hidden_gateway_task_with_prompt_metadata_drift",
+      "state": "executable_hidden_gateway_task",
+      "status": "executable_hidden_gateway_task",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
       "registerGrantsExecution": false,
       "promptProfile": "claimboundary-v2",
@@ -100,7 +100,8 @@
         "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
         "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
         "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
-        "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md"
+        "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
+        "Docs/WIP/2026-05-17_V2_Slice_X3-B_Query_Planning_Prompt_Frontmatter_Text_Approval_Package.md"
       ],
       "sourcePackage": "Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md",
       "approvalPointer": "Captain-approved 7L-1 query-planning source package and approval metadata.",
@@ -135,11 +136,8 @@
       ],
       "liveJobEligibility": "blocked",
       "liveJobBlockReason": "Hidden executable gateway task only; no live-smoke gate currently approves job submission.",
-      "knownDrift": [
-        "prompt_frontmatter_required_sections_lag"
-      ],
-      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
-      "notes": "Static task-policy/readiness metadata is aligned in X3-A. Prompt frontmatter/text drift remains until X3-B receives explicit prompt approval."
+      "lastVerifiedBy": "Codex GPT-5.5 on 2026-05-17 (X3-B)",
+      "notes": "Static task-policy/readiness metadata is aligned in X3-A. X3-B repaired prompt frontmatter/text drift for the already-approved hidden/internal query-planning loader. Register remains audit-only and grants no execution."
     },
     {
       "id": "gate.research_acquisition",

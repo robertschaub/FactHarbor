@@ -122,8 +122,8 @@ function assertFrontmatter(frontmatter: PromptFrontmatter): void {
     throw new Error(`Analyzer V2 prompt frontmatter pipeline mismatch: ${frontmatter.pipeline ?? "missing"}`);
   }
 
-  if (frontmatter.requiredSections.length !== 1 || frontmatter.requiredSections[0] !== CLAIM_UNDERSTANDING_GATE1_SECTION_ID) {
-    throw new Error("Analyzer V2 prompt frontmatter must require only the Claim Understanding Gate 1 section");
+  if (!frontmatter.requiredSections.includes(CLAIM_UNDERSTANDING_GATE1_SECTION_ID)) {
+    throw new Error("Analyzer V2 prompt frontmatter must require the Claim Understanding Gate 1 section");
   }
 
   if (

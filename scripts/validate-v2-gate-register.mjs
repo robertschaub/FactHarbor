@@ -109,11 +109,9 @@ const REQUIRED_BLOCKED_SURFACE_FLAGS = [
   "v1Reuse",
   "realByteParserConsumption",
 ];
-const REQUIRED_QUERY_PLANNING_DRIFT_MARKERS = [
-  "prompt_frontmatter_required_sections_lag",
-];
 const REPAIRED_QUERY_PLANNING_DRIFT_MARKERS = [
   "static_task_policy_symbolic_not_executable",
+  "prompt_frontmatter_required_sections_lag",
 ];
 const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-F";
 const RESEARCH_ACQUISITION_CURRENT_STATE =
@@ -716,14 +714,6 @@ function validateRegisterAgainstGateway(register, gatewayTasks, gatewayTaskIds, 
   const queryPlanning = entriesByTaskId.get("evidence_query_planning")?.entry;
   if (queryPlanning?.observedGatewayStatus === "executable") {
     const driftMarkers = Array.isArray(queryPlanning.knownDrift) ? queryPlanning.knownDrift : [];
-    for (const marker of REQUIRED_QUERY_PLANNING_DRIFT_MARKERS) {
-      if (!driftMarkers.includes(marker)) {
-        drift(
-          `${REGISTER_PATH}:evidence_query_planning`,
-          `known drift marker ${marker} must be present until X3 repairs query-planning policy drift`,
-        );
-      }
-    }
     for (const marker of REPAIRED_QUERY_PLANNING_DRIFT_MARKERS) {
       if (driftMarkers.includes(marker)) {
         drift(
@@ -848,9 +838,11 @@ async function runSelfTest(context) {
   const base = context.register;
   const mutations = [
     [
-      "missing prompt metadata drift marker",
+      "reintroduced prompt metadata drift marker",
       (candidate) => {
-        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").knownDrift = [];
+        candidate.entries.find((entry) => entry.taskId === "evidence_query_planning").knownDrift = [
+          "prompt_frontmatter_required_sections_lag",
+        ];
       },
     ],
     [

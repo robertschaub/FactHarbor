@@ -1,9 +1,9 @@
 ---
 pipeline: claimboundary-v2
 version: 0.1.0
-description: V2 Claim Understanding plus non-executable Evidence Lifecycle task drafts. Non-executable until gateway approvals are recorded.
+description: V2 Claim Understanding plus hidden/internal Evidence Query Planning and non-executable remaining Evidence Lifecycle task drafts. Execution remains governed by per-task gateway, model, and cache approvals.
 variables: [currentDate, analysisInput, acsSnapshotJson, inputGroundingSeedJson]
-requiredSections: [V2_CLAIM_UNDERSTANDING_GATE1]
+requiredSections: [V2_CLAIM_UNDERSTANDING_GATE1, V2_EVIDENCE_QUERY_PLANNING]
 ---
 
 ## V2_CLAIM_UNDERSTANDING_GATE1
@@ -221,7 +221,7 @@ This task decides search intent, retrieval policy coverage, source-language post
 
 ### Inputs
 
-A future non-executable loader package must provide these JSON packets:
+The hidden/internal query-planning runtime loader provides these JSON packets:
 
 - `claimContractJson`: the accepted `v2.claim_contract.0` object.
 - `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
