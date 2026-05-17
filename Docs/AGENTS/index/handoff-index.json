@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T02:22:01.410Z",
-  "count": 579,
+  "generatedAt": "2026-05-17T02:32:45.828Z",
+  "count": 580,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12542,6 +12542,23 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Start from the X7-K package. Run live jobs only after package commit, clean worktree, runtime refresh, pre-run verifiers, and admin route preflight. The expected ledger id for both artifact routes is `<jobId>:precutover-observability`."
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-K_Live_Smoke_Result.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-k",
+        "live",
+        "smoke",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Lead Architect Handoff: V2 X7-K Live Smoke Result"
     }
   ]
 }
