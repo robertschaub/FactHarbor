@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T19:17:56.308Z",
-  "count": 636,
+  "generatedAt": "2026-05-17T19:24:29.132Z",
+  "count": 637,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13212,6 +13212,28 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat X7-R as passed. Do not rerun X7-P or X7-R. Any next live job, Query Planning execution, source/provider/parser execution, public output, or V1 cleanup needs a separate reviewed package."
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_7N3B2_Provider_Network_Provenance_Repair.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "7n3b2",
+        "provider",
+        "network",
+        "provenance",
+        "repair"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-envelope.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Resolve the W2 debate blocker where 7N-3B2 documentation and runtime approval provenance disagreed."
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_X7-O_Ledger_Bound_Hardening.md",

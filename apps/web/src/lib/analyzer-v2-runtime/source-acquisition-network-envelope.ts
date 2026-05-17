@@ -2,7 +2,7 @@ export const SOURCE_ACQUISITION_NETWORK_RUNTIME_VERSION =
   "v2.source-acquisition.provider-network.7n3b2";
 export const SOURCE_ACQUISITION_NETWORK_PACKAGE_PATH =
   "Docs/WIP/2026-05-16_V2_Slice_7N3B2_Candidate_Provider_Network_Source_Package.md";
-export const SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT = "c426eefd";
+export const SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT = "54b8af1a";
 
 export type SourceAcquisitionNetworkApproval = {
   readonly status: "approved_7n3b2_candidate_provider_network";

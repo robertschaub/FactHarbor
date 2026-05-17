@@ -3776,3 +3776,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** X7-W1C adds no production code, runtime owner, artifact sink, route, live job, provider/network/source IO, source material, EvidenceCorpus, parser/cache/SR/storage, evidence/report/verdict/warning/confidence behavior, public cutover, ACS/direct URL, V1 work, or V1 cleanup. W2 provider-network execution remains blocked until a separate reviewed package.
 **Learnings:** A governance fence can reduce Source Acquisition ambiguity without adding another hidden artifact surface; make the active product route and the next blocked gate explicit before opening real IO.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-W1C_Pre_IO_Fence_Implementation.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 7N-3B2 Provider-Network Provenance Repair -- [Standard] [open-items: yes]
+**For next agent:** Repaired the W2 debate blocker where the 7N-3B2 runtime approval constant pointed at `c426eefd` even though the provider-network implementation landed at `54b8af1a`. `SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT` now matches the documented and verified implementation commit, with a focused regression assertion.
+**Warnings:** Provenance repair only. It does not authorize W2 product wiring, provider-network live execution, content dereference, parser/source material/EvidenceCorpus, cache/SR/storage, public output, ACS/direct URL, V1 reuse, or V1 cleanup. W2 still needs a separate reviewed package with exact endpoint and credential posture.
+**Learnings:** Exact-match approval constants are useful only if they point to the landed implementation commit; W2 packages should verify approval-vs-implementation provenance before opening a runtime path.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_7N3B2_Provider_Network_Provenance_Repair.md

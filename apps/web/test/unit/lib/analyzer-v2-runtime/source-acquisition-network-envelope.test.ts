@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT,
   SOURCE_ACQUISITION_NETWORK_RUNTIME_VERSION,
   buildSourceAcquisitionNetworkHiddenDiagnostic,
   readSourceAcquisitionNetworkCandidateArray,
@@ -105,6 +106,11 @@ function request(
 }
 
 describe("Analyzer V2 source-acquisition provider-network envelope", () => {
+  it("pins approval provenance to the landed 7N-3B2 provider-network implementation commit", () => {
+    expect(SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT).toBe("54b8af1a");
+    expect(sourceAcquisitionNetworkApproval().packageCommit).toBe("54b8af1a");
+  });
+
   it("validates endpoint, budget, and request snapshots without raw URLs or secrets", () => {
     expect(validateSourceAcquisitionNetworkEndpointSnapshot(endpoint())).toEqual({
       status: "valid",
