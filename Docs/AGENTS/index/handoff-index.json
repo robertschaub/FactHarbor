@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T19:24:29.132Z",
-  "count": 637,
+  "generatedAt": "2026-05-17T20:08:54.211Z",
+  "count": 638,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12268,6 +12268,29 @@
         "Docs/AGENTS/README.md"
       ],
       "summary": "Use `node scripts/agents/invoke-claude.cjs ...` for GPT/Codex-initiated Claude reviews. Run `npm run test:agent-hooks` after hook-policy or wrapper changes."
+    },
+    {
+      "file": "2026-05-17_LLM_Expert_V2_Cost_Quality_Report_Progress_Review.md",
+      "date": "2026-05-17",
+      "roles": [
+        "llm_cost-quality",
+        "report-quality"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "v2",
+        "cost",
+        "quality",
+        "report",
+        "progress",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-17_LLM_Expert_V2_Cost_Quality_Report_Progress_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-05-17_V2_Slice_X7-W1C_Source_Acquisition_Path_Consolidation_And_Pre_IO_Fence_Package.md` Section 6, `Docs/STATUS/Backlog.md` lines 17-23 and 27-37, `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts`, and the model-selection"
     },
     {
       "file": "2026-05-17_LLM_Expert_V2_Model_Selection_Investigation.md",
