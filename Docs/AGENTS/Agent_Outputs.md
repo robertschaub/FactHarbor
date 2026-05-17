@@ -3535,3 +3535,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** X7-O remains non-authorizing; any live-smoke run needs a separate reviewed execution package and runtime refresh from a clean committed state.
 **Learnings:** When a hidden artifact sink exports a bound constant, enforce that bound at the sink boundary as well as at API routes so non-route callers cannot bypass the invariant.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-O_Ledger_Bound_Hardening.md
+
+---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-P X7-O Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** Drafted and reviewed `Docs/WIP/2026-05-17_V2_Slice_X7-P_X7O_Query_Planning_Observation_Live_Smoke_Package.md` as the separate docs-only execution package for one product-route X7-O artifact smoke. Architect, Security/runtime, Code/package, and LLM/semantic reviewers approved with no required changes. The package uses exactly the Captain-approved Bolsonaro/fair-trial legal-question input as an opaque runtime payload and requires package commit, clean runtime refresh, route auth/preflight, focused verifiers, and public non-leak inspection before any live job. It does not authorize Query Planning execution, source/provider/parser execution, extra live jobs, report/verdict/evidence/source-quality conclusions, prompt/config/model/schema edits, public cutover, V1 work, or V1 cleanup.
+**Warnings:** Live execution remains blocked until this package is committed and all runtime/preflight verifiers pass.
+**Learnings:** For post-observer live smokes, keep the canary choice tied to prior clean accepted-path evidence, not to semantic breadth; the smoke objective is artifact reachability and public non-leakage.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-P_X7O_Live_Smoke_Package.md
