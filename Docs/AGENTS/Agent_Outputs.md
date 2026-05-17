@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-C Legal-Question Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** X7-N-C is spent and is not a passing gate. Job `d441e8d3e5fe4fbda40c8b31ce3e6830` functionally showed the legal/fair-trial direct-text path can produce accepted hidden Claim Understanding output and X7-J intake readiness while public output stayed `4.0.0-cb-precutover` / `blocked_precutover`, but the package-required post-inspection clean-worktree checkpoint failed after unrelated PipelineV1 archive cleanup reappeared. Classify it as `PROVENANCE_CONTAMINATED_FUNCTIONAL_OBSERVATION`; do not submit a second X7-N-C job. Any clean legal-question rerun requires a new reviewed package after unrelated docs churn is isolated.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-C_Legal_Question_Live_Smoke_Result.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-C Legal-Question Live-Smoke Package -- [Significant] [open-items: yes]
 **For next agent:** X7-N-C is a docs-only execution package for one Bolsonaro/fair-trial direct-text smoke after X7-N-B passed. It may run only after reviewer acceptance, package commit, clean worktree, runtime refresh, explicit `claimboundary-v2` shell/runtime gates, focused verifiers, and admin-route preflight. It tests only whether the hidden Claim Understanding path now accepts the externally assessable direct question while public output stays pre-cutover blocked; it must not draw truth/legal/fairness/evidence/report/verdict-quality conclusions.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-C_Legal_Question_Live_Smoke_Package.md
