@@ -32,13 +32,11 @@ For the V2 pipeline rebuild, use `Current_Status.md`, `Backlog.md`, and `V2_Pipe
 ## Active Engineering / Quality Tracks
 
 ### Archived V1 pipeline tracks
-The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, grounding/boundary stabilization tracks, the pre-V2 Dominant Proposition implementation plan, and the pre-V2 selection/clarification plan family were moved to [Docs/ARCHIVE/PipelineV1](../ARCHIVE/PipelineV1/) on 2026-05-17. They remain historical context only; current V2 design lessons are retained in [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md), [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md), and [2026-05-17_Selection_and_Clarification_V2_Disposition.md](2026-05-17_Selection_and_Clarification_V2_Disposition.md).
+The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, grounding/boundary stabilization tracks, late V1 `claimboundary` prompt/report-quality repair plans, the pre-V2 Dominant Proposition implementation plan, and the pre-V2 selection/clarification plan family were moved to [Docs/ARCHIVE/PipelineV1](../ARCHIVE/PipelineV1/) on 2026-05-17. They remain historical context only; current V2 design lessons are retained in [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md), [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md), and [2026-05-17_Selection_and_Clarification_V2_Disposition.md](2026-05-17_Selection_and_Clarification_V2_Disposition.md).
 
 ### Prompt governance / architecture
 - [2026-04-15_Prompt_System_Architecture_Issues_Report.md](2026-04-15_Prompt_System_Architecture_Issues_Report.md) — 4 unresolved prompt governance issues (PSA-1 through PSA-4)
-- [2026-04-16_Prompt_Genericity_Pass_Plan.md](2026-04-16_Prompt_Genericity_Pass_Plan.md) — items 7-10 awaiting Captain approval; items 1-6 possibly landed
 - [2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md](2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md) — v3 rule draft awaiting Captain review; 3 open questions
-- [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) — adjudicated execution plan after GPT + Claude Opus prompt-audit consolidation
 
 ### Multilingual
 - [2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md](2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md) — **APPROVED** multilingual policy; Proposal 2 partially shipped, EN lane experimental/default-off
@@ -124,6 +122,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-05-17 | Additional V1 plan retirement | 4 PipelineV1 `claimboundary` / report-quality / snapshot-integration plans archived to `Docs/ARCHIVE/PipelineV1/`; retained-lessons note expanded | 148 |
 | 2026-05-17 | V1 selection/clarification reclassification | 5 pre-V2 selection/clarification plans archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 152 |
 | 2026-05-17 | Dominant Proposition V2 reclassification | 1 pre-V2 Dominant Proposition plan archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 144 |
 | 2026-05-17 | PipelineV1 + stale WIP archival | 22 files archived (18 PipelineV1 docs + 4 superseded WIP docs); 1 retained-lessons note added | 144 |

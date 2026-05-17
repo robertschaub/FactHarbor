@@ -8,9 +8,9 @@
 
 ### PipelineV1 archival with V2 retained lessons (2026-05-17)
 
-**Description**: Archived V1 pipeline maintenance, report-quality, calibration, optimization, debate, pre-V2 Dominant Proposition, and pre-V2 selection/clarification documents that are no longer valid V2 execution plans. V2-relevant lessons were extracted into `Docs/WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md`, the Dominant Proposition V2 disposition was recorded in `Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md`, and the selection/clarification V2 disposition was recorded in `Docs/WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md`. `2026-04-04_Source_Provenance_Tracking_Design.md` was deliberately not moved here because it remains a parked future evidence-lifecycle design, not a PipelineV1-only document.
+**Description**: Archived V1 pipeline maintenance, report-quality, calibration, optimization, debate, late `claimboundary` prompt/runtime repair plans, pre-V2 Dominant Proposition, and pre-V2 selection/clarification documents that are no longer valid V2 execution plans. V2-relevant lessons were extracted into `Docs/WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md`, the Dominant Proposition V2 disposition was recorded in `Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md`, and the selection/clarification V2 disposition was recorded in `Docs/WIP/2026-05-17_Selection_and_Clarification_V2_Disposition.md`. `2026-04-04_Source_Provenance_Tracking_Design.md` was deliberately not moved here because it remains a parked future evidence-lifecycle design, not a PipelineV1-only document.
 
-**PipelineV1 files archived** (24):
+**PipelineV1 files archived** (28):
 
 | File | Reason |
 |------|--------|
@@ -38,6 +38,10 @@
 | `2026-04-10_Claim_Clarification_Gate_Design.md` | Pre-V2 / PipelineV1 clarification pause/wizard design; archived as obsolete for direct V2 implementation and replaced by a V2 disposition note. |
 | `2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md` | Pre-V2 / PipelineV1 async session-preparation follow-on built on the old selection session lifecycle; archived with the same family. |
 | `2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md` | Pre-V2 / PipelineV1 selection-readiness fix plan built on the old selection session lifecycle; archived with the same family. |
+| `2026-04-16_Prompt_Genericity_Pass_Plan.md` | PipelineV1 `claimboundary` prompt execution plan; V2 prompt work must be re-specified against the current V2 prompt/runtime contracts. |
+| `2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md` | PipelineV1 prompt/runtime cleanup plan; surviving lessons are retained, but the execution plan is not valid for V2 as written. |
+| `2026-05-01_Main_Regression_Snapshot_Integration_Plan.md` | PipelineV1 regression-snapshot integration plan; late V1 branch-integration lanes are historical only and must not be treated as V2 work. |
+| `2026-05-08_DirectionBasis_Regression_Fix_Proposal.md` | PipelineV1 report-quality repair plan; the late V1 repair chain is archived and any future evidence-direction work must be redesigned for V2. |
 
 **Additional WIP files archived** (4):
 

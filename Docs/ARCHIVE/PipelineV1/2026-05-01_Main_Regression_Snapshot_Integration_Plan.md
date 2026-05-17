@@ -1,5 +1,7 @@
 # Main Regression Snapshot Integration Plan
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a PipelineV1 regression-snapshot integration plan, not a current V2 execution plan. See [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](../../WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md).
+
 **Date:** 2026-05-01
 **Status:** Integration plan; no merge authorized
 **Source snapshot:** `codex/main-regression-snapshot-2026-05-01` at `fccd2733`

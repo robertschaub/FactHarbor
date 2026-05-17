@@ -64,6 +64,22 @@ Retained lessons:
 
 ---
 
+## Prompt Governance And Repair Lessons
+
+Source documents:
+- [Prompt Genericity Pass Plan](../ARCHIVE/PipelineV1/2026-04-16_Prompt_Genericity_Pass_Plan.md)
+- [Consolidated Prompt Audit Implementation Plan](../ARCHIVE/PipelineV1/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md)
+- [Main Regression Snapshot Integration Plan](../ARCHIVE/PipelineV1/2026-05-01_Main_Regression_Snapshot_Integration_Plan.md)
+- [DirectionBasis Regression Fix Proposal](../ARCHIVE/PipelineV1/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md)
+
+Retained lessons:
+- Prompt governance needs explicit section-level and runtime-contract alignment; do not assume a large prompt file is the operative runtime unit.
+- Diagnostic metadata and observational prompt outputs must not quietly become behavioral authority without a reviewed contract that names where that authority lives.
+- Late repair chains tend to drift when local fixes accumulate across prompts, runtime coercions, and verdict repairs; V2 should prefer a single reviewed owner per semantic decision path.
+- Historical branch snapshots and late repair branches should be mined lane by lane for lessons, never ported wholesale into V2 execution.
+
+---
+
 ## Related V2 And Future Design Anchors
 
 - [Pipeline Rebuild Target Specification Draft](2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md)

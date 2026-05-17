@@ -1,5 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a PipelineV1 report-quality repair plan, not a current V2 execution plan. See [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](../../WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md).
+
 **Date:** 2026-05-08; updated 2026-05-11
 **Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` and `bolsonaro-en` have Captain-accepted current exact watch reports, `bundesrat-simple` has a current-head high-true quality pass with timing warning, and Captain accepted `plastic-en` current exact job `939563ecbea14a4c90249eb13c9743ef` (`LEANING-FALSE` 37/62) as a good report with `LEANING-FALSE` accepted for plastic reports in English and other languages
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point

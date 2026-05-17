@@ -1,5 +1,7 @@
 # Prompt Genericity Pass — Plan
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a PipelineV1 `claimboundary` prompt execution plan, not a current V2 execution plan. See [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](../../WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md).
+
 **Date:** 2026-04-16
 **Author:** LLM Expert (review) + Captain (direction)
 **Target file:** `apps/web/prompts/claimboundary.prompt.md`
