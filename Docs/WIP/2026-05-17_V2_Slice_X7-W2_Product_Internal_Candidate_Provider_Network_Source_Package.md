@@ -38,6 +38,14 @@ A short Architect/Security/Code debate on 2026-05-17 converged on:
 - Existing `source-acquisition-network-*` files are not part of W2. They must not be edited for type friction, test convenience, helper exposure, or broad cleanup. A concrete verifier-backed defect in those files requires stopping and either amending this package through review or splitting a separate repair package.
 - No live jobs are part of W2 implementation.
 
+Steering Board direction is incorporated as follows:
+
+- Lead Developer/Captain Deputy must decide whether W2 is ready after review; the board direction is advisory, not automatic implementation authority.
+- W2 must produce first limited hidden provider-network candidate-provider structural records if implemented; it must not be another no-IO marker.
+- W2 must not jump to broad source execution: exactly one provider, hidden-only, no live jobs, and no public output.
+- W2 must include cost, timing, outcome, and leakage-control telemetry.
+- W2 must address guard/test debt, especially `boundary-guard.test.ts`, instead of adding unbounded guard complexity.
+
 Two debate blockers are addressed in this package:
 
 1. 7N-3B2 provenance mismatch is repaired at baseline `0e6a8b37`: runtime approval now points to implementation commit `54b8af1a`.
@@ -51,7 +59,7 @@ W2 uses Wikimedia Core REST Search as the first narrow candidate provider becaus
 - path: `/core/v1/wikipedia/en/search/page`;
 - method: `GET`;
 - required query parameter: `q`, sourced from Query Planning query text;
-- optional `limit` is not used in W2; result limiting stays at candidate-runtime budget and byte caps;
+- fixed query parameter: `limit=3`, aligned with the W2 candidate cap to avoid fetching avoidable provider payload;
 - response candidate array field: `pages`;
 - network endpoint credential posture: `not_required`;
 - candidate-provider credential posture: `not_required_for_approved_network_provider`;
@@ -193,6 +201,7 @@ Fail closed if:
 - candidate provider allowlist, candidate budget, endpoint snapshot, or network budget is invalid;
 - 7N-3B2 network authority cannot be constructed;
 - endpoint snapshot is not the exact approved Wikimedia snapshot;
+- candidate-provider allowlist is not the exact approved W2 allowlist;
 - candidate-provider credentials state is anything other than `not_required_for_approved_network_provider`;
 - network endpoint credentials state is anything other than `not_required`;
 - redirect policy is not `deny`;
@@ -212,12 +221,15 @@ protocol: https
 port: 443
 path: /core/v1/wikipedia/en/search/page
 method: GET
-allowedRequestParameters: [{ key: q, valueSource: query_text }]
+allowedRequestParameters:
+  - key: q
+    valueSource: query_text
+  - key: limit
+    value: 3
 allowedRequestHeaders:
   - accept: application_json
   - user-agent: factharbor_internal_agent
 credentialsState: not_required
-candidateProviderCredentialsState: not_required_for_approved_network_provider
 redirectPolicy: deny
 proxyPolicy: none
 responseContentTypePolicy: application/json only
@@ -231,7 +243,7 @@ The package intentionally does not approve:
 - Authorization headers;
 - API keys;
 - cookies;
-- query string templates;
+- query string templates beyond exact `q` and fixed `limit=3`;
 - raw URLs;
 - provider-returned URLs as dereference targets;
 - redirect following;
@@ -242,7 +254,48 @@ The package intentionally does not approve:
 
 Multilingual note: fixed English Wikimedia search is acceptable only as a hidden W2 network proof. It is not acceptable as final V2 source strategy or report-quality gate. A later provider portfolio package must address multilingual provider routing and coverage before public cutover.
 
-## 8. Budget And Cost Telemetry Contract
+## 8. Candidate Provider Allowlist Contract
+
+The W2 candidate-provider allowlist snapshot must be exact:
+
+```text
+version: v2.source-acquisition.candidate-runtime.7n3b1
+providerAllowlistSnapshotHash: sha256 of the canonical W2 candidate-provider allowlist snapshot
+configSnapshotHash: sha256 of the canonical W2 authority, endpoint, provider, and budget tuple
+allowedProviders:
+  - providerId: wikimedia_core
+    endpointKind: candidate_search_api_future
+    maxQueries: 2
+    timeoutMs: 1500
+    credentialsState: not_required_for_approved_network_provider
+disabledProviders:
+  - providerId: openalex
+    disabledReason: credentials_missing
+noCache: true
+noStorage: true
+noSourceReliability: true
+noProduct: true
+noPublic: true
+```
+
+The candidate-provider credential state belongs only to this allowlist and the W2 authority, not to the 7N-3B2 network endpoint snapshot. The network endpoint snapshot must remain compatible with the existing exact-key 7N-3B2 validator.
+
+The implementation may update the candidate envelope validator only to admit `not_required_for_approved_network_provider` for W2. It must continue to reject any copied closed/local/test-only provider state, any secret-bearing state, any unknown literal, and any provider entry with a different provider id, endpoint kind, query cap, timeout, or boundary flag.
+
+The allowlist hash input must include:
+
+- W2 source package path;
+- W2 authority status;
+- 7N-3B1 approval tuple;
+- provider id;
+- endpoint kind;
+- `maxQueries`;
+- `timeoutMs`;
+- candidate-provider credentials state;
+- disabled-provider list;
+- no-cache/no-storage/no-SR/no-product/no-public flags.
+
+## 9. Budget And Cost Telemetry Contract
 
 W2 budget snapshots must be exact and deliberately small:
 
@@ -277,7 +330,7 @@ The W2 artifact must include sanitized timing/cost telemetry:
 
 Candidate-quality observation in W2 is structural only: candidate records may be counted as shape-valid or shape-dropped. W2 must not score semantic source quality, relevance, authority, probative value, or report suitability.
 
-## 9. Artifact Contract
+## 10. Artifact Contract
 
 The W2 artifact and route may expose only sanitized structural data:
 
@@ -338,13 +391,24 @@ Forbidden in decision, artifact, route JSON, logs, thrown errors, and `JSON.stri
 
 If W2 cannot prove query ids are opaque, artifacts must use only ordinal `W2Q_001`-style references.
 
-## 10. Test Requirements
+Hidden artifact route contract:
+
+- the route must use the existing admin-key authorization pattern via `checkAdminKey`;
+- production requests with a missing admin key must return `401`;
+- production requests with a wrong admin key must return `401`;
+- every response, including authorization failures and errors, must include `Cache-Control: no-store`;
+- the route may read only the single bounded `precutover-observability` ledger id used by W2;
+- the route must not support listing, enumeration, wildcard ledger reads, cross-ledger reads, or query-by-provider/search functionality;
+- route errors must be generic and must not include stack, cause, raw exception text, raw provider payload, raw query text, headers, URLs, or source material.
+
+## 11. Test Requirements
 
 Focused W2 tests must cover:
 
 - happy path with hermetic fake DNS/socket/HTTPS transport returning Wikimedia-shaped JSON `{ "pages": [...] }`;
 - no ambient DNS or provider internet in unit tests;
 - exact endpoint snapshot and credential posture;
+- exact candidate-provider allowlist snapshot, disabled-provider shape, and allowlist hash inputs;
 - W2 blocks if the endpoint host/path/provider id changes;
 - W2 blocks if candidate-provider credentials state is not `not_required_for_approved_network_provider`;
 - W2 blocks if network endpoint credentials state is not `not_required`;
@@ -358,6 +422,7 @@ Focused W2 tests must cover:
 - W2 maps transport DNS/SSRF/final-address/redirect/content-type/sniff/byte/decompression/timeout/cancel failures to structural outcomes only;
 - successful provider result creates hidden candidates but no source material;
 - downstream source-material gate remains closed;
+- hidden artifact route requires admin auth, returns production `401` for missing/wrong admin key, sets `Cache-Control: no-store` on every response, rejects malformed/duplicate ledger identifiers, blocks listing/enumeration/cross-ledger reads, does not echo requested ledger ids on not-found/error paths, and returns generic errors;
 - poison values do not leak through decisions, artifacts, route JSON, `JSON.stringify(...)`, logs, generic error paths, or thrown errors.
 
 Poison test values must include:
@@ -382,7 +447,7 @@ Inherited 7N-3B2 tests must still pass:
 - timeout/cancellation sanitization;
 - no raw payload/URL/secret/stack leakage.
 
-## 11. Boundary Guard Requirements
+## 12. Boundary Guard Requirements
 
 Boundary guards must prove:
 
@@ -396,7 +461,15 @@ Boundary guards must prove:
 - old X6/X7-D/X7-E/X7-F/X7-G1/X7-G2 paths remain regression/historical context and are not product-route imports;
 - any allowance for provider-network execution is scoped to W2 only.
 
-## 12. Gate Register And Status Rules
+Boundary guard debt control:
+
+- W2 must add a small named W2-specific section in `boundary-guard.test.ts` for W2 assertions.
+- W2 may add targeted `boundary-guard.test.ts` assertions only where they prove a W2-specific safety property.
+- W2 may reorganize local `boundary-guard.test.ts` helper structure if it reduces duplication or makes the W2 allowance easier to audit, but it must not perform broad guard-suite refactoring.
+- If W2 cannot fit inside a small named W2-specific guard section, or if it requires broad new glob scans, complex negative-match cascades, or cross-suite guard cleanup to pass, stop and split a guard/test debt package before W2 implementation proceeds.
+- The W2 completion handoff must state whether boundary-guard complexity increased, decreased, or stayed flat, and list any remaining guard/test debt.
+
+## 13. Gate Register And Status Rules
 
 If implementation succeeds:
 
@@ -411,7 +484,7 @@ If implementation succeeds:
 
 The gate register remains audit-only and grants no runtime authority.
 
-## 13. Explicitly Not Authorized
+## 14. Explicitly Not Authorized
 
 - live jobs or Captain canaries;
 - public API/UI/report/export/compatibility view changes;
@@ -434,12 +507,13 @@ The gate register remains audit-only and grants no runtime authority.
 - deleting old harnesses without explicit deletion/retirement package;
 - V1 reuse, V1 work, or V1 cleanup.
 
-## 14. Required Verifier Set
+## 15. Required Verifier Set
 
 Before completion, run:
 
 ```powershell
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.test.ts
 npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-authority.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts
 npm -w apps/web run build
 npm run validate:v2-gates
@@ -450,7 +524,7 @@ npm run index
 
 Do not run live jobs or expensive LLM tests for W2 implementation.
 
-## 15. Review Questions
+## 16. Review Questions
 
 1. Is Wikimedia Core REST Search an acceptable first no-credential candidate provider for hidden W2 network proof, given that it is not final source-portfolio coverage?
 2. Is the fixed English endpoint acceptable for W2 proof only, with multilingual provider routing blocked for a later package?
@@ -459,7 +533,7 @@ Do not run live jobs or expensive LLM tests for W2 implementation.
 5. Are the artifact leakage rules strict enough given Wikimedia responses include page titles, excerpts, keys, and URLs?
 6. Is the stop rule for Wikimedia endpoint deprecation/status re-check sufficient before implementation?
 
-## 16. Reviewer Prompt
+## 17. Reviewer Prompt
 
 Review `Docs/WIP/2026-05-17_V2_Slice_X7-W2_Product_Internal_Candidate_Provider_Network_Source_Package.md` as the W2 source package after X7-W1C and provenance repair `0e6a8b37`.
 
@@ -473,5 +547,6 @@ Check whether implementation may proceed inside the exact envelope. Pay special 
 - preserving redirect `deny`, proxy `none`, SDK-free transport, SSRF/final-address controls, byte/decompression caps, timeout/cancel behavior, and no ambient internet in tests;
 - preventing raw query text, provider payload, titles, excerpts, URLs, page keys, headers, secrets, source material, EvidenceCorpus, warnings, verdicts, confidence, report prose, cache/SR fields, stack, and causes from leaking;
 - keeping content dereference/parser/source-material/EvidenceCorpus/report/public/live jobs blocked;
+- ensuring W2 improves or contains guard/test complexity, especially in `boundary-guard.test.ts`;
 - whether the candidate-envelope credential-state literal addition is the lowest-complexity way to express no-auth real provider posture;
 - whether the source envelope is too broad, too narrow, or missing a required verifier.
