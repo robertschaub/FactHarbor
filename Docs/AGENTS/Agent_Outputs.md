@@ -3664,3 +3664,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** I intentionally left `2026-04-04_Source_Provenance_Tracking_Design.md`, `2026-03-27_Internet_Outage_Resilience_Plan.md`, and `2026-03-25_Long_Run_Variance_Reduction_Roadmap.md` in WIP because they are not clearly PipelineV1-only execution plans. Historical AGENTS handoffs and older Agent_Outputs entries still preserve old `Docs/WIP/...` path text where those files were referenced at the time.
 **Learnings:** The right archive boundary here is document role, not age: clear V1 execution plans moved cleanly, while cross-cutting parked designs stayed discoverable in WIP. Keep `Docs/WIP/README.md` and `Docs/ARCHIVE/README_ARCHIVE.md` synchronized with every archive move or the split becomes misleading fast.
 -> Docs/AGENTS/Handoffs/2026-05-17_Unassigned_V1_Plan_Archive_Followup.md
+---
+### 2026-05-17 | LLM Expert | Codex (GPT-5) | Pipeline V2 Model Selection Investigation -- [Significant] [open-items: yes]
+**For next agent:** Investigated executable and planned V2 LLM calls with two Codex explorers plus Claude Opus 4.6. Recommendation: do not change models now. `claim_understanding_gate1` and `evidence_query_planning` execute hidden Anthropic Haiku snapshots, while Query Planning is awaiting X7-U1 diagnostics after `schema_validation_failed`; the planned Evidence/Verdict/Aggregation tasks remain unregistered or blocked.
+**Warnings:** `modelTier: "standard"` is not currently a V2 resolver. The concrete executable model is frozen in `run-context.ts` and exact validators in Query Planning. Changing it means a reviewed approval package, not a config tweak. Resolve V2 model-policy/UCM authority and telemetry first.
+**Learnings:** V2 model review must distinguish model-policy metadata from activation snapshots and runtime exact validators before recommending swaps.
+-> Docs/AGENTS/Handoffs/2026-05-17_LLM_Expert_V2_Model_Selection_Investigation.md

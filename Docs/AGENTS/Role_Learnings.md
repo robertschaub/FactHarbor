@@ -321,6 +321,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When a workflow skill is installed both as a repo workflow and as a user-level Codex skill for automatic triggering, define one canonical source and treat the other copy as a mirror. Validate both skill packages and compare the mirrored `SKILL.md` content after edits; otherwise cross-tool discovery can silently drift.
 **Files:** `.claude/skills/context-extension/SKILL.md`, `C:/Users/rober/.codex/skills/context-extension/SKILL.md`, `Docs/DEVELOPMENT/Claude_Code_Skills.md`
 
+### 2026-05-17 — V2 model tiers are not executable authority by themselves
+**Role:** LLM Expert  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** In Pipeline V2, a `modelTier` label in `model-policy-registry.ts` may be only declarative unless the runtime activation snapshot and exact validators resolve it to the same concrete model. Before recommending a model change, inspect `run-context.ts`, provider runtime config contracts, and task-specific validators to find the actual executable model authority.
+**Files:** `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`, `apps/web/src/lib/analyzer-v2/run-context.ts`, `apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts`, `apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract.ts`
+
 ## Product Strategist
 
 _(No entries yet)_

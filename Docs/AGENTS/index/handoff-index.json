@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T15:13:54.859Z",
-  "count": 617,
+  "generatedAt": "2026-05-17T15:23:25.607Z",
+  "count": 618,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12268,6 +12268,25 @@
         "Docs/AGENTS/README.md"
       ],
       "summary": "Use `node scripts/agents/invoke-claude.cjs ...` for GPT/Codex-initiated Claude reviews. Run `npm run test:agent-hooks` after hook-policy or wrapper changes."
+    },
+    {
+      "file": "2026-05-17_LLM_Expert_V2_Model_Selection_Investigation.md",
+      "date": "2026-05-17",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "v2",
+        "model",
+        "selection",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-17_LLM_Expert_V2_Model_Selection_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "Start from `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`, `apps/web/src/lib/analyzer-v2/run-context.ts`, `apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts`, `apps/web/src/lib/analyzer-v2-runtime/evidence-query-planning-provider-runtime-config.contract.ts`, "
     },
     {
       "file": "2026-05-17_Lead_Architect_V2_B3A_Provisioned_OCI_Proof_Intake_Runbook.md",
