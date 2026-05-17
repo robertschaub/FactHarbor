@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T06:42:34.783Z",
+  "generatedAt": "2026-05-17T07:11:19.293Z",
   "count": 585,
   "entries": [
     {
@@ -4462,23 +4462,6 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
-      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
-      "date": "2026-04-19",
-      "roles": [
-        "llm_expert"
-      ],
-      "topics": [
-        "claim",
-        "extraction",
-        "atomicity",
-        "review"
-      ],
-      "files_touched": [
-        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
-      ],
-      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
-    },
-    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -5744,13 +5727,15 @@
         "senior_developer"
       ],
       "topics": [
-        "build",
-        "index",
+        "build_index",
+        "handoff_index",
         "parser",
-        "regression",
-        "tests"
+        "regression_tests"
       ],
-      "files_touched": [],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts"
+      ],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -12694,6 +12679,28 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-N_Live_Smoke_Provenance_Contaminated_Result.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-n",
+        "live-smoke",
+        "claim-understanding",
+        "provenance"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Preserve unrelated stashes. Do not pop archive/instruction-cleanup stashes into the X7-N result branch state before committing or rerunning live jobs; that would reintroduce dirty provenance."
     },
     {
       "file": "2026-05-17_Lead_Architect_V2_X7-N_Post_X7M_Live_Smoke_Package.md",
