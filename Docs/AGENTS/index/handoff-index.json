@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T13:08:52.244Z",
-  "count": 608,
+  "generatedAt": "2026-05-17T14:01:29.030Z",
+  "count": 609,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13278,6 +13278,42 @@
       ],
       "files_touched": [],
       "summary": "Handoff: V2 X7-S Product-Internal Query Planning Execution Package"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-T_Query_Planning_Runtime_Live_Smoke_Package.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-t",
+        "query-planning",
+        "live-smoke",
+        "execution-package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-T_Query_Planning_Runtime_Live_Smoke_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Stage and commit only the X7-T docs/status/handoff/index envelope, then run the package verifiers. After a clean runtime refresh with `FH_ANALYZER_V2_SHELL=enabled`, `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`, and `FH_ANALYZER_V2_QUERY_PLANNING_RUNTIME=enabled_hidden_dir",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend the docs-only X7-T package in place after Security/runtime review findings.",
+            "net_mechanism_count": "unchanged.",
+            "verification": "Security/runtime re-review approved; package verifiers still required before commit/execution.",
+            "residual_debt": "none in the package; runtime closeout must still avoid recording raw process command lines or secrets."
+          }
+        }
+      }
     },
     {
       "file": "2026-05-17_Unassigned_Dominant_Proposition_V2_Reclassification.md",
