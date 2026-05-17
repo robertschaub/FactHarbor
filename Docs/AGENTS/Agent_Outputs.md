@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-B Post-Route-Repair Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** X7-N-B is a docs-only execution package for one clean German direct-text smoke after the route-selection fail-closed repair and X3-B commit. It may run only after reviewer acceptance, package commit, clean worktree, runtime refresh, explicit `claimboundary-v2` shell/runtime gates, focused verifiers, and admin-route preflight. It must stop on dirty provenance, missing gates, V1 events, absent/problematically exposed hidden artifacts, public V2 validity, or any source/provider/parser/downstream semantic execution.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-B_Post_Route_Repair_Live_Smoke_Package.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X3-B Query Planning Prompt Metadata Implementation -- [Significant] [open-items: yes]
 **For next agent:** X3-B is implemented after explicit Captain prompt authorization. `claimboundary-v2.prompt.md` now truthfully lists Claim Understanding plus hidden/internal Evidence Query Planning as required sections, the query-planning loader wording no longer says future/non-executable, the Claim Understanding loader accepts additional approved required sections while still requiring its own variables/section, and `gate.evidence_query_planning` no longer carries repaired prompt-frontmatter drift. This grants no live jobs, product/public wiring, source/provider/parser execution, EvidenceCorpus/report/verdict behavior, model/cache/gateway approval flips, ACS/direct URL, or V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X3-B_Query_Planning_Prompt_Metadata_Implementation.md
