@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-J Intake Artifact Source Package -- [Significant] [open-items: yes]
+**For next agent:** X7-J is deputy-approved as the next source package after X7-I. It permits only a product-internal observer bridge: after Claim Understanding, the V2 orchestrator may call existing `buildEvidenceLifecycleIntake(...)` and write a bounded, sanitized, process-local, admin-only intake artifact while public output remains damaged/precutover. Query Planning, X5-X7 harness execution, source-provider/search/fetch/content-dereference/provider-network/parser execution, EvidenceCorpus/EvidenceItems/report/verdict behavior, cache/SR/storage, public exposure, live jobs, ACS/direct URL, B3 proof, 2D-C, V1 work, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-J_Intake_Artifact_Source_Package.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-I Direct-Text Route B Live-Smoke Result -- [Significant] [open-items: yes]
 **For next agent:** X7-I live smoke passed on committed baseline `cc249312`: after clean-worktree runtime refresh and pre-run verifiers, the two Captain-approved direct-text jobs `8af2b1970bf14e0a8e316f15a299e51f` and `c44eb9273946488897e26eb7643d2406` executed `claimboundary-v2`, stayed fail-closed on public schema `4.0.0-cb-precutover` with `publicCutoverStatus: blocked_precutover`, and wrote one internal-admin-only Claim Understanding runtime artifact each. Public result scanning found only schema null placeholders for hidden hash fields. This proves hidden Claim Understanding runtime continuity plus fail-closed public behavior only; X3-B prompt edits, source-provider/search/fetch/content-dereference/provider-network/parser execution, X5-X7 product wiring, EvidenceCorpus/EvidenceItems/report/verdict behavior, cache/SR/storage, ACS/direct URL, B3 proof, 2D-C, V1 work, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-I_Live_Smoke_Result.md
