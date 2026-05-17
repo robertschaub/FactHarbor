@@ -11,6 +11,10 @@ const analyzerV2RuntimeArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-intake-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -72,6 +76,10 @@ const analyzerV2RuntimeActivationPath = path.resolve(
 const analyzerV2RuntimeArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-runtime-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-intake-artifact-sink.ts",
 );
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -559,12 +567,27 @@ const analyzerV2RuntimeArtifactSinkApprovedImports = new Map<string, Set<string>
     new Set(["AnalyzerV2CacheDecision", "AnalyzerV2GatewayTaskId", "AnalyzerV2GatewayTaskStatus"]),
   ],
 ]);
+const analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/claim-understanding/stage-handoff",
+    new Set(["ClaimUnderstandingStageHandoff"]),
+  ],
+  [
+    "@/lib/analyzer-v2/evidence-lifecycle/types",
+    new Set(["EvidenceLifecycleStartDecision"]),
+  ],
+  [
+    "@/lib/analyzer-v2/run-context",
+    new Set(["PipelineRunContext"]),
+  ],
+]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
     new Set([
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink",
     ]),
   ],
   [
@@ -578,6 +601,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2RuntimeArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink",
     ]),
   ],
 ]);
@@ -1771,6 +1800,135 @@ describe("analyzer-v2 boundary guard", () => {
     }
     if (!content.includes("publicPointerExposure: \"forbidden\"")) {
       violations.push("runtime artifact sink does not forbid public pointer exposure");
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the X7-J Evidence Lifecycle intake artifact path internal-only and observation-only", () => {
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath)).toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath)).toBe(true);
+    const violations: string[] = [];
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`X7-J intake artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`X7-J intake artifact sink imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath, specifier)) {
+        violations.push(`X7-J intake artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-J intake artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-J intake artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-J intake artifact sink imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-J intake artifact sink imports Source Reliability ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-J intake artifact sink imports public surface ${specifier}`);
+      }
+    }
+
+    const routeSourceFile = parseSource(analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath);
+    const routeImports = collectModuleSpecifiers(routeSourceFile).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(routeSourceFile)) {
+      violations.push(`X7-J intake artifact route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    expect(orchestratorImports).toContain("@/lib/analyzer-v2/evidence-lifecycle/intake");
+    expect(orchestratorImports).toContain("@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink");
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2/hidden-integration-harness",
+      "@/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-J downstream execution module ${forbiddenSpecifier}`);
+      }
+    }
+
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleIntakeArtifactSinkPath, "utf8");
+    for (const requiredText of [
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_INTAKE_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_INTAKE_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_INTAKE_ARTIFACT_MAX_SERIALIZED_BYTES = 16_384",
+      "executionEligibility: \"not_executable_precutover\"",
+      "queryPlanningExecuted: false",
+      "sourceAcquisitionExecuted: false",
+      "providerNetworkExecuted: false",
+      "parserExecuted: false",
+      "evidenceCorpusCreated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`X7-J intake artifact sink missing required text ${requiredText}`);
+      }
+    }
+
+    const routeContent = readFileSync(analyzerV2EvidenceLifecycleIntakeArtifactInspectionRoutePath, "utf8");
+    for (const requiredText of [
+      "\"Cache-Control\": \"no-store\"",
+      "checkAdminKey(req)",
+      "params.getAll(\"ledgerId\").length !== 1",
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "error: \"Not found\"",
+    ]) {
+      if (!routeContent.includes(requiredText)) {
+        violations.push(`X7-J intake artifact route missing required text ${requiredText}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "runHiddenV2IntegrationHarness",
+      "runEvidenceQueryPlanningRuntime",
+      "providerCall",
+      "fetch(",
+      "EvidenceItem",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "sourceReliability",
+      "cacheKey",
+      "insufficient_evidence",
+      "low_evidence",
+      "public_ready",
+    ]) {
+      if (sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+        violations.push(`X7-J intake artifact path references forbidden text ${forbiddenText}`);
+      }
     }
 
     expect(violations).toEqual([]);

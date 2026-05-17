@@ -1,11 +1,12 @@
 # V2 Slice X7-J Product-Internal Evidence Lifecycle Intake Artifact Source Package
 
 **Date:** 2026-05-17
-**Status:** deputy-approved source package; docs-only; source implementation not yet started
+**Status:** implementation complete; pre-commit reviews accepted
 **Owner role:** Lead Architect / Captain Deputy
 **Baseline:** `cfdd7ce6` (`docs: record v2 x7i live-smoke result`)
 **Decision source:** post-X7-I next-step debate. Architect and LLM/semantic recommended an internal observer bridge; Security/runtime warned against broad product-observable downstream artifacts; Code/package consolidated the narrow safe path: observe only the existing Evidence Lifecycle intake decision after Claim Understanding, with no downstream execution.
 **Review result:** Architect APPROVE, Security/runtime APPROVE, Code/package APPROVE, LLM/semantic APPROVE after adding bounded structural reason codes, `intake_ready` qualification, `executionEligibility: "not_executable_precutover"`, allow-list projection, no-enumeration route rules, `Cache-Control: no-store`, concrete sink caps, fail-closed sink failure behavior, and stronger public leak tests.
+**Implementation result:** X7-J is implemented inside the approved source/test envelope. It adds a bounded process-local Evidence Lifecycle intake artifact sink, an authenticated internal no-store route, and orchestrator observation after Claim Understanding. Public output remains damaged/precutover. Security required and approved a best-effort observer hardening so sink exceptions cannot affect public envelope generation. Focused X7-J tests, Analyzer V2 runtime tests, Analyzer V2 tests, build, gate validators, and diff hygiene passed locally.
 
 ## 1. Purpose
 

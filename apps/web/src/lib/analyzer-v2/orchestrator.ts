@@ -2,6 +2,7 @@ import {
   buildClaimUnderstandingStageHandoff,
   claimPreparationEnvelopeDiagnosticsFromHandoff,
 } from "@/lib/analyzer-v2/claim-understanding/stage-handoff";
+import { buildEvidenceLifecycleIntake } from "@/lib/analyzer-v2/evidence-lifecycle/intake";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import {
@@ -12,6 +13,7 @@ import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
 import { createClaimUnderstandingRuntimeInMemoryArtifactSink } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
+import { recordEvidenceLifecycleIntakeRuntimeArtifact } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -38,6 +40,16 @@ export async function runClaimBoundaryPipelineV2(
     { activation: claimUnderstandingActivation },
   );
   const claimUnderstandingHandoff = buildClaimUnderstandingStageHandoff(context, claimUnderstandingState);
+  const evidenceLifecycleIntake = buildEvidenceLifecycleIntake(context, claimUnderstandingHandoff);
+  try {
+    recordEvidenceLifecycleIntakeRuntimeArtifact({
+      context,
+      claimUnderstandingHandoff,
+      evidenceLifecycleIntake,
+    });
+  } catch {
+    // X7-J observability must never affect the public damaged/precutover envelope.
+  }
   const envelope = buildDamagedClaimBoundaryV2Envelope(
     context,
     claimPreparationEnvelopeDiagnosticsFromHandoff(claimUnderstandingHandoff),

@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { runClaimBoundaryPipelineV2 } from "@/lib/analyzer-v2";
 import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
+import {
+  clearEvidenceLifecycleIntakeRuntimeArtifacts,
+  readEvidenceLifecycleIntakeRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink";
 
 function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -113,6 +117,91 @@ describe("analyzer-v2 shell", () => {
     expect(serialized).not.toContain("V2_CLAIM_UNDERSTANDING_GATE1");
     expect(serialized).not.toContain("v2.claim-understanding.runtime-stage.0");
     expect(serialized).not.toContain("gateway_policy_not_executable");
+  });
+
+  it("records product-internal Evidence Lifecycle intake observation without public exposure", async () => {
+    const ledgerId = "job-v2-shell-x7j:precutover-observability";
+    clearEvidenceLifecycleIntakeRuntimeArtifacts(ledgerId);
+
+    const result = await runClaimBoundaryV2Shell({
+      jobId: "job-v2-shell-x7j",
+      inputType: "text",
+      inputValue: "Structural shell X7-J input",
+    });
+    const serialized = JSON.stringify(result.resultJson);
+    const keys = collectKeys(result.resultJson);
+
+    expect(readEvidenceLifecycleIntakeRuntimeArtifacts(ledgerId)).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        ledgerId,
+        evidenceLifecycleIntake: expect.objectContaining({
+          observationStatus: "blocked_preexecution",
+          status: "blocked",
+          executionEligibility: "not_executable_precutover",
+        }),
+        downstreamExecution: {
+          queryPlanningExecuted: false,
+          sourceAcquisitionExecuted: false,
+          providerNetworkExecuted: false,
+          parserExecuted: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+        },
+      }),
+    ]);
+    expect(keys).not.toEqual(expect.arrayContaining([
+      "evidenceLifecycleIntake",
+      "downstreamExecution",
+      "artifactVersion",
+      "artifactId",
+      "ledgerId",
+      "runId",
+    ]));
+    expect(serialized).not.toContain("job-v2-shell-x7j:precutover-observability");
+    expect(serialized).not.toContain("contract_observed_preexecution");
+    expect(serialized).not.toContain("not_executable_precutover");
+  });
+
+  it("keeps public damaged output unchanged when intake artifact recording fails", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink", () => ({
+      recordEvidenceLifecycleIntakeRuntimeArtifact: () => {
+        throw new Error("simulated X7-J sink failure");
+      },
+    }));
+
+    try {
+      const { runClaimBoundaryV2Shell: runWithFailingSink } = await import("@/lib/analyzer-v2/pipeline-shell");
+      const result = await runWithFailingSink({
+        jobId: "job-v2-shell-x7j-sink-failure",
+        inputType: "text",
+        inputValue: "Structural shell X7-J sink failure input",
+      });
+
+      expect(result.resultJson).toMatchObject({
+        _schemaVersion: "4.0.0-cb-precutover",
+        meta: {
+          pipeline: "claimboundary-v2",
+          publicCutoverStatus: "blocked_precutover",
+          runId: "job-v2-shell-x7j-sink-failure",
+        },
+        qualityGates: {
+          damagedReport: true,
+        },
+        verdict: {
+          label: "UNVERIFIED",
+          confidenceTier: "none",
+        },
+      });
+      expect(JSON.stringify(result.resultJson)).not.toContain("simulated X7-J sink failure");
+      expect(JSON.stringify(result.resultJson)).not.toContain("not_executable_precutover");
+    } finally {
+      vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink");
+      vi.resetModules();
+    }
   });
 
   it("threads ACS preparation diagnostics into admin-only warnings without exposing internal state", async () => {
