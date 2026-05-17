@@ -224,8 +224,6 @@ port: 443
 path: /core/v1/wikipedia/en/search/page
 method: GET
 allowedRequestParameters: [{ key: q, valueSource: query_text }]
-  - key: limit
-    value: 3
 allowedRequestHeaders:
   - accept: application_json
   - user-agent: factharbor_internal_agent
