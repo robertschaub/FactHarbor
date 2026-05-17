@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T14:19:39.920Z",
-  "count": 610,
+  "generatedAt": "2026-05-17T14:26:53.334Z",
+  "count": 611,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13303,6 +13303,32 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Commit the X7-T-R docs/status/handoff/index package only. Then refresh the runtime from the committed revision with all three gates visible in the actual port-3000 process ancestry, rerun the four-route hidden artifact preflight, run the clean/idle checkpoint, and submit the German canary first. Sub"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-T-S_Final_Launcher_Exact_Gate_Smoke_Addendum.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-t-s",
+        "final",
+        "launcher",
+        "exact",
+        "gate",
+        "smoke",
+        "addendum"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-17_V2_Slice_X7-T-S_Final_Launcher_Exact_Gate_Smoke_Addendum.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit this docs-only package, verify clean worktree, run the disposable exact-gate probe, restart runtime with the corrected launcher, prove the actual port-3000 process ancestry has all three gates, rerun hidden-route auth/no-store preflight, run the idle checkpoint, and submit only the German can"
     },
     {
       "file": "2026-05-17_Lead_Developer_V2_X7-T_Query_Planning_Runtime_Live_Smoke_Package.md",
