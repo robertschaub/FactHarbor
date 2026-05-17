@@ -1,5 +1,7 @@
 # 2026-04-20 Dominant Proposition Architecture Plan
 
+> Archived to `Docs/ARCHIVE/PipelineV1/` on 2026-05-17. This is a pre-V2 / PipelineV1-transitional implementation plan, not a current V2 execution plan. See [2026-05-17_Dominant_Proposition_V2_Disposition.md](../../WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md).
+
 ## Status
 
 - Decision state: reviewed, challenged, and re-consolidated

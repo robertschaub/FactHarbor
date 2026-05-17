@@ -3591,6 +3591,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-S0_CU_Artifact_NoStore_Hardening.md
 
 ---
+### 2026-05-17 | Unassigned | Codex (GPT-5) | Dominant Proposition V2 Reclassification -- [Standard] [open-items: no]
+**For next agent:** The pre-V2 Dominant Proposition implementation plan is no longer active WIP. It now lives at `Docs/ARCHIVE/PipelineV1/2026-04-20_Dominant_Proposition_Architecture_Plan.md` with an archive banner, and the live decision note is `Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md`. `Docs/WIP/README.md`, `Docs/STATUS/Backlog.md`, and `Docs/ARCHIVE/README_ARCHIVE.md` now label the split explicitly, and the ACS/check-worthiness specs now point their related-doc references at the V2 disposition note.
+-> Docs/AGENTS/Handoffs/2026-05-17_Unassigned_Dominant_Proposition_V2_Reclassification.md
+
+---
 ### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-S Query Planning Execution Package -- [Significant] [open-items: yes]
 **For next agent:** Prepared and reviewed `Docs/WIP/2026-05-17_V2_Slice_X7-S_Product_Internal_Query_Planning_Execution_Package.md` as the source package for product-internal hidden Query Planning execution after X7-R. LLM/semantic and Code/package reviewers approved; Security/runtime approved after Section 7.2 made the internal artifact route contract explicit: configured `FH_ADMIN_KEY`, production missing-key `401`, wrong-key `401`, no-store on all response paths, exactly one bounded `ledgerId`, rejection of invalid/listing/enumeration shapes, bounded generic errors, no ledger echo, no listing, and no public route/UI/report/export/compat import path. X7-S authorizes source implementation only inside its envelope and does not authorize live jobs, source/search/fetch/parser/SR/cache IO, evidence/report/verdict/warning/confidence behavior, prompt/config/schema edits, public exposure, ACS/direct URL, V1 reuse, or V1 cleanup.
 **Warnings:** Env flag alone is not execution authority; Query Planning activation must remain separate and default closed. X7-T live smoke requires a later reviewed package.

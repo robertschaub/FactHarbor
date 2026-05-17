@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-05-17
-**Status**: V2 WIP packages preserved. V1 pipeline-only plans moved to `Docs/ARCHIVE/PipelineV1/`; V2-relevant lessons retained in a current WIP note.
+**Status**: V2 WIP packages preserved. V1 pipeline-only plans moved to `Docs/ARCHIVE/PipelineV1/`; V2-relevant lessons and deferred V2-native decisions remain in current WIP notes.
 
 ---
 
@@ -14,7 +14,7 @@ This directory contains only:
 - **future-facing proposals and organizational documents**
 - **reference analyses still relevant for future decisions**
 
-Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`. V1 pipeline plans that are no longer valid for V2 execution live in `Docs/ARCHIVE/PipelineV1/`; their retained V2 lessons are summarized in [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md).
+Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`. V1 pipeline plans that are no longer valid for V2 execution live in `Docs/ARCHIVE/PipelineV1/`; retained V2 lessons and deferred V2-native decisions stay in WIP notes such as [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md) and [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md).
 
 ---
 
@@ -32,14 +32,13 @@ For the V2 pipeline rebuild, use `Current_Status.md`, `Backlog.md`, and `V2_Pipe
 ## Active Engineering / Quality Tracks
 
 ### Archived V1 pipeline tracks
-The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, and grounding/boundary stabilization tracks were moved to [Docs/ARCHIVE/PipelineV1](../ARCHIVE/PipelineV1/) on 2026-05-17. They remain historical context only; current V2 design lessons are retained in [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md).
+The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, grounding/boundary stabilization tracks, and the pre-V2 Dominant Proposition implementation plan were moved to [Docs/ARCHIVE/PipelineV1](../ARCHIVE/PipelineV1/) on 2026-05-17. They remain historical context only; current V2 design lessons are retained in [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md), and the Dominant Proposition V2 decision is recorded in [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md).
 
 ### Prompt governance / architecture
 - [2026-04-15_Prompt_System_Architecture_Issues_Report.md](2026-04-15_Prompt_System_Architecture_Issues_Report.md) — 4 unresolved prompt governance issues (PSA-1 through PSA-4)
 - [2026-04-16_Prompt_Genericity_Pass_Plan.md](2026-04-16_Prompt_Genericity_Pass_Plan.md) — items 7-10 awaiting Captain approval; items 1-6 possibly landed
 - [2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md](2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md) — v3 rule draft awaiting Captain review; 3 open questions
 - [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) — adjudicated execution plan after GPT + Claude Opus prompt-audit consolidation
-- [2026-04-20_Dominant_Proposition_Architecture_Plan.md](2026-04-20_Dominant_Proposition_Architecture_Plan.md) — consolidated reviewed plan for optional parent/top-level proposition semantics, `all_must_hold` aggregation, and UCM-flagged alpha rollout
 
 ### Multilingual
 - [2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md](2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md) — **APPROVED** multilingual policy; Proposal 2 partially shipped, EN lane experimental/default-off
@@ -76,6 +75,7 @@ The former Phase 7/report-quality-restoration, UPQ-1 Stage 2/3, and grounding/bo
 
 ### Quality / analyzer
 - [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) - implementation-ready v1 spec for pre-job AtomicClaim selection over the current Stage 1 final claim set
+- [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md) — V2 decision note: archive the pre-V2 `topLevelProposition` plan and reassess only if V2 benchmark evidence later shows a real parent/conjunctive gap
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — long-run retrieval-first roadmap
 - [2026-04-04_Source_Provenance_Tracking_Design.md](2026-04-04_Source_Provenance_Tracking_Design.md) — source provenance extraction design (v2, post-GPT review). PARKED.
 - [2026-04-10_Claim_Clarification_Gate_Design.md](2026-04-10_Claim_Clarification_Gate_Design.md) — claim clarification gate design (out of scope for current track)
@@ -125,6 +125,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-05-17 | Dominant Proposition V2 reclassification | 1 pre-V2 Dominant Proposition plan archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 144 |
 | 2026-05-17 | PipelineV1 + stale WIP archival | 22 files archived (18 PipelineV1 docs + 4 superseded WIP docs); 1 retained-lessons note added | 144 |
 | 2026-04-18 | **#12** | 48 files archived (Phase 2-6 execution artefacts, completed investigations, historical reviews, event prep, superseded proposals, abandoned MCP investigation) | 37 |
 | 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |

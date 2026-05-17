@@ -6,7 +6,7 @@ status: Draft for implementation review
 scope: ACS-CW-1 inside the ACS draft/prepared-job architecture
 related:
   - Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md
-  - Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md
+  - Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md
   - Docs/STATUS/Backlog.md
   - Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Debate_CheckWorthiness_Before_ACS.md
   - Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Clarified_Order_ACS_CheckWorthiness_TopLevelProposition.md

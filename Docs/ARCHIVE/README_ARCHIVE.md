@@ -8,9 +8,9 @@
 
 ### PipelineV1 archival with V2 retained lessons (2026-05-17)
 
-**Description**: Archived V1 pipeline maintenance, report-quality, calibration, optimization, and debate documents that are no longer valid V2 execution plans. V2-relevant lessons were extracted into `Docs/WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md`. `2026-04-04_Source_Provenance_Tracking_Design.md` was deliberately not moved here because it remains a parked future evidence-lifecycle design, not a PipelineV1-only document.
+**Description**: Archived V1 pipeline maintenance, report-quality, calibration, optimization, debate, and pre-V2 Dominant Proposition documents that are no longer valid V2 execution plans. V2-relevant lessons were extracted into `Docs/WIP/2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md`, and the Dominant Proposition V2 disposition was recorded in `Docs/WIP/2026-05-17_Dominant_Proposition_V2_Disposition.md`. `2026-04-04_Source_Provenance_Tracking_Design.md` was deliberately not moved here because it remains a parked future evidence-lifecycle design, not a PipelineV1-only document.
 
-**PipelineV1 files archived** (18):
+**PipelineV1 files archived** (19):
 
 | File | Reason |
 |------|--------|
@@ -32,6 +32,7 @@
 | `2026-03-19_SR_LLM_Calibration_Plan.md` | V1 source-reliability calibration note; live backlog retains SR-1 pointer, V2 calibration requires fresh specification. |
 | `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md` | V1 speed/cost optimization plan; residual ideas are linked from cost reference/backlog and need a fresh V2 baseline. |
 | `Quality_Improvement_Pending_fwd.md` | V1 residual quality backlog extract; active items belong in Backlog/Current_Status rather than WIP. |
+| `2026-04-20_Dominant_Proposition_Architecture_Plan.md` | Pre-V2 / PipelineV1-transitional parent-proposition plan; archived as obsolete for direct V2 implementation and replaced by a V2 disposition note. |
 
 **Additional WIP files archived** (4):
 
