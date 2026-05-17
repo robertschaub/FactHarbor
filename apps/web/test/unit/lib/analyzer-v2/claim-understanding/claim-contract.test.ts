@@ -28,6 +28,14 @@ function ajvWithClaimContractSchema(): Ajv2020 {
   return ajv;
 }
 
+function validateClaimContractJsonSchema(value: unknown): boolean {
+  const schema = readFixture<Record<string, unknown>>("schemas/claim-contract-v2.schema.json");
+  const ajv = new Ajv2020({ allErrors: true });
+  const validate = ajv.compile(schema);
+
+  return Boolean(validate(value));
+}
+
 function directInputClaimContract(): ClaimContract {
   return {
     schemaVersion: CLAIM_CONTRACT_V2_SCHEMA_VERSION,
@@ -65,6 +73,43 @@ function directInputClaimContract(): ClaimContract {
     ],
     integrityEvents: [],
     acsMigration: null,
+  };
+}
+
+function preparedSnapshotClaimContract(): ClaimContract {
+  return {
+    ...directInputClaimContract(),
+    input: {
+      ...directInputClaimContract().input,
+      detectedLanguage: "und",
+      selectedAtomicClaimIds: ["AC_PREPARED_01"],
+    },
+    inputGroundingSeed: {
+      ...directInputClaimContract().inputGroundingSeed,
+      source: "acs_prepared_snapshot",
+      detectedLanguage: "und",
+      acsSnapshotHash: "fixture-acs-snapshot-hash",
+    },
+    atomicClaims: [
+      {
+        id: "AC_PREPARED_01",
+        statement: "Prepared selected claim.",
+        selected: true,
+        source: "acs_prepared_snapshot",
+        gate1Status: {
+          status: "passed",
+          source: "acs_prepared_snapshot",
+          summary: "Prepared snapshot selected claim accepted.",
+          reasons: [],
+        },
+        integrityEvents: [],
+      },
+    ],
+    acsMigration: {
+      sourceSchemaVersion: "prepared-stage1-v1",
+      status: "accepted",
+      selectedClaimFinalityPreserved: true,
+    },
   };
 }
 
@@ -162,6 +207,72 @@ describe("analyzer-v2 claim contract fixture", () => {
       ))).toBe(true);
     }
   });
+
+  it.each([
+    [
+      "input.detectedLanguage und",
+      {
+        input: {
+          ...directInputClaimContract().input,
+          detectedLanguage: "und",
+        },
+      },
+    ],
+    [
+      "inputGroundingSeed.detectedLanguage und",
+      {
+        inputGroundingSeed: {
+          ...directInputClaimContract().inputGroundingSeed,
+          detectedLanguage: "und",
+        },
+      },
+    ],
+    [
+      "input.detectedLanguage blank",
+      {
+        input: {
+          ...directInputClaimContract().input,
+          detectedLanguage: "   ",
+        },
+      },
+    ],
+    [
+      "inputGroundingSeed.detectedLanguage blank",
+      {
+        inputGroundingSeed: {
+          ...directInputClaimContract().inputGroundingSeed,
+          detectedLanguage: "   ",
+        },
+      },
+    ],
+  ])("rejects accepted direct-input ClaimContract with %s", (_label, override) => {
+    const invalidContract = {
+      ...directInputClaimContract(),
+      ...override,
+    };
+
+    expect(ClaimContractSchema.safeParse(invalidContract).success).toBe(false);
+    expect(validateClaimContractJsonSchema(invalidContract)).toBe(false);
+  });
+
+  it("rejects direct-input ClaimContract language disagreement at runtime", () => {
+    const invalidContract = {
+      ...directInputClaimContract(),
+      inputGroundingSeed: {
+        ...directInputClaimContract().inputGroundingSeed,
+        detectedLanguage: "de",
+      },
+    };
+
+    expect(ClaimContractSchema.safeParse(invalidContract).success).toBe(false);
+  });
+
+  it("keeps prepared-snapshot copied-language behavior outside the direct-input language rule", () => {
+    const preparedContract = preparedSnapshotClaimContract();
+
+    expect(ClaimContractSchema.safeParse(preparedContract).success).toBe(true);
+    expect(validateClaimContractJsonSchema(preparedContract)).toBe(true);
+  });
 });
 
 describe("analyzer-v2 claim understanding result envelope", () => {
@@ -207,6 +318,29 @@ describe("analyzer-v2 claim understanding result envelope", () => {
       claimContract: {
         ...directInputClaimContract(),
         schemaVersion: "v2.claim_contract.1",
+      },
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+
+    expect(ClaimUnderstandingResultSchema.safeParse(accepted).success).toBe(false);
+  });
+
+  it("rejects accepted direct-input envelopes with unavailable language metadata at runtime", () => {
+    const accepted = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "accepted",
+      claimContract: {
+        ...directInputClaimContract(),
+        input: {
+          ...directInputClaimContract().input,
+          detectedLanguage: "und",
+        },
+        inputGroundingSeed: {
+          ...directInputClaimContract().inputGroundingSeed,
+          detectedLanguage: "und",
+        },
       },
       integrityEvents: [],
       blockedReason: null,

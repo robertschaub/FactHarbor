@@ -209,7 +209,7 @@ describe("Analyzer V2 Query Planning pre-execution observation", () => {
     expect(JSON.stringify(observation)).not.toContain("AC_DIRECT_01");
   });
 
-  it("blocks unavailable language signal as missing metadata only", () => {
+  it("blocks unavailable direct-input language metadata as an invalid ClaimContract", () => {
     const languageMissingContract = claimContract({
       input: {
         ...claimContract().input,
@@ -225,8 +225,8 @@ describe("Analyzer V2 Query Planning pre-execution observation", () => {
 
     expect(observation).toMatchObject({
       status: "blocked_pre_query_planning",
-      blockedReason: "language_signal_unavailable",
-      inputScope: "direct_text_claim_contract",
+      blockedReason: "claim_contract_invalid",
+      inputScope: "not_applicable",
       sourceLanguageSignal: "unavailable",
     });
     expect(JSON.stringify(observation)).not.toContain("und");

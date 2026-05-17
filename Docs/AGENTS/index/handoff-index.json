@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T11:06:32.313Z",
-  "count": 600,
+  "generatedAt": "2026-05-17T11:21:31.659Z",
+  "count": 601,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -13095,6 +13095,57 @@
       ],
       "files_touched": [],
       "summary": "Lead Developer Handoff: V2 X7-O Ledger-Bound Hardening"
+    },
+    {
+      "file": "2026-05-17_Lead_Developer_V2_X7-Q_Language_Metadata_Repair_Implementation.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-q",
+        "claim-understanding",
+        "language-metadata",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary-v2.prompt.md",
+        "apps/web/src/lib/analyzer-v2/claim-understanding/schemas.ts",
+        "apps/web/test/fixtures/analyzer-v2/schemas/claim-contract-v2.schema.json",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/claim-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/model-adapter.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning/preexecution-observation.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-Q_Language_Metadata_Repair_Implementation.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Implement the deputy-approved X7-Q package after X7-P exposed accepted direct-text Claim Understanding carrying `und` language metadata into X7-O/Query Planning prerequisites.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism",
+            "chosen_option": "amend the existing V2 Claim Understanding prompt and ClaimContract schema boundary",
+            "rejected_path_and_why": "downstream X7-O/Query Planning fallback rejected because it would pass the observer while leaving the real input-envelope precondition divergent",
+            "what_was_removed_simplified": "none; the invalid accepted-output path is now rejected at the contract boundary",
+            "what_was_added": "prompt guidance, structural schema refinement, JSON schema fixture constraints, focused schema/retry/downstream tests, and a boundary guard against deterministic language-detection dependencies/helpers",
+            "net_mechanism_count": "unchanged",
+            "budget_reconciliation": "implementation stayed in the approved source/prompt/test surface except for one runtime-stage test fixture alignment required by the broad Claim Understanding verifier; no runtime fallback, flag, provider, cache, source, public, report, verdict, or V1 mechanism was added",
+            "verification": "focused X7-Q tests, Claim Understanding slice, Analyzer V2 slice, build, V2 gate validator, self-test, and diff check passed",
+            "debt_accepted_and_removal_trigger": "none",
+            "residual_debt": "post-repair product-route behavior is unproven until a separate reviewed live-smoke package runs on a committed/refreshed runtime"
+          }
+        }
+      }
     }
   ]
 }

@@ -48,6 +48,11 @@ export const V2AtomicClaimSchema = z.object({
   integrityEvents: z.array(ClaimIntegrityEventSchema),
 }).strict();
 
+function isConcreteSourceLanguage(value: string): boolean {
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized.toLowerCase() !== "und";
+}
+
 export const ClaimContractSchema = z.object({
   schemaVersion: z.literal(CLAIM_CONTRACT_V2_SCHEMA_VERSION),
   input: z.object({
@@ -65,7 +70,40 @@ export const ClaimContractSchema = z.object({
     status: z.literal("accepted"),
     selectedClaimFinalityPreserved: z.boolean(),
   }).strict().nullable(),
-}).strict();
+}).strict().superRefine((claimContract, context) => {
+  if (claimContract.inputGroundingSeed.source !== "direct_input") {
+    return;
+  }
+
+  const inputLanguage = claimContract.input.detectedLanguage.trim();
+  const seedLanguage = claimContract.inputGroundingSeed.detectedLanguage.trim();
+
+  if (!isConcreteSourceLanguage(claimContract.input.detectedLanguage)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["input", "detectedLanguage"],
+      message: "Direct-input ClaimContract requires concrete non-und input language metadata.",
+    });
+  }
+  if (!isConcreteSourceLanguage(claimContract.inputGroundingSeed.detectedLanguage)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["inputGroundingSeed", "detectedLanguage"],
+      message: "Direct-input ClaimContract requires concrete non-und grounding language metadata.",
+    });
+  }
+  if (
+    isConcreteSourceLanguage(claimContract.input.detectedLanguage)
+    && isConcreteSourceLanguage(claimContract.inputGroundingSeed.detectedLanguage)
+    && inputLanguage !== seedLanguage
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["inputGroundingSeed", "detectedLanguage"],
+      message: "Direct-input ClaimContract language metadata must match the input language metadata.",
+    });
+  }
+});
 
 const AcceptedClaimUnderstandingResultSchema = z.object({
   schemaVersion: z.literal(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION),

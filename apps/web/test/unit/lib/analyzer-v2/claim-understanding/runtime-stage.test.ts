@@ -62,7 +62,7 @@ function directTextRuntimeOptions(providerCall: ClaimUnderstandingProviderCall) 
   };
 }
 
-function acceptedResult(input: string, language = "und"): ClaimUnderstandingResult {
+function acceptedResult(input: string, language = "en"): ClaimUnderstandingResult {
   return {
     schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
     status: "accepted",

@@ -354,6 +354,24 @@ const forbiddenNetworkParserSpecifiers = [
   "playwright",
   "puppeteer",
 ];
+const forbiddenLanguageDetectionSpecifiers = [
+  "cld",
+  "cld2",
+  "cld3",
+  "franc",
+  "langdetect",
+  "language-detect",
+  "languagedetect",
+  "tinyld",
+  "whatlang",
+];
+const forbiddenLanguageDetectionIdentifiers = new Set([
+  "classifyLanguageFromText",
+  "detectLanguageFromText",
+  "inferLanguageFromText",
+  "languageKeywordList",
+  "languageKeywords",
+]);
 const forbiddenSourceReliabilitySpecifiers = [
   "@/lib/source-reliability",
   "@/lib/source-reliability-cache",
@@ -6090,6 +6108,34 @@ describe("analyzer-v2 boundary guard", () => {
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isProviderSdkImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Analyzer V2 free of deterministic language-detection implementations", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of [...v2SourceFiles, ...analyzerV2RuntimeSourceFiles]) {
+      const sourceFile = parseSource(sourcePath);
+      const relativePath = toPosix(path.relative(webRoot, sourcePath));
+
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (forbiddenLanguageDetectionSpecifiers.some((forbidden) => (
+          specifier === forbidden
+          || specifier.startsWith(`${forbidden}/`)
+          || specifier.startsWith(`${forbidden}-`)
+          || specifier.includes(`/${forbidden}/`)
+        ))) {
+          violations.push(`${relativePath} imports deterministic language detection dependency ${specifier}`);
+        }
+      }
+
+      for (const identifier of collectIdentifiers(sourceFile)) {
+        if (forbiddenLanguageDetectionIdentifiers.has(identifier)) {
+          violations.push(`${relativePath} declares deterministic language detection identifier ${identifier}`);
         }
       }
     }

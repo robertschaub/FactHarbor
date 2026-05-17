@@ -130,7 +130,7 @@ describe("analyzer-v2 evidence query-planning input envelope", () => {
     }
   });
 
-  it("requires direct-text input and a real non-und source-language signal", () => {
+  it("requires direct-text input and rejects invalid direct-input language contracts", () => {
     expect(buildEvidenceQueryPlanningInputEnvelope({
       claimContract: claimContract({
         input: {
@@ -177,7 +177,26 @@ describe("analyzer-v2 evidence query-planning input envelope", () => {
       taskPolicySnapshot: {},
     })).toMatchObject({
       status: "blocked",
-      blockedReason: "language_signal_unavailable",
+      blockedReason: "claim_contract_invalid",
+    });
+
+    expect(buildEvidenceQueryPlanningInputEnvelope({
+      claimContract: claimContract({
+        input: {
+          ...claimContract().input,
+          detectedLanguage: "   ",
+        },
+        inputGroundingSeed: {
+          ...claimContract().inputGroundingSeed,
+          detectedLanguage: "   ",
+        },
+      }),
+      selectedAtomicClaimIds: ["AC_001"],
+      currentDate: "2026-05-15",
+      taskPolicySnapshot: {},
+    })).toMatchObject({
+      status: "blocked",
+      blockedReason: "claim_contract_invalid",
     });
   });
 });

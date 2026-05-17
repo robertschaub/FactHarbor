@@ -264,6 +264,30 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(section).not.toContain('"..."');
   });
 
+  it("requires direct-input accepted language metadata to be concrete and LLM-owned", () => {
+    const section = readSection(readPrompt(), sectionId);
+    const directInputSection = section.slice(
+      section.indexOf("Direct-input accepted `claimContract` shape:"),
+      section.indexOf("Prepared-snapshot accepted `claimContract` shape:"),
+    );
+    const preparedSnapshotSection = section.slice(
+      section.indexOf("Prepared-snapshot accepted `claimContract` shape:"),
+    );
+
+    expect(section).toContain("must be concrete source-language signals");
+    expect(section).toContain("must not be blank and must not be `und`");
+    expect(section).toContain("If `inputGroundingSeedJson.detectedLanguage` is already concrete, copy that value");
+    expect(section).toContain("If it is `und`, infer the primary language from the submitted/resolved direct input text itself");
+    expect(section).toContain("without English-only assumptions");
+    expect(section).toContain("do not translate the claim");
+    expect(section).toContain("do not change the claim statement language");
+    expect(section).toContain("For mixed-language direct input, use the primary language of the selected AtomicClaims");
+    expect(directInputSection).toContain("<replace with concrete non-und source-language signal>");
+    expect(directInputSection).not.toContain("<replace with copied language>");
+    expect(preparedSnapshotSection).toContain("<replace with copied language>");
+    expect(section).not.toMatch(/keyword list|regex|regular expression/i);
+  });
+
   it("pins generic externally assessable direct-question guidance without canary topics", () => {
     const section = readSection(readPrompt(), sectionId);
     const abstractMultilingualQuestion = "Hat Handlung A Anforderung B erfuellt?";

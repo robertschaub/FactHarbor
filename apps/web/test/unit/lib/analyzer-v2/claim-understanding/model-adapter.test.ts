@@ -376,6 +376,26 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
     expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["invalid_schema", "accepted"]);
   });
 
+  it("treats accepted direct-input und language metadata as schema invalid and retries structurally", async () => {
+    const calls: ClaimUnderstandingProviderCallRequest[] = [];
+    const outcome = await executeClaimUnderstandingModelAdapter(baseRequest(async (request) => {
+      calls.push(request);
+      return {
+        output: calls.length === 1 ? acceptedResult(DEFAULT_INPUT, "und") : acceptedResult(DEFAULT_INPUT, "en"),
+        telemetry: providerTelemetry(),
+      };
+    }));
+
+    expect(calls).toHaveLength(2);
+    expect(outcome.executionStatus).toBe("completed");
+    expect(outcome.claimUnderstandingResult?.status).toBe("accepted");
+    expect(outcome.claimUnderstandingResult?.status === "accepted"
+      ? outcome.claimUnderstandingResult.claimContract.input.detectedLanguage
+      : null).toBe("en");
+    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["invalid_schema", "accepted"]);
+    expect(outcome.telemetry.retryCount).toBe(1);
+  });
+
   it("returns damaged unavailable when the provider call fails or telemetry is not real", async () => {
     const providerFailure = await executeClaimUnderstandingModelAdapter(baseRequest(async () => {
       throw new Error("provider unavailable");

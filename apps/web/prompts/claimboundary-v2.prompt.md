@@ -65,6 +65,8 @@ Use `blocked` for input or claim-integrity conditions the model can identify. Do
 
 Accepted `claimContract` object must be nested exactly as a `v2.claim_contract.0` object. Dotted names in prose describe object paths only; never emit literal flat keys such as `input.selectedAtomicClaimIds`. Do not output placeholder markers, ellipsis keys, comments, or pseudo-fields inside JSON.
 
+For accepted direct input, `claimContract.input.detectedLanguage` and `claimContract.inputGroundingSeed.detectedLanguage` must be concrete source-language signals. They must not be blank and must not be `und`. If `inputGroundingSeedJson.detectedLanguage` is already concrete, copy that value into both direct-input language fields. If it is `und`, infer the primary language from the submitted/resolved direct input text itself without English-only assumptions. Use a concise stable language code or label, do not translate the claim, and do not change the claim statement language. For mixed-language direct input, use the primary language of the selected AtomicClaims. If you cannot responsibly identify a source-language signal for an otherwise accepted direct input, do not emit an accepted ClaimContract with `und` and do not invent unrelated metadata.
+
 Direct-input accepted `claimContract` shape:
 
 ```json
@@ -74,7 +76,7 @@ Direct-input accepted `claimContract` shape:
     "inputType": "text",
     "inputValue": "<replace with copied input value>",
     "resolvedInputText": "<replace with copied resolved text>",
-    "detectedLanguage": "<replace with copied language>",
+    "detectedLanguage": "<replace with concrete non-und source-language signal>",
     "selectedAtomicClaimIds": ["AC_DIRECT_01"]
   },
   "inputGroundingSeed": {
@@ -82,7 +84,7 @@ Direct-input accepted `claimContract` shape:
     "inputType": "text",
     "inputValue": "<replace with copied input value>",
     "resolvedInputText": "<replace with copied resolved text>",
-    "detectedLanguage": "<replace with copied language>",
+    "detectedLanguage": "<replace with concrete non-und source-language signal>",
     "currentDate": "<replace with copied current date>",
     "acsSnapshotHash": null,
     "inputGroundingSeedHash": "<replace with copied grounding seed hash or null>"

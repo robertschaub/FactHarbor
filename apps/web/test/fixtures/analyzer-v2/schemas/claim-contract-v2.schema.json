@@ -152,6 +152,76 @@
       ]
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "inputGroundingSeed": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "const": "direct_input"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        },
+        "required": [
+          "inputGroundingSeed"
+        ]
+      },
+      "then": {
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "detectedLanguage": {
+                "type": "string",
+                "allOf": [
+                  {
+                    "not": {
+                      "type": "string",
+                      "pattern": "^\\s*$"
+                    }
+                  },
+                  {
+                    "not": {
+                      "type": "string",
+                      "pattern": "^\\s*[uU][nN][dD]\\s*$"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "inputGroundingSeed": {
+            "type": "object",
+            "properties": {
+              "detectedLanguage": {
+                "type": "string",
+                "allOf": [
+                  {
+                    "not": {
+                      "type": "string",
+                      "pattern": "^\\s*$"
+                    }
+                  },
+                  {
+                    "not": {
+                      "type": "string",
+                      "pattern": "^\\s*[uU][nN][dD]\\s*$"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "atomicClaim": {
       "type": "object",
