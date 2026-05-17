@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-K Direct-Text X7-J Intake Artifact Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** X7-K is deputy-approved as an executable docs-only live-smoke package after X7-J. After package commit, clean worktree, runtime refresh, pre-run verifiers, and admin route preflight, it may run at most the two Captain-approved direct-text jobs to verify both Claim Understanding and X7-J Evidence Lifecycle intake artifacts while public output remains `4.0.0-cb-precutover` / `blocked_precutover`. X3-B prompt edits, Query Planning execution, X5-X7 harness execution, source-provider/search/fetch/content-dereference/provider-network/parser execution, EvidenceCorpus/EvidenceItems/report/verdict behavior, cache/SR/storage, public exposure, ACS/direct URL, B3 proof, 2D-C, V1 work, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-K_Live_Smoke_Package.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-J Intake Artifact Implementation -- [Significant] [open-items: yes]
 **For next agent:** X7-J is implemented inside the approved package. Product V2 now builds the existing Evidence Lifecycle intake decision after Claim Understanding and records a bounded, sanitized, process-local, admin-only intake artifact through a no-store internal route; public output remains damaged/precutover. Security required and approved best-effort observer hardening so sink failures cannot affect public envelope generation. Query Planning, X5-X7 harness execution, source-provider/search/fetch/content-dereference/provider-network/parser execution, EvidenceCorpus/EvidenceItems/report/verdict behavior, cache/SR/storage, public exposure, live jobs, ACS/direct URL, B3 proof, 2D-C, V1 work, and V1 cleanup remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-J_Intake_Artifact_Implementation.md
