@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T08:06:39.477Z",
-  "count": 589,
+  "generatedAt": "2026-05-17T08:17:32.195Z",
+  "count": 590,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -12780,6 +12780,28 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-17_Lead_Architect_V2_X7-N-B_Live_Smoke_Result.md",
+      "date": "2026-05-17",
+      "roles": [
+        "lead_architect",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-n-b",
+        "live-smoke",
+        "result",
+        "route-repair"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Treat job `585dcad36a3044928f6c29edab0d3b86` as clean one-job route-smoke evidence only. Use a new reviewed package for any further live job or implementation slice."
     },
     {
       "file": "2026-05-17_Lead_Architect_V2_X7-N-B_Post_Route_Repair_Live_Smoke_Package.md",

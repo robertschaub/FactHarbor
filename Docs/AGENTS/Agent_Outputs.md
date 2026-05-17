@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-B Post-Route-Repair Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** X7-N-B passed its one-job clean route-repair smoke on package/runtime `7f104139`: job `585dcad36a3044928f6c29edab0d3b86` first prepared `pipeline: claimboundary-v2`, recorded clean created/executed hash `7f104139932afccfef49a3ef4ba3d97780dbfaaa`, reached `SUCCEEDED`, wrote accepted internal Claim Understanding and X7-J intake artifacts, kept public output `4.0.0-cb-precutover` / `blocked_precutover`, and leaked no hidden markers in non-admin public inspection. X7-N-B does not approve the Bolsonaro canary, live expansion, Query Planning execution, source/provider/parser execution, evidence/report/verdict behavior, public cutover, or V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-B_Live_Smoke_Result.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-B Post-Route-Repair Live-Smoke Package -- [Significant] [open-items: yes]
 **For next agent:** X7-N-B is a docs-only execution package for one clean German direct-text smoke after the route-selection fail-closed repair and X3-B commit. It may run only after reviewer acceptance, package commit, clean worktree, runtime refresh, explicit `claimboundary-v2` shell/runtime gates, focused verifiers, and admin-route preflight. It must stop on dirty provenance, missing gates, V1 events, absent/problematically exposed hidden artifacts, public V2 validity, or any source/provider/parser/downstream semantic execution.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-B_Post_Route_Repair_Live_Smoke_Package.md
