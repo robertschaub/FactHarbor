@@ -18,6 +18,13 @@ import {
   clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts,
   readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink";
+import type {
+  SourceAcquisitionCandidateProviderNetworkLoopDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop";
+import {
+  clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts,
+  readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -120,10 +127,100 @@ function acceptedQueryPlanningResult(): EvidenceQueryPlanningResult {
   };
 }
 
+function candidateProviderNetworkDecision(): SourceAcquisitionCandidateProviderNetworkLoopDecision {
+  return {
+    networkLoopVersion: "v2.evidence-lifecycle.source-acquisition-candidate-provider-network-loop.x7w2",
+    visibility: "internal_only",
+    status: "candidate_provider_network_completed",
+    blockedReason: null,
+    damagedReason: null,
+    closedLoopStatus: "closed_loop_completed_no_source_candidates",
+    handoffStatus: "ready_not_executable",
+    requestStatus: "source_acquisition_ready_not_executable",
+    intakeStatus: "intake_ready_not_executable",
+    selectedAtomicClaimCount: 1,
+    queryEntryCount: 1,
+    retrievalPolicyCount: 1,
+    sourceLanguageSignal: "present",
+    productNetworkAuthorityHash: "a".repeat(64),
+    runtimeContractAuthorityHash: "r".repeat(64),
+    endpointSnapshotHash: "e".repeat(64),
+    networkBudgetSnapshotHash: "n".repeat(64),
+    providerAllowlistSnapshotHash: "p".repeat(64),
+    candidateBudgetSnapshotHash: "b".repeat(64),
+    runtimeStatus: "completed_structural",
+    queryOutcomeSummaries: [
+      {
+        ordinal: 1,
+        candidateProviderNetworkQueryRef: "W2Q_001",
+        status: "attempted",
+        structuralReason: "not_stopped",
+        providerAttemptObserved: true,
+        candidateCount: 3,
+      },
+    ],
+    telemetry: {
+      candidateRuntimeExercised: true,
+      candidateProviderBoundaryInvoked: true,
+      providerNetworkBoundaryInvoked: true,
+      providerAttemptCount: 1,
+      networkAttemptCount: 1,
+      candidateCount: 3,
+      totalCandidateCount: 5,
+      structurallyDroppedCandidateCount: 2,
+      totalDurationMs: 42,
+      totalCompressedBytes: 2048,
+      totalDecompressedBytes: 4096,
+      totalBytes: 6144,
+      fixedDollarCost: 0,
+      costReason: "no_paid_api_no_credentials",
+      providerNetworkExecuted: true,
+      searchFetchCalled: true,
+      contentDereferenceCalled: false,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      sourceMaterialCreated: false,
+      evidenceCorpusCreated: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      publicSurfaceWritten: false,
+      networkAttempts: [
+        {
+          telemetryVersion: "v2.source-acquisition.provider-network-attempt-telemetry.7n3b2-t1",
+          visibility: "internal_only",
+          providerId: "wikimedia_core",
+          endpointId: "ep_wikimedia_core_page_search",
+          attemptOrdinal: 1,
+          structuralStatus: "success",
+          stopReason: "not_stopped",
+          durationMs: 42,
+          timeoutMs: 1500,
+          candidateCount: 5,
+          compressedBytes: 2048,
+          decompressedBytes: 4096,
+          byteCountState: "observed",
+          rawPayloadIncluded: false,
+          secretIncluded: false,
+          publicPayloadIncluded: false,
+          errorTraceIncluded: false,
+        },
+      ],
+    },
+    downstreamGate: "candidate_to_source_material_gate_closed",
+    publicCutoverStatus: "blocked_precutover",
+  };
+}
+
 describe("Analyzer V2 orchestrator X7-S Query Planning product-internal execution", () => {
   afterEach(() => {
     vi.doUnmock("@/lib/analyzer-v2/claim-understanding/runtime-stage");
     vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-query-planning-provider-factory");
+    vi.doUnmock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop");
     vi.resetModules();
   });
 
@@ -134,6 +231,9 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -162,6 +262,9 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         }),
       })),
     }));
+    vi.doMock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop", () => ({
+      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async () => candidateProviderNetworkDecision()),
+    }));
 
     const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
     const result = await runClaimBoundaryPipelineV2(
@@ -186,6 +289,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     const candidateClosedLoopArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
+    const candidateProviderNetworkArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -326,6 +431,39 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("queryText");
     expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("queryId");
     expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("providerAttemptId");
+    expect(candidateProviderNetworkArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        candidateProviderNetwork: expect.objectContaining({
+          status: "candidate_provider_network_completed",
+          blockedReason: null,
+          damagedReason: null,
+          queryEntryCount: 1,
+          downstreamGate: "candidate_to_source_material_gate_closed",
+        }),
+        productExecution: expect.objectContaining({
+          candidateProviderNetworkObserved: true,
+          candidateRuntimeExecuted: true,
+          providerNetworkExecuted: true,
+          searchFetchCalled: true,
+          contentDereferenceCalled: false,
+          parserExecuted: false,
+          sourceMaterialCreated: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          publicSurfaceWritten: false,
+          fixedDollarCost: 0,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("Asylbereich Schweiz 235000");
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("queryText");
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("queryId");
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("providerAttemptId");
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("confidence");
+    expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("cacheKey");
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
@@ -372,6 +510,9 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         })),
       })),
     }));
+    vi.doMock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop", () => ({
+      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async () => candidateProviderNetworkDecision()),
+    }));
 
     const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
     await runClaimBoundaryPipelineV2(
@@ -397,6 +538,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     const candidateClosedLoopArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
+    const candidateProviderNetworkArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
     expect(artifacts[0]).toMatchObject({
       selectedAtomicClaimIds: ["AC_001"],
       sourceAcquisitionHandoff: {
@@ -468,6 +611,26 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         bytesRead: 0,
       }),
     });
+    expect(candidateProviderNetworkArtifacts[0]).toMatchObject({
+      candidateProviderNetwork: {
+        status: "candidate_provider_network_completed",
+        blockedReason: null,
+        selectedAtomicClaimCount: 1,
+        queryEntryCount: 1,
+        sourceLanguageSignal: "present",
+      },
+      productExecution: expect.objectContaining({
+        candidateRuntimeExecuted: true,
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        contentDereferenceCalled: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+        providerAttemptCount: 1,
+        candidateCount: 3,
+        fixedDollarCost: 0,
+      }),
+    });
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {
@@ -511,5 +674,6 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId)).toEqual([]);
+    expect(readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId)).toEqual([]);
   });
 });

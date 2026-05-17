@@ -145,6 +145,26 @@ describe("Analyzer V2 source-acquisition candidate envelope", () => {
       status: "valid",
       blockedReasons: [],
     });
+    expect(validateSourceAcquisitionCandidateProviderAllowlistSnapshot(allowlist({
+      allowedProviders: [
+        {
+          providerId: "wikimedia_core",
+          endpointKind: "candidate_search_api_future",
+          maxQueries: 2,
+          timeoutMs: 1500,
+          credentialsState: "not_required_for_approved_network_provider",
+        },
+      ],
+      disabledProviders: [
+        {
+          providerId: "openalex",
+          disabledReason: "credentials_missing",
+        },
+      ],
+    }))).toEqual({
+      status: "valid",
+      blockedReasons: [],
+    });
     expect(validateSourceAcquisitionCandidateBudgetSnapshot(budget())).toEqual({
       status: "valid",
       blockedReasons: [],

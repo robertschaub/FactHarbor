@@ -35,6 +35,10 @@ const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactIns
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -84,6 +88,10 @@ const evidenceLifecycleSourceAcquisitionCandidateRuntimeAdmissionPath = path.res
 const evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath = path.resolve(
   evidenceLifecycleSourceAcquisitionRoot,
   "candidate-runtime-closed-loop.ts",
+);
+const evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "candidate-provider-network-loop.ts",
 );
 const evidenceLifecycleSourceAcquisitionPreIoFencePath = path.resolve(
   evidenceLifecycleSourceAcquisitionRoot,
@@ -144,6 +152,10 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateAdmissionArtif
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -504,6 +516,7 @@ const runtimeScaffoldOptionOwnerPaths = new Set([
   analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
   analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath,
   evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath,
+  evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath,
 ].map(toPosix));
 const runtimeScaffoldOptionTerms = [
   "claimUnderstandingRuntime",
@@ -756,6 +769,23 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArti
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      new Set([
+        "SourceAcquisitionCandidateProviderNetworkAttemptTelemetryRecord",
+        "SourceAcquisitionCandidateProviderNetworkBlockedReason",
+        "SourceAcquisitionCandidateProviderNetworkDamagedReason",
+        "SourceAcquisitionCandidateProviderNetworkLoopDecision",
+        "SourceAcquisitionCandidateProviderNetworkQuerySummary",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -770,6 +800,7 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
     ]),
   ],
   [
@@ -784,6 +815,17 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
       "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
       "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+    ]),
+  ],
+  [
+    toPosix(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
     ]),
   ],
   [
@@ -833,6 +875,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
     ]),
   ],
 ]);
@@ -3513,6 +3561,349 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W2 candidate-provider network product-owned, hidden, and scoped to the approved provider boundary", () => {
+    expect(existsSync(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath))
+      .toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath))
+      .toBe(true);
+    const violations: string[] = [];
+
+    const ownerSourceFile = parseSource(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath);
+    const approvedOwnerRuntimeImports = new Map<string, Set<string>>([
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+        new Set([
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_COMMIT",
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_PACKAGE_PATH",
+          "SOURCE_ACQUISITION_CANDIDATE_RUNTIME_VERSION",
+          "SourceAcquisitionCandidateBudgetSnapshot",
+          "SourceAcquisitionCandidateProviderAllowlistSnapshot",
+          "SourceAcquisitionCandidateRunRequest",
+          "SourceAcquisitionCandidateRuntimeDecision",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+        new Set([
+          "SourceAcquisitionCandidateRuntimeAuthority",
+          "createSourceAcquisitionCandidateRuntimeAuthority",
+          "executeSourceAcquisitionCandidateRuntime",
+          "readSourceAcquisitionCandidateRuntimeAuthoritySnapshot",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+        new Set([
+          "SourceAcquisitionRuntimeAuthoritySnapshot",
+          "createSourceAcquisitionRuntimeAuthority",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+        new Set(["createSourceAcquisitionNetworkAuthority"]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+        new Set([
+          "SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT",
+          "SOURCE_ACQUISITION_NETWORK_RUNTIME_VERSION",
+          "SourceAcquisitionNetworkBudgetSnapshot",
+          "SourceAcquisitionNetworkEndpointSnapshot",
+          "sourceAcquisitionNetworkApproval",
+          "validateSourceAcquisitionNetworkBudgetSnapshot",
+          "validateSourceAcquisitionNetworkEndpointSnapshot",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+        new Set([
+          "SourceAcquisitionNetworkAttemptTelemetryRecord",
+          "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+        ]),
+      ],
+    ]);
+    for (const importBinding of collectImportBindings(ownerSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = approvedOwnerRuntimeImports.get(specifier);
+      if (approvedNames) {
+        for (const importedName of importBinding.names) {
+          if (!approvedNames.has(importedName)) {
+            violations.push(`X7-W2 owner imports unapproved runtime symbol ${importedName} from ${specifier}`);
+          }
+        }
+      } else if (isAnalyzerV2RuntimeImport(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath, specifier)) {
+        violations.push(`X7-W2 owner imports unapproved analyzer-v2-runtime module ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network-transport")) {
+        violations.push(`X7-W2 owner imports network transport directly ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-content") || specifier.includes("source-acquisition-content-parser")) {
+        violations.push(`X7-W2 owner imports content/parser owner ${specifier}`);
+      }
+      if (isV1AnalyzerImport(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath, specifier)) {
+        violations.push(`X7-W2 owner imports V1 analyzer ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-W2 owner imports source/network/parser dependency ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-W2 owner imports IO/storage dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-W2 owner imports Source Reliability ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-W2 owner imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-W2 owner imports test/mock/fixture module ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-W2 owner imports public surface ${specifier}`);
+      }
+    }
+
+    const ownerContent = readFileSync(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.source-acquisition-candidate-provider-network-loop.x7w2",
+      "approved_x7w2_product_candidate_provider_network",
+      "wikimedia_core",
+      "ep_wikimedia_core_page_search",
+      "api.wikimedia.org",
+      "/core/v1/wikipedia/en/search/page",
+      "{ key: \"q\", valueSource: \"query_text\" }",
+      "not_required_for_approved_network_provider",
+      "credentialsState: \"not_required\"",
+      "redirectPolicy: \"deny\"",
+      "proxyPolicy: \"none\"",
+      "fieldName: \"pages\"",
+      "decompressionPolicy: \"identity_only\"",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 2",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_CANDIDATES_PER_QUERY = 3",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS = 1500",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 3000",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP = 32_768",
+      "query_count_exceeds_w2_cap",
+      "candidate_to_source_material_gate_closed",
+      "providerNetworkImplementationCommit: SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT",
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "attemptTelemetrySink",
+      "sanitizeNetworkAttempt",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!ownerContent.includes(requiredText)) {
+        violations.push(`X7-W2 owner missing required text ${requiredText}`);
+      }
+    }
+    for (const forbiddenText of [
+      "source-acquisition-network-transport",
+      "source-acquisition-content-transport",
+      "source-acquisition-content-parser",
+      "fetch(",
+      "XMLHttpRequest",
+      "globalThis.fetch",
+      "cacheKeyConstructed",
+      "sourceReliabilityTouched",
+      "rawSdkResponse",
+      "rawPayload:",
+      "providerPayload",
+      "reportMarkdown",
+      "truthPercentage",
+      "public_ready",
+      "live_eligible",
+    ]) {
+      if (ownerContent.includes(forbiddenText)) {
+        violations.push(`X7-W2 owner references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const sinkSourceFile = parseSource(
+      analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath,
+    );
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkApprovedImports
+          .get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`X7-W2 artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`X7-W2 artifact sink imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+      if (isV1AnalyzerImport(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath, specifier)) {
+        violations.push(`X7-W2 artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-W2 artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-W2 artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-W2 artifact sink imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-W2 artifact sink imports Source Reliability ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-W2 artifact sink imports public surface ${specifier}`);
+      }
+    }
+
+    const sinkContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_ARTIFACT_MAX_SERIALIZED_BYTES = 24_576",
+      "candidateProviderNetworkObserved: true",
+      "providerNetworkExecuted: decision.telemetry.providerNetworkExecuted",
+      "searchFetchCalled: decision.telemetry.searchFetchCalled",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "evidenceItemGenerated: false",
+      "warningGenerated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "fixedDollarCost: 0",
+      "costReason: \"no_paid_api_no_credentials\"",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`X7-W2 artifact sink missing required text ${requiredText}`);
+      }
+    }
+    for (const forbiddenText of [
+      "queryText",
+      "queryId",
+      "providerAttemptId",
+      "ClaimContract",
+      "Raw Title",
+      "EvidenceItem",
+      "EvidenceCorpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "parsedContent",
+      "promptText",
+      "rawSdkResponse",
+      "public_ready",
+      "live_eligible",
+    ]) {
+      if (sinkContent.includes(forbiddenText)) {
+        violations.push(`X7-W2 artifact sink references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const routeSourceFile = parseSource(
+      analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath,
+    );
+    const routeImports = collectModuleSpecifiers(routeSourceFile).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(routeSourceFile)) {
+      violations.push(`X7-W2 route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required X7-W2 import ${requiredSpecifier}`);
+      }
+    }
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-W2 downstream/source execution module ${forbiddenSpecifier}`);
+      }
+    }
+
+    const productionSourceFiles = collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+        && !filePath.includes(`${path.sep}test${path.sep}`)
+    );
+    for (const sourcePath of productionSourceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const importBinding of collectImportBindings(sourceFile)) {
+        if (
+          importBinding.specifier === "@/lib/analyzer-v2-runtime/source-acquisition-network-factory"
+          && importBinding.names.includes("buildSourceAcquisitionCandidateNetworkProviderBoundary")
+          && toPosix(sourcePath) !== toPosix(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath)
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider-network boundary outside X7-W2 owner`);
+        }
+        if (
+          importBinding.specifier.includes("source-acquisition-network-transport")
+          && (
+            toPosix(sourcePath) === toPosix(analyzerV2OrchestratorPath)
+            || publicSurfaceFiles.map(toPosix).includes(toPosix(sourcePath))
+          )
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports network transport`);
+        }
+      }
+    }
+
+    for (const sourcePath of publicSurfaceFiles.filter((filePath) =>
+      existsSync(filePath)
+      && toPosix(filePath)
+        !== toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath)
+    )) {
+      for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+        if (
+          specifier.includes("candidate-provider-network-loop")
+          || specifier.includes("evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink")
+          || specifier.includes("source-acquisition-network-")
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports W2/provider-network module ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -4283,6 +4674,14 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath,
       analyzerV2RuntimeHiddenDirectTextSourceAcquisitionExecutionGatePath,
     ].map(toPosix));
+    const productFilesWithApprovedX7W2ProviderNetworkReachability = new Set([
+      analyzerV2IndexPath,
+      analyzerV2OrchestratorPath,
+      analyzerV2PipelineShellPath,
+      analyzerV2RunnerIngressPath,
+      analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath,
+      ...publicSurfaceFiles,
+    ].map(toPosix));
     const filesToScan = Array.from(new Set([
       ...adapterForbiddenProductPaths,
       ...publicSurfaceFiles,
@@ -4301,6 +4700,9 @@ describe("analyzer-v2 boundary guard", () => {
 
       for (const importedPath of directAndTransitive) {
         if (forbiddenTargetPaths.has(toPosix(importedPath))) {
+          if (productFilesWithApprovedX7W2ProviderNetworkReachability.has(toPosix(sourcePath))) {
+            continue;
+          }
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} reaches ${toPosix(path.relative(webRoot, importedPath))}`);
         }
       }
@@ -6597,13 +6999,14 @@ describe("analyzer-v2 boundary guard", () => {
     ]);
   });
 
-  it("keeps Evidence Lifecycle source-acquisition controlled-harness-only before provider wiring", () => {
+  it("keeps Evidence Lifecycle source-acquisition owners explicit through W2 provider wiring", () => {
     const sourceAcquisitionFiles = collectFiles(evidenceLifecycleSourceAcquisitionRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     );
     const violations: string[] = [];
 
     expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract.ts",
@@ -6669,6 +7072,17 @@ describe("analyzer-v2 boundary guard", () => {
               "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
               "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
               "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+            ].includes(specifier)
+          )
+          && !(
+            toPosix(sourcePath) === toPosix(evidenceLifecycleSourceAcquisitionCandidateProviderNetworkLoopPath)
+            && [
+              "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+              "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+              "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+              "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+              "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+              "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
             ].includes(specifier)
           )
         ) {

@@ -9,6 +9,7 @@ import { runEvidenceQueryPlanningRuntime } from "@/lib/analyzer-v2/evidence-life
 import { buildQueryPlanSourceAcquisitionHandoff } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff";
 import { buildSourceAcquisitionCandidateRuntimeAdmissionDecision } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission";
 import { runSourceAcquisitionCandidateRuntimeClosedLoop } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop";
+import { runSourceAcquisitionCandidateProviderNetworkLoop } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop";
 import { buildSourceAcquisitionIntakeBoundaryDecision } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary";
 import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
@@ -43,6 +44,9 @@ import {
 import {
   recordEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -168,6 +172,16 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifact({
           context,
           closedLoopDecision: candidateRuntimeClosedLoop,
+        });
+        const candidateProviderNetwork = await runSourceAcquisitionCandidateProviderNetworkLoop({
+          handoffDecision: sourceAcquisitionHandoff,
+          sourceAcquisitionStartDecision,
+          sourceAcquisitionIntakeBoundary,
+          candidateRuntimeClosedLoop,
+        });
+        recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
+          context,
+          networkDecision: candidateProviderNetwork,
         });
       }
     } catch {

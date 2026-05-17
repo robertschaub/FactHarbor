@@ -1,0 +1,718 @@
+import { describe, expect, it } from "vitest";
+import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types";
+import {
+  buildSourceAcquisitionCandidateRuntimeClosedLoopAuthoritySnapshot,
+  type SourceAcquisitionCandidateRuntimeClosedLoopDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop";
+import {
+  buildSourceAcquisitionCandidateProviderNetworkAllowlistSnapshot,
+  buildSourceAcquisitionCandidateProviderNetworkAuthoritySnapshot,
+  buildSourceAcquisitionCandidateProviderNetworkBudgetSnapshot,
+  buildSourceAcquisitionCandidateProviderNetworkCandidateBudgetSnapshot,
+  buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot,
+  runSourceAcquisitionCandidateProviderNetworkLoop,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop";
+import type {
+  QueryPlanSourceAcquisitionHandoff,
+  QueryPlanSourceAcquisitionHandoffDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff";
+import type {
+  SourceAcquisitionIntakeBoundaryDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary";
+import type {
+  SourceAcquisitionRequest,
+  SourceAcquisitionStartDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types";
+import type {
+  SourceAcquisitionNetworkLowLevelRequest,
+  SourceAcquisitionNetworkLowLevelTransport,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-network-transport";
+
+const POISON_QUERY_TEXT = "https://example.invalid/source?secret=sk_test_query_text";
+const POISON_QUERY_ID = "EQ_001";
+const POISON_LANGUAGE_RATIONALE = "language policy contains sk_test_language and https://example.invalid/lang";
+const POISON_PROVIDER_PAYLOAD = "https://example.invalid/provider?secret=sk_test_provider_payload";
+
+function claimContract(): ClaimContract {
+  return {
+    schemaVersion: "v2.claim_contract.0",
+    input: {
+      inputType: "text",
+      inputValue: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      resolvedInputText: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      detectedLanguage: "de",
+      selectedAtomicClaimIds: ["AC_001"],
+    },
+    inputGroundingSeed: {
+      source: "direct_input",
+      inputType: "text",
+      inputValue: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      resolvedInputText: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      detectedLanguage: "de",
+      currentDate: "2026-05-17",
+      acsSnapshotHash: null,
+      inputGroundingSeedHash: "seed-hash",
+    },
+    atomicClaims: [
+      {
+        id: "AC_001",
+        statement: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz.",
+        selected: true,
+        source: "v2_claim_understanding",
+        gate1Status: {
+          status: "passed",
+          source: "v2_claim_understanding",
+          summary: "One selected assertion.",
+          reasons: [],
+        },
+        integrityEvents: [],
+      },
+    ],
+    integrityEvents: [],
+    acsMigration: null,
+  };
+}
+
+function queryEntry(index: number) {
+  return {
+    queryId: `EQ_${String(index).padStart(3, "0")}`,
+    retrievalPolicyKey: "baseline_research",
+    queryText: index === 1 ? POISON_QUERY_TEXT : `structural query ${index}`,
+    targetAtomicClaimIds: ["AC_001"],
+  };
+}
+
+function handoff(overrides: Partial<QueryPlanSourceAcquisitionHandoff> = {}): QueryPlanSourceAcquisitionHandoff {
+  return {
+    handoffVersion: "v2.evidence-lifecycle.query-plan-source-acquisition-handoff.0",
+    visibility: "internal_only",
+    executionScope: "not_executable",
+    sourceAcquisitionStatus: "ready_not_executable",
+    selectedAtomicClaimIds: ["AC_001"],
+    queryPlanResultSchemaVersion: "v2.evidence_query_planning_result.0",
+    queryPlanningStatus: "accepted",
+    inspection: {
+      inspectionVersion: "v2.evidence-query-planning.inspection.0",
+      resultStatus: "accepted",
+      selectedAtomicClaimIds: ["AC_001"],
+      selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+      queryEntryCount: 1,
+      sourceLanguagePolicy: {
+        primaryLanguage: "de",
+        supplementaryLanguageDecision: "needed",
+        rationale: POISON_LANGUAGE_RATIONALE,
+      },
+      structuralCoverage: {
+        selectedAtomicClaimCount: 1,
+        queryCoveredClaimCount: 1,
+        uncoveredSelectedAtomicClaimIds: [],
+        partialCoverage: false,
+        coverageJudgment: "structural_only_not_quality_assessment",
+      },
+      promptProvenance: {
+        promptContentHash: "p".repeat(64),
+        renderedPromptHash: "r".repeat(64),
+        configSnapshotHash: "c".repeat(64),
+        cacheDecisionReason: "no_store_runtime_dispatch_safety",
+      },
+      modelPolicyId: "v2.model.evidence_query_planning.0",
+      cacheDecision: {
+        namespace: "analyzer-v2:query",
+        canRead: false,
+        canWrite: false,
+        reason: "no_store_runtime_dispatch_safety",
+      },
+    },
+    promptProvenance: {
+      promptContentHash: "p".repeat(64),
+      renderedPromptHash: "r".repeat(64),
+      configSnapshotHash: "c".repeat(64),
+      cacheDecisionReason: "no_store_runtime_dispatch_safety",
+    },
+    modelPolicyId: "v2.model.evidence_query_planning.0",
+    cacheProvenance: {
+      namespace: "analyzer-v2:query",
+      reason: "no_store_runtime_dispatch_safety",
+      canRead: false,
+      canWrite: false,
+    },
+    sourceLanguagePolicy: {
+      primaryLanguage: "de",
+      supplementaryLanguageDecision: "needed",
+      rationale: POISON_LANGUAGE_RATIONALE,
+    },
+    structuralCoverage: {
+      selectedAtomicClaimCount: 1,
+      queryCoveredClaimCount: 1,
+      uncoveredSelectedAtomicClaimIds: [],
+      partialCoverage: false,
+      coverageJudgment: "structural_only_not_quality_assessment",
+    },
+    queryEntries: [queryEntry(1)],
+    ...overrides,
+  };
+}
+
+function readyHandoffDecision(
+  value: QueryPlanSourceAcquisitionHandoff = handoff(),
+): QueryPlanSourceAcquisitionHandoffDecision {
+  return {
+    decisionVersion: "v2.evidence-lifecycle.query-plan-source-acquisition-handoff.0",
+    visibility: "internal_only",
+    status: "ready_not_executable",
+    handoff: value,
+    blockedReason: null,
+  };
+}
+
+function sourceRequest(overrides: Partial<SourceAcquisitionRequest> = {}): SourceAcquisitionRequest {
+  return {
+    requestVersion: "v2.evidence-lifecycle.source-acquisition-request.0",
+    visibility: "internal_only",
+    executionScope: "contract_only_no_provider_execution",
+    sourceAcquisitionStatus: "ready_not_executable",
+    intake: {
+      intakeVersion: "v2.evidence-lifecycle.intake.0",
+      selectedAtomicClaimIds: ["AC_001"],
+      runId: "job-v2-x7w2-provider-network",
+      currentDate: "2026-05-17",
+      detectedLanguage: "de",
+    },
+    policySnapshot: {
+      snapshotVersion: "v2.evidence-lifecycle.task-policy.0",
+      source: "static_contract_only",
+      policyStatus: "query_planning_hidden_internal_executable",
+      plannedTasks: [],
+      retrievalPolicyCatalog: [],
+      cachePolicy: "no_store_no_read",
+      providerExecution: "not_wired",
+      promptModelExecution: "query_planning_approved_only",
+      publicExposure: "forbidden",
+      sourceReliabilityIntegration: "thin_port_pending",
+      sourceLanguagePolicy: "source_language_first_query_planning_approved",
+    },
+    retrievalPolicyCatalog: [
+      { policyKey: "baseline_research", status: "planned_not_executable", source: "static_contract_only" },
+    ],
+    claimContract: claimContract(),
+    ...overrides,
+  };
+}
+
+function readyStartDecision(request = sourceRequest()): SourceAcquisitionStartDecision {
+  return {
+    decisionVersion: "v2.evidence-lifecycle.source-acquisition-request.0",
+    visibility: "internal_only",
+    status: "source_acquisition_ready_not_executable",
+    request,
+    blockedReason: null,
+    sourceEvidenceLifecycleStatus: "intake_ready",
+  };
+}
+
+function intakeDecision(
+  overrides: Partial<SourceAcquisitionIntakeBoundaryDecision> = {},
+): SourceAcquisitionIntakeBoundaryDecision {
+  return {
+    boundaryVersion: "v2.evidence-lifecycle.source-acquisition-intake-boundary.x7v",
+    visibility: "internal_only",
+    status: "intake_ready_not_executable",
+    blockedReason: null,
+    handoffStatus: "ready_not_executable",
+    requestStatus: "source_acquisition_ready_not_executable",
+    executionScope: "not_executable",
+    selectedAtomicClaimCount: 1,
+    queryEntryCount: 1,
+    retrievalPolicyCount: 1,
+    sourceLanguageSignal: "present",
+    executionPosture: {
+      sourceExecutionAuthority: "blocked_precutover",
+      providerNetworkAuthority: "not_authorized",
+      parserAuthority: "not_authorized",
+      publicExposure: "forbidden",
+    },
+    execution: {
+      sourceAcquisitionExecuted: false,
+      providerNetworkExecuted: false,
+      searchFetchCalled: false,
+      contentDereferenceCalled: false,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      sourceReliabilityCalled: false,
+      sourceMaterialCreated: false,
+      evidenceCorpusCreated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+    },
+    ...overrides,
+  };
+}
+
+function closedLoopDecision(
+  overrides: Partial<SourceAcquisitionCandidateRuntimeClosedLoopDecision> = {},
+): SourceAcquisitionCandidateRuntimeClosedLoopDecision {
+  return {
+    closedLoopVersion: "v2.evidence-lifecycle.source-acquisition-candidate-runtime-closed-loop.x7w1b",
+    visibility: "internal_only",
+    status: "closed_loop_completed_no_source_candidates",
+    blockedReason: null,
+    damagedReason: null,
+    admissionStatus: "admission_ready_no_runtime_execution",
+    handoffStatus: "ready_not_executable",
+    requestStatus: "source_acquisition_ready_not_executable",
+    intakeStatus: "intake_ready_not_executable",
+    selectedAtomicClaimCount: 1,
+    queryEntryCount: 1,
+    retrievalPolicyCount: 1,
+    sourceLanguageSignal: "present",
+    productClosedLoopAuthorityHash: buildSourceAcquisitionCandidateRuntimeClosedLoopAuthoritySnapshot()
+      .authoritySnapshotHash,
+    runtimeContractAuthorityHash: "r".repeat(64),
+    providerAllowlistSnapshotHash: "p".repeat(64),
+    candidateBudgetSnapshotHash: "b".repeat(64),
+    runtimeStatus: "completed_structural",
+    queryOutcomeSummaries: [
+      {
+        ordinal: 1,
+        closedLoopQueryRef: "CLQ_001",
+        status: "failed",
+        structuralReason: "provider_failure",
+        providerAttemptObserved: true,
+        candidateCount: 0,
+      },
+    ],
+    telemetry: {
+      candidateRuntimeExercised: true,
+      closedProviderBoundaryInvoked: true,
+      providerAttemptCount: 1,
+      candidateCount: 0,
+      totalCandidateCount: 0,
+      bytesRead: 0,
+      providerNetworkExecuted: false,
+      searchFetchCalled: false,
+      contentDereferenceCalled: false,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      sourceMaterialCreated: false,
+      evidenceCorpusCreated: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      publicSurfaceWritten: false,
+    },
+    publicCutoverStatus: "blocked_precutover",
+    ...overrides,
+  };
+}
+
+function fakeTransport(calls: SourceAcquisitionNetworkLowLevelRequest[]): SourceAcquisitionNetworkLowLevelTransport {
+  return {
+    resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+    request: async (request) => {
+      calls.push(request);
+      return {
+        statusCode: 200,
+        headers: { "content-type": "application/json" },
+        remoteAddress: "93.184.216.34",
+        body: Buffer.from(JSON.stringify({
+          pages: Array.from({ length: 5 }, (_, index) => ({
+            id: index + 1,
+            key: `Raw_Key_${index}_${POISON_PROVIDER_PAYLOAD}`,
+            title: `Raw Title ${index} ${POISON_PROVIDER_PAYLOAD}`,
+            excerpt: `Raw excerpt ${index} ${POISON_PROVIDER_PAYLOAD}`,
+            description: POISON_PROVIDER_PAYLOAD,
+            thumbnail: { url: POISON_PROVIDER_PAYLOAD },
+          })),
+        }), "utf8"),
+      };
+    },
+    now: () => 100,
+  };
+}
+
+describe("Analyzer V2 Source Acquisition candidate-provider network loop", () => {
+  it("runs one hidden Wikimedia candidate-provider network path without leaking query or provider payloads", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: fakeTransport(calls),
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.hostname).toBe("api.wikimedia.org");
+    expect(calls[0]?.pathWithQuery).toContain("/core/v1/wikipedia/en/search/page?q=");
+    expect(calls[0]?.pathWithQuery).not.toContain("limit=");
+    expect(decision).toMatchObject({
+      networkLoopVersion: "v2.evidence-lifecycle.source-acquisition-candidate-provider-network-loop.x7w2",
+      visibility: "internal_only",
+      status: "candidate_provider_network_completed",
+      blockedReason: null,
+      damagedReason: null,
+      closedLoopStatus: "closed_loop_completed_no_source_candidates",
+      handoffStatus: "ready_not_executable",
+      requestStatus: "source_acquisition_ready_not_executable",
+      intakeStatus: "intake_ready_not_executable",
+      queryEntryCount: 1,
+      queryOutcomeSummaries: [
+        {
+          ordinal: 1,
+          candidateProviderNetworkQueryRef: "W2Q_001",
+          status: "attempted",
+          structuralReason: "not_stopped",
+          providerAttemptObserved: true,
+          candidateCount: 3,
+        },
+      ],
+      telemetry: expect.objectContaining({
+        candidateRuntimeExercised: true,
+        candidateProviderBoundaryInvoked: true,
+        providerNetworkBoundaryInvoked: true,
+        providerAttemptCount: 1,
+        networkAttemptCount: 1,
+        candidateCount: 3,
+        totalCandidateCount: 5,
+        structurallyDroppedCandidateCount: 2,
+        fixedDollarCost: 0,
+        costReason: "no_paid_api_no_credentials",
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        contentDereferenceCalled: false,
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        sourceReliabilityCalled: false,
+        sourceMaterialCreated: false,
+        evidenceCorpusCreated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        publicSurfaceWritten: false,
+      }),
+      downstreamGate: "candidate_to_source_material_gate_closed",
+      publicCutoverStatus: "blocked_precutover",
+    });
+    expect(decision.productNetworkAuthorityHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.runtimeContractAuthorityHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.endpointSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.networkBudgetSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.providerAllowlistSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.candidateBudgetSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(decision.telemetry.totalCompressedBytes).toBeGreaterThan(0);
+    expect(decision.telemetry.totalDecompressedBytes).toBeGreaterThan(0);
+    expect(decision.telemetry.networkAttempts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_only",
+        providerId: "wikimedia_core",
+        endpointId: "ep_wikimedia_core_page_search",
+        structuralStatus: "success",
+        stopReason: "not_stopped",
+        byteCountState: "observed",
+        rawPayloadIncluded: false,
+        secretIncluded: false,
+        publicPayloadIncluded: false,
+        errorTraceIncluded: false,
+      }),
+    ]);
+    for (const forbidden of [
+      POISON_QUERY_TEXT,
+      POISON_QUERY_ID,
+      POISON_LANGUAGE_RATIONALE,
+      POISON_PROVIDER_PAYLOAD,
+      "Raw Title",
+      "Raw excerpt",
+      "Raw_Key",
+      "queryText",
+      "queryId",
+      "sourceLanguagePolicy",
+      "providerAttemptId",
+      "SourceAcquisitionCandidateProviderAttemptRequest",
+      "sk_test",
+      "https://example.invalid",
+      "EvidenceItem",
+      "EvidenceCorpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "sourceReliabilityScore",
+      "parsedContent",
+    ]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
+
+  it("blocks before network execution when prerequisites or exact W2 snapshots are invalid", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const tooManyQueries = handoff({
+      queryEntries: [queryEntry(1), queryEntry(2), queryEntry(3)],
+    });
+
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(tooManyQueries),
+      sourceAcquisitionStartDecision: readyStartDecision(sourceRequest()),
+      sourceAcquisitionIntakeBoundary: intakeDecision({ queryEntryCount: 3 }),
+      candidateRuntimeClosedLoop: closedLoopDecision({ queryEntryCount: 3 }),
+      lowLevelTransport: fakeTransport(calls),
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "query_count_exceeds_w2_cap",
+      telemetry: {
+        providerNetworkExecuted: false,
+        searchFetchCalled: false,
+      },
+    });
+    expect(calls).toEqual([]);
+
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision({ status: "blocked_pre_closed_candidate_runtime_loop" }),
+      lowLevelTransport: fakeTransport(calls),
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "candidate_runtime_closed_loop_not_completed",
+    });
+
+    const endpoint = {
+      ...buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot(),
+      canonicalAsciiHostname: "en.wikipedia.org",
+    };
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      endpointSnapshot: endpoint,
+      lowLevelTransport: fakeTransport(calls),
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "network_endpoint_invalid",
+    });
+
+    const endpointWithLiteralLimit = {
+      ...buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot(),
+      allowedRequestParameters: [
+        { key: "q", valueSource: "query_text" },
+        { key: "limit", valueSource: "retrieval_policy_key" },
+      ],
+    };
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      endpointSnapshot: endpointWithLiteralLimit,
+      lowLevelTransport: fakeTransport(calls),
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "network_endpoint_invalid",
+    });
+  });
+
+  it("requires exact no-credential provider posture and maps network failures structurally", async () => {
+    const endpoint = buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot();
+    const providerAllowlist = buildSourceAcquisitionCandidateProviderNetworkAllowlistSnapshot({
+      endpointSnapshotHash: endpoint.endpointSnapshotHash,
+    });
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      providerAllowlistSnapshot: {
+        ...providerAllowlist,
+        allowedProviders: [
+          {
+            ...providerAllowlist.allowedProviders[0],
+            credentialsState: "present_without_secret",
+          },
+        ],
+      },
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "provider_allowlist_invalid",
+    });
+
+    const dnsPoison = "dns failure https://example.invalid/sk_test_dns";
+    const failure = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: {
+        resolve: async () => {
+          throw new Error(dnsPoison);
+        },
+        request: async () => {
+          throw new Error("request must not run after DNS failure");
+        },
+      },
+    });
+
+    expect(failure).toMatchObject({
+      status: "candidate_provider_network_damaged_structural",
+      damagedReason: "candidate_runtime_query_coverage_invalid",
+      telemetry: {
+        providerAttemptCount: 1,
+        networkAttemptCount: 1,
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        candidateCount: 0,
+        totalCandidateCount: 0,
+      },
+    });
+    expect(failure.telemetry.networkAttempts).toEqual([
+      expect.objectContaining({
+        providerId: "wikimedia_core",
+        stopReason: "dns_resolution_failed",
+        byteCountState: "not_reached",
+        compressedBytes: 0,
+        decompressedBytes: 0,
+      }),
+    ]);
+    expect(JSON.stringify(failure)).not.toContain(dnsPoison);
+    expect(JSON.stringify(failure)).not.toContain("example.invalid");
+    expect(JSON.stringify(failure)).not.toContain("sk_test_dns");
+  });
+
+  it("builds exact W2 endpoint, provider, budget, and authority snapshots", async () => {
+    const currentHandoff = handoff();
+    const request = sourceRequest();
+    const endpoint = buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot();
+    const providerAllowlist = buildSourceAcquisitionCandidateProviderNetworkAllowlistSnapshot({
+      endpointSnapshotHash: endpoint.endpointSnapshotHash,
+    });
+    const candidateBudget = buildSourceAcquisitionCandidateProviderNetworkCandidateBudgetSnapshot({
+      handoff: currentHandoff,
+      request,
+    });
+    const networkBudget = buildSourceAcquisitionCandidateProviderNetworkBudgetSnapshot({
+      endpointSnapshot: endpoint,
+      providerAllowlist,
+      candidateBudget,
+    });
+    const authority = buildSourceAcquisitionCandidateProviderNetworkAuthoritySnapshot({
+      endpointSnapshotHash: endpoint.endpointSnapshotHash,
+      networkBudgetSnapshotHash: networkBudget.networkBudgetSnapshotHash,
+      providerAllowlistSnapshotHash: providerAllowlist.providerAllowlistSnapshotHash,
+      candidateBudgetSnapshotHash: candidateBudget.budgetSnapshotHash,
+    });
+
+    expect(endpoint).toMatchObject({
+      providerId: "wikimedia_core",
+      endpointId: "ep_wikimedia_core_page_search",
+      canonicalAsciiHostname: "api.wikimedia.org",
+      path: "/core/v1/wikipedia/en/search/page",
+      method: "GET",
+      allowedRequestParameters: [{ key: "q", valueSource: "query_text" }],
+      credentialsState: "not_required",
+      redirectPolicy: "deny",
+      proxyPolicy: "none",
+      responseCandidatePointer: { kind: "object_array_field", fieldName: "pages" },
+      decompressionPolicy: "identity_only",
+      noCache: true,
+      noStorage: true,
+      noSourceReliability: true,
+      noProduct: true,
+      noPublic: true,
+    });
+    expect(JSON.stringify(endpoint)).not.toContain("limit");
+    expect(providerAllowlist).toMatchObject({
+      allowedProviders: [
+        {
+          providerId: "wikimedia_core",
+          endpointKind: "candidate_search_api_future",
+          maxQueries: 2,
+          timeoutMs: 1500,
+          credentialsState: "not_required_for_approved_network_provider",
+        },
+      ],
+      disabledProviders: [{ providerId: "openalex", disabledReason: "credentials_missing" }],
+      noCache: true,
+      noStorage: true,
+      noSourceReliability: true,
+      noProduct: true,
+      noPublic: true,
+    });
+    expect(candidateBudget).toMatchObject({
+      queryEntryCount: 1,
+      maxAttemptsPerQuery: 1,
+      maxCandidateRecordsPerQuery: 3,
+      providerTimeoutMs: 1500,
+      totalCandidateAcquisitionTimeoutMs: 3000,
+      cancellationState: "not_requested",
+      retryPolicy: "none",
+    });
+    expect(networkBudget).toMatchObject({
+      maxProvidersPerRun: 1,
+      maxQueriesPerProvider: 2,
+      maxAttemptsPerQuery: 1,
+      maxCandidatesPerQuery: 3,
+      perQueryTimeoutMs: 1500,
+      totalNetworkTimeoutMs: 3000,
+      retryPolicy: "none",
+      noCache: true,
+      noStorage: true,
+      noSourceReliability: true,
+      noProduct: true,
+      noPublic: true,
+    });
+    expect(authority).toMatchObject({
+      status: "approved_x7w2_product_candidate_provider_network",
+      approvedBy: "captain_deputy_review_team",
+      visibility: "internal_only",
+      providerId: "wikimedia_core",
+      endpointId: "ep_wikimedia_core_page_search",
+      providerNetworkImplementationCommit: "54b8af1a",
+      capabilityScope: {
+        candidateProviderNetwork: "approved_wikimedia_core_search_only",
+        providerSdk: false,
+        arbitraryUrlDereference: false,
+        contentDereference: false,
+        parser: false,
+        cacheRead: false,
+        cacheWrite: false,
+        durableStorage: false,
+        sourceReliability: false,
+        sourceMaterial: false,
+        evidenceCorpus: false,
+        evidenceItem: false,
+        warning: false,
+        report: false,
+        verdict: false,
+        publicExposure: false,
+        liveJobs: false,
+        acsPreparedSnapshot: false,
+        directUrl: false,
+      },
+    });
+
+    await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(currentHandoff),
+      sourceAcquisitionStartDecision: readyStartDecision(request),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      w2AuthoritySnapshot: {
+        ...authority,
+        endpointSnapshotHash: "0".repeat(64),
+      },
+      lowLevelTransport: fakeTransport([]),
+    })).resolves.toMatchObject({
+      status: "blocked_pre_candidate_provider_network",
+      blockedReason: "w2_authority_invalid",
+      telemetry: {
+        providerNetworkExecuted: false,
+        searchFetchCalled: false,
+      },
+    });
+  });
+});

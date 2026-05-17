@@ -19,6 +19,7 @@ export type SourceAcquisitionCandidateProviderEndpointKind =
 
 type CandidateProviderCredentialsState =
   | "not_required_for_test_boundary"
+  | "not_required_for_approved_network_provider"
   | "present_without_secret";
 
 type SourceAcquisitionCandidateProviderEntry = {
@@ -328,7 +329,11 @@ export function validateSourceAcquisitionCandidateProviderAllowlistSnapshot(
       || !positiveInteger(entry.maxQueries)
       || !positiveInteger(entry.timeoutMs)
       || typeof entry.credentialsState !== "string"
-      || !["not_required_for_test_boundary", "present_without_secret"].includes(entry.credentialsState)
+      || ![
+        "not_required_for_test_boundary",
+        "not_required_for_approved_network_provider",
+        "present_without_secret",
+      ].includes(entry.credentialsState)
     ) {
       blockedReasons.push("allowed_provider_invalid");
       break;

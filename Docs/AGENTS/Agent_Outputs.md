@@ -3815,3 +3815,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** W2 can use this observer, but T1 itself does not authorize W2 product wiring or provider-network execution. First boundary-guard verification failed on the exact 7N-3B2 export allowlist and was recovered with a tiny debt-guard amendment inside the approved T1 guard envelope.
 **Learnings:** Byte-count telemetry should be projected as bounded internal scalars from the existing hidden network diagnostic; do not pass raw diagnostics, candidates, request data, or provider payloads into the next product owner.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_7N3B2-T1_Network_Attempt_Telemetry_Projection.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2 Product-Internal Candidate-Provider Network -- [Significant] [open-items: yes]
+**For next agent:** Implemented X7-W2 as a hidden product-internal candidate-provider network path after X7-V/X7-W1A/X7-W1B/W1C, using only the approved Wikimedia Core REST Search page-search endpoint. W2 records bounded admin-only cost/timing/outcome/byte telemetry and keeps public output damaged/precutover.
+**Warnings:** No live jobs were run or authorized. W2 does not authorize source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence behavior, public cutover, ACS/direct URL, broad provider portfolio, V1 work, or V1 cleanup. Wikimedia is a time-bound hidden proof dependency and must be rechecked before provider expansion.
+**Learnings:** Exact owner-path guards are required once a narrow network seam opens; broad pre-W2 transitive no-provider guards become misleading after approval.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-W2_Product_Internal_Candidate_Provider_Network.md
