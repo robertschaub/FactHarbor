@@ -3670,3 +3670,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** `modelTier: "standard"` is not currently a V2 resolver. The concrete executable model is frozen in `run-context.ts` and exact validators in Query Planning. Changing it means a reviewed approval package, not a config tweak. Resolve V2 model-policy/UCM authority and telemetry first.
 **Learnings:** V2 model review must distinguish model-policy metadata from activation snapshots and runtime exact validators before recommending swaps.
 -> Docs/AGENTS/Handoffs/2026-05-17_LLM_Expert_V2_Model_Selection_Investigation.md
+---
+### 2026-05-17 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-U1 Query Planning Diagnostic Live-Smoke Result -- [Significant] [open-items: yes]
+**For next agent:** X7-U1 passed as `PASS_X7_U1_DIAGNOSTIC_CAPTURED`. Job `83c76b93bea746e9b4848c020c8f34a1` ran on committed/refreshed runtime `6ca35b35eb3a202c966fea504069a7abcdf071fd`, reached hidden Query Planning runtime/model execution, kept public V2 blocked/precutover with no hidden leak, and captured one `invalid_schema` adapter attempt.
+**Warnings:** The diagnostic localizes the failure to strict Query Planning prompt/schema contract drift: `integrityEvents.0.type` and `.references` were required, while the provider emitted `eventType`. Do not relax schema, add adapter alias normalization, change model, add retries, or start source execution before the X7-U2 prompt contract repair.
+**Learnings:** A schema literal is not enough for executable prompt behavior if the loader renders only a narrow section. The rendered `V2_EVIDENCE_QUERY_PLANNING` section needs the task-event object contract.
+-> Docs/AGENTS/Handoffs/2026-05-17_Lead_Developer_V2_X7-U1_Query_Planning_Diagnostic_Live_Smoke_Result.md
