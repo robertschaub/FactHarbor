@@ -174,6 +174,57 @@ function acceptedRuntimeResult(): EvidenceQueryPlanningRuntimeResult {
   };
 }
 
+function damagedRuntimeResult(): EvidenceQueryPlanningRuntimeResult {
+  const accepted = acceptedRuntimeResult();
+  const damagedResult: EvidenceQueryPlanningRuntimeResult["result"] = {
+    schemaVersion: "v2.evidence_query_planning_result.0",
+    taskKey: "evidence_query_planning",
+    status: "damaged",
+    queryPlan: null,
+    integrityEvents: [
+      {
+        type: "schema_validation_failed",
+        severity: "error",
+        message: "schema validation failed",
+        references: ["evidence_query_planning"],
+      },
+    ],
+    blockedReason: null,
+    damagedReason: "schema_validation_failed",
+  };
+
+  return {
+    ...accepted,
+    result: damagedResult,
+    adapterOutcome: {
+      ...accepted.adapterOutcome!,
+      result: damagedResult,
+      attempts: [
+        {
+          attemptNumber: 1,
+          promptContentHash: "p".repeat(64),
+          status: "invalid_schema",
+          providerTelemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 100,
+            outputTokens: 60,
+            totalTokens: 160,
+            durationMs: 90,
+          },
+          failureMessage: JSON.stringify([
+            {
+              code: "invalid_type",
+              path: ["queryPlan", "queries", 0, "queryText"],
+              message: `Expected string near https://example.invalid/private and "${"x".repeat(96)}"`,
+            },
+          ]),
+        },
+      ],
+    },
+  };
+}
+
 describe("Analyzer V2 Evidence Query Planning runtime artifact sink", () => {
   it("records bounded admin-only X7-S runtime artifacts without raw prompt or source data", () => {
     const runContext = context();
@@ -241,6 +292,80 @@ describe("Analyzer V2 Evidence Query Planning runtime artifact sink", () => {
     expect(serialized).not.toContain("Evidence Query Planning prompt bytes");
     expect(serialized).not.toContain("Baseline retrieval");
     expect(serialized).not.toContain("https://example.invalid");
+    expect(artifacts[0]?.adapterAttemptDiagnostics).toEqual([
+      expect.objectContaining({
+        attemptNumber: 1,
+        status: "accepted",
+        failureCategory: "none",
+        issueCount: 0,
+        issues: [],
+      }),
+    ]);
+  });
+
+  it("records bounded sanitized adapter diagnostics for damaged schema attempts", () => {
+    const runContext = context();
+    const runtimeResult = damagedRuntimeResult();
+    const inspection = buildEvidenceQueryPlanningInspection({
+      runtimeResult,
+      selectedAtomicClaimIds: ["AC_001"],
+      selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+    });
+    const sourceAcquisitionHandoff = buildQueryPlanSourceAcquisitionHandoff({
+      runtimeResult,
+      selectedAtomicClaimIds: ["AC_001"],
+      selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+    });
+
+    clearEvidenceQueryPlanningRuntimeArtifacts(runContext.observabilityLedger.ledgerId);
+    const recordResult = recordEvidenceQueryPlanningRuntimeArtifact({
+      context: runContext,
+      runtimeResult,
+      inspection,
+      sourceAcquisitionHandoff,
+    });
+    const artifacts = readEvidenceQueryPlanningRuntimeArtifacts(runContext.observabilityLedger.ledgerId);
+    const serialized = JSON.stringify(artifacts);
+
+    expect(recordResult.status).toBe("recorded");
+    expect(artifacts[0]).toMatchObject({
+      runtime: {
+        resultStatus: "damaged",
+        resultDamagedReason: "schema_validation_failed",
+      },
+      queryEntryCount: 0,
+      queryEntries: [],
+      sourceLanguagePolicy: null,
+      sourceAcquisitionHandoff: {
+        status: "blocked",
+      },
+      adapterAttemptDiagnostics: [
+        {
+          attemptNumber: 1,
+          status: "invalid_schema",
+          promptContentHash: "p".repeat(64),
+          providerTelemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 100,
+            outputTokens: 60,
+            totalTokens: 160,
+            durationMs: 90,
+          },
+          failureCategory: "schema_validation",
+          issueCount: 1,
+          issues: [
+            {
+              path: "queryPlan.queries.0.queryText",
+              code: "invalid_type",
+              message: 'Expected string near [redacted_url] and "[redacted_long_literal]"',
+            },
+          ],
+        },
+      ],
+    });
+    expect(serialized).not.toContain("https://example.invalid");
+    expect(serialized).not.toContain("x".repeat(96));
   });
 
   it("rejects invalid ledger ids at the sink boundary", () => {

@@ -1,7 +1,7 @@
 # V2 Slice X7-U0 Query Planning Adapter Diagnostics Source Package
 
 **Date:** 2026-05-17
-**Status:** deputy-team approved source package; implementation pending
+**Status:** implementation-complete; focused source package ready for follow-up diagnostic smoke
 **Owner:** Lead Developer / Captain Deputy
 **Trigger:** X7-T-S `PARTIAL_X7_T_S_QUERY_PLANNING_SCHEMA_VALIDATION_FAILED`
 
@@ -98,6 +98,30 @@ X7-U0 does not authorize:
 
 ## 7. Follow-Up Gate
 
-After X7-U0 implementation is committed and verified, a separate X7-U1 diagnostic live-smoke package may authorize exactly one German canary rerun to capture the bounded schema failure diagnostics.
+After X7-U0 implementation is committed and verified, a separate X7-U1 diagnostic live-smoke package may authorize a bounded canary rerun to capture the schema-failure diagnostics.
 
 Only after X7-U1 should the team decide whether the repair belongs in prompt text, schema, adapter normalization, provider configuration, or another layer.
+
+## 8. Implementation Result
+
+X7-U0 was implemented inside the approved source envelope:
+
+- `adapterAttemptDiagnostics` was added to the hidden X7-S Query Planning runtime artifact.
+- Diagnostics are derived only from existing `adapterOutcome.attempts`.
+- Attempt diagnostics include attempt number, status, prompt-content hash, bounded provider telemetry, failure category, issue count, and bounded sanitized structural issues.
+- URL-like text, email-like text, and long quoted literals are redacted in diagnostic messages.
+- Damaged Query Planning artifacts still report zero query entries, no source-language policy, and blocked source-acquisition handoff.
+- The existing authenticated internal no-store artifact route returns the new diagnostic field.
+- Boundary guards now explicitly allow only the shared pure V2 `isRecord` utility import for the X7-S runtime artifact sink.
+
+Verifier result:
+
+- Focused artifact/route tests passed.
+- Full `analyzer-v2-runtime` unit slice passed.
+- Full `analyzer-v2` unit slice passed after a boundary-guard allowlist correction.
+- Internal Analyzer V2 artifact route tests passed.
+- Web build passed.
+- V2 gate-register validator and self-test passed.
+- `git diff --check` passed.
+
+X7-U0 did not edit prompts, config, model policy, schemas, provider factory, acceptance logic, retries, source execution, public output, cache/SR/storage, evidence/report/verdict/confidence behavior, ACS/direct URL, or V1 code. X7-U0 did not run live jobs.

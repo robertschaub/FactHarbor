@@ -199,6 +199,25 @@ describe("Analyzer V2 internal Query Planning runtime artifact route", () => {
       ledgerId,
       artifactCount: 1,
     });
+    expect(body.artifacts).toEqual([
+      expect.objectContaining({
+        adapterAttemptDiagnostics: [
+          expect.objectContaining({
+            attemptNumber: 1,
+            status: "invalid_schema",
+            failureCategory: "schema_validation",
+            issueCount: 1,
+            issues: [
+              {
+                path: "",
+                code: "invalid_schema",
+                message: "schema invalid",
+              },
+            ],
+          }),
+        ],
+      }),
+    ]);
     expect(serialized).not.toContain("Evidence Query Planning prompt bytes");
     expect(serialized).not.toContain("Using hydrogen");
   });

@@ -12,6 +12,7 @@ import type {
   EvidenceQueryPlanEntry,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import type { PipelineRunContext } from "@/lib/analyzer-v2/run-context";
+import { isRecord } from "@/lib/analyzer-v2/util";
 
 export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_VERSION =
   "v2.evidence-query-planning.runtime-artifact.x7s";
@@ -22,12 +23,39 @@ export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_LEDGER_ID_LENGTH = 256
 export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_QUERY_ENTRIES = 6;
 export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_QUERY_TEXT_LENGTH = 240;
 export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_QUERY_LABEL_LENGTH = 80;
+export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_ATTEMPT_DIAGNOSTICS = 3;
+export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_ISSUES = 6;
+export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_TEXT_LENGTH = 240;
+export const EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_PATH_LENGTH = 160;
 
 export type EvidenceQueryPlanningRuntimeArtifactQueryEntry = {
   readonly queryId: string;
   readonly retrievalPolicyKey: EvidenceQueryPlanEntry["retrievalPolicyKey"];
   readonly queryText: string;
   readonly targetAtomicClaimIds: readonly string[];
+};
+
+export type EvidenceQueryPlanningRuntimeArtifactDiagnosticIssue = {
+  readonly path: string;
+  readonly code: string;
+  readonly message: string;
+};
+
+export type EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic = {
+  readonly attemptNumber: number;
+  readonly status: "accepted" | "invalid_schema" | "parse_failure" | "provider_failure";
+  readonly promptContentHash: string;
+  readonly providerTelemetry: {
+    readonly providerId: string;
+    readonly modelId: string;
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly totalTokens: number;
+    readonly durationMs: number;
+  } | null;
+  readonly failureCategory: "none" | "schema_validation" | "parse_failure" | "provider_failure";
+  readonly issueCount: number;
+  readonly issues: readonly EvidenceQueryPlanningRuntimeArtifactDiagnosticIssue[];
 };
 
 export type EvidenceQueryPlanningRuntimeArtifact = {
@@ -84,6 +112,7 @@ export type EvidenceQueryPlanningRuntimeArtifact = {
     readonly totalTokens: number;
     readonly durationMs: number;
   } | null;
+  readonly adapterAttemptDiagnostics: readonly EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic[];
   readonly inspection: {
     readonly status: QueryPlanInspectionResult["status"];
     readonly resultStatus: string | null;
@@ -211,6 +240,87 @@ function containsUrlLikeText(value: string): boolean {
   return /(?:https?:\/\/|www\.)/i.test(value);
 }
 
+function sanitizeDiagnosticText(value: string, maxLength: number): string {
+  return boundedText(
+    value
+      .replace(/(?:https?:\/\/|www\.)\S+/gi, "[redacted_url]")
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted_email]")
+      .replace(/"[^"]{48,}"/g, "\"[redacted_long_literal]\"")
+      .replace(/\s+/g, " ")
+      .trim(),
+    maxLength,
+  );
+}
+
+function readDiagnosticIssuePath(issue: Record<string, unknown>): string {
+  const path = issue.path;
+  if (!Array.isArray(path)) {
+    return "";
+  }
+  return boundedText(
+    path
+      .map((segment) => {
+        if (typeof segment === "string" && /^[A-Za-z0-9_-]+$/.test(segment)) {
+          return segment;
+        }
+        if (typeof segment === "number" && Number.isInteger(segment) && segment >= 0) {
+          return String(segment);
+        }
+        return "[non_structural]";
+      })
+      .join("."),
+    EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_PATH_LENGTH,
+  );
+}
+
+function parseDiagnosticIssues(
+  failureMessage: string | null,
+  fallbackCode: EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic["status"],
+): readonly EvidenceQueryPlanningRuntimeArtifactDiagnosticIssue[] {
+  if (!failureMessage) {
+    return [];
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(failureMessage);
+  } catch {
+    return [{
+      path: "",
+      code: fallbackCode,
+      message: sanitizeDiagnosticText(
+        failureMessage,
+        EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_TEXT_LENGTH,
+      ),
+    }];
+  }
+
+  if (!Array.isArray(parsed)) {
+    return [{
+      path: "",
+      code: fallbackCode,
+      message: sanitizeDiagnosticText(
+        failureMessage,
+        EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_TEXT_LENGTH,
+      ),
+    }];
+  }
+
+  return parsed
+    .filter(isRecord)
+    .slice(0, EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_ISSUES)
+    .map((issue) => ({
+      path: readDiagnosticIssuePath(issue),
+      code: typeof issue.code === "string"
+        ? boundedText(issue.code, EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_QUERY_LABEL_LENGTH)
+        : fallbackCode,
+      message: sanitizeDiagnosticText(
+        typeof issue.message === "string" ? issue.message : fallbackCode,
+        EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_DIAGNOSTIC_TEXT_LENGTH,
+      ),
+    }));
+}
+
 function boundedQueryEntries(
   runtimeResult: EvidenceQueryPlanningRuntimeResult,
 ): readonly EvidenceQueryPlanningRuntimeArtifactQueryEntry[] {
@@ -249,6 +359,53 @@ function providerTelemetry(
     totalTokens: telemetry.tokenUsage.totalTokens,
     durationMs: telemetry.durationMs,
   };
+}
+
+function attemptFailureCategory(
+  status: EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic["status"],
+): EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic["failureCategory"] {
+  if (status === "accepted") {
+    return "none";
+  }
+  if (status === "parse_failure") {
+    return "parse_failure";
+  }
+  if (status === "provider_failure") {
+    return "provider_failure";
+  }
+  return "schema_validation";
+}
+
+function attemptDiagnostics(
+  runtimeResult: EvidenceQueryPlanningRuntimeResult,
+): readonly EvidenceQueryPlanningRuntimeArtifactAttemptDiagnostic[] {
+  const attempts = runtimeResult.adapterOutcome?.attempts ?? [];
+  return attempts
+    .slice(0, EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_ATTEMPT_DIAGNOSTICS)
+    .map((attempt) => {
+      const issues = parseDiagnosticIssues(attempt.failureMessage, attempt.status);
+      return {
+        attemptNumber: attempt.attemptNumber,
+        status: attempt.status,
+        promptContentHash: boundedText(
+          attempt.promptContentHash,
+          EVIDENCE_QUERY_PLANNING_RUNTIME_ARTIFACT_MAX_QUERY_LABEL_LENGTH,
+        ),
+        providerTelemetry: attempt.providerTelemetry
+          ? {
+            providerId: attempt.providerTelemetry.providerId,
+            modelId: attempt.providerTelemetry.modelId,
+            inputTokens: attempt.providerTelemetry.inputTokens,
+            outputTokens: attempt.providerTelemetry.outputTokens,
+            totalTokens: attempt.providerTelemetry.totalTokens,
+            durationMs: attempt.providerTelemetry.durationMs,
+          }
+          : null,
+        failureCategory: attemptFailureCategory(attempt.status),
+        issueCount: attempt.failureMessage && issues.length === 0 ? 1 : issues.length,
+        issues,
+      };
+    });
 }
 
 export function buildEvidenceQueryPlanningRuntimeArtifact(
@@ -314,6 +471,7 @@ export function buildEvidenceQueryPlanningRuntimeArtifact(
       canWrite: runtimeResult.cacheDecision?.canWrite ?? null,
     },
     providerTelemetry: providerTelemetry(runtimeResult),
+    adapterAttemptDiagnostics: attemptDiagnostics(runtimeResult),
     inspection: {
       status: projection.inspection.status,
       resultStatus: inspectionSummary?.resultStatus ?? null,

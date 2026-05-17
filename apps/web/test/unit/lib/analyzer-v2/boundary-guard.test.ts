@@ -658,6 +658,10 @@ const analyzerV2RuntimeEvidenceQueryPlanningRuntimeArtifactSinkApprovedImports =
     "@/lib/analyzer-v2/run-context",
     new Set(["PipelineRunContext"]),
   ],
+  [
+    "@/lib/analyzer-v2/util",
+    new Set(["isRecord"]),
+  ],
 ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
