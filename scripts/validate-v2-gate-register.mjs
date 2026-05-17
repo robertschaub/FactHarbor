@@ -160,12 +160,14 @@ const REQUIRED_QUERY_PLANNING_NOTE_TOKENS = [
   "V1 cleanup",
   "audit-only",
 ];
-const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-W1B";
+const RESEARCH_ACQUISITION_CURRENT_SLICE_ID = "X7-W1C";
 const RESEARCH_ACQUISITION_CURRENT_STATE =
-  "implemented_product_internal_closed_candidate_runtime_loop_no_source_io";
+  "pre_io_fence_documented_no_execution";
 const RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE =
-  "Docs/WIP/2026-05-17_V2_Slice_X7-W1B_Product_Internal_Closed_Candidate_Runtime_Loop_Source_Package.md";
+  "Docs/WIP/2026-05-17_V2_Slice_X7-W1C_Source_Acquisition_Path_Consolidation_And_Pre_IO_Fence_Package.md";
 const RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT = null;
+const RESEARCH_ACQUISITION_X7_W1B_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-17_V2_Slice_X7-W1B_Product_Internal_Closed_Candidate_Runtime_Loop_Source_Package.md";
 const RESEARCH_ACQUISITION_X7_W1A_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-17_V2_Slice_X7-W1A_Product_Internal_Candidate_Runtime_Admission_Source_Package.md";
 const RESEARCH_ACQUISITION_X7_V_SOURCE_PACKAGE =
@@ -178,6 +180,7 @@ const RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S3_Parser_Admission_Parsed_Material_Denial_Source_Package.md";
 const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE,
+  RESEARCH_ACQUISITION_X7_W1B_SOURCE_PACKAGE,
   RESEARCH_ACQUISITION_X7_W1A_SOURCE_PACKAGE,
   RESEARCH_ACQUISITION_X7_V_SOURCE_PACKAGE,
   "Docs/WIP/2026-05-16_V2_Slice_X7-F_Hidden_No_IO_Source_Acquisition_Execution_Gate_Source_Package.md",
@@ -190,18 +193,16 @@ const REQUIRED_RESEARCH_ACQUISITION_REFS = [
   RESEARCH_ACQUISITION_C0_S3_SOURCE_PACKAGE,
 ];
 const REQUIRED_RESEARCH_ACQUISITION_ALLOWED_FILES = [
-  "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts",
-  "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission.ts",
-  "apps/web/src/lib/analyzer-v2/orchestrator.ts",
-  "apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.ts",
-  "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.ts",
-  "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
-  "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope.ts",
-  "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts",
+  "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+  "Docs/AGENTS/V2_Gate_Register.json",
+  "scripts/validate-v2-gate-register.mjs",
+  "Docs/STATUS/Current_Status.md",
+  "Docs/STATUS/Backlog.md",
 ];
 const FORBIDDEN_RESEARCH_ACQUISITION_ALLOWED_FILE_TOKENS = [
   "**",
   "*",
+  "apps/web/src/",
   "source-acquisition-network-",
   "source-acquisition-content-",
   "hidden-direct-text-candidate-acquisition-harness",
@@ -210,10 +211,13 @@ const FORBIDDEN_RESEARCH_ACQUISITION_ALLOWED_FILE_TOKENS = [
   "source-acquisition-provider-network-readiness",
   "source-material",
   "evidence-corpus",
+  "pre-io-fence",
   "structural-executor.ts",
   "execution-contract.ts",
 ];
 const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
+  "W2 provider-network execution",
+  "X7-W1C runtime owner/artifact/route",
   "real provider-network execution",
   "real provider boundary/network transport",
   "real network/search/fetch execution",
@@ -234,15 +238,19 @@ const REQUIRED_RESEARCH_ACQUISITION_BLOCKED_SURFACES = [
   "live jobs",
 ];
 const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
+  "X7-W1C",
+  "pre_io_fence_documented_no_execution",
+  "w2ReviewReadiness",
+  "blocked_missing_w2_package",
+  "latest product-route runtime proof",
   "X7-W1B",
   "closed_loop_completed_no_source_candidates",
   "closed local no-IO provider boundary",
-  "provider boundary invocation is confined",
-  "opaque per-query projection",
-  "queryId/queryText",
+  "no W1C runtime owner",
+  "source-acquisition-network-*",
+  "redirect policy exactly deny",
   "X7-W1A",
   "admission_ready_no_runtime_execution",
-  "provider attempts observed",
   "zero candidates",
   "zero bytes",
   "no source material",
@@ -250,7 +258,7 @@ const REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS = [
   "intake_ready_not_executable",
   "X7-F",
   "gate_closed_no_io",
-  "X6/X7-D",
+  "X6/X7-D/X7-E/X7-F/X7-G1/X7-G2",
   "regression/historical context",
   "parser_isolation_unavailable",
   "B3",
@@ -916,9 +924,9 @@ function validateResearchAcquisitionAuditState(entry, drift) {
   if (entry.implementationCommit !== RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT) {
     drift(where, `implementationCommit must be ${RESEARCH_ACQUISITION_CURRENT_IMPLEMENTATION_COMMIT}`);
   }
-  requireTextIncludes(entry.approvalPointer, "X7-W1B", where, "approvalPointer", drift);
-  requireTextIncludes(entry.approvalPointer, "closed candidate-runtime loop", where, "approvalPointer", drift);
-  requireTextIncludes(entry.approvalPointer, "real source execution remains blocked", where, "approvalPointer", drift);
+  requireTextIncludes(entry.approvalPointer, "X7-W1C", where, "approvalPointer", drift);
+  requireTextIncludes(entry.approvalPointer, "docs/register/boundary-guard", where, "approvalPointer", drift);
+  requireTextIncludes(entry.approvalPointer, "no runtime owner", where, "approvalPointer", drift);
 
   for (const requiredRef of REQUIRED_RESEARCH_ACQUISITION_REFS) {
     requireArrayIncludes(entry.sourceOfTruthRefs, requiredRef, where, "sourceOfTruthRefs", drift);
@@ -939,9 +947,10 @@ function validateResearchAcquisitionAuditState(entry, drift) {
   for (const noteToken of REQUIRED_RESEARCH_ACQUISITION_NOTE_TOKENS) {
     requireTextIncludes(entry.notes, noteToken, where, "notes", drift);
   }
-  requireTextIncludes(entry.liveJobBlockReason, "X7-W1B", where, "liveJobBlockReason", drift);
+  requireTextIncludes(entry.liveJobBlockReason, "X7-W1C", where, "liveJobBlockReason", drift);
   requireTextIncludes(entry.liveJobBlockReason, "live jobs", where, "liveJobBlockReason", drift);
   requireTextIncludes(entry.liveJobBlockReason, "real provider/network/source IO", where, "liveJobBlockReason", drift);
+  requireTextIncludes(entry.liveJobBlockReason, "W2", where, "liveJobBlockReason", drift);
 }
 
 function validateRegister(register, context) {
@@ -1117,18 +1126,27 @@ async function runSelfTest(context) {
       },
     ],
     [
-      "research acquisition drifts from X7-W1B",
+      "research acquisition drifts from X7-W1C",
       (candidate) => {
         candidate.entries.find((entry) => entry.taskId === "research_acquisition").sourcePackage =
           RESEARCH_ACQUISITION_X7_V_SOURCE_PACKAGE;
       },
     ],
     [
-      "research acquisition drops X7-W1B package ref",
+      "research acquisition drops X7-W1C package ref",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
           ref !== RESEARCH_ACQUISITION_CURRENT_SOURCE_PACKAGE
+        );
+      },
+    ],
+    [
+      "research acquisition drops X7-W1B context package ref",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.sourceOfTruthRefs = row.sourceOfTruthRefs.filter((ref) =>
+          ref !== RESEARCH_ACQUISITION_X7_W1B_SOURCE_PACKAGE
         );
       },
     ],
@@ -1163,38 +1181,54 @@ async function runSelfTest(context) {
       },
     ],
     [
-      "research acquisition drops candidate closed-loop owner allowed file",
+      "research acquisition keeps W1C runtime owner allowed file",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.allowedFiles.push("apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/pre-io-fence.ts");
+      },
+    ],
+    [
+      "research acquisition drops boundary guard allowed file",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.allowedFiles = row.allowedFiles.filter((file) =>
-          file !== "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts"
+          file !== "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts"
         );
       },
     ],
     [
-      "research acquisition drops candidate admission owner allowed file",
+      "research acquisition drops gate register allowed file",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.allowedFiles = row.allowedFiles.filter((file) =>
-          file !== "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission.ts"
+          file !== "Docs/AGENTS/V2_Gate_Register.json"
         );
       },
     ],
     [
-      "research acquisition drops candidate runtime dependency allowed file",
+      "research acquisition drops validator allowed file",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
         row.allowedFiles = row.allowedFiles.filter((file) =>
-          file !== "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts"
+          file !== "scripts/validate-v2-gate-register.mjs"
         );
       },
     ],
     [
-      "research acquisition drops runtime authority dependency allowed file",
+      "research acquisition drops W2 execution blocker",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
-        row.allowedFiles = row.allowedFiles.filter((file) =>
-          file !== "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts"
+        row.blockedSurfaces = row.blockedSurfaces.filter((surface) =>
+          surface !== "W2 provider-network execution"
+        );
+      },
+    ],
+    [
+      "research acquisition drops W1C runtime-surface blocker",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.blockedSurfaces = row.blockedSurfaces.filter((surface) =>
+          surface !== "X7-W1C runtime owner/artifact/route"
         );
       },
     ],
@@ -1217,24 +1251,52 @@ async function runSelfTest(context) {
       },
     ],
     [
-      "research acquisition drops closed-boundary confinement note",
+      "research acquisition drops X7-W1C fence note",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
-        row.notes = row.notes.replace("provider boundary invocation is confined", "provider boundary is available");
+        row.notes = row.notes.replace("pre_io_fence_documented_no_execution", "pre_io_pending");
       },
     ],
     [
-      "research acquisition drops query id/text leak guard note",
+      "research acquisition drops W2 review readiness note",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
-        row.notes = row.notes.replace("queryId/queryText", "query projection");
+        row.notes = row.notes.replace("w2ReviewReadiness", "w2Readiness");
       },
     ],
     [
-      "research acquisition drops opaque projection note",
+      "research acquisition drops W2 missing package note",
       (candidate) => {
         const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
-        row.notes = row.notes.replace("opaque per-query projection", "query projection");
+        row.notes = row.notes.replace("blocked_missing_w2_package", "ready_for_review_only_not_execution");
+      },
+    ],
+    [
+      "research acquisition drops no W1C runtime owner note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("no W1C runtime owner", "W1C runtime owner pending");
+      },
+    ],
+    [
+      "research acquisition drops no network import note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("source-acquisition-network-*", "source-acquisition-network modules");
+      },
+    ],
+    [
+      "research acquisition drops redirect deny note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("redirect policy exactly deny", "redirect cap");
+      },
+    ],
+    [
+      "research acquisition drops old-path family note",
+      (candidate) => {
+        const row = candidate.entries.find((entry) => entry.taskId === "research_acquisition");
+        row.notes = row.notes.replace("X6/X7-D/X7-E/X7-F/X7-G1/X7-G2", "X6/X7-D");
       },
     ],
     [

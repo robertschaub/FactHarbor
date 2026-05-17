@@ -35,6 +35,10 @@ const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactIns
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -80,6 +84,10 @@ const evidenceLifecycleSourceAcquisitionCandidateRuntimeAdmissionPath = path.res
 const evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath = path.resolve(
   evidenceLifecycleSourceAcquisitionRoot,
   "candidate-runtime-closed-loop.ts",
+);
+const evidenceLifecycleSourceAcquisitionPreIoFencePath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "pre-io-fence.ts",
 );
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
@@ -136,6 +144,10 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateAdmissionArtif
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-acquisition-pre-io-fence-artifact-sink.ts",
 );
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -3433,6 +3445,68 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (orchestratorImports.includes(forbiddenSpecifier)) {
         violations.push(`orchestrator imports forbidden X7-W1B downstream/source execution module ${forbiddenSpecifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps X7-W1C docs/register/boundary-guard only with no runtime surface", () => {
+    const violations: string[] = [];
+
+    for (const forbiddenRuntimePath of [
+      evidenceLifecycleSourceAcquisitionPreIoFencePath,
+      analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath,
+      analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath,
+    ]) {
+      if (existsSync(forbiddenRuntimePath)) {
+        violations.push(`X7-W1C must not add runtime surface ${toPosix(path.relative(webRoot, forbiddenRuntimePath))}`);
+      }
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/pre-io-fence",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-pre-io-fence-artifact-sink",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-execution-gate",
+      "@/lib/analyzer-v2-runtime/downstream-no-corpus-denial-adapter",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-transport",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-W1C active-path module ${forbiddenSpecifier}`);
+      }
+    }
+
+    const productionSourceFiles = collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+        && !filePath.includes(`${path.sep}test${path.sep}`)
+    );
+    for (const sourcePath of productionSourceFiles) {
+      const content = readFileSync(sourcePath, "utf8");
+      if (content.includes("pre_io_fence_documented_no_execution")) {
+        violations.push(`${toPosix(path.relative(webRoot, sourcePath))} contains X7-W1C audit-only status in production code`);
+      }
+    }
+
+    const productAndPublicPaths = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2OrchestratorPath,
+    ].filter((filePath) => existsSync(filePath))));
+    for (const sourcePath of productAndPublicPaths) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (specifier.includes("pre-io-fence")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports or references W1C runtime surface ${specifier}`);
+        }
+        if (specifier.includes("source-acquisition-network-")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports W1C-forbidden provider-network module ${specifier}`);
+        }
       }
     }
 

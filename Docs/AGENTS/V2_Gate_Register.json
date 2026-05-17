@@ -160,12 +160,12 @@
     },
     {
       "id": "gate.research_acquisition",
-      "sliceId": "X7-W1B",
+      "sliceId": "X7-W1C",
       "gateType": "gateway_task",
       "taskId": "research_acquisition",
       "owner": "source_acquisition",
-      "state": "implemented_product_internal_closed_candidate_runtime_loop_no_source_io",
-      "status": "implemented_product_internal_closed_candidate_runtime_loop_no_source_io",
+      "state": "pre_io_fence_documented_no_execution",
+      "status": "pre_io_fence_documented_no_execution",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus reviewed source-acquisition packages",
       "registerGrantsExecution": false,
       "promptProfile": null,
@@ -183,6 +183,7 @@
       "cacheApprovalId": "not_applicable",
       "sourceOfTruthRefs": [
         "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "Docs/WIP/2026-05-17_V2_Slice_X7-W1C_Source_Acquisition_Path_Consolidation_And_Pre_IO_Fence_Package.md",
         "Docs/WIP/2026-05-17_V2_Slice_X7-W1B_Product_Internal_Closed_Candidate_Runtime_Loop_Source_Package.md",
         "Docs/WIP/2026-05-17_V2_Slice_X7-W1A_Product_Internal_Candidate_Runtime_Admission_Source_Package.md",
         "Docs/WIP/2026-05-17_V2_Slice_X7-V_Product_Internal_Source_Acquisition_Intake_Boundary_Source_Package.md",
@@ -195,20 +196,19 @@
         "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S2_Parser_Admission_Provenance_Source_Package.md",
         "Docs/WIP/2026-05-16_V2_Slice_7N3B3-2D-C0-S3_Parser_Admission_Parsed_Material_Denial_Source_Package.md"
       ],
-      "sourcePackage": "Docs/WIP/2026-05-17_V2_Slice_X7-W1B_Product_Internal_Closed_Candidate_Runtime_Loop_Source_Package.md",
-      "approvalPointer": "Deputy/reviewer-approved X7-W1B closed candidate-runtime loop package; accepted Query Planning handoff plus X7-V intake and X7-W1A admission may exercise one closed local no-IO provider boundary while real source execution remains blocked.",
+      "sourcePackage": "Docs/WIP/2026-05-17_V2_Slice_X7-W1C_Source_Acquisition_Path_Consolidation_And_Pre_IO_Fence_Package.md",
+      "approvalPointer": "Deputy/reviewer-approved X7-W1C docs/register/boundary-guard pre-IO fence package; no runtime owner, artifact sink, route, live smoke, W2 provider-network execution, or real source execution is approved.",
       "implementationCommit": null,
       "allowedFiles": [
-        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts",
-        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission.ts",
-        "apps/web/src/lib/analyzer-v2/orchestrator.ts",
-        "apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.ts",
-        "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.ts",
-        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime.ts",
-        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope.ts",
-        "apps/web/src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts"
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/AGENTS/V2_Gate_Register.json",
+        "scripts/validate-v2-gate-register.mjs",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md"
       ],
       "blockedSurfaces": [
+        "W2 provider-network execution",
+        "X7-W1C runtime owner/artifact/route",
         "real provider-network execution",
         "real provider boundary/network transport",
         "real network/search/fetch execution",
@@ -240,17 +240,15 @@
         "realByteParserConsumption": true
       },
       "verifierCommands": [
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts",
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime",
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/boundary-guard.test.ts",
         "npm -w apps/web run build",
         "npm run validate:v2-gates",
         "node scripts/validate-v2-gate-register.mjs --self-test"
       ],
       "liveJobEligibility": "blocked",
-      "liveJobBlockReason": "X7-W1B is product-internal closed candidate-runtime loop only; live jobs and real provider/network/source IO remain blocked, and the research_acquisition gateway task remains notImplemented.",
-      "lastVerifiedBy": "Codex GPT-5.5 on 2026-05-17 (X7-W1B)",
-      "notes": "Latest product-route hidden state is X7-W1B: accepted Query Planning handoff plus X7-V intake and X7-W1A admission can exercise a closed local no-IO provider boundary through the existing candidate runtime as closed_loop_completed_no_source_candidates. provider boundary invocation is confined to this product-owned closed boundary, provider attempts observed are structural only, query outcomes use opaque per-query projection, queryId/queryText/provider-attempt/raw request leakage is forbidden, and the result has zero candidates, zero bytes, no source material, no EvidenceCorpus, and no public output. X7-W1A remains the admission prerequisite and records admission_ready_no_runtime_execution. X7-V remains the immediate intake prerequisite and records intake_ready_not_executable. Earlier X7-F remains the closed no-IO execution-denial gate and returns gate_closed_no_io with research_acquisition_gateway_not_implemented when used in the hidden readiness chain. X6/X7-D are now regression/historical context, not the active forward product route. Parser B2 remains locally parser_isolation_unavailable, B3 requires provisioned rootless OCI proof, C0-S1 adds a P0 admission contract labelled not a security boundary without parser execution, C0-S2 adds process-local parser-admission provenance, and C0-S3 adds parsed-material denial with no parsed material. 2D-C remains blocked. Real provider/network/source IO, parser/cache/SR/storage, evidence/report/verdict/warning/confidence generation, public cutover, ACS/direct URL, V1 reuse, V1 cleanup, and live jobs remain blocked. Register remains audit-only and grants no execution."
+      "liveJobBlockReason": "X7-W1C is docs/register/boundary-guard-only; live jobs, W2 provider-network execution, and real provider/network/source IO remain blocked, and the research_acquisition gateway task remains notImplemented.",
+      "lastVerifiedBy": "Codex GPT-5.5 on 2026-05-17 (X7-W1C)",
+      "notes": "latest product-route runtime proof remains X7-W1B: accepted Query Planning handoff plus X7-V intake and X7-W1A admission can exercise a closed local no-IO provider boundary through the existing candidate runtime as closed_loop_completed_no_source_candidates, with zero candidates, zero bytes, no source material, no EvidenceCorpus, and no public output. X7-W1C records only pre_io_fence_documented_no_execution in this audit register; w2ReviewReadiness is blocked_missing_w2_package, no W1C runtime owner, artifact sink, route, live smoke, or source-acquisition-network-* import is approved, and redirect policy exactly deny remains the W2 checklist posture. X7-W1A remains the admission prerequisite and records admission_ready_no_runtime_execution. X7-V remains the immediate intake prerequisite and records intake_ready_not_executable. Earlier X7-F remains the closed no-IO execution-denial gate and returns gate_closed_no_io with research_acquisition_gateway_not_implemented when used in the hidden readiness chain. X6/X7-D/X7-E/X7-F/X7-G1/X7-G2 are now regression/historical context, not the active forward product route. Parser B2 remains locally parser_isolation_unavailable, B3 requires provisioned rootless OCI proof, C0-S1 adds a P0 admission contract labelled not a security boundary without parser execution, C0-S2 adds process-local parser-admission provenance, and C0-S3 adds parsed-material denial with no parsed material. 2D-C remains blocked. Real provider/network/source IO, parser/cache/SR/storage, evidence/report/verdict/warning/confidence generation, public cutover, ACS/direct URL, V1 reuse, V1 cleanup, and live jobs remain blocked. Register remains audit-only and grants no execution."
     },
     {
       "id": "gate.evidence_applicability",
