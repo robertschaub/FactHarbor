@@ -14,6 +14,10 @@ import {
   clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts,
   readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink";
+import {
+  clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts,
+  readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -129,6 +133,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -179,6 +184,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     const candidateAdmissionArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
+    const candidateClosedLoopArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -268,6 +275,57 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         }),
       }),
     ]);
+    expect(candidateClosedLoopArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        candidateRuntimeClosedLoop: expect.objectContaining({
+          status: "closed_loop_completed_no_source_candidates",
+          blockedReason: null,
+          damagedReason: null,
+          admissionStatus: "admission_ready_no_runtime_execution",
+          handoffStatus: "ready_not_executable",
+          requestStatus: "source_acquisition_ready_not_executable",
+          intakeStatus: "intake_ready_not_executable",
+          queryEntryCount: 1,
+          sourceLanguageSignal: "present",
+          runtimeStatus: "completed_structural",
+          queryOutcomeSummaries: [
+            expect.objectContaining({
+              closedLoopQueryRef: "CLQ_001",
+              status: "failed",
+              structuralReason: "provider_failure",
+              providerAttemptObserved: true,
+              candidateCount: 0,
+            }),
+          ],
+        }),
+        productExecution: expect.objectContaining({
+          queryPlanningRuntimeInvoked: true,
+          sourceAcquisitionIntakeObserved: true,
+          candidateRuntimeAdmissionObserved: true,
+          candidateRuntimeClosedLoopObserved: true,
+          candidateRuntimeExecuted: true,
+          closedProviderBoundaryInvoked: true,
+          providerNetworkExecuted: false,
+          searchFetchCalled: false,
+          contentDereferenceCalled: false,
+          parserExecuted: false,
+          sourceMaterialCreated: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          publicSurfaceWritten: false,
+          providerAttemptCount: 1,
+          candidateCount: 0,
+          bytesRead: 0,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("Asylbereich Schweiz 235000");
+    expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("queryText");
+    expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("queryId");
+    expect(JSON.stringify(candidateClosedLoopArtifacts)).not.toContain("providerAttemptId");
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
@@ -288,6 +346,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -336,6 +395,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     const sourceAcquisitionIntakeArtifacts = readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     const candidateAdmissionArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
+    const candidateClosedLoopArtifacts =
+      readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     expect(artifacts[0]).toMatchObject({
       selectedAtomicClaimIds: ["AC_001"],
       sourceAcquisitionHandoff: {
@@ -388,6 +449,25 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         bytesRead: 0,
       }),
     });
+    expect(candidateClosedLoopArtifacts[0]).toMatchObject({
+      candidateRuntimeClosedLoop: {
+        status: "closed_loop_completed_no_source_candidates",
+        blockedReason: null,
+        selectedAtomicClaimCount: 1,
+        queryEntryCount: 1,
+        sourceLanguageSignal: "present",
+      },
+      productExecution: expect.objectContaining({
+        candidateRuntimeExecuted: true,
+        closedProviderBoundaryInvoked: true,
+        providerNetworkExecuted: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+        providerAttemptCount: 1,
+        candidateCount: 0,
+        bytesRead: 0,
+      }),
+    });
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {
@@ -396,6 +476,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceQueryPlanningRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -429,5 +510,6 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(readEvidenceQueryPlanningRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId)).toEqual([]);
+    expect(readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId)).toEqual([]);
   });
 });

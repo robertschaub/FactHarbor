@@ -8,6 +8,7 @@ import { buildEvidenceQueryPlanningInspection } from "@/lib/analyzer-v2/evidence
 import { runEvidenceQueryPlanningRuntime } from "@/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime";
 import { buildQueryPlanSourceAcquisitionHandoff } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff";
 import { buildSourceAcquisitionCandidateRuntimeAdmissionDecision } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission";
+import { runSourceAcquisitionCandidateRuntimeClosedLoop } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop";
 import { buildSourceAcquisitionIntakeBoundaryDecision } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary";
 import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
@@ -39,6 +40,9 @@ import {
 import {
   recordEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -154,6 +158,16 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifact({
           context,
           admissionDecision: candidateRuntimeAdmission,
+        });
+        const candidateRuntimeClosedLoop = await runSourceAcquisitionCandidateRuntimeClosedLoop({
+          handoffDecision: sourceAcquisitionHandoff,
+          sourceAcquisitionStartDecision,
+          sourceAcquisitionIntakeBoundary,
+          candidateRuntimeAdmission,
+        });
+        recordEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifact({
+          context,
+          closedLoopDecision: candidateRuntimeClosedLoop,
         });
       }
     } catch {

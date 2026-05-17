@@ -31,6 +31,10 @@ const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateAdmissionArtifactInsp
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-admission-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifacts/route.ts",
+);
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
@@ -72,6 +76,10 @@ const evidenceLifecycleSourceAcquisitionIntakeBoundaryPath = path.resolve(
 const evidenceLifecycleSourceAcquisitionCandidateRuntimeAdmissionPath = path.resolve(
   evidenceLifecycleSourceAcquisitionRoot,
   "candidate-runtime-admission.ts",
+);
+const evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "candidate-runtime-closed-loop.ts",
 );
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
@@ -124,6 +132,10 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionIntakeArtifactSinkPath 
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateAdmissionArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink.ts",
 );
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -479,6 +491,7 @@ const runtimeScaffoldOptionOwnerPaths = new Set([
   analyzerV2RuntimeSourceAcquisitionCandidateEnvelopePath,
   analyzerV2RuntimeSourceAcquisitionCandidateRuntimePath,
   analyzerV2RuntimeHiddenDirectTextCandidateAcquisitionHarnessPath,
+  evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath,
 ].map(toPosix));
 const runtimeScaffoldOptionTerms = [
   "claimUnderstandingRuntime",
@@ -715,6 +728,22 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateAdmissionArtif
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop",
+      new Set([
+        "SourceAcquisitionCandidateRuntimeClosedLoopBlockedReason",
+        "SourceAcquisitionCandidateRuntimeClosedLoopDamagedReason",
+        "SourceAcquisitionCandidateRuntimeClosedLoopDecision",
+        "SourceAcquisitionCandidateRuntimeClosedLoopQuerySummary",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -728,12 +757,21 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-query-planning-runtime-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-intake-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
     ]),
   ],
   [
     toPosix(evidenceLifecycleSourceAcquisitionCandidateRuntimeAdmissionPath),
     new Set([
       "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+    ]),
+  ],
+  [
+    toPosix(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
     ]),
   ],
   [
@@ -777,6 +815,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateAdmissionArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
     ]),
   ],
 ]);
@@ -3114,6 +3158,287 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the X7-W1B candidate-runtime closed loop local, no-IO, and product-owned", () => {
+    expect(existsSync(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath))
+      .toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactInspectionRoutePath))
+      .toBe(true);
+    const violations: string[] = [];
+
+    const closedLoopSourceFile = parseSource(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath);
+    const approvedClosedLoopRuntimeImports = new Map<string, Set<string>>([
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+        new Set([
+          "SourceAcquisitionCandidateBudgetSnapshot",
+          "SourceAcquisitionCandidateProviderAllowlistSnapshot",
+          "SourceAcquisitionCandidateProviderAttemptRequest",
+          "SourceAcquisitionCandidateProviderAttemptResult",
+          "SourceAcquisitionCandidateProviderBoundary",
+          "SourceAcquisitionCandidateRuntimeDecision",
+          "SourceAcquisitionCandidateRunRequest",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+        new Set([
+          "createSourceAcquisitionCandidateRuntimeAuthority",
+          "executeSourceAcquisitionCandidateRuntime",
+          "readSourceAcquisitionCandidateRuntimeAuthoritySnapshot",
+        ]),
+      ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+        new Set([
+          "createSourceAcquisitionRuntimeAuthority",
+          "SourceAcquisitionRuntimeAuthoritySnapshot",
+        ]),
+      ],
+    ]);
+
+    for (const importBinding of collectImportBindings(closedLoopSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = approvedClosedLoopRuntimeImports.get(specifier);
+      if (approvedNames) {
+        for (const importedName of importBinding.names) {
+          if (!approvedNames.has(importedName)) {
+            violations.push(`X7-W1B closed-loop owner imports unapproved runtime symbol ${importedName}`);
+          }
+        }
+      } else if (isAnalyzerV2RuntimeImport(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath, specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports unapproved analyzer-v2-runtime module ${specifier}`);
+      }
+      if (isV1AnalyzerImport(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath, specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports V1 analyzer ${specifier}`);
+      }
+      if (specifier.includes("hidden-direct-text-candidate-acquisition-harness")
+        || specifier.includes("hidden-direct-text-source-acquisition-readiness-composition")) {
+        violations.push(`X7-W1B closed-loop owner imports old hidden harness ${specifier}`);
+      }
+      if (specifier.includes("source-acquisition-network")
+        || specifier.includes("source-acquisition-content")
+        || specifier.includes("source-acquisition-content-parser")) {
+        violations.push(`X7-W1B closed-loop owner imports source/provider network or content module ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports Source Reliability ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`X7-W1B closed-loop owner imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    const closedLoopContent = readFileSync(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.source-acquisition-candidate-runtime-closed-loop.x7w1b",
+      "closed_loop_completed_no_source_candidates",
+      "blocked_pre_closed_candidate_runtime_loop",
+      "closed_loop_damaged_structural",
+      "approved_x7w1b_product_closed_candidate_runtime_loop",
+      "product_internal_closed_runtime_loop_no_source_io",
+      "approved_local_no_io_zero_candidate_boundary",
+      "executeSourceAcquisitionCandidateRuntime",
+      "createSourceAcquisitionCandidateRuntimeAuthority",
+      "createSourceAcquisitionRuntimeAuthority",
+      "structuralStatus: \"provider_failure\"",
+      "candidates: []",
+      "rawPayloadIncluded: false",
+      "secretIncluded: false",
+      "publicPayloadIncluded: false",
+      "closedLoopQueryRef",
+      "candidateRuntimeExercised: params.runtimeExercised",
+      "closedProviderBoundaryInvoked",
+      "providerNetworkExecuted: false",
+      "searchFetchCalled: false",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "evidenceItemGenerated: false",
+      "warningGenerated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "bytesRead: 0",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!closedLoopContent.includes(requiredText)) {
+        violations.push(`X7-W1B closed-loop owner missing required text ${requiredText}`);
+      }
+    }
+    for (const forbiddenText of [
+      "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "executeSourceAcquisitionNetworkTransport",
+      "fetch(",
+      "XMLHttpRequest",
+      "source-acquisition-network-factory",
+      "source-acquisition-network-transport",
+      "source-acquisition-content-transport",
+      "source-acquisition-content-parser",
+      "parsedContent",
+      "rawSdkResponse",
+      "public_ready",
+      "live_eligible",
+    ]) {
+      if (closedLoopContent.includes(forbiddenText)) {
+        violations.push(`X7-W1B closed-loop owner references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `X7-W1B candidate closed-loop artifact sink imports unapproved symbol ${importedName} from ${specifier}`,
+          );
+        }
+      }
+      if (isV1AnalyzerImport(analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath, specifier)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isSearchFetchProviderImport(specifier) || isNetworkParserImport(specifier)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports source/network/parser dependency ${specifier}`);
+      }
+      if (isSourceReliabilityImport(specifier)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports Source Reliability ${specifier}`);
+      }
+      if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink imports public surface ${specifier}`);
+      }
+    }
+
+    const sinkContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactSinkPath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_CLOSED_LOOP_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_CLOSED_LOOP_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_SOURCE_ACQUISITION_CANDIDATE_CLOSED_LOOP_ARTIFACT_MAX_SERIALIZED_BYTES = 16_384",
+      "candidateRuntimeClosedLoopObserved: true",
+      "candidateRuntimeExecuted: closedLoop.telemetry.candidateRuntimeExercised",
+      "closedProviderBoundaryInvoked: closedLoop.telemetry.closedProviderBoundaryInvoked",
+      "providerNetworkExecuted: false",
+      "searchFetchCalled: false",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "evidenceItemGenerated: false",
+      "warningGenerated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "candidateCount: 0",
+      "totalCandidateCount: 0",
+      "bytesRead: 0",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink missing required text ${requiredText}`);
+      }
+    }
+    for (const forbiddenText of [
+      "queryText",
+      "queryId",
+      "providerAttemptId",
+      "ClaimContract",
+      "EvidenceItem",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "parsedContent",
+      "providerTelemetry",
+      "promptText",
+      "renderedPrompt:",
+      "rawSdkResponse",
+      "public_ready",
+      "live_eligible",
+    ]) {
+      if (sinkContent.includes(forbiddenText)) {
+        violations.push(`X7-W1B candidate closed-loop artifact sink references forbidden text ${forbiddenText}`);
+      }
+    }
+
+    const routeSourceFile = parseSource(
+      analyzerV2EvidenceLifecycleSourceAcquisitionCandidateClosedLoopArtifactInspectionRoutePath,
+    );
+    const routeImports = collectModuleSpecifiers(routeSourceFile).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(routeSourceFile)) {
+      violations.push(
+        `X7-W1B candidate closed-loop route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`,
+      );
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required X7-W1B import ${requiredSpecifier}`);
+      }
+    }
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-candidate-acquisition-harness",
+      "@/lib/analyzer-v2-runtime/hidden-direct-text-source-acquisition-readiness-composition",
+      "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-network-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden X7-W1B downstream/source execution module ${forbiddenSpecifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -4515,6 +4840,11 @@ describe("analyzer-v2 boundary guard", () => {
 
       for (const importedPath of directAndTransitive) {
         if (forbiddenTargetPaths.has(toPosix(importedPath))) {
+          const reachesApprovedX7W1BClosedLoop =
+            directAndTransitive.map(toPosix).includes(toPosix(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath));
+          if (reachesApprovedX7W1BClosedLoop) {
+            continue;
+          }
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} reaches ${toPosix(path.relative(webRoot, importedPath))}`);
         }
       }
@@ -6198,6 +6528,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-admission.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/intake-boundary.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts",
@@ -6254,6 +6585,14 @@ describe("analyzer-v2 boundary guard", () => {
           && !(
             toPosix(sourcePath) === toPosix(evidenceLifecycleSourceAcquisitionCandidateRuntimeAdmissionPath)
             && specifier === "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope"
+          )
+          && !(
+            toPosix(sourcePath) === toPosix(evidenceLifecycleSourceAcquisitionCandidateRuntimeClosedLoopPath)
+            && [
+              "@/lib/analyzer-v2-runtime/source-acquisition-candidate-envelope",
+              "@/lib/analyzer-v2-runtime/source-acquisition-candidate-runtime",
+              "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+            ].includes(specifier)
           )
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
