@@ -7,6 +7,13 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-RP1 Local Raw-Code Probe Result -- [Significant] [open-items: yes]
+**For next agent:** Closed RP1 as `PASS_X7_W2_RP1_OBSERVED_UNMAPPED_STANDARD_NODE_CODE`. The one local transient product-parity `https.request` probe reproduced the pre-response failure; committed docs record only `[RAW_CODE_OBSERVED_LOCALLY_NOT_RECORDED]`, DNS count `1`, selected family `ipv4`, and the categorical outcome.
+**Warnings:** The observed raw code must not be quoted or reconstructed in docs/chat from RP1. RP1 authorizes no DIAG5 implementation, live jobs, source material/content/parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, provider expansion, endpoint redesign, ACS/direct URL, V1 work/cleanup, retries, additional probes, or source/test/prompt/config/schema/model edits.
+**Learnings:** The next safe action is a separate reviewed DIAG5 taxonomy/mapping source package. That package must explicitly decide whether the RP1-observed standard Node-style code can be promoted into source/test taxonomy literals while product/admin/public artifacts continue to expose only bounded categories.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-RP1_Local_Raw_Code_Probe_Result.md
+
+---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-RP1 Local Raw-Code Probe Package -- [Significant] [open-items: yes]
 **For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W2-RP1_Local_Raw_Code_Probe_Package.md` after LS5 still reported `node_error_code_present` / `other_known` / `unknown_phase`. Claude Opus approved exactly one transient operator-local probe outside the repo, matching the product `https.request` transport path, with no committed raw code or helper.
 **Warnings:** RP1 must not expose the observed raw code in product/admin artifacts, committed docs, logs, scripts, commit messages, or chat. It authorizes no source/test/prompt/config/schema/model edits, no live jobs, no response-body read, no source material/content/parser/cache/SR/storage, no EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, no provider expansion, no endpoint redesign, no ACS/direct URL, no V1 work/cleanup, no retries, and no additional probes.
