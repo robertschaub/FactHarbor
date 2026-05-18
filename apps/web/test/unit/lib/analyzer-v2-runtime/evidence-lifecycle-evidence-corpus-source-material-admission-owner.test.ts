@@ -9,14 +9,17 @@ import {
   buildSourceMaterialPageSummaryFetchLocator,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
+  buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-owner";
+import {
   buildEvidenceLifecycleSourceCandidatePreviewDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
 import {
-  runEvidenceLifecycleSourceMaterialPageSummaryDecision,
-} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
-import {
   buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-owner";
+import {
+  runEvidenceLifecycleSourceMaterialPageSummaryDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
 
 function networkDecision(): SourceAcquisitionCandidateProviderNetworkLoopDecision {
   return {
@@ -80,10 +83,10 @@ function networkDecision(): SourceAcquisitionCandidateProviderNetworkLoopDecisio
 
 async function sourceMaterialDecision() {
   const candidate = {
-    key: "Hydrogen_vehicle",
-    title: "Hydrogen vehicle",
-    excerpt: "Fuel cell vehicles use hydrogen.",
-    description: "Public encyclopedia page",
+    key: "Neutral_page_key",
+    title: "Neutral page title",
+    excerpt: "Neutral candidate excerpt.",
+    description: "Public reference page",
   };
   const projection = buildSourceCandidatePreviewProjection({
     providerId: "wikimedia_core",
@@ -108,58 +111,117 @@ async function sourceMaterialDecision() {
         statusCode: 200,
         headers: { "content-type": "application/json" },
         remoteAddress: "93.184.216.34",
-        body: Buffer.from("{\"extract\":\"Hydrogen vehicles store hydrogen and power an electric motor.\"}", "utf8"),
+        body: Buffer.from("{\"extract\":\"Neutral source material text for admission owner testing.\"}", "utf8"),
       }),
     },
   });
 }
 
-describe("Analyzer V2 W4-A runtime Source Material to EvidenceCorpus readiness owner", () => {
-  it("accepts producer-owned W3-B decisions and emits text-free readiness", async () => {
+describe("Analyzer V2 W4-C runtime Source Material corpus admission owner", () => {
+  it("accepts only producer-owned W4-A readiness and emits text-free corpus-admission input", async () => {
     const sourceMaterial = await sourceMaterialDecision();
     const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
       sourceMaterialPageSummary: sourceMaterial,
     });
-    const serialized = JSON.stringify(readiness);
+    const admission = buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
+      sourceMaterialReadiness: readiness,
+    });
+    const serialized = JSON.stringify(admission);
 
-    expect(readiness).toMatchObject({
-      status: "source_material_structurally_admissible_evidence_corpus_gate_closed",
+    expect(admission).toMatchObject({
+      status: "source_material_admitted_to_corpus_input_gate_closed",
       stopReason: "not_stopped",
       sourceMaterialRecordCount: 1,
-      admittedSourceMaterialRecordCount: 1,
-      sourceMaterialRecord: {
-        providerId: "wikimedia_core",
-        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
-        languageCode: "en",
-      },
-      extractionInput: null,
+      admittedCorpusAdmissionInputCount: 1,
+      rejectedCorpusAdmissionInputCount: 0,
       evidenceCorpus: null,
       evidenceCorpusBuildAuthorized: false,
       evidenceItems: [],
-      downstreamGate: "evidence_corpus_build_gate_closed",
+      extractionInput: null,
+      downstreamGate: "evidence_corpus_construction_gate_closed",
+      publicCutoverStatus: "blocked_precutover",
     });
-    expect(serialized).not.toContain("Hydrogen vehicles store hydrogen");
-    expect(serialized).not.toContain("Hydrogen_vehicle");
+    expect(admission.corpusAdmissionInput).toMatchObject({
+      providerId: "wikimedia_core",
+      sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+      languageCode: "en",
+      sourceMaterialKind: "wikimedia_page_summary_extract_text",
+      sourceMaterialRecordCount: 1,
+    });
+    expect(serialized).not.toContain("Neutral source material text");
+    expect(serialized).not.toContain("Neutral_page_key");
     expect(serialized).not.toContain("truthPercentage");
+    expect(serialized).not.toContain("reportMarkdown");
   });
 
-  it("rejects copied or post-mark mutated W3-B decisions", async () => {
+  it("rejects direct W3-B source material, W3-B records, and copied W4-A readiness", async () => {
     const sourceMaterial = await sourceMaterialDecision();
-    const jsonCopy = JSON.parse(JSON.stringify(sourceMaterial));
-    const spreadCopy = { ...sourceMaterial };
-    const mutated = await sourceMaterialDecision();
-    (mutated as { stopReason: string }).stopReason = "source_material_structural_exception";
+    const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
+      sourceMaterialPageSummary: sourceMaterial,
+    });
+    const directRecord = Array.isArray(sourceMaterial.sourceMaterialRecords)
+      ? sourceMaterial.sourceMaterialRecords[0]
+      : null;
+    const cases = [
+      [
+        sourceMaterial,
+        "blocked_pre_evidence_corpus_readiness_absent",
+        "w4a_not_completed",
+      ],
+      [
+        directRecord,
+        "blocked_pre_evidence_corpus_readiness_absent",
+        "w4a_not_completed",
+      ],
+      [
+        JSON.parse(JSON.stringify(readiness)),
+        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        "runtime_ownership_missing",
+      ],
+      [
+        structuredClone(readiness),
+        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        "runtime_ownership_missing",
+      ],
+      [
+        { ...readiness },
+        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        "runtime_ownership_missing",
+      ],
+    ];
 
-    for (const input of [jsonCopy, structuredClone(sourceMaterial), spreadCopy, mutated]) {
-      expect(buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
-        sourceMaterialPageSummary: input,
+    for (const [sourceMaterialReadiness, status, stopReason] of cases) {
+      expect(buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
+        sourceMaterialReadiness,
       })).toMatchObject({
-        status: "blocked_pre_evidence_corpus_source_material_not_runtime_owned",
-        stopReason: "runtime_ownership_missing",
+        status,
+        stopReason,
+        corpusAdmissionInput: null,
         evidenceCorpus: null,
         evidenceCorpusBuildAuthorized: false,
         evidenceItems: [],
+        extractionInput: null,
       });
     }
+  });
+
+  it("rejects post-mark mutated W4-A readiness", async () => {
+    const sourceMaterial = await sourceMaterialDecision();
+    const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
+      sourceMaterialPageSummary: sourceMaterial,
+    });
+    (readiness as { stopReason: string }).stopReason = "structural_exception";
+
+    expect(buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
+      sourceMaterialReadiness: readiness,
+    })).toMatchObject({
+      status: "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+      stopReason: "runtime_ownership_missing",
+      corpusAdmissionInput: null,
+      evidenceCorpus: null,
+      evidenceCorpusBuildAuthorized: false,
+      evidenceItems: [],
+      extractionInput: null,
+    });
   });
 });

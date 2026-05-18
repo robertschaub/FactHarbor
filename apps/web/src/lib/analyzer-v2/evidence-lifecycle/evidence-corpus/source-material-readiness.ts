@@ -53,6 +53,9 @@ export type EvidenceCorpusSourceMaterialReadinessRecordSummary = {
   readonly sourceMaterialRef: string;
   readonly locatorRef: string;
   readonly candidatePreviewId: string;
+  readonly providerId: string;
+  readonly sourceMaterialEndpointId: typeof SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID;
+  readonly languageCode: string;
   readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
@@ -397,23 +400,26 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
   const sourceMaterialId = record.sourceMaterialId;
   const locatorRef = record.locatorRef;
   const candidatePreviewId = record.candidatePreviewId;
+  const providerId = record.providerId;
+  const sourceMaterialEndpointId = record.sourceMaterialEndpointId;
+  const languageCode = record.languageCode;
   const sourceMaterialTextHash = record.sourceMaterialTextHash;
   if (
     !isNonBlankString(sourceMaterialId)
     || !isNonBlankString(locatorRef)
     || !isNonBlankString(candidatePreviewId)
-    || !isNonBlankString(record.providerId)
-    || !isNonBlankString(record.sourceMaterialEndpointId)
-    || !isNonBlankString(record.languageCode)
+    || !isNonBlankString(providerId)
+    || !isNonBlankString(sourceMaterialEndpointId)
+    || !isNonBlankString(languageCode)
     || !isNonBlankString(record.sourceMaterialKind)
     || !isNonBlankString(sourceMaterialTextHash)
     || [
       sourceMaterialId,
       locatorRef,
       candidatePreviewId,
-      record.providerId,
-      record.sourceMaterialEndpointId,
-      record.languageCode,
+      providerId,
+      sourceMaterialEndpointId,
+      languageCode,
       record.sourceMaterialKind,
       sourceMaterialTextHash,
     ].some(containsForbiddenStructuralMarker)
@@ -429,6 +435,9 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     sourceMaterialRef: sourceMaterialId,
     locatorRef,
     candidatePreviewId,
+    providerId,
+    sourceMaterialEndpointId: SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
+    languageCode,
     sourceMaterialKind: "wikimedia_page_summary_extract_text",
     sourceMaterialTextHash,
     sourceMaterialTextByteLength: byteLength,
