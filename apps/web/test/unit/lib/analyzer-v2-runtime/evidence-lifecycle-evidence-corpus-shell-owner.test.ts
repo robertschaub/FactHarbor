@@ -9,11 +9,11 @@ import {
   buildSourceMaterialPageSummaryFetchLocator,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
+  buildEvidenceLifecycleEvidenceCorpusShellDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-shell-owner";
+import {
   buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-owner";
-import {
-  readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision,
-} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-provenance";
 import {
   buildEvidenceLifecycleSourceCandidatePreviewDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
@@ -114,118 +114,123 @@ async function sourceMaterialDecision() {
         statusCode: 200,
         headers: { "content-type": "application/json" },
         remoteAddress: "93.184.216.34",
-        body: Buffer.from("{\"extract\":\"Neutral source material text for admission owner testing.\"}", "utf8"),
+        body: Buffer.from("{\"extract\":\"Neutral source material text for shell owner testing.\"}", "utf8"),
       }),
     },
   });
 }
 
-describe("Analyzer V2 W4-C runtime Source Material corpus admission owner", () => {
-  it("accepts only producer-owned W4-A readiness and emits text-free corpus-admission input", async () => {
-    const sourceMaterial = await sourceMaterialDecision();
-    const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
-      sourceMaterialPageSummary: sourceMaterial,
-    });
-    const admission = buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
+async function admissionDecision() {
+  const sourceMaterial = await sourceMaterialDecision();
+  const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
+    sourceMaterialPageSummary: sourceMaterial,
+  });
+  return {
+    sourceMaterial,
+    readiness,
+    admission: buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
       sourceMaterialReadiness: readiness,
-    });
-    const serialized = JSON.stringify(admission);
+    }),
+  };
+}
 
-    expect(admission).toMatchObject({
-      status: "source_material_admitted_to_corpus_input_gate_closed",
+describe("Analyzer V2 W4-D runtime EvidenceCorpus shell owner", () => {
+  it("accepts only producer-owned W4-C admission and emits a text-free shell", async () => {
+    const { admission } = await admissionDecision();
+    const shell = buildEvidenceLifecycleEvidenceCorpusShellDecision({
+      sourceMaterialAdmission: admission,
+    });
+    const serialized = JSON.stringify(shell);
+
+    expect(shell).toMatchObject({
+      status: "evidence_corpus_shell_created_extraction_gate_closed",
       stopReason: "not_stopped",
       sourceMaterialRecordCount: 1,
-      admittedCorpusAdmissionInputCount: 1,
-      rejectedCorpusAdmissionInputCount: 0,
-      evidenceCorpus: null,
-      evidenceCorpusBuildAuthorized: false,
       evidenceItems: [],
       extractionInput: null,
-      downstreamGate: "evidence_corpus_construction_gate_closed",
+      evidenceItemExtractionAuthorized: false,
+      downstreamGate: "evidence_item_extraction_gate_closed",
       publicCutoverStatus: "blocked_precutover",
+      productExecution: {
+        evidenceCorpusShellCreated: true,
+        semanticExtractionAuthorized: false,
+        evidenceItemExtractionAuthorized: false,
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
     });
-    expect(admission.corpusAdmissionInput).toMatchObject({
-      providerId: "wikimedia_core",
-      sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
-      languageCode: "en",
-      sourceMaterialKind: "wikimedia_page_summary_extract_text",
-      sourceMaterialRecordCount: 1,
+    expect(shell.evidenceCorpus).toMatchObject({
+      kind: "shell_only",
+      corpusTextAccess: "closed",
+      semanticExtractionAuthorized: false,
+      evidenceItemExtractionAuthorized: false,
+      providerIds: ["wikimedia_core"],
+      languageCodes: ["en"],
     });
-    expect(readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision(admission)).toBe(admission);
     expect(serialized).not.toContain("Neutral source material text");
     expect(serialized).not.toContain("Neutral_page_key");
     expect(serialized).not.toContain("truthPercentage");
     expect(serialized).not.toContain("reportMarkdown");
   });
 
-  it("rejects direct W3-B source material, W3-B records, and copied W4-A readiness", async () => {
-    const sourceMaterial = await sourceMaterialDecision();
-    const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
-      sourceMaterialPageSummary: sourceMaterial,
-    });
-    const directRecord = Array.isArray(sourceMaterial.sourceMaterialRecords)
-      ? sourceMaterial.sourceMaterialRecords[0]
-      : null;
+  it("rejects direct W3-B Source Material, W4-A readiness, and copied W4-C admission", async () => {
+    const { sourceMaterial, readiness, admission } = await admissionDecision();
     const cases = [
+      [sourceMaterial, "blocked_pre_evidence_corpus_admission_absent", "w4c_not_completed"],
+      [readiness, "blocked_pre_evidence_corpus_admission_absent", "w4c_not_completed"],
       [
-        sourceMaterial,
-        "blocked_pre_evidence_corpus_readiness_absent",
-        "w4a_not_completed",
-      ],
-      [
-        directRecord,
-        "blocked_pre_evidence_corpus_readiness_absent",
-        "w4a_not_completed",
-      ],
-      [
-        JSON.parse(JSON.stringify(readiness)),
-        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        JSON.parse(JSON.stringify(admission)),
+        "blocked_pre_evidence_corpus_admission_not_runtime_owned",
         "runtime_ownership_missing",
       ],
       [
-        structuredClone(readiness),
-        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        structuredClone(admission),
+        "blocked_pre_evidence_corpus_admission_not_runtime_owned",
         "runtime_ownership_missing",
       ],
       [
-        { ...readiness },
-        "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
+        { ...admission },
+        "blocked_pre_evidence_corpus_admission_not_runtime_owned",
         "runtime_ownership_missing",
       ],
     ];
 
-    for (const [sourceMaterialReadiness, status, stopReason] of cases) {
-      expect(buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
-        sourceMaterialReadiness,
+    for (const [sourceMaterialAdmission, status, stopReason] of cases) {
+      expect(buildEvidenceLifecycleEvidenceCorpusShellDecision({
+        sourceMaterialAdmission,
       })).toMatchObject({
         status,
         stopReason,
-        corpusAdmissionInput: null,
         evidenceCorpus: null,
-        evidenceCorpusBuildAuthorized: false,
         evidenceItems: [],
         extractionInput: null,
+        evidenceItemExtractionAuthorized: false,
       });
     }
   });
 
-  it("rejects post-mark mutated W4-A readiness", async () => {
-    const sourceMaterial = await sourceMaterialDecision();
-    const readiness = buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
-      sourceMaterialPageSummary: sourceMaterial,
-    });
-    (readiness as { stopReason: string }).stopReason = "structural_exception";
+  it("rejects post-mark mutated W4-C admission distinctly", async () => {
+    const { admission } = await admissionDecision();
+    (admission as { stopReason: string }).stopReason = "structural_exception";
 
-    expect(buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
-      sourceMaterialReadiness: readiness,
+    expect(buildEvidenceLifecycleEvidenceCorpusShellDecision({
+      sourceMaterialAdmission: admission,
     })).toMatchObject({
-      status: "blocked_pre_evidence_corpus_readiness_not_runtime_owned",
-      stopReason: "runtime_ownership_missing",
-      corpusAdmissionInput: null,
+      status: "blocked_pre_evidence_corpus_admission_mutated_after_provenance",
+      stopReason: "admission_post_mark_mutated",
       evidenceCorpus: null,
-      evidenceCorpusBuildAuthorized: false,
       evidenceItems: [],
       extractionInput: null,
+      evidenceItemExtractionAuthorized: false,
     });
   });
 });

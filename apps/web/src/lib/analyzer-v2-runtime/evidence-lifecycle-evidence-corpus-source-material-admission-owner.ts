@@ -5,6 +5,9 @@ import {
 import {
   readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeOwnedDecision,
 } from "./evidence-lifecycle-source-material-evidence-corpus-readiness-provenance";
+import {
+  markEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision,
+} from "./evidence-lifecycle-evidence-corpus-source-material-admission-provenance";
 
 export type EvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision =
   EvidenceCorpusSourceMaterialAdmissionDecision;
@@ -15,8 +18,9 @@ export function buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecis
   const runtimeOwnedReadiness =
     readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeOwnedDecision(params.sourceMaterialReadiness);
 
-  return buildEvidenceCorpusSourceMaterialAdmission({
+  const decision = buildEvidenceCorpusSourceMaterialAdmission({
     sourceMaterialReadiness: runtimeOwnedReadiness ?? params.sourceMaterialReadiness,
     runtimeOwned: runtimeOwnedReadiness !== null,
   });
+  return markEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision(decision);
 }
