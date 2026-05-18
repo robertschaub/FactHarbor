@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T09:40:14.231Z",
-  "count": 677,
+  "generatedAt": "2026-05-18T10:14:00.870Z",
+  "count": 678,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14851,6 +14851,25 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Start with `Docs/WIP/2026-05-18_V2_Slice_X7-W2-TR1_Standard_Client_Transport_Repair_Source_Package.md`. Implementation must stay inside the transport-focused envelope and apply `/debt-guard` before source edits. If the post-repair canary still has zero bytes/candidates, stop and prepare an endpoint/"
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W3-A_Safe_Locator_Materialization_Preview_Source_Package.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-w3-a",
+        "safe",
+        "locator",
+        "materialization",
+        "preview",
+        "source",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "Prepare a narrow W3-A implementation package for Steering Board review only."
     },
     {
       "file": "2026-05-18_Lead_Developer_V2_X7-W3_Source_Material_Steering_Review_Package.md",
