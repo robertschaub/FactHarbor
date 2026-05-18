@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-PIV1-A Bounded Core Search Limit Source Package
 
 **Date:** 2026-05-18
-**Status:** Implementation verified; focused commit/runtime refresh/canary pending
+**Status:** Live canary passed; result recorded
 **Owner:** Lead Developer / Captain Deputy
 **Parent package:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-PIV1_Endpoint_Client_Response_Size_Pivot_Package.md`
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-TR1_Standard_Client_Transport_Repair_Live_Result.md`
@@ -9,6 +9,15 @@
 ## Purpose
 
 TR1 repaired W2 far enough to reach response streaming, but the one canary still stopped all attempts at `compressed_byte_cap_exceeded` with zero bytes and zero hidden candidates. PIV1-A is the narrow first response-size repair: keep the same standard Node HTTPS path and approved Wikimedia Core page-search endpoint, but request only the bounded candidate count W2 can consume.
+
+## Reference Confirmation
+
+Before implementation and canary execution, the Wikimedia Core Search content reference was checked for the exact parameter placement. The page-search endpoint is a `GET` endpoint at `/core/v1/{project}/{language}/search/page`, and `limit` is documented as an optional query parameter. The examples use URL/query-parameter transport (`?q=earth&limit=10`) and client request params, not a request body field. No alternate parameter name such as `count` or `n` was used for this endpoint.
+
+Reference pages checked:
+
+- `https://api.wikimedia.org/wiki/API_reference/Core/Search/Search_content`
+- `https://www.mediawiki.org/wiki/API:REST_API/Reference/en`
 
 ## Approved Scope
 
@@ -70,7 +79,7 @@ One focused test assertion was narrowed during failed-attempt recovery: the broa
 
 ## Canary Rule
 
-After focused commit, runtime refresh, route preflight, endpoint status re-check, and clean worktree/idle checkpoint, PIV1-A authorizes exactly one Captain-defined canary:
+After focused commit, runtime refresh, route preflight, endpoint status re-check, and clean worktree/idle checkpoint, PIV1-A authorized exactly one Captain-defined canary:
 
 ```text
 Using hydrogen for cars is more efficient than using electricity
@@ -91,3 +100,32 @@ Pass signal:
 Stop/pivot signal:
 
 - if the one canary still yields zero bytes/candidates, stop and bring back a project-local endpoint or byte-cap pivot package.
+
+## Canary Result
+
+PIV1-A passed its narrow live proof on 2026-05-18.
+
+| Field | Observation |
+|---|---|
+| Implementation commit | `7c833b53da7d6e5ece6970247671ed4d8bdce7ea` |
+| Canary job | `c4ed36f4ce634860b906c74ea1557cc6` |
+| Input | `Using hydrogen for cars is more efficient than using electricity` |
+| Job status | `SUCCEEDED` |
+| First preparation event | `pipeline: claimboundary-v2` |
+| Public schema | `4.0.0-cb-precutover` |
+| Public cutover status | `blocked_precutover` |
+| Public hidden-marker leak | none found by refined marker scan |
+| W2 status | `candidate_provider_network_completed` |
+| W2 blocked/damaged reason | `null` / `null` |
+| Query entries | `3` |
+| Provider/network attempts | `3` / `3` |
+| Candidate count | `9` total, `3` per query |
+| Total compressed bytes | `6991` |
+| Total decompressed bytes | `6991` |
+| Total bytes | `13982` |
+| Cost reason | `no_paid_api_no_credentials` |
+| Source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public writes | not created / not executed |
+
+Each W2 network attempt returned `success_2xx`, `accepted_json`, `matched_validated_public_address`, `not_stopped`, and `candidateCount: 3`. The stop/pivot condition did not trigger because W2 recorded nonzero bytes and nonzero hidden structural candidates.
+
+PIV1-A does not authorize source material, content dereference, parser execution, cache IO, durable storage, Source Reliability, EvidenceCorpus/evidence/report/verdict/warning/confidence behavior, public behavior changes, provider expansion, retries, ACS/direct URL behavior, prompt/config/model/schema edits, V1 reuse, or V1 cleanup.

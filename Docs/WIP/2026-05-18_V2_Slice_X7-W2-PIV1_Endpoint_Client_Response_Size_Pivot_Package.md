@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-PIV1 Endpoint/Client/Response-Size Pivot Package
 
 **Date:** 2026-05-18
-**Status:** Steering Board review accepted; PIV1-A bounded Core-search limit implementation verified, canary pending
+**Status:** Steering Board review accepted; PIV1-A bounded Core-search limit passed live canary
 **Owner:** Lead Developer / Captain Deputy
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-TR1_Standard_Client_Transport_Repair_Live_Result.md`
 
@@ -18,6 +18,8 @@ Captain approved the narrow response-size repair direction after Steering Board 
 - if zero bytes/candidates persist, stop and return with a project-local endpoint or byte-cap pivot package.
 
 The implementing package is now `Docs/WIP/2026-05-18_V2_Slice_X7-W2-PIV1-A_Bounded_Core_Search_Limit_Source_Package.md`.
+
+PIV1-A subsequently passed its one approved canary on job `c4ed36f4ce634860b906c74ea1557cc6` at implementation commit `7c833b53da7d6e5ece6970247671ed4d8bdce7ea`: W2 reached `candidate_provider_network_completed`, recorded `9` hidden structural candidates and `13982` total bytes, and preserved public `4.0.0-cb-precutover` / `blocked_precutover` containment with no hidden-marker leak. The zero-byte/zero-candidate pivot condition did not trigger.
 
 ## 1. Purpose
 
