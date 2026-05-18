@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import {
@@ -190,7 +192,19 @@ function fakeTransport(
 }
 
 describe("Analyzer V2 source-acquisition provider-network transport", () => {
-  it("executes an SDK-free HTTPS transport through explicit DNS and final-address validation", async () => {
+  it("keeps the production default request on the standard Node HTTPS connection path", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts"),
+      "utf8",
+    );
+
+    expect(source).toContain("const req = httpsRequest({");
+    expect(source).toContain("agent: false");
+    expect(source).not.toContain("lookup: (_hostname");
+    expect(source).not.toContain("request.lookupAddress.address");
+  });
+
+  it("executes an SDK-free HTTPS transport through pre-resolved DNS and final-address validation", async () => {
     const seenPaths: string[] = [];
     const transport = fakeTransport({
       request: async (request) => {
@@ -217,6 +231,8 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
 
     expect(outcome.status).toBe("success");
     expect(outcome).toMatchObject({ candidateCount: 1 });
+    expect(outcome.diagnostic.compressedBytes).toBeGreaterThan(0);
+    expect(outcome.diagnostic.decompressedBytes).toBeGreaterThan(0);
     expect(seenPaths).toEqual(["/candidate-search?q=Plastic+recycling+is+pointless"]);
     expect(outcome.diagnostic).toMatchObject({
       dnsAddressCount: 1,

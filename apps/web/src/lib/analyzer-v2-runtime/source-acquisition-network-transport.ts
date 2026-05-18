@@ -597,9 +597,6 @@ async function defaultRequest(
       headers: request.headers,
       timeout: request.timeoutMs,
       agent: false,
-      lookup: (_hostname, _options, callback) => {
-        callback(null, request.lookupAddress.address, request.lookupAddress.family);
-      },
     }, (response) => {
       response.on("data", (chunk: Buffer | string) => {
         const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);

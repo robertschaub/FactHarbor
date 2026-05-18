@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-TR1 Standard-Client Transport Repair Source Package
 
 **Date:** 2026-05-18
-**Status:** Claude Opus-reviewed and approved; source edits allowed only after package commit
+**Status:** Implementation verified; commit and one post-repair canary remain
 **Owner:** Lead Developer / Captain Deputy
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS6_DIAG5_Taxonomy_Live_Result.md`
 **Baseline:** `8263164a` (`docs: record v2 w2 ls6 live result`)
@@ -298,3 +298,44 @@ Check whether TR1 is the correct narrow repair after LS6:
 | Role | Reviewer | Date | Decision | Notes |
 |---|---|---:|---|---|
 | Claude Opus 4.6 senior architect/security | Claude Opus 4.6 via `scripts/agents/invoke-claude.cjs` | 2026-05-18 | APPROVE | Reviewer confirmed TR1 is the correct narrow next package after LS6, the standard Node HTTPS connection path without the custom pinned lookup callback is a reasonable primary repair candidate, containment boundaries are preserved, the source/test envelope is narrow, synthetic tests and the one gated post-repair canary are adequate, the stop/pivot rule is correct, and no unauthorized scope expansion is present. Non-blocking observation: standard-client connection can re-resolve after DNS pre-validation; final remote-address validation mitigates this by failing closed on mismatch. |
+
+## 15. Implementation Closeout
+
+TR1 implementation stayed inside the approved source/test envelope.
+
+Source behavior changed:
+
+- `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts` now uses the standard Node HTTPS connection path in the production default request by removing the custom pinned lookup callback.
+- DNS pre-resolution, public-address validation, final remote-address validation, endpoint allowlist, redirect-deny, proxy-none posture, no-credential posture, byte/timeout caps, hidden-only telemetry, and raw-leak controls remain in place.
+
+Test behavior changed:
+
+- `apps/web/test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts` now verifies the production default request no longer installs the pinned lookup callback and that the synthetic success path records nonzero compressed/decompressed byte telemetry with hidden-only sanitized output.
+
+Debt-guard result:
+
+- **Classification:** incomplete existing mechanism.
+- **Chosen option:** amend the current transport request mechanism in place.
+- **Rejected path:** new provider/client stack, retries, endpoint change, custom DNS stack patch, or weakened final-address validation.
+- **Net mechanism count:** decreases in the production default request path.
+- **Debt accepted:** none for TR1; the one-canary stop/pivot rule remains active.
+
+Verifier results:
+
+| Verifier | Result |
+|---|---|
+| `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` | PASS, 4 files / 93 tests |
+| `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts` | PASS, 3 files / 17 tests |
+| `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` | PASS, 5 files / 94 tests |
+| `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime` | PASS, 43 files / 257 tests |
+| `npm -w apps/web run test -- test/unit/lib/analyzer-v2` | PASS, 88 files / 622 tests |
+| `npm -w apps/web run build` | PASS |
+| `npm run validate:v2-gates` | PASS |
+| `node scripts/validate-v2-gate-register.mjs --self-test` | PASS |
+| `git diff --check` | PASS |
+
+## 16. Post-Repair Canary Status
+
+The post-repair live canary is not yet run in this implementation package. It may run only after this TR1 implementation is committed, runtime is refreshed from that commit, endpoint status is re-checked, route preflight passes, and the worktree remains clean through the required idle checkpoint.
+
+If the canary still records zero bytes and zero hidden candidates, stop and prepare an endpoint/client pivot package for Steering Board review. Do not patch the custom DNS stack inside TR1.
