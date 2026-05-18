@@ -40,6 +40,10 @@ import {
   clearEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifacts,
   readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-artifact-sink";
+import {
+  clearEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifacts,
+  readEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-observability-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -357,6 +361,209 @@ function sourceMaterialEvidenceCorpusReadinessDecision() {
   } as const;
 }
 
+function evidenceCorpusSourceMaterialAdmissionDecision() {
+  return {
+    decisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
+    visibility: "internal_admin_only",
+    publicPointerExposure: "forbidden",
+    status: "source_material_admitted_to_corpus_input_gate_closed",
+    stopReason: "not_stopped",
+    parent: {
+      readinessDecisionVersion: "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a",
+      readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed",
+      readinessStopReason: "not_stopped",
+    },
+    sourceMaterialRecordCount: 1,
+    admittedCorpusAdmissionInputCount: 1,
+    rejectedCorpusAdmissionInputCount: 0,
+    corpusAdmissionInput: {
+      inputVersion: "v2.evidence-lifecycle.evidence-corpus-admission-input.x7w4c",
+      corpusAdmissionInputId: "CORPUS_ADMISSION_INPUT_0123456789ABCDEF",
+      sourceMaterialRef: "SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF",
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+      providerId: "wikimedia_core",
+      sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+      sourceMaterialKind: "wikimedia_page_summary_extract_text",
+      languageCode: "en",
+      sourceMaterialTextHash: "0".repeat(64),
+      sourceMaterialTextByteLength: 90,
+      sourceMaterialTextCharLength: 90,
+      responseStatusCategory: "success_2xx",
+      contentTypeCategory: "accepted_json",
+      truncationApplied: false,
+      sourceMaterialRecordCount: 1,
+      readinessDecisionVersion: "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a",
+      readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed",
+      readinessStopReason: "not_stopped",
+      downstreamExecution: {
+        evidenceCorpusBuildAuthorized: false,
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    },
+    evidenceCorpus: null,
+    evidenceCorpusBuildAuthorized: false,
+    evidenceItems: [],
+    extractionInput: null,
+    downstreamGate: "evidence_corpus_construction_gate_closed",
+    publicCutoverStatus: "blocked_precutover",
+    productExecution: {
+      sourceMaterialReadinessObserved: true,
+      corpusAdmissionInputCreated: true,
+      evidenceCorpusBuildAuthorized: false,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      evidenceCorpusCreated: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
+  } as const;
+}
+
+function evidenceCorpusShellDecision() {
+  return {
+    decisionVersion: "v2.evidence-lifecycle.evidence-corpus-shell.x7w4d",
+    visibility: "internal_admin_only",
+    publicPointerExposure: "forbidden",
+    status: "evidence_corpus_shell_created_extraction_gate_closed",
+    stopReason: "not_stopped",
+    parent: {
+      admissionDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
+      admissionStatus: "source_material_admitted_to_corpus_input_gate_closed",
+      admissionStopReason: "not_stopped",
+    },
+    sourceMaterialRecordCount: 1,
+    evidenceCorpus: {
+      shellVersion: "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d",
+      evidenceCorpusId: "EVIDENCE_CORPUS_SHELL_0123456789ABCDEF",
+      kind: "shell_only",
+      visibility: "internal_admin_only",
+      publicPointerExposure: "forbidden",
+      sourceMaterialRefs: ["SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF"],
+      locatorRefs: ["OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456"],
+      candidatePreviewIds: ["SOURCE_CANDIDATE_PREVIEW_1_1"],
+      providerIds: ["wikimedia_core"],
+      sourceMaterialEndpointIds: ["ep_wikimedia_project_page_summary"],
+      languageCodes: ["en"],
+      sourceMaterialKinds: ["wikimedia_page_summary_extract_text"],
+      sourceMaterialTextHashes: ["0".repeat(64)],
+      aggregateSourceMaterialTextByteLength: 90,
+      aggregateSourceMaterialTextCharLength: 90,
+      admissionLineage: {
+        admissionDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
+        admissionStatus: "source_material_admitted_to_corpus_input_gate_closed",
+        admissionStopReason: "not_stopped",
+        corpusAdmissionInputId: "CORPUS_ADMISSION_INPUT_0123456789ABCDEF",
+      },
+      readinessLineage: {
+        readinessDecisionVersion: "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a",
+        readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed",
+        readinessStopReason: "not_stopped",
+      },
+      corpusTextAccess: "closed",
+      semanticExtractionAuthorized: false,
+      evidenceItemExtractionAuthorized: false,
+      downstreamExecution: {
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    },
+    evidenceItems: [],
+    extractionInput: null,
+    semanticExtractionAuthorized: false,
+    evidenceItemExtractionAuthorized: false,
+    downstreamGate: "evidence_item_extraction_gate_closed",
+    publicCutoverStatus: "blocked_precutover",
+    productExecution: {
+      evidenceCorpusShellCreated: true,
+      semanticExtractionAuthorized: false,
+      evidenceItemExtractionAuthorized: false,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
+  } as const;
+}
+
+function evidenceCorpusExtractionReadinessDenialDecision() {
+  return {
+    decisionVersion: "v2.evidence-lifecycle.evidence-corpus-extraction-readiness-denial.x7w4e",
+    visibility: "internal_admin_only",
+    publicPointerExposure: "forbidden",
+    status: "extraction_denied_shell_only",
+    stopReason: "shell_only_corpus",
+    parent: {
+      shellDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-shell.x7w4d",
+      shellStatus: "evidence_corpus_shell_created_extraction_gate_closed",
+      shellStopReason: "not_stopped",
+      shellVersion: "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d",
+      evidenceCorpusId: "EVIDENCE_CORPUS_SHELL_0123456789ABCDEF",
+    },
+    parentAdmissionLineage: {
+      admissionDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
+      admissionStatus: "source_material_admitted_to_corpus_input_gate_closed",
+      corpusAdmissionInputId: "CORPUS_ADMISSION_INPUT_0123456789ABCDEF",
+    },
+    evidenceCorpusKind: "shell_only",
+    corpusTextAccess: "closed",
+    semanticExtractionAuthorized: false,
+    evidenceItemExtractionAuthorized: false,
+    extractionInput: null,
+    evidenceItems: [],
+    downstreamGate: "evidence_item_extraction_denied_shell_only",
+    publicCutoverStatus: "blocked_precutover",
+    productExecution: {
+      extractionReadinessDenied: true,
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
+  } as const;
+}
+
 describe("Analyzer V2 orchestrator X7-S Query Planning product-internal execution", () => {
   afterEach(() => {
     vi.doUnmock("@/lib/analyzer-v2/claim-understanding/runtime-stage");
@@ -364,6 +571,9 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     vi.doUnmock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop");
     vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner");
     vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-owner");
+    vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-owner");
+    vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-shell-owner");
+    vi.doUnmock("@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner");
     vi.resetModules();
   });
 
@@ -378,6 +588,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -433,6 +644,23 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
           vi.fn(() => sourceMaterialEvidenceCorpusReadinessDecision()),
       }),
     );
+    vi.doMock(
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-owner",
+      () => ({
+        buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision:
+          vi.fn(() => evidenceCorpusSourceMaterialAdmissionDecision()),
+      }),
+    );
+    vi.doMock("@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-shell-owner", () => ({
+      buildEvidenceLifecycleEvidenceCorpusShellDecision: vi.fn(() => evidenceCorpusShellDecision()),
+    }));
+    vi.doMock(
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner",
+      () => ({
+        buildEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialDecision:
+          vi.fn(() => evidenceCorpusExtractionReadinessDenialDecision()),
+      }),
+    );
 
     const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
     const result = await runClaimBoundaryPipelineV2(
@@ -465,6 +693,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       readEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifacts(ledgerId);
     const sourceMaterialEvidenceCorpusReadinessArtifacts =
       readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifacts(ledgerId);
+    const evidenceCorpusObservabilityArtifacts =
+      readEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -713,6 +943,50 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         }),
       }),
     ]);
+    expect(evidenceCorpusObservabilityArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        evidenceCorpusSourceMaterialAdmission: expect.objectContaining({
+          status: "source_material_admitted_to_corpus_input_gate_closed",
+          evidenceCorpus: null,
+          extractionInput: null,
+          evidenceItems: [],
+        }),
+        evidenceCorpusShell: expect.objectContaining({
+          status: "evidence_corpus_shell_created_extraction_gate_closed",
+          evidenceCorpus: expect.objectContaining({
+            kind: "shell_only",
+            corpusTextAccess: "closed",
+          }),
+          extractionInput: null,
+          evidenceItems: [],
+        }),
+        evidenceCorpusExtractionReadinessDenial: expect.objectContaining({
+          status: "extraction_denied_shell_only",
+          stopReason: "shell_only_corpus",
+          extractionInput: null,
+          evidenceItems: [],
+        }),
+        productExecution: expect.objectContaining({
+          corpusAdmissionObserved: true,
+          evidenceCorpusShellObserved: true,
+          extractionReadinessDenialObserved: true,
+          sourceTextAuthorized: false,
+          extractionInputCreated: false,
+          evidenceItemGenerated: false,
+          parserExecuted: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          publicSurfaceWritten: false,
+        }),
+        publicCutoverStatus: "blocked_precutover",
+      }),
+    ]);
+    expect(JSON.stringify(evidenceCorpusObservabilityArtifacts)).not.toContain("Hydrogen_vehicle");
+    expect(JSON.stringify(evidenceCorpusObservabilityArtifacts)).not.toContain("Neutral source material text");
+    expect(JSON.stringify(evidenceCorpusObservabilityArtifacts)).not.toContain("reportMarkdown");
+    expect(JSON.stringify(evidenceCorpusObservabilityArtifacts)).not.toContain("truthPercentage");
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {

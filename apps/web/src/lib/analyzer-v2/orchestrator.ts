@@ -20,6 +20,15 @@ import {
   buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-owner";
 import {
+  buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-source-material-admission-owner";
+import {
+  buildEvidenceLifecycleEvidenceCorpusShellDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-shell-owner";
+import {
+  buildEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -63,6 +72,9 @@ import {
 import {
   recordEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-artifact-sink";
+import {
+  recordEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-observability-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -228,6 +240,23 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifact({
           context,
           readinessDecision: sourceMaterialEvidenceCorpusReadiness,
+        });
+        const evidenceCorpusSourceMaterialAdmission =
+          buildEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionDecision({
+            sourceMaterialReadiness: sourceMaterialEvidenceCorpusReadiness,
+          });
+        const evidenceCorpusShell = buildEvidenceLifecycleEvidenceCorpusShellDecision({
+          sourceMaterialAdmission: evidenceCorpusSourceMaterialAdmission,
+        });
+        const evidenceCorpusExtractionReadinessDenial =
+          buildEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialDecision({
+            evidenceCorpusShell,
+          });
+        recordEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifact({
+          context,
+          sourceMaterialAdmission: evidenceCorpusSourceMaterialAdmission,
+          evidenceCorpusShell,
+          extractionReadinessDenial: evidenceCorpusExtractionReadinessDenial,
         });
       }
     } catch {
