@@ -415,6 +415,24 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     const tlsError = Object.assign(new Error("tls raw https://example.test sk_secret stack"), {
       code: "ERR_TLS_CERT_ALTNAME_INVALID",
     });
+    const networkUnreachableError = Object.assign(new Error("network raw https://example.test sk_secret stack"), {
+      code: "ENETUNREACH",
+    });
+    const hostUnreachableError = Object.assign(new Error("host raw https://example.test sk_secret stack"), {
+      code: "EHOSTUNREACH",
+    });
+    const addressFamilyError = Object.assign(new Error("address raw https://example.test sk_secret stack"), {
+      code: "EAFNOSUPPORT",
+    });
+    const addressUnavailableError = Object.assign(new Error("address raw https://example.test sk_secret stack"), {
+      code: "EADDRNOTAVAIL",
+    });
+    const httpsProtocolError = Object.assign(new Error("protocol raw https://example.test sk_secret stack"), {
+      code: "EPROTO",
+    });
+    const sslProtocolError = Object.assign(new Error("ssl raw https://example.test sk_secret stack"), {
+      code: "ERR_SSL_WRONG_VERSION_NUMBER",
+    });
     const thrownCases = [
       {
         thrown: "timed_out",
@@ -445,6 +463,7 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       },
       {
         thrown: resetError,
+        rawCode: "ECONNRESET",
         stopReason: "transport_failure",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "connection_reset",
@@ -454,6 +473,67 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       },
       {
         thrown: tlsError,
+        rawCode: "ERR_TLS_CERT_ALTNAME_INVALID",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "tls_failure",
+        transportFailurePhase: "tls_handshake",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "tls_protocol",
+      },
+      {
+        thrown: networkUnreachableError,
+        rawCode: "ENETUNREACH",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "network_unreachable",
+        transportFailurePhase: "socket_connect",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "network_unreachable",
+      },
+      {
+        thrown: hostUnreachableError,
+        rawCode: "EHOSTUNREACH",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "host_unreachable",
+        transportFailurePhase: "socket_connect",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "host_unreachable",
+      },
+      {
+        thrown: addressFamilyError,
+        rawCode: "EAFNOSUPPORT",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "address_family_failure",
+        transportFailurePhase: "address_selection",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "address_family_failure",
+      },
+      {
+        thrown: addressUnavailableError,
+        rawCode: "EADDRNOTAVAIL",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "address_family_failure",
+        transportFailurePhase: "address_selection",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "address_family_failure",
+      },
+      {
+        thrown: httpsProtocolError,
+        rawCode: "EPROTO",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "tls_failure",
+        transportFailurePhase: "tls_handshake",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "tls_protocol",
+      },
+      {
+        thrown: sslProtocolError,
+        rawCode: "ERR_SSL_WRONG_VERSION_NUMBER",
         stopReason: "transport_failure",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "tls_failure",
@@ -498,6 +578,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       expect(serialized).not.toContain("example.test");
       expect(serialized).not.toContain("sk_secret");
       expect(serialized).not.toContain("stack");
+      if ("rawCode" in testCase) {
+        expect(serialized).not.toContain(testCase.rawCode);
+      }
       expect(outcome.diagnostic).toMatchObject({
         stopReason: testCase.stopReason,
         selectedAddressFamily: testCase.selectedAddressFamily,

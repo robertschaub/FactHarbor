@@ -103,6 +103,15 @@ function nodeErrorCodeCategoryFromCode(
   if (code === "ETIMEDOUT" || code === "ERR_SOCKET_CONNECTION_TIMEOUT") {
     return "connection_timeout";
   }
+  if (code === "ENETUNREACH") {
+    return "network_unreachable";
+  }
+  if (code === "EHOSTUNREACH") {
+    return "host_unreachable";
+  }
+  if (code === "EAFNOSUPPORT" || code === "EADDRNOTAVAIL") {
+    return "address_family_failure";
+  }
   if (code === "ECANCELED" || code === "ERR_CANCELED" || code === "ABORT_ERR") {
     return "operation_canceled";
   }
@@ -114,7 +123,11 @@ function nodeErrorCodeCategoryFromCode(
   ) {
     return "tls_certificate";
   }
-  if (code.startsWith("ERR_TLS_")) {
+  if (
+    code === "EPROTO"
+    || code.startsWith("ERR_TLS_")
+    || code.startsWith("ERR_SSL_")
+  ) {
     return "tls_protocol";
   }
   if (code.startsWith("HPE_") || code.startsWith("ERR_HTTP_")) {
@@ -156,6 +169,12 @@ function transportFailurePhaseFromCategory(
   if (category === "connection_refused" || category === "connection_timeout") {
     return "socket_connect";
   }
+  if (category === "network_unreachable" || category === "host_unreachable") {
+    return "socket_connect";
+  }
+  if (category === "address_family_failure") {
+    return "address_selection";
+  }
   if (category === "connection_reset") {
     return "response_wait";
   }
@@ -185,6 +204,15 @@ function classifyTransportFailureFromCategory(
   }
   if (category === "connection_timeout") {
     return "socket_timeout";
+  }
+  if (category === "network_unreachable") {
+    return "network_unreachable";
+  }
+  if (category === "host_unreachable") {
+    return "host_unreachable";
+  }
+  if (category === "address_family_failure") {
+    return "address_family_failure";
   }
   if (category === "tls_certificate" || category === "tls_protocol") {
     return "tls_failure";

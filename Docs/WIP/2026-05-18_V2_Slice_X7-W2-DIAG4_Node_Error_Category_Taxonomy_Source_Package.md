@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-DIAG4 Node Error Category Taxonomy Source Package
 
 **Date:** 2026-05-18
-**Status:** Claude Opus-approved; pending commit
+**Status:** implementation complete; pending commit
 **Owner:** Lead Developer / Captain Deputy
 **Baseline:** `084a4e8d` (`docs: record v2 w2 ls4 live result`)
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS4_DIAG3_Transport_Phase_Live_Result.md`
@@ -158,3 +158,55 @@ Focus on whether DIAG4 is the correct next step after LS4:
 - raw codes stay out of product/admin artifacts;
 - W2 completion semantics stay unchanged;
 - no live jobs, provider expansion, source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence, public output, ACS/direct URL, V1 work, or V1 cleanup are authorized.
+
+## 10. Implementation Closeout
+
+DIAG4 implementation completed inside the approved source/test envelope.
+
+Production changes:
+
+- added exactly three `nodeErrorCodeCategory` enum values:
+  - `network_unreachable`
+  - `host_unreachable`
+  - `address_family_failure`
+- mapped `ENETUNREACH`, `EHOSTUNREACH`, `EAFNOSUPPORT`, and `EADDRNOTAVAIL` to the approved categories, failure classes, and phases;
+- mapped HTTPS-only `EPROTO` and `ERR_SSL_*` code families to existing `tls_protocol`;
+- kept W2 completion semantics unchanged.
+
+Test changes:
+
+- added injected synthetic error-code cases for the new categories;
+- added TLS alias coverage for `EPROTO` and `ERR_SSL_*`;
+- strengthened leak assertions so serialized outcomes must not include the raw test code literals, URL/secret markers, or stack marker.
+
+Claude Opus 4.6 reviewed the implementation diff and returned `PASS` with no findings.
+
+Verifier results:
+
+```text
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts
+PASS - 2 files / 11 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+PASS - 8 files / 110 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime
+PASS - 43 files / 256 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2
+PASS - 88 files / 621 tests
+
+npm -w apps/web run build
+PASS
+
+npm run validate:v2-gates
+PASS
+
+node scripts/validate-v2-gate-register.mjs --self-test
+PASS
+
+git diff --check
+PASS
+```
+
+No live jobs were run for DIAG4. DIAG4 does not prove W2 provider-network success; a later LS5-style package would be required to observe whether the real product-route failure now maps to one of the new categories or remains `other_known`.
