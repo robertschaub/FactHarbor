@@ -3880,3 +3880,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Do not rerun LS2 and do not repair inside LS2. No source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, provider expansion, ACS/direct URL, V1 reuse/work/cleanup is authorized. Next action needs a separate reviewed diagnostic/repair package.
 **Learnings:** A hidden provider-network live smoke can prove route reachability and public containment while still failing provider completion; sanitized telemetry should drive a focused diagnostic package, not reactive broadening.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Result.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG1 Transport Failure Diagnostic -- [Significant] [open-items: yes]
+**For next agent:** Completed docs-only DIAG1 at `Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG1_Transport_Failure_Diagnostic.md` after Claude Opus recommended diagnostic-only follow-up. Existing LS2 W2 artifact telemetry shows all three attempts as `provider_failure` / `transport_failure`, with `byteCountState: not_reached`, zero bytes, zero candidates, and durations 28ms/2ms/2ms.
+**Warnings:** DIAG1 authorizes no source changes and no live jobs. The current sanitized telemetry is not enough to distinguish TLS/socket failure, Wikimedia user-agent policy rejection, custom lookup behavior, local proxy/firewall behavior, or endpoint connection reset. Do not rerun LS2 or change W2 completion semantics reactively.
+**Learnings:** Safe telemetry was intentionally narrow and now blocks root-cause attribution. Next should be a reviewed DIAG2 source package for bounded sanitized transport diagnostics only.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG1_Transport_Failure_Diagnostic.md

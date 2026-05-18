@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T01:20:36.131Z",
-  "count": 650,
+  "generatedAt": "2026-05-18T01:28:46.366Z",
+  "count": 651,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14108,6 +14108,30 @@
       ],
       "files_touched": [],
       "summary": "Apply the repo policy follow-up that V1 plans should no longer remain in `Docs/WIP/` while V1 is retiring."
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W2-DIAG1_Transport_Failure_Diagnostic.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w2-diag1",
+        "transport",
+        "failure",
+        "diagnostic"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG1_Transport_Failure_Diagnostic.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG1_Transport_Failure_Diagnostic.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Draft/review `X7-W2-DIAG2` as a narrow source package for bounded sanitized transport diagnostics only. Do not include another live job by default and do not add source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public behavior."
     },
     {
       "file": "2026-05-18_Lead_Developer_V2_X7-W2-LS1_Live_Result.md",
