@@ -3859,3 +3859,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** QC3 implementation must not edit runtime validators, `source-acquisition-network-*`, artifact route/sink, prompts/configs/schemas/model policy, public surfaces, parser/content/source-material/cache/SR/storage/EvidenceCorpus/report/verdict/warning/confidence files, V1 files, or package/lock files. No live jobs are authorized until a separate LS2-style package.
 **Learnings:** Cap alignment should be fixed to a reviewed value, not silently imported as an open-ended widening of network authority.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC3_Source_Package.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-QC3 W2 Cap Alignment Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented QC3 at `c2fdcd9c`: W2 hidden candidate-provider-network admission now allows reviewed cap `6` with total candidate/network timeouts `9000ms`. New tests prove six fake-provider queries complete and seven fail closed before network execution.
+**Warnings:** QC3 ran no live jobs and does not authorize any. It preserves one-provider/no-credential W2 posture and does not open source material, content dereference, parser, cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public output, ACS/direct URL, V1 work, or provider expansion. A separate reviewed LS2 package is required before live provider-network proof.
+**Learnings:** Cap alignment must scale exact total-timeout snapshots because existing candidate-runtime and network-budget validators intentionally reject under-sized totals.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC3_W2_Cap_Alignment.md

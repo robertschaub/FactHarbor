@@ -1,10 +1,11 @@
 # V2 Slice X7-W2-QC3 W2 Cap Alignment Source Package
 
 **Date:** 2026-05-18
-**Status:** deputy-approved source package for implementation
+**Status:** implementation-complete
 **Owner:** Lead Developer / Captain Deputy
 **Parent package:** `Docs/WIP/2026-05-17_V2_Slice_X7-W2_Product_Internal_Candidate_Provider_Network_Source_Package.md`
 **Evidence package:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-QC2_Query_Planning_Distribution_Diagnostic_Result.md`
+**Implementation commit:** `c2fdcd9c` (`feat: align v2 w2 query cap`)
 
 ## 1. Purpose
 
