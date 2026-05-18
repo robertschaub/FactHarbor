@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-LS3 DIAG2 Diagnostic Live-Smoke Package -- [Significant] [open-items: yes]
+**For next agent:** LS3 is Claude Opus-reviewed and approved as a one-job diagnostic live-smoke package after DIAG2. It reuses exact input `Using hydrogen for cars is more efficient than using electricity` and passes only if hidden W2 artifacts safely capture DIAG2 transport fields; it is not a provider-success, repair, source-quality, report-quality, public-readiness, or V1-cleanup gate.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS3_Diagnostic_Live_Smoke_Package.md
+
+---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG2 Sanitized Transport Diagnostics Implementation -- [Significant] [open-items: yes]
 **For next agent:** DIAG2 is implementation-complete inside the approved diagnostic-only envelope. W2 hidden network-attempt telemetry/artifacts now propagate DNS/final-address/response/content states and add bounded `selectedAddressFamily` plus `transportFailureClass`; no live jobs were run and no source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public behavior was added. Next safe action is a separately reviewed LS3/repair decision package, not a blind rerun.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG2_Implementation.md
