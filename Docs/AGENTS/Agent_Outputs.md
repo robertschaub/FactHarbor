@@ -4118,3 +4118,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No W3-B live canary was run. W3-B does not authorize Tier 2 full page/source/html fetch, parser execution, EvidenceCorpus/EvidenceItems, report/verdict/warning/confidence behavior, public exposure, second provider, retries, cache/SR/storage, ACS/direct URL, W2 endpoint migration, V1 work, or V1 cleanup. Public V2 remains damaged/precutover.
 **Learnings:** The first failed focused verifier was a boundary-guard issue. The corrected low-complexity fix was to add explicit W3-B guard coverage and keep W3-B transport self-contained, rather than weakening the W2 guard or importing W2 transport helpers across slice ownership.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Implementation.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W3-B Bounded Page-Summary Source Material Live Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Closed the one approved W3-B canary as `PASS_X7_W3_B_BOUNDED_PAGE_SUMMARY_SOURCE_MATERIAL_CANARY`. Job `0964b2da1f534821b2e01bc7f50a7fff` ran on clean committed/refreshed runtime `871d6b606c3301c40860bb32ed0886598495f24d`, first prepared `pipeline: claimboundary-v2`, reached `SUCCEEDED`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover`, and produced one hidden/admin-only W3-B Source Material page-summary record.
+**Warnings:** No second W3-B canary is authorized. W3-B does not approve Tier 2 full page/source/html fetch, parser execution, EvidenceCorpus/EvidenceItems, report/verdict/warning/confidence behavior, public exposure, second provider, retries, cache/SR/storage, ACS/direct URL, W2 endpoint migration, V1 work, or V1 cleanup.
+**Learnings:** W3-B successfully bridged from W2 candidates and W3-A materialized previews to one bounded hidden Source Material record: W2 completed with `9` candidates / `13742` bytes, W3-A produced `8` materialized previews, and W3-B completed one page-summary fetch with one bounded `extract` record.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Live_Canary_Result.md

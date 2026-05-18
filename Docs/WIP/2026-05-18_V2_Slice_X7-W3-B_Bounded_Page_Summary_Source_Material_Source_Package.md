@@ -1,13 +1,13 @@
 # V2 Slice X7-W3-B Bounded Page-Summary Source Material Source Package
 
 **Date:** 2026-05-18
-**Status:** Implementation complete and verifier-clean; live canary blocked until focused commit, runtime refresh, route/runtime preflight, and clean worktree checkpoint
+**Status:** Implementation complete; one approved live canary passed
 **Owner:** Lead Developer / Captain Deputy
 **Parent steering package:** `Docs/WIP/2026-05-18_V2_Slice_X7-W3_Source_Material_Steering_Review_Package.md`
 **Parent implementation package:** `Docs/WIP/2026-05-18_V2_Slice_X7-W3-A_Safe_Locator_Materialization_Preview_Source_Package.md`
 **Parent live result:** `Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-A_Live_Canary_Result.md`
 **Parent commits:** `b72cda94` W3-A implementation, `84dc1051` W3-A canary-result documentation
-**Live-job tranche:** 5 jobs remain after the W3-A canary. This package proposes at most one optional W3-B canary after Steering approval, implementation, clean verifiers, focused commit, runtime refresh, route preflight, and a clean worktree checkpoint.
+**Live-job tranche:** 4 jobs remain after the W3-B canary. No second W3-B canary is authorized without another reviewed package.
 
 ## 1. Purpose
 
@@ -15,7 +15,7 @@ W3-A proved that V2 can safely materialize hidden/admin-only preview diagnostics
 
 W3-B is the proposed Tier 1 package: the first real Source Material fetch. It should fetch a bounded Wikimedia page summary for exactly one approved runtime-owned materialized locator and produce one or more hidden/admin-only Source Material records from a single explicitly approved plain-text response field.
 
-This package was the review target for whether W3-B was narrow enough, valuable enough, and sufficiently contained to implement next. Implementation closeout is recorded in `Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Implementation.md`; no W3-B live canary has run yet.
+This package was the review target for whether W3-B was narrow enough, valuable enough, and sufficiently contained to implement next. Implementation closeout is recorded in `Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Implementation.md`; live canary result is recorded in `Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Live_Canary_Result.md`.
 
 ## 2. Debate Result
 
