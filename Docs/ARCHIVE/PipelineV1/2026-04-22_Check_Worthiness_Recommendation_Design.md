@@ -11,7 +11,7 @@ related:
   - Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Debate_CheckWorthiness_Before_ACS.md
   - Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Clarified_Order_ACS_CheckWorthiness_TopLevelProposition.md
   - Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Documentation_Update_ACS_CheckWorthiness_TopLevelProposition.md
-  - Docs/Knowledge/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md
+  - FactHarbor-internal/Operations/Cooperations/ZHAW Cooperation/Reference Docs/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md
   - Docs/Knowledge/CheckThat_Lab_Lessons_for_FactHarbor.md
   - Docs/Knowledge/HAMiSoN_Lessons_for_FactHarbor.md
   - apps/web/src/lib/analyzer/claim-extraction-stage.ts

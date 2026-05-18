@@ -4,7 +4,7 @@
 **Links:** [CheckThat! 2025](https://checkthat.gitlab.io/clef2025/) | [CheckThat! 2024](https://checkthat.gitlab.io/clef2024/) | [CheckThat! 2023](https://checkthat.gitlab.io/clef2023/) | [GitLab (datasets)](https://gitlab.com/checkthat_lab/) | [2026 Preview (arXiv)](https://arxiv.org/abs/2602.09516)
 **Reviewed by:** Claude Opus 4.6 (2026-03-24)
 
-> **Related docs:** [HAMiSoN Analysis](HAMiSoN_Lessons_for_FactHarbor.md) for the research project behind ZHAW's participation. [ViClaim (EMNLP 2025)](ViClaim_EMNLP2025_Lessons_for_FactHarbor.md) for the claim detection dataset extending CheckThat! to video. [Factiverse Analysis](Factiverse_Lessons_for_FactHarbor.md) for another finding that fine-tuned encoders beat LLMs. [Global Landscape](Global_FactChecking_Landscape_2026.md) for how CheckThat! fits the broader ecosystem. [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table.
+> **Related docs:** [HAMiSoN Analysis](HAMiSoN_Lessons_for_FactHarbor.md) for the research project behind ZHAW's participation. [ViClaim (EMNLP 2025)](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md) for the claim detection dataset extending CheckThat! to video. [Factiverse Analysis](Factiverse_Lessons_for_FactHarbor.md) for another finding that fine-tuned encoders beat LLMs. [Global Landscape](Global_FactChecking_Landscape_2026.md) for how CheckThat! fits the broader ecosystem. [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table.
 
 ---
 

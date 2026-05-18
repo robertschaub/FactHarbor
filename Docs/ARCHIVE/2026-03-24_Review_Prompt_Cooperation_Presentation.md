@@ -103,9 +103,9 @@ Use the following verified information to check the document's claims and assess
 | Document | Path | What it contains |
 |----------|------|-----------------|
 | **Document under review** | `Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Academic Cooperation/WebHome.xwiki` | The cooperation presentation to review (xWiki 2.1 format) |
-| **Innosuisse Partnership Briefing** | `FactHarbor-internal/Operations/Cooperations/UZH Cooperation/Innosuisse/2026-03-24_Innosuisse_Partnership_Research_Briefing.md` | Full research into ZHAW, ETH Ash, grant strategy, Swiss landscape, competitive positioning |
+| **Innosuisse Partnership Briefing** | `FactHarbor-internal/Operations/Cooperations/ZHAW Cooperation/Reference Docs/2026-03-24_Innosuisse_Partnership_Research_Briefing.md` | Full research into ZHAW, ETH Ash, grant strategy, Swiss landscape, competitive positioning |
 | **HAMiSoN Analysis** | `Docs/Knowledge/HAMiSoN_Lessons_for_FactHarbor.md` | Deep analysis of the HAMiSoN project: consortium, publications, methods, 7 lessons for FactHarbor |
-| **ViClaim Analysis** | `Docs/Knowledge/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md` | Deep analysis of ViClaim paper: dataset details, model results, 7 lessons for FactHarbor |
+| **ViClaim Analysis** | `FactHarbor-internal/Operations/Cooperations/ZHAW Cooperation/Reference Docs/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md` | Deep analysis of ViClaim paper: dataset details, model results, 7 lessons for FactHarbor |
 | **CheckThat! Lab Analysis** | `Docs/Knowledge/CheckThat_Lab_Lessons_for_FactHarbor.md` | Deep analysis of the shared task series: ZHAW's methods, 10 lessons for FactHarbor |
 | **Climinator Analysis** | `Docs/Knowledge/Climinator_Lessons_for_FactHarbor.md` | Analysis of the Climinator paper vs code: debate architecture, 11 lessons |
 | **DIRAS Analysis** | `Docs/Knowledge/Schimanski_DIRAS_NAACL2025.md` | Analysis of DIRAS relevance scoring: distillation, calibration |

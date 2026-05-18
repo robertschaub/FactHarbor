@@ -1,7 +1,7 @@
 # Innosuisse-Antrag v2 — Innovationsprojekt mit Umsetzungspartner
 
 **Stand:** 18.03.2026
-**Projektstatus:** ⚠️ ÜBERHOLT — Dieser Entwurf basierte auf einer geplanten Partnerschaft mit UZH (Schimanski/Leippold), die am 23.03.2026 nicht zustande kam. Die aktive Forschungspartnerschaft läuft nun mit **ZHAW CAI/NLP** (Giedemann/Cieliebak/Deriu) über DIZH Rapid Action Call + Innosuisse Cheque. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) und [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md).
+**Projektstatus:** ⚠️ ÜBERHOLT — Dieser Entwurf basierte auf einer geplanten Partnerschaft mit UZH (Schimanski/Leippold), die am 23.03.2026 nicht zustande kam. Die aktive Forschungspartnerschaft läuft nun mit **ZHAW CAI/NLP** (Giedemann/Cieliebak/Deriu) über DIZH Rapid Action Call + Innosuisse Cheque. Siehe [DIZH Leitfaden](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/DIZH_Rapid_Action_Call_Leitfaden.md) und [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md).
 **Statushinweis 29.04.2026:** FactHarbor ist inzwischen als Verein gegründet, der Handelsregister-Eintragsbrief liegt vor, und die UID / Firmennummer **CHE-448.446.098** ist zugeteilt. Zeitpläne und offene Punkte unten sind daher teilweise historisch.
 **Förderinstrument:** Innovationsprojekte mit Umsetzungspartner
 **Arbeitstitel:** **LiveCheck: Evidenzbasierte Echtzeit-Faktenprüfung für Audio- und Video-Inhalte**

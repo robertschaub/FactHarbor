@@ -1,6 +1,6 @@
 # Innovationsprojekt mit Umsetzungspartner
 
-> ⚠️ **ÜBERHOLT** — Partnerschaft mit UZH (Schimanski/Leippold) kam am 23.03.2026 nicht zustande. Aktive Partnerschaft: ZHAW CAI/NLP. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md).
+> ⚠️ **ÜBERHOLT** — Partnerschaft mit UZH (Schimanski/Leippold) kam am 23.03.2026 nicht zustande. Aktive Partnerschaft: ZHAW CAI/NLP. Siehe [DIZH Leitfaden](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/DIZH_Rapid_Action_Call_Leitfaden.md).
 
 **Projekttitel:**
 **LiveCheck: Evidenzbasierte Echtzeit-Faktenprüfung für Audio- und Video-Inhalte**

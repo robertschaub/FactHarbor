@@ -4,7 +4,7 @@
 **Erstellt von:** Claude Opus 4.6 (2026-03-11)
 **Quellen:** innosuisse.admin.ch, bridge.ch, BFS UID-Register (alle Links am Ende)
 
-> **Verwandte Dokumente:** [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) | [ZHAW Meeting Prep](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Meetings/2026-04-22_ZHAW_Meeting_Prep.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
+> **Verwandte Dokumente:** [DIZH Rapid Action Call Leitfaden](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/DIZH_Rapid_Action_Call_Leitfaden.md) | [ZHAW Meeting Prep](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Meetings/2026-04-22_ZHAW_Meeting_Prep.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
 
 ---
 
@@ -221,7 +221,7 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 | **DIZH Rapid Action Call** | ⭐⭐⭐⭐⭐ | ZHAW beantragt, FactHarbor als Praxispartner. Kein Cash nötig. Thema "Demokratische Resilienz" passt perfekt. Bis CHF 75K. |
 | **BRIDGE Discovery** | ⭐⭐ | Forscher/in müsste allein beantragen. FactHarbor hat keine formelle Rolle. |
 
-**Empfehlung:** DIZH Rapid Action Call als erster Schritt (höhere Summe, kein Cash nötig, thematisch perfekt). Parallel oder danach Innovation Cheque / Innovation Project über Innosuisse. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md).
+**Empfehlung:** DIZH Rapid Action Call als erster Schritt (höhere Summe, kein Cash nötig, thematisch perfekt). Parallel oder danach Innovation Cheque / Innovation Project über Innosuisse. Siehe [DIZH Leitfaden](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/DIZH_Rapid_Action_Call_Leitfaden.md).
 
 ---
 
@@ -250,7 +250,7 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 | **1. Juli 2026** | **DIZH Rapid Action Call Deadline** |
 | Rolling | Innosuisse Innovation Cheque (jederzeit einreichbar) |
 
-Siehe [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) für Details zum DIZH-Track.
+Siehe [DIZH Rapid Action Call Leitfaden](https://github.com/robertschaub/FactHarbor-internal/blob/main/Operations/Cooperations/ZHAW%20Cooperation/Reference%20Docs/DIZH_Rapid_Action_Call_Leitfaden.md) für Details zum DIZH-Track.
 
 ---
 
