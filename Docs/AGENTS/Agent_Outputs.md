@@ -4174,3 +4174,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No live job was run or proposed. W4-D does not authorize product routes, artifact routes, source text, extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence/public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup. Downstream consumers must reject `kind: "shell_only"` explicitly; non-null `evidenceCorpus` is not enough.
 **Learnings:** The first safe corpus crossing is a manifest boundary, not analytical content. Producer-owned W4-C provenance plus shell-only semantics creates corpus identity without letting source text or extraction readiness leak forward.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-D_Implementation.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-E EvidenceCorpus Extraction Readiness Denial Source Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W4-E_EvidenceCorpus_Extraction_Readiness_Denial_Package.md` after W4-D commit `010fb04f`. Claude Opus 4.6 recommended W4-E as a denial-only consumer-side extraction-readiness contract over producer-owned W4-D shell output, not source-text authorization or product observability.
+**Warnings:** This package authorizes no implementation and no live job. W4-E must not add positive extraction readiness, source text, extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence/public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup.
+**Learnings:** W4-D protects the producer side by creating only a shell. W4-E should protect the consumer side by making shell-only extraction denial explicit, runtime-owned, and hard to confuse with readiness.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-E_Source_Package.md
