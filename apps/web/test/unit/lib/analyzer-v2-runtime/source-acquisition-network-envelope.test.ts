@@ -30,6 +30,7 @@ function endpoint(
     allowedRequestParameters: [
       { key: "q", valueSource: "query_text" },
       { key: "policy", valueSource: "retrieval_policy_key" },
+      { key: "limit", valueSource: "max_candidate_records" },
     ],
     allowedRequestHeaders: [
       { key: "accept", valueSource: "application_json" },
@@ -96,6 +97,7 @@ function request(
     requestParameters: [
       { key: "q", value: "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz" },
       { key: "policy", value: "baseline_research" },
+      { key: "limit", value: "3" },
     ],
     requestHeaders: [
       { key: "accept", valueSource: "application_json" },

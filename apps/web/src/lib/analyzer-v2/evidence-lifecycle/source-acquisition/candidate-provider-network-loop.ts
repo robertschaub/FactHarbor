@@ -474,6 +474,7 @@ export function buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot()
     method: "GET",
     allowedRequestParameters: [
       { key: "q", valueSource: "query_text" },
+      { key: "limit", valueSource: "max_candidate_records" },
     ],
     allowedRequestHeaders: [
       { key: "accept", valueSource: "application_json" },

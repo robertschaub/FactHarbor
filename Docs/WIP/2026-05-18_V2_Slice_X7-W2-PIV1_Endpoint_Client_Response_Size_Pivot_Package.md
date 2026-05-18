@@ -1,9 +1,23 @@
 # V2 Slice X7-W2-PIV1 Endpoint/Client/Response-Size Pivot Package
 
 **Date:** 2026-05-18
-**Status:** Steering Board review package; no implementation authorized
+**Status:** Steering Board review accepted; PIV1-A bounded Core-search limit implementation verified, canary pending
 **Owner:** Lead Developer / Captain Deputy
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-TR1_Standard_Client_Transport_Repair_Live_Result.md`
+
+## 0. 2026-05-18 PIV1-A Decision Update
+
+Captain approved the narrow response-size repair direction after Steering Board review:
+
+- keep TR1's standard Node HTTPS client;
+- keep the current approved Wikimedia Core page-search endpoint for this slice;
+- add only an explicit small `limit` parameter aligned to the W2 hidden candidate cap;
+- do not raise byte caps or switch endpoints in PIV1-A;
+- add bounded construction/success/byte-cap/no-leak tests;
+- after clean verifiers and clean runtime refresh, run exactly one canary;
+- if zero bytes/candidates persist, stop and return with a project-local endpoint or byte-cap pivot package.
+
+The implementing package is now `Docs/WIP/2026-05-18_V2_Slice_X7-W2-PIV1-A_Bounded_Core_Search_Limit_Source_Package.md`.
 
 ## 1. Purpose
 

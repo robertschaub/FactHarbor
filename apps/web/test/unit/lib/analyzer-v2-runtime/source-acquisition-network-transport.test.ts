@@ -87,7 +87,10 @@ function endpoint(
     port: 443,
     path: "/candidate-search",
     method: "GET",
-    allowedRequestParameters: [{ key: "q", valueSource: "query_text" }],
+    allowedRequestParameters: [
+      { key: "q", valueSource: "query_text" },
+      { key: "limit", valueSource: "max_candidate_records" },
+    ],
     allowedRequestHeaders: [{ key: "accept", valueSource: "application_json" }],
     credentialsState: "not_required",
     redirectPolicy: "deny",
@@ -161,7 +164,10 @@ function networkRequest(
     queryId: "EQ_001",
     retrievalPolicyKey: "baseline_research",
     providerAttemptId: "ATT_1",
-    requestParameters: [{ key: "q", value: "Plastic recycling is pointless" }],
+    requestParameters: [
+      { key: "q", value: "Plastic recycling is pointless" },
+      { key: "limit", value: "3" },
+    ],
     requestHeaders: [{ key: "accept", valueSource: "application_json" }],
     ...overrides,
   };
@@ -233,7 +239,7 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     expect(outcome).toMatchObject({ candidateCount: 1 });
     expect(outcome.diagnostic.compressedBytes).toBeGreaterThan(0);
     expect(outcome.diagnostic.decompressedBytes).toBeGreaterThan(0);
-    expect(seenPaths).toEqual(["/candidate-search?q=Plastic+recycling+is+pointless"]);
+    expect(seenPaths).toEqual(["/candidate-search?q=Plastic+recycling+is+pointless&limit=3"]);
     expect(outcome.diagnostic).toMatchObject({
       dnsAddressCount: 1,
       selectedAddressFamily: "ipv4",

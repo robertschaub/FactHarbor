@@ -324,12 +324,17 @@ function fakeTransport(calls: SourceAcquisitionNetworkLowLevelRequest[]): Source
     resolve: async () => [{ address: "93.184.216.34", family: 4 }],
     request: async (request) => {
       calls.push(request);
+      const parsed = new URL(`https://api.wikimedia.org${request.pathWithQuery}`);
+      const requestedLimit = Number(parsed.searchParams.get("limit") ?? "5");
+      const pageCount = Number.isInteger(requestedLimit) && requestedLimit >= 0
+        ? Math.min(requestedLimit, 5)
+        : 0;
       return {
         statusCode: 200,
         headers: { "content-type": "application/json" },
         remoteAddress: "93.184.216.34",
         body: Buffer.from(JSON.stringify({
-          pages: Array.from({ length: 5 }, (_, index) => ({
+          pages: Array.from({ length: pageCount }, (_, index) => ({
             id: index + 1,
             key: `Raw_Key_${index}_${POISON_PROVIDER_PAYLOAD}`,
             title: `Raw Title ${index} ${POISON_PROVIDER_PAYLOAD}`,
@@ -359,7 +364,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     expect(calls).toHaveLength(1);
     expect(calls[0]?.hostname).toBe("api.wikimedia.org");
     expect(calls[0]?.pathWithQuery).toContain("/core/v1/wikipedia/en/search/page?q=");
-    expect(calls[0]?.pathWithQuery).not.toContain("limit=");
+    expect(calls[0]?.pathWithQuery).toContain("&limit=3");
     expect(decision).toMatchObject({
       networkLoopVersion: "v2.evidence-lifecycle.source-acquisition-candidate-provider-network-loop.x7w2",
       visibility: "internal_only",
@@ -388,8 +393,8 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
         providerAttemptCount: 1,
         networkAttemptCount: 1,
         candidateCount: 3,
-        totalCandidateCount: 5,
-        structurallyDroppedCandidateCount: 2,
+        totalCandidateCount: 3,
+        structurallyDroppedCandidateCount: 0,
         fixedDollarCost: 0,
         costReason: "no_paid_api_no_credentials",
         providerNetworkExecuted: true,
@@ -501,8 +506,8 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
         providerAttemptCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
         networkAttemptCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
         candidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 3,
-        totalCandidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 5,
-        structurallyDroppedCandidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 2,
+        totalCandidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 3,
+        structurallyDroppedCandidateCount: 0,
         fixedDollarCost: 0,
         providerNetworkExecuted: true,
         searchFetchCalled: true,
@@ -557,6 +562,88 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       "confidence",
       "cacheKey",
       "sourceReliabilityScore",
+      "parsedContent",
+    ]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
+
+  it("fails closed on bounded Wikimedia response byte-cap overrun without leaking raw payloads", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const poison = `${POISON_PROVIDER_PAYLOAD} Raw Title RAW_SOURCE_MATERIAL_PAYLOAD EvidenceCorpus`;
+    const largeBody = Buffer.from(JSON.stringify({
+      pages: [{
+        id: 1,
+        title: `Raw Title ${poison}`,
+        excerpt: poison.repeat(1400),
+        url: `${POISON_PROVIDER_PAYLOAD}/raw`,
+      }],
+    }), "utf8");
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          calls.push(request);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: largeBody,
+          };
+        },
+      },
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.pathWithQuery).toContain("/core/v1/wikipedia/en/search/page?q=");
+    expect(calls[0]?.pathWithQuery).toContain("&limit=3");
+    expect(decision).toMatchObject({
+      status: "candidate_provider_network_damaged_structural",
+      damagedReason: "candidate_runtime_query_coverage_invalid",
+      telemetry: expect.objectContaining({
+        providerAttemptCount: 1,
+        networkAttemptCount: 1,
+        candidateCount: 0,
+        totalCandidateCount: 0,
+        structurallyDroppedCandidateCount: 0,
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        sourceMaterialCreated: false,
+        evidenceCorpusCreated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(decision.telemetry.networkAttempts).toEqual([
+      expect.objectContaining({
+        structuralStatus: "search_failure",
+        stopReason: "compressed_byte_cap_exceeded",
+        responseStatusCodeCategory: "success_2xx",
+        contentTypeState: "accepted_json",
+        byteCountState: "observed",
+        rawPayloadIncluded: false,
+        secretIncluded: false,
+        publicPayloadIncluded: false,
+        errorTraceIncluded: false,
+      }),
+    ]);
+    expect(decision.telemetry.networkAttempts[0]?.compressedBytes).toBeGreaterThan(0);
+    for (const forbidden of [
+      POISON_PROVIDER_PAYLOAD,
+      "Raw Title",
+      "provider?secret",
+      "RAW_SOURCE_MATERIAL_PAYLOAD",
+      "EvidenceCorpus",
+      "EvidenceItem",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
       "parsedContent",
     ]) {
       expect(serialized).not.toContain(forbidden);
@@ -740,7 +827,10 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       canonicalAsciiHostname: "api.wikimedia.org",
       path: "/core/v1/wikipedia/en/search/page",
       method: "GET",
-      allowedRequestParameters: [{ key: "q", valueSource: "query_text" }],
+      allowedRequestParameters: [
+        { key: "q", valueSource: "query_text" },
+        { key: "limit", valueSource: "max_candidate_records" },
+      ],
       credentialsState: "not_required",
       redirectPolicy: "deny",
       proxyPolicy: "none",
@@ -752,7 +842,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       noProduct: true,
       noPublic: true,
     });
-    expect(JSON.stringify(endpoint)).not.toContain("limit");
+    expect(JSON.stringify(endpoint)).toContain("\"limit\"");
     expect(providerAllowlist).toMatchObject({
       allowedProviders: [
         {

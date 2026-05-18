@@ -93,7 +93,10 @@ function endpoint(
     port: 443,
     path: "/candidate-search",
     method: "GET",
-    allowedRequestParameters: [{ key: "q", valueSource: "query_text" }],
+    allowedRequestParameters: [
+      { key: "q", valueSource: "query_text" },
+      { key: "limit", valueSource: "max_candidate_records" },
+    ],
     allowedRequestHeaders: [{ key: "accept", valueSource: "application_json" }],
     credentialsState: "not_required",
     redirectPolicy: "deny",
@@ -193,11 +196,22 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const seenPaths: string[] = [];
     const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
       authority: networkAuthority(),
       endpoints: [endpoint()],
       budget: budget(),
-      lowLevelTransport: lowLevelTransport(),
+      lowLevelTransport: lowLevelTransport({
+        request: async (request) => {
+          seenPaths.push(request.pathWithQuery);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from("{\"items\":[{\"title\":\"raw title\",\"url\":\"https://example.test\"},{\"snippet\":\"raw\"}]}", "utf8"),
+          };
+        },
+      }),
       attemptTelemetrySink: (record) => telemetry.push(record),
     });
 
@@ -216,6 +230,9 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
         publicPayloadIncluded: false,
       },
     });
+    expect(seenPaths).toEqual([
+      "/candidate-search?q=Did+the+legal+proceedings+against+Jair+Bolsonaro+comply+with+Brazilian+law%3F&limit=2",
+    ]);
     expect(result.candidates).toHaveLength(2);
     expect(telemetry).toEqual([
       expect.objectContaining({

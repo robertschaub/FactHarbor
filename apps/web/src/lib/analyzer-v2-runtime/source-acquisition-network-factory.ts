@@ -187,7 +187,13 @@ function requestParameterValue(
   source: SourceAcquisitionNetworkEndpointSnapshot["allowedRequestParameters"][number]["valueSource"],
   request: SourceAcquisitionCandidateProviderAttemptRequest,
 ): string {
-  return source === "query_text" ? request.queryText : request.retrievalPolicyKey;
+  if (source === "query_text") {
+    return request.queryText;
+  }
+  if (source === "retrieval_policy_key") {
+    return request.retrievalPolicyKey;
+  }
+  return String(finiteNonNegativeInteger(request.maxCandidateRecords));
 }
 
 function buildNetworkRequest(params: {
