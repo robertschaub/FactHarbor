@@ -7,6 +7,13 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-RP1 Local Raw-Code Probe Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W2-RP1_Local_Raw_Code_Probe_Package.md` after LS5 still reported `node_error_code_present` / `other_known` / `unknown_phase`. Claude Opus approved exactly one transient operator-local probe outside the repo, matching the product `https.request` transport path, with no committed raw code or helper.
+**Warnings:** RP1 must not expose the observed raw code in product/admin artifacts, committed docs, logs, scripts, commit messages, or chat. It authorizes no source/test/prompt/config/schema/model edits, no live jobs, no response-body read, no source material/content/parser/cache/SR/storage, no EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, no provider expansion, no endpoint redesign, no ACS/direct URL, no V1 work/cleanup, no retries, and no additional probes.
+**Learnings:** The remaining W2 blocker is no longer a good target for another enum guess. The next useful evidence is one contained client-parity observation using Node `https.request`, explicit SNI, custom DNS lookup, and the product header/path posture.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-RP1_Local_Raw_Code_Probe_Package.md
+
+---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-LS3 DIAG2 Diagnostic Live-Smoke Package -- [Significant] [open-items: yes]
 **For next agent:** LS3 is Claude Opus-reviewed and approved as a one-job diagnostic live-smoke package after DIAG2. It reuses exact input `Using hydrogen for cars is more efficient than using electricity` and passes only if hidden W2 artifacts safely capture DIAG2 transport fields; it is not a provider-success, repair, source-quality, report-quality, public-readiness, or V1-cleanup gate.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS3_Diagnostic_Live_Smoke_Package.md

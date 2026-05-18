@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T04:18:59.880Z",
-  "count": 663,
+  "generatedAt": "2026-05-18T04:36:22.558Z",
+  "count": 664,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14632,6 +14632,32 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "If proceeding, draft LS2 as a separate reviewed package. Use a Captain-defined input likely to exercise the former cap mismatch, commit and refresh runtime first, re-check Wikimedia endpoint status, and keep the live slot count narrow."
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W2-RP1_Local_Raw_Code_Probe_Package.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w2-rp1",
+        "local",
+        "raw",
+        "code",
+        "probe",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-18_V2_Slice_X7-W2-RP1_Local_Raw_Code_Probe_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-RP1_Local_Raw_Code_Probe_Package.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "First commit this package by explicit paths after `git diff --check`, `npm run validate:v2-gates`, `node scripts/validate-v2-gate-register.mjs --self-test`, and `npm run index`. Then run exactly one transient local probe outside the repo, delete the temp helper, verify the repo stayed clean, and doc"
     }
   ]
 }
