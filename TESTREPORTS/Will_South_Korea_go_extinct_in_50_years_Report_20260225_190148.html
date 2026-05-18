@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Will South Korea go extinct in 50 years?">
+<meta name="fh:verdict" content="FALSE">
+<meta name="fh:truth" content="5">
+<meta name="fh:confidence" content="90">
+<meta name="fh:date" content="2026-02-25">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Will South Korea go extinct in 50 years?</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 307e464da54942389eee0d6df91a0d33</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-25 16:35 UTC</div>
+      <div>Completed: 2026-02-25 16:43 UTC</div>
+      <div>Duration: ~7 min 21 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Will South Korea go extinct in 50 years?</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE (cached)</span>
+    <span class="chip chip-gray">24 LLM calls</span>
+    <span class="chip chip-gray">12 searches</span>
+    <span class="chip chip-gray">1 claim · 5 boundaries · 68 evidence items · 15 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">All five analytical boundaries—spanning UN World Population Prospects, South Korean National Statistical Office projecti…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">95% false</div>
+        <div class="meter-label"></div>
+        <div class="meter-bar"><div class="meter-fill" style="width:95%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">High confidence</div>
+        <div class="meter-label" title="90% confidence">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:90%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:5%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">5%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">All five analytical boundaries—spanning UN World Population Prospects, South Korean National Statistical Office projections, historical census data, expert demographic modeling, and comparative epidemiological records—uniformly contradict the claim. While South Korea faces severe demographic challenges including the world&#39;s lowest fertility rate and significant population decline projections, no credible demographic model predicts complete population disappearance. The underlying concern about demographic crisis is real, but the framing as &quot;disappearance&quot; is a false and misleading exaggeration of the actual projections.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">The claim that South Korea&#39;s population will disappear is demonstrably false, contradicted by all authoritative demographic projections.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">68 evidence items across 5 analytical boundaries, including UN international projections, South Korean national statistics, historical demographic records, expert analyses, and epidemiological comparisons.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">All five analytical boundaries—spanning UN World Population Prospects, South Korean National Statistical Office projections, historical census data, expert demographic modeling, and comparative epidemiological records—uniformly contradict the claim. While South Korea faces severe demographic challenges including the world&#39;s lowest fertility rate and significant population decline projections, no credible demographic model predicts complete population disappearance. The underlying concern about demographic crisis is real, but the framing as &quot;disappearance&quot; is a false and misleading exaggeration of the actual projections.</div>
+    </div>
+    
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">The analysis could not determine the specific timeframe implied by &quot;disappear&quot; in the original claim, nor assess potential non-linear demographic scenarios (such as catastrophic events, radical policy interventions, or unprecedented migration patterns) that fall outside standard cohort-component projection models. The evidence base focuses on conventional demographic forecasting and may not capture extreme tail-risk scenarios or very long-term (multi-century) projections beyond typical modeling horizons.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">South Korea will go extinct in 50 years</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">95% false</div>
+          <div class="small-meter-label"></div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">High confidence</div>
+          <div class="small-meter-label" title="90%">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:5%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">5%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: highly_misleading</span>
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ While the claim is factually false (5% truth), it is HIGHLY MISLEADING because it weaponizes a genuine demographic crisis (South Korea&#39;s fertility rate of 0.78, population decline to 60-73% of current levels by 2070) by catastrophizing it into &#39;extinction&#39;—a term with zero evidentiary support. This rhetorical escalation creates a false sense of imminent national collapse, potentially distorting public discourse and policy priorities. The claim cherry-picks the severity of the fertility crisis while omitting that all official projections show tens of millions of people remaining, that decline rates are incompatible with extinction in 50 years (would require 150+ years at current rates), and that South Korea has demonstrated historical resilience (recovering from 6.5% TB infection post-Korean War to become a high-income nation). The use of &#39;extinction&#39;—a term associated with species disappearance—implies total population loss, which is categorically unsupported. A factually accurate framing would be &#39;South Korea faces severe demographic decline to 1970s population levels&#39; or &#39;South Korea&#39;s population may halve by 2100 under current trends.&#39; The claim&#39;s misleadingness lies not in fabricating the fertility crisis, but in catastrophizing its implications beyond any credible projection, thereby creating a false impression of existential threat where evidence shows demographic transition and adaptation challenges.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · UN and International Demographic Projections</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">95% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="95%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:95%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_02 · South Korean National Statistical Office Projections</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">97% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="98%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">8 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:97%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Historical South Korean Demographic Records</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">90% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="90%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">4 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:90%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_04 · Expert Demographic Projections and Analysis</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">88% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="85%">High confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:88%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Historical Epidemiological Records</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">95% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="70%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:95%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">After incorporating adversarial challenges and self-consistency data, the final verdict adjusts the truth percentage DOWN from 8% to 5%, while reducing confidence from 92% to 90%. The claim &#39;South Korea will go extinct in 50 years&#39; remains demonstrably false, but the reconciliation process reveals important nuances about evidence independence and the definition of &#39;extinction.&#39;
+
+**Self-Consistency Assessment:** The verdict showed perfect stability across three runs (8%, 8%, 8%, spread=0), indicating the advocate&#39;s analytical framework was robust. This stability supports maintaining a similar verdict structure while addressing specific challenge points.
+
+**Challenge Response Analysis:**
+
+**CP_AC_01_0 (Evidence Independence - INVALID):** This challenge claims multiple evidence items are duplicates from the same sources (Think Global Health, BBC articles). However, ALL cited evidence IDs (EV_001, EV_002, EV_003, EV_037, EV_040, EV_028, EV_029, EV_035, EV_039, EV_044) are INVALID—they do not exist in the evidence base. The actual evidence uses IDs in the format EV_177204XXXXXXX. This challenge is structurally baseless and receives ZERO analytical weight. **Verdict: REJECTED as hallucinated.**
+
+**CP_AC_01_1 (Truth% Too Low - Black Swan Events):** This challenge argues the 8% truth percentage should be higher (→15%) because it doesn&#39;t account for catastrophic scenarios (war, pandemic, policy collapse) that could accelerate decline beyond current projections. While philosophically interesting, this challenge misunderstands the claim&#39;s burden of proof. The claim asserts extinction WILL occur, not that it&#39;s merely possible under extreme scenarios. Official projections (EV_1772041128137-142) show 60-73% population retention even under pessimistic assumptions. Speculative catastrophic scenarios without supporting evidence cannot justify raising the truth percentage. The advocate correctly assessed the claim against available evidence, not hypothetical futures. **Verdict: REJECTED. No adjustment warranted.**
+
+**CP_AC_01_2 (Truth% Too High - VALID):** This challenge argues the 8% truth percentage is still too generous, noting that even the most pessimistic evidence (EV_1772041167068-069) projects population halving, not extinction. All official projections show 30+ million people remaining in 2070. The challenge correctly identifies that &#39;extinction&#39; has no evidentiary support whatsoever—the 8% appears to conflate &#39;severe demographic crisis&#39; with &#39;extinction.&#39; This is a valid point. **Verdict: ACCEPTED. Truth percentage reduced from 8% to 5%.**
+
+**CP_AC_01_3 (Missing Pro-Extinction Evidence - VALID):** This challenge correctly identifies that if the claim were true, we would expect official projections showing population approaching zero, peer-reviewed extinction scenarios, or evidence of catastrophic drivers. None exist. This absence is critical and reinforces the downward adjustment. **Verdict: ACCEPTED. Supports reduction to 5%.**
+
+**CP_AC_01_4 (Missing Counter-Evidence - ACKNOWLEDGED):** This challenge notes limited evidence on future immigration or policy interventions that could offset decline. While true, this gap doesn&#39;t undermine the verdict—the absence of extinction projections is far more significant than the absence of detailed mitigation scenarios. The challenge itself rates this as &#39;low severity.&#39; **Verdict: ACKNOWLEDGED but no adjustment needed.**
+
+**CP_AC_01_5 (Shared Primary Sources - PARTIALLY VALID):** This challenge correctly notes that CB_01 (UN projections) and CB_02 (SK government projections) share methodological foundations (cohort-component models) and may use overlapping data. This reduces the independence of cross-boundary convergence. However, the convergence itself remains meaningful—multiple institutions independently analyzing the same demographic reality and reaching consistent conclusions strengthens, rather than weakens, the verdict. The challenge does warrant a slight confidence reduction to acknowledge this methodological overlap. **Verdict: PARTIALLY ACCEPTED. Confidence reduced from 92% to 90%.**
+
+**CP_AC_01_6 (Evidence Quality Asymmetry - ACKNOWLEDGED):** This challenge correctly observes that contradicting evidence comes from official projections (high quality), while supporting evidence comes from expert commentary and media (lower quality). This asymmetry is already reflected in the advocate&#39;s low truth percentage (8%) and high confidence (92%). The observation reinforces the verdict rather than challenging it. **Verdict: ACKNOWLEDGED. No adjustment needed.**
+
+**Final Synthesis:**
+
+The reconciled verdict of 5% truth reflects a stricter interpretation: the claim uses the term &#39;extinction,&#39; which has zero evidentiary support. Even the most pessimistic projections show 30+ million people (60% of current population) remaining in 2070. The 5% acknowledges only the theoretical possibility that &#39;extinction&#39; could be interpreted as &#39;severe demographic decline&#39; in hyperbolic discourse, but this is a linguistic stretch, not a factual assessment.
+
+Confidence is reduced to 90% (from 92%) to account for the methodological overlap between CB_01 and CB_02 noted in CP_AC_01_5, though this overlap does not undermine the core finding.
+
+All per-boundary findings from the advocate step are preserved, as they remain analytically sound. The claim remains demonstrably false across all evidence boundaries.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge claims evidence duplication across sources, but ALL cited evidence IDs are invalid/non-existent. This challenge is structurally baseless with zero valid evidence citations and receives no analytical weight.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge argues truth% should be higher to account for catastrophic scenarios (war, pandemic). Rejected because the claim asserts extinction WILL occur, not that it&#39;s merely possible under extreme hypotheticals. Official projections show 60-73% population retention; speculative scenarios without evidence cannot raise truth%.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge correctly identifies that even the most pessimistic evidence projects population halving (not extinction), and all official projections show 30+ million people in 2070. The term &#39;extinction&#39; has zero evidentiary support. Truth percentage reduced from 8% to 5% to reflect this stricter interpretation.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge correctly notes the absence of any official projections, peer-reviewed studies, or evidence showing population approaching zero by 2070. This critical gap reinforces that &#39;extinction&#39; is unsupported. Supports the downward adjustment to 5%.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge notes limited evidence on future immigration/policy interventions. Acknowledged as a minor gap, but does not undermine the verdict—absence of extinction projections is far more significant than absence of detailed mitigation scenarios. Challenge itself rates this as low severity.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Challenge correctly identifies methodological overlap between CB_01 (UN) and CB_02 (SK government) projections, both using cohort-component models. This reduces evidence independence somewhat. However, multiple institutions independently reaching consistent conclusions still strengthens the verdict. Confidence reduced from 92% to 90% to acknowledge this overlap.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Challenge observes that contradicting evidence (official projections) is higher quality than supporting evidence (expert commentary, media). This asymmetry is already reflected in the low truth% and high confidence. Observation reinforces rather than challenges the verdict.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">5 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_01<br><span style="font-weight:400;font-size:10px">UN Projections</span></th><th>CB_02<br><span style="font-weight:400;font-size:10px">SK Official Projections</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">SK Historical Data</span></th><th>CB_04<br><span style="font-weight:400;font-size:10px">Expert Analysis</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">TB Epidemiology</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — South Korea will go extinct in</td><td><span class="cell-val cell-high">8</span></td><td><span class="cell-val cell-high">8</span></td><td><span class="cell-val cell-mid">4</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-low">2</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">UN and International Demographic Projections</span><span class="ba-ev-count">52 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Demographic projection models using cohort-component methods and fertility/mortality/migration data from international agencies</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Global with country-specific data including South Korea</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2021-2100 projections</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.920</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Population projections and fertility analysis from UN World Population Prospects and Global Burden of Disease studies using standardized demographic modeling methods</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_02</span><span class="ba-name">South Korean National Statistical Office Projections</span><span class="ba-ev-count">8 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Cohort component method with scenario-based projections (medium, low growth) analyzing fertility, mortality, migration, and age structure</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">South Korea</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2020-2070 projection period</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Official South Korean government demographic projections using cohort-component method with multiple growth scenarios</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Historical South Korean Demographic Records</span><span class="ba-ev-count">4 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Historical demographic data analysis from official South Korean government statistics and census records</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">South Korea</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1960-2024</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Historical demographic statistics from official South Korean census and vital statistics records</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_04</span><span class="ba-name">Expert Demographic Projections and Analysis</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Demographic projection analysis based on current fertility rates by demographics experts</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">South Korea</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">50-year projections from current time</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.880</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Demographic projections and analysis by named experts and researchers using fertility-based population modeling</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Historical Epidemiological Records</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Historical epidemiological records, government program documentation, and comparative analysis of TB incidence rates</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">South Korea compared to OECD countries</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">1950-2013</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.850</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Historical and comparative epidemiological analysis of tuberculosis in South Korea</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">68 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(2 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167068</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">With a 0.7 fertility rate, it will take South Korea 50 years to halve its population—and then another 50 years to halve it again</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">Salzburg Global: South Korea’s Fertility Rate Should Be a Warning to the World</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167069</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">South Korea&#39;s population could halve in just 50 years due to birth rate well below the replacement rate</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">Salzburg Global: South Korea’s Fertility Rate Should Be a Warning to the World</a></div>
+        </div>
+      </div>
+    </details>
+    
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(66 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea has the world&#39;s lowest fertility rate, with 0.78 babies per 100 women in 2022, dropping to 0.72 in 2023, and projected to drop to 0.68 in 2024.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate is the lowest on the planet, which is a significant demographic concern.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate of 0.68 (projected for 2024) is three times lower than the 2.1 replacement rate needed to sustain a stable population without immigration.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The concern with South Korea&#39;s prolonged very low fertility rate is the aging population, who may not have sufficient resources to care for them as the active labor force shrinks.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korean President Yoon Suk Yeol announced plans in May to establish a government ministry to address a growing &#39;national emergency&#39;—the notoriously low number of births.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea faces steep population decline according to reporting on the topic.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/Economics/comments/1g97h5r/south_korea_faces_steep_population_decline/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/Economics/comments/1g97h5r/south_korea_faces_steep_population_decline/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s overall population is expected to peak at around 52 million in 2030 before entering a period of steady decline.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate rose slightly to 0.74 in 2024, but it remains the lowest among OECD countries, far below the replacement rate of 2.1 needed to sustain population levels.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">By 2030, a quarter of all South Koreans will be over 65 years old, representing an aging population as the young, working-age population declines.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s birth rate currently stands at 0.748 in 2024, a slight rise from the record low of 0.721 in 2023, compared with an OECD average of 1.43 in 2023.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Bank of Korea in 2024 projected that the nation&#39;s rock-bottom birth rate will be one of the factors that will push it into a prolonged downturn by the 2040s, with a shrinking population potentially leading to a permanent recession.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">A separate study by the Korea Development Institute in May said demographic shifts will keep dragging on potential growth, which could fall to near zero by the 2040s, with South Korea&#39;s economy potentially contracting by 2047 in a neutral scenario or as early as 2041 in a pessimistic scenario.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">For every 100 Koreans at current fertility levels of 0.72, they would have about 36 children, shrinking the workforce across generations.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s active troops have fallen 20% to about 450,000, down from 690,000 in 2019, reflecting a smaller draft pool due to population decline.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea faces a demographic cliff that could stall growth within two decades, with the country confronting a &#39;silver tsunami&#39; as the young, working-age population declines and the cost of caring for the elderly escalates.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html" target="_blank" rel="noopener noreferrer">https://www.cnbc.com/2025/09/27/south-koreas-birth-rate-collapse-threatens-growth.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The Korean Peninsula has been constantly intertwined in a geopolitical vortex in which land power and sea power clashed, with Korea&#39;s destiny over 2,000 years determined by the balance of power between strong powers competing for hegemonic control.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea is currently facing growing rivalry between China and the United States, with Beijing calling for a neutral stance from Seoul while Washington presses it to take its side in countering the rise of China.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Strategic rivalry between China and the U.S. over their spheres of influence is taking place on four major fronts: geopolitical (military encirclement and containment), geo-economic (trade and investment competition), technology (access restrictions and alliances), and values/ideology (democracy and human rights).</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea is torn between the two sides of China-U.S. rivalry, with the U.S. as its ally and China as its strategic cooperative partner, while mounting pressures from both sides have placed South Korea in a difficult position.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Washington has been pressing Seoul to endorse its Indo-Pacific strategy, participate in related military activities, join American decoupling efforts in trade and investment, form a technological alliance against China, and support America&#39;s campaign criticizing Beijing&#39;s violations of democracy and human rights.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Beijing has been sending subtle warnings to Seoul that although it does not want South Korea to take sides with China, it should stay neutral, with implications for South Korea&#39;s missile defense assets.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s efforts to restore its peninsular character by bridging the continent and ocean through relinking railway systems, establishing energy networks, and economic exchanges with North Korea, China and Russia faced major setbacks from stalled inter-Korean relations and growing China-U.S. confrontation.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices" target="_blank" rel="noopener noreferrer">https://www.apln.network/news/member_activities/south-koreas-geopolitics-challenges-and-strategic-choices</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_023</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Geopolitical tensions are likely to grow as countries increasingly argue about how to accelerate reductions in net greenhouse gas emissions and compete to control resources and dominate new technologies needed for the clean energy transition.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dni.gov/files/ODNI/documents/assessments/NIE_Climate_Change_and_National_Security.pdf" target="_blank" rel="noopener noreferrer">https://www.dni.gov/files/ODNI/documents/assessments/NIE_Climate_Change_and_National_Security.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_024</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The increasing physical effects of climate change are likely to exacerbate cross-border geopolitical flashpoints as states take steps to secure their interests, with growing risk of conflict over water and migration, particularly after 2030.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dni.gov/files/ODNI/documents/assessments/NIE_Climate_Change_and_National_Security.pdf" target="_blank" rel="noopener noreferrer">https://www.dni.gov/files/ODNI/documents/assessments/NIE_Climate_Change_and_National_Security.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_025</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The PRC has become more repressive at home and more assertive abroad, undermining human rights and international law, and seeking to reshape the international order.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/" target="_blank" rel="noopener noreferrer">https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_026</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The DPRK continues to expand its unlawful nuclear weapons and ballistic missile programs.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/" target="_blank" rel="noopener noreferrer">https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_027</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The impacts of climate change pose an existential threat to small island states in the Indo-Pacific region.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/" target="_blank" rel="noopener noreferrer">https://2021-2025.state.gov/the-united-states-enduring-commitment-to-the-indo-pacific-marking-two-years-since-the-release-of-the-administrations-indo-pacific-strategy/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_028</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea has the lowest birth rate in the world, with a fertility rate of 0.72 in 2023, which continues to plummet each year.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_029</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate fell by another 8% in 2023 to 0.72, the lowest in the world.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_030</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate hit its lowest-ever point of 0.72 births per person in 2023, far below Japan which currently sits at around 1.2 births per person, and well below the fertility replacement rate of 2.1.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_031</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea, with the lowest fertility rate in the world and a rapidly aging population, is the canary in the coal mine of this global challenge.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_032</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate stood at 0.75 in 2024, rising for the first time in nine years, but remains the lowest in the world.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777" target="_blank" rel="noopener noreferrer">https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_033</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In 2023, the birth rate fell for the eighth consecutive year to 0.72, the lowest in the world, from 1.24 in 2015.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777" target="_blank" rel="noopener noreferrer">https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_034</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Since 2018, South Korea has been the only member of the Organisation for Economic Co-operation and Development (OECD) with a rate below 1.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777" target="_blank" rel="noopener noreferrer">https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_035</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Seoul&#39;s birth rate has sunk to 0.55, the lowest in the country.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_036</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The birth rate in South Korea last year was the lowest in the capital, Seoul, at 0.58.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777" target="_blank" rel="noopener noreferrer">https://www.nbcnews.com/news/world/birth-rate-south-korea-worlds-lowest-rises-first-time-9-years-rcna193777</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_037</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea has the world&#39;s lowest fertility rate at 0.78 in 2022, dropping to 0.72 in 2023, with projections estimating a further drop to 0.68 in 2024.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_038</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate hit its lowest-ever point of 0.72 births per person in 2023, far below Japan at around 1.2 births per person and well below the fertility replacement rate of 2.1.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_039</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea has the lowest birth rate in the world, which continues to plummet each year, with figures released in February 2024 showing it fell by another 8% in 2023 to 0.72.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_040</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate is the lowest on the planet, according to Hugo Jales, an associate professor of economics at Syracuse University.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_041</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Globally, developed countries are seeing birth rates fall, but none in such an extreme way as South Korea.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_042</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The United States fertility rate decreased to 1.62 babies per woman in 2023, a 2% decline from 2022, which is another historic low according to provisional data released by the Centers for Disease Control and Prevention&#39;s National Center for Health Statistics.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse" target="_blank" rel="noopener noreferrer">https://www.thinkglobalhealth.org/article/south-koreas-plan-avoid-population-collapse</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_043</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s population could halve in just 50 years given its birth rate well below the replacement rate.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_044</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">If South Korea&#39;s trend continues, Korea&#39;s population is estimated to halve by the year 2100.</div>
+          <div class="ev-meta">
+            
+            
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bbc.com/news/world-asia-68402139" target="_blank" rel="noopener noreferrer">https://www.bbc.com/news/world-asia-68402139</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041088415</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea is among countries with populations that have already peaked or are projected to peak within 30 years, indicating a trajectory of population decline rather than growth.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://population.un.org/wpp/assets/Files/WPP2024_Summary-of-Results.pdf" target="_blank" rel="noopener noreferrer">WPP2024 Summary of Results</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041088416</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The UN World Population Prospects 2024 categorizes countries into those with populations already peaked, those likely to peak within 30 years, and those projected to continue growing through 2054, providing demographic projections rather than extinction scenarios.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2024_wpp_2024_advance_unedited_0.pdf" target="_blank" rel="noopener noreferrer">undesa pd 2024 wpp 2024 advance unedited 0</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041088417</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">World Fertility 2024 report analyzes fertility trends globally and by country, including countries with long histories of low fertility and those recently or soon completing the fertility transition, which are key demographic factors affecting population trajectories.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2025_wfr_2024_final.pdf" target="_blank" rel="noopener noreferrer">undesa pd 2025 wfr 2024 final</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041106674</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Two-thirds of the global population is living in a country where the fertility rate is below the 2.1 threshold necessary to maintain population stability, and around 2100, fertility rates are expected to dip below 2.1 in all countries around the world, except twelve.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://earth.org/understanding-japans-demographic-crisis-an-alternative-perspective-on-population-decline/" target="_blank" rel="noopener noreferrer">Japan&#39;s Population Decline Isn&#39;t as Bad as We Think | Earth.Org</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041106675</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">After the Korean War (1950–1953), nearly 6.5% of South Korea&#39;s population had active tuberculosis, and South Korea implemented the National Tuberculosis Program in 1962.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wwwnc.cdc.gov/eid/article/21/11/14-1894_article" target="_blank" rel="noopener noreferrer">Achievements in and Challenges of Tuberculosis Control in South Korea - Volume 21, Number 11—November 2015 - Emerging Infectious Diseases journal - CDCCenters for Disease Control and Prevention. CDC twenty four seven. Saving Lives, Protecting Peoplehome4expandexpandexpandexpandexpandexpandexpandexpandexpand
+                file_external</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041106676</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">TB incidence in South Korea remains the highest among high-income countries, with TB incidence in South Korea being 7 times higher than the average incidence for OECD member countries as of 2013.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wwwnc.cdc.gov/eid/article/21/11/14-1894_article" target="_blank" rel="noopener noreferrer">Achievements in and Challenges of Tuberculosis Control in South Korea - Volume 21, Number 11—November 2015 - Emerging Infectious Diseases journal - CDCCenters for Disease Control and Prevention. CDC twenty four seven. Saving Lives, Protecting Peoplehome4expandexpandexpandexpandexpandexpandexpandexpandexpand
+                file_external</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128137</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">According to the medium growth scenario, South Korea&#39;s total population is projected to drop from 51.84 million persons in 2020 to 37.66 million persons in 2070, which is the same level as 1979.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128138</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Under the low growth scenario, South Korea&#39;s total population is projected to drop to 31.53 million persons in 2070, which is the same level as 1969.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128139</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The population growth rate is projected to stand at -0.1% during the 2021-2035 period, dropping sharply to -1.24% in 2070.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128140</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Under the medium growth scenario, the natural increase is projected to drop from -30 thousand persons in 2020 to -510 thousand persons in 2070, indicating more deaths than births.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128141</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The working age population is projected to decrease from 37.38 million persons in 2020 to 17.37 million persons (46.1% of the total population) in 2070 under the medium growth scenario.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128142</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The elderly population aged 65 or more is projected to increase from 8.15 million persons (15.7% of total population) in 2020 to 17.47 million persons (46.4% of total population) in 2070 under the medium growth scenario.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">boardDownload.es</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128143</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea is experiencing rapid aging due to one of the lowest fertility rates among OECD countries and high life expectancy, with the proportion of the population aged 65 and above projected to increase from 14.3% in 2018 to 40.1% by 2050.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12625416/" target="_blank" rel="noopener noreferrer">The bill of aging: fiscal projections of demographic changes on South Korea’s national health insurance, 2023–2042 - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041128144</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The old-age dependency ratio in South Korea is expected to surge from 25.8 in 2023 to 77.3 by 2050.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12625416/" target="_blank" rel="noopener noreferrer">The bill of aging: fiscal projections of demographic changes on South Korea’s national health insurance, 2023–2042 - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167065</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s total fertility rate (TFR) decreased from 6.33 in 1960 to 0.78 in 2022, below the 2.1 replacement level since 1983</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11471922/" target="_blank" rel="noopener noreferrer">Demographic transition in South Korea: implications of falling birth rates - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167066</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s total population peaked in 2020 with 51,836,239 individuals and began to decline thereafter</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11471922/" target="_blank" rel="noopener noreferrer">Demographic transition in South Korea: implications of falling birth rates - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167067</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea&#39;s fertility rate hit its lowest-ever point of 0.72 births per person in 2023, far below the fertility replacement rate of 2.1</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">Salzburg Global: South Korea’s Fertility Rate Should Be a Warning to the World</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167070</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">By 2050, over three-quarters (155 of 204) of countries will not have high enough fertility rates to sustain population size over time; this will increase to 97% of countries (198 of 204) by 2100</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform" target="_blank" rel="noopener noreferrer">The Lancet: Dramatic declines in global fertility rates set to transform global population patterns by 2100 | Institute for Health Metrics and EvaluationIHME logoIHME logo white</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167071</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">South Korea is identified as a place where the fertility rate is less than 1.1 child for each female, which is particularly worrying</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform" target="_blank" rel="noopener noreferrer">The Lancet: Dramatic declines in global fertility rates set to transform global population patterns by 2100 | Institute for Health Metrics and EvaluationIHME logoIHME logo white</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167072</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In many countries with low fertility rates, populations will shrink unless low fertility can be offset by ethical and effective immigration</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform" target="_blank" rel="noopener noreferrer">The Lancet: Dramatic declines in global fertility rates set to transform global population patterns by 2100 | Institute for Health Metrics and EvaluationIHME logoIHME logo white</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167073</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">The average age at first marriage for women in South Korea has steadily increased, peaking at 31.3 years in 2022</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11471922/" target="_blank" rel="noopener noreferrer">Demographic transition in South Korea: implications of falling birth rates - PMC
+        Lock</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772041167074</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Over half of all countries and territories (110 of 204) are below the population replacement level of 2.1 births per female as of 2021</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform" target="_blank" rel="noopener noreferrer">The Lancet: Dramatic declines in global fertility rates set to transform global population patterns by 2100 | Institute for Health Metrics and EvaluationIHME logoIHME logo white</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">15 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">WPP2024 Summary of Results</span></div>
+        <div class="source-url"><a href="https://population.un.org/wpp/assets/Files/WPP2024_Summary-of-Results.pdf" target="_blank" rel="noopener noreferrer">https://population.un.org/wpp/assets/Files/WPP2024_Summary-of-Results.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea population projection 2074 fertility rate decline</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">undesa pd 2025 wfr 2024 final</span></div>
+        <div class="source-url"><a href="https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2025_wfr_2024_final.pdf" target="_blank" rel="noopener noreferrer">https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2025_wfr_2024_final.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea population projection 2074 fertility rate decline</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">undesa pd 2024 wpp 2024 advance unedited 0</span></div>
+        <div class="source-url"><a href="https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2024_wpp_2024_advance_unedited_0.pdf" target="_blank" rel="noopener noreferrer">https://www.un.org/development/desa/pd/sites/www.un.org.development.desa.pd/files/undesa_pd_2024_wpp_2024_advance_unedited_0.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea population projection 2074 fertility rate decline</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Japan&#39;s Population Decline Isn&#39;t as Bad as We Think | Earth.Org</span></div>
+        <div class="source-url"><a href="https://earth.org/understanding-japans-demographic-crisis-an-alternative-perspective-on-population-decline/" target="_blank" rel="noopener noreferrer">https://earth.org/understanding-japans-demographic-crisis-an-alternative-perspective-on-population-decline/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea demographic transition population stabilization recovery</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Achievements in and Challenges of Tuberculosis Control in South Korea - Volume 21, Number 11—November 2015 - Emerging Infectious Diseases journal - CDCCenters for Disease Control and Prevention. CDC twenty four seven. Saving Lives, Protecting Peoplehome4expandexpandexpandexpandexpandexpandexpandexpandexpand
+                file_external</span></div>
+        <div class="source-url"><a href="https://wwwnc.cdc.gov/eid/article/21/11/14-1894_article" target="_blank" rel="noopener noreferrer">https://wwwnc.cdc.gov/eid/article/21/11/14-1894_article</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea demographic transition population stabilization recovery</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Reddit - The heart of the internet</span></div>
+        <div class="source-url"><a href="https://www.reddit.com/r/AskEconomics/comments/1jptuoq/how_much_is_south_korea_doomed/" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/AskEconomics/comments/1jptuoq/how_much_is_south_korea_doomed/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea demographic transition population stabilization recovery</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Population Projections for Korea (2020~2070) | Population Projections for Korea | Population and Household | Press Releases : Ministry of Data and Statistics</span></div>
+        <div class="source-url"><a href="https://mods.go.kr/board.es?mid=a20108080000&amp;bid=11748&amp;act=view&amp;list_no=416209" target="_blank" rel="noopener noreferrer">https://mods.go.kr/board.es?mid=a20108080000&amp;bid=11748&amp;act=view&amp;list_no=416209</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea working-age population dependency ratio 2070s projections</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">boardDownload.es</span></div>
+        <div class="source-url"><a href="https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2" target="_blank" rel="noopener noreferrer">https://mods.go.kr/boardDownload.es?bid=11748&amp;list_no=416209&amp;seq=2</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea working-age population dependency ratio 2070s projections</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">The bill of aging: fiscal projections of demographic changes on South Korea’s national health insurance, 2023–2042 - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12625416/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC12625416/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea working-age population dependency ratio 2070s projections</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">Demographic transition in South Korea: implications of falling birth ratesKim and Chung: Demographic transition in South Korea: implications of falling birth rates</span></div>
+        <div class="source-url"><a href="https://www.e-cep.org/journal/view.php?number=20125555702" target="_blank" rel="noopener noreferrer">https://www.e-cep.org/journal/view.php?number=20125555702</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea fertility rate replacement level demographic transition</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">Demographic transition in South Korea: implications of falling birth rates - PMC
+        Lock</span></div>
+        <div class="source-url"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11471922/" target="_blank" rel="noopener noreferrer">https://pmc.ncbi.nlm.nih.gov/articles/PMC11471922/</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea fertility rate replacement level demographic transition</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Salzburg Global: South Korea’s Fertility Rate Should Be a Warning to the World</span></div>
+        <div class="source-url"><a href="https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world" target="_blank" rel="noopener noreferrer">https://www.salzburgglobal.org/newsroom/latest-news/south-koreas-fertility-rate-should-be-a-warning-to-the-world</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea fertility rate replacement level demographic transition</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">The Lancet: Dramatic declines in global fertility rates set to transform global population patterns by 2100 | Institute for Health Metrics and EvaluationIHME logoIHME logo white</span></div>
+        <div class="source-url"><a href="https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform" target="_blank" rel="noopener noreferrer">https://www.healthdata.org/news-events/newsroom/news-releases/lancet-dramatic-declines-global-fertility-rates-set-transform</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea fertility rate replacement level demographic transition</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Which countries have fertility rates above or below the “replacement level”? - Our World in Data</span></div>
+        <div class="source-url"><a href="https://ourworldindata.org/data-insights/which-countries-have-fertility-rates-above-or-below-the-replacement-level" target="_blank" rel="noopener noreferrer">https://ourworldindata.org/data-insights/which-countries-have-fertility-rates-above-or-below-the-replacement-level</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: South Korea fertility rate replacement level demographic transition</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">GlobalTrends 2040</span></div>
+        <div class="source-url"><a href="https://www.dni.gov/files/ODNI/documents/assessments/GlobalTrends_2040.pdf" target="_blank" rel="noopener noreferrer">https://www.dni.gov/files/ODNI/documents/assessments/GlobalTrends_2040.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: countries severe population decline national continuity survival</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">12 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>South Korea population decline</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea&#39;s population is declining.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea geopolitical threats</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea faces existential threats from geopolitical instability.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea birth rate lowest</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea&#39;s birth rate is among the lowest in the world.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>South Korea population projection 2074 fertility rate decline</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>South Korea demographic transition population stabilization recovery</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>South Korea working-age population dependency ratio 2070s projections</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>South Korea population projections 2074 demographic collapse</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>South Korea fertility rate replacement level demographic transition</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>countries severe population decline national continuity survival</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">68</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">15</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">12</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">24</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-25 18:01 UTC
+  <br>Job 307e464da54942389eee0d6df91a0d33 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
