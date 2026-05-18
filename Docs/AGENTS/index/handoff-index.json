@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T08:01:01.160Z",
-  "count": 675,
+  "generatedAt": "2026-05-18T09:18:04.056Z",
+  "count": 676,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14851,6 +14851,24 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Start with `Docs/WIP/2026-05-18_V2_Slice_X7-W2-TR1_Standard_Client_Transport_Repair_Source_Package.md`. Implementation must stay inside the transport-focused envelope and apply `/debt-guard` before source edits. If the post-repair canary still has zero bytes/candidates, stop and prepare an endpoint/"
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W3_Source_Material_Steering_Review_Package.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-w3",
+        "source",
+        "material",
+        "steering",
+        "review",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "Prepare Source Material package for Steering Board review after W2/PIV1-A closeout."
     },
     {
       "file": "2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md",
