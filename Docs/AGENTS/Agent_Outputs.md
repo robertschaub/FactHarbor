@@ -3845,3 +3845,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Source package only until committed. QC2 must not import or invoke Source Acquisition/W2/provider-network/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public paths, must not edit prompts/config/schema/model/provider policy, and must not submit live jobs.
 **Learnings:** Distribution diagnostics need a hard static import fence before any real model call.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC2_Source_Package.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-QC2 Query Planning Distribution Diagnostic -- [Significant] [open-items: yes]
+**For next agent:** Implemented and ran QC2 on committed `046acef8`. The local harness ran Claim Understanding plus Query Planning only for three Captain-defined inputs and stopped at Query Planning inspection. Query-entry counts were `2`, `5`, and `3`; two accepted outputs exceed W2's current cap of `2`, so the next default should be a reviewed `X7-W2-QC3` W2 cap-alignment package, not a blind compatible canary.
+**Warnings:** QC2 does not authorize W2 cap changes by itself, live jobs, Source Acquisition/W2/provider-network/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/warning/confidence behavior, public/API/UI changes, prompt/config/schema/model/provider policy edits, ACS/direct URL, V1 work/cleanup, or broader provider expansion.
+**Learnings:** Align downstream proof caps with upstream accepted-output contracts before spending provider-network live jobs; otherwise the smoke tests the cap mismatch rather than provider behavior.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC2_Query_Planning_Distribution_Diagnostic.md
