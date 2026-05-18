@@ -3951,3 +3951,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** DIAG4 ran no live jobs and does not prove W2 provider-network success. It adds no provider/source expansion, no raw-code probe, no local/loopback network behavior, no source material/content/parser/cache/SR/storage, no EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, no ACS/direct URL, no V1 work/cleanup, and no W2 damaged/success semantics change.
 **Learnings:** Claude Opus reviewed the implementation diff and returned `PASS`. The next evidence step, if desired, is a separate LS5-style live observation package to see whether the real product-route failure maps to the new taxonomy or still needs local-only raw-code diagnosis.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG4_Implementation.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-LS5 DIAG4 Taxonomy Live-Observation Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS5_DIAG4_Taxonomy_Live_Observation_Package.md` as the separate one-job post-DIAG4 live-observation package. It uses the exact Captain-defined input `Using hydrogen for cars is more efficient than using electricity` for comparability with LS2/LS3/LS4.
+**Warnings:** Claude Opus reviewed and approved the package. It authorizes no repair, no raw-code probe, no local/loopback probe, no source material/content dereference/parser/cache/SR/storage, no EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, no provider expansion, no ACS/direct URL, no V1 work/cleanup, no retry, no second canary, and no expensive validation suite.
+**Learnings:** LS5 should observe taxonomy impact only: whether the hidden W2 product-route attempts now map to `network_unreachable`, `host_unreachable`, `address_family_failure`, `tls_protocol`, or still `other_known`.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS5_Live_Observation_Package.md
