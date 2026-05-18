@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T00:50:48.874Z",
-  "count": 648,
+  "generatedAt": "2026-05-18T01:06:11.425Z",
+  "count": 649,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14153,6 +14153,30 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS1_Candidate_Provider_Network_Live_Smoke_Package.md` as the active W2 live-smoke execution package once its docs-only commit lands. The package is already reviewer-approved; execution must still obey its verifiers and stop rules."
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Smoke_Package.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w2-ls2",
+        "live",
+        "smoke",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS2_Post_QC3_Candidate_Provider_Network_Live_Smoke_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Smoke_Package.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Commit only the LS2 docs package by explicit path after verifying the staged envelope. Then refresh runtime, run runtime verifiers and admin-route preflight, and submit at most one live job. Do not repair failures inside LS2."
     },
     {
       "file": "2026-05-18_Lead_Developer_V2_X7-W2-QC1_Query_Count_Estimation_Package.md",
