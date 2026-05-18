@@ -13,7 +13,9 @@ import {
   type SourceAcquisitionNetworkEndpointSnapshot,
   type SourceAcquisitionNetworkHiddenDiagnostic,
   type SourceAcquisitionNetworkRequestEnvelope,
+  type SourceAcquisitionNetworkSelectedAddressFamily,
   type SourceAcquisitionNetworkStopReason,
+  type SourceAcquisitionNetworkTransportFailureClass,
   type SourceAcquisitionNetworkTransportOutcome,
 } from "./source-acquisition-network-envelope";
 import {
@@ -69,6 +71,64 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function readErrorCode(error: unknown): string | null {
+  if (!isRecord(error) || typeof error.code !== "string") {
+    return null;
+  }
+  const code = error.code.trim().toUpperCase();
+  return code.length > 0 ? code : null;
+}
+
+function classifyTransportFailure(error: unknown): SourceAcquisitionNetworkTransportFailureClass {
+  const code = readErrorCode(error);
+  if (code === null) {
+    return "unknown_transport_failure";
+  }
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
+    return "dns_resolution_failure";
+  }
+  if (code === "ECONNRESET" || code === "EPIPE") {
+    return "connection_reset";
+  }
+  if (code === "ECONNREFUSED") {
+    return "connection_refused";
+  }
+  if (code === "ENETUNREACH") {
+    return "network_unreachable";
+  }
+  if (code === "EHOSTUNREACH") {
+    return "host_unreachable";
+  }
+  if (code === "ETIMEDOUT" || code === "ERR_SOCKET_CONNECTION_TIMEOUT") {
+    return "socket_timeout";
+  }
+  if (code === "EADDRNOTAVAIL" || code === "EAFNOSUPPORT") {
+    return "address_family_failure";
+  }
+  if (
+    code.startsWith("ERR_TLS_")
+    || code === "CERT_HAS_EXPIRED"
+    || code === "DEPTH_ZERO_SELF_SIGNED_CERT"
+    || code === "SELF_SIGNED_CERT_IN_CHAIN"
+    || code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+  ) {
+    return "tls_failure";
+  }
+  return "unknown_transport_failure";
+}
+
+function selectedAddressFamily(
+  address?: SourceAcquisitionNetworkResolvedAddress,
+): SourceAcquisitionNetworkSelectedAddressFamily {
+  if (address?.family === 4) {
+    return "ipv4";
+  }
+  if (address?.family === 6) {
+    return "ipv6";
+  }
+  return "not_reached";
+}
+
 function now(transport?: SourceAcquisitionNetworkLowLevelTransport): number {
   return transport?.now?.() ?? Date.now();
 }
@@ -85,9 +145,11 @@ function diagnostic(params: {
   readonly startedAt: number;
   readonly transport?: SourceAcquisitionNetworkLowLevelTransport;
   readonly dnsAddressCount?: number;
+  readonly selectedAddressFamily?: SourceAcquisitionNetworkSelectedAddressFamily;
   readonly finalAddressValidation?: SourceAcquisitionNetworkHiddenDiagnostic["finalAddressValidation"];
   readonly responseStatusCodeCategory?: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState?: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
+  readonly transportFailureClass?: SourceAcquisitionNetworkTransportFailureClass;
   readonly compressedBytes?: number;
   readonly decompressedBytes?: number;
   readonly redirectDenied?: boolean;
@@ -102,9 +164,11 @@ function diagnostic(params: {
     durationMs: duration(params.startedAt, params.transport),
     timeoutMs: params.endpoint.timeoutMs,
     dnsAddressCount: params.dnsAddressCount,
+    selectedAddressFamily: params.selectedAddressFamily,
     finalAddressValidation: params.finalAddressValidation,
     responseStatusCodeCategory: params.responseStatusCodeCategory,
     contentTypeState: params.contentTypeState,
+    transportFailureClass: params.transportFailureClass,
     compressedBytes: params.compressedBytes,
     decompressedBytes: params.decompressedBytes,
     redirectDenied: params.redirectDenied,
@@ -119,9 +183,11 @@ function blocked(params: {
   readonly transport?: SourceAcquisitionNetworkLowLevelTransport;
   readonly status?: "blocked" | "failed" | "timed_out" | "cancelled";
   readonly dnsAddressCount?: number;
+  readonly selectedAddressFamily?: SourceAcquisitionNetworkSelectedAddressFamily;
   readonly finalAddressValidation?: SourceAcquisitionNetworkHiddenDiagnostic["finalAddressValidation"];
   readonly responseStatusCodeCategory?: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState?: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
+  readonly transportFailureClass?: SourceAcquisitionNetworkTransportFailureClass;
   readonly compressedBytes?: number;
   readonly decompressedBytes?: number;
   readonly redirectDenied?: boolean;
@@ -137,9 +203,11 @@ function blocked(params: {
       startedAt: params.startedAt,
       transport: params.transport,
       dnsAddressCount: params.dnsAddressCount,
+      selectedAddressFamily: params.selectedAddressFamily,
       finalAddressValidation: params.finalAddressValidation,
       responseStatusCodeCategory: params.responseStatusCodeCategory,
       contentTypeState: params.contentTypeState,
+      transportFailureClass: params.transportFailureClass,
       compressedBytes: params.compressedBytes,
       decompressedBytes: params.decompressedBytes,
       redirectDenied: params.redirectDenied,
@@ -673,6 +741,7 @@ export async function executeSourceAcquisitionNetworkTransport(
       startedAt,
       transport,
       status: "failed",
+      transportFailureClass: "dns_resolution_failure",
     });
   }
 
@@ -694,6 +763,7 @@ export async function executeSourceAcquisitionNetworkTransport(
       finalAddressValidation: "blocked_or_mismatched",
     });
   }
+  const selectedAddress = publicAddresses[0];
 
   try {
     const response = await transport.request({
@@ -704,7 +774,7 @@ export async function executeSourceAcquisitionNetworkTransport(
       headers: requestHeaders(input.request.requestHeaders),
       timeoutMs: Math.min(input.endpoint.timeoutMs, input.budget.perQueryTimeoutMs),
       maxCompressedBytes: input.endpoint.compressedByteCap,
-      lookupAddress: publicAddresses[0],
+      lookupAddress: selectedAddress,
       signal: input.signal,
     });
     const finalAddressMatches = publicAddresses.some((address) => address.address === response.remoteAddress)
@@ -717,6 +787,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "blocked_or_mismatched",
       });
     }
@@ -730,6 +801,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         redirectDenied: true,
@@ -743,6 +815,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         status: "failed",
@@ -756,6 +829,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "rejected",
@@ -771,6 +845,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "accepted_json",
@@ -785,6 +860,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "rejected",
@@ -804,6 +880,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "accepted_json",
@@ -823,6 +900,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "rejected",
@@ -842,6 +920,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
         finalAddressValidation: "matched_validated_public_address",
         responseStatusCodeCategory: category,
         contentTypeState: "accepted_json",
@@ -860,6 +939,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         transport,
         status: "cancelled",
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
       });
     }
     if (message === "timed_out") {
@@ -871,6 +951,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         transport,
         status: "timed_out",
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
       });
     }
     if (message === "compressed_byte_cap_exceeded") {
@@ -881,6 +962,7 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         dnsAddressCount: resolved.length,
+        selectedAddressFamily: selectedAddressFamily(selectedAddress),
       });
     }
     return blocked({
@@ -891,6 +973,8 @@ export async function executeSourceAcquisitionNetworkTransport(
       transport,
       status: "failed",
       dnsAddressCount: resolved.length,
+      selectedAddressFamily: selectedAddressFamily(selectedAddress),
+      transportFailureClass: classifyTransportFailure(error),
     });
   }
 }

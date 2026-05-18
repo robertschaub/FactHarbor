@@ -219,7 +219,12 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     expect(outcome).toMatchObject({ candidateCount: 1 });
     expect(seenPaths).toEqual(["/candidate-search?q=Plastic+recycling+is+pointless"]);
     expect(outcome.diagnostic).toMatchObject({
+      dnsAddressCount: 1,
+      selectedAddressFamily: "ipv4",
       finalAddressValidation: "matched_validated_public_address",
+      responseStatusCodeCategory: "success_2xx",
+      contentTypeState: "accepted_json",
+      transportFailureClass: "not_applicable",
       rawPayloadIncluded: false,
       secretIncluded: false,
       cacheKeyConstructed: false,
@@ -256,6 +261,7 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         status: "blocked",
         diagnostic: {
           stopReason: "dns_address_blocked",
+          selectedAddressFamily: "not_reached",
           finalAddressValidation: "blocked_or_mismatched",
         },
       });
@@ -289,6 +295,7 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       status: "blocked",
       diagnostic: {
         stopReason: "final_address_mismatch",
+        selectedAddressFamily: "ipv4",
         finalAddressValidation: "blocked_or_mismatched",
       },
     });
@@ -307,6 +314,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       status: "blocked",
       diagnostic: {
         stopReason: "redirect_denied",
+        selectedAddressFamily: "ipv4",
+        responseStatusCodeCategory: "redirect_3xx",
+        transportFailureClass: "not_applicable",
         redirectDenied: true,
       },
     });
@@ -383,12 +393,55 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     });
     expect(dnsTimeout).toMatchObject({
       status: "timed_out",
-      diagnostic: { stopReason: "timed_out" },
+      diagnostic: {
+        stopReason: "timed_out",
+        selectedAddressFamily: "not_reached",
+        transportFailureClass: "not_applicable",
+      },
     });
 
-    for (const thrown of ["timed_out", "cancelled", "raw https://example.test sk_secret stack"] as const) {
+    const resetError = Object.assign(new Error("raw https://example.test sk_secret stack"), {
+      code: "ECONNRESET",
+    });
+    const tlsError = Object.assign(new Error("tls raw https://example.test sk_secret stack"), {
+      code: "ERR_TLS_CERT_ALTNAME_INVALID",
+    });
+    const thrownCases = [
+      {
+        thrown: "timed_out",
+        stopReason: "timed_out",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "not_applicable",
+      },
+      {
+        thrown: "cancelled",
+        stopReason: "cancelled",
+        selectedAddressFamily: "not_reached",
+        transportFailureClass: "not_applicable",
+      },
+      {
+        thrown: new Error("raw https://example.test sk_secret stack"),
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "unknown_transport_failure",
+      },
+      {
+        thrown: resetError,
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "connection_reset",
+      },
+      {
+        thrown: tlsError,
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "tls_failure",
+      },
+    ] as const;
+
+    for (const testCase of thrownCases) {
       const controller = new AbortController();
-      if (thrown === "cancelled") {
+      if (testCase.thrown === "cancelled") {
         controller.abort();
       }
       const outcome = await executeSourceAcquisitionNetworkTransport({
@@ -399,7 +452,7 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         signal: controller.signal,
         lowLevelTransport: fakeTransport({
           request: async () => {
-            throw new Error(thrown);
+            throw typeof testCase.thrown === "string" ? new Error(testCase.thrown) : testCase.thrown;
           },
         }),
       });
@@ -408,7 +461,11 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       expect(serialized).not.toContain("example.test");
       expect(serialized).not.toContain("sk_secret");
       expect(serialized).not.toContain("stack");
-      expect(["timed_out", "cancelled", "transport_failure"]).toContain(outcome.diagnostic.stopReason);
+      expect(outcome.diagnostic).toMatchObject({
+        stopReason: testCase.stopReason,
+        selectedAddressFamily: testCase.selectedAddressFamily,
+        transportFailureClass: testCase.transportFailureClass,
+      });
     }
   });
 });

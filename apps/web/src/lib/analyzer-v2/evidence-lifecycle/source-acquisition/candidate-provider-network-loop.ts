@@ -193,6 +193,12 @@ export type SourceAcquisitionCandidateProviderNetworkAttemptTelemetryRecord = Pi
   | "stopReason"
   | "durationMs"
   | "timeoutMs"
+  | "dnsAddressCount"
+  | "selectedAddressFamily"
+  | "finalAddressValidation"
+  | "responseStatusCodeCategory"
+  | "contentTypeState"
+  | "transportFailureClass"
   | "candidateCount"
   | "compressedBytes"
   | "decompressedBytes"
@@ -291,6 +297,12 @@ function sanitizeNetworkAttempt(
     stopReason: record.stopReason,
     durationMs: record.durationMs,
     timeoutMs: record.timeoutMs,
+    dnsAddressCount: record.dnsAddressCount,
+    selectedAddressFamily: record.selectedAddressFamily,
+    finalAddressValidation: record.finalAddressValidation,
+    responseStatusCodeCategory: record.responseStatusCodeCategory,
+    contentTypeState: record.contentTypeState,
+    transportFailureClass: record.transportFailureClass,
     candidateCount: record.candidateCount,
     compressedBytes: record.compressedBytes,
     decompressedBytes: record.decompressedBytes,

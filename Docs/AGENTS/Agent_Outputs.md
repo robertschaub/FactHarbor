@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG2 Sanitized Transport Diagnostics Implementation -- [Significant] [open-items: yes]
+**For next agent:** DIAG2 is implementation-complete inside the approved diagnostic-only envelope. W2 hidden network-attempt telemetry/artifacts now propagate DNS/final-address/response/content states and add bounded `selectedAddressFamily` plus `transportFailureClass`; no live jobs were run and no source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public behavior was added. Next safe action is a separately reviewed LS3/repair decision package, not a blind rerun.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG2_Implementation.md
+
+---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG2 Sanitized Transport Diagnostics Source Package -- [Significant] [open-items: yes]
 **For next agent:** DIAG2 is Claude Opus-reviewed and approved for implementation in `Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG2_Sanitized_Transport_Diagnostics_Source_Package.md`. It may only propagate hidden W2 network diagnostic fields and add `selectedAddressFamily` plus structural `transportFailureClass`; no live jobs, source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public behavior, prompt/config/model/schema/provider-policy edits, ACS/direct URL, or V1 work.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG2_Source_Package.md

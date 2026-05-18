@@ -120,6 +120,23 @@ export type SourceAcquisitionNetworkStopReason =
   | "cancelled"
   | "transport_failure";
 
+export type SourceAcquisitionNetworkSelectedAddressFamily =
+  | "not_reached"
+  | "ipv4"
+  | "ipv6";
+
+export type SourceAcquisitionNetworkTransportFailureClass =
+  | "not_applicable"
+  | "dns_resolution_failure"
+  | "connection_reset"
+  | "connection_refused"
+  | "network_unreachable"
+  | "host_unreachable"
+  | "socket_timeout"
+  | "tls_failure"
+  | "address_family_failure"
+  | "unknown_transport_failure";
+
 export type SourceAcquisitionNetworkHiddenDiagnostic = {
   readonly version: typeof SOURCE_ACQUISITION_NETWORK_RUNTIME_VERSION;
   readonly visibility: "internal_only";
@@ -132,12 +149,14 @@ export type SourceAcquisitionNetworkHiddenDiagnostic = {
   readonly durationMs: number;
   readonly timeoutMs: number;
   readonly dnsAddressCount: number;
+  readonly selectedAddressFamily: SourceAcquisitionNetworkSelectedAddressFamily;
   readonly finalAddressValidation:
     | "not_reached"
     | "matched_validated_public_address"
     | "blocked_or_mismatched";
   readonly responseStatusCodeCategory: "not_reached" | "success_2xx" | "redirect_3xx" | "rejected";
   readonly contentTypeState: "not_reached" | "accepted_json" | "rejected";
+  readonly transportFailureClass: SourceAcquisitionNetworkTransportFailureClass;
   readonly compressedBytes: number;
   readonly decompressedBytes: number;
   readonly redirectDenied: boolean;
@@ -659,9 +678,11 @@ export function buildSourceAcquisitionNetworkHiddenDiagnostic(params: {
   readonly durationMs: number;
   readonly timeoutMs: number;
   readonly dnsAddressCount?: number;
+  readonly selectedAddressFamily?: SourceAcquisitionNetworkSelectedAddressFamily;
   readonly finalAddressValidation?: SourceAcquisitionNetworkHiddenDiagnostic["finalAddressValidation"];
   readonly responseStatusCodeCategory?: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState?: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
+  readonly transportFailureClass?: SourceAcquisitionNetworkTransportFailureClass;
   readonly compressedBytes?: number;
   readonly decompressedBytes?: number;
   readonly redirectDenied?: boolean;
@@ -678,9 +699,11 @@ export function buildSourceAcquisitionNetworkHiddenDiagnostic(params: {
     durationMs: Math.max(0, Math.trunc(params.durationMs)),
     timeoutMs: params.timeoutMs,
     dnsAddressCount: params.dnsAddressCount ?? 0,
+    selectedAddressFamily: params.selectedAddressFamily ?? "not_reached",
     finalAddressValidation: params.finalAddressValidation ?? "not_reached",
     responseStatusCodeCategory: params.responseStatusCodeCategory ?? "not_reached",
     contentTypeState: params.contentTypeState ?? "not_reached",
+    transportFailureClass: params.transportFailureClass ?? "not_applicable",
     compressedBytes: params.compressedBytes ?? 0,
     decompressedBytes: params.decompressedBytes ?? 0,
     redirectDenied: params.redirectDenied ?? false,

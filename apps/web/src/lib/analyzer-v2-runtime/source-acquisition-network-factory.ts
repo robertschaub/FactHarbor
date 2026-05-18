@@ -10,6 +10,7 @@ import {
   validateSourceAcquisitionNetworkRequestEnvelope,
   type SourceAcquisitionNetworkBudgetSnapshot,
   type SourceAcquisitionNetworkEndpointSnapshot,
+  type SourceAcquisitionNetworkHiddenDiagnostic,
   type SourceAcquisitionNetworkRequestEnvelope,
   type SourceAcquisitionNetworkStopReason,
   type SourceAcquisitionNetworkTransportOutcome,
@@ -41,6 +42,12 @@ export type SourceAcquisitionNetworkAttemptTelemetryRecord = {
   readonly stopReason: SourceAcquisitionNetworkStopReason;
   readonly durationMs: number;
   readonly timeoutMs: number;
+  readonly dnsAddressCount: number;
+  readonly selectedAddressFamily: SourceAcquisitionNetworkHiddenDiagnostic["selectedAddressFamily"];
+  readonly finalAddressValidation: SourceAcquisitionNetworkHiddenDiagnostic["finalAddressValidation"];
+  readonly responseStatusCodeCategory: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
+  readonly contentTypeState: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
+  readonly transportFailureClass: SourceAcquisitionNetworkHiddenDiagnostic["transportFailureClass"];
   readonly candidateCount: number;
   readonly compressedBytes: number;
   readonly decompressedBytes: number;
@@ -109,6 +116,12 @@ function telemetryFromOutcome(params: {
     stopReason: params.outcome.diagnostic.stopReason,
     durationMs: finiteNonNegativeInteger(params.outcome.diagnostic.durationMs),
     timeoutMs: finiteNonNegativeInteger(params.timeoutMs),
+    dnsAddressCount: finiteNonNegativeInteger(params.outcome.diagnostic.dnsAddressCount),
+    selectedAddressFamily: params.outcome.diagnostic.selectedAddressFamily,
+    finalAddressValidation: params.outcome.diagnostic.finalAddressValidation,
+    responseStatusCodeCategory: params.outcome.diagnostic.responseStatusCodeCategory,
+    contentTypeState: params.outcome.diagnostic.contentTypeState,
+    transportFailureClass: params.outcome.diagnostic.transportFailureClass,
     candidateCount: finiteNonNegativeInteger(params.candidateCount),
     compressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.compressedBytes) : 0,
     decompressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.decompressedBytes) : 0,
