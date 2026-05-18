@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T09:18:04.056Z",
-  "count": 676,
+  "generatedAt": "2026-05-18T09:40:14.231Z",
+  "count": 677,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14869,6 +14869,24 @@
       ],
       "files_touched": [],
       "summary": "Prepare Source Material package for Steering Board review after W2/PIV1-A closeout."
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W3_Tiered_Source_Material_Strategy_Amendment.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-w3",
+        "tiered",
+        "source",
+        "material",
+        "strategy",
+        "amendment"
+      ],
+      "files_touched": [],
+      "summary": "Amend the X7-W3 Source Material steering review package before implementation."
     },
     {
       "file": "2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md",

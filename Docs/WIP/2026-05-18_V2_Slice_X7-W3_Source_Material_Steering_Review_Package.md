@@ -17,11 +17,12 @@ The next downstream stage is Source Material. This package is not implementation
 - W2 live canary job `c4ed36f4ce634860b906c74ea1557cc6` completed with `candidate_provider_network_completed`, `9` total hidden structural candidates, and `13982` total bytes.
 - W2 public output stayed `4.0.0-cb-precutover` / `blocked_precutover`.
 - W2 artifacts expose sanitized structural counts, hashes, byte/timing telemetry, and opaque query references only.
-- Current W2 hidden candidate records contain opaque `candidateId` and `hiddenLocatorId` placeholders. They do not carry dereferenceable URLs, page keys, titles, snippets, domains, source text, or parsed content in artifacts.
+- Current W2 hidden candidate records contain opaque `candidateId` and `hiddenLocatorId` placeholders. They do not expose usable titles, URLs, excerpts, descriptions, page keys, domains, source text, or parsed content in artifacts.
 - `source-acquisition-network-transport.ts` currently reads the candidate array only to count entries. It does not expose candidate-array fields for downstream source-material use.
 - Existing X7-A/X7-B source-material code intentionally proves absence: candidates are not source material, hidden locators are not dereferenceable, and candidate counts are not evidence.
+- Wikimedia search references show that provider-owned search candidates may contain page fields such as `id`, `key`, `title`, `excerpt`, and `description`, and that `limit` is a GET query parameter for search-page endpoints. Those fields are not present in current W2 artifacts. They may be used only if safely materialized from the provider-owned search candidate inside the approved W3 path.
 
-Conclusion: Source Material must not consume W2 artifacts alone. A safe locator-materialization contract is required before any source-material fetch can be implemented.
+Conclusion: Source Material must not consume W2 artifacts alone. A safe locator-materialization contract is required before any source-material fetch can be implemented. The Wikimedia observation is a tiering input for W3 design, not a separate build task.
 
 ## 3. Steering Decision Requested
 
@@ -34,10 +35,70 @@ Approve, modify, or reject the following direction:
 5. Do not add retries in W3.
 6. Do not open parser execution, EvidenceCorpus, EvidenceItems, report/verdict/warning/confidence, public exposure, cache/SR/storage, ACS/direct URL, or V1 work.
 7. Prefer a split implementation sequence unless reviewers deliberately approve a combined package:
-   - **W3-A:** safe locator materialization contract and artifact surface, no source-material fetch.
-   - **W3-B:** bounded source-material fetch from approved materialized locators, no parser or EvidenceCorpus.
+   - **W3-A / Tier 0:** safe locator materialization plus bounded search-result preview diagnostics, no extra HTTP call, no source-material record.
+   - **W3-B / Tier 1:** bounded page-summary fetch from approved materialized locators, no parser or EvidenceCorpus.
 
 The default Lead Developer recommendation is split W3-A/W3-B. Combining locator materialization and fetch into one source package is possible but broader and should require explicit Steering Board acceptance.
+
+## 3.1 Tiered Source Material Strategy
+
+W3 should treat Wikimedia search-result fields as a staged source-material strategy, not as permission to broaden execution.
+
+### Tier 0: Search-Result Materialization / Preview, No Extra HTTP
+
+Tier 0 may materialize bounded fields from the provider-owned Wikimedia search candidate while the provider-network owner still has access to the candidate object. Candidate fields may include a page key, title, excerpt, and description only when they come from the approved provider response candidate and pass structural validation.
+
+Tier 0 recommendation: diagnostic-only, not Source Material.
+
+Rationale:
+
+- a search excerpt is provider-generated search context, not the fetched source body;
+- excerpts may be partial, highlighted, or search-engine-shaped;
+- treating the excerpt as Source Material would blur the boundary between candidate discovery and content acquisition;
+- no extra HTTP call is useful as a low-risk proof of safe materialization, but it should not feed EvidenceCorpus, EvidenceItems, reports, verdicts, warnings, or confidence.
+
+Tier 0 may produce a hidden/admin-only `source_candidate_preview` diagnostic with bounded sanitized fields, hashes, byte counts, truncation state, and opaque candidate/locator refs. It must not produce a source-material record.
+
+### Tier 1: Bounded Page-Summary Fetch As First Real Source Material
+
+If Tier 0 is insufficient for Source Material, Tier 1 is the first real fetch path. Tier 1 should fetch a bounded page summary for one or more approved materialized locators, producing hidden/admin-only source-material records from an explicitly selected summary field.
+
+Tier 1 endpoint recommendation: prefer the project-local Wikimedia Page Content Service summary endpoint, for example `{wiki_domain}/api/rest_v1/page/summary/{title}`, rather than a new Core API page fetch. This stays within the same provider family while reducing Core API deprecation exposure. It requires a reviewed endpoint/host allowlist decision before implementation.
+
+Tier 1 body recommendation: use only a bounded plain-text summary/extract field if present and structurally accepted. Do not use full HTML, full source, provider-returned URLs, or raw JSON payload as Source Material in W3.
+
+### Tier 2: Full Page / Source / HTML Fetch
+
+Tier 2 is out of scope for W3. Full page source, full page HTML, page-object fetches that expose source or HTML, parser input, and any source-body expansion beyond page-summary material require separate Steering Board approval and a later package.
+
+### Byte Cap Posture
+
+Tier 0 must not add any network byte budget. It should cap serialized preview diagnostics aggressively and never emit the raw provider candidate object. Recommended posture for a later source package:
+
+- cap materialized preview fields individually;
+- cap the aggregate Tier 0 diagnostic body well below W2's network byte caps;
+- store hashes, lengths, truncation state, and enum statuses instead of raw candidate payloads;
+- strip or encode provider highlighting markup before admin display;
+- fail closed if safe truncation/sanitization would change the structural meaning of the preview.
+
+Tier 1 must not raise W2 byte caps. Recommended posture:
+
+- start with a lower per-fetch cap than W2's page-search response cap because page summaries should be small;
+- fetch only the minimum number of materialized locators needed for proof;
+- no retries;
+- preserve existing timeout, redirect-deny, proxy-none, no-credentials, endpoint allowlist, final-address validation, hidden-only artifacts, and raw-leak protections;
+- fail closed if the endpoint requires higher caps, credentials, redirects, proxy behavior, raw URLs, or full page/source/html content.
+
+### Tier Stop Criteria
+
+Stop before implementation or fetch if:
+
+- the required locator or preview fields are available only from current W2 artifacts, public output, logs, or serialized raw provider JSON rather than the provider-owned candidate in the W3 path;
+- Tier 0 cannot produce bounded sanitized preview diagnostics without raw title/URL/page-key/excerpt/description leakage;
+- a page key/title/locator cannot be validated structurally without treating a provider-returned URL as authority;
+- Tier 1 needs a Core/full-page/source/html endpoint rather than a bounded summary endpoint;
+- Tier 1 yields zero bounded summary material after one approved canary;
+- any parser, EvidenceCorpus, EvidenceItem, report/verdict/warning/confidence, cache/SR/storage, public, second-provider, retry, ACS/direct URL, or V1 path becomes necessary.
 
 ## 4. Accepted Inputs From W2
 
@@ -76,14 +137,14 @@ W3 must introduce a separate locator-materialization contract because current W2
 
 The materialization contract may consume only the provider-owned candidate array while the W2 provider-network owner still has access to it. It must not recover locators from raw artifacts, logs, public output, or provider response JSON serialized elsewhere.
 
-For Wikimedia, the materializer may accept a bounded provider page identifier only if:
+For Wikimedia, the materializer may accept bounded provider-owned search-candidate fields only if:
 
 - it comes from the approved Wikimedia search response candidate object;
-- it is needed to build the approved Source Material fetch request;
+- it is needed to build the approved Source Material fetch request or Tier 0 diagnostic preview;
 - it passes exact structural validation;
 - it is never exposed in public output;
 - it is not written to durable storage;
-- it is not emitted in admin artifacts as raw title, raw page key, raw URL, or raw path;
+- it is not emitted in admin artifacts as raw URL, raw path, raw provider JSON, or unbounded title/page-key/excerpt/description;
 - the admin artifact receives only an opaque locator ref, provider id, endpoint id, materialization status, bounded counts, hashes, and failure categories.
 
 The materializer must reject:
@@ -103,6 +164,8 @@ W3 may produce hidden/admin-only source-material records only after the locator-
 
 A source-material record is not an EvidenceItem, not an EvidenceCorpus entry, not a verdict input, and not public content. It is a bounded source acquisition artifact that may be inspected by admins only and consumed by a later reviewed parser/EvidenceCorpus gate.
 
+Tier 0 search-result preview diagnostics are not source-material records. They may help prove safe materialization and support a later Tier 1 endpoint decision, but they must remain diagnostic-only unless Steering Board explicitly changes that classification.
+
 Allowed source-material record fields:
 
 - record version;
@@ -118,7 +181,7 @@ Allowed source-material record fields:
 - content type category;
 - byte counts after caps;
 - duration and timeout values;
-- source material kind, for example `provider_page_source_text` or `provider_page_html_unparsed`;
+- source material kind, for example `provider_page_summary_text`;
 - bounded source material body only if the endpoint contract explicitly marks that field as source material and the body is capped, non-durable, admin-only, and not parsed;
 - source material body hash and byte length;
 - truncation state;
@@ -133,7 +196,7 @@ Forbidden in source-material records and diagnostics:
 - request headers;
 - raw request URL;
 - provider-returned URL;
-- unbounded title, snippet, excerpt, domain, page key, page id, path, query string, or HTML URL;
+- unbounded title, snippet, excerpt, description, domain, page key, page id, path, query string, or HTML URL;
 - raw error message, stack, cause, or low-level exception text;
 - cache key;
 - Source Reliability fields;
@@ -178,28 +241,35 @@ Allowed diagnostic fields:
 - error trace included false;
 - cache/SR/storage touched false.
 
-Diagnostics must not include raw locator values, URLs, source text, source body, snippets, titles, page keys, raw payloads, headers, secrets, stack traces, or public result fields.
+Diagnostics must not include raw locator values, URLs, source text, source body, snippets, excerpts, descriptions, titles, page keys, raw payloads, headers, secrets, stack traces, or public result fields.
 
 ## 7. Endpoint Strategy For Review
 
-This package does not choose a final endpoint. It defines the decision.
+This package chooses no implementation endpoint. It defines the tiered endpoint decision.
 
 Options:
 
 | Option | Shape | Pros | Risks |
 |---|---|---|---|
-| A: Wikimedia Core page endpoint | Continue `api.wikimedia.org/core/v1/...` for the first source-material fetch | Same host family as W2, simpler continuity | Core API deprecation starts July 2026; weaker long-term durability |
-| B: Wikimedia project-local REST endpoint | Use the documented project-local equivalent under the wiki domain, for example `/w/rest.php/v1/page/...` | Better aligned with Wikimedia deprecation guidance | New host allowlist and endpoint review required |
-| C: Add second provider first | Add a broader source provider before Source Material | Better coverage strategy | Too broad for first post-W2 Source Material gate; new provider security and cost review needed |
+| Tier 0: no new endpoint | Materialize bounded fields from the already-fetched provider-owned search candidate | Lowest cost/risk, no extra HTTP, proves locator/preview safety | Diagnostic-only; does not create real Source Material |
+| Tier 1A: project-local page summary | Fetch `{wiki_domain}/api/rest_v1/page/summary/{title}` from an approved materialized locator | First real bounded source-material fetch; same provider family; better aligned with Core API deprecation posture | New host/endpoint allowlist review required |
+| Tier 1B: Core page summary/description | Continue through `api.wikimedia.org/core/v1/...` for a summary-style source-material fetch | Same host family as W2, simpler continuity | Core API deprecation starts July 2026; weaker long-term durability |
+| Tier 2: full page/source/html | Fetch full page, source, or HTML | More complete content | Out of scope; parser/source-body risk; requires separate Steering approval |
+| Second provider first | Add a broader source provider before Source Material | Better coverage strategy | Too broad for first post-W2 Source Material gate; new provider security and cost review needed |
 
-Lead Developer recommendation: do not add a second provider in W3. Decide between A and B during Steering Board review. If endpoint durability is the dominant concern, prefer B as a same-provider-family endpoint change rather than adding a second provider.
+Lead Developer recommendation:
+
+1. Start with Tier 0 as diagnostic-only W3-A: safe locator plus bounded search-result preview materialization, no extra HTTP call, no source-material record.
+2. If Tier 0 is accepted but insufficient, use Tier 1A as the first real source-material fetch: bounded project-local page-summary fetch from approved materialized locators.
+3. Do not use Tier 2 in W3.
+4. Do not add a second provider in W3.
 
 Official references checked for review context:
 
 - `https://api.wikimedia.org/wiki/API_reference/Core/Search/Search_content`
-- `https://api.wikimedia.org/wiki/Core_REST_API/Reference/Pages/Page_object`
-- `https://api.wikimedia.org/wiki/Core_REST_API/Reference/Pages/Get_page_source`
-- `https://www.mediawiki.org/wiki/API:REST_API/Reference/en`
+- `https://www.mediawiki.org/wiki/API:REST_API/Reference`
+- `https://www.mediawiki.org/wiki/Page_Content_Service`
+- `https://wikitech.wikimedia.org/wiki/API_Portal/Deprecation`
 
 ## 8. Containment Boundaries
 
@@ -256,6 +326,7 @@ No implementation is approved by this package. If the Steering Board approves W3
 Likely new or changed files:
 
 - `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/locator-materialization.ts`
+- `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview.ts`
 - `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-material/source-material-record.ts`
 - `apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-owner.ts`
 - `apps/web/src/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-artifact-sink.ts`
@@ -279,8 +350,8 @@ Likely forbidden files:
 
 The later implementation package must explicitly decide whether W3 is split:
 
-- W3-A locator materialization only; or
-- W3-A plus W3-B bounded source-material fetch in one package.
+- W3-A / Tier 0 locator plus diagnostic preview materialization only; or
+- W3-A plus W3-B / Tier 1 bounded source-material fetch in one package.
 
 Default recommendation: split.
 
@@ -291,8 +362,11 @@ The later implementation package should require focused tests for:
 - W2 completed input admitted;
 - W2 blocked/damaged/stale input rejected;
 - public result JSON and admin W2 artifact rejected as execution input;
-- safe locator materialization succeeds only from approved provider candidate objects;
-- raw URL/provider URL/title/snippet/page-key leakage rejected from artifacts;
+- safe locator and preview materialization succeeds only from approved provider candidate objects;
+- current W2 artifacts do not expose usable title, URL, excerpt, description, or page-key fields;
+- raw URL/provider URL/title/excerpt/description/page-key leakage rejected from artifacts;
+- Tier 0 produces diagnostic-only preview output, not source-material records;
+- Tier 0 makes no extra HTTP call;
 - endpoint authority exactness;
 - final-address validation;
 - redirect denial;
@@ -301,6 +375,8 @@ The later implementation package should require focused tests for:
 - byte/time cap failure mapping;
 - no raw payload leakage;
 - source-material record body cap/truncation;
+- Tier 1 page-summary source body uses only an approved bounded field;
+- Tier 2 full page/source/html endpoints stay blocked;
 - artifact oversize skip;
 - admin route auth/no-store/error sanitization;
 - public V2 output remains damaged/precutover;
@@ -312,7 +388,9 @@ Boundary guards should prove:
 - public files do not import W3;
 - W3 owner does not import parser/cache/SR/storage/report/verdict/public/V1 modules;
 - W3 cannot use provider-returned URLs as request URLs;
-- W3 cannot call parser or EvidenceCorpus builders.
+- W3 cannot call parser or EvidenceCorpus builders;
+- Tier 0 cannot be reclassified as Source Material without an explicit contract change;
+- Tier 2 full page/source/html endpoints cannot be wired by the W3-A/W3-B package.
 
 ## 12. Proposed Post-Implementation Canary
 
@@ -336,28 +414,32 @@ Pass criteria:
 - public output remains `4.0.0-cb-precutover` / `blocked_precutover`;
 - no hidden markers leak publicly;
 - W2 still records completed hidden candidates;
-- W3 records locator-materialization success;
-- if W3-B fetch is approved, W3 records at least one hidden/admin-only source-material record and bounded fetch diagnostics;
+- if only W3-A / Tier 0 is approved, W3 records locator-materialization success and bounded diagnostic preview only, with zero source-material records;
+- if W3-B / Tier 1 fetch is approved, W3 records at least one hidden/admin-only source-material record from a bounded page-summary field and bounded fetch diagnostics;
 - parser, cache, SR, storage, EvidenceCorpus, EvidenceItems, report, verdict, warning, confidence, public write, ACS/direct URL, and V1 flags remain false.
 
 Stop criteria:
 
-- zero source-material records after an approved W3-B fetch package;
+- Tier 0 attempts to consume title, URL, excerpt, description, or page key from current W2 artifacts rather than provider-owned candidates;
+- Tier 0 creates source-material records instead of diagnostic previews;
+- zero source-material records after an approved W3-B / Tier 1 fetch package;
 - locator materialization requires raw URL or provider-returned URL use;
-- endpoint requires credentials, redirects, proxy behavior, raised byte caps, retries, or provider expansion;
+- endpoint requires full page/source/html content, credentials, redirects, proxy behavior, raised byte caps, retries, or provider expansion;
 - any raw payload/source/public leak is observed;
 - any downstream parser/EvidenceCorpus/report/verdict behavior appears.
 
 ## 13. Review Questions
 
 1. Is safe locator materialization mandatory before Source Material? Lead Developer recommendation: yes.
-2. Should W3 be split into W3-A materialization and W3-B fetch? Lead Developer recommendation: yes.
-3. Should Source Material use Wikimedia Core pages or project-local REST pages for the first fetch endpoint?
-4. Is one provider family sufficient for first Source Material, or should a second provider be required before fetch?
-5. Are hidden/admin-only source-material records allowed to contain bounded source body text, or should W3 first record diagnostics only?
-6. Are the no-storage/no-cache/no-SR constraints compatible with the desired live inspection workflow?
-7. Is one post-implementation canary enough for W3?
-8. Should boundary-guard/gate-register debt be trimmed before W3 implementation?
+2. Should W3 be split into W3-A / Tier 0 materialization and W3-B / Tier 1 fetch? Lead Developer recommendation: yes.
+3. Should Tier 0 search-result preview materialization be diagnostic-only? Lead Developer recommendation: yes.
+4. If Tier 0 is insufficient, should Tier 1 use project-local page summary as the first real fetch? Lead Developer recommendation: yes.
+5. Should Tier 2 full page/source/html be excluded from W3? Lead Developer recommendation: yes.
+6. Is one provider family sufficient for first Source Material, or should a second provider be required before fetch?
+7. Are hidden/admin-only source-material records allowed to contain bounded source body text from a page-summary field, or should W3 first record diagnostics only?
+8. Are the no-storage/no-cache/no-SR constraints compatible with the desired live inspection workflow?
+9. Is one post-implementation canary enough for W3?
+10. Should boundary-guard/gate-register debt be trimmed before W3 implementation?
 
 ## 14. Reviewer Prompt
 
@@ -368,10 +450,14 @@ Return `approve`, `modify`, or `reject`.
 Check whether:
 
 - W3 correctly requires safe locator materialization before source-material fetch;
+- W3 correctly states that current W2 artifacts do not expose usable titles, URLs, excerpts, descriptions, or page keys;
+- Tier 0 is correctly limited to bounded search-result materialization/preview diagnostics with no extra HTTP call and no source-material record;
+- Tier 1 is correctly framed as the first real Source Material fetch through a bounded page-summary endpoint if Tier 0 is insufficient;
+- Tier 2 full page/source/html fetch remains out of scope and requires separate Steering approval;
 - the accepted W2 inputs are precise enough and do not rely on public/admin artifacts as execution input;
 - the proposed source-material record contract is hidden/admin-only and bounded;
-- raw payload, URL, title/snippet/page-key, header, error, secret, parser, EvidenceCorpus, evidence, report/verdict/warning/confidence, cache/SR/storage, public, ACS/direct URL, and V1 paths remain closed;
-- endpoint strategy should use Wikimedia Core pages, project-local REST pages, or a different provider decision;
+- raw payload, URL, title/excerpt/description/page-key, header, error, secret, parser, EvidenceCorpus, evidence, report/verdict/warning/confidence, cache/SR/storage, public, ACS/direct URL, and V1 paths remain closed;
+- endpoint strategy should start with Tier 0 diagnostic preview, then use project-local REST page summary or another reviewed same-provider-family summary endpoint for Tier 1;
 - W3 should be split into W3-A and W3-B;
 - one post-implementation canary is appropriate and correctly counted against the 6-job tranche;
 - any decision should escalate to Captain before a source package is drafted.
