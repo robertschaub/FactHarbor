@@ -4125,3 +4125,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No second W3-B canary is authorized. W3-B does not approve Tier 2 full page/source/html fetch, parser execution, EvidenceCorpus/EvidenceItems, report/verdict/warning/confidence behavior, public exposure, second provider, retries, cache/SR/storage, ACS/direct URL, W2 endpoint migration, V1 work, or V1 cleanup.
 **Learnings:** W3-B successfully bridged from W2 candidates and W3-A materialized previews to one bounded hidden Source Material record: W2 completed with `9` candidates / `13742` bytes, W3-A produced `8` materialized previews, and W3-B completed one page-summary fetch with one bounded `extract` record.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-B_Live_Canary_Result.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-A Source Material To EvidenceCorpus Readiness Source Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W4-A_Source_Material_EvidenceCorpus_Readiness_Source_Package.md` as the next package after W3-B passed. Consolidated debate chose W4-A readiness/denial before W3-C source-material widening. Claude Opus and two reviewer agents returned `MODIFY`; required edits were applied, including mandatory W3-B runtime provenance, no source text in W4-A artifacts, explicit relationship to existing X7-B absence guards, and expanded verifier coverage.
+**Warnings:** This package authorizes no implementation and no live job. It must not create EvidenceCorpus, EvidenceItems, parser output, extraction input, report, verdict, warning, confidence, cache/SR/storage, public behavior, retries, provider expansion, W2 endpoint migration, ACS/direct URL behavior, V1 work, or V1 cleanup.
+**Learnings:** After W3-B, the immediate risk is accidental downstream interpretation of Source Material. W4-A creates the closed readiness/denial boundary before any additional fetch breadth or EvidenceCorpus work.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-A_Source_Package.md
