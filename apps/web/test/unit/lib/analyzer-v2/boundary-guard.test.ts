@@ -3679,11 +3679,13 @@ describe("analyzer-v2 boundary guard", () => {
       "proxyPolicy: \"none\"",
       "fieldName: \"pages\"",
       "decompressionPolicy: \"identity_only\"",
-      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 2",
+      "EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 6",
       "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_CANDIDATES_PER_QUERY = 3",
       "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS = 1500",
-      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 3000",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 9000",
       "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP = 32_768",
+      "reviewedQueryPlanningMaxQueryEntries",
       "query_count_exceeds_w2_cap",
       "candidate_to_source_material_gate_closed",
       "providerNetworkImplementationCommit: SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT",
@@ -3705,6 +3707,8 @@ describe("analyzer-v2 boundary guard", () => {
       }
     }
     for (const forbiddenText of [
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 2",
+      "SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 3000",
       "source-acquisition-network-transport",
       "source-acquisition-content-transport",
       "source-acquisition-content-parser",

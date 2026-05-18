@@ -37,6 +37,9 @@ import {
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
 import { sha256Json } from "@/lib/analyzer-v2/util";
 import {
+  EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
+} from "@/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope";
+import {
   buildSourceAcquisitionCandidateRuntimeClosedLoopAuthoritySnapshot,
   type SourceAcquisitionCandidateRuntimeClosedLoopDecision,
 } from "./candidate-runtime-closed-loop";
@@ -66,11 +69,15 @@ const WIKIMEDIA_ENDPOINT_ID = "ep_wikimedia_core_page_search";
 const WIKIMEDIA_HOSTNAME = "api.wikimedia.org";
 const WIKIMEDIA_SEARCH_PATH = "/core/v1/wikipedia/en/search/page";
 
-export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 2;
+export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 6;
 export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_CANDIDATES_PER_QUERY = 3;
 export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS = 1500;
-export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 3000;
+export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS = 9000;
 export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP = 32_768;
+
+const reviewedQueryPlanningMaxQueryEntries: typeof SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES =
+  EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES;
+void reviewedQueryPlanningMaxQueryEntries;
 
 export type SourceAcquisitionCandidateProviderNetworkAuthoritySnapshot = {
   readonly authorityVersion: typeof SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_LOOP_VERSION;

@@ -5,6 +5,8 @@ import {
   type SourceAcquisitionCandidateRuntimeClosedLoopDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-runtime-closed-loop";
 import {
+  SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+  SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS,
   buildSourceAcquisitionCandidateProviderNetworkAllowlistSnapshot,
   buildSourceAcquisitionCandidateProviderNetworkAuthoritySnapshot,
   buildSourceAcquisitionCandidateProviderNetworkBudgetSnapshot,
@@ -12,6 +14,9 @@ import {
   buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot,
   runSourceAcquisitionCandidateProviderNetworkLoop,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop";
+import {
+  EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
+} from "@/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope";
 import type {
   QueryPlanSourceAcquisitionHandoff,
   QueryPlanSourceAcquisitionHandoffDecision,
@@ -80,6 +85,10 @@ function queryEntry(index: number) {
     queryText: index === 1 ? POISON_QUERY_TEXT : `structural query ${index}`,
     targetAtomicClaimIds: ["AC_001"],
   };
+}
+
+function queryEntries(count: number) {
+  return Array.from({ length: count }, (_, index) => queryEntry(index + 1));
 }
 
 function handoff(overrides: Partial<QueryPlanSourceAcquisitionHandoff> = {}): QueryPlanSourceAcquisitionHandoff {
@@ -449,17 +458,117 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     }
   });
 
+  it("admits the reviewed six-query cap and keeps multi-query artifacts sanitized", async () => {
+    expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(6);
+    expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(
+      EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
+    );
+    expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS).toBe(9000);
+
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const maxQueryHandoff = handoff({
+      queryEntries: queryEntries(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES),
+    });
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(maxQueryHandoff),
+      sourceAcquisitionStartDecision: readyStartDecision(sourceRequest()),
+      sourceAcquisitionIntakeBoundary: intakeDecision({
+        queryEntryCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+      }),
+      candidateRuntimeClosedLoop: closedLoopDecision({
+        queryEntryCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+      }),
+      lowLevelTransport: fakeTransport(calls),
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(calls).toHaveLength(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES);
+    expect(decision).toMatchObject({
+      status: "candidate_provider_network_completed",
+      blockedReason: null,
+      damagedReason: null,
+      queryEntryCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+      telemetry: expect.objectContaining({
+        providerAttemptCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+        networkAttemptCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+        candidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 3,
+        totalCandidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 5,
+        structurallyDroppedCandidateCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES * 2,
+        fixedDollarCost: 0,
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        contentDereferenceCalled: false,
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        sourceReliabilityCalled: false,
+        sourceMaterialCreated: false,
+        evidenceCorpusCreated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(decision.queryOutcomeSummaries).toHaveLength(
+      SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+    );
+    expect(decision.queryOutcomeSummaries.map((summary) => summary.candidateProviderNetworkQueryRef)).toEqual([
+      "W2Q_001",
+      "W2Q_002",
+      "W2Q_003",
+      "W2Q_004",
+      "W2Q_005",
+      "W2Q_006",
+    ]);
+    expect(decision.telemetry.networkAttempts).toHaveLength(
+      SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+    );
+
+    for (const forbidden of [
+      POISON_QUERY_TEXT,
+      POISON_QUERY_ID,
+      POISON_LANGUAGE_RATIONALE,
+      POISON_PROVIDER_PAYLOAD,
+      "structural query",
+      "EQ_002",
+      "EQ_006",
+      "Raw Title",
+      "Raw excerpt",
+      "Raw_Key",
+      "queryText",
+      "queryId",
+      "sourceLanguagePolicy",
+      "providerAttemptId",
+      "sk_test",
+      "https://example.invalid",
+      "EvidenceItem",
+      "EvidenceCorpus",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidence",
+      "cacheKey",
+      "sourceReliabilityScore",
+      "parsedContent",
+    ]) {
+      expect(serialized).not.toContain(forbidden);
+    }
+  });
+
   it("blocks before network execution when prerequisites or exact W2 snapshots are invalid", async () => {
     const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
     const tooManyQueries = handoff({
-      queryEntries: [queryEntry(1), queryEntry(2), queryEntry(3)],
+      queryEntries: queryEntries(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES + 1),
     });
 
     await expect(runSourceAcquisitionCandidateProviderNetworkLoop({
       handoffDecision: readyHandoffDecision(tooManyQueries),
       sourceAcquisitionStartDecision: readyStartDecision(sourceRequest()),
-      sourceAcquisitionIntakeBoundary: intakeDecision({ queryEntryCount: 3 }),
-      candidateRuntimeClosedLoop: closedLoopDecision({ queryEntryCount: 3 }),
+      sourceAcquisitionIntakeBoundary: intakeDecision({
+        queryEntryCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES + 1,
+      }),
+      candidateRuntimeClosedLoop: closedLoopDecision({
+        queryEntryCount: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES + 1,
+      }),
       lowLevelTransport: fakeTransport(calls),
     })).resolves.toMatchObject({
       status: "blocked_pre_candidate_provider_network",
@@ -631,7 +740,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
         {
           providerId: "wikimedia_core",
           endpointKind: "candidate_search_api_future",
-          maxQueries: 2,
+          maxQueries: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
           timeoutMs: 1500,
           credentialsState: "not_required_for_approved_network_provider",
         },
@@ -648,17 +757,17 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       maxAttemptsPerQuery: 1,
       maxCandidateRecordsPerQuery: 3,
       providerTimeoutMs: 1500,
-      totalCandidateAcquisitionTimeoutMs: 3000,
+      totalCandidateAcquisitionTimeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS,
       cancellationState: "not_requested",
       retryPolicy: "none",
     });
     expect(networkBudget).toMatchObject({
       maxProvidersPerRun: 1,
-      maxQueriesPerProvider: 2,
+      maxQueriesPerProvider: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
       maxAttemptsPerQuery: 1,
       maxCandidatesPerQuery: 3,
       perQueryTimeoutMs: 1500,
-      totalNetworkTimeoutMs: 3000,
+      totalNetworkTimeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS,
       retryPolicy: "none",
       noCache: true,
       noStorage: true,
