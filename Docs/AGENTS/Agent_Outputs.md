@@ -7,6 +7,13 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-B EvidenceCorpus Source Material Admission Design Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W4-B_EvidenceCorpus_Source_Material_Admission_Design_Package.md` after W4-A commit `b7fa607b`. Three reviewers converged on W4-B before W3-C, then returned `MODIFY`; edits were applied to make W4-C hash/ref-only by default, keep source text out of corpus-admission artifacts, remove runner/live escape hatches, and define W3-C trigger criteria. Claude Opus was attempted twice through the required wrapper but timed out with no review result.
+**Warnings:** W4-B is review-only. It authorizes no implementation, live job, W3-C sweep, parser, EvidenceCorpus creation, EvidenceItems, LLM extraction input, report/verdict/warning/confidence/public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup.
+**Learnings:** More source-material breadth is useful only after the admission contract defines what distribution evidence matters; otherwise it risks spending live budget and biasing corpus design around incidental Wikimedia summary behavior.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-B_Design_Package.md
+
+---
 ### 2026-05-18 | Maintainability / Overengineering | Codex (GPT-5) | V2 W2 Balance Progress Review -- [Standard] [open-items: yes]
 **For next agent:** Balance is `mixed_needs_steering`. W2 is better balanced than the prior passive/no-IO phase because the source path remains hidden and bounded, and diagnostics converged from unknown transport failure to an RP1-observed unmapped standard Node-style code. Steering is still needed because `d446a751..fd963941` added ~11k lines, boundary/gate verifiers are now sizable subsystems, and live W2 still has zero candidates/bytes/source/report/verdict value.
 **Warnings:** Do not continue enum-by-enum diagnostics without a concrete DIAG5 unlock target and retirement/consolidation criteria. Do not quote or reconstruct RP1 raw code. Boundary guard is healthy but heavy: focused W2 tests passed quickly, gate-register self-test passed, and boundary guard passed locally but took about 87 seconds.
