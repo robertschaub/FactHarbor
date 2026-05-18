@@ -134,6 +134,10 @@ const evidenceLifecycleEvidenceCorpusShellPath = path.resolve(
   evidenceLifecycleEvidenceCorpusRoot,
   "evidence-corpus-shell.ts",
 );
+const evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath = path.resolve(
+  evidenceLifecycleEvidenceCorpusRoot,
+  "evidence-corpus-extraction-readiness-denial.ts",
+);
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
 const evidenceLifecycleSourceMaterialLocatorMaterializationPath = path.resolve(
@@ -244,6 +248,14 @@ const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionPro
 const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellOwnerPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-evidence-corpus-shell-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-evidence-corpus-shell-provenance.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -4816,6 +4828,7 @@ describe("analyzer-v2 boundary guard", () => {
       parseSource(analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellOwnerPath),
     ).sort();
     expect(shellOwnerImports).toEqual([
+      "./evidence-lifecycle-evidence-corpus-shell-provenance",
       "./evidence-lifecycle-evidence-corpus-source-material-admission-provenance",
       "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-shell",
     ]);
@@ -4823,6 +4836,10 @@ describe("analyzer-v2 boundary guard", () => {
     const shellContent = readFileSync(evidenceLifecycleEvidenceCorpusShellPath, "utf8");
     const admissionProvenanceContent = readFileSync(
       analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionProvenancePath,
+      "utf8",
+    );
+    const shellProvenanceContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellProvenancePath,
       "utf8",
     );
     const shellOwnerContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellOwnerPath, "utf8");
@@ -4857,6 +4874,22 @@ describe("analyzer-v2 boundary guard", () => {
         violations.push(`W4-C admission provenance missing required text ${requiredText}`);
       }
     }
+    for (const requiredText of [
+      "markEvidenceLifecycleEvidenceCorpusShellRuntimeOwnedDecision",
+      "new WeakMap<object, string>()",
+      "sha256Json(decision)",
+      "recordedHash !== sha256Json(value)",
+      "mutated_after_provenance",
+      "evidence_item_extraction_gate_closed",
+      "blocked_precutover",
+    ]) {
+      if (!shellProvenanceContent.includes(requiredText)) {
+        violations.push(`W4-D shell provenance missing required text ${requiredText}`);
+      }
+    }
+    if (!shellOwnerContent.includes("markEvidenceLifecycleEvidenceCorpusShellRuntimeOwnedDecision")) {
+      violations.push("W4-D shell owner does not mark W4-D shell provenance");
+    }
     for (const forbiddenText of [
       "runEvidenceLifecycleSourceMaterialPageSummaryDecision",
       "readEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision",
@@ -4872,6 +4905,7 @@ describe("analyzer-v2 boundary guard", () => {
       if (
         shellContent.includes(forbiddenText)
         || admissionProvenanceContent.includes(forbiddenText)
+        || shellProvenanceContent.includes(forbiddenText)
         || shellOwnerContent.includes(forbiddenText)
       ) {
         violations.push(`W4-D EvidenceCorpus shell contains forbidden text ${forbiddenText}`);
@@ -4882,9 +4916,136 @@ describe("analyzer-v2 boundary guard", () => {
       for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
         if (
           specifier.includes("evidence-lifecycle-evidence-corpus-shell-owner")
+          || specifier.includes("evidence-lifecycle-evidence-corpus-shell-provenance")
           || specifier.includes("evidence-lifecycle-evidence-corpus-source-material-admission-provenance")
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports W4-D/W4-C provenance module ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps X7-W4-E EvidenceCorpus extraction readiness denial hidden, W4-D-owned, and denial-only", () => {
+    const violations: string[] = [];
+
+    for (const requiredPath of [
+      evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath,
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellProvenancePath,
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialOwnerPath,
+    ]) {
+      expect(existsSync(requiredPath)).toBe(true);
+    }
+
+    const denialImports = collectModuleSpecifiers(
+      parseSource(evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath),
+    ).sort();
+    expect(denialImports).toEqual(["./evidence-corpus-shell"]);
+    for (const specifier of denialImports) {
+      if (isAnalyzerV2RuntimeImport(evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath, specifier)) {
+        violations.push(`W4-E pure denial imports runtime module ${specifier}`);
+      }
+      if (isV1AnalyzerImport(evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath, specifier)) {
+        violations.push(`W4-E pure denial imports V1 analyzer ${specifier}`);
+      }
+      if (
+        isProviderSdkImport(specifier)
+        || isCacheIoImport(specifier)
+        || isSourceReliabilityImport(specifier)
+        || isSearchFetchProviderImport(specifier)
+        || isNetworkParserImport(specifier)
+      ) {
+        violations.push(`W4-E pure denial imports forbidden dependency ${specifier}`);
+      }
+    }
+
+    const shellProvenanceImports = collectModuleSpecifiers(
+      parseSource(analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellProvenancePath),
+    ).sort();
+    expect(shellProvenanceImports).toEqual([
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-shell",
+      "node:crypto",
+    ]);
+
+    const denialOwnerImports = collectModuleSpecifiers(
+      parseSource(analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialOwnerPath),
+    ).sort();
+    expect(denialOwnerImports).toEqual([
+      "./evidence-lifecycle-evidence-corpus-shell-provenance",
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-extraction-readiness-denial",
+    ]);
+
+    const denialContent = readFileSync(evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath, "utf8");
+    const shellProvenanceContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusShellProvenancePath,
+      "utf8",
+    );
+    const denialOwnerContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialOwnerPath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "v2.evidence-lifecycle.evidence-corpus-extraction-readiness-denial.x7w4e",
+      "extraction_denied_shell_only",
+      "extraction_denied_corpus_not_runtime_owned",
+      "extraction_denied_corpus_post_mark_mutated",
+      "extraction_denied_corpus_kind_unsupported",
+      "evidence_item_extraction_denied_shell_only",
+      "publicPointerExposure: \"forbidden\"",
+      "semanticExtractionAuthorized: false",
+      "evidenceItemExtractionAuthorized: false",
+      "extractionInput: null",
+      "evidenceItems: []",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!denialContent.includes(requiredText)) {
+        violations.push(`W4-E pure denial missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "new WeakMap<object, string>()",
+      "sha256Json(decision)",
+      "recordedHash !== sha256Json(value)",
+      "mutated_after_provenance",
+      "evidence_item_extraction_gate_closed",
+      "blocked_precutover",
+    ]) {
+      if (!shellProvenanceContent.includes(requiredText)) {
+        violations.push(`W4-E shell provenance missing required text ${requiredText}`);
+      }
+    }
+    for (const forbiddenText of [
+      "runEvidenceLifecycleSourceMaterialPageSummaryDecision",
+      "readEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision",
+      "readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeOwnedDecision",
+      "readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision",
+      "page-summary-source-material",
+      "page-summary-fetch-locator",
+      "fetch(",
+      "EvidenceItemBuilder",
+      "reportMarkdown:",
+      "truthPercentage:",
+      "verdictGenerated: true",
+      "confidenceGenerated: true",
+      "publicSurfaceWritten: true",
+    ]) {
+      if (
+        denialContent.includes(forbiddenText)
+        || shellProvenanceContent.includes(forbiddenText)
+        || denialOwnerContent.includes(forbiddenText)
+      ) {
+        violations.push(`W4-E extraction readiness denial contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    for (const sourcePath of publicSurfaceFiles) {
+      for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+        if (
+          specifier.includes("evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner")
+          || specifier.includes("evidence-lifecycle-evidence-corpus-shell-provenance")
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports W4-E/W4-D runtime module ${specifier}`);
         }
       }
     }
@@ -8440,6 +8601,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(evidenceCorpusFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/build-decision.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-extraction-readiness-denial.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-shell.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-admission.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/source-material-guard.ts",
@@ -8520,11 +8682,14 @@ describe("analyzer-v2 boundary guard", () => {
           evidenceLifecycleEvidenceCorpusSourceMaterialReadinessGuardPath,
           evidenceLifecycleEvidenceCorpusSourceMaterialAdmissionPath,
           evidenceLifecycleEvidenceCorpusShellPath,
+          evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath,
         ].map(toPosix).includes(toPosix(sourcePath));
         const isApprovedW4AFlagTerm = isW4AReadinessFile && [
           "warning",
           "verdict",
+          "truthPercentage",
           "confidence",
+          "reportMarkdown",
           "sourceReliability",
         ].includes(forbiddenTerm);
         if (sourceContent.includes(forbiddenTerm)) {

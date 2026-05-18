@@ -6,6 +6,9 @@ import {
   inspectEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnership,
   readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision,
 } from "./evidence-lifecycle-evidence-corpus-source-material-admission-provenance";
+import {
+  markEvidenceLifecycleEvidenceCorpusShellRuntimeOwnedDecision,
+} from "./evidence-lifecycle-evidence-corpus-shell-provenance";
 
 export type EvidenceLifecycleEvidenceCorpusShellDecision = EvidenceCorpusShellDecision;
 
@@ -17,8 +20,8 @@ export function buildEvidenceLifecycleEvidenceCorpusShellDecision(params: {
   const runtimeOwnedAdmission =
     readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision(params.sourceMaterialAdmission);
 
-  return buildEvidenceCorpusShell({
+  return markEvidenceLifecycleEvidenceCorpusShellRuntimeOwnedDecision(buildEvidenceCorpusShell({
     sourceMaterialAdmission: runtimeOwnedAdmission ?? params.sourceMaterialAdmission,
     runtimeOwnership,
-  });
+  }));
 }
