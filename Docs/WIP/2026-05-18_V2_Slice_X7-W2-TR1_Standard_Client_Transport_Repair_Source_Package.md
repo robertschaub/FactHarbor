@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-TR1 Standard-Client Transport Repair Source Package
 
 **Date:** 2026-05-18
-**Status:** Implementation verified; commit and one post-repair canary remain
+**Status:** Implementation committed; post-repair canary failed pass bar; pivot package prepared
 **Owner:** Lead Developer / Captain Deputy
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS6_DIAG5_Taxonomy_Live_Result.md`
 **Baseline:** `8263164a` (`docs: record v2 w2 ls6 live result`)
@@ -334,8 +334,39 @@ Verifier results:
 | `node scripts/validate-v2-gate-register.mjs --self-test` | PASS |
 | `git diff --check` | PASS |
 
-## 16. Post-Repair Canary Status
+## 16. Post-Repair Canary Result
 
-The post-repair live canary is not yet run in this implementation package. It may run only after this TR1 implementation is committed, runtime is refreshed from that commit, endpoint status is re-checked, route preflight passes, and the worktree remains clean through the required idle checkpoint.
+TR1 implementation was committed at `dcd083ee58ee507ccfd10292b4dd4d2b9cd4e2bd` (`fix: repair v2 w2 standard transport path`). Runtime was refreshed from that commit, official Wikimedia endpoint documentation was re-checked, V2 runtime gates and hidden route preflight passed, and the worktree stayed clean through the required idle checkpoint.
 
-If the canary still records zero bytes and zero hidden candidates, stop and prepare an endpoint/client pivot package for Steering Board review. Do not patch the custom DNS stack inside TR1.
+Exactly one post-repair live canary was submitted with the approved input:
+
+```text
+Using hydrogen for cars is more efficient than using electricity
+```
+
+Canary job `fcf5135297e449468e881e957d89464d` reached `SUCCEEDED`, first prepared `pipeline: claimboundary-v2`, and public output remained `4.0.0-cb-precutover` / `blocked_precutover` with no hidden-marker leak.
+
+Hidden W2 result:
+
+| Field | Observed |
+|---|---|
+| Runtime commit | `dcd083ee58ee507ccfd10292b4dd4d2b9cd4e2bd` |
+| W2 status | `candidate_provider_network_damaged_structural` |
+| W2 damaged reason | `candidate_runtime_query_coverage_invalid` |
+| Query entries | `3` |
+| Provider attempts | `3` |
+| Network attempts | `3` |
+| Candidate count | `0` |
+| Total compressed bytes | `0` |
+| Total decompressed bytes | `0` |
+| Total bytes | `0` |
+| Attempt status | all `search_failure` |
+| Attempt stop reason | all `compressed_byte_cap_exceeded` |
+| Attempt phase | all `response_stream` |
+| Downstream gate | `candidate_to_source_material_gate_closed` |
+
+The standard-client change did improve the failure point: W2 no longer stops at the earlier address-selection failure, and provider-network execution reaches the response stream. It still fails the TR1 pass bar because W2 records zero bytes and zero hidden structural candidates.
+
+Classification: `PIVOT_REQUIRED_X7_W2_TR1_RESPONSE_STREAM_BYTE_CAP_ZERO_CANDIDATES`.
+
+Required stop action is now active: do not patch the custom DNS stack inside TR1, do not run another TR1 canary, and do not broaden into source material or report behavior. The next artifact is `Docs/WIP/2026-05-18_V2_Slice_X7-W2-PIV1_Endpoint_Client_Response_Size_Pivot_Package.md`.
