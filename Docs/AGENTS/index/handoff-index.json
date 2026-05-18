@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T01:06:11.425Z",
-  "count": 649,
+  "generatedAt": "2026-05-18T01:20:36.131Z",
+  "count": 650,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14153,6 +14153,29 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS1_Candidate_Provider_Network_Live_Smoke_Package.md` as the active W2 live-smoke execution package once its docs-only commit lands. The package is already reviewer-approved; execution must still obey its verifiers and stop rules."
+    },
+    {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Result.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w2-ls2",
+        "live",
+        "result"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS2_Post_QC3_Candidate_Provider_Network_Live_Result.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Result.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start with `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS2_Post_QC3_Candidate_Provider_Network_Live_Result.md`. The next package should diagnose W2 transport failure and W2 coverage-status semantics without broadening source execution or running another live job by default. Debate/review before any code cha"
     },
     {
       "file": "2026-05-18_Lead_Developer_V2_X7-W2-LS2_Live_Smoke_Package.md",
