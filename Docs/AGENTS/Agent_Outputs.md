@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG2 Sanitized Transport Diagnostics Source Package -- [Significant] [open-items: yes]
+**For next agent:** DIAG2 is Claude Opus-reviewed and approved for implementation in `Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG2_Sanitized_Transport_Diagnostics_Source_Package.md`. It may only propagate hidden W2 network diagnostic fields and add `selectedAddressFamily` plus structural `transportFailureClass`; no live jobs, source material/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/public behavior, prompt/config/model/schema/provider-policy edits, ACS/direct URL, or V1 work.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG2_Source_Package.md
+
+---
 ### 2026-05-17 | Lead Architect / Captain Deputy | Codex (GPT-5.5) | V2 X7-N-D Live-Smoke Result -- [Significant] [open-items: yes]
 **For next agent:** X7-N-D passed its narrow clean-provenance objective on package/runtime `92c9fff6`: job `fbccbbc9dc234991bb74c0990664e8ba` used the exact legal/fair-trial Captain input, first prepared `pipeline: claimboundary-v2`, recorded clean executed hash `92c9fff60e0d5f745667d793bbe149d7ef844e1f`, reached `SUCCEEDED`, wrote accepted internal Claim Understanding and X7-J intake artifacts, kept public output `4.0.0-cb-precutover` / `blocked_precutover` with `report_damaged`, and leaked no hidden markers in non-admin public inspection. X7-N-D does not approve truth/legal/fairness/report conclusions, live expansion, Query Planning execution, source/provider/parser execution, public cutover, or V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-17_Lead_Architect_V2_X7-N-D_Live_Smoke_Result.md
