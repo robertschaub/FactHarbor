@@ -3852,3 +3852,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** QC2 does not authorize W2 cap changes by itself, live jobs, Source Acquisition/W2/provider-network/content/parser/cache/SR/storage/EvidenceCorpus/report/verdict/warning/confidence behavior, public/API/UI changes, prompt/config/schema/model/provider policy edits, ACS/direct URL, V1 work/cleanup, or broader provider expansion.
 **Learnings:** Align downstream proof caps with upstream accepted-output contracts before spending provider-network live jobs; otherwise the smoke tests the cap mismatch rather than provider behavior.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC2_Query_Planning_Distribution_Diagnostic.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-QC3 W2 Cap Alignment Source Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared deputy-approved `Docs/WIP/2026-05-18_V2_Slice_X7-W2-QC3_W2_Cap_Alignment_Source_Package.md`. QC3 may align W2 hidden candidate-provider-network admission from cap `2` to reviewed cap `6`, with total candidate/network timeouts `9000ms`, while preserving one provider, hidden-only artifacts, and all no-source-material/no-public/no-downstream constraints.
+**Warnings:** QC3 implementation must not edit runtime validators, `source-acquisition-network-*`, artifact route/sink, prompts/configs/schemas/model policy, public surfaces, parser/content/source-material/cache/SR/storage/EvidenceCorpus/report/verdict/warning/confidence files, V1 files, or package/lock files. No live jobs are authorized until a separate LS2-style package.
+**Learnings:** Cap alignment should be fixed to a reviewed value, not silently imported as an open-ended widening of network authority.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-QC3_Source_Package.md

@@ -6,6 +6,8 @@
 **Parent package:** `Docs/WIP/2026-05-17_V2_Slice_X7-W1C_Source_Acquisition_Path_Consolidation_And_Pre_IO_Fence_Package.md`
 **Baseline:** `0e6a8b37` (`fix: align v2 provider network provenance`)
 
+> **2026-05-18 QC3 addendum:** X7-W2-QC2 measured accepted Query Planning query-entry counts of `2`, `5`, and `3`, showing that the original W2 cap of `2` was too narrow for the upstream accepted-output contract. `Docs/WIP/2026-05-18_V2_Slice_X7-W2-QC3_W2_Cap_Alignment_Source_Package.md` supersedes this package's original query-cap and total-timeout values only: W2 cap `2` / total timeout `3000ms` become reviewed W2 cap `6` / total timeout `9000ms`. All W2 no-source-material, no-content-dereference, no-parser, no-cache/SR/storage, no-evidence/report/verdict/warning/confidence/public, one-provider, and no-live-job constraints remain unchanged.
+
 ## 1. Purpose
 
 X7-W1B proved that the product V2 route can exercise the existing candidate runtime through a product-owned closed local no-IO provider boundary.
