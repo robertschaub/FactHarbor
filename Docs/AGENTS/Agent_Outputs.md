@@ -7,6 +7,33 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-18 | Maintainability / Overengineering | Codex (GPT-5) | V2 W2 Balance Progress Review -- [Standard] [open-items: yes]
+**For next agent:** Balance is `mixed_needs_steering`. W2 is better balanced than the prior passive/no-IO phase because the source path remains hidden and bounded, and diagnostics converged from unknown transport failure to an RP1-observed unmapped standard Node-style code. Steering is still needed because `d446a751..fd963941` added ~11k lines, boundary/gate verifiers are now sizable subsystems, and live W2 still has zero candidates/bytes/source/report/verdict value.
+**Warnings:** Do not continue enum-by-enum diagnostics without a concrete DIAG5 unlock target and retirement/consolidation criteria. Do not quote or reconstruct RP1 raw code. Boundary guard is healthy but heavy: focused W2 tests passed quickly, gate-register self-test passed, and boundary guard passed locally but took about 87 seconds.
+**Learnings:** The next maintainability checkpoint is whether DIAG5 either produces a narrow mapping/repair or forces an endpoint/client design pivot; further scaffolding without capability unlock should be blocked.
+-> Docs/AGENTS/Handoffs/2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md
+
+---
+### 2026-05-18 | Architecture/Sequencing | Codex (GPT-5) | V2 X7-W2 Fresh Progress Review -- [Standard] [open-items: yes]
+**For next agent:** Assessed development since `d446a751..HEAD` as `mixed_needs_steering`: W2 is more value-bearing than prior passive gates because it implemented a hidden product-internal Wikimedia candidate-provider network path, corrected the upstream query-cap mismatch through QC2/QC3, and preserved public/downstream containment. The same sequence then shifted into DIAG1-DIAG4 plus LS3-LS5/RP1 diagnostic narrowing without provider success, candidates, bytes, source material, EvidenceCorpus, verdict/report behavior, or cost-quality evidence.
+**Warnings:** Do not spend another live W2 job or add another broad diagnostic package until DIAG5 is framed as the smallest mapping/repair decision with explicit stop criteria and a concrete unlock target. Keep raw-code handling bounded; do not quote or reconstruct RP1's observed code from memory or local output.
+**Learnings:** Steering should preserve the good gate discipline but require diagnostic exit criteria: after DIAG5, either map and fix the standard Node-style code, retire/merge obsolete W2 diagnostics, or switch to endpoint/client design review rather than continuing enum-by-enum probing.
+
+---
+### 2026-05-18 | Maintainability / Overengineering | Codex (GPT-5) | V2 W2 Balance Progress Review -- [Standard] [open-items: yes]
+**For next agent:** Reviewed W2 progress from a maintainability/overengineering lens. Verdict is `mixed_needs_steering`: W2 is better balanced than passive no-IO slices because diagnostics converged to an RP1-observed unmapped standard Node-style code, but the accumulated W2/guard/gate surface is heavy and should now unlock concrete capability or trigger a pivot.
+**Warnings:** DIAG5 should be narrow with explicit stop criteria. After DIAG5, require candidate-provider success evidence or a pivot/retirement plan for accumulated diagnostics. Do not continue enum-by-enum diagnostics without an unlock target and do not quote or reconstruct the RP1 raw code.
+**Learnings:** The maintainability test is no longer whether one more diagnostic field is safe; it is whether DIAG5 removes uncertainty and enables a concrete next capability.
+-> Docs/AGENTS/Handoffs/2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG5 RP1-Observed Node-Code Taxonomy Source Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG5_RP1_Observed_Node_Code_Taxonomy_Source_Package.md` after RP1. Claude Opus approved DIAG5 as a narrow mapping package that may promote the RP1-observed raw literal only into source/test mapping code while docs/product/admin/public artifacts stay raw-literal-free.
+**Warnings:** DIAG5 source edits are allowed only after this package is committed and `/debt-guard` compact path is applied. It authorizes no live jobs, endpoint/client repair, provider expansion, source material/content/parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, ACS/direct URL, V1 work/cleanup, retries, prompt/config/model edits, package/lockfile edits, or additional probes.
+**Learnings:** The generic category is `address_validation_failure`, mapped to `transportFailurePhase: address_selection`; source/test code is the only approved place for the raw literal.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG5_Source_Package.md
+
+---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-RP1 Local Raw-Code Probe Result -- [Significant] [open-items: yes]
 **For next agent:** Closed RP1 as `PASS_X7_W2_RP1_OBSERVED_UNMAPPED_STANDARD_NODE_CODE`. The one local transient product-parity `https.request` probe reproduced the pre-response failure; committed docs record only `[RAW_CODE_OBSERVED_LOCALLY_NOT_RECORDED]`, DNS count `1`, selected family `ipv4`, and the categorical outcome.
 **Warnings:** The observed raw code must not be quoted or reconstructed in docs/chat from RP1. RP1 authorizes no DIAG5 implementation, live jobs, source material/content/parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, provider expansion, endpoint redesign, ACS/direct URL, V1 work/cleanup, retries, additional probes, or source/test/prompt/config/schema/model edits.
@@ -3979,3 +4006,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** LS5 proves only hidden diagnostic observation. DIAG4 did not classify the live failure: all three W2 attempts still show `nodeErrorCodeCategory: other_known`, `transportFailurePhase: unknown_phase`, and `transportFailureClass: unknown_transport_failure`, with zero candidates and zero bytes. Do not rerun LS5 or repair inside it. No source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, provider expansion, ACS/direct URL, V1 work/cleanup, or additional live job is authorized.
 **Learnings:** The next evidence need is no longer another enum guess. The next package should decide whether to run a strictly local-only raw-code probe outside product/admin artifacts, or shift to endpoint/client design review.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-LS5_Live_Result.md
+
+---
+### 2026-05-18 | Cost-Quality / Report-Quality | Codex (GPT-5) | V2 X7-W2 Cost-Quality Report-Quality Review -- [Standard] [open-items: yes]
+**For next agent:** Balance is `mixed_needs_steering`. W2 improved over passive/no-IO work by implementing a hidden product-route Wikimedia candidate-provider network path, adding bounded cost/timing/outcome/byte telemetry, aligning W2 cap to accepted Query Planning output, and using live diagnostics to narrow a real transport failure. It still produced zero live candidates/bytes/source material/EvidenceCorpus/evidence/verdict/report behavior; current results are diagnostic, not report-quality evidence.
+**Warnings:** Do not spend another live W2 job until a reviewed DIAG5 mapping/repair package has explicit stop criteria and a concrete success target. Keep RP1 raw-code handling bounded; do not quote or reconstruct the raw code. Model swaps remain unsupported because V2 executable model authority still depends on static activation snapshots/exact validators.
+**Learnings:** Cost-quality steering should allow one narrow DIAG5 mapping/repair step because RP1 made the blocker evidence-backed, then require either provider-network candidate success or an endpoint/client design pivot. Further enum-only diagnostics without an unlock target are diminishing-return spend.

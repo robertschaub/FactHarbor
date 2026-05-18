@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-18T04:41:40.143Z",
-  "count": 665,
+  "generatedAt": "2026-05-18T04:55:11.944Z",
+  "count": 667,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -14279,6 +14279,29 @@
       "summary": "Start with `Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG4_Node_Error_Category_Taxonomy_Source_Package.md`. The package is approved; implement only the bounded enum/type and mapping changes in `source-acquisition-network-envelope.ts` and `source-acquisition-network-transport.ts`, with focused synthetic te"
     },
     {
+      "file": "2026-05-18_Lead_Developer_V2_X7-W2-DIAG5_Source_Package.md",
+      "date": "2026-05-18",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w2-diag5",
+        "source",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-18_V2_Slice_X7-W2-DIAG5_RP1_Observed_Node_Code_Taxonomy_Source_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG5_Source_Package.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Before source edits, apply `/debt-guard` compact path. Then implement only inside the approved source/test envelope and run the package verifier set. Do not commit raw literal in docs, handoffs, status, Agent_Outputs, or commit messages; source/test code is the only approved raw-literal location."
+    },
+    {
       "file": "2026-05-18_Lead_Developer_V2_X7-W2-LS1_Live_Result.md",
       "date": "2026-05-18",
       "roles": [
@@ -14684,6 +14707,24 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Draft a separate DIAG5 taxonomy/mapping source package. Before any source edit, debate/review whether the RP1-observed standard Node-style code may be promoted into a source/test literal and how to document that without raw-code leakage into product/admin/public artifacts. Keep W2 completion semanti"
+    },
+    {
+      "file": "2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md",
+      "date": "2026-05-18",
+      "roles": [
+        "maintainability",
+        "overengineering"
+      ],
+      "topics": [
+        "v2",
+        "progress",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-18_Maintainability_Overengineering_V2_Progress_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `fd963941`. Relevant anchors: `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-factory.t"
     }
   ]
 }
