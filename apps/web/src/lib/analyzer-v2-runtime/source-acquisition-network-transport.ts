@@ -59,6 +59,23 @@ export type SourceAcquisitionNetworkLowLevelTransport = {
   readonly now?: () => number;
 };
 
+export type SourceAcquisitionNetworkCandidateProjectionInput = {
+  readonly providerId: string;
+  readonly endpointId: string;
+  readonly queryId: string;
+  readonly retrievalPolicyKey: string;
+  readonly providerAttemptId: string;
+  readonly providerAttemptOrdinal: number;
+  readonly providerRank: number;
+  readonly candidateOrdinal: number;
+  readonly sourceCandidateRef: string;
+  readonly candidate: unknown;
+};
+
+export type SourceAcquisitionNetworkCandidateProjectionHook = (
+  input: SourceAcquisitionNetworkCandidateProjectionInput,
+) => void;
+
 export type SourceAcquisitionNetworkTransportRequest = {
   readonly authority: SourceAcquisitionNetworkAuthority;
   readonly endpoint: SourceAcquisitionNetworkEndpointSnapshot;
@@ -66,6 +83,7 @@ export type SourceAcquisitionNetworkTransportRequest = {
   readonly request: SourceAcquisitionNetworkRequestEnvelope;
   readonly signal?: AbortSignal;
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
+  readonly candidateProjectionHook?: SourceAcquisitionNetworkCandidateProjectionHook;
 };
 
 const IPV6_MAX = (1n << 128n) - 1n;
@@ -368,6 +386,44 @@ function blocked(params: {
       redirectDenied: params.redirectDenied,
     }),
   };
+}
+
+function sourceCandidateRef(providerAttemptId: string, rank: number): string {
+  return `OPAQUE_SOURCE_CANDIDATE_${providerAttemptId}_${rank}`;
+}
+
+function emitCandidateProjectionHooks(params: {
+  readonly input: SourceAcquisitionNetworkTransportRequest;
+  readonly candidates: readonly unknown[];
+}): void {
+  if (!params.input.candidateProjectionHook) {
+    return;
+  }
+
+  const candidateLimit = Math.min(
+    params.candidates.length,
+    params.input.budget.maxCandidatesPerQuery,
+  );
+  const providerAttemptOrdinal = Number(params.input.request.providerAttemptId.replace("ATT_", ""));
+  for (let index = 0; index < candidateLimit; index += 1) {
+    try {
+      const providerRank = index + 1;
+      params.input.candidateProjectionHook({
+        providerId: params.input.endpoint.providerId,
+        endpointId: params.input.endpoint.endpointId,
+        queryId: params.input.request.queryId,
+        retrievalPolicyKey: params.input.request.retrievalPolicyKey,
+        providerAttemptId: params.input.request.providerAttemptId,
+        providerAttemptOrdinal,
+        providerRank,
+        candidateOrdinal: providerRank,
+        sourceCandidateRef: sourceCandidateRef(params.input.request.providerAttemptId, providerRank),
+        candidate: params.candidates[index],
+      });
+    } catch {
+      // Candidate preview projection is observational and must not affect provider/network behavior.
+    }
+  }
 }
 
 function parseIpv4(address: string): number | null {
@@ -1072,6 +1128,11 @@ export async function executeSourceAcquisitionNetworkTransport(
         decompressedBytes: body.body.byteLength,
       });
     }
+
+    emitCandidateProjectionHooks({
+      input,
+      candidates: candidateArray,
+    });
 
     return {
       status: "success",

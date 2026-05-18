@@ -24,6 +24,10 @@ import {
   executeSourceAcquisitionNetworkTransport,
   type SourceAcquisitionNetworkLowLevelTransport,
 } from "./source-acquisition-network-transport";
+import {
+  buildSourceCandidatePreviewProjection,
+  type SourceCandidatePreviewProjection,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 
 export type SourceAcquisitionCandidateNetworkProviderFactory = {
   readonly buildProvider: () => SourceAcquisitionCandidateProviderBoundary;
@@ -69,6 +73,7 @@ type FactoryParams = {
   readonly budget: SourceAcquisitionNetworkBudgetSnapshot;
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
   readonly attemptTelemetrySink?: (record: SourceAcquisitionNetworkAttemptTelemetryRecord) => void;
+  readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
 };
 
 type FactoryState =
@@ -152,6 +157,20 @@ function emitTelemetry(
     sink(record);
   } catch {
     // Telemetry is observational only and must not affect provider/network behavior.
+  }
+}
+
+function emitCandidatePreviewProjection(
+  sink: FactoryParams["candidatePreviewProjectionSink"],
+  projection: SourceCandidatePreviewProjection,
+): void {
+  if (!sink) {
+    return;
+  }
+  try {
+    sink(projection);
+  } catch {
+    // W3-A preview artifacts are observational only and must not affect provider/network behavior.
   }
 }
 
@@ -360,6 +379,20 @@ export function buildSourceAcquisitionCandidateNetworkProviderBoundary(
         request: networkRequest,
         signal: controller.signal,
         lowLevelTransport: state.lowLevelTransport,
+        candidateProjectionHook: params.candidatePreviewProjectionSink
+          ? (projectionInput) => {
+              const projection = buildSourceCandidatePreviewProjection({
+                providerId: projectionInput.providerId,
+                endpointId: projectionInput.endpointId,
+                providerAttemptOrdinal: projectionInput.providerAttemptOrdinal,
+                providerRank: projectionInput.providerRank,
+                candidateOrdinal: projectionInput.candidateOrdinal,
+                sourceCandidateRef: projectionInput.sourceCandidateRef,
+                candidate: projectionInput.candidate,
+              });
+              emitCandidatePreviewProjection(params.candidatePreviewProjectionSink, projection);
+            }
+          : undefined,
       }).finally(() => clearTimeout(timeout));
       const structuralStatus = structuralStatusFromTransport(outcome);
       emitTelemetry(params.attemptTelemetrySink, telemetryFromOutcome({

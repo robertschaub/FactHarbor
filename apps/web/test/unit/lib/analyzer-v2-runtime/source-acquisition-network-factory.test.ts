@@ -196,6 +196,7 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const previews: unknown[] = [];
     const seenPaths: string[] = [];
     const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
       authority: networkAuthority(),
@@ -213,6 +214,7 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
         },
       }),
       attemptTelemetrySink: (record) => telemetry.push(record),
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
     });
 
     const result = await provider.acquireCandidates(attempt());
@@ -269,6 +271,18 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     expect(telemetry[0]?.durationMs).toBeGreaterThanOrEqual(0);
     expect(telemetry[0]?.compressedBytes).toBeGreaterThan(0);
     expect(telemetry[0]?.decompressedBytes).toBeGreaterThan(0);
+    expect(previews).toEqual([
+      expect.objectContaining({
+        materializationStatus: "blocked_provider_mismatch",
+        pageKeyHash: null,
+        locatorRef: null,
+      }),
+      expect.objectContaining({
+        materializationStatus: "blocked_provider_mismatch",
+        pageKeyHash: null,
+        locatorRef: null,
+      }),
+    ]);
     expect(result.candidates[0]).toMatchObject({
       candidateId: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
       hiddenLocatorId: "HIDDEN_SOURCE_LOCATOR_ATT_1_1",
@@ -281,6 +295,9 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     expect(serializedTelemetry).not.toContain("raw title");
     expect(serializedTelemetry).not.toContain("https://example.test");
     expect(serializedTelemetry).not.toContain("\"snippet\":\"raw\"");
+    expect(JSON.stringify(previews)).not.toContain("raw title");
+    expect(JSON.stringify(previews)).not.toContain("https://example.test");
+    expect(JSON.stringify(previews)).not.toContain("\"snippet\":\"raw\"");
     expect(serializedTelemetry).not.toContain("queryText");
     expect(serializedTelemetry).not.toContain("queryId");
     expect(serializedTelemetry).not.toContain("retrievalPolicyKey");
@@ -306,6 +323,9 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
       lowLevelTransport: lowLevelTransport(),
       attemptTelemetrySink: () => {
         throw new Error("telemetry sink should be isolated");
+      },
+      candidatePreviewProjectionSink: () => {
+        throw new Error("preview sink should be isolated");
       },
     });
 

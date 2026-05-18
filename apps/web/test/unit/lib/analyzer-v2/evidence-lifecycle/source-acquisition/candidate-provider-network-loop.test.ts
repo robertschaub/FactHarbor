@@ -472,6 +472,65 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     }
   });
 
+  it("projects bounded W3-A preview records through the provider-owned search response without changing W2 output", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const previews: unknown[] = [];
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          calls.push(request);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify({
+              pages: [
+                {
+                  id: 235000,
+                  key: "Switzerland_asylum_statistics",
+                  title: "Asylum statistics in Switzerland",
+                  excerpt: "Mehr als <span class=\"searchmatch\">235 000</span> Personen",
+                  description: "Public encyclopedia page",
+                  url: "https://example.invalid/source?secret=sk_test",
+                },
+              ],
+            }), "utf8"),
+          };
+        },
+      },
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+    });
+    const serializedDecision = JSON.stringify(decision);
+    const serializedPreviews = JSON.stringify(previews);
+
+    expect(calls).toHaveLength(1);
+    expect(decision.status).toBe("candidate_provider_network_completed");
+    expect(serializedDecision).not.toContain("Switzerland_asylum_statistics");
+    expect(serializedDecision).not.toContain("Asylum statistics in Switzerland");
+    expect(serializedDecision).not.toContain("https://example.invalid");
+    expect(previews).toEqual([
+      expect.objectContaining({
+        sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
+        locatorRef: expect.stringMatching(/^OPAQUE_SOURCE_LOCATOR_1_1_[A-F0-9]{12}$/),
+        pageKeyHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        pageIdHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        titlePreviewText: "Asylum statistics in Switzerland",
+        excerptPreviewText: "Mehr als 235 000 Personen",
+        descriptionPreviewText: "Public encyclopedia page",
+        materializationStatus: "source_candidate_preview_materialized",
+      }),
+    ]);
+    expect(serializedPreviews).not.toContain("Switzerland_asylum_statistics");
+    expect(serializedPreviews).not.toContain("https://example.invalid");
+    expect(serializedPreviews).not.toContain("sk_test");
+    expect(serializedPreviews).not.toContain("url");
+  });
+
   it("admits the reviewed six-query cap and keeps multi-query artifacts sanitized", async () => {
     expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(6);
     expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(

@@ -260,6 +260,43 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     expect(JSON.stringify(outcome)).not.toContain("raw title");
   });
 
+  it("can project bounded provider-owned candidates without exposing raw candidate objects", async () => {
+    const projected: Array<{ readonly ref: string; readonly rank: number }> = [];
+    const outcome = await executeSourceAcquisitionNetworkTransport({
+      authority: authority(),
+      endpoint: endpoint(),
+      budget: budget({ maxCandidatesPerQuery: 3 }),
+      request: networkRequest(),
+      lowLevelTransport: fakeTransport({
+        body: Buffer.from(JSON.stringify({
+          items: Array.from({ length: 5 }, (_, index) => ({
+            t: `Raw${index}`,
+            u: "https://x",
+          })),
+        }), "utf8"),
+      }),
+      candidateProjectionHook: (candidate) => {
+        const projection = {
+          ref: candidate.sourceCandidateRef,
+          rank: candidate.providerRank,
+        };
+        projected.push(projection);
+      },
+    });
+    const serialized = JSON.stringify(outcome);
+
+    expect(outcome.status).toBe("success");
+    expect(outcome.candidateCount).toBe(5);
+    expect(projected).toEqual([
+      { ref: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1", rank: 1 },
+      { ref: "OPAQUE_SOURCE_CANDIDATE_ATT_1_2", rank: 2 },
+      { ref: "OPAQUE_SOURCE_CANDIDATE_ATT_1_3", rank: 3 },
+    ]);
+    expect("candidateProjections" in outcome).toBe(false);
+    expect(serialized).not.toContain("Raw");
+    expect(serialized).not.toContain("https://x");
+  });
+
   it("blocks private, loopback, link-local, IPv4-mapped IPv6, metadata, multicast, and reserved addresses", async () => {
     for (const address of [
       "127.0.0.1",

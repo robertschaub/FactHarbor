@@ -14,11 +14,13 @@ import { buildSourceAcquisitionIntakeBoundaryDecision } from "@/lib/analyzer-v2/
 import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
+import { buildEvidenceLifecycleSourceCandidatePreviewDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
 import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
 } from "@/lib/analyzer-v2/run-context";
+import type { SourceCandidatePreviewProjection } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
@@ -47,6 +49,9 @@ import {
 import {
   recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceCandidatePreviewRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -173,15 +178,25 @@ export async function runClaimBoundaryPipelineV2(
           context,
           closedLoopDecision: candidateRuntimeClosedLoop,
         });
+        const sourceCandidatePreviewProjections: SourceCandidatePreviewProjection[] = [];
         const candidateProviderNetwork = await runSourceAcquisitionCandidateProviderNetworkLoop({
           handoffDecision: sourceAcquisitionHandoff,
           sourceAcquisitionStartDecision,
           sourceAcquisitionIntakeBoundary,
           candidateRuntimeClosedLoop,
+          candidatePreviewProjectionSink: (projection) => sourceCandidatePreviewProjections.push(projection),
         });
         recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
           context,
           networkDecision: candidateProviderNetwork,
+        });
+        const sourceCandidatePreview = buildEvidenceLifecycleSourceCandidatePreviewDecision({
+          networkDecision: candidateProviderNetwork,
+          previewProjections: sourceCandidatePreviewProjections,
+        });
+        recordEvidenceLifecycleSourceCandidatePreviewRuntimeArtifact({
+          context,
+          previewDecision: sourceCandidatePreview,
         });
       }
     } catch {

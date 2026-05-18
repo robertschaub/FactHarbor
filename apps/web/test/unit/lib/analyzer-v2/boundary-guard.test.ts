@@ -39,6 +39,10 @@ const analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifa
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-candidate-preview-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -108,6 +112,14 @@ const evidenceLifecycleQueryPlanningPreexecutionObservationPath = path.resolve(
 const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
+const evidenceLifecycleSourceMaterialLocatorMaterializationPath = path.resolve(
+  evidenceLifecycleSourceMaterialRoot,
+  "locator-materialization.ts",
+);
+const evidenceLifecycleSourceMaterialSourceCandidatePreviewPath = path.resolve(
+  evidenceLifecycleSourceMaterialRoot,
+  "source-candidate-preview.ts",
+);
 const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -156,6 +168,14 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateClosedLoopArti
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-candidate-preview-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-candidate-preview-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -786,6 +806,17 @@ const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionCandidateProviderNetwor
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      new Set(["EvidenceLifecycleSourceCandidatePreviewDecision"]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -801,6 +832,8 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-admission-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-closed-loop-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
     ]),
   ],
   [
@@ -826,6 +859,20 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
       "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
       "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewOwnerPath),
+    new Set([
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      "@/lib/analyzer-v2/run-context",
     ]),
   ],
   [
@@ -881,6 +928,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleSourceAcquisitionCandidateProviderNetworkArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
     ]),
   ],
 ]);
@@ -3908,6 +3961,149 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W3-A source-candidate preview materialization hidden, bounded, and Tier-0 only", () => {
+    expect(existsSync(evidenceLifecycleSourceMaterialLocatorMaterializationPath)).toBe(true);
+    expect(existsSync(evidenceLifecycleSourceMaterialSourceCandidatePreviewPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewOwnerPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath)).toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath)).toBe(true);
+    const violations: string[] = [];
+
+    for (const sourcePath of [
+      evidenceLifecycleSourceMaterialLocatorMaterializationPath,
+      evidenceLifecycleSourceMaterialSourceCandidatePreviewPath,
+    ]) {
+      const sourceFile = parseSource(sourcePath);
+      const relativePath = toPosix(path.relative(webRoot, sourcePath));
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports runtime module ${specifier}`);
+        }
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports V1 analyzer ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier) || specifier.includes("source-acquisition-network")) {
+          violations.push(`${relativePath} imports source-acquisition network/provider ${specifier}`);
+        }
+        if (specifier.includes("source-acquisition-content")) {
+          violations.push(`${relativePath} imports content/source-material fetch owner ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier) || isCacheIoImport(specifier) || isSourceReliabilityImport(specifier)) {
+          violations.push(`${relativePath} imports forbidden dependency ${specifier}`);
+        }
+      }
+      const content = readFileSync(sourcePath, "utf8");
+      for (const forbiddenText of [
+        "fetch(",
+        "https://",
+        "SourceMaterialRecord",
+        "EvidenceCorpus",
+        "EvidenceItem",
+        "reportMarkdown",
+        "truthPercentage",
+        "confidence",
+        "sourceReliability",
+        "cacheKey",
+        "parsedContent",
+      ]) {
+        if (content.includes(forbiddenText)) {
+          violations.push(`${relativePath} contains forbidden W3-A text ${forbiddenText}`);
+        }
+      }
+    }
+
+    const ownerImports = collectModuleSpecifiers(parseSource(
+      analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewOwnerPath,
+    )).sort();
+    expect(ownerImports).toEqual([
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview",
+    ]);
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkApprovedImports
+          .get(importBinding.specifier);
+      if (!approvedNames) {
+        violations.push(`W3-A preview artifact sink imports unapproved module ${importBinding.specifier}`);
+        continue;
+      }
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `W3-A preview artifact sink imports unapproved symbol ${importedName} from ${importBinding.specifier}`,
+          );
+        }
+      }
+    }
+
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.source-candidate-preview-artifact.x7w3a",
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_SOURCE_CANDIDATE_PREVIEW_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_SOURCE_CANDIDATE_PREVIEW_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_SOURCE_CANDIDATE_PREVIEW_ARTIFACT_MAX_SERIALIZED_BYTES = 24_576",
+      "source: \"product_v2_orchestrator_after_source_candidate_preview_materialization\"",
+      "extraHttpCallMade: false",
+      "contentDereferenceCalled: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "sourceMaterialCreated: false",
+      "evidenceCorpusCreated: false",
+      "evidenceItemGenerated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "publicSurfaceWritten: false",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`W3-A preview artifact sink missing required text ${requiredText}`);
+      }
+    }
+
+    const routeImports = collectModuleSpecifiers(
+      parseSource(analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath),
+    ).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(
+      parseSource(analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath),
+    )) {
+      violations.push(`W3-A route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W3-A import ${requiredSpecifier}`);
+      }
+    }
+    for (const forbiddenSpecifier of [
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-transport",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser",
+      "@/lib/analyzer-v2-runtime/source-acquisition-content-parser-runner-protocol",
+      "@/lib/analyzer-v2-runtime/downstream-no-corpus-denial-adapter",
+    ]) {
+      if (orchestratorImports.includes(forbiddenSpecifier)) {
+        violations.push(`orchestrator imports forbidden W3-A downstream/source module ${forbiddenSpecifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -4293,6 +4489,8 @@ describe("analyzer-v2 boundary guard", () => {
       "validateSourceAcquisitionNetworkRequestEnvelope",
     ].sort();
     const expectedTransportExports = [
+      "SourceAcquisitionNetworkCandidateProjectionHook",
+      "SourceAcquisitionNetworkCandidateProjectionInput",
       "SourceAcquisitionNetworkLowLevelRequest",
       "SourceAcquisitionNetworkLowLevelResponse",
       "SourceAcquisitionNetworkLowLevelTransport",
@@ -4414,6 +4612,13 @@ describe("analyzer-v2 boundary guard", () => {
             [
               "SourceAcquisitionNetworkLowLevelTransport",
               "executeSourceAcquisitionNetworkTransport",
+            ].sort(),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview",
+            [
+              "SourceCandidatePreviewProjection",
+              "buildSourceCandidatePreviewProjection",
             ].sort(),
           ],
         ]),
@@ -5805,7 +6010,9 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(coreFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/source-material/contract.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material/locator-materialization.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-material/readiness.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-material/types.ts",
     ]);
     expect(existsSync(harnessPath)).toBe(true);

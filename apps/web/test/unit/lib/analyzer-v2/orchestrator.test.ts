@@ -25,6 +25,13 @@ import {
   clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts,
   readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink";
+import {
+  buildSourceCandidatePreviewProjection,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import {
+  clearEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts,
+  readEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink";
 
 function claimContract(): ClaimContract {
   return {
@@ -225,6 +232,23 @@ function candidateProviderNetworkDecision(): SourceAcquisitionCandidateProviderN
   };
 }
 
+function sourceCandidatePreviewProjection() {
+  return buildSourceCandidatePreviewProjection({
+    providerId: "wikimedia_core",
+    endpointId: "ep_wikimedia_core_page_search",
+    providerAttemptOrdinal: 1,
+    providerRank: 1,
+    candidateOrdinal: 1,
+    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
+    candidate: {
+      key: "Switzerland_asylum_statistics",
+      title: "Asylum statistics in Switzerland",
+      excerpt: "Mehr als 235 000 Personen",
+      description: "Public encyclopedia page",
+    },
+  });
+}
+
 describe("Analyzer V2 orchestrator X7-S Query Planning product-internal execution", () => {
   afterEach(() => {
     vi.doUnmock("@/lib/analyzer-v2/claim-understanding/runtime-stage");
@@ -241,8 +265,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
-    clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
-    clearEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -272,7 +295,12 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       })),
     }));
     vi.doMock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop", () => ({
-      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async () => candidateProviderNetworkDecision()),
+      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async (
+        params: { candidatePreviewProjectionSink?: (projection: ReturnType<typeof sourceCandidatePreviewProjection>) => void },
+      ) => {
+        params.candidatePreviewProjectionSink?.(sourceCandidatePreviewProjection());
+        return candidateProviderNetworkDecision();
+      }),
     }));
 
     const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
@@ -300,6 +328,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     const candidateProviderNetworkArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
+    const sourceCandidatePreviewArtifacts =
+      readEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     const serializedPublic = JSON.stringify(result.resultJson);
 
     expect(providerCalls).toBe(1);
@@ -473,6 +503,33 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("providerAttemptId");
     expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("confidence");
     expect(JSON.stringify(candidateProviderNetworkArtifacts)).not.toContain("cacheKey");
+    expect(sourceCandidatePreviewArtifacts).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        sourceCandidatePreview: expect.objectContaining({
+          status: "source_candidate_preview_materialized",
+          previewRecordCount: 1,
+          sourceMaterial: null,
+          evidenceCorpus: null,
+          downstreamGate: "source_candidate_preview_to_source_material_gate_closed",
+        }),
+        productExecution: expect.objectContaining({
+          sourceCandidatePreviewObserved: true,
+          extraHttpCallMade: false,
+          contentDereferenceCalled: false,
+          parserExecuted: false,
+          sourceMaterialCreated: false,
+          evidenceCorpusCreated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          publicSurfaceWritten: false,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(sourceCandidatePreviewArtifacts)).not.toContain("Switzerland_asylum_statistics");
+    expect(JSON.stringify(sourceCandidatePreviewArtifacts)).not.toContain("https://example.invalid");
+    expect(JSON.stringify(sourceCandidatePreviewArtifacts)).not.toContain("sk_test");
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: {
@@ -494,6 +551,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -520,7 +578,12 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       })),
     }));
     vi.doMock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop", () => ({
-      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async () => candidateProviderNetworkDecision()),
+      runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async (
+        params: { candidatePreviewProjectionSink?: (projection: ReturnType<typeof sourceCandidatePreviewProjection>) => void },
+      ) => {
+        params.candidatePreviewProjectionSink?.(sourceCandidatePreviewProjection());
+        return candidateProviderNetworkDecision();
+      }),
     }));
 
     const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
@@ -549,6 +612,8 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
       readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
     const candidateProviderNetworkArtifacts =
       readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId);
+    const sourceCandidatePreviewArtifacts =
+      readEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     expect(artifacts[0]).toMatchObject({
       selectedAtomicClaimIds: ["AC_001"],
       sourceAcquisitionHandoff: {
@@ -640,6 +705,20 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         fixedDollarCost: 0,
       }),
     });
+    expect(sourceCandidatePreviewArtifacts[0]).toMatchObject({
+      sourceCandidatePreview: {
+        status: "source_candidate_preview_materialized",
+        previewRecordCount: 1,
+        sourceMaterial: null,
+        evidenceCorpus: null,
+      },
+      productExecution: expect.objectContaining({
+        extraHttpCallMade: false,
+        contentDereferenceCalled: false,
+        parserExecuted: false,
+        publicSurfaceWritten: false,
+      }),
+    });
   });
 
   it("does not invoke Query Planning when X7-S activation is closed", async () => {
@@ -649,6 +728,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     clearEvidenceLifecycleSourceAcquisitionIntakeRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId);
     clearEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId);
+    clearEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId);
     vi.resetModules();
     vi.doMock("@/lib/analyzer-v2/claim-understanding/runtime-stage", async (importOriginal) => ({
       ...(await importOriginal<typeof import("@/lib/analyzer-v2/claim-understanding/runtime-stage")>()),
@@ -684,5 +764,6 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(readEvidenceLifecycleSourceAcquisitionCandidateAdmissionRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionCandidateClosedLoopRuntimeArtifacts(ledgerId)).toEqual([]);
     expect(readEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifacts(ledgerId)).toEqual([]);
+    expect(readEvidenceLifecycleSourceCandidatePreviewRuntimeArtifacts(ledgerId)).toEqual([]);
   });
 });

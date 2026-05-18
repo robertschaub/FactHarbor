@@ -35,6 +35,9 @@ import {
   buildSourceAcquisitionCandidateNetworkProviderBoundary,
   type SourceAcquisitionNetworkAttemptTelemetryRecord,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
+import type {
+  SourceCandidatePreviewProjection,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import { sha256Json } from "@/lib/analyzer-v2/util";
 import {
   EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
@@ -944,6 +947,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   readonly endpointSnapshot?: SourceAcquisitionNetworkEndpointSnapshot;
   readonly networkBudgetSnapshot?: SourceAcquisitionNetworkBudgetSnapshot;
   readonly lowLevelTransport?: LowLevelTransportOption;
+  readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
 }): Promise<SourceAcquisitionCandidateProviderNetworkLoopDecision> {
   const closedLoopStatus = params.candidateRuntimeClosedLoop.status;
   const handoffStatus = params.handoffDecision.status;
@@ -1182,6 +1186,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
       budget: networkBudget,
       lowLevelTransport: params.lowLevelTransport,
       attemptTelemetrySink: (record) => networkAttempts.push(record),
+      candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
     });
     const runRequest: SourceAcquisitionCandidateRunRequest = {
       candidateRunId: `X7W2_NETWORK_${sha256Json({
