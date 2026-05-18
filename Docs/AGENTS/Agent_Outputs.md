@@ -4188,3 +4188,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No live job was run or proposed. W4-E is not positive extraction readiness and does not authorize source text, EvidenceItems, parser execution, report/verdict/warning/confidence/public behavior, cache/SR/storage, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup.
 **Learnings:** Producer-side shell closure was not enough by itself; downstream needs its own denial-only runtime-owned contract so a non-null `EvidenceCorpus` cannot be mistaken for extraction readiness.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-E_Implementation.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-F Product-Route Observability Canary Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-18_V2_Slice_X7-W4-F_Product_Route_Observability_Canary_Package.md` for Steering Board review only. The recommended next step is product-route observability, not source-text authorization: add one combined hidden/admin-only W4-C/W4-D/W4-E chain artifact after W3-B/W4-A, then run exactly one later canary only after Steering approval, implementation commit, clean verifiers, runtime refresh, and route preflight.
+**Warnings:** This package authorizes no implementation and no live job. W4-F must not add source text authorization, extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup. The proposed canary would count against the 4-job tranche only after a later accepted implementation package.
+**Learnings:** W4-D/W4-E local verifier-clean state still needs product-route observability proof before the next positive capability. A single chain artifact is narrower than separate W4-C/W4-D/W4-E route families and gives reviewers the reachability evidence without authorizing extraction.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-F_Source_Package.md
