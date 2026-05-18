@@ -4097,3 +4097,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No live canary was run. W3-A creates no Source Material record and performs no extra HTTP call. Parser execution, EvidenceCorpus, EvidenceItems, report/verdict/warning/confidence behavior, public exposure, second provider, retries, cache/SR/storage, ACS/direct URL, Tier 1 fetch, Tier 2 full page/source/html, Query Planning, Claim Understanding, downstream denial, parser, provider expansion, gate-register cleanup, and V1 work remain closed.
 **Learnings:** Keep W3-A as a projection side-channel, not a widened network result contract. Final verifiers passed: focused W3-A package, analyzer-v2-runtime, analyzer-v2, build, V2 gate validators, whitespace, and envelope-clean check.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-A_Implementation.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W3-A Safe Locator Materialization Preview Live Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Closed the one authorized W3-A canary as `PASS_X7_W3_A_SOURCE_CANDIDATE_PREVIEW_CANARY`. Job `316e938072dc44a2a24d8e0862642c6b` ran on clean committed/refreshed runtime `b72cda946225f4a46f131853c18fdd2d590bc28c`, first prepared `pipeline: claimboundary-v2`, reached `SUCCEEDED`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover`, and produced W3-A hidden source-candidate previews.
+**Warnings:** W3-A remains Tier 0 only: no extra HTTP call, no Source Material record, no parser, no EvidenceCorpus, no report/verdict/warning/confidence behavior, no public behavior, no cache/SR/storage, no retries, no provider expansion, no ACS/direct URL, and no V1 work. Unrelated dirty files were isolated in named stashes and are not W3-A content.
+**Learnings:** W3-A can materialize bounded hidden/admin-only previews from provider-owned Wikimedia candidates: W2 completed with 9 candidates and 14,406 total bytes; W3-A recorded 9 preview records, 8 materialized and 1 partial, with all downstream/source-material flags false.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W3-A_Live_Canary_Result.md
