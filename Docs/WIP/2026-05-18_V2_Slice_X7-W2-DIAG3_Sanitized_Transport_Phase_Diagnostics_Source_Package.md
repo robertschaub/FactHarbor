@@ -1,7 +1,7 @@
 # V2 Slice X7-W2-DIAG3 Sanitized Transport Phase Diagnostics Source Package
 
 **Date:** 2026-05-18
-**Status:** approved by Claude Opus review; pending package verification/commit before implementation
+**Status:** implementation complete; pending commit
 **Owner:** Lead Developer / Captain Deputy
 **Baseline:** `aea78bdb` (`docs: record v2 w2 ls3 diagnostic result`)
 **Parent result:** `Docs/WIP/2026-05-18_V2_Slice_X7-W2-LS3_DIAG2_Transport_Diagnostics_Live_Result.md`
@@ -202,3 +202,46 @@ Focus on whether DIAG3 is a safe and useful next step after LS3:
 - new diagnostics are enum-only and do not expose raw error message, stack, cause, URL/path/query/header/IP/payload/source/candidate data;
 - W2 completion semantics stay unchanged;
 - no live jobs, provider expansion, source material, content dereference, parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence, public output, ACS/direct URL, V1 work, or V1 cleanup are authorized.
+
+## 9. Implementation Closeout
+
+Implementation completed inside the approved source/test envelope.
+
+Added hidden enum-only diagnostics:
+
+- `transportFailurePhase`
+- `transportErrorShape`
+- `nodeErrorCodeCategory`
+
+The fields propagate from the low-level transport hidden diagnostic through provider-attempt telemetry and the W2 product-internal artifact. They remain internal-only and sanitized. No public result, report, UI, API export, cache/SR/storage, parser, source-material, EvidenceCorpus/evidence/report/verdict/warning/confidence behavior was added.
+
+W2 completion semantics are unchanged. DIAG3 does not turn the LS3 result into provider-network success and does not authorize source execution.
+
+Claude Opus 4.6 reviewed the implementation diff and returned `PASS`. Observation carried as residual debt: rare pre-existing `transportFailureClass` values `network_unreachable`, `host_unreachable`, and `address_family_failure` remain in the type union but are not emitted by the DIAG3 category mapping because the approved `nodeErrorCodeCategory` enum intentionally has no separate categories for those raw codes. Those cases consolidate to `other_known` / `unknown_transport_failure` unless a later reviewed package expands the enum contract.
+
+Verifier results:
+
+```text
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+PASS - 8 files / 110 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime
+PASS - 43 files / 256 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2
+PASS - 88 files / 621 tests
+
+npm -w apps/web run build
+PASS
+
+npm run validate:v2-gates
+PASS
+
+node scripts/validate-v2-gate-register.mjs --self-test
+PASS
+
+git diff --check
+PASS
+```
+
+No live jobs were run for DIAG3.

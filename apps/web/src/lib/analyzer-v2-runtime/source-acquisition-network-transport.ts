@@ -12,10 +12,13 @@ import {
   type SourceAcquisitionNetworkBudgetSnapshot,
   type SourceAcquisitionNetworkEndpointSnapshot,
   type SourceAcquisitionNetworkHiddenDiagnostic,
+  type SourceAcquisitionNetworkNodeErrorCodeCategory,
   type SourceAcquisitionNetworkRequestEnvelope,
   type SourceAcquisitionNetworkSelectedAddressFamily,
   type SourceAcquisitionNetworkStopReason,
+  type SourceAcquisitionNetworkTransportErrorShape,
   type SourceAcquisitionNetworkTransportFailureClass,
+  type SourceAcquisitionNetworkTransportFailurePhase,
   type SourceAcquisitionNetworkTransportOutcome,
 } from "./source-acquisition-network-envelope";
 import {
@@ -79,42 +82,148 @@ function readErrorCode(error: unknown): string | null {
   return code.length > 0 ? code : null;
 }
 
-function classifyTransportFailure(error: unknown): SourceAcquisitionNetworkTransportFailureClass {
-  const code = readErrorCode(error);
+function nodeErrorCodeCategoryFromCode(
+  code: string | null,
+): SourceAcquisitionNetworkNodeErrorCodeCategory {
   if (code === null) {
-    return "unknown_transport_failure";
+    return "unknown_absent";
   }
-  if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
-    return "dns_resolution_failure";
+  if (code === "ENOTFOUND") {
+    return "dns_not_found";
   }
-  if (code === "ECONNRESET" || code === "EPIPE") {
-    return "connection_reset";
+  if (code === "EAI_AGAIN") {
+    return "dns_temporary_failure";
   }
   if (code === "ECONNREFUSED") {
     return "connection_refused";
   }
-  if (code === "ENETUNREACH") {
-    return "network_unreachable";
-  }
-  if (code === "EHOSTUNREACH") {
-    return "host_unreachable";
+  if (code === "ECONNRESET" || code === "EPIPE") {
+    return "connection_reset";
   }
   if (code === "ETIMEDOUT" || code === "ERR_SOCKET_CONNECTION_TIMEOUT") {
-    return "socket_timeout";
+    return "connection_timeout";
   }
-  if (code === "EADDRNOTAVAIL" || code === "EAFNOSUPPORT") {
-    return "address_family_failure";
+  if (code === "ECANCELED" || code === "ERR_CANCELED" || code === "ABORT_ERR") {
+    return "operation_canceled";
   }
   if (
-    code.startsWith("ERR_TLS_")
-    || code === "CERT_HAS_EXPIRED"
+    code === "CERT_HAS_EXPIRED"
     || code === "DEPTH_ZERO_SELF_SIGNED_CERT"
     || code === "SELF_SIGNED_CERT_IN_CHAIN"
     || code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
   ) {
+    return "tls_certificate";
+  }
+  if (code.startsWith("ERR_TLS_")) {
+    return "tls_protocol";
+  }
+  if (code.startsWith("HPE_") || code.startsWith("ERR_HTTP_")) {
+    return "http_parser";
+  }
+  return "other_known";
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
+
+function transportErrorShape(
+  error: unknown,
+): SourceAcquisitionNetworkTransportErrorShape {
+  const code = readErrorCode(error);
+  if (code !== null) {
+    return "node_error_code_present";
+  }
+  if (!(error instanceof Error)) {
+    return "non_error_throwable";
+  }
+  const message = errorMessage(error);
+  if (message === "timed_out") {
+    return "synthetic_timeout_marker";
+  }
+  if (message === "cancelled") {
+    return "synthetic_cancel_marker";
+  }
+  return "node_error_code_absent";
+}
+
+function transportFailurePhaseFromCategory(
+  category: SourceAcquisitionNetworkNodeErrorCodeCategory,
+): SourceAcquisitionNetworkTransportFailurePhase {
+  if (category === "dns_not_found" || category === "dns_temporary_failure") {
+    return "dns_resolution";
+  }
+  if (category === "connection_refused" || category === "connection_timeout") {
+    return "socket_connect";
+  }
+  if (category === "connection_reset") {
+    return "response_wait";
+  }
+  if (category === "operation_canceled") {
+    return "request_write";
+  }
+  if (category === "tls_certificate" || category === "tls_protocol") {
+    return "tls_handshake";
+  }
+  if (category === "http_parser") {
+    return "response_stream";
+  }
+  return "unknown_phase";
+}
+
+function classifyTransportFailureFromCategory(
+  category: SourceAcquisitionNetworkNodeErrorCodeCategory,
+): SourceAcquisitionNetworkTransportFailureClass {
+  if (category === "dns_not_found" || category === "dns_temporary_failure") {
+    return "dns_resolution_failure";
+  }
+  if (category === "connection_reset") {
+    return "connection_reset";
+  }
+  if (category === "connection_refused") {
+    return "connection_refused";
+  }
+  if (category === "connection_timeout") {
+    return "socket_timeout";
+  }
+  if (category === "tls_certificate" || category === "tls_protocol") {
     return "tls_failure";
   }
   return "unknown_transport_failure";
+}
+
+function transportFailureDetails(error: unknown): {
+  readonly transportFailureClass: SourceAcquisitionNetworkTransportFailureClass;
+  readonly transportFailurePhase: SourceAcquisitionNetworkTransportFailurePhase;
+  readonly transportErrorShape: SourceAcquisitionNetworkTransportErrorShape;
+  readonly nodeErrorCodeCategory: SourceAcquisitionNetworkNodeErrorCodeCategory;
+} {
+  const code = readErrorCode(error);
+  const nodeErrorCodeCategory = nodeErrorCodeCategoryFromCode(code);
+  return {
+    transportFailureClass: classifyTransportFailureFromCategory(nodeErrorCodeCategory),
+    transportFailurePhase: transportFailurePhaseFromCategory(nodeErrorCodeCategory),
+    transportErrorShape: transportErrorShape(error),
+    nodeErrorCodeCategory,
+  };
+}
+
+function syntheticFailureDetails(params: {
+  readonly phase: SourceAcquisitionNetworkTransportFailurePhase;
+  readonly shape: Extract<
+    SourceAcquisitionNetworkTransportErrorShape,
+    "synthetic_timeout_marker" | "synthetic_cancel_marker"
+  >;
+}): {
+  readonly transportFailurePhase: SourceAcquisitionNetworkTransportFailurePhase;
+  readonly transportErrorShape: SourceAcquisitionNetworkTransportErrorShape;
+  readonly nodeErrorCodeCategory: SourceAcquisitionNetworkNodeErrorCodeCategory;
+} {
+  return {
+    transportFailurePhase: params.phase,
+    transportErrorShape: params.shape,
+    nodeErrorCodeCategory: "none",
+  };
 }
 
 function selectedAddressFamily(
@@ -150,6 +259,9 @@ function diagnostic(params: {
   readonly responseStatusCodeCategory?: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState?: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
   readonly transportFailureClass?: SourceAcquisitionNetworkTransportFailureClass;
+  readonly transportFailurePhase?: SourceAcquisitionNetworkTransportFailurePhase;
+  readonly transportErrorShape?: SourceAcquisitionNetworkTransportErrorShape;
+  readonly nodeErrorCodeCategory?: SourceAcquisitionNetworkNodeErrorCodeCategory;
   readonly compressedBytes?: number;
   readonly decompressedBytes?: number;
   readonly redirectDenied?: boolean;
@@ -169,6 +281,9 @@ function diagnostic(params: {
     responseStatusCodeCategory: params.responseStatusCodeCategory,
     contentTypeState: params.contentTypeState,
     transportFailureClass: params.transportFailureClass,
+    transportFailurePhase: params.transportFailurePhase,
+    transportErrorShape: params.transportErrorShape,
+    nodeErrorCodeCategory: params.nodeErrorCodeCategory,
     compressedBytes: params.compressedBytes,
     decompressedBytes: params.decompressedBytes,
     redirectDenied: params.redirectDenied,
@@ -188,6 +303,9 @@ function blocked(params: {
   readonly responseStatusCodeCategory?: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState?: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
   readonly transportFailureClass?: SourceAcquisitionNetworkTransportFailureClass;
+  readonly transportFailurePhase?: SourceAcquisitionNetworkTransportFailurePhase;
+  readonly transportErrorShape?: SourceAcquisitionNetworkTransportErrorShape;
+  readonly nodeErrorCodeCategory?: SourceAcquisitionNetworkNodeErrorCodeCategory;
   readonly compressedBytes?: number;
   readonly decompressedBytes?: number;
   readonly redirectDenied?: boolean;
@@ -208,6 +326,9 @@ function blocked(params: {
       responseStatusCodeCategory: params.responseStatusCodeCategory,
       contentTypeState: params.contentTypeState,
       transportFailureClass: params.transportFailureClass,
+      transportFailurePhase: params.transportFailurePhase,
+      transportErrorShape: params.transportErrorShape,
+      nodeErrorCodeCategory: params.nodeErrorCodeCategory,
       compressedBytes: params.compressedBytes,
       decompressedBytes: params.decompressedBytes,
       redirectDenied: params.redirectDenied,
@@ -720,6 +841,10 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         status: "timed_out",
+        ...syntheticFailureDetails({
+          phase: "dns_resolution",
+          shape: "synthetic_timeout_marker",
+        }),
       });
     }
     if (resolveResult.status === "cancelled") {
@@ -730,10 +855,15 @@ export async function executeSourceAcquisitionNetworkTransport(
         startedAt,
         transport,
         status: "cancelled",
+        ...syntheticFailureDetails({
+          phase: "dns_resolution",
+          shape: "synthetic_cancel_marker",
+        }),
       });
     }
     resolved = resolveResult.value;
-  } catch {
+  } catch (error) {
+    const details = transportFailureDetails(error);
     return blocked({
       endpoint: input.endpoint,
       request: input.request,
@@ -742,6 +872,9 @@ export async function executeSourceAcquisitionNetworkTransport(
       transport,
       status: "failed",
       transportFailureClass: "dns_resolution_failure",
+      transportFailurePhase: "dns_resolution",
+      transportErrorShape: details.transportErrorShape,
+      nodeErrorCodeCategory: details.nodeErrorCodeCategory,
     });
   }
 
@@ -940,6 +1073,10 @@ export async function executeSourceAcquisitionNetworkTransport(
         status: "cancelled",
         dnsAddressCount: resolved.length,
         selectedAddressFamily: selectedAddressFamily(selectedAddress),
+        ...syntheticFailureDetails({
+          phase: "request_write",
+          shape: "synthetic_cancel_marker",
+        }),
       });
     }
     if (message === "timed_out") {
@@ -952,6 +1089,10 @@ export async function executeSourceAcquisitionNetworkTransport(
         status: "timed_out",
         dnsAddressCount: resolved.length,
         selectedAddressFamily: selectedAddressFamily(selectedAddress),
+        ...syntheticFailureDetails({
+          phase: "response_wait",
+          shape: "synthetic_timeout_marker",
+        }),
       });
     }
     if (message === "compressed_byte_cap_exceeded") {
@@ -963,8 +1104,12 @@ export async function executeSourceAcquisitionNetworkTransport(
         transport,
         dnsAddressCount: resolved.length,
         selectedAddressFamily: selectedAddressFamily(selectedAddress),
+        transportFailurePhase: "response_stream",
+        transportErrorShape: "node_error_code_absent",
+        nodeErrorCodeCategory: "unknown_absent",
       });
     }
+    const details = transportFailureDetails(error);
     return blocked({
       endpoint: input.endpoint,
       request: input.request,
@@ -974,7 +1119,10 @@ export async function executeSourceAcquisitionNetworkTransport(
       status: "failed",
       dnsAddressCount: resolved.length,
       selectedAddressFamily: selectedAddressFamily(selectedAddress),
-      transportFailureClass: classifyTransportFailure(error),
+      transportFailureClass: details.transportFailureClass,
+      transportFailurePhase: details.transportFailurePhase,
+      transportErrorShape: details.transportErrorShape,
+      nodeErrorCodeCategory: details.nodeErrorCodeCategory,
     });
   }
 }

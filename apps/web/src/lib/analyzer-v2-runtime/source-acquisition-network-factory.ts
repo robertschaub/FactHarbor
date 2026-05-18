@@ -48,6 +48,9 @@ export type SourceAcquisitionNetworkAttemptTelemetryRecord = {
   readonly responseStatusCodeCategory: SourceAcquisitionNetworkHiddenDiagnostic["responseStatusCodeCategory"];
   readonly contentTypeState: SourceAcquisitionNetworkHiddenDiagnostic["contentTypeState"];
   readonly transportFailureClass: SourceAcquisitionNetworkHiddenDiagnostic["transportFailureClass"];
+  readonly transportFailurePhase: SourceAcquisitionNetworkHiddenDiagnostic["transportFailurePhase"];
+  readonly transportErrorShape: SourceAcquisitionNetworkHiddenDiagnostic["transportErrorShape"];
+  readonly nodeErrorCodeCategory: SourceAcquisitionNetworkHiddenDiagnostic["nodeErrorCodeCategory"];
   readonly candidateCount: number;
   readonly compressedBytes: number;
   readonly decompressedBytes: number;
@@ -122,6 +125,9 @@ function telemetryFromOutcome(params: {
     responseStatusCodeCategory: params.outcome.diagnostic.responseStatusCodeCategory,
     contentTypeState: params.outcome.diagnostic.contentTypeState,
     transportFailureClass: params.outcome.diagnostic.transportFailureClass,
+    transportFailurePhase: params.outcome.diagnostic.transportFailurePhase,
+    transportErrorShape: params.outcome.diagnostic.transportErrorShape,
+    nodeErrorCodeCategory: params.outcome.diagnostic.nodeErrorCodeCategory,
     candidateCount: finiteNonNegativeInteger(params.candidateCount),
     compressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.compressedBytes) : 0,
     decompressedBytes: state === "observed" ? finiteNonNegativeInteger(params.outcome.diagnostic.decompressedBytes) : 0,

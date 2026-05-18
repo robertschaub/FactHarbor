@@ -191,6 +191,9 @@ describe("Analyzer V2 source-acquisition provider-network envelope", () => {
     expect(diagnostic.responseStatusCodeCategory).toBe("not_reached");
     expect(diagnostic.contentTypeState).toBe("not_reached");
     expect(diagnostic.transportFailureClass).toBe("not_applicable");
+    expect(diagnostic.transportFailurePhase).toBe("not_applicable");
+    expect(diagnostic.transportErrorShape).toBe("not_applicable");
+    expect(diagnostic.nodeErrorCodeCategory).toBe("none");
     expect(serialized).not.toContain("https://");
     expect(serialized).not.toContain("raw body");
     expect(serialized).not.toContain("stack");

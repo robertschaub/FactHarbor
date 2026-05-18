@@ -199,6 +199,9 @@ export type SourceAcquisitionCandidateProviderNetworkAttemptTelemetryRecord = Pi
   | "responseStatusCodeCategory"
   | "contentTypeState"
   | "transportFailureClass"
+  | "transportFailurePhase"
+  | "transportErrorShape"
+  | "nodeErrorCodeCategory"
   | "candidateCount"
   | "compressedBytes"
   | "decompressedBytes"
@@ -303,6 +306,9 @@ function sanitizeNetworkAttempt(
     responseStatusCodeCategory: record.responseStatusCodeCategory,
     contentTypeState: record.contentTypeState,
     transportFailureClass: record.transportFailureClass,
+    transportFailurePhase: record.transportFailurePhase,
+    transportErrorShape: record.transportErrorShape,
+    nodeErrorCodeCategory: record.nodeErrorCodeCategory,
     candidateCount: record.candidateCount,
     compressedBytes: record.compressedBytes,
     decompressedBytes: record.decompressedBytes,

@@ -225,6 +225,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
       responseStatusCodeCategory: "success_2xx",
       contentTypeState: "accepted_json",
       transportFailureClass: "not_applicable",
+      transportFailurePhase: "not_applicable",
+      transportErrorShape: "not_applicable",
+      nodeErrorCodeCategory: "none",
       rawPayloadIncluded: false,
       secretIncluded: false,
       cacheKeyConstructed: false,
@@ -317,6 +320,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         selectedAddressFamily: "ipv4",
         responseStatusCodeCategory: "redirect_3xx",
         transportFailureClass: "not_applicable",
+        transportFailurePhase: "not_applicable",
+        transportErrorShape: "not_applicable",
+        nodeErrorCodeCategory: "none",
         redirectDenied: true,
       },
     });
@@ -397,6 +403,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         stopReason: "timed_out",
         selectedAddressFamily: "not_reached",
         transportFailureClass: "not_applicable",
+        transportFailurePhase: "dns_resolution",
+        transportErrorShape: "synthetic_timeout_marker",
+        nodeErrorCodeCategory: "none",
       },
     });
 
@@ -412,30 +421,54 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         stopReason: "timed_out",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "not_applicable",
+        transportFailurePhase: "response_wait",
+        transportErrorShape: "synthetic_timeout_marker",
+        nodeErrorCodeCategory: "none",
       },
       {
         thrown: "cancelled",
         stopReason: "cancelled",
         selectedAddressFamily: "not_reached",
         transportFailureClass: "not_applicable",
+        transportFailurePhase: "dns_resolution",
+        transportErrorShape: "synthetic_cancel_marker",
+        nodeErrorCodeCategory: "none",
       },
       {
         thrown: new Error("raw https://example.test sk_secret stack"),
         stopReason: "transport_failure",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "unknown_transport_failure",
+        transportFailurePhase: "unknown_phase",
+        transportErrorShape: "node_error_code_absent",
+        nodeErrorCodeCategory: "unknown_absent",
       },
       {
         thrown: resetError,
         stopReason: "transport_failure",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "connection_reset",
+        transportFailurePhase: "response_wait",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "connection_reset",
       },
       {
         thrown: tlsError,
         stopReason: "transport_failure",
         selectedAddressFamily: "ipv4",
         transportFailureClass: "tls_failure",
+        transportFailurePhase: "tls_handshake",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "tls_protocol",
+      },
+      {
+        thrown: "non_error_throwable",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "unknown_transport_failure",
+        transportFailurePhase: "unknown_phase",
+        transportErrorShape: "non_error_throwable",
+        nodeErrorCodeCategory: "unknown_absent",
       },
     ] as const;
 
@@ -452,7 +485,11 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         signal: controller.signal,
         lowLevelTransport: fakeTransport({
           request: async () => {
-            throw typeof testCase.thrown === "string" ? new Error(testCase.thrown) : testCase.thrown;
+            throw testCase.thrown === "non_error_throwable"
+              ? testCase.thrown
+              : typeof testCase.thrown === "string"
+                ? new Error(testCase.thrown)
+                : testCase.thrown;
           },
         }),
       });
@@ -465,6 +502,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         stopReason: testCase.stopReason,
         selectedAddressFamily: testCase.selectedAddressFamily,
         transportFailureClass: testCase.transportFailureClass,
+        transportFailurePhase: testCase.transportFailurePhase,
+        transportErrorShape: testCase.transportErrorShape,
+        nodeErrorCodeCategory: testCase.nodeErrorCodeCategory,
       });
     }
   });
