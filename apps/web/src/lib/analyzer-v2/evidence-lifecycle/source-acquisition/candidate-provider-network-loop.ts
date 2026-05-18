@@ -38,6 +38,9 @@ import {
 import type {
   SourceCandidatePreviewProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import type {
+  SourceMaterialPageSummaryFetchLocator,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import { sha256Json } from "@/lib/analyzer-v2/util";
 import {
   EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
@@ -948,6 +951,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   readonly networkBudgetSnapshot?: SourceAcquisitionNetworkBudgetSnapshot;
   readonly lowLevelTransport?: LowLevelTransportOption;
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
+  readonly sourceMaterialPageSummaryFetchLocatorSink?: (locator: SourceMaterialPageSummaryFetchLocator) => void;
 }): Promise<SourceAcquisitionCandidateProviderNetworkLoopDecision> {
   const closedLoopStatus = params.candidateRuntimeClosedLoop.status;
   const handoffStatus = params.handoffDecision.status;
@@ -1187,6 +1191,8 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
       lowLevelTransport: params.lowLevelTransport,
       attemptTelemetrySink: (record) => networkAttempts.push(record),
       candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
+      sourceMaterialPageSummaryFetchLocatorSink: params.sourceMaterialPageSummaryFetchLocatorSink,
+      sourceMaterialPageSummaryLanguageCode: "en",
     });
     const runRequest: SourceAcquisitionCandidateRunRequest = {
       candidateRunId: `X7W2_NETWORK_${sha256Json({

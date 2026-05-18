@@ -15,12 +15,14 @@ import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecy
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import { buildEvidenceLifecycleSourceCandidatePreviewDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
+import { runEvidenceLifecycleSourceMaterialPageSummaryDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
 import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
 } from "@/lib/analyzer-v2/run-context";
 import type { SourceCandidatePreviewProjection } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import type { SourceMaterialPageSummaryFetchLocator } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
@@ -52,6 +54,9 @@ import {
 import {
   recordEvidenceLifecycleSourceCandidatePreviewRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -179,12 +184,15 @@ export async function runClaimBoundaryPipelineV2(
           closedLoopDecision: candidateRuntimeClosedLoop,
         });
         const sourceCandidatePreviewProjections: SourceCandidatePreviewProjection[] = [];
+        const sourceMaterialPageSummaryFetchLocators: SourceMaterialPageSummaryFetchLocator[] = [];
         const candidateProviderNetwork = await runSourceAcquisitionCandidateProviderNetworkLoop({
           handoffDecision: sourceAcquisitionHandoff,
           sourceAcquisitionStartDecision,
           sourceAcquisitionIntakeBoundary,
           candidateRuntimeClosedLoop,
           candidatePreviewProjectionSink: (projection) => sourceCandidatePreviewProjections.push(projection),
+          sourceMaterialPageSummaryFetchLocatorSink: (locator) =>
+            sourceMaterialPageSummaryFetchLocators.push(locator),
         });
         recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
           context,
@@ -197,6 +205,15 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceCandidatePreviewRuntimeArtifact({
           context,
           previewDecision: sourceCandidatePreview,
+        });
+        const sourceMaterialPageSummary = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+          networkDecision: candidateProviderNetwork,
+          previewDecision: sourceCandidatePreview,
+          fetchLocators: sourceMaterialPageSummaryFetchLocators,
+        });
+        recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
+          context,
+          decision: sourceMaterialPageSummary,
         });
       }
     } catch {

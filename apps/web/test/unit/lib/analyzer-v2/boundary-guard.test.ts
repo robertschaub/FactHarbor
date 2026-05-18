@@ -43,6 +43,10 @@ const analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePa
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-candidate-preview-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-source-material-page-summary-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -120,6 +124,14 @@ const evidenceLifecycleSourceMaterialSourceCandidatePreviewPath = path.resolve(
   evidenceLifecycleSourceMaterialRoot,
   "source-candidate-preview.ts",
 );
+const evidenceLifecycleSourceMaterialPageSummaryFetchLocatorPath = path.resolve(
+  evidenceLifecycleSourceMaterialRoot,
+  "page-summary-fetch-locator.ts",
+);
+const evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath = path.resolve(
+  evidenceLifecycleSourceMaterialRoot,
+  "page-summary-source-material.ts",
+);
 const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -176,6 +188,18 @@ const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewOwnerPath = path.r
 const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-source-candidate-preview-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-material-page-summary-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryTransportPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-material-page-summary-transport.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-source-material-page-summary-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -817,6 +841,21 @@ const analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkApprov
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner",
+      new Set(["EvidenceLifecycleSourceMaterialPageSummaryDecision"]),
+    ],
+    [
+      "./evidence-lifecycle-source-material-page-summary-owner",
+      new Set(["EvidenceLifecycleSourceMaterialPageSummaryDecision"]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -834,6 +873,8 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink",
     ]),
   ],
   [
@@ -872,6 +913,23 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2RuntimeEvidenceLifecycleSourceCandidatePreviewArtifactSinkPath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      "@/lib/analyzer-v2/run-context",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryOwnerPath),
+    new Set([
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-transport",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkPath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner",
       "@/lib/analyzer-v2/run-context",
     ]),
   ],
@@ -934,6 +992,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleSourceCandidatePreviewArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink",
     ]),
   ],
 ]);
@@ -4104,6 +4168,189 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W3-B page-summary Source Material hidden, bounded, and Tier-1 only", () => {
+    expect(existsSync(evidenceLifecycleSourceMaterialPageSummaryFetchLocatorPath)).toBe(true);
+    expect(existsSync(evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryOwnerPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryTransportPath)).toBe(true);
+    expect(existsSync(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkPath)).toBe(true);
+    expect(existsSync(analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath)).toBe(true);
+    const violations: string[] = [];
+
+    for (const sourcePath of [
+      evidenceLifecycleSourceMaterialPageSummaryFetchLocatorPath,
+      evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath,
+    ]) {
+      const sourceFile = parseSource(sourcePath);
+      const relativePath = toPosix(path.relative(webRoot, sourcePath));
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports runtime module ${specifier}`);
+        }
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports V1 analyzer ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier) || isCacheIoImport(specifier) || isSourceReliabilityImport(specifier)) {
+          violations.push(`${relativePath} imports forbidden dependency ${specifier}`);
+        }
+        if (specifier.includes("source-acquisition-content") || specifier.includes("parser")) {
+          violations.push(`${relativePath} imports parser/content module ${specifier}`);
+        }
+      }
+      const content = readFileSync(sourcePath, "utf8");
+      for (const forbiddenText of [
+        "fetch(",
+        "https://",
+        "EvidenceCorpusBuilder",
+        "EvidenceItemBuilder",
+        "reportMarkdown",
+        "truthPercentage",
+        "warning-display",
+        "cacheKey",
+        "sourceReliabilityScore",
+        "parsedContent",
+      ]) {
+        if (content.includes(forbiddenText)) {
+          violations.push(`${relativePath} contains forbidden W3-B text ${forbiddenText}`);
+        }
+      }
+    }
+
+    const ownerImports = collectModuleSpecifiers(parseSource(
+      analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryOwnerPath,
+    )).sort();
+    expect(ownerImports).toEqual([
+      "./evidence-lifecycle-source-candidate-preview-owner",
+      "./evidence-lifecycle-source-material-page-summary-transport",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+    ]);
+
+    const transportSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryTransportPath);
+    const transportImports = collectModuleSpecifiers(transportSourceFile).sort();
+    expect(transportImports).toEqual([
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+      "node:dns/promises",
+      "node:https",
+      "node:net",
+      "node:url",
+      "node:zlib",
+    ]);
+    for (const location of collectDirectFetchCallLocations(transportSourceFile)) {
+      violations.push(`W3-B transport makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+    const transportContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryTransportPath, "utf8");
+    for (const requiredText of [
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_TRANSPORT_TIMEOUT_MS = 1_500",
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_COMPRESSED_BYTE_CAP = 8_192",
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_DECOMPRESSED_BYTE_CAP = 16_384",
+      "redirect_denied",
+      "final_address_mismatch",
+      "dns_address_blocked",
+      "agent: false",
+      "rawPayloadIncluded: false",
+      "secretIncluded: false",
+      "publicPayloadIncluded: false",
+      "errorTraceIncluded: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityTouched: false",
+    ]) {
+      if (!transportContent.includes(requiredText)) {
+        violations.push(`W3-B transport missing required text ${requiredText}`);
+      }
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkApprovedImports
+          .get(importBinding.specifier);
+      if (!approvedNames) {
+        violations.push(`W3-B page-summary artifact sink imports unapproved module ${importBinding.specifier}`);
+        continue;
+      }
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `W3-B page-summary artifact sink imports unapproved symbol ${importedName} from ${importBinding.specifier}`,
+          );
+        }
+      }
+    }
+
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryArtifactSinkPath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.source-material.page-summary-artifact.x7w3b",
+      "visibility: \"internal_admin_only\"",
+      "publicPointerExposure: \"forbidden\"",
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4",
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_ARTIFACT_MAX_LEDGER_COUNT = 256",
+      "EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_ARTIFACT_MAX_SERIALIZED_BYTES = 24_576",
+      "source: \"product_v2_orchestrator_after_source_material_page_summary\"",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "evidenceCorpusCreated: false",
+      "evidenceItemGenerated: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "confidenceGenerated: false",
+      "publicSurfaceWritten: false",
+      "publicCutoverStatus: \"blocked_precutover\"",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`W3-B page-summary artifact sink missing required text ${requiredText}`);
+      }
+    }
+
+    const routeImports = collectModuleSpecifiers(
+      parseSource(analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath),
+    ).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(
+      parseSource(analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath),
+    )) {
+      violations.push(`W3-B route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W3-B import ${requiredSpecifier}`);
+      }
+    }
+    for (const sourcePath of publicSurfaceFiles.filter((filePath) =>
+      existsSync(filePath)
+      && toPosix(filePath)
+        !== toPosix(analyzerV2EvidenceLifecycleSourceMaterialPageSummaryArtifactInspectionRoutePath)
+    )) {
+      for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+        if (
+          specifier.includes("evidence-lifecycle-source-material-page-summary")
+          || specifier.includes("page-summary-fetch-locator")
+          || specifier.includes("page-summary-source-material")
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports W3-B page-summary module ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -4619,6 +4866,14 @@ describe("analyzer-v2 boundary guard", () => {
             [
               "SourceCandidatePreviewProjection",
               "buildSourceCandidatePreviewProjection",
+            ].sort(),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator",
+            [
+              "SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE",
+              "SourceMaterialPageSummaryFetchLocator",
+              "buildSourceMaterialPageSummaryFetchLocator",
             ].sort(),
           ],
         ]),
@@ -5988,6 +6243,11 @@ describe("analyzer-v2 boundary guard", () => {
   it("keeps X7-A source-material readiness runtime-adapted and non-executable", () => {
     const coreFiles = collectFiles(evidenceLifecycleSourceMaterialRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
+    ).filter((filePath) =>
+      ![
+        evidenceLifecycleSourceMaterialPageSummaryFetchLocatorPath,
+        evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath,
+      ].map(toPosix).includes(toPosix(filePath))
     );
     const harnessPath = analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath;
     const testPath = path.resolve(

@@ -339,6 +339,63 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     });
   });
 
+  it("emits W3-B page-summary fetch locators only through the runtime-owned candidate hook", async () => {
+    const currentEndpoint = endpoint({
+      providerId: "wikimedia_core",
+      endpointId: "ep_wikimedia_core_page_search",
+      responseCandidatePointer: { kind: "object_array_field", fieldName: "items" },
+    });
+    const currentBudget = budget({ endpointSnapshotHash: currentEndpoint.endpointSnapshotHash });
+    const locators: unknown[] = [];
+    const provider = buildSourceAcquisitionCandidateNetworkProviderBoundary({
+      authority: networkAuthority(currentEndpoint, currentBudget),
+      endpoints: [currentEndpoint],
+      budget: currentBudget,
+      lowLevelTransport: lowLevelTransport({
+        request: async () => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from(JSON.stringify({
+            items: [
+              {
+                key: "Hydrogen_vehicle",
+                title: "Hydrogen vehicle",
+                excerpt: "Fuel cell vehicles use hydrogen.",
+                description: "Public encyclopedia page",
+                url: "https://example.invalid/poison?secret=sk_test",
+              },
+            ],
+          }), "utf8"),
+        }),
+      }),
+      sourceMaterialPageSummaryFetchLocatorSink: (locator) => locators.push(locator),
+    });
+
+    const result = await provider.acquireCandidates(attempt({
+      allowedProviderIds: ["wikimedia_core"],
+      maxCandidateRecords: 1,
+    }));
+    const serialized = JSON.stringify(locators);
+
+    expect(result.structuralStatus).toBe("success");
+    expect(locators).toEqual([
+      expect.objectContaining({
+        providerId: "wikimedia_core",
+        searchEndpointId: "ep_wikimedia_core_page_search",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+        languageCode: "en",
+        encodedTitlePathSegment: "Hydrogen_vehicle",
+        eligibility: "eligible_for_w3b_fetch",
+      }),
+    ]);
+    expect(serialized).not.toContain("Hydrogen vehicle");
+    expect(serialized).not.toContain("https://example.invalid");
+    expect(serialized).not.toContain("sk_test");
+    expect(JSON.stringify(result)).not.toContain("Hydrogen_vehicle");
+  });
+
   it("passes abort signals to transport and enforces provider query and total network budgets", async () => {
     const limitedBudget = budget({
       maxQueriesPerProvider: 1,

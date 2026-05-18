@@ -475,6 +475,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
   it("projects bounded W3-A preview records through the provider-owned search response without changing W2 output", async () => {
     const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
     const previews: unknown[] = [];
+    const locators: unknown[] = [];
     const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
       handoffDecision: readyHandoffDecision(),
       sourceAcquisitionStartDecision: readyStartDecision(),
@@ -504,9 +505,11 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
         },
       },
       candidatePreviewProjectionSink: (projection) => previews.push(projection),
+      sourceMaterialPageSummaryFetchLocatorSink: (locator) => locators.push(locator),
     });
     const serializedDecision = JSON.stringify(decision);
     const serializedPreviews = JSON.stringify(previews);
+    const serializedLocators = JSON.stringify(locators);
 
     expect(calls).toHaveLength(1);
     expect(decision.status).toBe("candidate_provider_network_completed");
@@ -525,10 +528,24 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
         materializationStatus: "source_candidate_preview_materialized",
       }),
     ]);
+    expect(locators).toEqual([
+      expect.objectContaining({
+        providerId: "wikimedia_core",
+        searchEndpointId: "ep_wikimedia_core_page_search",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+        languageCode: "en",
+        encodedTitlePathSegment: "Switzerland_asylum_statistics",
+        eligibility: "eligible_for_w3b_fetch",
+      }),
+    ]);
     expect(serializedPreviews).not.toContain("Switzerland_asylum_statistics");
     expect(serializedPreviews).not.toContain("https://example.invalid");
     expect(serializedPreviews).not.toContain("sk_test");
     expect(serializedPreviews).not.toContain("url");
+    expect(serializedLocators).not.toContain("Asylum statistics in Switzerland");
+    expect(serializedLocators).not.toContain("https://example.invalid");
+    expect(serializedLocators).not.toContain("sk_test");
   });
 
   it("admits the reviewed six-query cap and keeps multi-query artifacts sanitized", async () => {

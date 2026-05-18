@@ -28,6 +28,11 @@ import {
   buildSourceCandidatePreviewProjection,
   type SourceCandidatePreviewProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import {
+  buildSourceMaterialPageSummaryFetchLocator,
+  SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE,
+  type SourceMaterialPageSummaryFetchLocator,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 
 export type SourceAcquisitionCandidateNetworkProviderFactory = {
   readonly buildProvider: () => SourceAcquisitionCandidateProviderBoundary;
@@ -74,6 +79,8 @@ type FactoryParams = {
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
   readonly attemptTelemetrySink?: (record: SourceAcquisitionNetworkAttemptTelemetryRecord) => void;
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
+  readonly sourceMaterialPageSummaryFetchLocatorSink?: (locator: SourceMaterialPageSummaryFetchLocator) => void;
+  readonly sourceMaterialPageSummaryLanguageCode?: string;
 };
 
 type FactoryState =
@@ -171,6 +178,20 @@ function emitCandidatePreviewProjection(
     sink(projection);
   } catch {
     // W3-A preview artifacts are observational only and must not affect provider/network behavior.
+  }
+}
+
+function emitSourceMaterialPageSummaryFetchLocator(
+  sink: FactoryParams["sourceMaterialPageSummaryFetchLocatorSink"],
+  locator: SourceMaterialPageSummaryFetchLocator,
+): void {
+  if (!sink) {
+    return;
+  }
+  try {
+    sink(locator);
+  } catch {
+    // W3-B fetch locators are runtime-only and must not affect provider/network behavior.
   }
 }
 
@@ -379,7 +400,7 @@ export function buildSourceAcquisitionCandidateNetworkProviderBoundary(
         request: networkRequest,
         signal: controller.signal,
         lowLevelTransport: state.lowLevelTransport,
-        candidateProjectionHook: params.candidatePreviewProjectionSink
+        candidateProjectionHook: params.candidatePreviewProjectionSink || params.sourceMaterialPageSummaryFetchLocatorSink
           ? (projectionInput) => {
               const projection = buildSourceCandidatePreviewProjection({
                 providerId: projectionInput.providerId,
@@ -391,6 +412,16 @@ export function buildSourceAcquisitionCandidateNetworkProviderBoundary(
                 candidate: projectionInput.candidate,
               });
               emitCandidatePreviewProjection(params.candidatePreviewProjectionSink, projection);
+              const locator = buildSourceMaterialPageSummaryFetchLocator({
+                projection,
+                candidate: projectionInput.candidate,
+                languageCode: params.sourceMaterialPageSummaryLanguageCode
+                  ?? SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE,
+              });
+              emitSourceMaterialPageSummaryFetchLocator(
+                params.sourceMaterialPageSummaryFetchLocatorSink,
+                locator,
+              );
             }
           : undefined,
       }).finally(() => clearTimeout(timeout));

@@ -24,6 +24,22 @@ export type SourceCandidateLocatorMaterialization =
       readonly pageKeyHash: null;
     };
 
+export type SourceCandidatePageSummaryTitleMaterialization =
+  | {
+      readonly status: "accepted_bounded";
+      readonly pageKeyHash: string;
+      readonly encodedPathSegment: string;
+      readonly rawByteLength: number;
+      readonly encodedByteLength: number;
+    }
+  | {
+      readonly status: "missing" | "rejected_structural";
+      readonly pageKeyHash: null;
+      readonly encodedPathSegment: null;
+      readonly rawByteLength: 0;
+      readonly encodedByteLength: 0;
+    };
+
 export type SourceCandidatePreviewTextMaterialization = {
   readonly state: SourceCandidatePreviewFieldState;
   readonly value: string | null;
@@ -147,6 +163,48 @@ export function materializeSourceCandidatePageKey(value: unknown): SourceCandida
   return {
     status: "accepted_bounded",
     pageKeyHash: sha256Text(value),
+  };
+}
+
+export function materializeSourceCandidatePageSummaryTitle(
+  value: unknown,
+): SourceCandidatePageSummaryTitleMaterialization {
+  const locator = materializeSourceCandidatePageKey(value);
+  if (locator.status !== "accepted_bounded") {
+    return {
+      status: locator.status,
+      pageKeyHash: null,
+      encodedPathSegment: null,
+      rawByteLength: 0,
+      encodedByteLength: 0,
+    };
+  }
+
+  const raw = value as string;
+  const encodedPathSegment = encodeURIComponent(raw);
+  if (
+    encodedPathSegment.length === 0
+    || encodedPathSegment.includes("/")
+    || encodedPathSegment.includes("\\")
+    || encodedPathSegment.includes("?")
+    || encodedPathSegment.includes("#")
+    || utf8ByteLength(encodedPathSegment) > SOURCE_CANDIDATE_PREVIEW_PAGE_KEY_MAX_BYTES * 3
+  ) {
+    return {
+      status: "rejected_structural",
+      pageKeyHash: null,
+      encodedPathSegment: null,
+      rawByteLength: 0,
+      encodedByteLength: 0,
+    };
+  }
+
+  return {
+    status: "accepted_bounded",
+    pageKeyHash: locator.pageKeyHash,
+    encodedPathSegment,
+    rawByteLength: utf8ByteLength(raw),
+    encodedByteLength: utf8ByteLength(encodedPathSegment),
   };
 }
 
