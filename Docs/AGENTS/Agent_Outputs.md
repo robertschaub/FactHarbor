@@ -4181,3 +4181,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This package authorizes no implementation and no live job. W4-E must not add positive extraction readiness, source text, extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence/public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup.
 **Learnings:** W4-D protects the producer side by creating only a shell. W4-E should protect the consumer side by making shell-only extraction denial explicit, runtime-owned, and hard to confuse with readiness.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-E_Source_Package.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-E EvidenceCorpus Extraction Readiness Denial Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented W4-E inside the approved package envelope. V2 now has W4-D shell runtime provenance and a denial-only `EvidenceCorpusExtractionReadinessDenial` consumer contract. It consumes only producer-owned W4-D shell decisions, rejects copied or post-mark-mutated shells, and keeps extraction input and EvidenceItems absent.
+**Warnings:** No live job was run or proposed. W4-E is not positive extraction readiness and does not authorize source text, EvidenceItems, parser execution, report/verdict/warning/confidence/public behavior, cache/SR/storage, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup.
+**Learnings:** Producer-side shell closure was not enough by itself; downstream needs its own denial-only runtime-owned contract so a non-null `EvidenceCorpus` cannot be mistaken for extraction readiness.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-E_Implementation.md
