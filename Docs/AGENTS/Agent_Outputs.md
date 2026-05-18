@@ -47,6 +47,7 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 **Learnings:** The remaining W2 blocker is no longer a good target for another enum guess. The next useful evidence is one contained client-parity observation using Node `https.request`, explicit SNI, custom DNS lookup, and the product header/path posture.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-RP1_Local_Raw_Code_Probe_Package.md
 
+
 ---
 ### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-LS3 DIAG2 Diagnostic Live-Smoke Package -- [Significant] [open-items: yes]
 **For next agent:** LS3 is Claude Opus-reviewed and approved as a one-job diagnostic live-smoke package after DIAG2. It reuses exact input `Using hydrogen for cars is more efficient than using electricity` and passes only if hidden W2 artifacts safely capture DIAG2 transport fields; it is not a provider-success, repair, source-quality, report-quality, public-readiness, or V1-cleanup gate.
@@ -4012,3 +4013,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Balance is `mixed_needs_steering`. W2 improved over passive/no-IO work by implementing a hidden product-route Wikimedia candidate-provider network path, adding bounded cost/timing/outcome/byte telemetry, aligning W2 cap to accepted Query Planning output, and using live diagnostics to narrow a real transport failure. It still produced zero live candidates/bytes/source material/EvidenceCorpus/evidence/verdict/report behavior; current results are diagnostic, not report-quality evidence.
 **Warnings:** Do not spend another live W2 job until a reviewed DIAG5 mapping/repair package has explicit stop criteria and a concrete success target. Keep RP1 raw-code handling bounded; do not quote or reconstruct the raw code. Model swaps remain unsupported because V2 executable model authority still depends on static activation snapshots/exact validators.
 **Learnings:** Cost-quality steering should allow one narrow DIAG5 mapping/repair step because RP1 made the blocker evidence-backed, then require either provider-network candidate success or an endpoint/client design pivot. Further enum-only diagnostics without an unlock target are diminishing-return spend.
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W2-DIAG5 RP1-Observed Node-Code Taxonomy Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented DIAG5 inside the approved source/test envelope. Hidden W2 source-acquisition network diagnostics now map the RP1-observed standard Node-style address-validation failure to `address_validation_failure` / `address_selection` / `node_error_code_present`, while public pre-cutover output and W2 damaged/completion semantics remain unchanged.
+**Warnings:** Raw observed code remains confined to approved source/test literals only; do not quote or reconstruct it in docs/chat/status/handoffs/Agent_Outputs/commit messages or product/admin/public artifacts. DIAG5 authorizes no live jobs, endpoint/client repair, source material/content/parser/cache/SR/storage, EvidenceCorpus/evidence/report/verdict/warning/confidence/public behavior, provider expansion, ACS/direct URL, V1 work/cleanup, prompt/config/model edits, retries, or additional probes.
+**Learnings:** DIAG5 removes the immediate taxonomy blind spot. The next runtime evidence step, if needed, should be a separate LS6-style package after commit/runtime refresh; if that still reports unknown category/phase, pivot to endpoint/client design review rather than another enum-only diagnostic.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W2-DIAG5_Implementation.md

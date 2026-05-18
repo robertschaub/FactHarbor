@@ -135,6 +135,7 @@ export type SourceAcquisitionNetworkTransportFailureClass =
   | "socket_timeout"
   | "tls_failure"
   | "address_family_failure"
+  | "address_validation_failure"
   | "unknown_transport_failure";
 
 export type SourceAcquisitionNetworkTransportFailurePhase =
@@ -166,6 +167,7 @@ export type SourceAcquisitionNetworkNodeErrorCodeCategory =
   | "network_unreachable"
   | "host_unreachable"
   | "address_family_failure"
+  | "address_validation_failure"
   | "operation_canceled"
   | "tls_certificate"
   | "tls_protocol"

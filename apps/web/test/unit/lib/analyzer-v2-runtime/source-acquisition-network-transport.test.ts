@@ -427,6 +427,9 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
     const addressUnavailableError = Object.assign(new Error("address raw https://example.test sk_secret stack"), {
       code: "EADDRNOTAVAIL",
     });
+    const addressValidationError = Object.assign(new Error("address raw https://example.test sk_secret stack"), {
+      code: "ERR_INVALID_IP_ADDRESS",
+    });
     const httpsProtocolError = Object.assign(new Error("protocol raw https://example.test sk_secret stack"), {
       code: "EPROTO",
     });
@@ -520,6 +523,16 @@ describe("Analyzer V2 source-acquisition provider-network transport", () => {
         transportFailurePhase: "address_selection",
         transportErrorShape: "node_error_code_present",
         nodeErrorCodeCategory: "address_family_failure",
+      },
+      {
+        thrown: addressValidationError,
+        rawCode: "ERR_INVALID_IP_ADDRESS",
+        stopReason: "transport_failure",
+        selectedAddressFamily: "ipv4",
+        transportFailureClass: "address_validation_failure",
+        transportFailurePhase: "address_selection",
+        transportErrorShape: "node_error_code_present",
+        nodeErrorCodeCategory: "address_validation_failure",
       },
       {
         thrown: httpsProtocolError,

@@ -112,6 +112,9 @@ function nodeErrorCodeCategoryFromCode(
   if (code === "EAFNOSUPPORT" || code === "EADDRNOTAVAIL") {
     return "address_family_failure";
   }
+  if (code === "ERR_INVALID_IP_ADDRESS") {
+    return "address_validation_failure";
+  }
   if (code === "ECANCELED" || code === "ERR_CANCELED" || code === "ABORT_ERR") {
     return "operation_canceled";
   }
@@ -172,7 +175,7 @@ function transportFailurePhaseFromCategory(
   if (category === "network_unreachable" || category === "host_unreachable") {
     return "socket_connect";
   }
-  if (category === "address_family_failure") {
+  if (category === "address_family_failure" || category === "address_validation_failure") {
     return "address_selection";
   }
   if (category === "connection_reset") {
@@ -213,6 +216,9 @@ function classifyTransportFailureFromCategory(
   }
   if (category === "address_family_failure") {
     return "address_family_failure";
+  }
+  if (category === "address_validation_failure") {
+    return "address_validation_failure";
   }
   if (category === "tls_certificate" || category === "tls_protocol") {
     return "tls_failure";

@@ -205,3 +205,50 @@ Focus on whether DIAG5 is the right next step after RP1:
 | Role | Reviewer | Date | Decision | Notes |
 |---|---|---:|---|---|
 | Claude Opus 4.6 senior architect/security | Claude Opus 4.6 via `scripts/agents/invoke-claude.cjs` | 2026-05-18 | APPROVE | Reviewer confirmed DIAG5 is correctly sequenced after RP1, source/test raw-literal promotion is properly bounded, narrative/product/admin/public artifacts remain raw-literal-free, `address_validation_failure` is generic and correctly scoped, the source/test envelope is narrow, W2 completion semantics stay unchanged, no live job or endpoint/client repair is authorized, and the verifier set is complete. |
+
+## 13. Implementation Closeout
+
+**Status:** Implementation-complete; ready for focused commit.
+
+**Implemented behavior:**
+
+- Added the bounded `address_validation_failure` taxonomy family to hidden source-acquisition network diagnostics.
+- Mapped the RP1-observed standard Node-style address-validation code to:
+  - `nodeErrorCodeCategory: address_validation_failure`
+  - `transportFailureClass: address_validation_failure`
+  - `transportFailurePhase: address_selection`
+  - `transportErrorShape: node_error_code_present`
+- Preserved W2 damaged/completion semantics, public pre-cutover output, provider endpoint policy, retries, budgets, prompts, configs, model policy, cache/SR/storage boundaries, source-material/content/parser blocks, and V1 non-reuse.
+- Added a focused synthetic injected test proving the bounded mapping while serialized outcomes omit the raw code, raw URL marker, secret marker, and stack marker.
+
+**Raw literal handling:** The raw observed code is present only in approved source/test mapping literals. Narrative docs, status, handoffs, Agent_Outputs, commit messages, product/admin/public artifacts, and chat continue to use `[RAW_CODE_OBSERVED_LOCALLY_NOT_RECORDED]` when a placeholder is needed.
+
+**Verifier results:**
+
+```text
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts
+PASS: 2 files, 11 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/source-acquisition-network-envelope.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-transport.test.ts test/unit/lib/analyzer-v2-runtime/source-acquisition-network-factory.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-source-acquisition-candidate-provider-network-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts/route.test.ts test/unit/lib/analyzer-v2/orchestrator.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+PASS: 8 files, 110 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime
+PASS: 43 files, 256 tests
+
+npm -w apps/web run test -- test/unit/lib/analyzer-v2
+PASS: 88 files, 621 tests
+
+npm -w apps/web run build
+PASS
+
+npm run validate:v2-gates
+PASS
+
+node scripts/validate-v2-gate-register.mjs --self-test
+PASS
+
+git diff --check
+PASS
+```
+
+**Next allowed action:** After commit and runtime refresh, any runtime confirmation must be a separate LS6-style package. DIAG5 itself does not authorize live jobs or endpoint/client repair.
