@@ -4132,3 +4132,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This package authorizes no implementation and no live job. It must not create EvidenceCorpus, EvidenceItems, parser output, extraction input, report, verdict, warning, confidence, cache/SR/storage, public behavior, retries, provider expansion, W2 endpoint migration, ACS/direct URL behavior, V1 work, or V1 cleanup.
 **Learnings:** After W3-B, the immediate risk is accidental downstream interpretation of Source Material. W4-A creates the closed readiness/denial boundary before any additional fetch breadth or EvidenceCorpus work.
 -> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-A_Source_Package.md
+
+---
+### 2026-05-18 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-A Source Material To EvidenceCorpus Readiness Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented W4-A inside the approved package envelope. Product V2 now records a hidden/admin-only, text-free Source Material to EvidenceCorpus readiness artifact after W3-B. The positive path requires producer-owned W3-B runtime provenance and still returns `evidenceCorpusBuildAuthorized: false`, `extractionInput: null`, `evidenceCorpus: null`, and `evidenceItems: []`.
+**Warnings:** No live job was run or proposed. W4-A does not authorize EvidenceCorpus, EvidenceItems, parser output, extraction input, report/verdict/warning/confidence, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, ACS/direct URL, V1 work, or V1 cleanup. Boundary guard remains expensive; only timeout metadata was amended after verifier evidence.
+**Learnings:** A Source Material-bearing path needs producer-owned provenance before downstream readiness can be meaningful. The readiness artifact must carry hash/length/status summaries only, not source text, so downstream gates can inspect structure without accidentally becoming extraction.
+-> Docs/AGENTS/Handoffs/2026-05-18_Lead_Developer_V2_X7-W4-A_Implementation.md

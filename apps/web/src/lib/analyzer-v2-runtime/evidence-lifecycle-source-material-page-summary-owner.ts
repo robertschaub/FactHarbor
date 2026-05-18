@@ -22,6 +22,9 @@ import {
   type EvidenceLifecycleSourceMaterialPageSummaryStopReason as TransportStopReason,
   type SourceAcquisitionNetworkLowLevelTransport,
 } from "./evidence-lifecycle-source-material-page-summary-transport";
+import {
+  markEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision,
+} from "./evidence-lifecycle-source-material-page-summary-provenance";
 
 export type EvidenceLifecycleSourceMaterialPageSummaryStatus =
   | "source_material_page_summary_completed"
@@ -123,7 +126,7 @@ function baseDecision(params: {
 }): EvidenceLifecycleSourceMaterialPageSummaryDecision {
   const records = params.records ?? [];
   const diagnostics = params.diagnostics ?? [];
-  return {
+  return markEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision({
     sourceMaterialVersion: SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
     visibility: "internal_admin_only",
     publicPointerExposure: "forbidden",
@@ -151,7 +154,7 @@ function baseDecision(params: {
     }),
     downstreamGate: "source_material_to_evidence_corpus_gate_closed",
     publicCutoverStatus: "blocked_precutover",
-  };
+  });
 }
 
 function matchingMaterializedPreviewIds(

@@ -17,6 +17,9 @@ import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-en
 import { buildEvidenceLifecycleSourceCandidatePreviewDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
 import { runEvidenceLifecycleSourceMaterialPageSummaryDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
 import {
+  buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -57,6 +60,9 @@ import {
 import {
   recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink";
+import {
+  recordEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-evidence-corpus-readiness-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -214,6 +220,14 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
           context,
           decision: sourceMaterialPageSummary,
+        });
+        const sourceMaterialEvidenceCorpusReadiness =
+          buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
+            sourceMaterialPageSummary,
+          });
+        recordEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeArtifact({
+          context,
+          readinessDecision: sourceMaterialEvidenceCorpusReadiness,
         });
       }
     } catch {
