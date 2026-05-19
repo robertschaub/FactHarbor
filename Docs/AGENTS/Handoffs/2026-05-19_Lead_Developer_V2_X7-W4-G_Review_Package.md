@@ -19,13 +19,17 @@ Prepared the W4-G Steering Board review package only. The package proposes a two
 - W3-B runtime-owned Source Material remains the only text parent.
 - W4-F/W4-C/W4-D/W4-E same-ledger runtime state remains the corpus closure parent.
 
-The proposed W4-G positive path creates exactly one hidden/admin-only EvidenceCorpus text-bearing record, preserves the W3-B `4096` byte cap, requires hash/ref/length/endpoint/kind/language equality between W3-B and W4-D/W4-C lineage, and keeps extraction input, EvidenceItems, parser, report/verdict/warning/confidence, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, W3-C widening, ACS/direct URL, and V1 work closed.
+The proposed W4-G positive path creates exactly one hidden/admin-only linked EvidenceCorpus bounded-text sidecar/record, preserves the W3-B `4096` byte cap, requires hash/ref/length/endpoint/kind/language equality between W3-B and W4-D/W4-C lineage, and keeps extraction input, EvidenceItems, parser, report/verdict/warning/confidence, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, W3-C widening, ACS/direct URL, and V1 work closed.
+
+The package was amended before implementation approval so the W4-G admin artifact route is hash/length/provenance-only by default. Bounded text may be returned only behind an explicit authenticated admin inspection flag, if included at all. Public result JSON, UI, reports, exports, compatibility projections, logs, and errors must never expose the text.
 
 ## Key Design Recommendation
 
 Do not source W4-G text from the W4-F artifact route output. W4-F is reachability and closure evidence. W4-G should use producer-owned W3-B Source Material for the bounded text and use W4-F/W4-D/W4-E only to prove same-ledger corpus closure and extraction denial.
 
 No new safe locator-materialization contract is needed for W4-G because W3-A/W3-B already materialized and dereferenced the safe locator. W4-G needs lineage equality and bounded text authorization. Any new locator contract belongs to W3-C or provider-widening work.
+
+W4-G must not supersede or mutate W4-D shell-only or W4-E denial state. It should add a linked sidecar or linked corpus-text decision while preserving the existing closure provenance.
 
 ## Canary Recommendation
 
@@ -35,7 +39,7 @@ No canary is authorized by this package.
 
 ## Warnings
 
-W4-G is review-only. Do not implement until Steering Board accepts a source package. Do not run a live job. W4-G must not authorize extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, W3-C source-material widening, full page/source/html fetch, ACS/direct URL, V1 reuse, V1 work, or V1 cleanup.
+W4-G is review-only. Do not implement until Steering Board accepts a source package. Do not run a live job. W4-G must not authorize default text-returning admin routes, extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2 endpoint migration, W3-C source-material widening, full page/source/html fetch, ACS/direct URL, V1 reuse, V1 work, or V1 cleanup.
 
 ## Learnings
 

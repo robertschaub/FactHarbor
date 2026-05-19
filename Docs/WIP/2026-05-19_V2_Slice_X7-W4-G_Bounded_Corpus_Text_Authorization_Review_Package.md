@@ -29,12 +29,12 @@ The next useful step is no longer another denial or observability layer. W4-G sh
 ```text
 existing W3-B bounded Wikimedia page-summary extract text
   + W4-F-proven corpus chain closure
-  -> one hidden/admin-only EvidenceCorpus text-bearing record
+  -> one hidden/admin-only linked EvidenceCorpus bounded-text sidecar/record
   -> extraction remains closed
   -> public V2 remains pre-cutover and blocked
 ```
 
-The goal is to prove that bounded Source Material text can be carried into the EvidenceCorpus layer without creating extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, or public output.
+The goal is to prove that bounded Source Material text can be carried into the EvidenceCorpus layer without creating extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, or public output. W4-G must not supersede or mutate the W4-D shell or W4-E denial state; it should add a linked sidecar or linked corpus-text decision that preserves the existing shell-only denial provenance.
 
 ## 2. Baseline Facts
 
@@ -65,6 +65,8 @@ Implement a narrow two-parent authorization contract:
 2. **Corpus parent:** the same-run W4-F chain state, preferably the in-memory runtime decisions that produced the W4-F artifact, proving W4-C admission, W4-D shell creation, and W4-E extraction denial on the same ledger.
 
 W4-G should not use the W4-F artifact route output as the source of text. W4-F is a reachability and closure proof. The text-bearing input remains the producer-owned W3-B Source Material decision.
+
+W4-G should not rewrite, replace, mutate, or reinterpret W4-D or W4-E. The W4-D shell remains `kind: "shell_only"` with `corpusTextAccess: "closed"`, and W4-E remains `extraction_denied_shell_only` / `shell_only_corpus`. W4-G adds a separately owned bounded-text sidecar or linked text-authorization decision that points back to the W4-D shell lineage.
 
 The W4-G contract should create one hidden/admin-only EvidenceCorpus text-bearing record only when the W3-B text parent and W4-D corpus parent describe the same source-material record:
 
@@ -143,10 +145,13 @@ evidence_corpus_text_record_created_extraction_gate_closed
 
 Recommended EvidenceCorpus text posture:
 
-- `kind: "bounded_text"`;
+- sidecar kind `bounded_text_sidecar` or linked decision kind `bounded_text_authorization`;
 - `visibility: "internal_admin_only"`;
 - `publicPointerExposure: "forbidden"`;
-- `corpusTextAccess: "internal_admin_only"`;
+- `corpusTextAccess: "internal_admin_only_sidecar"`;
+- `preservesShellOnlyCorpus: true`;
+- `mutatesShellCorpus: false`;
+- `mutatesExtractionDenial: false`;
 - `semanticExtractionAuthorized: false`;
 - `evidenceItemExtractionAuthorized: false`;
 - `extractionInput: null`;
@@ -180,6 +185,10 @@ Recommended text-bearing record fields:
 - `publicPointerExposure: "forbidden"`;
 - closed execution flags.
 
+The internal sidecar/decision may hold `text` so the pipeline can prove bounded corpus-text authorization. The admin artifact route must not return `text` by default. The default route projection should expose only hash, byte length, char length, provenance refs, decision versions, status, stop reason, and closed execution flags.
+
+If the implementation includes text inspection at all, text may be returned only when an authenticated admin request supplies an explicit inspection flag such as `includeText=1`. That response must be no-store, must mark `inspectionMode: "explicit_admin_text_inspection"`, must remain internal/admin-only, and must not be used by downstream execution. The safer default recommendation is to omit text inspection in W4-G unless Steering explicitly asks for it during implementation review.
+
 Caps:
 
 | Limit | Value | Reason |
@@ -188,7 +197,7 @@ Caps:
 | Corpus text bytes per record | `4096` | Matches W3-B/W4-C cap; no cap raise |
 | Aggregate corpus text bytes | `4096` | One record only |
 | Text chars | derived, bounded by byte cap | Multilingual-safe; UTF-8 byte cap is authoritative |
-| Serialized hidden artifact bytes | `32768` recommended | Enough for one bounded text record and metadata, still small |
+| Serialized hidden artifact bytes | `32768` recommended | Enough for one bounded internal sidecar and redacted route metadata, still small |
 | Records per ledger for W4-G artifact sink | `4` recommended | Matches recent bounded hidden artifact posture |
 | Ledger count | `256` recommended | Matches recent bounded hidden artifact posture |
 
@@ -224,9 +233,15 @@ Do not carry raw URL, raw title, raw page key, provider URL, or request path int
 
 ## 7. Raw-Leak Protections
 
-The only source text allowed in W4-G is the already bounded W3-B `sourceMaterialText`, copied into the internal/admin-only corpus text record after W4-G revalidates hash, byte length, record count, kind, and closure state.
+The only source text allowed in W4-G is the already bounded W3-B `sourceMaterialText`, copied into the internal/admin-only corpus text sidecar/decision after W4-G revalidates hash, byte length, record count, kind, and closure state.
 
-Forbidden in W4-G records, artifacts, route responses, public result JSON, report markdown, UI, export, and compatibility projections:
+Forbidden in public result JSON, UI, reports, exports, compatibility projections, logs, and errors:
+
+- the bounded W3-B source material text;
+- the W4-G bounded corpus text sidecar contents;
+- any substring of the bounded text emitted for debugging or diagnostics.
+
+Forbidden in W4-G records, artifacts, default route responses, public result JSON, report markdown, UI, export, compatibility projections, logs, and errors:
 
 - raw provider JSON;
 - raw URL;
@@ -255,7 +270,7 @@ Forbidden in W4-G records, artifacts, route responses, public result JSON, repor
 - report prose;
 - public compatibility fields.
 
-The W4-G admin route, if implemented, must be authenticated, internal, no-store, and explicitly marked `internal_admin_only` / `forbidden`. Public V2 output must remain `4.0.0-cb-precutover` / `blocked_precutover`.
+The W4-G admin route, if implemented, must be authenticated, internal, no-store, and explicitly marked `internal_admin_only` / `forbidden`. The default response must be hash/length/provenance-only and must omit `text`, `sourceMaterialText`, excerpts, snippets, previews, and raw provider fields. Public V2 output must remain `4.0.0-cb-precutover` / `blocked_precutover`.
 
 ## 8. Failure Boundaries
 
@@ -282,7 +297,7 @@ Recommended blocked statuses / stop reasons:
 | downstream flag opened | `downstream_execution_not_authorized` |
 | structural exception | `structural_exception` |
 
-Blocked W4-G decisions must emit no corpus text record, no extraction input, no EvidenceItems, no parser output, no report/verdict/warning/confidence data, no public output changes, no cache/SR/storage writes, and no retries.
+Blocked W4-G decisions must emit no corpus text sidecar/record, no extraction input, no EvidenceItems, no parser output, no report/verdict/warning/confidence data, no public output changes, no cache/SR/storage writes, and no retries.
 
 ## 9. Explicit Non-Goals
 
@@ -344,13 +359,17 @@ Any source edit for source acquisition, W2 endpoint migration, W3-C widening, pa
 
 Focused tests should prove:
 
-- W4-G creates exactly one hidden/admin-only corpus text record from one runtime-owned W3-B record and matching W4-C/W4-D/W4-E chain;
+- W4-G creates exactly one hidden/admin-only corpus text sidecar/record from one runtime-owned W3-B record and matching W4-C/W4-D/W4-E chain;
+- W4-G does not supersede or mutate W4-D shell state;
+- W4-G does not supersede or mutate W4-E denial state;
 - the text hash, byte length, and char length match W3-B exactly;
 - source-material ref, locator ref, candidate preview id, provider id, endpoint id, kind, and language match W4-C/W4-D lineage;
 - copied, spread, structured-cloned, or JSON-round-tripped parents are rejected;
 - post-mark mutated parents are rejected;
 - missing W3-B, unsupported kind, blank text, oversize text, hash mismatch, multiple records, W4-C non-positive, W4-D non-shell, and W4-E non-denial all fail closed;
 - admin artifact route is authenticated, no-store, bounded, and hidden/admin-only;
+- default admin artifact route response is hash/length/provenance-only and contains no `text`, `sourceMaterialText`, excerpt, snippet, preview, or raw provider field;
+- optional text inspection, if implemented, requires an explicit authenticated admin inspection flag and never becomes the default response;
 - malformed ledger ids return `400` no-store;
 - missing ledgers return `404` no-store;
 - unauthenticated reads return `401` no-store;
@@ -406,9 +425,10 @@ A later single W4-G canary is recommended after implementation review because th
 
 - W3-B still creates one bounded page-summary Source Material record;
 - W4-F chain closure still appears on the same ledger;
-- W4-G creates one hidden/admin-only corpus text record;
+- W4-G creates one hidden/admin-only corpus text sidecar/record;
 - text byte length is `> 0` and `<= 4096`;
 - W4-G text hash equals the W3-B Source Material text hash;
+- W4-G default admin route response exposes only hash/length/provenance and not text;
 - extraction remains closed;
 - public V2 remains `4.0.0-cb-precutover` / `blocked_precutover`;
 - no hidden markers or text leak publicly.
@@ -431,19 +451,22 @@ W4-G passes only if one product-route live canary:
 - shows W4-D `evidence_corpus_shell_created_extraction_gate_closed`;
 - shows W4-E `extraction_denied_shell_only` / `shell_only_corpus`;
 - shows W4-G `evidence_corpus_text_record_created_extraction_gate_closed`;
-- shows exactly one W4-G text record;
+- shows exactly one W4-G text sidecar/record;
 - shows text byte length `> 0` and `<= 4096`;
 - shows W4-G text hash equals the W3-B Source Material text hash;
+- shows W4-G preserves W4-D shell-only and W4-E denial provenance without mutating either state;
 - keeps `semanticExtractionAuthorized: false`;
 - keeps `evidenceItemExtractionAuthorized: false`;
 - keeps `extractionInput: null`;
 - keeps `evidenceItems: []`;
 - keeps parser/cache/SR/storage/report/verdict/warning/confidence/public flags closed;
 - exposes the W4-G artifact only through the authenticated internal no-store route;
+- keeps the default W4-G artifact route response hash/length/provenance-only with no text;
+- if text inspection is implemented, exposes text only through an explicit authenticated admin inspection flag and never through default route responses;
 - keeps public result `_schemaVersion` at `4.0.0-cb-precutover`;
 - keeps public cutover status `blocked_precutover`;
 - keeps public result damaged/precutover and not a meaningful V2 report;
-- leaks no W4-G markers or source text into public result JSON, report markdown, UI, export, or compatibility projection;
+- leaks no W4-G markers or source text into public result JSON, report markdown, UI, export, compatibility projection, logs, or errors;
 - consumes exactly one live job from the 3-job tranche.
 
 ## 15. Stop Criteria
@@ -456,7 +479,8 @@ Stop and return to Steering Board without a canary or second attempt if any of t
 - the W3-B and W4-D/W4-C lineage does not match;
 - source text would need to come from route JSON, logs, docs, public output, or copied state;
 - source-material widening, provider expansion, endpoint migration, retries, parser work, extraction input, EvidenceItems, report/verdict/warning/confidence behavior, cache/SR/storage, public behavior, ACS/direct URL, or V1 work becomes necessary;
-- hidden artifact routing would expose raw provider payload, raw URL/title/key, or text publicly;
+- hidden artifact routing would expose raw provider payload, raw URL/title/key, or text publicly or by default;
+- W4-G would need to mutate, supersede, or reinterpret W4-D shell-only state or W4-E extraction-denial state;
 - local verifiers fail and the root cause is not a narrow W4-G formatting/type/test issue;
 - runtime cannot be refreshed cleanly from the committed W4-G implementation.
 
@@ -465,19 +489,19 @@ Stop and return to Steering Board without a canary or second attempt if any of t
 Architect:
 
 - Is the two-parent contract, W3-B for text and W4-F/W4-D/W4-E for corpus closure, the right authorization shape?
-- Should W4-G create `kind: "bounded_text"` or another corpus kind name?
-- Is `corpusTextAccess: "internal_admin_only"` clear enough, or should the field distinguish "record exists" from "extraction authorized" more explicitly?
+- Should the linked sidecar use `bounded_text_sidecar`, `bounded_text_authorization`, or another name?
+- Is `corpusTextAccess: "internal_admin_only_sidecar"` clear enough, or should the field distinguish "sidecar text exists" from "extraction authorized" more explicitly?
 
 Security/runtime:
 
 - Is carrying the bounded W3-B text into a hidden/admin-only corpus record acceptable with the proposed cap and route posture?
-- Should the W4-G admin route return the bounded text itself, or return only hash/length by default with a separate explicit text-inspection flag later?
+- Should W4-G omit text inspection entirely in the first implementation, or include an explicit admin-only `includeText=1` inspection flag?
 - Are the raw-leak protections enough for first text-bearing corpus admission?
 
 Code/package:
 
 - Is the candidate source envelope narrow enough?
-- Should W4-G be implemented as a sidecar text record linked to the W4-D shell, or as a new corpus decision that supersedes the shell for the same ledger?
+- Should W4-G be implemented as a sidecar text record linked to the W4-D shell, or as a new linked corpus-text decision that preserves the W4-D shell and W4-E denial unchanged?
 - Are the proposed tests sufficient to prove runtime ownership, lineage equality, and public non-leakage?
 
 Product/quality/cost:
