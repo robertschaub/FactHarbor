@@ -385,6 +385,45 @@ At 21:00:09 a new round of edits appeared. HEAD unchanged at `6cef9c71`; working
 
 Continuing to monitor.
 
+### Resume update (21:45) — W5-B implementation appears in working tree; Captain authorization not visible in this monitor session
+
+At 21:45:40, ~41 min after the W5-B review package was committed at 21:04, working-tree changes appeared that implement W5-B's approval-flip scope:
+
+- New untracked handoff `Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md` (Captain-attributed approval anchor file, same pattern as W5-A's anchor file).
+- New `ANALYZER_V2_X7_W5_B_APPROVAL_ANCHOR` and `ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL` in `approval-records.ts` (uses path-anchor for `approvedAt`, not synthetic timestamp — the correct pattern from `98515f61`).
+- `apps/web/src/lib/analyzer-v2/gateway/policy.ts`: `claim_understanding_gate1` flipped to `status: "executable"` with `promptApproval: ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL`.
+- `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`: `v2.model.claim_understanding_gate1.0` flipped from `MISSING_APPROVAL` to W5-B approval.
+- `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts`: `ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY` flipped from `PENDING_APPROVAL` to W5-B approval.
+- `apps/web/test/unit/lib/analyzer-v2/gateway/policy.test.ts`: updated to expect `executable` for `claim_understanding_gate1`.
+
+**Technical scope:** matches the W5-B review package's Proposed Scope exactly. Approval-flip surface only; no prompt text, schema text, model/provider selection changes, cache read/write, public API/UI/report/export/compatibility behavior, parser, report/verdict/warning/confidence, provider expansion, ACS/direct URL, or V1 work. Uses path-anchor approach for the `approvedAt` value (not the fabricated-timestamp anti-pattern from earlier in the session).
+
+**Procedural concern: Captain authorization not visible in this monitor session.** The W5-B review package committed at 21:04 (`23a0b1bc`) explicitly states it must not be implemented without explicit Captain approval. The new Captain-attributed handoff document contains the quoted Captain approval text:
+
+> "Approved to implement X7-W5-B under Docs/WIP/2026-05-19_V2_Slice_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md, limited to making claim_understanding_gate1 executable"
+
+That quoted Captain message **does not appear in this monitor's session.** Since the W5-B review package was committed at 21:04, the Captain inputs I have received are: the agent-attribution research question and the window extensions to 24:00. No W5-B approval message in this thread.
+
+**This is the same pattern as Addendum VI (W5-A canary).** Two interpretations:
+
+(A) The Captain authorized W5-B in another Codex thread, consistent with the session's established pattern (W5-A initial implementation, W5-A canary, W5-A second/third canary all received approvals outside this monitor's thread, ratified by Captain commits).
+
+(B) Unauthorized implementation, fabricating the approval anchor — the early-session pattern.
+
+The established Captain behavior in this session strongly suggests (A). The technical execution is properly scoped and uses the correct path-anchor approach. The W5-B review package is properly framed and the implementation matches its scope exactly. The Captain's commit-ratification pattern will resolve the ambiguity.
+
+**Monitor disposition:** Not escalating to "halt" — recording as a watch-flag with the same disambiguation logic as Addendum VI. If the Captain commits within a reasonable window (consistent with the W5-A and canary commit cadences of ~3-15 min), the implementation is path (A) and the recovery is complete. If the work continues to expand beyond W5-B's approval-flip scope without commit, escalation may be warranted.
+
+**Whitespace and live state:** no commits since `23a0b1bc`; no live jobs; tranche unchanged at `6` reset / `4` remaining. Public V2 unchanged. `git diff --check` clean.
+
+### Resume update (~21:47) — Captain confirmed W5-B authorization
+
+The Captain confirmed in this monitor's session that the message "Approved to implement X7-W5-B under Docs/WIP/2026-05-19_V2_Slice_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md, limited to making claim_understanding_gate1 executable" was the actual Captain authorization, issued in a separate thread. This resolves the path (A)/(B) ambiguity in favor of (A): the W5-B implementation is Captain-authorized and the synthetic-handoff pattern detected at 21:45 is just the durable repo-local approval anchor file the implementing agent created from the Captain's actual message in the other thread.
+
+The W5-B working tree at this point includes the implementation source diffs, the Captain-attributed approval anchor file, gate register update, validator-script update for the new W5-B approval anchor, and a runtime-stage test update — all scope-compliant with the W5-B review package and the Captain's approval text.
+
+**Lesson reinforced (already noted in earlier addenda):** the Captain's authorizations during this session are routinely issued in separate Codex threads and then ratified into this monitor's audit chain by commits and by post-hoc confirmation. The monitor's correct posture continues to be: flag potential procedural violations clearly, do not escalate to "halt" when the technical scope matches the corresponding review package and uses the right approval-anchor pattern, and let the Captain's commit/message behavior disambiguate.
+
 ### Resume update (20:40) — authorization concern resolved by implementing thread
 
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
