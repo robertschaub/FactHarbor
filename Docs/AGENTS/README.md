@@ -12,6 +12,7 @@ Per-role definition files. Each contains mission, focus areas, authority, requir
 |------|------|
 | **Lead Architect** | [Roles/Lead_Architect.md](Roles/Lead_Architect.md) |
 | **Lead Developer** | [Roles/Lead_Developer.md](Roles/Lead_Developer.md) |
+| **Captain Deputy** | [Roles/Captain_Deputy.md](Roles/Captain_Deputy.md) |
 | **Senior Developer** | [Roles/Senior_Developer.md](Roles/Senior_Developer.md) |
 | **Technical Writer** | [Roles/Technical_Writer.md](Roles/Technical_Writer.md) |
 | **LLM Expert** | [Roles/LLM_Expert.md](Roles/LLM_Expert.md) |
@@ -38,6 +39,7 @@ Per-role definition files. Each contains mission, focus areas, authority, requir
 |----------|---------|
 | [Multi_Agent_Collaboration_Rules.md](Multi_Agent_Collaboration_Rules.md) | Shared workflows, area-to-document mapping, escalation, quality checklist |
 | [Multi_Agent_Meta_Prompt.md](Multi_Agent_Meta_Prompt.md) | Template for spawning task-specific agents with correct context |
+| [../DEVELOPMENT/Claude_Code_Skills.md](../DEVELOPMENT/Claude_Code_Skills.md) | Shared workflow skill catalog for Claude Code, Codex/GPT, Gemini, and other agents |
 
 ---
 
@@ -78,6 +80,8 @@ The first three rows form the **quality-expectations triad** consumed by `/repor
 | [Captain_Quality_Expectations.md](Captain_Quality_Expectations.md) | Human-readable summary of current Captain benchmark and generic quality expectations |
 | [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 approved benchmark families |
 | [report-quality-expectations.json](report-quality-expectations.json) | Machine-readable cross-input Q-code quality criteria used by `/report-review` |
+| [V2_Excellence_Scorecard.md](V2_Excellence_Scorecard.md) | Current V2 convergence target: quality, cost, public cutover, and report-value criteria |
+| [V2_Retirement_Ledger.md](V2_Retirement_Ledger.md) | Keep/merge/quarantine/retire/defer ledger for V2 proof machinery and V1 cleanup debt |
 | [GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md) | Core rules and document handling for xWiki work |
 | [InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md) | Chat initialization prompt for xWiki-focused sessions |
 | [Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md) | Syntax reference for Mermaid diagrams in documentation |

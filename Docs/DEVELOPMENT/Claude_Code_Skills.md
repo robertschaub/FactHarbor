@@ -1,6 +1,6 @@
 # FactHarbor Workflow Skills
 
-FactHarbor currently ships fourteen built-in workflow skills. Claude Code exposes them as slash
+FactHarbor currently ships seventeen built-in workflow skills. Claude Code exposes them as slash
 commands, and the same canonical procedures live under `.claude/skills/<name>/SKILL.md` for
 Codex/GPT, Gemini, and Cline to consume directly.
 
@@ -15,6 +15,9 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 | [Pipeline Analysis](#pipeline-analysis) | `/pipeline` | Debug, architecture questions, multi-stage changes | No |
 | [Quality Audit](#quality-audit) | `/audit` | Pre-release checks, quality regressions | No |
 | [Adversarial Debate](#adversarial-debate) | `/debate` | Structured adversarial debate on any proposition; reusable by other skills | No |
+| [Captain Deputy](#captain-deputy) | `/captain-deputy` | Single Captain-facing front door for autonomous workstreams | No |
+| [Steer-Co](#steer-co) | `/steer-co` | Captain-facing model-diverse Steering Committee for consent-based direction-setting | No |
+| [Reasoning Budget](#reasoning-budget) | `/reasoning-budget` | Dynamic reasoning effort selection for agents and lanes | No |
 | [Context Extension](#context-extension) | `/context-extension` | Preserve, exchange, and reload high-value in-progress context throughout long sessions | No |
 | [Debt Guard](#debt-guard) | `/debt-guard` | Mandatory bugfix complexity guard: decide between undoing/amending previous code and adding new code before editing | No |
 | [Prompt Audit](#prompt-audit) | `/prompt-audit` | Static prompt-only quality audit against AGENTS.md prompt rules and schema alignment | No |
@@ -175,11 +178,108 @@ Other skills invoke `/debate` by passing a `CONTEXT_MANIFEST` with `EVIDENCE_INV
 
 ---
 
+## Captain Deputy
+
+**File:** [`.claude/skills/captain-deputy/SKILL.md`](../../.claude/skills/captain-deputy/SKILL.md)
+
+Captain-facing front-door workflow for autonomous implementation workstreams. The Captain talks to one deputy, and the deputy coordinates Steer-Co for steering plus the Lead Developer for delivery, applies `/reasoning-budget`, actively controls debt-guard posture, runs mechanical debt-sensor checkpoints for V2/debt-sensitive work, monitors progress, and escalates only for high risk, standing approval gates, unresolved material dissent, or essential no-consent decisions.
+
+### When to use
+
+- The Captain wants one accountable agent to coordinate an approved workstream end to end.
+- A plan should keep moving without routine Captain prompts.
+- Steer-Co should automatically steer implementation when verifier failure, scope drift, reviewer disagreement, or contested causality appears.
+- The Lead Developer needs a bounded delivery packet with authority, scope, validation, and stop triggers.
+
+### What it does
+
+1. Restates the Captain objective, scope boundaries, approval gates, budget limits, and forbidden assumptions.
+2. Applies role startup rules and `/reasoning-budget` across the deputy, Steer-Co leader, Lead Developer, reviewers, and sidecars.
+3. Creates a compact workstream packet.
+4. Convenes `/steer-co` only when steering is useful.
+5. Assigns the Lead Developer delivery lane with allowed files/actions, mandatory workflows, validation, and stop triggers.
+6. Monitors validation, reviewer findings, debt-guard result blocks, accepted temporary debt, and removal triggers without interrupting routine implementation.
+7. Runs `npm run debt:sensors` at V2/debt-sensitive intake, before debt-sensitive Steer-Co packets, and before closeout; treats `advisory_warn` as steering context unless Captain requires `--fail-on-warn`.
+8. Requires `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` for substantial V2 packages against `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`.
+9. Reconvenes Steer-Co when debt-guard was skipped, net mechanisms increase without containment, failed validation repeats, or V2 gate/diagnostic/proof work adds machinery without value or retirement.
+10. Escalates to the Captain only when high risk, approval gates, no-consent essential decisions, or expensive ambiguity require it.
+
+---
+
+## Steer-Co
+
+**File:** [`.claude/skills/steer-co/SKILL.md`](../../.claude/skills/steer-co/SKILL.md)
+
+Captain-facing Steering Committee workflow for high-impact direction-setting and ambiguous next-step decisions. The Captain communicates only with the GPT-5.5 xhigh Steer-Co Leader. The Leader holds bounded consent-based steering authority for low-risk or bounded medium-risk decisions, decides whether to convene the committee, briefs model-diverse reviewers, consolidates advice and dissent, includes the latest mechanical debt-sensor signal for V2/debt-sensitive decisions, and returns concise current state, directions, a decision or proposal, and a prompt the Captain can hand to the implementing Lead Developer.
+
+### When to use
+
+- Captain explicitly asks for Steer-Co, Steering Committee, committee review, or a Steer-Co clarification.
+- A governance, architecture, prompt/model, report-quality, or pipeline decision needs model-diverse steering.
+- Failed validation or contested causality leaves more than one plausible next step.
+- Debt-guard evidence is contested, net mechanisms increase, or a V2 consolidation-gate exception needs consent.
+- A V2 or debt-sensitive decision needs the latest `npm run debt:sensors` signal interpreted as steering context.
+- A substantial V2 decision needs scorecard/retirement-ledger interpretation or a hidden-only exception.
+- A prior Steer-Co result needs clarification and the Leader must decide whether the committee needs to reconvene.
+
+### Committee structure
+
+| Member | Model | Default lens |
+|---|---|---|
+| Leader | GPT-5.5 xhigh | Intake, member selection, consolidation, Captain-facing answer |
+| Reviewer | Claude Opus 4.6 | Adversarial review, architecture pressure, LLM-quality or governance consistency |
+| Reviewer | Gemini newest approved pro model | Independent systems review, implementation practicality, alternative path, cross-tool portability |
+
+The active committee has at least three members including the Leader. Expertise is selected per task from the FactHarbor role registry or a narrow expertise label.
+
+### What it does
+
+1. Builds a compact steering packet: decision question, requested output, authority boundaries, evidence inventory, known gaps, forbidden assumptions, and owning workflows.
+2. Checks whether the Leader can decide as Captain Deputy or must escalate to the human Captain.
+3. Decides whether the Leader can answer a clarification directly or must reconvene the committee.
+4. Selects members with distinct expertise and distinct model families.
+5. Briefs every member from the same packet without leaking the Leader's preferred answer.
+6. Consolidates by consent, not majority vote; unresolved evidence-backed objections force modification, deferral, or escalation.
+7. States the accepted complexity direction when debt-sensitive work is in scope: amend, revert, quarantine, delete, add, or defer.
+8. Returns a concise Captain-facing result with current state, directions, decision/proposal, debt-guard/complexity control, and a Lead Developer handoff prompt.
+
+### Relationship to `/debate`
+
+`/debate` pressures a concrete proposition. `/steer-co` chooses direction. Use `/debate` inside Steer-Co only when a proposition needs adversarial pressure before the Leader can synthesize a recommendation.
+
+---
+
+## Reasoning Budget
+
+**File:** [`.claude/skills/reasoning-budget/SKILL.md`](../../.claude/skills/reasoning-budget/SKILL.md)
+
+Dynamic reasoning-effort workflow for choosing the lowest safe effort and escalating from observed signals. It routes reasoning effort only after the task and workflow are known; it does not select skills, assign roles, or approve work.
+
+### When to use
+
+- At task start for delegated, multi-agent, Steer-Co, implementation-lead, review/debate, failed-validation, or expensive-to-reverse work.
+- After verifier failures, reviewer disagreement, scope changes, failed-attempt recovery, or final synthesis.
+- When a Captain Deputy packet needs explicit reasoning budgets for every lane.
+
+### Effort levels
+
+| Level | Use for | Typical effort |
+|---|---|---|
+| `R0 mechanical` | searches, formatting, index rebuilds, status checks | low |
+| `R1 bounded` | clear single-scope implementation/review from an accepted packet | medium |
+| `R2 complex` | cross-file or cross-doc work, unclear contracts, synthesis | high |
+| `R3 critical` | failed validation, contested causality, final multi-agent synthesis | extra high |
+| `R4 external challenge` | high-risk ambiguity needing independent model-family review | Opus/Gemini reviewer with a written unique question |
+
+---
+
 ## Debt Guard
 
 **File:** [`.claude/skills/debt-guard/SKILL.md`](../../.claude/skills/debt-guard/SKILL.md)
 
 Mandatory balanced complexity-control workflow for bug fixes, failed validation recovery, refactors, and reviews. It prevents additive repair drift without assuming rollback is always best.
+
+In Captain Deputy workstreams, `/debt-guard` becomes an actively controlled signal: the Deputy assigns the owner and expected path, while Steer-Co decides contested complexity direction or net mechanism increases by consent.
 
 ### When to use
 
@@ -518,7 +618,7 @@ For complex concepts it uses multiple analogies. The tone is conversational, not
 
 ## Cross-Tool Usage
 
-All fourteen skills are discoverable by non-Claude agents:
+All seventeen skills are discoverable by non-Claude agents:
 
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also
@@ -533,7 +633,9 @@ All fourteen skills are discoverable by non-Claude agents:
 Workflow selection follows the order in [AGENTS.md](../../AGENTS.md): mandatory gates first,
 then explicit user or prompt assignment, then `fhAgentKnowledge.preflight_task` for role-activated
 or ambiguous tasks, then metadata or table matching. Overlapping workflows rely on their own scope
-guards; FactHarbor does not use a separate meta-routing skill.
+guards; FactHarbor does not use generic meta-routing skills. `/captain-deputy` is the
+explicit Captain-delegated coordinator for the fixed Steer-Co + Lead Developer operating
+model, not a replacement for mandatory workflow selection or approval gates.
 
 For any tool that is not Claude Code:
 

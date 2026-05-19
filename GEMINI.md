@@ -29,7 +29,9 @@ You are an expert software engineer working on **FactHarbor**.
 
 ## Behavior
 *   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
-*   **Bugfixing:** For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, first read and apply `.claude/skills/debt-guard/SKILL.md`.
+*   **Bugfixing:** For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, first read and apply `.claude/skills/debt-guard/SKILL.md`. In Captain Deputy workstreams, the deputy actively controls debt-guard posture and Steer-Co decides contested complexity direction by consent.
+*   **Mechanical debt sensors:** `npm run debt:sensors` prints an advisory report for V2 footprint, debt-guard telemetry, docs volume, and V2 consolidation markers. Run it automatically for Captain Deputy V2/debt-sensitive workstreams, debt-sensitive Steer-Co packets, V2 Consolidation Gate packages, and Lead Developer closeout; record status and salient warnings. `advisory_warn` is not a hard blocker unless Captain explicitly requires `--fail-on-warn`.
+*   **V2 convergence controls:** Substantial V2 packages must state `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` against `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
@@ -62,12 +64,15 @@ Documented procedures for recurring tasks. Read the file and follow its instruct
 3. **Preflight routing** — `fhAgentKnowledge.preflight_task` returns recommended skills and startup advice. Role-activated tasks must call preflight; other tasks may call it when workflow choice is ambiguous.
 4. **Metadata/table match** — use the Named Workflows table below and the target skill's own description.
 
-When skills overlap, each skill's own scope guards determine which workflow owns the outcome. Do not create meta-routing skills.
+When skills overlap, each skill's own scope guards determine which workflow owns the outcome. Do not create generic meta-routing skills. `captain-deputy` is a Captain-delegated workstream coordinator for the fixed Steer-Co + Lead Developer operating model; it does not replace mandatory workflow selection or approval gates.
 
 | Task | Workflow file |
 |---|---|
 | Balanced bugfix complexity guard | `.claude/skills/debt-guard/SKILL.md` — mandatory for every bugfixing task before editing; compare undoing/amending previous code against adding new code |
 | Adversarial debate | `.claude/skills/debate/SKILL.md` — read and execute the role procedure manually or with available agents when slash commands are unavailable |
+| Captain Deputy | `.claude/skills/captain-deputy/SKILL.md` — Captain-facing front-door workflow coordinating Steer-Co, Lead Developer delivery, reasoning budgets, active debt-guard control, advisory debt-sensor checkpoints for V2/debt-sensitive work, progress monitoring, and escalation only for high risk, approval gates, or no-consent essential decisions |
+| Steering Committee | `.claude/skills/steer-co/SKILL.md` — Captain-facing model-diverse steering workflow; GPT-5.5 xhigh Leader holds bounded consent-based steering authority for low-risk or bounded medium-risk decisions, including contested complexity direction and debt-sensor interpretation for V2/debt-sensitive decisions, and returns concise state, directions, decision/proposal, and a Lead Developer handoff prompt |
+| Dynamic reasoning budget | `.claude/skills/reasoning-budget/SKILL.md` — choose and adjust reasoning effort after task/workflow is known; does not select skills or approve work |
 | Context extension | `.claude/skills/context-extension/SKILL.md` — preserve, exchange, and reload high-value in-progress context throughout long sessions; not a replacement for completion outputs |
 | Deep pipeline analysis | `.claude/skills/pipeline/SKILL.md` |
 | Full quality audit | `.claude/skills/audit/SKILL.md` |

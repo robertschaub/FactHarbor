@@ -405,6 +405,52 @@ _(No entries yet)_
 
 ---
 
+## Agents Supervisor
+
+### 2026-05-19 — Reasoning Effort Should Be Routed By State, Not Preference
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** Dynamic reasoning selection should start at the lowest safe effort and escalate only on concrete signals: verifier failure, unclear root cause, reviewer disagreement, failed-attempt recovery, expensive-to-reverse decisions, or final multi-agent synthesis. Sidecars should default lower than the integrator; premium Opus/Gemini calls need a written unique question before invocation.
+**Files:** `.claude/skills/reasoning-budget/SKILL.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Dynamic_Reasoning_Budget.md`
+
+### 2026-05-19 — Steer-Co Belongs In A Skill, Not Only Ad Hoc Handoffs
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** Steer-Co should be available as a named steering committee workflow so direction-setting is discoverable and consistent. Keep it scoped to evidence-packet intake, model-diverse advice, consent synthesis, material dissent preservation, and Captain escalation; do not let it become an implementation role or a way to bypass approval authority.
+**Files:** `.claude/skills/steer-co/SKILL.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Steer_Co_Skill_Restored.md`
+
+### 2026-05-19 — Captain Deputy Should Own The Front Door, Not The Delivery Lane
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** A Captain Deputy can keep implementation autonomous without becoming an implementer by owning the front-door operating loop: intake, authority packet, Steer-Co triggers, Lead Developer packet, reasoning budgets, monitoring, and escalation. Keep Steer-Co as the consent/challenge lane and Lead Developer as the delivery lane; that separation preserves autonomy without laundering approval authority.
+**Files:** `.claude/skills/captain-deputy/SKILL.md`, `Docs/AGENTS/Roles/Captain_Deputy.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Captain_Deputy_Operating_Model.md`
+
+### 2026-05-19 — Session Functions Should Not Become Role Aliases
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5) + Claude Opus 4.6 review
+**Category:** gotcha
+**Learning:** Do not alias a model-pinned session function as a general activatable role. `Steer-Co Leader` is a GPT-5.5-pinned function inside `/steer-co`; mapping it to `Captain Deputy` would let Claude/Gemini sessions activate the wrong role and bypass the intended model boundary. Keep role aliases for actual role files, and describe session functions inside their owning skill.
+**Files:** `Docs/AGENTS/Roles/Captain_Deputy.md`, `.claude/skills/steer-co/SKILL.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`
+
+### 2026-05-19 — Claude CLI Deprecation Warnings Do Not Override Captain Model Policy
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** gotcha
+**Learning:** Captain explicitly prefers `claude-opus-4-6` with adaptive thinking disabled, `CLAUDE_CODE_EFFORT_LEVEL=max`, and `MAX_THINKING_TOKENS=63999`. Do not "fix" Claude CLI adaptive-thinking deprecation warnings by switching model or reasoning mode unless Captain changes this policy.
+**Files:** `AGENTS.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `.claude/settings.json`, `C:/Users/rober/.claude/settings.json`
+
+### 2026-05-19 — Debt Sensors Should Be Automatic But Advisory First
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** Mechanical debt sensors are useful when Captain Deputy, Steer-Co, and Lead Developer run them automatically at V2/debt-sensitive intake, steering, gate, and closeout points. Keep `advisory_warn` as steering context until Captain accepts a baseline or explicitly promotes fail-on-warning behavior; otherwise the process gains stop-start overhead before the team has calibrated thresholds.
+**Files:** `.claude/skills/captain-deputy/SKILL.md`, `.claude/skills/steer-co/SKILL.md`, `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Automatic_Debt_Sensor_Checkpoints.md`
+
+### 2026-05-19 — V2 Needs Packet-Level Convergence Controls
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** V2 convergence must be required at packet start, not only judged afterward. Substantial V2 packages should state `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` so agents must show whether the slice advances excellent report quality, retires/merges/quarantines older machinery, or needs an explicit hidden-only exception.
+**Files:** `Docs/AGENTS/V2_Excellence_Scorecard.md`, `Docs/AGENTS/V2_Retirement_Ledger.md`, `Docs/WIP/2026-05-19_Bounded_Orchestration_Review_Packet.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_V2_Convergence_Controls.md`
+
+---
+
 ## Captain Review Log
 
 When the Captain reviews and promotes learnings, record it here:

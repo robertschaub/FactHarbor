@@ -1,0 +1,4 @@
+interface:
+  display_name: "Captain Deputy"
+  short_description: "Coordinate Steer-Co and Lead Developer"
+  default_prompt: "Use $captain-deputy to coordinate Steer-Co and the Lead Developer for an approved implementation plan."

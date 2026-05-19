@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
-**Version:** 2.1
-**Date:** 2026-04-26
+**Version:** 2.2
+**Date:** 2026-05-19
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -56,6 +56,7 @@ When activated in a role, use this table to identify which areas are within your
 |------|--------------|-----------------|
 | Lead Architect | Pipeline, Schema, Configuration | All (architecture oversight) |
 | Lead Developer | All code areas | Testing, Deployment |
+| Captain Deputy | Coordination, Steering, Delivery oversight | All through delegated workstream coordination |
 | Senior Developer | (assigned per task) | Testing |
 | Technical Writer | Documentation | All (docs for any area) |
 | LLM Expert | Prompts, Calculations | Pipeline, Testing |
@@ -102,6 +103,7 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 | 2.9 | DevOps Expert | GIT Expert, GitHub Expert | [Roles/DevOps_Expert.md](Roles/DevOps_Expert.md) |
 | 2.10 | Captain | *(Human role — not assignable to agents)* | [Roles/Captain.md](Roles/Captain.md) |
 | 2.11 | Agents Supervisor | AI Supervisor | [Roles/Agents_Supervisor.md](Roles/Agents_Supervisor.md) |
+| 2.12 | Captain Deputy | Deputy, Captain's Deputy | [Roles/Captain_Deputy.md](Roles/Captain_Deputy.md) |
 
 ---
 
@@ -109,7 +111,23 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 
 > **Usage:** The 5-phase workflow below is active for complex or risky tasks. For simple changes, use the Quick Fix Workflow (3.2).
 >
-> **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role and LLM model tier are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` and Model-Class Guidelines in §6.
+> **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role, model tier, and reasoning effort are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md`, Model-Class Guidelines in §6, and Dynamic Reasoning Effort Router in §6.7.
+
+### 3.0 Captain Deputy Operating Model
+
+Use `/captain-deputy` (`.claude/skills/captain-deputy/SKILL.md`) when the Captain wants one front-door agent to run an autonomous implementation workstream. The Captain Deputy coordinates Steer-Co for steering and the Lead Developer for delivery, applies `/reasoning-budget` to all lanes, actively controls debt-guard posture, monitors progress, and escalates only for high risk, standing approval gates, unresolved material dissent, or essential no-consent decisions.
+
+The Captain Deputy may keep low-risk or bounded medium-risk reversible work moving inside existing Captain-approved direction. "Bounded medium risk" means the scope, cost, reversibility, and blast radius are concretely identifiable; a wrong decision can be undone within one work session without Captain intervention, data loss, public-facing impact, live-job budget consumption, or prompt/model/config/security approval. The Captain Deputy cannot bypass mandatory workflows, prompt/model/config approval, live-job discipline, security/data rules, or other standing Captain gates. The Lead Developer remains responsible for implementation management, verification, and delivery handoffs; Steer-Co remains responsible for model-diverse steering and consent synthesis.
+
+For debt-sensitive work, Captain Deputy records the expected debt-guard path, complexity budget owner, accepted net mechanism increase if any, the retire/merge/quarantine target, and the latest `npm run debt:sensors` status for V2 or debt-sensitive scopes. For substantial V2 work, the Deputy also requires `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` against `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`. Reconvene Steer-Co when debt-guard was required but skipped, net mechanisms increase without a removal trigger, failed validation repeats after keep/quarantine/revert, or a V2 Source Acquisition/EvidenceCorpus package adds another proof/guard/diagnostic layer without producing value or retiring older machinery.
+
+### 3.0.1 Steer-Co Steering Committee
+
+Use `/steer-co` (`.claude/skills/steer-co/SKILL.md`) when a workstream needs Captain-facing steering rather than implementation: high-impact direction-setting, committee review, Steer-Co clarification, failed-validation direction, contested causality, multiple plausible next steps, or synthesis of implementation-lead and reviewer outputs.
+
+Steer-Co coordinates one accountable GPT leader with model-diverse members such as Claude Opus 4.6 and Gemini. It uses consent, not majority vote. It may direct low-risk or bounded medium-risk, reversible, within-scope next steps only when no standing Captain approval rule applies and no material dissent remains. It must escalate strategic, significant, high-risk, prompt/model, live-job, public behavior, or other approval-gated decisions to Captain.
+
+When Steer-Co reviews a debt-sensitive decision, its output must state whether the accepted path amends, reverts, quarantines, deletes, adds, or defers a mechanism. For V2 or debt-sensitive decisions, the packet and synthesis must include the latest `npm run debt:sensors` status and salient warnings. Net mechanism increases require an explicit missing-capability rationale plus containment or a removal trigger.
 
 ### 3.1 Standard Feature Workflow
 
@@ -625,6 +643,7 @@ API endpoint, configuration parameter, or pipeline stage:
 - Use for the primary implementation agent when the task combines deep reasoning, repository edits, and verification.
 - Use as reviewer/advisor models when an independent architecture, prompt, or quality judgment is needed.
 - For Claude reviewer/advisor calls initiated by GPT/Codex, prefer `claude-opus-4-6` over other Claude models unless the Captain explicitly requests another Claude model or Opus 4.6 is unavailable.
+- Captain currently prefers Opus 4.6 with adaptive thinking disabled, `CLAUDE_CODE_EFFORT_LEVEL=max`, and `MAX_THINKING_TOKENS=63999`; CLI deprecation warnings about adaptive thinking are informational unless the Captain changes this policy.
 
 ### 6.2 Mid-Tier Models (e.g., GPT-5.4, Claude Sonnet 4.6, current Gemini Flash family)
 
@@ -674,11 +693,58 @@ Any agent working on FactHarbor can invoke `/debate` when a decision needs adver
 
 `/debt-guard` (`.claude/skills/debt-guard/SKILL.md`) is mandatory for every bugfixing task across all agent tools and model tiers. Lightweight models may use the compact path for obvious single-site fixes, but they still must load the skill before editing. Higher-capability models should use the full path when ownership, prior failed attempts, public contracts, prompt/config behavior, or net mechanism increases are involved.
 
+Captain Deputy owns active debt-guard control for autonomous workstreams: it assigns the debt-guard owner, checks the output block before closeout, tracks accepted temporary debt, runs `npm run debt:sensors` automatically for V2 or debt-sensitive intake/Steer-Co/closeout checkpoints, and uses Steer-Co for contested keep/quarantine/revert decisions or net mechanism increases. Steer-Co does not replace `/debt-guard`; it decides whether a proposed complexity direction has consent. The sensor is advisory unless Captain explicitly promotes `--fail-on-warn`.
+
 ### 6.6 Current Tool Assignment Defaults
 
 In Robert's current workflow, Codex/GPT-5.5 is the default executor for repo-local implementation, verification, and direct file edits. Claude Opus 4.6 and Gemini Pro are normally review and secondary-advice surfaces unless the Captain explicitly assigns implementation.
 
 Tool-specific defaults do not override role activation, Captain assignment, mandatory workflows, or path-specific `AGENTS.md` files.
+
+### 6.7 Dynamic Reasoning Effort Router
+
+Use `.claude/skills/reasoning-budget/SKILL.md` for dynamic reasoning-effort selection. This is not a skill-selection router and does not change role assignment or approval authority. It only selects how much reasoning effort the current agent or delegated subagent should use after the task and workflow are known.
+
+| Level | Use for | Typical effort |
+|---|---|---|
+| `R0 mechanical` | search, formatting, index rebuilds, status checks, narrow docs edits | low |
+| `R1 bounded` | clear single-scope implementation/review from an accepted packet | medium |
+| `R2 complex` | cross-file or cross-doc work, unclear contracts, non-trivial synthesis | high |
+| `R3 critical` | failed validation, contested causality, keep/quarantine/revert, final multi-agent synthesis | extra high |
+| `R4 external challenge` | high-risk ambiguity needing independent model-family review | Opus/Gemini reviewer with written unique question |
+
+Default role/lane mapping:
+
+| Role/lane | Default | Raise to `R3` when |
+|---|---|---|
+| Captain Deputy / Orchestration Lane | `R3` only for active autonomous coordination or final synthesis; `R1` for status-only monitoring | final synthesis spans lanes, authority is unclear, or Steer-Co/Lead Developer outputs conflict |
+| Implementation Lead / Delivery Lane | `R2` | verifier fails, root cause is unclear, cross-stage behavior changes, or final integration synthesis is needed |
+| Steer-Co / Challenge Lane | `R2` | reviewers disagree, sequencing is contested, scope drift is suspected, or process-cost tradeoffs are being decided |
+| Subagent sidecar | `R1` | the sidecar owns a complex causal review or high-risk independent challenge |
+| Routine docs/status agent | `R0` or `R1` | the edit changes standing process rules or resolves conflicting docs |
+
+Escalate one level when a verifier/test/build/manual validation fails, ownership or authority is unclear, two reviewers materially disagree, root cause cannot be stated with concrete evidence, keep/quarantine/revert is required, final synthesis spans multiple agents, or the work is expensive to reverse.
+
+De-escalate one level when validation passes and only mechanical cleanup remains, scope is single-file or purely structural, the subagent question is narrow and independently checkable, or no decision authority/contested synthesis is needed.
+
+For delegated, multi-agent, or high-risk work, include this launch-note field:
+
+```markdown
+- Reasoning budget: R0 | R1 | R2 | R3 | R4
+- Starting rationale:
+- Escalation triggers:
+- De-escalation triggers:
+- Max premium calls:
+```
+
+When spawning subagents, set the subagent reasoning effort from the launch note. Do not run sidecars at `R3`/extra-high by default. `R4` calls require a written unique question before invocation, for example: "Opus: identify hidden authority ambiguity" or "Gemini: find an alternative frame Codex/Opus may miss."
+
+When effort changes during a task, record one terse line in the working notes or completion output:
+
+```markdown
+Reasoning change: R2 -> R3
+Reason: focused verifier failed and root cause is not isolated.
+```
 
 ---
 
@@ -750,4 +816,4 @@ Before marking any task complete:
 
 **Document Owner:** Robert Schaub (Captain)
 **Document Maintainer:** Agents Supervisor
-**Last Reviewed:** 2026-04-26
+**Last Reviewed:** 2026-05-19

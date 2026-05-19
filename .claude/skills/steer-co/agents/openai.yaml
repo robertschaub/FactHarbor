@@ -1,0 +1,4 @@
+interface:
+  display_name: "Steer-Co"
+  short_description: "Convene consent-based steering through a GPT leader."
+  default_prompt: "Use Steer-Co to return current state, decision, directions, and a Lead Developer prompt."

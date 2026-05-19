@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T12:54:29.159Z",
-  "count": 703,
+  "generatedAt": "2026-05-19T15:41:02.583Z",
+  "count": 708,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15237,6 +15237,188 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from `fd963941`. Relevant anchors: `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-factory.t"
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_Automatic_Debt_Sensor_Checkpoints.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "automatic",
+        "debt",
+        "sensor",
+        "checkpoints"
+      ],
+      "files_touched": [
+        ".claude/skills/captain-deputy/SKILL.md",
+        ".claude/skills/steer-co/SKILL.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "factharbor-agent.skill",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Roles/Captain_Deputy.md",
+        "Docs/AGENTS/Roles/Lead_Developer.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "If invoked as Captain Deputy on a V2/debt-sensitive workstream, run `npm run debt:sensors` during intake, before any debt-sensitive Steer-Co packet, and before closeout. Record status and salient warnings in the packet or handoff. Do not stop solely on `advisory_warn` unless the Captain explicitly p",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "technical-debt-sensitive governance amendment",
+            "chosen_option": "amend existing Captain Deputy, Steer-Co, V2 gate, Lead Developer, and tool-wrapper docs",
+            "rejected_path_and_why": "adding a new workflow or hard hook/CI gate would increase mechanism count and interrupt routine work before Captain accepts thresholds",
+            "what_was_removed_simplified": "none",
+            "what_was_added": "automatic advisory debt-sensor checkpoint language and packet fields",
+            "net_mechanism_count": "unchanged; reused the existing `npm run debt:sensors` mechanism",
+            "budget_reconciliation": "touched governance/skill/docs/package artifacts only; no product code, prompt, model, config, live-job, or analysis behavior changed",
+            "verification": "`npm run debt:sensors`; `git diff --check`; `Compress-Archive -Path .gemini/skills/factharbor-agent/* -DestinationPath factharbor-agent.skill -Force`; `npm run index`",
+            "debt_accepted_and_removal_trigger": "current `advisory_warn` baseline remains accepted until Captain promotes thresholds or asks for cleanup slices",
+            "residual_debt": "a future bounded orchestration review should check whether the sensor creates enough actionability without adding stop-start overhead"
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_Captain_Deputy_Operating_Model.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "operating",
+        "model"
+      ],
+      "files_touched": [
+        ".claude/skills/captain-deputy/SKILL.md",
+        ".claude/skills/captain-deputy/agents/openai.yaml",
+        ".claude/skills/steer-co/SKILL.md",
+        "Docs/AGENTS/Roles/Captain_Deputy.md",
+        "Docs/AGENTS/Roles/Captain.md",
+        "Docs/AGENTS/Roles/Lead_Developer.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "factharbor-agent.skill",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        "Docs/AGENTS/README.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "To run an autonomous workstream, start with `As Captain Deputy, Skill: captain-deputy` and produce a workstream packet with objective, authority, scope, reasoning budgets, mandatory workflows, validation, and stop triggers. Use `/steer-co` when verifier failure, scope drift, reviewer disagreement, c",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism",
+            "chosen_option": "amend existing governance text in place",
+            "rejected_path_and_why": "adding another role or new mechanism would increase complexity; the issue was ambiguity in the existing coordination model",
+            "what_was_removed_simplified": "removed `Steer-Co Leader` as a Captain Deputy alias and reduced duplicate reasoning-default language in the Captain Deputy skill",
+            "what_was_added": "bounded-medium-risk definition, Deputy-vs-Leader authority clarification, model-agnostic Deputy note, Lead Developer standing-gates cross-reference",
+            "net_mechanism_count": "unchanged",
+            "budget_reconciliation": "touched expected governance/skill files only; no product code or new workflow mechanism added",
+            "verification": "Opus 4.6 review; skill validators; `npm run index`; `git diff --check`; path/alias inspections",
+            "debt_accepted_and_removal_trigger": "none",
+            "residual_debt": "none known"
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_Dynamic_Reasoning_Budget.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "dynamic",
+        "reasoning",
+        "budget"
+      ],
+      "files_touched": [],
+      "summary": "Agents Supervisor Handoff: Dynamic Reasoning Budget"
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_Steer_Co_Skill_Restored.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "steer",
+        "co",
+        "skill",
+        "restored"
+      ],
+      "files_touched": [],
+      "summary": "Agents Supervisor Handoff: Steer-Co Skill Restored"
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_V2_Convergence_Controls.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "v2",
+        "convergence",
+        "controls"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/V2_Excellence_Scorecard.md",
+        "Docs/AGENTS/V2_Retirement_Ledger.md",
+        "Docs/WIP/2026-05-19_Bounded_Orchestration_Review_Packet.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "AGENTS.md",
+        ".claude/skills/captain-deputy/SKILL.md",
+        ".claude/skills/steer-co/SKILL.md",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/README.md",
+        "Docs/AGENTS/Roles/Captain_Deputy.md",
+        "Docs/AGENTS/Roles/Lead_Developer.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "factharbor-agent.skill",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "Before substantial V2 work, read `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`, then fill the required impact blocks. For process review, use `Docs/WIP/2026-05-19_Bounded_Orchestration_Review_Packet.md`; Opus 4.6 should check authority ambiguity and overbuilding,",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "technical-debt-sensitive governance amendment",
+            "chosen_option": "amend existing V2 process controls and add two living governance artifacts",
+            "rejected_path_and_why": "broad redesign or a new workflow would increase ceremony; the missing mechanism was a concrete scorecard/ledger target inside existing packets",
+            "what_was_removed_simplified": "none",
+            "what_was_added": "V2 Excellence Scorecard, V2 Retirement Ledger, bounded orchestration review packet, required scorecard/ledger impact blocks",
+            "net_mechanism_count": "increases by two governance artifacts and one review packet, but no new runtime mechanism or workflow",
+            "budget_reconciliation": "touched process/agent/docs/package artifacts only; no product code, prompt text, model config, live-job state, or public behavior changed",
+            "verification": "`npm run debt:sensors`; `npm run index`; `git diff --check`; Gemini package rebuild",
+            "debt_accepted_and_removal_trigger": "scorecard/ledger are draft living controls; revise after bounded orchestration review or Captain direction",
+            "residual_debt": "orchestration review still needs to be executed with Opus 4.6, Gemini, and Codex synthesis"
+          }
+        }
+      }
     },
     {
       "file": "2026-05-19_Lead_Developer_V2_X7-W4-G_Implementation.md",

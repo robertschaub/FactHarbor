@@ -156,6 +156,41 @@ Bugfixes should stay small and self-contained. If the required fix expands into 
 
 Trivial single-site bugfixes may use `/debt-guard`'s compact path, but they still must load and apply the skill before editing.
 
+### Active Debt-Guard Control
+
+In Captain Deputy workstreams, `/debt-guard` is actively controlled rather than
+left as an implementer-only checklist. Captain Deputy assigns the expected
+debt-guard path, monitors the complexity budget, checks the final debt-guard
+result block, and reconvenes Steer-Co when net mechanisms increase, failed
+validation repeats, or accepted debt lacks a removal trigger.
+
+Steer-Co decides complexity direction by consent when debt-guard evidence is
+contested: amend, revert, quarantine, delete, add, or defer. Net mechanism
+increases require a missing-capability rationale plus containment or a removal
+trigger. This does not replace `/debt-guard`; it makes Captain Deputy and
+Steer-Co accountable for enforcing it across autonomous workstreams.
+
+### Automatic Mechanical Debt Sensors
+
+Run `npm run debt:sensors` automatically for Captain Deputy autonomous V2
+workstreams, debt-sensitive Steer-Co packets, V2 Consolidation Gate packages,
+and Lead Developer closeout when the work touches Source Acquisition,
+EvidenceCorpus, debt-guard, guard, diagnostic, readiness, proof, or hidden
+artifact layers. Record the status and salient warnings in the packet or
+handoff. Treat `advisory_warn` as context for steering, not as a hard blocker,
+unless Captain explicitly requires `--fail-on-warn`. Do not add this checkpoint
+to trivial docs/status work unless the scope is debt-sensitive.
+
+### V2 Convergence Controls
+
+Substantial V2 packages must use `Docs/AGENTS/V2_Excellence_Scorecard.md` and
+`Docs/AGENTS/V2_Retirement_Ledger.md`. The package and closeout must state
+`V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` before adding new
+hidden readiness, denial, proof, diagnostic, guard, route, Source Acquisition,
+EvidenceCorpus, extraction, or report machinery. Hidden-only work that neither
+advances scorecard value nor retires/merges/quarantines older machinery needs a
+Steer-Co exception under the V2 Consolidation Gate.
+
 ### Pipeline Integrity
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
@@ -296,6 +331,7 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 | Lint | `npm run lint` — placeholder (not yet configured) |
 | Validation: run batch | `npm run validate:run -- <batchLabel>` — submits 16 families, writes JSON summaries to `test-output/validation/` |
 | Validation: compare | `npm run validate:compare -- <oldDir> <newDir>` — regression detection with markdown table |
+| Debt sensors | `npm run debt:sensors` — advisory mechanical debt report for V2 footprint, debt-guard telemetry, docs volume, and V2 consolidation markers |
 | **Publish docs (gh-pages)** | `git push` to `main` — CI deploys automatically |
 
 > **⚠ AGENTS: Never push to the `gh-pages` branch directly.** CI owns gh-pages and injects `DOCS_ANALYTICS_URL`. Manual pushes overwrite the CI build and break analytics. To publish: push to `main`. To re-trigger CI: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`.
@@ -344,7 +380,7 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 - Platform is Windows. Use PowerShell-compatible commands.
 - **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, `git push --force`, `git clean -f`; no `factharbor.db` writes; no expensive test runs. Main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
 - **Codex hooks** (`.codex/hooks.json`) provide best-effort safety symmetry for the same destructive shell patterns and expensive tests. Codex hook coverage is incomplete by design, so these are guardrails, not enforcement boundaries.
-- **GPT-to-Claude calls** must use `node scripts/agents/invoke-claude.cjs ...`, never bare `claude` / `claude.exe`, so `.claude/settings.json` and its env block are applied consistently. The wrapper defaults to `claude-opus-4-6`; GPT agents should prefer Opus 4.6 over other Claude models unless the Captain explicitly requests another Claude model or Opus 4.6 is unavailable.
+- **GPT-to-Claude calls** must use `node scripts/agents/invoke-claude.cjs ...`, never bare `claude` / `claude.exe`, so `.claude/settings.json` and its env block are applied consistently. The wrapper defaults to `claude-opus-4-6`; GPT agents should prefer Opus 4.6 over other Claude models unless the Captain explicitly requests another Claude model or Opus 4.6 is unavailable. Captain currently prefers Opus 4.6 with adaptive thinking disabled, `CLAUDE_CODE_EFFORT_LEVEL=max`, and `MAX_THINKING_TOKENS=63999`; do not switch this to adaptive thinking only because the CLI emits a deprecation warning.
 
 ---
 
@@ -385,11 +421,14 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 3. **Preflight routing** — `fhAgentKnowledge.preflight_task` returns recommended skills and startup advice. Agents activated with `As <Role>,` must call preflight before starting; other agents may call it for ambiguous tasks.
 4. **Metadata match** — Claude Code injects skill descriptions into the system context; the model selects based on task fit. Non-Claude tools use the table below.
 
-When skills overlap, each skill's own scope guards (for example, context-extension's Overlap Gate) determine which workflow owns the outcome. Do not create meta-routing skills.
+When skills overlap, each skill's own scope guards (for example, context-extension's Overlap Gate) determine which workflow owns the outcome. Do not create generic meta-routing skills. `/captain-deputy` is a Captain-delegated workstream coordinator for the fixed Steer-Co + Lead Developer operating model; it does not replace mandatory workflow selection or approval gates.
 
 | Slash command | Workflow file | When to use |
 |---|---|---|
 | `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |
+| `/captain-deputy` | `.claude/skills/captain-deputy/SKILL.md` | Captain-facing front-door workflow for autonomous implementation workstreams. Coordinates Steer-Co and the Lead Developer, assigns dynamic reasoning budgets, runs advisory debt-sensor checkpoints for V2/debt-sensitive work, monitors progress, and escalates only for high risk, standing approval gates, unresolved material dissent, or essential no-consent decisions. Does not bypass mandatory workflows or Captain approval rules. |
+| `/steer-co` | `.claude/skills/steer-co/SKILL.md` | Captain-facing steering committee workflow for high-impact direction-setting, committee review, or Steer-Co clarification. Coordinates a GPT leader with Opus/Gemini members, resolves by consent, includes latest debt-sensor signal for V2/debt-sensitive decisions, returns current state, directions, decision/proposal, escalation needs, and a Lead Developer prompt. May decide low-risk or bounded medium-risk reversible next steps inside approved direction; does not bypass Captain approval, live-job discipline, prompt/model approval, or mandatory workflows. |
+| `/reasoning-budget` | `.claude/skills/reasoning-budget/SKILL.md` | Dynamically select and adjust reasoning effort after the task/workflow is known. Use at task start for delegated, multi-agent, Steer-Co/Challenge Lane, implementation-lead, review/debate, failed-validation, or expensive-to-reverse work; use again after verifier failures, reviewer disagreement, scope changes, or final synthesis. This is not a skill-selection router and does not approve work. |
 | `/context-extension` | `.claude/skills/context-extension/SKILL.md` | Preserve, exchange, and reload high-value working context throughout long sessions when context-window loss, compaction, interruption, delegation, or handoff would lose important state. Use for in-progress reload/exchange artifacts with freshness checks; do not use as a replacement for completion outputs. |
 | `/debt-guard` | `.claude/skills/debt-guard/SKILL.md` | Mandatory for every bugfixing task before editing. Balanced complexity-control workflow for failed validation recovery, refactors, or reviews; forces agents to compare undoing/amending prior changes against adding new code, then choose the evidence-backed path with the lowest net complexity. |
 | `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |

@@ -9,7 +9,7 @@
 When starting any new task, every agent MUST:
 
 1. **Assess fit**: Is this task best suited for the current agent/tool, or would another be more effective?
-2. **Check role and model**: Identify your current role and underlying LLM model. If either is a poor match for the task (e.g., a lightweight model assigned deep architectural reasoning, or a Technical Writer role asked to implement code), inform the Captain and propose a better-suited role, model tier, or both. Reference the Model-Class Guidelines in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6 for tier strengths.
+2. **Check role, model, and reasoning effort**: Identify your current role, underlying LLM model, and starting reasoning effort. If any is a poor match for the task (e.g., a lightweight model assigned deep architectural reasoning, a Technical Writer role asked to implement code, or extra-high reasoning assigned to a mechanical status check), inform the Captain and propose a better-suited role, model tier, reasoning level, or combination. Reference the Model-Class Guidelines in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6 and the Dynamic Reasoning Effort Router in §6.7.
 3. **Recommend if not**: Tell the user which agent/tool to use, why, what context it needs (files to read, decisions already made), and any work completed so far.
 
 If no Captain role is actively assigned in the session, treat the active human user as the Captain for escalation and approval decisions.
@@ -38,6 +38,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 |-----------|---------|-----------|
 | "Senior Architect", "Principal Architect" | Lead Architect | `Docs/AGENTS/Roles/Lead_Architect.md` |
 | "Lead Developer" | Lead Developer | `Docs/AGENTS/Roles/Lead_Developer.md` |
+| "Captain Deputy", "Deputy", "Captain's Deputy" | Captain Deputy | `Docs/AGENTS/Roles/Captain_Deputy.md` |
 | "Senior Developer" | Senior Developer | `Docs/AGENTS/Roles/Senior_Developer.md` |
 | "Tech Writer", "xWiki Expert", "xWiki Developer" | Technical Writer | `Docs/AGENTS/Roles/Technical_Writer.md` |
 | "LLM Expert", "AI Consultant", "FH Analysis Expert" | LLM Expert | `Docs/AGENTS/Roles/LLM_Expert.md` |

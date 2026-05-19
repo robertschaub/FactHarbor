@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reasoning Budget"
+  short_description: "Select dynamic reasoning effort for agent tasks."
+  default_prompt: "Apply the reasoning budget router to this task."

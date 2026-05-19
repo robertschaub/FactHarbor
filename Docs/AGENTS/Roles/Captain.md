@@ -7,6 +7,7 @@
 ## Responsibilities
 
 - Assigning roles and tasks to agents
+- Delegating day-to-day autonomous coordination to the Captain Deputy when desired
 - Resolving disagreements between agents/roles
 - Making strategic decisions (scope, timeline, priorities)
 - Approving security-related changes and schema migrations
@@ -15,6 +16,7 @@
 ## What Agents Should Expect
 
 - Task assignments via "As \<Role\>" pattern
+- Captain Deputy workstream packets when the Captain has delegated routine coordination
 - Approval/rejection of plans and proposals
 - Resolution of escalated decisions
 

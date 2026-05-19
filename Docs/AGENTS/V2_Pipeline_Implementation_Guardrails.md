@@ -8,6 +8,11 @@ Authoritative specification:
 - `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline V2/WebHome.xwiki`
 - `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline Detail V2/WebHome.xwiki`
 
+Convergence controls:
+
+- `Docs/AGENTS/V2_Excellence_Scorecard.md` defines the current quality target.
+- `Docs/AGENTS/V2_Retirement_Ledger.md` tracks keep/merge/quarantine/retire/defer decisions for V2 and V1 cleanup debt.
+
 Baseline anchors:
 
 - V1-before-V2-specification tag: `v1-before-v2-pipeline-specification` at commit `92b5a5f3`.
@@ -24,7 +29,9 @@ Before non-trivial V2 implementation work:
 1. Call `fhAgentKnowledge.preflight_task` with the actual task.
 2. Read `apps/web/src/lib/analyzer-v2/AGENTS.md`.
 3. Read the relevant target-spec section for the slice.
-4. Identify whether the change touches prompt/model execution, report generation, UI/session behavior, V1 cleanup, cutover behavior, or live validation. Those surfaces require the documented review gates.
+4. Read `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`.
+5. Identify whether the change touches prompt/model execution, report generation, UI/session behavior, V1 cleanup, cutover behavior, or live validation. Those surfaces require the documented review gates.
+6. For substantial V2 packages, include `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` blocks in the package and closeout.
 
 ## Clean-Room Boundary
 
@@ -67,6 +74,62 @@ Use this checklist for every 6B.* Claim Understanding runtime/provider slice unt
 - V1 cleanup rule: V1 code/prompts/types are removal debt only after V2 owns the equivalent public path, cutover stabilizes, and the cleanup ledger verifier passes. Git history and tagged old worktrees are the backward-investigation mechanism.
 
 ## Approval Gates
+
+### V2 Consolidation Gate
+
+Before any new substantial Source Acquisition or EvidenceCorpus package, the
+workstream must pass a consolidation gate. "Substantial" includes source edits,
+new runtime owners, new product/internal routes, new hidden artifacts, new
+readiness/denial states, new diagnostics, new guard layers, live-smoke packages,
+or any package that expands Source Acquisition/EvidenceCorpus behavior beyond a
+pure docs clarification.
+
+The package must do at least one of these:
+
+- produce real hidden candidate/source/source-material/EvidenceCorpus value
+  under an approved no-public-leak boundary; or
+- retire, merge, demote, or quarantine at least one older readiness, guard,
+  diagnostic, denial, proof, or scaffold artifact; or
+- present a Steer-Co-approved exception explaining why no retirement is safe yet
+  and naming the exact later removal trigger.
+
+Run `npm run debt:sensors` automatically before completing this gate for every
+substantial package. Record the status and any salient warnings in the
+consolidation block. `advisory_warn` is a steering signal, not a blocker, unless
+the Captain explicitly promotes the sensor by requiring `--fail-on-warn`.
+
+Every package under this gate must include a short consolidation block:
+
+```text
+V2 SCORECARD IMPACT
+Quality dimension advanced:
+Direct user/report value:
+Hidden-only value:
+Cost/latency impact:
+Retirement or simplification unlocked:
+Scorecard risk:
+
+V2 RETIREMENT LEDGER IMPACT
+Rows touched:
+Status changes:
+New mechanism owner:
+Removal / merge trigger:
+Debt accepted:
+
+V2 CONSOLIDATION GATE
+Package:
+Substantial expansion: yes | no
+Value produced:
+Retires / merges / demotes / quarantines:
+Debt kept and removal trigger:
+Mechanical debt sensor run: <command/status/salient warnings>
+Steer-Co exception:
+```
+
+If the package only adds another proof/guard/diagnostic/readiness layer and
+does not produce source value or retire/merge older machinery, stop and convene
+Steer-Co before implementation. Captain Deputy owns monitoring this gate across
+the workstream.
 
 Prompt/model execution:
 
