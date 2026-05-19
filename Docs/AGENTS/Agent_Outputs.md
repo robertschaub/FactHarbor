@@ -4236,3 +4236,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No second W4-G canary is authorized. W4-G proves only the bounded internal text sidecar crossing with extraction still closed. It does not authorize extraction input, EvidenceItems, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2/W3 widening, ACS/direct URL, V1 work, or V1 cleanup. Remaining live-job budget is `2`.
 **Learnings:** The W4-G route can prove source-text lineage with hash/length/provenance while keeping bounded text out of default admin responses and public API/Web/report surfaces.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W4-G_Live_Canary_Result.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-H Bounded Extraction-Input Authorization Review Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-19_V2_Slice_X7-W4-H_Bounded_Extraction_Input_Authorization_Review_Package.md` for Steering Board review only. The recommended next step is one hidden/admin-only `bounded_text_extraction_input_packet` derived only from the runtime-owned W4-G bounded corpus-text sidecar, with extraction execution still closed.
+**Warnings:** This package authorizes no implementation and no live job. W4-H must not add EvidenceItems, parser execution, LLM evidence extraction calls, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2/W3 widening, ACS/direct URL, prompt/config/model/schema edits, V1 reuse, V1 work, or V1 cleanup. Default admin artifacts/routes must remain hash/length/provenance-only; retained internal packet text must not appear in public/default-admin/log/error surfaces.
+**Learnings:** The next balanced boundary is extraction-input authorization, not extraction. Separating packet creation from EvidenceItems keeps the text-bearing progression auditable while preserving W4-G redaction and extraction denial.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W4-H_Review_Package.md
