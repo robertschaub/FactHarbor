@@ -59,6 +59,13 @@ export const BOUNDED_EVIDENCE_EXTRACTION_CACHE_NAMESPACE = [
   ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY.policyId,
   "evidence_extraction",
 ].join(":");
+export const BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
+  "remove_or_fold_into_stable_w5_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary" as const;
+
+const BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES = 8;
+const BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_PATH_SEGMENTS = 8;
+const BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_PATH_SEGMENT_LENGTH = 64;
+const BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_CODE_LENGTH = 80;
 
 const BOUNDED_EVIDENCE_EXTRACTION_VARIABLES = [
   "claimContractJson",
@@ -104,6 +111,12 @@ export type BoundedEvidenceExtractionDamagedReason =
   | "schema_validation_failed"
   | "task_contract_validation_failed"
   | "prompt_render_failed";
+
+type BoundedEvidenceExtractionTaskContractDiagnosticCode =
+  | "approved_packet_mismatch"
+  | "empty_evidence_statement"
+  | "missing_target_atomic_claims"
+  | "unselected_target_atomic_claim";
 
 export type BoundedEvidenceExtractionSideEffects = {
   readonly promptLoaded: boolean;
@@ -153,12 +166,41 @@ export type BoundedEvidenceExtractionProviderCall = (
   request: BoundedEvidenceExtractionProviderCallRequest,
 ) => Promise<BoundedEvidenceExtractionProviderCallResponse>;
 
+export type BoundedEvidenceExtractionSchemaDiagnosticIssue = {
+  readonly path: readonly string[];
+  readonly code: string;
+};
+
+export type BoundedEvidenceExtractionSchemaDiagnostics = {
+  readonly diagnosticVersion: "v2.evidence-lifecycle.bounded-evidence-extraction.schema-diagnostics.x7w5c";
+  readonly contractName: "EvidenceExtractionResultSchema";
+  readonly contractVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
+  readonly outputParseStatus: "not_attempted" | "parse_failure" | "parsed";
+  readonly failureCategory:
+    | "none"
+    | "parse_failure"
+    | "schema_validation"
+    | "task_contract_validation";
+  readonly issueCount: number;
+  readonly issues: readonly BoundedEvidenceExtractionSchemaDiagnosticIssue[];
+  readonly rawProviderOutputReturned: false;
+  readonly rawSchemaMessagesReturned: false;
+  readonly providerCompletionTextReturned: false;
+  readonly sourceTextReturned: false;
+  readonly inputTextReturned: false;
+  readonly evidenceItemTextReturned: false;
+  readonly promptTextReturned: false;
+  readonly stackTraceReturned: false;
+  readonly removalTrigger: typeof BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER;
+};
+
 export type BoundedEvidenceExtractionModelAttempt = {
   readonly attemptNumber: number;
   readonly promptContentHash: string;
   readonly status: "accepted" | "invalid_schema" | "parse_failure" | "provider_failure";
   readonly providerTelemetry: BoundedEvidenceExtractionProviderTelemetry | null;
   readonly failureMessage: string | null;
+  readonly schemaDiagnostics: BoundedEvidenceExtractionSchemaDiagnostics | null;
 };
 
 export type BoundedEvidenceExtractionInputFrame = {
@@ -177,6 +219,7 @@ export type BoundedEvidenceExtractionModelTelemetry = {
   readonly renderedPromptHash: string | null;
   readonly configSnapshotHash: string | null;
   readonly outputSchemaVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
+  readonly schemaDiagnostics: BoundedEvidenceExtractionSchemaDiagnostics | null;
   readonly gatewayTaskId: "evidence_extraction";
   readonly modelPolicyId: string | null;
   readonly providerId: string | null;
@@ -386,6 +429,7 @@ function telemetry(
     renderedPromptHash: null,
     configSnapshotHash: null,
     outputSchemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+    schemaDiagnostics: null,
     gatewayTaskId: "evidence_extraction",
     modelPolicyId: null,
     providerId: null,
@@ -401,6 +445,128 @@ function telemetry(
     cacheDecisionReason: null,
     approvalPointer: null,
     ...overrides,
+  };
+}
+
+function boundedDiagnosticCode(value: string): string {
+  return value
+    .replace(/[^A-Za-z0-9_.-]/g, "_")
+    .slice(0, BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_CODE_LENGTH) || "unknown";
+}
+
+function boundedDiagnosticPathSegment(value: string): string {
+  return value.slice(0, BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_PATH_SEGMENT_LENGTH);
+}
+
+function sanitizeSchemaPathSegment(segment: unknown): string {
+  if (typeof segment === "string" && /^[A-Za-z0-9_-]+$/.test(segment)) {
+    return boundedDiagnosticPathSegment(segment);
+  }
+  if (typeof segment === "number" && Number.isInteger(segment) && segment >= 0) {
+    return String(segment);
+  }
+  return "[non_structural]";
+}
+
+function isDiagnosticRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function collectSchemaIssueDiagnostics(rawIssues: readonly unknown[]): readonly {
+  readonly path?: readonly unknown[];
+  readonly code: string;
+}[] {
+  const collected: Array<{ path?: readonly unknown[]; code: string }> = [];
+
+  function visit(issue: unknown): void {
+    if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      return;
+    }
+    if (!isDiagnosticRecord(issue)) {
+      return;
+    }
+    const code = typeof issue.code === "string" ? issue.code : "unknown";
+    const path = Array.isArray(issue.path) ? issue.path : [];
+    collected.push({ path, code });
+
+    const unionErrors = issue.unionErrors;
+    if (Array.isArray(unionErrors)) {
+      for (const error of unionErrors) {
+        if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (isDiagnosticRecord(error) && Array.isArray(error.issues)) {
+          for (const childIssue of error.issues) {
+            visit(childIssue);
+            if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const errors = issue.errors;
+    if (Array.isArray(errors)) {
+      for (const child of errors) {
+        if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (Array.isArray(child)) {
+          for (const childIssue of child) {
+            visit(childIssue);
+            if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        } else {
+          visit(child);
+        }
+      }
+    }
+  }
+
+  for (const issue of rawIssues) {
+    visit(issue);
+    if (collected.length >= BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      break;
+    }
+  }
+
+  return collected;
+}
+
+function schemaDiagnostics(params: {
+  readonly outputParseStatus: BoundedEvidenceExtractionSchemaDiagnostics["outputParseStatus"];
+  readonly failureCategory: BoundedEvidenceExtractionSchemaDiagnostics["failureCategory"];
+  readonly issues?: readonly { readonly path?: readonly unknown[]; readonly code: string }[];
+}): BoundedEvidenceExtractionSchemaDiagnostics {
+  const issues = (params.issues ?? [])
+    .slice(0, BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES)
+    .map((issue) => ({
+      path: (issue.path ?? [])
+        .slice(0, BOUNDED_EVIDENCE_EXTRACTION_MAX_SCHEMA_PATH_SEGMENTS)
+        .map(sanitizeSchemaPathSegment),
+      code: boundedDiagnosticCode(issue.code),
+    }));
+
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.bounded-evidence-extraction.schema-diagnostics.x7w5c",
+    contractName: "EvidenceExtractionResultSchema",
+    contractVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+    outputParseStatus: params.outputParseStatus,
+    failureCategory: params.failureCategory,
+    issueCount: issues.length,
+    issues,
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger: BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER,
   };
 }
 
@@ -958,10 +1124,10 @@ function coerceProviderOutput(output: unknown): { status: "parsed"; value: unkno
   }
   try {
     return { status: "parsed", value: parseProviderOutputText(output) };
-  } catch (error) {
+  } catch {
     return {
       status: "parse_failure",
-      message: error instanceof Error ? `JSON parse error: ${error.message}` : "JSON parse error",
+      message: "json_parse_error",
     };
   }
 }
@@ -989,24 +1155,24 @@ function validateProviderTelemetry(telemetryInput: BoundedEvidenceExtractionProv
 function validateAcceptedResultContent(
   result: EvidenceExtractionResult,
   frame: BoundedEvidenceExtractionInputFrame,
-): string | null {
+): BoundedEvidenceExtractionTaskContractDiagnosticCode | null {
   if (result.status !== "accepted") {
     return null;
   }
   const selectedIdSet = new Set(frame.targetAtomicClaimIds);
   for (const item of result.evidenceItems) {
     if (item.sourceRecordId !== frame.sourceRecordId || item.contentPacketId !== frame.contentPacketId) {
-      return "Evidence extraction returned an item outside the approved packet.";
+      return "approved_packet_mismatch";
     }
     if (item.statement.trim().length === 0) {
-      return "Evidence extraction returned an empty item statement.";
+      return "empty_evidence_statement";
     }
     if (item.targetAtomicClaimIds.length === 0) {
-      return "Evidence extraction returned an item without target AtomicClaims.";
+      return "missing_target_atomic_claims";
     }
     for (const claimId of item.targetAtomicClaimIds) {
       if (!selectedIdSet.has(claimId)) {
-        return "Evidence extraction returned an item for an unselected AtomicClaim.";
+        return "unselected_target_atomic_claim";
       }
     }
   }
@@ -1064,6 +1230,7 @@ async function executeAdapter(params: {
         status: "provider_failure",
         providerTelemetry: null,
         failureMessage: "provider failure",
+        schemaDiagnostics: null,
       });
       return adapterOutcome(params, attempts, damagedResult(
         "provider_unavailable",
@@ -1079,6 +1246,7 @@ async function executeAdapter(params: {
         status: "provider_failure",
         providerTelemetry: null,
         failureMessage: telemetryError,
+        schemaDiagnostics: null,
       });
       return adapterOutcome(params, attempts, damagedResult(
         "provider_unavailable",
@@ -1094,6 +1262,11 @@ async function executeAdapter(params: {
         status: "parse_failure",
         providerTelemetry: providerResponse.telemetry,
         failureMessage: parsedOutput.message,
+        schemaDiagnostics: schemaDiagnostics({
+          outputParseStatus: "parse_failure",
+          failureCategory: "parse_failure",
+          issues: [{ path: [], code: "json_parse_error" }],
+        }),
       });
       return adapterOutcome(params, attempts, damagedResult(
         "schema_validation_failed",
@@ -1103,12 +1276,18 @@ async function executeAdapter(params: {
 
     const parsedResult = EvidenceExtractionResultSchema.safeParse(parsedOutput.value);
     if (!parsedResult.success) {
+      const diagnostics = schemaDiagnostics({
+        outputParseStatus: "parsed",
+        failureCategory: "schema_validation",
+        issues: collectSchemaIssueDiagnostics(parsedResult.error.issues),
+      });
       attempts.push({
         attemptNumber,
         promptContentHash: params.renderedPrompt.promptContentHash,
         status: "invalid_schema",
         providerTelemetry: providerResponse.telemetry,
-        failureMessage: parsedResult.error.message,
+        failureMessage: "schema_validation_failed",
+        schemaDiagnostics: diagnostics,
       });
       return adapterOutcome(params, attempts, damagedResult(
         "schema_validation_failed",
@@ -1124,7 +1303,12 @@ async function executeAdapter(params: {
         promptContentHash: params.renderedPrompt.promptContentHash,
         status: "invalid_schema",
         providerTelemetry: providerResponse.telemetry,
-        failureMessage: contentError,
+        failureMessage: "task_contract_validation_failed",
+        schemaDiagnostics: schemaDiagnostics({
+          outputParseStatus: "parsed",
+          failureCategory: "task_contract_validation",
+          issues: [{ path: ["evidenceItems"], code: contentError }],
+        }),
       });
       return adapterOutcome(params, attempts, damagedResult(
         "task_contract_validation_failed",
@@ -1138,6 +1322,7 @@ async function executeAdapter(params: {
       status: "accepted",
       providerTelemetry: providerResponse.telemetry,
       failureMessage: null,
+      schemaDiagnostics: null,
     });
     return adapterOutcome(params, attempts, result, null);
   }
@@ -1175,6 +1360,7 @@ function adapterOutcome(
       promptContentHash: params.renderedPrompt.promptContentHash,
       renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
       configSnapshotHash: params.configSnapshotHash,
+      schemaDiagnostics: attempts.at(-1)?.schemaDiagnostics ?? null,
       modelPolicyId: params.modelPolicy.policyId,
       providerId: lastTelemetry?.providerId ?? null,
       modelId: lastTelemetry?.modelId ?? null,

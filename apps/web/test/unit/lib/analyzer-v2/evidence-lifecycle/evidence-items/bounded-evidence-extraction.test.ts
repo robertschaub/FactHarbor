@@ -369,6 +369,7 @@ describe("bounded evidence extraction runtime", () => {
     expect(result.status).toBe("hidden_no_extractable_evidence");
     expect(result.evidenceItemCount).toBe(0);
     expect(result.productExecution.evidenceItemGenerated).toBe(false);
+    expect(result.executionTelemetry.schemaDiagnostics).toBeNull();
   });
 
   it("fails closed on W4-I provider lineage drift before calling the provider", async () => {
@@ -416,7 +417,123 @@ describe("bounded evidence extraction runtime", () => {
 
     expect(result.status).toBe("damaged_execution");
     expect(result.damagedReason).toBe("parse_failure");
+    expect(result.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceExtractionResultSchema",
+      contractVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+      outputParseStatus: "parse_failure",
+      failureCategory: "parse_failure",
+      rawProviderOutputReturned: false,
+      rawSchemaMessagesReturned: false,
+    });
     expect(result.evidenceItemCount).toBe(0);
     expect(result.productExecution.publicProjectionWritten).toBe(false);
+    expect(JSON.stringify(result.executionTelemetry.schemaDiagnostics)).not.toContain("{not json");
+  });
+
+  it("records bounded schema path diagnostics without retaining raw provider text", async () => {
+    const inputPacket = packet();
+    const rawProviderStatement = "RAW_PROVIDER_STATEMENT_LEAK_SENTINEL";
+    const schemaInvalidOutput = {
+      schemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+      taskKey: "evidence_extraction",
+      status: "accepted",
+      extractionStatus: "evidence_extracted",
+      rationale: "Provider returned a structurally invalid evidence item.",
+      evidenceItems: Array.from({ length: 12 }, (_, index) => ({
+        evidenceItemId: `EI_W5_BAD_${index}`,
+        sourceRecordId: inputPacket.sourceMaterialRef,
+        contentPacketId: inputPacket.packetId,
+        statement: rawProviderStatement,
+        targetAtomicClaimIds: ["AC_001"],
+        claimDirection: "opposes",
+        probativeValue: "medium",
+        evidenceStrength: "moderate",
+        extractionConfidence: "medium",
+        provenance: {
+          locator: "bounded_page_summary_extract",
+          rationale: rawProviderStatement,
+        },
+      })),
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+
+    const result = await runBoundedEvidenceExtractionRuntime({
+      context: context(),
+      claimContract: claimContract(),
+      extractionInputAuthorization: w4h(inputPacket),
+      extractionInputRuntimeOwnership: "owned",
+      executionReadinessDenial: w4i(inputPacket),
+      executionReadinessRuntimeOwnership: "owned",
+      providerCall: providerCall(schemaInvalidOutput),
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      configSnapshotHash: "config-hash-w5",
+    });
+    const serializedDiagnostics = JSON.stringify(result.executionTelemetry.schemaDiagnostics);
+
+    expect(result.status).toBe("damaged_execution");
+    expect(result.damagedReason).toBe("schema_validation_failed");
+    expect(result.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceExtractionResultSchema",
+      contractVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+      outputParseStatus: "parsed",
+      failureCategory: "schema_validation",
+      rawProviderOutputReturned: false,
+      providerCompletionTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    expect(result.executionTelemetry.schemaDiagnostics?.issueCount).toBe(
+      result.executionTelemetry.schemaDiagnostics?.issues.length,
+    );
+    expect(result.executionTelemetry.schemaDiagnostics?.issueCount).toBeLessThanOrEqual(8);
+    expect(serializedDiagnostics).toContain("evidenceItems");
+    expect(serializedDiagnostics).not.toContain(rawProviderStatement);
+    expect(serializedDiagnostics).not.toContain("Provider returned");
+    expect(serializedDiagnostics).not.toContain("Invalid");
+    expect(JSON.stringify(result)).not.toContain(rawProviderStatement);
+  });
+
+  it("uses structural task-contract diagnostic codes without prose or raw received values", async () => {
+    const inputPacket = packet();
+    const rawOutsideSourceRecordId = "RAW_OUTSIDE_SOURCE_RECORD_ID_MUST_NOT_APPEAR";
+    const validOutput = evidenceExtractedResult(inputPacket);
+    const contractInvalidOutput: EvidenceExtractionResult = {
+      ...validOutput,
+      evidenceItems: [{
+        ...validOutput.evidenceItems[0]!,
+        sourceRecordId: rawOutsideSourceRecordId,
+      }],
+    };
+
+    const result = await runBoundedEvidenceExtractionRuntime({
+      context: context(),
+      claimContract: claimContract(),
+      extractionInputAuthorization: w4h(inputPacket),
+      extractionInputRuntimeOwnership: "owned",
+      executionReadinessDenial: w4i(inputPacket),
+      executionReadinessRuntimeOwnership: "owned",
+      providerCall: providerCall(contractInvalidOutput),
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      configSnapshotHash: "config-hash-w5",
+    });
+    const serializedDiagnostics = JSON.stringify(result.executionTelemetry.schemaDiagnostics);
+
+    expect(result.status).toBe("damaged_execution");
+    expect(result.damagedReason).toBe("task_contract_validation_failed");
+    expect(result.executionTelemetry.schemaDiagnostics).toMatchObject({
+      outputParseStatus: "parsed",
+      failureCategory: "task_contract_validation",
+      issueCount: 1,
+      issues: [{ path: ["evidenceItems"], code: "approved_packet_mismatch" }],
+    });
+    expect(serializedDiagnostics).not.toContain("Evidence extraction returned");
+    expect(serializedDiagnostics).not.toContain(rawOutsideSourceRecordId);
   });
 });

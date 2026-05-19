@@ -53,6 +53,7 @@ function decision(): BoundedEvidenceExtractionDecision {
       renderedPromptHash: null,
       configSnapshotHash: null,
       outputSchemaVersion: "v2.evidence_extraction_result.0",
+      schemaDiagnostics: null,
       gatewayTaskId: "evidence_extraction",
       modelPolicyId: null,
       providerId: null,

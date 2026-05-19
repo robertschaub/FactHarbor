@@ -4402,3 +4402,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** W5-C still authorizes no prompt text edits, schema edits, another live job, public/report/verdict/warning/confidence behavior, parser, cache/SR/storage, provider expansion, ACS/direct URL, or V1 work. If diagnosis shows prompt/schema text must change, stop for the standing Captain approval gate.
 **Learnings:** Captain Deputy should convene Steer-Co at failed live-validation boundaries that may cross prompt/schema/adapter authority. The useful next move is not another canary; it is local schema/output diagnosis with sanitized failure detail.
 -> Docs/AGENTS/Handoffs/2026-05-19_Captain_Deputy_Steer_Co_V2_X7-W5-C_Direction.md
+
+---
+### 2026-05-19 | Senior Developer | Codex (GPT-5.5) | Daily Bug Scan No Recent Commit Bug -- [Standard] [open-items: yes]
+**For next agent:** Scanned commits since `2026-05-19T10:54:54Z` through HEAD `1770179aafdb3d6b9591b6970f0c7e72adfff34a`. Code-bearing commits reviewed/verified included `99bff8c4`, `575e6b69`, `330ae2fb`, `98515f61`, and `2cdf0426`; later `1770179a` was docs-only. Focused V2 artifact, gateway, claim-understanding, boundary-guard, and orchestration tests passed; `node scripts/validate-v2-gate-register.mjs` passed; `npm -w apps/web run build` passed.
+**Warnings:** `npm run debt:sensors` returned `advisory_warn` for known V2/test/docs footprint and consolidation-marker warnings. Broad `npm test` failed in runner tests, but those files and `apps/web/src/lib/internal-runner-queue.ts` had no commits in the scanned window; latest touch was `66624496` on 2026-05-17, so this scan did not attribute the failures to today's commits or apply a fix.
+**Learnings:** For daily scans, distinguish recent-commit regressions from existing safe-suite instability. Focused changed-surface verification can be clean while broad runner tests still fail outside the commit window.
+
+---
+### 2026-05-19 | Lead Developer | Codex (GPT-5.5) | V2 X7-W5-C Evidence Extraction Schema Diagnosis Repair -- [Significant] [open-items: yes]
+**For next agent:** W5 now records bounded `executionTelemetry.schemaDiagnostics` on the existing hidden W5 artifact path for parse/schema/task-contract failures. Review-fix pass bounded `issueCount`, replaced task-contract prose diagnostic codes with structural labels, and sanitized malformed runtime-owned diagnostics at the default projection boundary. No prompt/schema/model/provider/live-job/public behavior changed; commit and refresh runtime before any separately approved canary.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md

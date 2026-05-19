@@ -12,6 +12,8 @@ import { markBoundedEvidenceExtractionRuntimeOwnedDecision } from "@/lib/analyze
 
 const SOURCE_TEXT = "Internal bounded source packet text that must not appear in the route projection.";
 const STATEMENT_TEXT = "Internal extracted EvidenceItem statement text that must be redacted by default.";
+const RAW_SCHEMA_FAILURE_TEXT = "RAW_SCHEMA_FAILURE_TEXT_MUST_NOT_APPEAR";
+const RAW_DIAGNOSTIC_VALUE = "RAW_DIAGNOSTIC_VALUE_MUST_NOT_APPEAR";
 
 function context(ledgerId: string): PipelineRunContext {
   return {
@@ -124,6 +126,7 @@ function decision(): BoundedEvidenceExtractionDecision {
       renderedPromptHash: "6".repeat(64),
       configSnapshotHash: "config-hash",
       outputSchemaVersion: "v2.evidence_extraction_result.0",
+      schemaDiagnostics: null,
       gatewayTaskId: "evidence_extraction",
       modelPolicyId: "v2.model.evidence_extraction.x7w5",
       providerId: "anthropic",
@@ -193,6 +196,7 @@ describe("bounded evidence extraction artifact sink", () => {
     expect(projections).toHaveLength(1);
     expect(projections[0]?.defaultProjection).toBe("hash_length_provenance_only");
     expect(projections[0]?.boundedEvidenceExtraction.extractionResult).toBeNull();
+    expect(projections[0]?.boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics).toBeNull();
     expect(projections[0]?.boundedEvidenceExtraction.evidenceItemTextReturnedByDefault).toBe(false);
     expect(serialized).not.toContain(STATEMENT_TEXT);
     expect(serialized).not.toContain(SOURCE_TEXT);
@@ -212,5 +216,82 @@ describe("bounded evidence extraction artifact sink", () => {
       context: context(`ledger-w5-unowned-${Date.now()}`),
       boundedEvidenceExtraction: unowned,
     })).toBeNull();
+  });
+
+  it("keeps schema-failure diagnostics bounded and text-free in default projections", () => {
+    const ledgerId = `ledger-w5-schema-${Date.now()}`;
+    clearBoundedEvidenceExtractionRuntimeArtifacts(ledgerId);
+    const damagedDecision = markBoundedEvidenceExtractionRuntimeOwnedDecision({
+      ...decision(),
+      status: "damaged_execution",
+      damagedReason: "schema_validation_failed",
+      extractionResult: null,
+      extractionResultHash: null,
+      extractionResultStatus: null,
+      extractionStatus: null,
+      evidenceItemCount: 0,
+      evidenceItemStatementHashes: [],
+      evidenceItemStatementByteLengths: [],
+      evidenceItemStatementProjections: [],
+      executionTelemetry: {
+        ...decision().executionTelemetry,
+        schemaDiagnostics: {
+          diagnosticVersion: RAW_DIAGNOSTIC_VALUE,
+          contractName: RAW_SCHEMA_FAILURE_TEXT,
+          contractVersion: `${RAW_DIAGNOSTIC_VALUE}-version`,
+          outputParseStatus: RAW_DIAGNOSTIC_VALUE,
+          failureCategory: RAW_DIAGNOSTIC_VALUE,
+          issueCount: 9_999,
+          issues: Array.from({ length: 12 }, (_, index) => ({
+            path: ["evidenceItems", index, RAW_DIAGNOSTIC_VALUE, "evidenceScope"],
+            code: index === 0 ? "invalid_type" : RAW_DIAGNOSTIC_VALUE,
+          })),
+          rawProviderOutputReturned: true,
+          rawSchemaMessagesReturned: true,
+          providerCompletionTextReturned: true,
+          sourceTextReturned: true,
+          inputTextReturned: true,
+          evidenceItemTextReturned: true,
+          promptTextReturned: true,
+          stackTraceReturned: true,
+          removalTrigger: RAW_DIAGNOSTIC_VALUE,
+        } as unknown as NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>,
+      },
+    });
+    recordBoundedEvidenceExtractionRuntimeArtifact({
+      context: context(ledgerId),
+      boundedEvidenceExtraction: damagedDecision,
+    });
+
+    const projection = readBoundedEvidenceExtractionRuntimeArtifactDefaultProjections(ledgerId)[0];
+    const serialized = JSON.stringify(projection);
+
+    expect(projection?.boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceExtractionResultSchema",
+      contractVersion: "v2.evidence_extraction_result.0",
+      outputParseStatus: "not_attempted",
+      failureCategory: "none",
+      issueCount: 8,
+      rawProviderOutputReturned: false,
+      rawSchemaMessagesReturned: false,
+      providerCompletionTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    const diagnostics = projection?.boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics;
+    expect(diagnostics?.issueCount).toBe(diagnostics?.issues.length);
+    expect(diagnostics?.issues[0]).toEqual({
+      path: ["evidenceItems", "0", "[non_structural]", "evidenceScope"],
+      code: "invalid_type",
+    });
+    expect(serialized).toContain("evidenceScope");
+    expect(serialized).not.toContain(RAW_DIAGNOSTIC_VALUE);
+    expect(serialized).not.toContain(RAW_SCHEMA_FAILURE_TEXT);
+    expect(serialized).not.toContain(SOURCE_TEXT);
+    expect(serialized).not.toContain(STATEMENT_TEXT);
+    expect(serialized).not.toContain("Error:");
   });
 });

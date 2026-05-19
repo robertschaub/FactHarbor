@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T20:25:47.536Z",
-  "count": 721,
+  "generatedAt": "2026-05-19T20:46:44.598Z",
+  "count": 722,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15803,6 +15803,31 @@
       ],
       "files_touched": [],
       "summary": "2026-05-19 Lead Developer V2 X7-W5-B Live Canary Result"
+    },
+    {
+      "file": "2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md",
+      "date": "2026-05-19",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-w5-c",
+        "schema",
+        "diagnosis",
+        "repair"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction.ts",
+        "apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-provenance.test.ts",
+        "apps/web/test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route.test.ts",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md"
+      ],
+      "summary": "Do not run another live job from this uncommitted work. If Captain approves a W5-C follow-up canary, commit first, refresh runtime, then inspect `executionTelemetry.schemaDiagnostics` on the authenticated W5 artifact route if W5 still returns `schema_validation_failed`."
     }
   ]
 }

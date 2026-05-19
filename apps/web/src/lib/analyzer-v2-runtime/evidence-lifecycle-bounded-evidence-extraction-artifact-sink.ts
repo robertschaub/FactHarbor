@@ -14,6 +14,76 @@ export const BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_MAX_RECORDS_PER_LEDGER = 4;
 export const BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_MAX_LEDGER_COUNT = 256;
 export const BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_MAX_LEDGER_ID_LENGTH = 256 as const;
 
+const BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
+  "remove_or_fold_into_stable_w5_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary" as const;
+const BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTIC_VERSION =
+  "v2.evidence-lifecycle.bounded-evidence-extraction.schema-diagnostics.x7w5c" as const;
+const BOUNDED_EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION = "v2.evidence_extraction_result.0" as const;
+const MAX_DEFAULT_PROJECTION_SCHEMA_DIAGNOSTIC_ISSUES = 8;
+const MAX_DEFAULT_PROJECTION_SCHEMA_PATH_SEGMENTS = 8;
+
+type BoundedEvidenceExtractionSchemaDiagnostics =
+  NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>;
+type BoundedEvidenceExtractionSchemaDiagnosticIssue =
+  BoundedEvidenceExtractionSchemaDiagnostics["issues"][number];
+
+const SAFE_DIAGNOSTIC_CODES = new Set([
+  "approved_packet_mismatch",
+  "custom",
+  "empty_evidence_statement",
+  "invalid_arguments",
+  "invalid_date",
+  "invalid_enum_value",
+  "invalid_intersection_types",
+  "invalid_literal",
+  "invalid_return_type",
+  "invalid_string",
+  "invalid_type",
+  "invalid_union",
+  "invalid_union_discriminator",
+  "invalid_value",
+  "json_parse_error",
+  "missing_target_atomic_claims",
+  "not_finite",
+  "not_multiple_of",
+  "too_big",
+  "too_small",
+  "unrecognized_keys",
+  "unknown",
+  "unselected_target_atomic_claim",
+]);
+
+const SAFE_DIAGNOSTIC_PATH_SEGMENTS = new Set([
+  "blockedReason",
+  "claimDirection",
+  "contentPacketId",
+  "damagedReason",
+  "evidenceItemId",
+  "evidenceItems",
+  "evidenceScope",
+  "evidenceStrength",
+  "extractionConfidence",
+  "extractionStatus",
+  "geographicScope",
+  "integrityEvents",
+  "limitations",
+  "locator",
+  "method",
+  "populationOrDomain",
+  "probativeValue",
+  "provenance",
+  "rationale",
+  "schemaVersion",
+  "scopeId",
+  "sourceRecordId",
+  "sourceType",
+  "statement",
+  "status",
+  "targetAtomicClaimIds",
+  "taskKey",
+  "temporalBounds",
+]);
+
 export type BoundedEvidenceExtractionRuntimeArtifact = {
   readonly artifactVersion: typeof BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_VERSION;
   readonly source: "product_v2_orchestrator_after_bounded_evidence_extraction";
@@ -142,6 +212,12 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
   artifact: BoundedEvidenceExtractionRuntimeArtifact,
 ): BoundedEvidenceExtractionRuntimeArtifactDefaultProjection {
   const decision = artifact.boundedEvidenceExtraction;
+  const executionTelemetry = {
+    ...decision.executionTelemetry,
+    schemaDiagnostics: sanitizeSchemaDiagnosticsForDefaultProjection(
+      decision.executionTelemetry.schemaDiagnostics,
+    ),
+  };
   return cloneJson({
     ...artifact,
     inputTextReturned: false,
@@ -149,6 +225,7 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
     sourceTextReturned: false,
     boundedEvidenceExtraction: {
       ...decision,
+      executionTelemetry,
       extractionResult: null,
       evidenceItemStatementProjections: decision.evidenceItemStatementProjections.map(
         redactEvidenceItemStatementProjection,
@@ -174,6 +251,85 @@ function redactEvidenceItemStatementProjection(
     evidenceScopeHash: projection.evidenceScopeHash,
     provenanceHash: projection.provenanceHash,
   };
+}
+
+function sanitizeSchemaDiagnosticsForDefaultProjection(
+  diagnostics: BoundedEvidenceExtractionSchemaDiagnostics | null,
+): BoundedEvidenceExtractionSchemaDiagnostics | null {
+  if (!diagnostics) {
+    return null;
+  }
+
+  const rawIssues = Array.isArray(diagnostics.issues) ? diagnostics.issues : [];
+  const issues = rawIssues
+    .slice(0, MAX_DEFAULT_PROJECTION_SCHEMA_DIAGNOSTIC_ISSUES)
+    .map(sanitizeSchemaDiagnosticIssueForDefaultProjection);
+
+  return {
+    diagnosticVersion: BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTIC_VERSION,
+    contractName: "EvidenceExtractionResultSchema",
+    contractVersion: BOUNDED_EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+    outputParseStatus: safeOutputParseStatus(diagnostics.outputParseStatus),
+    failureCategory: safeFailureCategory(diagnostics.failureCategory),
+    issueCount: issues.length,
+    issues,
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger: BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER,
+  };
+}
+
+function sanitizeSchemaDiagnosticIssueForDefaultProjection(
+  issue: BoundedEvidenceExtractionSchemaDiagnosticIssue,
+): BoundedEvidenceExtractionSchemaDiagnosticIssue {
+  const rawPath = Array.isArray(issue.path) ? issue.path : [];
+  return {
+    path: rawPath
+      .slice(0, MAX_DEFAULT_PROJECTION_SCHEMA_PATH_SEGMENTS)
+      .map(safeSchemaPathSegment),
+    code: safeDiagnosticCode(issue.code),
+  };
+}
+
+function safeDiagnosticCode(value: unknown): string {
+  return typeof value === "string" && SAFE_DIAGNOSTIC_CODES.has(value)
+    ? value
+    : "unknown";
+}
+
+function safeSchemaPathSegment(value: unknown): string {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return String(value);
+  }
+  if (typeof value === "string" && SAFE_DIAGNOSTIC_PATH_SEGMENTS.has(value)) {
+    return value;
+  }
+  return "[non_structural]";
+}
+
+function safeOutputParseStatus(
+  value: BoundedEvidenceExtractionSchemaDiagnostics["outputParseStatus"],
+): BoundedEvidenceExtractionSchemaDiagnostics["outputParseStatus"] {
+  return value === "parse_failure" || value === "parsed" || value === "not_attempted"
+    ? value
+    : "not_attempted";
+}
+
+function safeFailureCategory(
+  value: BoundedEvidenceExtractionSchemaDiagnostics["failureCategory"],
+): BoundedEvidenceExtractionSchemaDiagnostics["failureCategory"] {
+  return value === "parse_failure" ||
+    value === "schema_validation" ||
+    value === "task_contract_validation" ||
+    value === "none"
+    ? value
+    : "none";
 }
 
 function isValidLedgerId(value: string): boolean {

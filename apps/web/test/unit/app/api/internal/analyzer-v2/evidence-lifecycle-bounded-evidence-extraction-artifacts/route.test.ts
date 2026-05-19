@@ -11,6 +11,8 @@ import { markBoundedEvidenceExtractionRuntimeOwnedDecision } from "@/lib/analyze
 const originalEnv = { ...process.env };
 const INPUT = "Using hydrogen for cars is more efficient than using electricity";
 const FORBIDDEN_TEXT = "Hidden extraction route text must not appear by default.";
+const RAW_SCHEMA_FAILURE_TEXT = "RAW_ROUTE_SCHEMA_FAILURE_TEXT_MUST_NOT_APPEAR";
+const RAW_DIAGNOSTIC_VALUE = "RAW_ROUTE_DIAGNOSTIC_VALUE_MUST_NOT_APPEAR";
 
 function context(runId = "job-v2-w5-route") {
   return buildClaimBoundaryV2RunContext({
@@ -118,6 +120,7 @@ function decision(): BoundedEvidenceExtractionDecision {
       renderedPromptHash: "6".repeat(64),
       configSnapshotHash: "config-hash",
       outputSchemaVersion: "v2.evidence_extraction_result.0",
+      schemaDiagnostics: null,
       gatewayTaskId: "evidence_extraction",
       modelPolicyId: "v2.model.evidence_extraction.x7w5",
       providerId: "anthropic",
@@ -176,6 +179,39 @@ function seedArtifact(runId = "job-v2-w5-route") {
   recordBoundedEvidenceExtractionRuntimeArtifact({
     context: runContext,
     boundedEvidenceExtraction: decision(),
+  });
+  return runContext.observabilityLedger.ledgerId;
+}
+
+function seedSchemaFailureArtifact(
+  schemaDiagnostics: NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>,
+) {
+  const runContext = context("job-v2-w5-route-schema");
+  const baseDecision = decision();
+  clearBoundedEvidenceExtractionRuntimeArtifacts(runContext.observabilityLedger.ledgerId);
+  recordBoundedEvidenceExtractionRuntimeArtifact({
+    context: runContext,
+    boundedEvidenceExtraction: markBoundedEvidenceExtractionRuntimeOwnedDecision({
+      ...baseDecision,
+      status: "damaged_execution",
+      damagedReason: "schema_validation_failed",
+      extractionResult: null,
+      extractionResultHash: null,
+      extractionResultStatus: null,
+      extractionStatus: null,
+      evidenceItemCount: 0,
+      evidenceItemStatementHashes: [],
+      evidenceItemStatementByteLengths: [],
+      evidenceItemStatementProjections: [],
+      executionTelemetry: {
+        ...baseDecision.executionTelemetry,
+        schemaDiagnostics,
+      },
+      productExecution: {
+        ...baseDecision.productExecution,
+        evidenceItemGenerated: false,
+      },
+    }),
   });
   return runContext.observabilityLedger.ledgerId;
 }
@@ -245,5 +281,70 @@ describe("Analyzer V2 internal bounded evidence extraction artifact route", () =
     expect(JSON.stringify(await unauthenticated.json())).not.toContain(FORBIDDEN_TEXT);
     expect(JSON.stringify(await malformed.json())).not.toContain(FORBIDDEN_TEXT);
     expect(JSON.stringify(await missing.json())).not.toContain(FORBIDDEN_TEXT);
+  });
+
+  it("returns schema-failure diagnostics without raw provider, source, prompt, or stack text", async () => {
+    const ledgerId = seedSchemaFailureArtifact({
+      diagnosticVersion: RAW_DIAGNOSTIC_VALUE,
+      contractName: RAW_SCHEMA_FAILURE_TEXT,
+      contractVersion: `${RAW_DIAGNOSTIC_VALUE}-version`,
+      outputParseStatus: RAW_DIAGNOSTIC_VALUE,
+      failureCategory: RAW_DIAGNOSTIC_VALUE,
+      issueCount: 9_999,
+      issues: Array.from({ length: 12 }, (_, index) => ({
+        path: ["evidenceItems", index, RAW_DIAGNOSTIC_VALUE, "evidenceScope"],
+        code: index === 0 ? "invalid_type" : RAW_DIAGNOSTIC_VALUE,
+      })),
+      rawProviderOutputReturned: true,
+      rawSchemaMessagesReturned: true,
+      providerCompletionTextReturned: true,
+      sourceTextReturned: true,
+      inputTextReturned: true,
+      evidenceItemTextReturned: true,
+      promptTextReturned: true,
+      stackTraceReturned: true,
+      removalTrigger: RAW_DIAGNOSTIC_VALUE,
+    } as unknown as NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>);
+    process.env.FH_ADMIN_KEY = "test-admin-key";
+    const { GET } = await import(
+      "@/app/api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route"
+    );
+
+    const response = await GET(new Request(
+      artifactUrl(`?ledgerId=${encodeURIComponent(ledgerId)}`),
+      { headers: { "x-admin-key": "test-admin-key" } },
+    ));
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(body.artifacts[0].boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceExtractionResultSchema",
+      contractVersion: "v2.evidence_extraction_result.0",
+      outputParseStatus: "not_attempted",
+      failureCategory: "none",
+      issueCount: 8,
+      rawProviderOutputReturned: false,
+      rawSchemaMessagesReturned: false,
+      providerCompletionTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    const diagnostics = body.artifacts[0].boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics;
+    expect(diagnostics.issueCount).toBe(diagnostics.issues.length);
+    expect(diagnostics.issues[0]).toEqual({
+      path: ["evidenceItems", "0", "[non_structural]", "evidenceScope"],
+      code: "invalid_type",
+    });
+    expect(serialized).toContain("evidenceScope");
+    expect(serialized).not.toContain(RAW_DIAGNOSTIC_VALUE);
+    expect(serialized).not.toContain(RAW_SCHEMA_FAILURE_TEXT);
+    expect(serialized).not.toContain(FORBIDDEN_TEXT);
+    expect(serialized).not.toContain('"statement":');
+    expect(serialized).not.toContain("Runtime JSON Packets");
+    expect(serialized).not.toContain("Error:");
   });
 });
