@@ -24,7 +24,7 @@ Scorecard risk:
 ```
 
 If a package is hidden-only and does not retire/merge/quarantine older
-machinery, it needs a Steer-Co exception under the V2 Consolidation Gate.
+machinery, it requires a Steer-Co exception under the V2 Consolidation Gate.
 
 ## Release-Quality Inputs
 

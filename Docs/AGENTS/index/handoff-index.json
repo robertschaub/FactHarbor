@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T15:41:02.583Z",
-  "count": 708,
+  "generatedAt": "2026-05-19T15:50:08.908Z",
+  "count": 709,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15283,6 +15283,34 @@
             "verification": "`npm run debt:sensors`; `git diff --check`; `Compress-Archive -Path .gemini/skills/factharbor-agent/* -DestinationPath factharbor-agent.skill -Force`; `npm run index`",
             "debt_accepted_and_removal_trigger": "current `advisory_warn` baseline remains accepted until Captain promotes thresholds or asks for cleanup slices",
             "residual_debt": "a future bounded orchestration review should check whether the sensor creates enough actionability without adding stop-start overhead"
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-19_Agents_Supervisor_Bounded_Orchestration_Review_Consolidation.md",
+      "date": "2026-05-19",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "bounded",
+        "orchestration",
+        "review",
+        "consolidation"
+      ],
+      "files_touched": [],
+      "summary": "Treat the committed process model as approved with these review amendments. The next substantive work should be a normal Captain Deputy workstream packet using `V2 SCORECARD IMPACT`, `V2 RETIREMENT LEDGER IMPACT`, `V2 CONSOLIDATION GATE`, and `npm run debt:sensors` where applicable.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend existing governance wording and trigger text in place",
+            "net_mechanism_count": "unchanged",
+            "verification": "Opus 4.6 review; Gemini review; `git diff --check`",
+            "residual_debt": "watch for process overhead during the first real Captain Deputy workstream using these controls"
           }
         }
       }

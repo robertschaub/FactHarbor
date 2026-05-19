@@ -146,8 +146,10 @@ needed and still appears inside deputy authority:
 - root cause is unclear after the owning workflow's first pass;
 - reviewers disagree on risk, scope, or sequencing;
 - implementation starts to drift outside the accepted packet;
-- there are multiple plausible implementation paths with different complexity
-  or cost profiles;
+- multiple plausible implementation paths imply an architectural shift,
+  net-new technical debt without a removal trigger, V2 convergence-rule
+  conflict, or unresolved peer dissent that the Lead Developer/Lead Architect
+  cannot resolve inside the approved packet;
 - a process or governance rule conflicts with another local instruction;
 - the Lead Developer requests steering;
 - final synthesis spans multiple agents or model outputs.

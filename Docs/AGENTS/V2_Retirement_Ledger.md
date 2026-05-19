@@ -13,7 +13,7 @@ normal approval gates.
 
 1. Every substantial V2 package must update or reference at least one row.
 2. New hidden readiness, denial, proof, diagnostic, guard, or route machinery
-   needs an owner and removal/merge trigger.
+   requires an owner and removal/merge trigger.
 3. V1 cleanup remains blocked until V2 owns and verifies the equivalent public
    path, cutover stabilizes, and the cleanup verifier passes.
 4. Historical investigation remains available through git history, tags,

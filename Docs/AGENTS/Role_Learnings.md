@@ -446,8 +446,14 @@ _(No entries yet)_
 ### 2026-05-19 — V2 Needs Packet-Level Convergence Controls
 **Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5)
 **Category:** useful-pattern
-**Learning:** V2 convergence must be required at packet start, not only judged afterward. Substantial V2 packages should state `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` so agents must show whether the slice advances excellent report quality, retires/merges/quarantines older machinery, or needs an explicit hidden-only exception.
+**Learning:** V2 convergence must be required at packet start, not only judged afterward. Substantial V2 packages should state `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` so agents must show whether the slice advances excellent report quality, retires/merges/quarantines older machinery, or requires an explicit hidden-only exception.
 **Files:** `Docs/AGENTS/V2_Excellence_Scorecard.md`, `Docs/AGENTS/V2_Retirement_Ledger.md`, `Docs/WIP/2026-05-19_Bounded_Orchestration_Review_Packet.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_V2_Convergence_Controls.md`
+
+### 2026-05-19 — Steer-Co Should Not Absorb Ordinary Path Selection
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5.5) + Claude Opus 4.6 + Gemini
+**Category:** useful-pattern
+**Learning:** Multiple plausible implementation paths are not by themselves a Steer-Co trigger. Lead Developer or Lead Architect should select routine paths inside an approved packet. Convene Steer-Co only when path choice implies architectural shift, net-new technical debt without removal trigger, V2 convergence-rule conflict, or unresolved peer dissent.
+**Files:** `.claude/skills/captain-deputy/SKILL.md`, `Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Bounded_Orchestration_Review_Consolidation.md`
 
 ---
 

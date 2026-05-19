@@ -188,7 +188,7 @@ Substantial V2 packages must use `Docs/AGENTS/V2_Excellence_Scorecard.md` and
 `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` before adding new
 hidden readiness, denial, proof, diagnostic, guard, route, Source Acquisition,
 EvidenceCorpus, extraction, or report machinery. Hidden-only work that neither
-advances scorecard value nor retires/merges/quarantines older machinery needs a
+advances scorecard value nor retires/merges/quarantines older machinery requires a
 Steer-Co exception under the V2 Consolidation Gate.
 
 ### Pipeline Integrity
