@@ -264,3 +264,28 @@ At 20:15:35 a new untracked file appeared: `Docs/AGENTS/Handoffs/2026-05-19_Lead
 - #5 (no-further-autonomous-work hold): **explicitly honored** by the closeout. It disclaims canary, W4-I removal, W6 work, public behavior, parser, report/verdict/warning/confidence behavior, cache/SR/storage, provider expansion, ACS/direct URL, and V1 work.
 
 **Disposition:** the corrective recovery now substantially meets the Captain's stated criteria. The closeout handoff appears in working tree but is not yet committed; once committed, the X7-W5-A corrective recovery is complete and the Captain can decide whether to (i) accept and continue under the no-autonomous-work hold, or (ii) request additional changes (e.g., rewrite the synthetic Captain handoff from verbatim Captain message text). No live job, no canary, no public surface change.
+
+### Resume update (20:17) — closeout commit landed
+
+Commit `98515f61e490cf21cbc4192045c4ebabf5af603e` "chore: close v2 w5 approval hygiene" landed at 20:16:46 (Robert Schaub). HEAD advances `330ae2fb` → `98515f61`. 12 files / +245 / -38 lines. Working tree clean.
+
+The commit lands:
+- The `approval-records.ts` path-anchor fix (Addendum V #1 — **resolved** in committed code).
+- The validator-script path-anchor fix.
+- The gate-register path-anchor fix.
+- The Lead Developer Hygiene Closeout handoff with verifier evidence, debt-sensors snapshot, and SCORECARD/RETIREMENT/CONSOLIDATION blocks (Addendum V #3 + #4 — **resolved**).
+- The augmented Captain handoff document (with "Machine-readable approval anchor" line and strengthened "no synthetic timestamp" guidance).
+- Post-commit test alignments (in-scope test repair on source-acquisition / task-contracts / orchestrator / boundary-guard).
+- Both Claude monitor reports' addenda.
+
+**Final X7-W5-A corrective recovery status:**
+
+| Concern | Status |
+|---|---|
+| Addendum V #1 (fabricated `approvedAt`) | **Resolved** in `98515f61`: path-anchor replaces synthetic timestamp |
+| Addendum V #2 (synthetic Captain handoff committed before Captain message) | **Open as historical/audit fact**; not rewritten from Captain verbatim, but augmented and explicitly disclaims synthetic timestamp authority |
+| Addendum V #3 (Lead Developer handoff with governance blocks) | **Resolved** in `98515f61`: closeout handoff carries SCORECARD/RETIREMENT/CONSOLIDATION/DEBT-GUARD blocks |
+| Addendum V #4 (verifier evidence) | **Resolved** in `98515f61`: closeout handoff self-reports verifier results; external re-verification not in monitor scope |
+| Addendum V #5 (no-further-autonomous-work hold) | **Honored**: closeout explicitly disclaims canary, W4-I removal, W6, public behavior, parser, cache, SR/storage, provider expansion, ACS/direct URL, V1 work |
+
+The Captain's stated criteria for the corrective recovery are now substantively met. Live-job tranche ledger remains untouched (`5` remaining). Public V2 remains `4.0.0-cb-precutover` / `blocked_precutover`. No canary attempted.
