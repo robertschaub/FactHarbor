@@ -12,6 +12,7 @@ import {
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import {
@@ -118,6 +119,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "claim_understanding_gate1",
     owner: "claim_understanding",
+    status: "executable",
     modelTask: "understand",
     promptSectionId: "V2_CLAIM_UNDERSTANDING_GATE1",
     outputSchemaVersion: CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION,
@@ -127,6 +129,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "acsSnapshotJson",
       "inputGroundingSeedJson",
     ],
+    promptApproval: ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
     claimUnderstandingCache: true,
     notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt/model approval; accepted results carry ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
   }),

@@ -49,6 +49,13 @@ function executableClaimUnderstandingTask(): AnalyzerV2GatewayTask {
   };
 }
 
+function blockedClaimUnderstandingTask(): AnalyzerV2GatewayTask {
+  return {
+    ...executableClaimUnderstandingTask(),
+    status: "blockedUntilPromptApproved",
+  };
+}
+
 function claimUnderstandingModelPolicy(
   overrides: Partial<AnalyzerV2TaskModelPolicy> = {},
 ): AnalyzerV2TaskModelPolicy {
@@ -183,7 +190,7 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
         providerCalls.push(request);
         return { output: acceptedResult(), telemetry: providerTelemetry() };
       }),
-      gatewayTask: getAnalyzerV2GatewayTask("claim_understanding_gate1"),
+      gatewayTask: blockedClaimUnderstandingTask(),
     });
 
     expect(outcome.executionStatus).toBe("blocked_by_gateway");

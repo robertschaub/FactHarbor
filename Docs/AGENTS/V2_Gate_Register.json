@@ -12,40 +12,47 @@
   "entries": [
     {
       "id": "gate.claim_understanding_gate1",
-      "sliceId": "6B3c4C3b",
+      "sliceId": "X7-W5-B",
       "gateType": "gateway_task",
       "taskId": "claim_understanding_gate1",
       "owner": "claim_understanding",
-      "state": "implemented_hidden_runtime_blocked_by_gateway_policy",
-      "status": "implemented_hidden_runtime_blocked_by_gateway_policy",
+      "state": "implemented_hidden_internal_claim_understanding_execution",
+      "status": "implemented_hidden_internal_claim_understanding_execution",
       "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus canExecuteAnalyzerV2GatewayTask(...)",
       "registerGrantsExecution": false,
       "promptProfile": "claimboundary-v2",
       "promptSectionId": "V2_CLAIM_UNDERSTANDING_GATE1",
       "outputSchemaVersion": "v2.claim_understanding_result.0",
-      "observedGatewayStatus": "blockedUntilPromptApproved",
-      "gatewayPolicyStatus": "blockedUntilPromptApproved",
-      "observedPromptApprovalSource": "missing",
-      "promptApprovalId": "missing",
+      "observedGatewayStatus": "executable",
+      "gatewayPolicyStatus": "executable",
+      "observedPromptApprovalSource": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor",
+      "promptApprovalId": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL",
       "observedModelPolicyId": "v2.model.claim_understanding_gate1.0",
-      "observedModelApprovalSource": "missing",
-      "modelApprovalId": "missing",
+      "observedModelApprovalSource": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor",
+      "modelApprovalId": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL",
       "observedCachePolicyId": "v2.semantic.claim-understanding",
-      "observedCacheApprovalSource": "pending",
-      "cacheApprovalId": "pending",
+      "observedCacheApprovalSource": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor",
+      "cacheApprovalId": "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL",
       "sourceOfTruthRefs": [
         "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
         "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
         "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/approval-records.ts",
+        "Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md",
+        "Docs/WIP/2026-05-19_V2_Slice_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md",
         "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md"
       ],
-      "sourcePackage": "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md",
-      "approvalPointer": "Captain-approved 4C3b hidden direct-text wiring package; gateway execution remains blocked until prompt/model/cache policy approval.",
-      "implementationCommit": "d915e0b5",
+      "sourcePackage": "Docs/WIP/2026-05-19_V2_Slice_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md",
+      "approvalPointer": "Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md records the Captain approval in the current Codex thread on 2026-05-19. Scope is limited to making claim_understanding_gate1 executable through existing prompt/model/cache approval state. No live jobs, prompt text edits, schema edits, public behavior, parser, report/verdict/warning/confidence behavior, cache read/write, SR/storage, provider expansion, ACS/direct URL, or V1 work are authorized.",
+      "implementationCommit": null,
       "allowedFiles": [
         "apps/web/src/lib/analyzer-v2/claim-understanding/**",
         "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-*",
-        "apps/web/src/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/**"
+        "apps/web/src/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/**",
+        "apps/web/src/lib/analyzer-v2/gateway/approval-records.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts"
       ],
       "blockedSurfaces": [
         "public API result",
@@ -65,13 +72,16 @@
         "realByteParserConsumption": true
       },
       "verifierCommands": [
-        "npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime test/unit/lib/analyzer-v2",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2/gateway/policy.test.ts test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "npm -w apps/web run test -- test/unit/lib/analyzer-v2",
+        "npm run validate:v2-gates",
+        "node scripts/validate-v2-gate-register.mjs --self-test",
         "npm -w apps/web run build"
       ],
       "liveJobEligibility": "blocked",
-      "liveJobBlockReason": "V0 register is not a live-smoke gate; public result remains damaged pre-cutover.",
-      "lastVerifiedBy": "Codex GPT-5 on 2026-05-16",
-      "notes": "Runtime activation has separate guarded behavior; this row mirrors gateway policy and does not grant execution."
+      "liveJobBlockReason": "X7-W5-B authorizes local hidden/internal Claim Understanding activation repair only. Any canary requires separate clean commit, runtime refresh, preflight, and live-job ledger accounting.",
+      "lastVerifiedBy": "pending X7-W5-B verifier run",
+      "notes": "X7-W5-B makes claim_understanding_gate1 executable through the existing prompt/model/cache approval triple so product-owned direct-text runtime activation can reach Claim Understanding dispatch. Register remains audit-only and grants no execution. Public API/UI/report/export/compatibility behavior, parser execution, report/verdict/warning/confidence behavior, cache read/write, SR/storage, provider expansion, ACS/direct URL, V1 work, V1 cleanup, and live jobs remain blocked."
     },
     {
       "id": "gate.evidence_query_planning",

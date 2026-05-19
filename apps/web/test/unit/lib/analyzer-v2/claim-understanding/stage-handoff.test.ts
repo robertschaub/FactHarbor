@@ -235,7 +235,7 @@ describe("analyzer-v2 Claim Understanding stage handoff", () => {
       inputSource: "direct_input",
       status: "blocked",
       claimContract: null,
-      blockedReason: "gateway_policy_not_executable",
+      blockedReason: "runtime_dispatch_not_enabled",
       damagedReason: null,
       downstreamStart: {
         evidenceLifecycleStatus: "blocked_precutover",

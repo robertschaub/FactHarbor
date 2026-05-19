@@ -191,7 +191,7 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     });
   });
 
-  it("blocks direct input at the shipped gateway policy without prompt/cache/provider work", async () => {
+  it("keeps direct input blocked at stage scope without product-owned activation", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-direct",
       submitted: {
@@ -208,11 +208,11 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
       stageVersion: "v2.claim-understanding.runtime-stage.0",
       visibility: "internal_only",
       inputSource: "direct_input",
-      status: "blocked_by_gateway",
+      status: "blocked_by_stage_scope",
       result: null,
-      blockedReason: "gateway_policy_not_executable",
+      blockedReason: "runtime_dispatch_not_enabled",
       gatewayTaskId: "claim_understanding_gate1",
-      gatewayTaskStatus: "blockedUntilPromptApproved",
+      gatewayTaskStatus: "executable",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });
@@ -298,7 +298,7 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     });
   });
 
-  it("blocks direct text at the real gateway even when scaffold options are enabled", async () => {
+  it("blocks legacy direct-text scaffold options after gateway approval", async () => {
     const submittedText = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
     const input: ClaimBoundaryV2Ingress = {
@@ -324,18 +324,18 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
       stageVersion: "v2.claim-understanding.runtime-stage.0",
       visibility: "internal_only",
       inputSource: "direct_input",
-      status: "blocked_by_gateway",
+      status: "blocked_by_stage_scope",
       result: null,
-      blockedReason: "gateway_policy_not_executable",
+      blockedReason: "runtime_dispatch_not_enabled",
       gatewayTaskId: "claim_understanding_gate1",
-      gatewayTaskStatus: "blockedUntilPromptApproved",
+      gatewayTaskStatus: "executable",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });
     expect(providerCalls).toEqual([]);
   });
 
-  it("does not let missing-provider scaffold state bypass the blocked gateway", async () => {
+  it("does not let missing-provider scaffold state bypass product-owned activation", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-direct-missing-provider",
       submitted: {
@@ -354,9 +354,9 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
 
     expect(state).toMatchObject({
       inputSource: "direct_input",
-      status: "blocked_by_gateway",
+      status: "blocked_by_stage_scope",
       result: null,
-      blockedReason: "gateway_policy_not_executable",
+      blockedReason: "runtime_dispatch_not_enabled",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });
@@ -443,7 +443,7 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     expect(providerCalls).toEqual([]);
   });
 
-  it("blocks provider failure paths before prompt rendering while gateway approval is missing", async () => {
+  it("blocks legacy provider failure paths before prompt rendering without product activation", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-direct-provider-failure",
       submitted: {
@@ -464,9 +464,9 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
 
     expect(state).toMatchObject({
       inputSource: "direct_input",
-      status: "blocked_by_gateway",
+      status: "blocked_by_stage_scope",
       result: null,
-      blockedReason: "gateway_policy_not_executable",
+      blockedReason: "runtime_dispatch_not_enabled",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });

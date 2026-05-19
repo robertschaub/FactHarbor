@@ -22,6 +22,7 @@ import type {
 } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { getAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
+import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import { buildClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
@@ -118,6 +119,7 @@ function readiness(frame: ClaimUnderstandingDispatchFrame): ClaimUnderstandingDi
 function runtimeDispatchRequest(
   ready: ClaimUnderstandingDispatchReadinessResult,
   providerCall: ClaimUnderstandingProviderCall,
+  overrides: Partial<{ gatewayTask: AnalyzerV2GatewayTask }> = {},
 ) {
   const modelPolicy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
   if (!modelPolicy) {
@@ -126,9 +128,16 @@ function runtimeDispatchRequest(
 
   return {
     readiness: ready,
-    gatewayTask: getAnalyzerV2GatewayTask("claim_understanding_gate1"),
+    gatewayTask: overrides.gatewayTask ?? getAnalyzerV2GatewayTask("claim_understanding_gate1"),
     modelPolicy,
     providerCall,
+  };
+}
+
+function blockedClaimUnderstandingGatewayTask(): AnalyzerV2GatewayTask {
+  return {
+    ...getAnalyzerV2GatewayTask("claim_understanding_gate1"),
+    status: "blockedUntilPromptApproved",
   };
 }
 
@@ -284,7 +293,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     expect(result.sideEffects).toEqual(noRuntimeDispatchSideEffects);
   });
 
-  it("blocks direct-text dispatch at the real gateway before prompt, cache, or provider work", async () => {
+  it("blocks direct-text dispatch before prompt, cache, or provider work when the gateway task is not executable", async () => {
     const submittedText = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
     const frame = readyFrame({
       runIdHint: "job-runtime-dispatch-direct-owner",
@@ -304,6 +313,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
         providerCalls.push(request);
         throw new Error("should not be called");
       },
+      { gatewayTask: blockedClaimUnderstandingGatewayTask() },
     ));
 
     expect(ready.status).toBe("contract_satisfied");
@@ -419,7 +429,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     expect(result.sideEffects.promptRendered).toBe(false);
   });
 
-  it("blocks before prompt-render validation while real gateway approval is missing", async () => {
+  it("blocks before prompt-render validation when the supplied gateway task is not executable", async () => {
     const frame = readyFrame({
       runIdHint: "job-runtime-dispatch-prompt-render-blocked",
       submitted: {
@@ -444,6 +454,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
         providerCalls.push(request);
         throw new Error("should not be called");
       },
+      { gatewayTask: blockedClaimUnderstandingGatewayTask() },
     ));
 
     expect(readyWithRejectedSection.status).toBe("contract_satisfied");
@@ -462,7 +473,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
   });
 
-  it("blocks provider failure paths before adapter invocation while real gateway approval is missing", async () => {
+  it("blocks provider failure paths before adapter invocation when the supplied gateway task is not executable", async () => {
     const submittedText = "Plastic recycling is pointless";
     const frame = readyFrame({
       runIdHint: "job-runtime-dispatch-provider-failure",
@@ -479,6 +490,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
       async () => {
         throw new Error("provider unavailable");
       },
+      { gatewayTask: blockedClaimUnderstandingGatewayTask() },
     ));
 
     expect(result.status).toBe("blocked");
@@ -498,7 +510,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
   });
 
-  it("blocks invalid telemetry paths before adapter invocation while real gateway approval is missing", async () => {
+  it("blocks invalid telemetry paths before adapter invocation when the supplied gateway task is not executable", async () => {
     const submittedText = "Plastic recycling is pointless";
     const frame = readyFrame({
       runIdHint: "job-runtime-dispatch-invalid-telemetry",
@@ -523,6 +535,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
           durationMs: 345,
         },
       }),
+      { gatewayTask: blockedClaimUnderstandingGatewayTask() },
     ));
 
     expect(result.status).toBe("blocked");
@@ -536,7 +549,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     expect(result.sideEffects.cacheWrite).toBe(false);
   });
 
-  it("blocks invalid schema paths before adapter retry while real gateway approval is missing", async () => {
+  it("blocks invalid schema paths before adapter retry when the supplied gateway task is not executable", async () => {
     const submittedText = "Plastic recycling is pointless";
     const frame = readyFrame({
       runIdHint: "job-runtime-dispatch-invalid-schema",
@@ -565,6 +578,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
           },
         };
       },
+      { gatewayTask: blockedClaimUnderstandingGatewayTask() },
     ));
 
     expect(result.status).toBe("blocked");

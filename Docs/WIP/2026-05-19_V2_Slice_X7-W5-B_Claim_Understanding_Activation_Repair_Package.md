@@ -1,7 +1,7 @@
 # V2 Slice X7-W5-B Claim Understanding Activation Repair Package
 
 Date: 2026-05-19
-Status: review / Captain approval package only
+Status: locally implemented / verifier-clean / no live job run
 
 ## Purpose
 
@@ -19,11 +19,31 @@ Local code inspection shows the direct cause:
 - `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts`
   - `buildRuntimeApprovalSnapshotFromGatewayTask()` requires executable gateway status plus approved prompt/model/cache policies before dispatch.
 
-This package requests approval for the smallest repair that makes the already-existing direct-input Claim Understanding runtime path reachable under the same hidden/internal containment model.
+This package requested and received Captain approval for the smallest repair that makes the already-existing direct-input Claim Understanding runtime path reachable under the same hidden/internal containment model.
+
+## Implementation Status
+
+X7-W5-B is locally implemented as an approval-state repair only:
+
+- `claim_understanding_gate1` is now `executable`.
+- Claim Understanding prompt/model/cache policies all use the durable approval anchor `Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor`.
+- Legacy scaffold options still fail closed without product-owned runtime activation.
+- The V2 gate register mirrors the new hidden/internal Claim Understanding execution state but remains audit-only and does not grant execution.
+
+Local verifiers are clean:
+
+- focused gateway/runtime/boundary tests passed;
+- full `test/unit/lib/analyzer-v2` passed;
+- V2 gate validation and gate-register self-test passed;
+- `npm run debt:sensors` completed with advisory warnings only;
+- `npm -w apps/web run build` passed;
+- `git diff --check` passed.
+
+No live job has been run from this package. Any canary still requires commit, clean runtime refresh/preflight, and live-job ledger accounting.
 
 ## Proposed Scope
 
-Allowed after approval:
+Approved implementation scope:
 
 - Add a durable repo-local X7-W5-B approval record for `claim_understanding_gate1`.
 - Set `claim_understanding_gate1` to executable using that approval record.
@@ -50,7 +70,7 @@ Forbidden:
 
 ## Exact Approval Boundary
 
-This is an approval-flip package. It must not be implemented without explicit Captain approval because prompt/model/cache approval flips are standing Captain gates.
+This is an approval-flip package. It was implemented only after explicit Captain approval because prompt/model/cache approval flips are standing Captain gates.
 
 The approval anchor should be a durable repo-local handoff, for example:
 

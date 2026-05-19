@@ -125,7 +125,7 @@ const captainCanaryTopicTerms = [
 ] as const;
 
 describe("V2 Claim Understanding prompt contract", () => {
-  it("validates as a non-executable claimboundary-v2 prompt profile", () => {
+  it("validates the claimboundary-v2 prompt profile", () => {
     const content = readPrompt();
     const validation = validateConfig("prompt", content, "prompt.v1");
     const frontmatterValidation = validatePromptProfileFrontmatter("claimboundary-v2", content);
@@ -151,8 +151,8 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(gatewayTask.promptPolicy?.sectionId).toBe(sectionId);
     expect(gatewayTask.promptPolicy?.requiredVariables).toEqual([...expectedVariables]);
     expect(gatewayTask.promptPolicy?.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
-    expect(gatewayTask.status).toBe("blockedUntilPromptApproved");
-    expect(canExecuteAnalyzerV2GatewayTask(gatewayTask)).toBe(false);
+    expect(gatewayTask.status).toBe("executable");
+    expect(canExecuteAnalyzerV2GatewayTask(gatewayTask)).toBe(true);
     expect(section).toContain(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
     expect(section).toContain(CLAIM_CONTRACT_V2_SCHEMA_VERSION);
   });

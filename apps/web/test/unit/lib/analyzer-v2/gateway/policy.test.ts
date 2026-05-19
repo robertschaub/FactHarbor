@@ -6,8 +6,11 @@ import {
   getAnalyzerV2GatewayTask,
   isAnalyzerV2GatewayTaskEligibleForExecutableStatus,
 } from "@/lib/analyzer-v2/gateway/policy";
-import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
-import { ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
+import {
+  ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
+} from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
@@ -27,7 +30,9 @@ describe("analyzer-v2 gateway policy registry", () => {
       expect(task.verifier).toBeTruthy();
       expect(task.outputSchemaVersion).toMatch(/^v2\./);
       expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(
-        task.id === "evidence_query_planning" || task.id === "evidence_extraction",
+        task.id === "claim_understanding_gate1" ||
+        task.id === "evidence_query_planning" ||
+        task.id === "evidence_extraction",
       );
     }
   });
@@ -38,7 +43,11 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(promptBackedTasks.length).toBeGreaterThan(0);
     for (const task of promptBackedTasks) {
       expect(task.promptPolicy?.profile).toBe("claimboundary-v2");
-      if (task.id === "evidence_query_planning" || task.id === "evidence_extraction") {
+      if (
+        task.id === "claim_understanding_gate1" ||
+        task.id === "evidence_query_planning" ||
+        task.id === "evidence_extraction"
+      ) {
         expect(task.status).toBe("executable");
         expect(task.promptPolicy?.approval).toMatchObject({
           status: "approved",
@@ -61,10 +70,10 @@ describe("analyzer-v2 gateway policy registry", () => {
     }
   });
 
-  it("declares claim-understanding variables and cache policy without making it executable", () => {
+  it("declares approved executable claim-understanding variables and cache policy", () => {
     const task = getAnalyzerV2GatewayTask("claim_understanding_gate1");
 
-    expect(task.status).toBe("blockedUntilPromptApproved");
+    expect(task.status).toBe("executable");
     expect(task.promptPolicy?.requiredVariables).toEqual([
       "currentDate",
       "analysisInput",
@@ -75,10 +84,13 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(task.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
     expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.claim_understanding_gate1.0");
     expect(task.cachePolicy?.policyId).toBe("v2.semantic.claim-understanding");
-    expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+    expect(task.promptPolicy?.approval).toBe(ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL);
+    expect(task.modelPolicy?.approval).toBe(ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL);
+    expect(task.cachePolicy?.approval).toBe(ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL);
+    expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
   });
 
-  it("declares concrete blocked model-policy metadata for claim understanding", () => {
+  it("declares concrete approved model-policy metadata for claim understanding", () => {
     const policy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
 
     expect(policy).toMatchObject({
@@ -95,12 +107,9 @@ describe("analyzer-v2 gateway policy registry", () => {
       fallbackBehavior: "none_fail_closed",
       escalationBehavior: "surface_damaged_claim_understanding",
       execution: "blocked_until_prompt_model_cache_approval",
-      approval: {
-        status: "missing",
-        reviewer: null,
-        approvedAt: null,
-      },
+      approval: ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
     });
+    expect(policy?.approval).toBe(ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL);
   });
 
   it("aligns Evidence Lifecycle gateway metadata and only enables approved hidden task execution", () => {
@@ -273,7 +282,7 @@ describe("analyzer-v2 gateway policy registry", () => {
         : null,
     })).toBe(false);
 
-    expect(getAnalyzerV2GatewayTask("claim_understanding_gate1").status).toBe("blockedUntilPromptApproved");
+    expect(getAnalyzerV2GatewayTask("claim_understanding_gate1").status).toBe("executable");
     expect(getAnalyzerV2GatewayTask("evidence_query_planning").status).toBe("executable");
     expect(getAnalyzerV2GatewayTask("evidence_extraction").status).toBe("executable");
   });

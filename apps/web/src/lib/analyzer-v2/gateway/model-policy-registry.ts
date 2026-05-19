@@ -5,6 +5,7 @@ import type {
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
 
 const MISSING_APPROVAL = {
@@ -28,7 +29,7 @@ export const ANALYZER_V2_TASK_MODEL_POLICIES = [
     fallbackBehavior: "none_fail_closed",
     escalationBehavior: "surface_damaged_claim_understanding",
     execution: "blocked_until_prompt_model_cache_approval",
-    approval: MISSING_APPROVAL,
+    approval: ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
   },
   {
     policyId: "v2.model.evidence_query_planning.0",

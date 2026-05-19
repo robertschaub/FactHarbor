@@ -33,9 +33,12 @@ const GATEWAY_STATUSES = new Set([
 const LIVE_JOB_ELIGIBILITY = new Set(["blocked", "not_applicable"]);
 const X7_W5_A_APPROVAL_ANCHOR =
   "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md#approval-anchor";
+const X7_W5_B_APPROVAL_ANCHOR =
+  "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor";
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
   ["ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL", X7_W5_A_APPROVAL_ANCHOR],
+  ["ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL", X7_W5_B_APPROVAL_ANCHOR],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -43,7 +46,7 @@ const APPROVAL_SOURCE_BY_TOKEN = new Map([
 const CACHE_POLICY_BY_SELECTOR = {
   claimUnderstandingCache: {
     policyId: "v2.semantic.claim-understanding",
-    approvalSource: "pending",
+    approvalSource: X7_W5_B_APPROVAL_ANCHOR,
   },
   queryPlanningCache: {
     policyId: "v2.semantic.evidence-query-planning",
@@ -556,6 +559,9 @@ function approvalIdFromSource(source) {
   }
   if (source.startsWith("ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@")) {
     return "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL";
+  }
+  if (source.startsWith("ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@")) {
+    return "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL";
   }
   return source;
 }

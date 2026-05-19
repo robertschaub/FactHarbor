@@ -46,7 +46,7 @@ describe("analyzer-v2 run context", () => {
     expect(context.promptProfile.sectionIds).toContain("V2_CLAIM_UNDERSTANDING_GATE1");
     expect(context.modelPolicy.source).toBe("static_precutover_registry");
     expect(context.modelPolicy.snapshotHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(getPipelineRunGatewayTask(context, "claim_understanding_gate1").status).toBe("blockedUntilPromptApproved");
+    expect(getPipelineRunGatewayTask(context, "claim_understanding_gate1").status).toBe("executable");
     expect(getPipelineRunTaskModelPolicy(context, "claim_understanding_gate1")?.policyId).toBe(
       "v2.model.claim_understanding_gate1.0",
     );

@@ -6,6 +6,7 @@ import type {
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
 
 const PENDING_APPROVAL: AnalyzerV2PolicyApproval = {
@@ -70,7 +71,7 @@ export const ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY: AnalyzerV2CachePolicy
     "searchContextHash",
     "adapterVersion",
   ],
-  approval: PENDING_APPROVAL,
+  approval: ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 };
 
 export const ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY: AnalyzerV2CachePolicy = {
