@@ -4359,3 +4359,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No second W5-A canary is authorized. Do not proceed to W6/report progression, W4-I merge/delete, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, provider expansion, W2/W3 widening, ACS/direct URL, V1 work, or V1 cleanup without a separate reviewed package. Remaining live-job budget is `4`.
 **Learnings:** First value-validation should be recorded as evidence even when it does not produce value. A hidden executor that honestly returns zero EvidenceItems is useful signal, but it must stop the progression rather than being treated as success.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Live_Canary_Result.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W5-A Claim Understanding Gate Value Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Recorded the follow-up Captain-authorized value-validation canary as `STOP_X7_W5_A_CLAIM_UNDERSTANDING_NO_VALID_CLAIM`. Job `5f7e163ec8274789b98f1892d2d7616b` ran on refreshed Web runtime `eeae911de991edc2be34c56ce4109b2afb9fc7c3` with exact Captain-defined input `Plastic recycling is pointless`, reached `SUCCEEDED` publicly, but stopped at Claim Understanding with `no_valid_claim` / `stage_scope`. W2/W3/W4/W5 hidden routes returned authenticated no-store `404`, so this run did not exercise W5-A extraction.
+**Warnings:** This consumed one live job from the Captain-reset tranche; remaining budget is `5`. Do not count it as EvidenceItem-value success or W5-A extractor failure. Prompt/config/schema changes to Claim Understanding remain approval-gated.
+**Learnings:** V2 may over-block short evaluative but externally assessable claims before Source Acquisition. A clearer factual Captain-defined canary can still test the existing W2-W5 chain without code edits; fixing Claim Understanding requires a reviewed approval package.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_CU_Gate_Value_Canary_Result.md

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T18:36:48.967Z",
-  "count": 714,
+  "generatedAt": "2026-05-19T18:53:58.276Z",
+  "count": 715,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15641,6 +15641,25 @@
       ],
       "files_touched": [],
       "summary": "Lead Developer Handoff - V2 X7-W4-I Execution Readiness Denial Implementation"
+    },
+    {
+      "file": "2026-05-19_Lead_Developer_V2_X7-W5-A_CU_Gate_Value_Canary_Result.md",
+      "date": "2026-05-19",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w5-a",
+        "cu",
+        "gate",
+        "value",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "The job reached `SUCCEEDED` publicly but stopped at Claim Understanding with `no_valid_claim` / `stage_scope`. Expected W2/W3/W4/W5 hidden artifact routes returned authenticated no-store `404`, so this run did not exercise the W5-A bounded evidence executor and must not be counted as an EvidenceItem"
     },
     {
       "file": "2026-05-19_Lead_Developer_V2_X7-W5-A_Hygiene_Closeout.md",
