@@ -7,17 +7,17 @@
   "activeTranche": {
     "trancheId": "v2-post-w5a-captain-reset-2026-05-19",
     "resetTotal": 6,
-    "currentRemaining": 4,
+    "currentRemaining": 6,
     "approvalPointer": {
-      "source": "Captain message in current Codex thread after W5-A no-extractable-evidence canary closeout",
+      "source": "Captain message in current Codex thread after W5-B implementation closeout",
       "date": "2026-05-19",
-      "summary": "Captain clarified that no input is needed now, live jobs are authorized, and the current live-job budget is 6."
+      "summary": "Captain clarified that no input is needed, live jobs are authorized, safety measures should not be overdone when code is ready, and the current live-job budget is 6."
     },
     "latestReset": {
       "date": "2026-05-19",
       "previousRemaining": 4,
       "resetRemaining": 6,
-      "reason": "Captain reset/increased the live-job budget after the W5-A value-validation canary returned hidden_no_extractable_evidence."
+      "reason": "Captain reset/increased the live-job budget after W5-B implementation and asked Captain Deputy to continue toward the whole pipeline without stopping for routine input."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,
