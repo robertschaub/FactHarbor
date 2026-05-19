@@ -4355,9 +4355,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 
 ---
 ### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W5-A Bounded Evidence Extraction Live Canary Result -- [Significant] [open-items: yes]
-**For next agent:** Closed the single Captain-authorized W5-A live canary as `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`. Job `b7f8561316dd4ab18d3e8aeadf496a9c` ran on refreshed Web runtime `8f9dcea0609873595592e0893879b9db8ffb20f6`, reached `SUCCEEDED`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover`, and executed the hidden W5-A bounded extraction path once. W5-A returned `hidden_no_extractable_evidence` with `evidenceItemCount: 0`; this is not a passing EvidenceItem-value canary.
-**Warnings:** No second W5-A canary is authorized. Do not proceed to W6/report progression, W4-I merge/delete, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, provider expansion, W2/W3 widening, ACS/direct URL, V1 work, or V1 cleanup without a separate reviewed package. Remaining live-job budget is `4`.
-**Learnings:** First value-validation should be recorded as evidence even when it does not produce value. A hidden executor that honestly returns zero EvidenceItems is useful signal, but it must stop the progression rather than being treated as success.
+**For next agent:** Corrected after re-inspection. Job `b7f8561316dd4ab18d3e8aeadf496a9c` is now classified as `CORRECTED_STOP_X7_W5_A_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE`, not `hidden_no_extractable_evidence`. The persisted job payload is a plain V2 pre-cutover damaged shell envelope (`shellOnly: true`, `analyticalStagesExecuted: []`) and authenticated W2/W3/W4/W5 hidden routes returned `404`.
+**Warnings:** Do not use this job as EvidenceItem-value evidence, W5-A extraction-failure evidence, or W4-I retirement evidence. No public/report/parser/cache/SR/storage/provider/ACS/direct URL/V1 progression is authorized by this correction.
+**Learnings:** Hidden-chain live-job conclusions must be anchored to persisted/admin route evidence, not to expected package behavior or stale in-memory observations.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Live_Canary_Result.md
 
 ---
@@ -4366,3 +4366,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This consumed one live job from the Captain-reset tranche; remaining budget is `5`. Do not count it as EvidenceItem-value success or W5-A extractor failure. Prompt/config/schema changes to Claim Understanding remain approval-gated.
 **Learnings:** V2 may over-block short evaluative but externally assessable claims before Source Acquisition. A clearer factual Captain-defined canary can still test the existing W2-W5 chain without code edits; fixing Claim Understanding requires a reviewed approval package.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_CU_Gate_Value_Canary_Result.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W5-A Runtime Activation Discriminator Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Recorded job `64ec6dcfe6e54fff8c90fc00f4c61b0a` as `STOP_X7_W5_A_SHELL_ONLY_RUNTIME_ACTIVATION_NOT_PROVEN`. It ran on refreshed Web runtime `6cef9c715a98e2c6ec48a0fef0522871380df6d2` with exact Captain-defined input `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`, reached `SUCCEEDED`, but returned the plain V2 shell-only envelope. Claim Understanding and W2-W5 hidden artifact routes returned `404`.
+**Warnings:** Remaining live-job budget is `4`. Stop further live jobs until the activation/provenance path is diagnosed or repaired under a reviewed package. This is not W5-A extraction evidence and not report-quality progress.
+**Learnings:** Runtime commit match alone is insufficient. Product-route canaries need explicit hidden-chain evidence before being counted as value validation.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Runtime_Activation_Discriminator_Canary_Result.md

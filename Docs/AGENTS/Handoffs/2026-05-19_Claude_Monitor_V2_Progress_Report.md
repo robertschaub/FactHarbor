@@ -359,6 +359,32 @@ Tranche ledger changes:
 
 Continuing standard monitoring.
 
+### Resume update (21:00) — third canary executed; FIRST canary classification corrected on provenance re-inspection
+
+At 21:00:09 a new round of edits appeared. HEAD unchanged at `6cef9c71`; working tree shows uncommitted edits to the previous hydrogen-canary handoff, the WIP result file, and the tranche ledger, plus a new untracked third-canary handoff `2026-05-19_Lead_Developer_V2_X7-W5-A_Runtime_Activation_Discriminator_Canary_Result.md`.
+
+**Third live canary executed (different input, scope-compliant):**
+
+- Job: `64ec6dcfe6e54fff8c90fc00f4c61b0a`.
+- Runtime commit: `6cef9c715a98e2c6ec48a0fef0522871380df6d2` (the CU-gate canary commit).
+- Input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz` (Captain scorecard input `asylum-235000-de`).
+- Classification: `STOP_X7_W5_A_SHELL_ONLY_RUNTIME_ACTIVATION_NOT_PROVEN`.
+- Public result: `SUCCEEDED` but persisted is `shellOnly: true`, `analyticalStagesExecuted: []`, `AC_V2_SHELL_01`. Authenticated hidden routes for Claim Understanding / Evidence Lifecycle intake / Query Planning / W2 / W3-B / W4-G / W4-H / W4-I / W5-A all returned `404` for the job ledger.
+
+**Critical provenance finding (initiated by the agent, not by the monitor):** The implementing agent re-inspected the FIRST canary (`b7f8561316dd4ab18d3e8aeadf496a9c` hydrogen) and found its persisted result is *also* `shellOnly: true`, `analyticalStagesExecuted: []`, with W2/W3/W4/W5 hidden routes returning `404`. The earlier closeout claim that W5-A executed and returned `hidden_no_extractable_evidence` is NOT supported by the actual persisted artifacts. The classification has been corrected in-place to `CORRECTED_STOP_X7_W5_A_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE`. The previous closeout's "Anthropic/claude-haiku-4-5-20251001, 2761 tokens, 2718 ms, no_store_no_read" telemetry — if all hidden artifact routes are `404` — was either recorded somewhere other than the persisted artifact store, or the original closeout was based on in-process state that did not survive the job lifecycle.
+
+**Implications:**
+
+- The X7-W5-A corrective recovery's first canary did NOT prove that W5-A executes end-to-end. It proved that V2 jobs reach `SUCCEEDED` and return a shell envelope, but the hidden chain through W2-W5 is not provable from persisted artifacts.
+- This is a substantial provenance-integrity gap — `analyticalStagesExecuted: []` is the persisted truth, regardless of what was recorded in any earlier in-memory or status-doc state.
+- The implementing agent has acted with integrity here: caught its own previous overclaim, corrected it, re-classified the canary, declined to spend more budget until the activation/provenance path is diagnosed, and refrained from prompt/config/schema edits.
+
+**Tranche after corrections:** `6` reset / `4` remaining. Three canaries consumed (hydrogen, plastic-recycling CU-gate, asylum-235000 runtime-activation discriminator). All three classified as STOP-class — none produced report-quality value.
+
+**Monitor's assessment:** This is exactly the behavior the V2 convergence controls are designed to encourage. The agent team is finding hard limits of the current V2 implementation and recording them honestly rather than overclaiming. The provenance correction is a self-audit win, not a stop-condition trigger. Captain stop conditions remain un-triggered: no raw text leak, no W4-I removal, no W6/report progression, no public surface change, no V1 work. The agent's `Warnings` and `For next agent` text properly disclaims any prompt/config/schema/source edits without a reviewed package.
+
+Continuing to monitor.
+
 ### Resume update (20:40) — authorization concern resolved by implementing thread
 
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.

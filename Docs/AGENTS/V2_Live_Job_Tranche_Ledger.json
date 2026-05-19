@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-post-w5a-captain-reset-2026-05-19",
     "resetTotal": 6,
-    "currentRemaining": 5,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W5-A no-extractable-evidence canary closeout",
       "date": "2026-05-19",
@@ -43,7 +43,7 @@
       {
         "sliceId": "X7-W5-A",
         "jobId": "b7f8561316dd4ab18d3e8aeadf496a9c",
-        "classification": "STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE",
+        "classification": "CORRECTED_STOP_X7_W5_A_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE",
         "implementationCommit": "8f9dcea0609873595592e0893879b9db8ffb20f6",
         "docsCommit": "same_commit_as_this_ledger_update",
         "count": 1,
@@ -59,6 +59,17 @@
         "docsCommit": "same_commit_as_this_ledger_update",
         "count": 1,
         "remainingAfter": 5,
+        "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-A-RUNTIME-ACTIVATION-DISCRIMINATOR",
+        "jobId": "64ec6dcfe6e54fff8c90fc00f4c61b0a",
+        "classification": "STOP_X7_W5_A_SHELL_ONLY_RUNTIME_ACTIVATION_NOT_PROVEN",
+        "implementationCommit": "6cef9c715a98e2c6ec48a0fef0522871380df6d2",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
         "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }

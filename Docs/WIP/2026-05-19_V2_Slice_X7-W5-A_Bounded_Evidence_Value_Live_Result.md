@@ -2,18 +2,24 @@
 
 **Date:** 2026-05-19
 **Role:** Captain Deputy / Lead Developer
-**Classification:** `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`
+**Corrected classification:** `CORRECTED_STOP_X7_W5_A_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE`
 **Job id:** `b7f8561316dd4ab18d3e8aeadf496a9c`
-**Canary count:** 1 of 1 authorized W5-A live canaries
-**Remaining live-job tranche:** `4`
 **Implementation/runtime commit:** `8f9dcea0609873595592e0893879b9db8ffb20f6`
 **Input:** `Using hydrogen for cars is more efficient than using electricity`
 
-## Summary
+## Correction Notice
 
-The single Captain-authorized X7-W5-A live canary ran on a refreshed Web runtime matching commit `8f9dcea0609873595592e0893879b9db8ffb20f6` and reached `SUCCEEDED`.
+This document supersedes the earlier closeout wording that classified the canary as `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`.
 
-The hidden W5-A execution path was reachable and executed exactly once, but it returned `hidden_no_extractable_evidence` with `evidenceItemCount: 0`. Per the W5 package, this is an honest bounded result, not a passing value canary. W5-A must stop before W6, report progression, or any second W5-A live job and return to Steer-Co/design review.
+Re-inspection of the persisted job payload and authenticated hidden artifact routes showed that the job did **not** provide durable evidence that W5-A executed. The persisted result is a plain V2 pre-cutover damaged shell envelope:
+
+- public schema: `4.0.0-cb-precutover`
+- public cutover status: `blocked_precutover`
+- public issue state: `report_damaged`
+- warning details: `shellOnly: true`, `analyticalStagesExecuted: []`
+- hidden W2/W3/W4/W5 artifact routes for ledger `b7f8561316dd4ab18d3e8aeadf496a9c:precutover-observability`: `404`
+
+Therefore the durable classification is `CORRECTED_STOP_X7_W5_A_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE`.
 
 ## Runtime And Job Provenance
 
@@ -26,60 +32,15 @@ The hidden W5-A execution path was reachable and executed exactly once, but it r
 - Public cutover status: `blocked_precutover`
 - Public issue state: `report_damaged`
 
-Note: the API-created commit hash on the job still reflected older API-side metadata, but the executed Web commit on the job and runtime version both matched the intended W5-A docs/runtime commit.
+## Corrected Result
 
-## Hidden Chain Evidence
+The canary is not a passing EvidenceItem-value canary and is not reliable evidence that W5-A ran and returned zero EvidenceItems. It shows that the product-route V2 request completed with the structural shell envelope and no durable hidden artifact evidence.
 
-Ledger inspected:
-
-```text
-b7f8561316dd4ab18d3e8aeadf496a9c:precutover-observability
-```
-
-Authenticated internal no-store artifact routes returned:
-
-| Stage | Result |
-|---|---|
-| W2 candidate-provider network | `artifactCount: 1` |
-| W3-B source material page summary | `artifactCount: 1` |
-| W4-G bounded corpus-text sidecar | `artifactCount: 1`, default `hash_length_provenance_only` |
-| W4-H bounded extraction-input packet | `artifactCount: 1`, default `hash_length_provenance_only` |
-| W4-I execution-readiness denial | `artifactCount: 1`, default `hash_length_provenance_only`, `inputTextReturned: false` |
-| W5-A bounded evidence extraction | `artifactCount: 1`, default `hash_length_provenance_only` |
-
-W5-A default artifact projection:
-
-- `kind: bounded_evidence_extraction_execution`
-- `status: hidden_no_extractable_evidence`
-- `extractionStatus: no_extractable_evidence`
-- `extractionResultStatus: accepted`
-- `evidenceItemCount: 0`
-- `evidenceItemStatementHashes: []`
-- Parent W4-H status: `bounded_extraction_input_packet_created_extraction_execution_closed`
-- Parent W4-I status: `extraction_input_structurally_eligible_execution_denied`
-- Parent W4-I pre-call gate: `merged_by_parity_rechecked_not_deleted`
-- Parent packet byte length: `613`
-- Parent provider id: `wikimedia_core`
-- Provider/model: `anthropic` / `claude-haiku-4-5-20251001`
-- Retry count: `0`
-- Token usage: input `2577`, output `184`, total `2761`
-- Duration: `2718ms`
-- Cache decision: `no_store_no_read`
-
-## Leak And Boundary Checks
-
-- Public job JSON stayed `4.0.0-cb-precutover` / `blocked_precutover`.
-- No EvidenceItems appeared in public result JSON.
-- Public/default surfaces did not expose hidden W5 markers checked during the canary.
-- W5-A default admin route returned only hash/length/provenance/count/status projection.
-- W5-A default projection reported `inputTextReturned: false`, `sourceTextReturned: false`, and `evidenceItemTextReturned: false`.
-- No source text, packet text, EvidenceItem statement text, prompt text, or raw provider payload was returned in public/default-admin route output.
+The earlier W5-A value conclusion must not be used as a premise for W6/report progression, extraction-quality diagnosis, or W4-I retirement.
 
 ## Scope Confirmation
 
-No source code changed before or after the canary. No second live job was run.
-
-Still closed:
+No source code changed in this correction. Still closed:
 
 - public cutover;
 - W4-I merge/delete;
@@ -93,12 +54,19 @@ Still closed:
 
 ## Decision Consequence
 
-W5-A is not closed as a pass. It is closed as a stop/result requiring Steer-Co review because the first value-validation canary reached the hidden extraction executor but produced zero EvidenceItems.
+W5-A is not closed as a positive value-validation pass. Before more W5 value canaries or W6/report progression, the team needs a narrow runtime activation/observability provenance check so live jobs cannot be recorded as hidden-chain evidence unless the persisted payload or durable/admin route evidence proves the chain actually ran.
 
-Recommended next question for Steer-Co:
+## V2 SCORECARD IMPACT
 
-```text
-Did W5-A produce no EvidenceItems because the bounded W3-B page-summary source text was insufficient for this claim, because the evidence_extraction task/schema is too conservative, or because the current single-source path is not a good value-validation substrate?
-```
+- Diagnostic only; no report-quality value was proven.
+- The correction protects report-quality provenance by removing an unsupported EvidenceItem-value conclusion.
 
-No W6/report progression or second W5-A canary should proceed without a separate reviewed package.
+## V2 RETIREMENT LEDGER IMPACT
+
+- No runtime mechanism is retired or merged.
+- W4-I and W4-chain artifacts remain active; this canary does not prove downstream value.
+
+## V2 CONSOLIDATION GATE
+
+- No new mechanism was added by this correction.
+- The next package should favor a small provenance/activation discriminator over adding hidden machinery.
