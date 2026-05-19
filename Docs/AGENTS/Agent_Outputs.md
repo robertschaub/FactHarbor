@@ -4419,3 +4419,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-19 | Lead Developer | Codex (GPT-5.5) | V2 X7-W5-C Evidence Extraction Schema Diagnosis Repair -- [Significant] [open-items: yes]
 **For next agent:** W5 now records bounded `executionTelemetry.schemaDiagnostics` on the existing hidden W5 artifact path for parse/schema/task-contract failures. Review-fix pass bounded `issueCount`, replaced task-contract prose diagnostic codes with structural labels, and sanitized malformed runtime-owned diagnostics at the default projection boundary. No prompt/schema/model/provider/live-job/public behavior changed; commit and refresh runtime before any separately approved canary.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md
+
+---
+### 2026-05-19 | Agents Supervisor | Codex (GPT-5.5) | Deferred V2 Orchestration Debt Backlog Markers -- [Standard] [open-items: yes]
+**For next agent:** Marked the process items previously classified as "do not address now" in `Docs/STATUS/Backlog.md`: `V2-ORCH-HANDOFF-PRUNE`, `V2-ORCH-GUARD-SPLIT`, and `V2-ORCH-DEBT-SENSOR-BASELINE`. These are now visible backlog items but explicitly deferred until the active W5 evidence-extraction value path stabilizes or Captain pauses implementation.
+**Warnings:** Do not pull these into the current W5 hot path unless guard size/timeouts become an actual verifier blocker or Captain explicitly asks for cleanup. The intent is to prevent losing the items, not to redirect the implementation team away from EvidenceItem value validation.
+**Learnings:** Deferred orchestration debt should be tracked in the canonical backlog with explicit activation triggers; otherwise teams either forget it or prematurely interrupt active value validation.
