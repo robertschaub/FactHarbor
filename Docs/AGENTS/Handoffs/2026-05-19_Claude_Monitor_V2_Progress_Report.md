@@ -446,6 +446,43 @@ This is a textbook scope-compliant V2 implementation commit. The procedural shap
 
 Tranche after reset: `6` remaining. Public V2 unchanged. No live jobs since the third W5-A canary at ~21:00.
 
+### Resume update (22:12-22:14) — two W5-B canaries; hydrogen reaches W5 model execution
+
+Two W5-B follow-up live canaries ran in quick succession after the W5-B activation commit:
+
+- **Canary 1** (`0849273afd304c7790e3cd3b7f009811`, asylum-235000-de input): `PARTIAL_X7_W5_B_CU_ACCEPTED_W2_ZERO_CANDIDATES`. Claim Understanding now completes (real Anthropic call, 3351 tokens, 3549 ms). Query Planning accepts. W2 ran 3 provider attempts but returned 0 candidates / 72 bytes. W3/W4/W5 blocked downstream because no source material.
+
+- **Canary 2** (`3524dcb15866442ea92bee6351591976`, hydrogen input — the same input as the original W5-A canary which I previously noted as shell-only / hidden routes 404): now reaches W5 model execution end-to-end. Hidden chain artifacts: Claim Understanding accepted, Query Planning accepted (`queryEntryCount: 3`), W2 `candidateCount: 9` / `14082` bytes, W3-B 1 Source Material record, W4-G bounded corpus text sidecar (392 bytes), W4-H extraction input packet (`providerId: wikimedia_core`), W4-I structurally eligible / execution denied, W5 `damaged_execution` / `schema_validation_failed` with `evidenceItemCount: 0`, `promptLoaded`/`promptRendered`/`adapterCalled`/`modelCalled` all true.
+
+Classification: `PARTIAL_X7_W5_B_REACHED_W5_SCHEMA_VALIDATION_FAILED`. Tranche debited `6` → `5` → `4`.
+
+**Significant V2-Q3 milestone:** the hydrogen path that earlier in the session was shell-only / hidden routes 404 now actually runs end-to-end through real Anthropic LLM calls to W5 model execution, and the next concrete blocker is identified (W5 evidence-extraction schema/output mismatch). This is real architectural movement toward V2-Q3 Evidence extraction.
+
+**Public leak check** explicitly run per Lead Developer canary handoff: public V2 stayed precutover, default hidden admin projections stayed no-store, no hidden ledger ids or hidden artifact markers in public response, W4-I/W5 default route fields report `inputTextReturned: false`, `evidenceItemTextReturned: false`, `sourceTextReturned: false` where applicable.
+
+**Lead Developer canary handoff recommended W5-C** (narrow Evidence Extraction Schema Diagnosis & Repair package) as next step, with explicit stop conditions and no further live job until local repair is verifier-clean.
+
+Commit `f13b8997b35a288147b326c5744a5f50a737cf81` "docs: record w5b live canary results" at 22:14:33 lands the canary handoffs and tranche debits cleanly.
+
+### Resume update (22:26) — Steer-Co convened for W5-C direction
+
+At 22:26:01 a staged set including a new Captain Deputy / Steer-Co Leader handoff and a W5-C package appeared. This is the **first explicit Steer-Co convening since the early-session X7-W5 phase-transition steering** (which committed in `6c4f122b` at 19:02).
+
+Steer-Co reviewers convened: **Claude Opus 4.6 (Senior Architect / LLM Expert)**, **Gemini (systems reviewer)**, **Code Reviewer sidecar**. Trigger: Captain noted Steer-Co and development-team agents had not been visibly involved recently, plus automatic Steer-Co trigger (W5 schema validation failure crosses adapter/prompt/schema/diagnostics/debt boundaries).
+
+**Reviewer positions:**
+- Opus 4.6: `modify` (sequence local reproduction before new telemetry; exclude schema relaxation; add negative-path leakage test; add input/model-correlation diagnosis; explicit retirement-ledger progression)
+- Gemini: `support` (bounded sanitized schema-failure diagnostics if existing telemetry insufficient)
+- Code Reviewer sidecar: `modify` (require `/debt-guard` Full Path; add concrete W5 internal artifact route test; specify diagnostic sanitization as allowlist with no raw provider/source/input/EvidenceItem/prompt/stack leakage)
+
+**Consolidated decision:** Consent with required amendments applied to the W5-C package. W5-C scope explicitly does NOT authorize prompt text edits, schema edits, model/provider changes, another live job/canary, public behavior, parser, report/verdict/warning/confidence, cache/SR/storage, provider expansion, ACS/direct URL, or V1 work.
+
+**Lead Developer Packet** follows the Multi-Agent Collaboration Rules pattern: explicit Skill (debt-guard), Authority (Captain Deputy delegated after Steer-Co consent), Scope (allowed/forbidden), Mandatory workflows (`/debt-guard` Full Path before source edits), Stop triggers (prompt/schema change needed → escalate; raw text leak → halt; semantic deterministic evidence repair → halt; etc.), Output expectations.
+
+**This is the V2 convergence controls operating as designed.** The previous absence of Steer-Co involvement (which I noted in the post-W5-A-canary attribution question) prompted Captain notice and proper Steer-Co convening before the next implementation step. Process recovery is solid.
+
+Captain Deputy explicitly states "should not implement application code directly." The W5-C steering/package closeout was then committed as `1770179a` (`docs: steer w5c extraction schema diagnosis`), and Lead Developer delivery was assigned under the amended package with `/debt-guard` Full Path.
+
 ### Resume update (20:40) — authorization concern resolved by implementing thread
 
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
