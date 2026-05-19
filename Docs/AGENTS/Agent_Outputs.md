@@ -4256,3 +4256,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No live job was run and no commit has been made yet in this implementation checkpoint. W4-H does not authorize extraction execution, EvidenceItems, parser execution, LLM extraction calls, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2/W3 widening, ACS/direct URL, prompt/config/model/schema edits, V1 work, or V1 cleanup.
 **Learnings:** The first focused verifier failure was boundary-guard bookkeeping for the new route/runtime owner/imports; debt-guard kept the implementation and narrowed the fix to guard allowlists plus one diagnostic boolean.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W4-H_Implementation.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W4-H Bounded Extraction-Input Live Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Closed W4-H as `PASS_X7_W4_H_BOUNDED_EXTRACTION_INPUT_CANARY`. Job `df8402362bee46daba2fe83000156b0d` ran on clean committed/refreshed runtime `a652fd70d7a3053ee6f57ca32659cf0e4cc5e901`, first prepared `pipeline: claimboundary-v2`, reached `SUCCEEDED`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover`, and produced exactly one hidden/admin-only `bounded_text_extraction_input_packet`.
+**Warnings:** No second W4-H canary is authorized. W4-H proves only bounded extraction-input packet creation with extraction still closed. It does not authorize extraction execution, EvidenceItems, parser execution, LLM extraction calls, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, retries, provider expansion, W2/W3 widening, ACS/direct URL, prompt/config/model/schema edits, V1 work, or V1 cleanup. Remaining live-job budget is `5`.
+**Learnings:** Exact leak checks should distinguish broad substring hits from exact key/status leaks when hidden route artifacts legitimately contain structural field names.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W4-H_Live_Canary_Result.md
