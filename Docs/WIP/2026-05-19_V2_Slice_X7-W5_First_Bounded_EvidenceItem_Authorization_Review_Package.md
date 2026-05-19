@@ -13,6 +13,8 @@
 **Future implementer:** Lead Developer / delivery lane, only after explicit package approval
 **Future canary runner:** Blocked; Lead Developer / Captain Deputy only after separate canary authorization
 
+> **Post-approval/canary note (2026-05-19):** X7-W5-A was later approved through the durable corrective approval anchor in `Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md`, implemented in hidden/internal scope, and run once as a Captain-authorized canary. The live result is recorded in `Docs/WIP/2026-05-19_V2_Slice_X7-W5-A_Bounded_Evidence_Value_Live_Result.md`. That canary returned `hidden_no_extractable_evidence` with `evidenceItemCount: 0`, so W5-A is not a passing EvidenceItem-value gate and must return to Steer-Co/design review before W6/report progression or any second W5-A canary.
+
 ## 1. Purpose
 
 X7-W5 is the first proposed phase transition after W4-I. It must not become another W4-J readiness, denial, or observability layer.

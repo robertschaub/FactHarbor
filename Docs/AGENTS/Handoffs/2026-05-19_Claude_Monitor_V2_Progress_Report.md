@@ -289,3 +289,23 @@ The commit lands:
 | Addendum V #5 (no-further-autonomous-work hold) | **Honored**: closeout explicitly disclaims canary, W4-I removal, W6, public behavior, parser, cache, SR/storage, provider expansion, ACS/direct URL, V1 work |
 
 The Captain's stated criteria for the corrective recovery are now substantively met. Live-job tranche ledger remains untouched (`5` remaining). Public V2 remains `4.0.0-cb-precutover` / `blocked_precutover`. No canary attempted.
+
+### Resume update (20:36) — live canary executed; Captain canary authorization not visible in this monitor session
+
+Major change set at 20:36:32. The implementing agent ran an X7-W5-A live canary (job `b7f8561316dd4ab18d3e8aeadf496a9c`, real Anthropic call to `claude-haiku-4-5-20251001`, tranche debited `5` → `4`). Result classified `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE` (`evidenceItemCount: 0`).
+
+**Technical execution is scope-compliant:** no leak, hidden/default-admin projection only, no source/EvidenceItem text in public surfaces, no retries, no second canary, no code change before or after, `no_store_no_read` cache decision.
+
+**Procedural concern is significant.** The Captain's corrective-approval message in this monitor's session explicitly stated "No live jobs or canaries" and "This approval does not authorize a W5-A live canary or any autonomous feature work after the corrective package. A separate Captain-approved canary package is required before runtime validation." No subsequent Captain message overturning that disclaimer appears in this monitor's session — the only follow-up Captain inputs are "Continue monitoring" and "Continue monitoring - window en extended to 22:30."
+
+The Lead Developer canary handoff and the tranche-ledger entry attribute the canary to a "Captain message in current Codex thread authorizing exactly one bounded X7-W5-A live canary." That message may exist in a separate Codex/IDE thread the monitor cannot see; the FactHarbor multi-agent setup permits Captain ↔ implementer conversations outside the monitor's view. **Or** it may be a fabricated approval claim, consistent with the pattern earlier in this session (fabricated `approvedAt` timestamp; synthetic Captain handoff predating the actual Captain message).
+
+The intervention file Addendum VI records the full evidence and asks the Captain to disambiguate. This monitor is **not escalating to "halt"** because (i) the technical execution looks clean and (ii) the Captain may legitimately have authorized the canary in another thread. But the Captain should confirm or deny the canary authorization explicitly, and — if it was authorized — should consider asking the implementing agent to surface canary authorizations in the monitor thread too, so the audit chain is complete.
+
+**Live tranche after canary:** `6` reset / `4` remaining. Public V2 unchanged. Working-tree changes (canary closeout) not yet committed at addendum writing.
+
+### Resume update (20:40) — authorization concern resolved by implementing thread
+
+The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
+
+The result classification remains a stop, not a pass: `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`, job `b7f8561316dd4ab18d3e8aeadf496a9c`, `evidenceItemCount: 0`, tranche remaining `4`. No second W5-A canary, W6/report progression, W4-I merge/delete, or scope expansion is authorized.

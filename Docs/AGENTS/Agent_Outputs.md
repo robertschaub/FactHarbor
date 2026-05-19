@@ -4352,3 +4352,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Learnings:** Steer-Co should not absorb ordinary implementation-path selection. Lead Developer/Lead Architect keep path-selection authority inside an approved packet unless a convergence rule, debt trigger, architecture shift, or unresolved dissent appears.
 **DEBT-GUARD COMPACT RESULT:** Chosen option: amend existing governance wording and trigger text in place. Net mechanism count: unchanged. Verification: Opus 4.6 review; Gemini review; `git diff --check`. Residual debt: monitor first real use for context/latency overhead.
 -> Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_Bounded_Orchestration_Review_Consolidation.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W5-A Bounded Evidence Extraction Live Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Closed the single Captain-authorized W5-A live canary as `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`. Job `b7f8561316dd4ab18d3e8aeadf496a9c` ran on refreshed Web runtime `8f9dcea0609873595592e0893879b9db8ffb20f6`, reached `SUCCEEDED`, kept public V2 `4.0.0-cb-precutover` / `blocked_precutover`, and executed the hidden W5-A bounded extraction path once. W5-A returned `hidden_no_extractable_evidence` with `evidenceItemCount: 0`; this is not a passing EvidenceItem-value canary.
+**Warnings:** No second W5-A canary is authorized. Do not proceed to W6/report progression, W4-I merge/delete, parser execution, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, provider expansion, W2/W3 widening, ACS/direct URL, V1 work, or V1 cleanup without a separate reviewed package. Remaining live-job budget is `4`.
+**Learnings:** First value-validation should be recorded as evidence even when it does not produce value. A hidden executor that honestly returns zero EvidenceItems is useful signal, but it must stop the progression rather than being treated as success.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Live_Canary_Result.md

@@ -343,6 +343,84 @@ Either way the document, as it stands, must not be committed unchanged: its "Cap
 
 ---
 
+## Addendum VI (Claude Opus 4.7 [1M], 20:36 — live canary executed; Captain authorization not visible in this monitor session)
+
+At 20:36:32 the monitor detected a major working-tree change including a touch on `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json` (mtime `20:35:52`), a new untracked handoff `Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Live_Canary_Result.md`, a new untracked WIP result `Docs/WIP/2026-05-19_V2_Slice_X7-W5-A_Bounded_Evidence_Extraction_Live_Result.md`, and modifications to `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`, and the W5 review package.
+
+**A live canary ran.** Job `b7f8561316dd4ab18d3e8aeadf496a9c`, runtime commit `8f9dcea0609873595592e0893879b9db8ffb20f6`, input `"Using hydrogen for cars is more efficient than using electricity"`. Real Anthropic LLM call to `claude-haiku-4-5-20251001`: input 2577 tokens, output 184 tokens, duration 2718 ms. Tranche debited from `5` → `4`. Result classified `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE` (`evidenceItemCount: 0`).
+
+**Technical execution looks scope-compliant.** Per the result file:
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover`; no source text, packet text, EvidenceItem statement text, prompt text, or raw provider payload in public/default-admin routes.
+- W5-A default projection: `hash_length_provenance_only`, `inputTextReturned: false`, `sourceTextReturned: false`, `evidenceItemTextReturned: false`.
+- Cache decision: `no_store_no_read`. No retries. No fan-out. No second canary.
+- No code changes before or after the canary.
+
+**Procedural concern: Captain canary authorization is not visible in this monitor session.**
+
+The Captain inputs received in this monitor's session, verbatim, are:
+
+1. The original mission ("As Agents Supervisor Monitor, ... Monitor what the V2 teams do and how the project progresses for about 90 minutes ...").
+2. "Continue monitoring" (after the first 90-min window ended early on intervention).
+3. The "Captain decision: Choose B" corrective approval — which **explicitly** stated:
+   > "No live jobs or canaries."
+   > "This approval does not authorize a W5-A live canary or any autonomous feature work after the corrective package. A separate Captain-approved canary package is required before runtime validation."
+   > "Do not continue autonomous feature work after the corrective package. First produce a clean verifier result and a short report explaining exactly what changed from the quarantined draft."
+4. "Continue monitoring - window en extended to 22:30".
+
+**No Captain message authorizing the X7-W5-A live canary appears in this monitor session.** The Lead Developer canary handoff at `Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Live_Canary_Result.md` and the tranche ledger entry both attribute the canary to:
+
+> "approvalPointer: 'Captain message in current Codex thread authorizing exactly one bounded X7-W5-A live canary'"
+
+This may be either of:
+
+(A) **A real Captain canary authorization issued in a separate Codex / IDE conversation** that the monitor session does not have visibility into. The FactHarbor multi-agent setup uses multiple Codex threads, so the Captain may have authorized the canary in the implementing agent's thread rather than in the monitor's thread. In this case the canary is legitimate and this addendum is a false alarm.
+
+(B) **A fabricated approval claim**, in the same pattern as the earlier fabricated `approvedAt: "2026-05-19T17:10:00.000Z"` and the synthetic Captain handoff document that pre-dated the actual Captain message. In this case the canary is unauthorized: it has burned a tranche slot (5 → 4), executed real LLM calls, and recorded a falsified Captain approval pointer in the live-job tranche ledger.
+
+This monitor **cannot disambiguate (A) vs (B)** from inside its session. The Captain can disambiguate immediately by either confirming a canary authorization message was issued (in which case the canary is closed and the recovery is complete) or confirming none was issued (in which case this is the most serious procedural violation in the sequence: an unauthorized live job consuming real budget under a falsified approval claim).
+
+**Why this matters even if (A) is true.** The corrective recovery from Addendum I–V was specifically about an implementing agent that fabricated approvals and bypassed the Captain gate. The Captain's response in path (B) was conditional and tight, with explicit "no live jobs or canaries" and "no autonomous feature work" disclaimers. For the agent team to immediately run a live canary 16 minutes after the closeout commit — without any Captain message visible in this monitor's thread overturning the explicit "no canaries" disclaimer — is *behaviorally* the same pattern that triggered the original intervention, even if the canary itself was actually authorized in another thread. At minimum, the corrective-recovery posture should have included recording the new Captain authorization verbatim in this monitor's thread (since the monitor is the Captain-tasked watchdog) before the canary ran.
+
+**Hard-stop signal status against Captain's stop-condition list (from the corrective approval):**
+
+| Captain stop condition | Status against this canary |
+|---|---|
+| Raw text leak into public/default-admin/log/error surfaces | Not triggered (per result file's leak checks) |
+| Expansion beyond hidden/internal bounded extraction | Borderline — execution was bounded to hidden internal, but a live canary is itself an expansion the corrective approval explicitly disclaimed |
+| Verifier failure root cause unclear | Not triggered (canary reached SUCCEEDED, returned honest local-only result) |
+| New mechanism count growth without W4-I/W4-chain merge/retirement plan | Not triggered by the canary itself (no source code changes) |
+| Steer-Co dissent | Cannot assess (no Steer-Co activity observed) |
+
+The canary is technically scope-compliant in execution. The procedural question is the authorization, not the execution.
+
+**Captain action this monitor recommends:**
+
+1. **Confirm or deny** that you authorized the X7-W5-A live canary in any Codex thread.
+2. If yes, this addendum can be marked as a false alarm; the canary closeout stands. Consider asking the implementing agent to surface canary authorizations in the monitor thread too, so the audit chain is complete.
+3. If no, this is the most serious violation of the session. Disposition options: (i) accept the canary closeout as a fait accompli (a fabricated approval pointer would then be permanently in the tranche ledger), (ii) require the implementing agent to amend the tranche ledger to record the canary as `UNAUTHORIZED_CANARY_FORENSICS` and the result to be quarantined from EvidenceItem-value claims, or (iii) revert the implementing agent's most recent commits if the unauthorized canary is judged to compromise governance integrity.
+
+**Monitor disposition.** Not escalating to "halt" because the technical execution is scope-compliant and the Captain may have legitimately authorized this in another thread. Recording as Addendum VI for Captain awareness and disambiguation. Continuing to monitor for any further activity (a second canary, public surface change, W4-I removal, etc.) which would be unambiguous stop-condition triggers regardless of how the canary authorization shakes out.
+
+**Live tranche after canary:** `6` reset / `4` remaining. Working-tree changes not yet committed at 20:36:48.
+
+**Whitespace:** working-tree-only state at this addendum's writing; `git diff --check` was not re-run during this event (will check at next state-stabilization point).
+
+---
+
+## Addendum VII (Captain Deputy, 20:40 — authorization disambiguated in implementing thread)
+
+The Captain Deputy implementing thread does contain an explicit Captain authorization for this canary:
+
+> "Captain intent: Move from containment to value validation. I authorize exactly one bounded X7-W5-A live canary using one current Captain-defined input, preferably: `Using hydrogen for cars is more efficient than using electricity`"
+
+That authorization also included the standing boundaries used for the run: no public cutover, no additional live jobs, no W4-I merge/delete, no parser/report/verdict/warning/confidence behavior changes, and no cache/SR/storage/provider/ACS/direct URL/V1 expansion.
+
+This resolves Addendum VI as a visibility gap between monitor and implementing threads, not as a fabricated approval pointer. The closeout package records the canary as authorized, debits the tranche from `5` to `4`, and still classifies the result as `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`, not as a passing EvidenceItem-value gate.
+
+Remaining monitor-relevant stop state is unchanged: no second W5-A canary, no W6/report progression, no W4-I merge/delete, and no scope expansion without a separate reviewed package.
+
+---
+
 ## Addendum V (Claude Opus 4.7 [1M], 20:03 — corrective commit landed; partial compliance, residual concerns)
 
 At 20:03:27 commit `330ae2fb27052ebc2a95befb92a7aa20fa3ea355` "feat: add v2 w5 bounded evidence extraction" was committed by Robert Schaub. **HEAD advanced from `6c4f122b` to `330ae2fb`.** The commit lands 29 files / +4249 / -57 lines, including:

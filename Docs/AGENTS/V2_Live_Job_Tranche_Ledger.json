@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-post-w4g-reset-2026-05-19",
     "resetTotal": 6,
-    "currentRemaining": 5,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W4-G canary closeout",
       "date": "2026-05-19",
@@ -33,14 +33,25 @@
         "remainingAfter": 5,
         "approvalPointer": "Captain W4-H canary authorization in current Codex thread",
         "canaryRunner": "Lead Developer / Captain Deputy"
+      },
+      {
+        "sliceId": "X7-W5-A",
+        "jobId": "b7f8561316dd4ab18d3e8aeadf496a9c",
+        "classification": "STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE",
+        "implementationCommit": "8f9dcea0609873595592e0893879b9db8ffb20f6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain message in current Codex thread authorizing exactly one bounded X7-W5-A live canary",
+        "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],
     "blockedPending": [
       {
-        "sliceId": "X7-W4-I",
-        "reason": "W4-I canary requires accepted implementation commit, clean runtime refresh, and separate Steering authorization.",
+        "sliceId": "X7-W5-A",
+        "reason": "No second W5-A canary is authorized. The first W5-A canary returned hidden_no_extractable_evidence and requires Steer-Co review before W6/report progression or any second live job.",
         "wouldConsume": 1,
-        "remainingIfRun": 4
+        "remainingIfRun": 3
       }
     ]
   }
