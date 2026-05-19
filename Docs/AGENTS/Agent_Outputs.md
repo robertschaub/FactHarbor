@@ -4373,3 +4373,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Remaining live-job budget is `4`. Stop further live jobs until the activation/provenance path is diagnosed or repaired under a reviewed package. This is not W5-A extraction evidence and not report-quality progress.
 **Learnings:** Runtime commit match alone is insufficient. Product-route canaries need explicit hidden-chain evidence before being counted as value validation.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-A_Runtime_Activation_Discriminator_Canary_Result.md
+
+---
+### 2026-05-19 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-B Claim Understanding Activation Repair Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-19_V2_Slice_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md` for Captain/Steer-Co review only. Local inspection found the direct activation blocker: `claim_understanding_gate1` is not executable and its prompt/model/cache approvals are not all approved, so direct-input Claim Understanding cannot build the runtime approval snapshot needed for dispatch.
+**Warnings:** This is an approval-flip package and requires explicit Captain approval before implementation. It authorizes no prompt text edits, schema edits, public behavior, live job, parser, report/verdict/warning/confidence behavior, cache IO, provider expansion, ACS/direct URL, or V1 work.
+**Learnings:** The shortest path to value validation is not more hidden machinery; it is aligning the existing Claim Understanding gateway approval state with the already-built direct-input runtime path.
+-> Docs/AGENTS/Handoffs/2026-05-19_Captain_Deputy_V2_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md
