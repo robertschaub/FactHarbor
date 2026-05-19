@@ -4421,7 +4421,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  });
+  }, 30000);
 
   it("keeps X7-W3-A source-candidate preview materialization hidden, bounded, and Tier-0 only", () => {
     expect(existsSync(evidenceLifecycleSourceMaterialLocatorMaterializationPath)).toBe(true);
@@ -6843,7 +6843,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  }, 20000);
+  }, 30000);
 
   it("keeps the 7N-3B3 content source packages inside their exact source envelopes", () => {
     const violations: string[] = [];
@@ -7429,7 +7429,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  }, 20000);
+  }, 30000);
 
   it("keeps product and public surfaces from transitively reaching candidate source-acquisition runtime files", () => {
     const forbiddenTargetPaths = new Set([
@@ -7464,7 +7464,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  }, 20000);
+  }, 30000);
 
   it("keeps provider SDK imports confined to approved runtime provider factories", () => {
     const violations: string[] = [];

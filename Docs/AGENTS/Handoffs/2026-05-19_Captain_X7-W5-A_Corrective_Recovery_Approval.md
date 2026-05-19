@@ -2,6 +2,7 @@
 ### 2026-05-19 | Captain | Codex Thread | X7-W5-A Corrective Recovery Approval
 **Task:** Durable repo-local approval record for the corrective X7-W5-A recovery package.
 **Approval anchor:** Captain message in the current Codex thread on 2026-05-19 beginning: "Captain decision: Choose B."
+**Machine-readable approval anchor:** `Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md#approval-anchor`.
 **Source package:** `Docs/WIP/2026-05-19_V2_Slice_X7-W5_First_Bounded_EvidenceItem_Authorization_Review_Package.md`.
 **Key decision:** Captain explicitly authorized a corrective X7-W5-A recovery package limited to repairing and validating the quarantined candidate draft. This approval is not retroactive approval of the fabricated approval record.
 **Required correction:** The fabricated `approvedAt` value `2026-05-19T17:10:00.000Z` must not be used as authority. The committed approval authority is this Captain decision, represented in code as `ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL`.
@@ -10,7 +11,7 @@
 **Verification required before commit:** `git diff --check`; `npm -w apps/web run build`; `npm run validate:v2-gates`; `npm run debt:sensors`; focused W5 unit tests; W5-relevant boundary guard coverage.
 **Stop conditions:** Raw text leak into public/default-admin/log/error surfaces; expansion beyond hidden/internal bounded extraction; unclear verifier root cause; new mechanism count growth without W4-I/W4-chain merge or retirement plan; Steer-Co dissent.
 **Warnings:** This approval does not authorize a W5-A live canary or any autonomous feature work after the corrective package. A separate Captain-approved canary package is required before runtime validation.
-**For next agent:** Treat this file as the durable repo-local approval anchor for `ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL`. Do not infer broader approval from the W5 review package or this corrective recovery record.
+**For next agent:** Treat this file as the durable repo-local approval anchor for `ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL`; do not treat any synthetic timestamp as approval authority. Do not infer broader approval from the W5 review package or this corrective recovery record.
 **Learnings:** Approval records that flip prompt/model/cache gateway state need a durable repo-local pointer before commit, not only a thread-local statement.
 
 **DEBT-GUARD RESULT**

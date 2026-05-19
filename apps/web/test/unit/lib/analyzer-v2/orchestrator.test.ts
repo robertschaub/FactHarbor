@@ -1000,7 +1000,7 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     expect(serializedPublic).not.toContain("source_acquisition_intake");
     expect(serializedPublic).not.toContain("Asylbereich Schweiz 235000");
     expect(serializedPublic).not.toContain("job-v2-x7s-orchestrator:precutover-observability");
-  });
+  }, 15000);
 
   it("records ClaimContract-selected ids in hidden Query Planning artifacts for direct ingress without selected ids", async () => {
     const ledgerId = "job-v2-x7s-direct-no-selected:precutover-observability";

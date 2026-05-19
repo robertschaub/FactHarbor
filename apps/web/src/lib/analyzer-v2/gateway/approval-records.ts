@@ -1,5 +1,8 @@
 import type { AnalyzerV2PolicyApproval } from "@/lib/analyzer-v2/gateway/types";
 
+export const ANALYZER_V2_X7_W5_A_APPROVAL_ANCHOR =
+  "Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md#approval-anchor" as const;
+
 export const ANALYZER_V2_7L1_CAPTAIN_APPROVAL = {
   status: "approved",
   reviewer: "Captain",
@@ -11,5 +14,5 @@ export const ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL = {
   reviewer: "Captain",
   // Durable approval anchor:
   // Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md
-  approvedAt: "2026-05-19T17:05:16.971Z",
+  approvedAt: ANALYZER_V2_X7_W5_A_APPROVAL_ANCHOR,
 } as const satisfies AnalyzerV2PolicyApproval;

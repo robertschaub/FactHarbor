@@ -136,25 +136,28 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(content).not.toContain("## VERDICT_GENERATION");
   });
 
-  it("links task metadata to prompt sections and output schemas with query-planning authority only", () => {
+  it("links task metadata to prompt sections and output schemas with approved hidden execution authority only", () => {
     const snapshot = buildStaticEvidenceTaskPolicySnapshot();
 
-    expect(snapshot.policyStatus).toBe("query_planning_hidden_internal_executable");
-    expect(snapshot.promptModelExecution).toBe("query_planning_approved_only");
+    expect(snapshot.policyStatus).toBe("query_planning_and_evidence_extraction_hidden_internal_executable");
+    expect(snapshot.promptModelExecution).toBe("query_planning_and_bounded_evidence_extraction_approved_only");
     expect(snapshot.cachePolicy).toBe("no_store_no_read");
-    expect(snapshot.providerExecution).toBe("not_wired");
+    expect(snapshot.providerExecution).toBe("query_planning_and_bounded_evidence_extraction_wired_hidden_internal");
 
     for (const task of snapshot.plannedTasks) {
       expect(task.promptSectionId).toBe(EVIDENCE_TASK_PROMPT_SECTION_IDS[task.taskKey]);
       expect(expectedSchemaVersions).toContain(task.outputSchemaVersion);
     }
-    expect(snapshot.plannedTasks.find((task) => task.taskKey === "evidence_query_planning")).toMatchObject({
-      status: "hidden_internal_executable",
-      promptApprovalStatus: "approved",
-      modelPolicyStatus: "approved",
-      executionAuthority: "gateway_executable_hidden_internal",
-    });
-    for (const task of snapshot.plannedTasks.filter((entry) => entry.taskKey !== "evidence_query_planning")) {
+    for (const taskKey of ["evidence_query_planning", "evidence_extraction"] as const) {
+      expect(snapshot.plannedTasks.find((task) => task.taskKey === taskKey)).toMatchObject({
+        status: "hidden_internal_executable",
+        promptApprovalStatus: "approved",
+        modelPolicyStatus: "approved",
+        executionAuthority: "gateway_executable_hidden_internal",
+      });
+    }
+    for (const task of snapshot.plannedTasks.filter((entry) =>
+      entry.taskKey !== "evidence_query_planning" && entry.taskKey !== "evidence_extraction")) {
       expect(task).toMatchObject({
         status: "symbolic_not_executable",
         promptApprovalStatus: "missing",

@@ -31,12 +31,11 @@ const GATEWAY_STATUSES = new Set([
   "executable",
 ]);
 const LIVE_JOB_ELIGIBILITY = new Set(["blocked", "not_applicable"]);
+const X7_W5_A_APPROVAL_ANCHOR =
+  "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md#approval-anchor";
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
-  [
-    "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL",
-    "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@2026-05-19T17:05:16.971Z",
-  ],
+  ["ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL", X7_W5_A_APPROVAL_ANCHOR],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -52,8 +51,7 @@ const CACHE_POLICY_BY_SELECTOR = {
   },
   evidenceExtractionCache: {
     policyId: "v2.semantic.evidence-extraction.x7w5",
-    approvalSource:
-      "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@2026-05-19T17:05:16.971Z",
+    approvalSource: X7_W5_A_APPROVAL_ANCHOR,
   },
   sourceAware: {
     policyId: "v2.semantic.source-aware",
