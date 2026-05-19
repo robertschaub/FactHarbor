@@ -4388,3 +4388,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Learnings:** Activation blockers should be fixed at the existing gateway approval mechanism when that mechanism is the actual failed gate; stale tests should use explicit blocked fixtures rather than assuming the shipped gateway remains closed.
 **DEBT-GUARD RESULT:** Classification: incomplete-existing-mechanism. Chosen option: amend existing gateway prompt/model/cache approval state. Rejected path: adding new runtime/public/provider/cache/prompt/schema mechanisms. Net mechanism count: unchanged. Verification: focused W5-B tests, full Analyzer V2 tests, `npm run validate:v2-gates`, gate-register self-test, `npm run debt:sensors`, build, and diff check.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-B_Claim_Understanding_Activation_Implementation.md
+
+---
+### 2026-05-19 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W5-B Live Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Ran two Captain-authorized W5-B live canaries on refreshed runtime `077c5394a9646ca47e206ff39b2246e984d349d6`. Job `0849273afd304c7790e3cd3b7f009811` proved Claim Understanding accepted but W2 returned zero candidates. Job `3524dcb15866442ea92bee6351591976` reached W5 bounded evidence extraction: CU accepted, QP accepted, W2 produced 9 candidates, W3-B produced one Source Material record, W4-G/H/I were positive through extraction-input eligibility, and W5 invoked the evidence-extraction model. W5 then returned `damaged_execution` / `schema_validation_failed` with zero EvidenceItems.
+**Warnings:** Remaining live-job budget is `4`. Do not spend another live job before a W5-C schema/output diagnosis package and local verifier. Do not claim report quality yet; public V2 remains damaged/precutover and no EvidenceItem was produced.
+**Learnings:** W5-B repaired the activation gate. The current blocker moved downstream to W5 evidence-extraction schema/output alignment, not Claim Understanding, W2/W3/W4 reachability, or public routing.
+-> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-B_Live_Canary_Result.md

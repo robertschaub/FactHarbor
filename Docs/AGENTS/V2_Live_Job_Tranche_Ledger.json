@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-post-w5a-captain-reset-2026-05-19",
     "resetTotal": 6,
-    "currentRemaining": 6,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W5-B implementation closeout",
       "date": "2026-05-19",
@@ -67,6 +67,28 @@
         "jobId": "64ec6dcfe6e54fff8c90fc00f4c61b0a",
         "classification": "STOP_X7_W5_A_SHELL_ONLY_RUNTIME_ACTIVATION_NOT_PROVEN",
         "implementationCommit": "6cef9c715a98e2c6ec48a0fef0522871380df6d2",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-B-CU-ACTIVATION-CANARY",
+        "jobId": "0849273afd304c7790e3cd3b7f009811",
+        "classification": "PARTIAL_X7_W5_B_CU_ACCEPTED_W2_ZERO_CANDIDATES",
+        "implementationCommit": "077c5394a9646ca47e206ff39b2246e984d349d6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 5,
+        "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-B-HYDROGEN-VALUE-CANARY",
+        "jobId": "3524dcb15866442ea92bee6351591976",
+        "classification": "PARTIAL_X7_W5_B_REACHED_W5_SCHEMA_VALIDATION_FAILED",
+        "implementationCommit": "077c5394a9646ca47e206ff39b2246e984d349d6",
         "docsCommit": "same_commit_as_this_ledger_update",
         "count": 1,
         "remainingAfter": 4,

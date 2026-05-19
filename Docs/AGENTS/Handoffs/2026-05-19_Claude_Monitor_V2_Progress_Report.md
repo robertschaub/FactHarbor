@@ -424,6 +424,28 @@ The W5-B working tree at this point includes the implementation source diffs, th
 
 **Lesson reinforced (already noted in earlier addenda):** the Captain's authorizations during this session are routinely issued in separate Codex threads and then ratified into this monitor's audit chain by commits and by post-hoc confirmation. The monitor's correct posture continues to be: flag potential procedural violations clearly, do not escalate to "halt" when the technical scope matches the corresponding review package and uses the right approval-anchor pattern, and let the Captain's commit/message behavior disambiguate.
 
+### Resume update (22:02-22:07) — W5-B implementation + Captain re-reset of tranche budget
+
+**Commit `2cdf04263811f1226370b9fb1e10536422881605` "feat: activate v2 claim understanding gate"** at 22:02:57 by Robert Schaub. 19 files / +382 / -56 lines. Working tree clean. Lands the full W5-B scope: Captain approval anchor, Lead Developer implementation handoff with all governance blocks, approval-flip code in 4 gateway files, validator-script update, gate-register update, test alignments across 5 claim-understanding test files + gateway/policy test + run-context test, W5-B WIP package post-commit annotation, status/backlog/agent-outputs entries.
+
+The Lead Developer implementation handoff self-reports verifier-clean: focused W5-B tests, claim-understanding suite, broad analyzer-v2 (`127` files / `741` tests), `npm run validate:v2-gates`, `node scripts/validate-v2-gate-register.mjs --self-test`, `npm run debt:sensors` (`advisory_warn`), `npm -w apps/web run build`, `git diff --check`. Debt sensors baseline unchanged. Net mechanism count unchanged. Captain explicitly advised "Do not include unrelated monitor handoff churn in a focused W5-B implementation commit unless Captain explicitly wants that governance artifact bundled" — and the commit follows that advice (excludes my monitor reports, which were committed separately in `456fc9cf`).
+
+This is a textbook scope-compliant V2 implementation commit. The procedural shape contrasts cleanly with the early-session W5-A behavior: review-package → Captain authorization → implementation → verifier-clean → handoff with governance blocks → focused commit, all in proper sequence.
+
+**Commit `456fc9cfefd5c2dd8381d2fd039e47456014b0c1` "docs: record w5b monitor authorization"** at 22:04:30. 1 file / +39 lines — my W5-B progress-report addendum, committed separately from the implementation per the Lead Developer handoff's recommendation.
+
+**Commit `077c5394a9646ca47e206ff39b2246e984d349d6` "docs: reset v2 live job budget for w5b"** at 22:07:27. Captain re-reset the tranche:
+
+- `currentRemaining`: `4` → `6`
+- New `approvalPointer.summary`: "Captain clarified that no input is needed, live jobs are authorized, safety measures should not be overdone when code is ready, and the current live-job budget is 6."
+- `latestReset.reason`: "Captain reset/increased the live-job budget after W5-B implementation and asked Captain Deputy to continue toward the whole pipeline without stopping for routine input."
+
+**Captain has signaled a posture change.** The phrases "no input is needed", "safety measures should not be overdone when code is ready", and "continue toward the whole pipeline without stopping for routine input" indicate the Captain wants the agent team to move faster through the pipeline, with less per-step authorization friction, for code that is verifier-clean and within an approved scope.
+
+**Monitor's recalibrated posture for the rest of this session:** Continue watching for actual hard-stop signals — raw text leak into public/default-admin/log/error surfaces, public API/UI/report/export exposure, W4-I removal without Steer-Co review, parser execution on public surfaces, cache/SR/storage expansion, provider expansion beyond approved scope, V1 cleanup, raw text leak — but **do not flag every implementation step or canary as a procedural concern**. In-scope, verifier-clean work proceeding under the Captain's pipeline-continuation instruction is normal expected behavior, not a flag-worthy event. The monitor's procedural-flag posture from earlier in the session was correct for the W5-A intervention context, but the Captain has now explicitly relaxed it for the post-W5-B remainder.
+
+Tranche after reset: `6` remaining. Public V2 unchanged. No live jobs since the third W5-A canary at ~21:00.
+
 ### Resume update (20:40) — authorization concern resolved by implementing thread
 
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
