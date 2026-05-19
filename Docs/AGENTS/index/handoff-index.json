@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T20:14:11.844Z",
-  "count": 720,
+  "generatedAt": "2026-05-19T20:25:47.536Z",
+  "count": 721,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15447,6 +15447,23 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-19_Captain_Deputy_Steer_Co_V2_X7-W5-C_Direction.md",
+      "date": "2026-05-19",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "steer",
+        "co",
+        "v2",
+        "x7-w5-c",
+        "direction"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-19 Captain Deputy / Steer-Co V2 X7-W5-C Direction"
     },
     {
       "file": "2026-05-19_Captain_Deputy_V2_X7-W5-B_Claim_Understanding_Activation_Repair_Package.md",

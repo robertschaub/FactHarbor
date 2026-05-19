@@ -4395,3 +4395,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** Remaining live-job budget is `4`. Do not spend another live job before a W5-C schema/output diagnosis package and local verifier. Do not claim report quality yet; public V2 remains damaged/precutover and no EvidenceItem was produced.
 **Learnings:** W5-B repaired the activation gate. The current blocker moved downstream to W5 evidence-extraction schema/output alignment, not Claim Understanding, W2/W3/W4 reachability, or public routing.
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-B_Live_Canary_Result.md
+
+---
+### 2026-05-19 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Opus 4.6 + Gemini + Code Reviewer | V2 X7-W5-C Evidence Extraction Schema Diagnosis Package -- [Significant] [open-items: yes]
+**For next agent:** Convened Steer-Co after W5-B live job `3524dcb15866442ea92bee6351591976` reached W5 model execution but failed `schema_validation_failed`. Consolidated consent is to proceed with W5-C as a local diagnosis/repair package only after tightening the package: `/debt-guard` Full Path, local repro before new telemetry, allowlisted sanitized schema diagnostics, W5 artifact route leak test, no schema relaxation, no prompt/schema edits, and explicit W4-chain retirement math.
+**Warnings:** W5-C still authorizes no prompt text edits, schema edits, another live job, public/report/verdict/warning/confidence behavior, parser, cache/SR/storage, provider expansion, ACS/direct URL, or V1 work. If diagnosis shows prompt/schema text must change, stop for the standing Captain approval gate.
+**Learnings:** Captain Deputy should convene Steer-Co at failed live-validation boundaries that may cross prompt/schema/adapter authority. The useful next move is not another canary; it is local schema/output diagnosis with sanitized failure detail.
+-> Docs/AGENTS/Handoffs/2026-05-19_Captain_Deputy_Steer_Co_V2_X7-W5-C_Direction.md
