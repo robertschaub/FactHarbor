@@ -4421,6 +4421,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md
 
 ---
+### 2026-05-19 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-C Schema Diagnostics Live Result -- [Significant] [open-items: yes]
+**For next agent:** W5-C live follow-up is classified `PARTIAL_X7_W5_C_SCHEMA_DIAGNOSTICS_CAPTURED_PROMPT_CONTRACT_REPAIR_REQUIRED`. Job `273975edbe2a4acc8bc48325df603069` was an activation/runtime-flag miss and is not W5 evidence. Job `7774d72df7734844ad9272967c5d3c7d` reached W5 and captured bounded diagnostics: W5 called the evidence-extraction model, then failed closed as `damaged_execution` / `schema_validation_failed`; diagnostics reported `parsed`, `schema_validation`, `issueCount: 8`, with issue paths centered on `evidenceItems.[non_structural].evidenceScope.*`.
+**Warnings:** Remaining live-job budget is `4`. Do not run another W5 live job before W5-D is approved, implemented, verifier-clean, committed, and runtime-refreshed. Prompt/schema edits remain Captain-gated. Do not claim EvidenceItem value yet.
+**Learnings:** `analyticalStagesExecuted: []` is expected public pre-cutover shell behavior and does not disprove hidden-chain execution. Same-ledger hidden artifact routes are the authority.
+-> Docs/AGENTS/Handoffs/2026-05-19_Captain_Deputy_V2_X7-W5-C_Live_Result.md
+
+---
+### 2026-05-19 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-D Prompt Contract Alignment Review Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-19_V2_Slice_X7-W5-D_Evidence_Extraction_Prompt_Contract_Alignment_Review_Package.md` as review-only. It proposes narrow `V2_EVIDENCE_EXTRACTION` prompt/contract clarification for the concrete `evidenceScope` and `provenance` object shapes plus branch-specific nullable/array requirements, using W5-C diagnostics as the evidence base.
+**Warnings:** This package does not authorize implementation, live jobs, schema relaxation, deterministic output repair, retries/fallback extraction, provider/model routing changes, public/report/verdict/warning/confidence behavior, parser/cache/SR/storage/provider expansion/ACS/direct URL, or V1 work.
+**Learnings:** The shortest path to EvidenceItem value is prompt/contract alignment on the existing W5 task, not another hidden diagnostic or runtime layer. Claude Opus reviewed the first package as `approve_with_changes`; it is now amended to include strict `provenance` shape and branch-specific null/empty-array requirements in addition to `evidenceScope`. Gemini reviewed the amended package text as `approve` with no further changes required.
+
+---
 ### 2026-05-19 | Agents Supervisor | Codex (GPT-5.5) | Deferred V2 Orchestration Debt Backlog Markers -- [Standard] [open-items: yes]
 **For next agent:** Marked the process items previously classified as "do not address now" in `Docs/STATUS/Backlog.md`: `V2-ORCH-HANDOFF-PRUNE`, `V2-ORCH-GUARD-SPLIT`, and `V2-ORCH-DEBT-SENSOR-BASELINE`. These are now visible backlog items but explicitly deferred until the active W5 evidence-extraction value path stabilizes or Captain pauses implementation.
 **Warnings:** Do not pull these into the current W5 hot path unless guard size/timeouts become an actual verifier blocker or Captain explicitly asks for cleanup. The intent is to prevent losing the items, not to redirect the implementation team away from EvidenceItem value validation.

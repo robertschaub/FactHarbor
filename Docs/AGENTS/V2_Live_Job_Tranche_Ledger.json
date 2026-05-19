@@ -94,6 +94,28 @@
         "remainingAfter": 4,
         "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
         "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-C-RUNTIME-FLAG-MISS",
+        "jobId": "273975edbe2a4acc8bc48325df603069",
+        "classification": "STOP_X7_W5_C_RUNTIME_FLAGS_NOT_ACTIVE",
+        "implementationCommit": "cc56295e97f82b8d30fc6655a85fd69c8ac7ed2d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 5,
+        "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-C-SCHEMA-DIAGNOSTIC-CANARY",
+        "jobId": "7774d72df7734844ad9272967c5d3c7d",
+        "classification": "PARTIAL_X7_W5_C_SCHEMA_DIAGNOSTICS_CAPTURED_PROMPT_CONTRACT_REPAIR_REQUIRED",
+        "implementationCommit": "cc56295e97f82b8d30fc6655a85fd69c8ac7ed2d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain message in current Codex thread clarifying live jobs are authorized and the current budget is 6",
+        "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],
     "blockedPending": []
