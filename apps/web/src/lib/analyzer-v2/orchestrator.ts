@@ -35,6 +35,9 @@ import {
   buildEvidenceLifecycleExtractionInputAuthorizationDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-owner";
 import {
+  buildEvidenceLifecycleExecutionReadinessDenialDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -87,6 +90,9 @@ import {
 import {
   recordEvidenceLifecycleExtractionInputRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink";
+import {
+  recordEvidenceLifecycleExecutionReadinessRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -287,6 +293,13 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleExtractionInputRuntimeArtifact({
           context,
           extractionInputAuthorization,
+        });
+        const executionReadinessDenial = buildEvidenceLifecycleExecutionReadinessDenialDecision({
+          extractionInputAuthorization,
+        });
+        recordEvidenceLifecycleExecutionReadinessRuntimeArtifact({
+          context,
+          executionReadinessDenial,
         });
       }
     } catch {

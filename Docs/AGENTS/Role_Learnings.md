@@ -122,6 +122,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When a later reviewed V2 slice intentionally opens the next hidden runtime step, older boundary guards for previous observer-only slices may still ban that import from the orchestrator. Keep the older artifact path guarded as non-executing, but move the newly approved execution allowance into a slice-specific guard so the test suite documents the transition instead of blocking it.
 **Files:** `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`, `apps/web/src/lib/analyzer-v2/orchestrator.ts`
 
+### 2026-05-19 — Downstream gates must use exact upstream contract fields
+**Role:** Lead Developer  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** gotcha
+**Learning:** When adding downstream V2 containment gates, do not infer generic IDs or renamed hash fields from adjacent artifacts. W4-I initially assumed the W4-H authorization decision exposed `decisionId`, `sidecarHash`, and `sidecarByteLength`; build caught that W4-H actually exposes `decisionVersion`, `status`, `parent.textHash`, and `parent.textByteLength`. Use the exact upstream TypeScript contract and set absent optional pointers to `null` instead of inventing compatibility aliases.
+**Files:** `apps/web/src/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial.ts`, `apps/web/src/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization.ts`
+
 ## Senior Developer
 
 ### 2026-02-19 — Assistant+user multi-turn messages are untested with AI SDK Output.object() tool calling

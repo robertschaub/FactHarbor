@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "v2-live-job-tranche-ledger.v1",
+  "lastUpdated": "2026-05-19",
+  "authority": "captain_deputy_governance_record",
+  "runtimeAuthority": false,
+  "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
+  "activeTranche": {
+    "trancheId": "v2-post-w4g-reset-2026-05-19",
+    "resetTotal": 6,
+    "currentRemaining": 5,
+    "approvalPointer": {
+      "source": "Captain message in current Codex thread after W4-G canary closeout",
+      "date": "2026-05-19",
+      "summary": "W4-G is closed and live-job budget is reset/increased to 6."
+    },
+    "perCanaryConsumptionRule": {
+      "defaultConsumption": 1,
+      "requiresReviewedPackage": true,
+      "requiresAcceptedImplementationCommit": true,
+      "requiresCleanGitStatusBeforeSubmission": true,
+      "requiresRuntimeRefreshBeforeSubmission": true,
+      "requiresRuntimeCommitMatch": true,
+      "noSecondCanaryWithoutSeparateReview": true
+    },
+    "consumption": [
+      {
+        "sliceId": "X7-W4-H",
+        "jobId": "df8402362bee46daba2fe83000156b0d",
+        "classification": "PASS_X7_W4_H_BOUNDED_EXTRACTION_INPUT_CANARY",
+        "implementationCommit": "a652fd70d7a3053ee6f57ca32659cf0e4cc5e901",
+        "docsCommit": "eeb18be2",
+        "count": 1,
+        "remainingAfter": 5,
+        "approvalPointer": "Captain W4-H canary authorization in current Codex thread",
+        "canaryRunner": "Lead Developer / Captain Deputy"
+      }
+    ],
+    "blockedPending": [
+      {
+        "sliceId": "X7-W4-I",
+        "reason": "W4-I canary requires accepted implementation commit, clean runtime refresh, and separate Steering authorization.",
+        "wouldConsume": 1,
+        "remainingIfRun": 4
+      }
+    ]
+  }
+}

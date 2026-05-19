@@ -63,6 +63,10 @@ const analyzerV2EvidenceLifecycleExtractionInputArtifactInspectionRoutePath = pa
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-extraction-input-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-execution-readiness-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -158,6 +162,10 @@ const evidenceLifecycleExtractionInputRoot = path.resolve(evidenceLifecycleRoot,
 const evidenceLifecycleExtractionInputBoundedAuthorizationPath = path.resolve(
   evidenceLifecycleExtractionInputRoot,
   "bounded-extraction-input-authorization.ts",
+);
+const evidenceLifecycleExecutionReadinessDenialPath = path.resolve(
+  evidenceLifecycleExecutionReadinessRoot,
+  "execution-readiness-denial.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -309,6 +317,18 @@ const analyzerV2RuntimeEvidenceLifecycleExtractionInputAuthorizationProvenancePa
 const analyzerV2RuntimeEvidenceLifecycleExtractionInputArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-extraction-input-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-execution-readiness-denial-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-execution-readiness-denial-provenance.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-execution-readiness-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -1029,6 +1049,31 @@ const analyzerV2RuntimeEvidenceLifecycleExtractionInputArtifactSinkApprovedImpor
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial",
+      new Set([
+        "EVIDENCE_LIFECYCLE_EXECUTION_READINESS_DENIAL_ARTIFACT_VERSION",
+        "EvidenceLifecycleExecutionReadinessDenialDecision",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-provenance",
+      new Set([
+        "EvidenceLifecycleExecutionReadinessRuntimeOwnedDecision",
+        "isEvidenceLifecycleExecutionReadinessRuntimeOwnedDecision",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2/util",
+      new Set(["sha256Json"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -1058,6 +1103,8 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
     ]),
   ],
   [
@@ -1184,6 +1231,22 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     ]),
   ],
   [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialOwnerPath),
+    new Set([
+      "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial",
+      "@/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-provenance",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-provenance",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialProvenancePath),
+    new Set([
+      "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial",
+      "@/lib/analyzer-v2/util",
+    ]),
+  ],
+  [
     toPosix(claimUnderstandingRuntimeStagePath),
     new Set([
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
@@ -1272,6 +1335,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleExtractionInputArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
     ]),
   ],
 ]);
@@ -5590,6 +5659,140 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W4-I execution-readiness denial hidden, redacted by default, and execution-closed", () => {
+    const violations: string[] = [];
+
+    for (const requiredPath of [
+      evidenceLifecycleExecutionReadinessDenialPath,
+      analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialOwnerPath,
+      analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialProvenancePath,
+      analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath,
+      analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath,
+    ]) {
+      expect(existsSync(requiredPath)).toBe(true);
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkApprovedImports.get(importBinding.specifier);
+      if (!approvedNames) {
+        violations.push(`W4-I execution-readiness artifact sink imports unapproved module ${importBinding.specifier}`);
+        continue;
+      }
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `W4-I execution-readiness artifact sink imports unapproved symbol ${importedName} from ${importBinding.specifier}`,
+          );
+        }
+      }
+    }
+
+    const coreContent = readFileSync(evidenceLifecycleExecutionReadinessDenialPath, "utf8");
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath, "utf8");
+    const routeContent = readFileSync(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath, "utf8");
+    for (const requiredText of [
+      "v2.evidence-lifecycle.execution-readiness-denial.x7w4i",
+      "evidence_lifecycle_execution_readiness_denial",
+      "extraction_input_structurally_eligible_execution_denied",
+      "x7w4i_no_extraction_execution_authority",
+      "blocked_pre_execution_readiness_provider_id_mismatch",
+      "closed_pre_execution",
+      "adminDefaultProjection: \"hash_length_provenance_only\"",
+      "inputTextReturnedByDefault: false",
+      "extractionExecutionAuthorized: false",
+      "llmExtractionCallAuthorized: false",
+      "evidenceItemGenerated: false",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "sourceReliabilityRead: false",
+      "sourceReliabilityWrite: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "warningGenerated: false",
+      "confidenceGenerated: false",
+      "publicProjectionWritten: false",
+    ]) {
+      if (!coreContent.includes(requiredText) && !sinkContent.includes(requiredText)) {
+        violations.push(`W4-I execution-readiness implementation missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "EVIDENCE_LIFECYCLE_EXECUTION_READINESS_ARTIFACT_MAX_SERIALIZED_BYTES",
+      "inputTextReturned: false",
+      "readEvidenceLifecycleExecutionReadinessRuntimeArtifactDefaultProjections",
+      "defaultProjection: \"hash_length_provenance_only\"",
+    ]) {
+      if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
+        violations.push(`W4-I execution-readiness default route projection missing required text ${requiredText}`);
+      }
+    }
+
+    const routeImports = collectModuleSpecifiers(
+      parseSource(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
+    ).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(
+      parseSource(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
+    )) {
+      violations.push(`W4-I route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W4-I import ${requiredSpecifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "extractionExecutionAuthorized: true",
+      "llmExtractionCallAuthorized: true",
+      "evidenceItemGenerated: true",
+      "parserExecuted: true",
+      "cacheRead: true",
+      "cacheWrite: true",
+      "sourceReliabilityRead: true",
+      "sourceReliabilityWrite: true",
+      "reportGenerated: true",
+      "verdictGenerated: true",
+      "warningGenerated: true",
+      "confidenceGenerated: true",
+      "publicProjectionWritten: true",
+      "reportMarkdown",
+      "truthPercentage",
+      "parserPacket",
+      "providerReturnedUrl",
+      "requestUrl",
+      "rawProviderJson",
+    ]) {
+      if (coreContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+        violations.push(`W4-I execution-readiness path contains forbidden text ${forbiddenText}`);
+      }
+    }
+    for (const forbiddenRouteText of [
+      "\"inputText\":",
+      "source text",
+      "snippet",
+      "summary",
+    ]) {
+      if (routeContent.includes(forbiddenRouteText)) {
+        violations.push(`W4-I default route references forbidden text surface ${forbiddenRouteText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -8988,6 +9191,7 @@ describe("analyzer-v2 boundary guard", () => {
     const violations: string[] = [];
 
     expect(readinessFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/execution-readiness/static-contract.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/execution-readiness/types.ts",
     ]);

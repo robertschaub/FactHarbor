@@ -2,12 +2,18 @@
 
 **Date:** 2026-05-19
 **Role:** Lead Developer / Captain Deputy
-**Status:** Review package only; no implementation authorized
+**Status:** Locally implemented and verifier-clean; no live canary authorized
 **Parent state:** W4-H closed as `PASS_X7_W4_H_BOUNDED_EXTRACTION_INPUT_CANARY`
 **Parent implementation commit:** `a652fd70d7a3053ee6f57ca32659cf0e4cc5e901`
 **Parent canary documentation commit:** `eeb18be2`
 **Parent canary job:** `df8402362bee46daba2fe83000156b0d`
 **Remaining live-job tranche:** `5`
+**Live-job tranche ledger:** `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`
+**Package author:** Lead Developer / Captain Deputy
+**Reviewer:** Steering Board / Captain approval in current Codex thread on 2026-05-19
+**Implementer:** Lead Developer / Captain Deputy
+**Canary runner:** Blocked until separate Steering authorization after implementation acceptance
+**Implementation handoff:** `Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W4-I_Execution_Readiness_Denial_Implementation.md`
 
 ## 1. Purpose
 
@@ -18,6 +24,16 @@ The narrow objective is to define one hidden/admin-only execution-readiness deni
 W4-I should answer one question:
 
 Can the W4-H bounded packet be consumed by an execution-readiness gate without opening LLM extraction calls, parser execution, EvidenceItems, public behavior, or durable side effects?
+
+This is infrastructure/containment progress only. W4-I must not be described as report-quality progress.
+
+## 1.1 Gate Accounting
+
+**What W4-I unlocks:** a future reviewed proposal for actual extraction execution can reference one consumer-side readiness-denial decision proving that the W4-H packet can reach an execution boundary while execution remains closed. W4-I does not unlock extraction execution by itself.
+
+**What W4-I retires or merges:** W4-I retires nothing in this slice. It supplements W4-H with a linked consumer-side denial artifact. W4-D shell-only state, W4-E extraction-readiness denial, W4-G bounded text sidecar, and W4-H extraction-input packet remain separate closure evidence and are not mutated, superseded, or merged.
+
+**Stop condition:** stop and return to Steering if W4-I would require packet text exposure outside runtime-owned state, more than one packet, a byte-cap increase, source fetch/provider widening, parser execution, LLM extraction, EvidenceItems, report/verdict/warning/confidence behavior, public behavior, cache/SR/storage, prompt/config/model/schema edits, ACS/direct URL, or V1 work.
 
 ## 2. Current Ground Truth
 
@@ -53,7 +69,7 @@ v2.evidence-lifecycle.execution-readiness-denial.x7w4i
 Recommended decision kind:
 
 ```text
-execution_readiness_denial
+evidence_lifecycle_execution_readiness_denial
 ```
 
 Recommended execution gate status:
@@ -135,7 +151,7 @@ Recommended fields:
 type ExecutionReadinessDenialDecision = {
   decisionVersion: "v2.evidence-lifecycle.execution-readiness-denial.x7w4i";
   decisionId: string;
-  kind: "execution_readiness_denial";
+  kind: "evidence_lifecycle_execution_readiness_denial";
   status:
     | "extraction_input_structurally_eligible_execution_denied"
     | "blocked";
@@ -351,7 +367,7 @@ git rev-parse HEAD
 
 The package is accepted only if Steering agrees that:
 
-- W4-I is a review package only.
+- W4-I remains limited to the approved local implementation package until Steering authorizes any later canary.
 - Accepted parent input is limited to runtime-owned W4-H packet state.
 - W4-I records structural eligibility and execution denial in one hidden/admin-only decision.
 - The W4-I decision is hash/length/provenance-only by default.
@@ -422,15 +438,15 @@ Canary pass target:
 
 ## 14. Review Questions
 
-Steering Board should decide:
+Resolved by implementation approval:
 
-- Is `extraction_input_structurally_eligible_execution_denied` the right status name for a structural-readiness positive / execution-denial negative decision?
-- Should W4-I add a route, or should it reuse only the W4-H route plus internal ledger inspection until a later execution slice?
-- Is one later W4-I canary justified from the remaining `5`-job tranche?
-- Should W4-I be required before any future extraction-execution package?
+- `extraction_input_structurally_eligible_execution_denied` is the local implementation status for a structural-readiness positive / execution-denial negative decision.
+- W4-I adds its own authenticated internal no-store artifact route with hash/length/provenance-only default projection.
+- One later W4-I canary may be proposed from the remaining `5`-job tranche, but it remains blocked until separate Steering authorization and ledger-confirmed accounting.
+- W4-I should be treated as the current execution-boundary denial evidence before any future extraction-execution package.
 
 ## 15. Decision Requested
 
-Approve, amend, or reject W4-I as the next narrow review package.
+Local implementation is approved and in progress under this package. After verifiers pass, record the implementation result and keep live execution blocked.
 
-Do not implement W4-I from this package. Do not run a W4-I live job from this package. Any W4-I implementation and any W4-I canary require separate Steering authorization.
+Do not run a W4-I live job from this package. Any W4-I canary requires separate Steering authorization, clean provenance, accepted implementation commit, runtime refresh, and `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json` budget accounting.
