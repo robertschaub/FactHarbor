@@ -32,6 +32,9 @@ import {
   buildEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner";
 import {
+  buildEvidenceLifecycleExtractionInputAuthorizationDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -81,6 +84,9 @@ import {
 import {
   recordEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink";
+import {
+  recordEvidenceLifecycleExtractionInputRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -274,6 +280,13 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact({
           context,
           boundedTextAuthorization: evidenceCorpusBoundedTextAuthorization,
+        });
+        const extractionInputAuthorization = buildEvidenceLifecycleExtractionInputAuthorizationDecision({
+          boundedTextAuthorization: evidenceCorpusBoundedTextAuthorization,
+        });
+        recordEvidenceLifecycleExtractionInputRuntimeArtifact({
+          context,
+          extractionInputAuthorization,
         });
       }
     } catch {

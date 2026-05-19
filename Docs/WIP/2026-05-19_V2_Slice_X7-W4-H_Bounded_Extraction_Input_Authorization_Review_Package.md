@@ -2,12 +2,14 @@
 
 **Date:** 2026-05-19
 **Role:** Lead Developer / Captain Deputy
-**Status:** Steering Board review package only
+**Status:** Implementation approved and locally implemented; no live job authorized
 **Parent state:** W4-G closed as `PASS_X7_W4_G_BOUNDED_CORPUS_TEXT_CANARY`
 **Parent implementation commit:** `3861568be8a4199b75034d24f52d178f3e375a67`
 **Parent canary documentation commit:** `cbbb9dea`
 **Parent canary job:** `1535d6e3695743fd88394c2dc3e3a546`
 **Current live-job tranche:** `6`, reset/increased after W4-G closeout
+
+**Implementation checkpoint:** W4-H has been implemented inside this amended package envelope as one hidden/admin-only `bounded_text_extraction_input_packet` from runtime-owned W4-G bounded text sidecar state. Verifiers passed locally; no canary/live job has been run.
 
 ## 1. Purpose
 
@@ -270,8 +272,7 @@ Every blocked decision must keep:
 
 W4-H does not authorize:
 
-- implementation from this package;
-- a live job from this package;
+- a live job from this implementation checkpoint;
 - a second W4-G canary;
 - EvidenceItems;
 - parser execution;
@@ -289,9 +290,9 @@ W4-H does not authorize:
 - prompt/config/model/schema edits;
 - V1 reuse, V1 work, or V1 cleanup.
 
-## 9. Candidate Future Implementation Envelope
+## 9. Implementation Envelope
 
-If Steering approves implementation later, the likely narrow file envelope should be limited to:
+The accepted implementation is limited to:
 
 ```text
 apps/web/src/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization.ts
@@ -315,9 +316,9 @@ Docs/AGENTS/index/handoff-index.json
 
 `orchestrator.ts` should be touched only to record the hidden/admin-only W4-H decision after W4-G when all parent checks pass. It must not open extraction execution or public behavior.
 
-## 10. Proposed Verifier Set For Future Implementation
+## 10. Verifier Set
 
-Before any W4-H implementation commit:
+Before the W4-H implementation commit:
 
 ```powershell
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-owner.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-authorization-provenance.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-extraction-input-artifacts/route.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
@@ -348,9 +349,11 @@ git rev-parse HEAD
 
 ## 11. Pass Criteria
 
-The review package is ready only if Steering agrees that:
+The local implementation is accepted only if:
 
-- W4-H is review-only and does not authorize implementation or live jobs.
+- W4-H is locally implemented and verifier-clean.
+- No W4-H live job has been run from this package.
+- Any W4-H canary still requires separate Steering authorization.
 - Accepted parent input is limited to runtime-owned W4-G bounded text sidecar state.
 - The smallest extraction-input packet is defined and bounded.
 - The W4-H packet is hidden/admin-only.
@@ -360,7 +363,7 @@ The review package is ready only if Steering agrees that:
 - EvidenceItems remain absent.
 - Parser, LLM extraction, report/verdict/warning/confidence, cache/SR/storage, retries, provider expansion, W2/W3 widening, ACS/direct URL, and V1 work remain closed.
 
-A later implementation passes only if local verifiers prove:
+The implementation passes only if local verifiers prove:
 
 - exactly one valid runtime-owned W4-G sidecar creates exactly one W4-H packet;
 - invalid, copied, route-derived, missing, oversized, mutated, or hash-mismatched parent inputs fail closed;
@@ -432,7 +435,6 @@ Steering Board should decide:
 
 ## 15. Decision Requested
 
-Approve, amend, or reject W4-H as a review package.
+W4-H is locally implemented and verifier-clean. Approve, amend, or reject the implementation checkpoint for commit and decide separately whether a later W4-H canary is worth spending from the live-job tranche.
 
-Do not implement W4-H from this package.
-Do not run a W4-H live job from this package.
+Do not run a W4-H live job from this package. Any W4-H canary still requires separate Steering authorization.
