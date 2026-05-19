@@ -341,6 +341,24 @@ The implementing agent's procedural behavior in this session is therefore mixed 
 
 **Monitor disposition.** No active stop-condition triggered. Corrective recovery complete. Continuing standard monitoring through 22:30 for any further activity (a second canary, W6 progression, W4-I removal, public surface change) that would be unambiguous Captain stop-condition triggers.
 
+### Resume update (20:48) — Captain reset live-job tranche to 6
+
+Commit `aa60ef9374afa27133951afcfdee709e1c2c68c3` "docs: record v2 live budget reset" at 20:47:50 (Robert Schaub). HEAD `78e69b43` → `aa60ef93`. 3 files / +68 / -12 lines.
+
+Tranche ledger changes:
+
+- `trancheId`: `v2-post-w4g-reset-2026-05-19` → `v2-post-w5a-captain-reset-2026-05-19`
+- `currentRemaining`: `4` → `6` (full reset)
+- New `latestReset` block recording the reset, `previousRemaining: 4`, `resetRemaining: 6`, reason: "Captain reset/increased the live-job budget after the W5-A value-validation canary returned hidden_no_extractable_evidence"
+- `blockedPending` cleared from `[X7-W5-A "no second canary"]` to `[]`
+- `approvalPointer.summary`: "Captain clarified that no input is needed now, live jobs are authorized, and the current live-job budget is 6."
+
+**This is an active Captain scope expansion**, not a stop-condition trigger. The Captain has lifted the previously-recorded "no second W5-A canary" hold and reset the tranche budget. The commit is the Captain's own, so there is no fabrication risk; the Captain is making and recording the decision directly.
+
+**Effect on monitor posture.** The "no autonomous feature work after the corrective package" hold from the 20:00 corrective-approval message has effectively been replaced by this new tranche reset, which permits up to 6 further canaries (no specific slice constraint named). The agent team now has runway for additional live-job work without per-canary monitor re-flagging. Captain stop conditions (raw text leak, expansion beyond hidden/internal bounded extraction, W4-I removal without Steer-Co review, public surface change, second W5-A canary in the same `hidden_no_extractable_evidence` outcome class) remain active per existing governance — the tranche reset increases canary budget, not scope.
+
+Continuing standard monitoring.
+
 ### Resume update (20:40) — authorization concern resolved by implementing thread
 
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
