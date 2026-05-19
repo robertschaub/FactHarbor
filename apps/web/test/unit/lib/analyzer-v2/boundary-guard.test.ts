@@ -55,6 +55,10 @@ const analyzerV2EvidenceLifecycleEvidenceCorpusObservabilityArtifactInspectionRo
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-evidence-corpus-observability-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-evidence-corpus-bounded-text-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -141,6 +145,10 @@ const evidenceLifecycleEvidenceCorpusShellPath = path.resolve(
 const evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath = path.resolve(
   evidenceLifecycleEvidenceCorpusRoot,
   "evidence-corpus-extraction-readiness-denial.ts",
+);
+const evidenceLifecycleEvidenceCorpusBoundedTextAuthorizationPath = path.resolve(
+  evidenceLifecycleEvidenceCorpusRoot,
+  "bounded-text-authorization.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -268,6 +276,18 @@ const analyzerV2RuntimeEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessArt
 const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusObservabilityArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-evidence-corpus-observability-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-evidence-corpus-bounded-text-authorization-provenance.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -958,6 +978,21 @@ const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusObservabilityArtifactSinkA
       new Set(["PipelineRunContext"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "./evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner",
+      new Set(["EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision"]),
+    ],
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization",
+      new Set(["EvidenceCorpusBoundedTextSidecar"]),
+    ],
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -983,6 +1018,8 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-shell-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-observability-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink",
     ]),
   ],
   [
@@ -1170,6 +1207,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleEvidenceCorpusObservabilityArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-observability-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink",
     ]),
   ],
 ]);
@@ -5207,6 +5250,139 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W4-G bounded corpus text hidden, redacted by default, and extraction-closed", () => {
+    const violations: string[] = [];
+
+    for (const requiredPath of [
+      evidenceLifecycleEvidenceCorpusBoundedTextAuthorizationPath,
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationOwnerPath,
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationProvenancePath,
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkPath,
+      analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath,
+    ]) {
+      expect(existsSync(requiredPath)).toBe(true);
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkApprovedImports
+          .get(importBinding.specifier);
+      if (!approvedNames) {
+        violations.push(`W4-G bounded text artifact sink imports unapproved module ${importBinding.specifier}`);
+        continue;
+      }
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `W4-G bounded text artifact sink imports unapproved symbol ${importedName} from ${importBinding.specifier}`,
+          );
+        }
+      }
+    }
+
+    const coreContent = readFileSync(evidenceLifecycleEvidenceCorpusBoundedTextAuthorizationPath, "utf8");
+    const sinkContent = readFileSync(
+      analyzerV2RuntimeEvidenceLifecycleEvidenceCorpusBoundedTextArtifactSinkPath,
+      "utf8",
+    );
+    const routeContent = readFileSync(
+      analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "v2.evidence-lifecycle.evidence-corpus-bounded-text-authorization.x7w4g",
+      "v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g",
+      "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+      "EVIDENCE_LIFECYCLE_EVIDENCE_CORPUS_BOUNDED_TEXT_ARTIFACT_MAX_SERIALIZED_BYTES = 32_768",
+      "corpusTextAccess: \"internal_admin_only_bounded_text_sidecar\"",
+      "preservesShellOnlyCorpus: true",
+      "mutatesShellCorpus: false",
+      "mutatesExtractionDenial: false",
+      "semanticExtractionAuthorized: false",
+      "evidenceItemExtractionAuthorized: false",
+      "extractionInput: null",
+      "evidenceItems: []",
+      "parserExecuted: false",
+      "cacheRead: false",
+      "cacheWrite: false",
+      "storageWrite: false",
+      "sourceReliabilityCalled: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "warningGenerated: false",
+      "confidenceGenerated: false",
+      "publicSurfaceWritten: false",
+    ]) {
+      if (!coreContent.includes(requiredText) && !sinkContent.includes(requiredText)) {
+        violations.push(`W4-G bounded text implementation missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "redacted_default_hash_length_provenance_only",
+      "textReturned: false",
+      "readEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifactDefaultProjections",
+      "defaultProjection: \"hash_length_provenance_only\"",
+    ]) {
+      if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
+        violations.push(`W4-G bounded text default route projection missing required text ${requiredText}`);
+      }
+    }
+
+    const routeImports = collectModuleSpecifiers(
+      parseSource(analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath),
+    ).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(
+      parseSource(analyzerV2EvidenceLifecycleEvidenceCorpusBoundedTextArtifactInspectionRoutePath),
+    )) {
+      violations.push(`W4-G route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W4-G import ${requiredSpecifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "sourceTextAuthorized: true",
+      "extractionInputCreated: true",
+      "evidenceItemGenerated: true",
+      "parserExecuted: true",
+      "cacheRead: true",
+      "cacheWrite: true",
+      "storageWrite: true",
+      "sourceReliabilityCalled: true",
+      "reportGenerated: true",
+      "verdictGenerated: true",
+      "warningGenerated: true",
+      "confidenceGenerated: true",
+      "publicSurfaceWritten: true",
+      "reportMarkdown",
+      "truthPercentage",
+      "EvidenceItem",
+      "parserPacket",
+      "providerReturnedUrl",
+      "requestUrl",
+      "rawProviderJson",
+    ]) {
+      if (coreContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+        violations.push(`W4-G bounded text path contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -8754,6 +8930,7 @@ describe("analyzer-v2 boundary guard", () => {
     const violations: string[] = [];
 
     expect(evidenceCorpusFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/build-decision.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-extraction-readiness-denial.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/evidence-corpus-shell.ts",
@@ -8837,6 +9014,7 @@ describe("analyzer-v2 boundary guard", () => {
           evidenceLifecycleEvidenceCorpusSourceMaterialAdmissionPath,
           evidenceLifecycleEvidenceCorpusShellPath,
           evidenceLifecycleEvidenceCorpusExtractionReadinessDenialPath,
+          evidenceLifecycleEvidenceCorpusBoundedTextAuthorizationPath,
         ].map(toPosix).includes(toPosix(sourcePath));
         const isApprovedW4AFlagTerm = isW4AReadinessFile && [
           "warning",

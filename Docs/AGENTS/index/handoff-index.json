@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T03:55:11.610Z",
-  "count": 696,
+  "generatedAt": "2026-05-19T06:35:08.144Z",
+  "count": 697,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15237,6 +15237,20 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from `fd963941`. Relevant anchors: `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-transport.ts`, `apps/web/src/lib/analyzer-v2-runtime/source-acquisition-network-factory.t"
+    },
+    {
+      "file": "2026-05-19_Lead_Developer_V2_X7-W4-G_Implementation.md",
+      "date": "2026-05-19",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "x7-w4-g",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "V2 X7-W4-G Bounded Corpus Text Authorization Implementation"
     },
     {
       "file": "2026-05-19_Lead_Developer_V2_X7-W4-G_Review_Package.md",

@@ -29,6 +29,9 @@ import {
   buildEvidenceLifecycleEvidenceCorpusExtractionReadinessDenialDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-extraction-readiness-denial-owner";
 import {
+  buildEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -75,6 +78,9 @@ import {
 import {
   recordEvidenceLifecycleEvidenceCorpusObservabilityRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-observability-artifact-sink";
+import {
+  recordEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -257,6 +263,17 @@ export async function runClaimBoundaryPipelineV2(
           sourceMaterialAdmission: evidenceCorpusSourceMaterialAdmission,
           evidenceCorpusShell,
           extractionReadinessDenial: evidenceCorpusExtractionReadinessDenial,
+        });
+        const evidenceCorpusBoundedTextAuthorization =
+          buildEvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision({
+            sourceMaterialPageSummary,
+            sourceMaterialAdmission: evidenceCorpusSourceMaterialAdmission,
+            evidenceCorpusShell,
+            extractionReadinessDenial: evidenceCorpusExtractionReadinessDenial,
+          });
+        recordEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact({
+          context,
+          boundedTextAuthorization: evidenceCorpusBoundedTextAuthorization,
         });
       }
     } catch {

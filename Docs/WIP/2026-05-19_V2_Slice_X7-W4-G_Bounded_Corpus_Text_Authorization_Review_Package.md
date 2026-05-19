@@ -128,19 +128,19 @@ W4-G must reject:
 Recommended decision version:
 
 ```text
-v2.evidence-lifecycle.evidence-corpus-text-authorization.x7w4g
+v2.evidence-lifecycle.evidence-corpus-bounded-text-authorization.x7w4g
 ```
 
 Recommended record version:
 
 ```text
-v2.evidence-lifecycle.evidence-corpus.text-record.x7w4g
+v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g
 ```
 
 Recommended positive status:
 
 ```text
-evidence_corpus_text_record_created_extraction_gate_closed
+bounded_corpus_text_sidecar_created_extraction_gate_closed
 ```
 
 Recommended EvidenceCorpus text posture:
@@ -197,7 +197,7 @@ Caps:
 | Corpus text bytes per record | `4096` | Matches W3-B/W4-C cap; no cap raise |
 | Aggregate corpus text bytes | `4096` | One record only |
 | Text chars | derived, bounded by byte cap | Multilingual-safe; UTF-8 byte cap is authoritative |
-| Serialized hidden artifact bytes | `32768` recommended | Enough for one bounded internal sidecar and redacted route metadata, still small |
+| Serialized hidden artifact bytes | `32_768` | Enough for one bounded internal sidecar and redacted route metadata, still small |
 | Records per ledger for W4-G artifact sink | `4` recommended | Matches recent bounded hidden artifact posture |
 | Ledger count | `256` recommended | Matches recent bounded hidden artifact posture |
 
@@ -450,7 +450,7 @@ W4-G passes only if one product-route live canary:
 - shows W4-C `source_material_admitted_to_corpus_input_gate_closed`;
 - shows W4-D `evidence_corpus_shell_created_extraction_gate_closed`;
 - shows W4-E `extraction_denied_shell_only` / `shell_only_corpus`;
-- shows W4-G `evidence_corpus_text_record_created_extraction_gate_closed`;
+- shows W4-G `bounded_corpus_text_sidecar_created_extraction_gate_closed`;
 - shows exactly one W4-G text sidecar/record;
 - shows text byte length `> 0` and `<= 4096`;
 - shows W4-G text hash equals the W3-B Source Material text hash;
