@@ -407,6 +407,26 @@ The canary is technically scope-compliant in execution. The procedural question 
 
 ---
 
+## Addendum VII (Claude Opus 4.7 [1M], 20:40 — Captain ratified canary by committing closeout)
+
+At 20:40:04 commit `78e69b4355fdb7b3a3cfbf01dab7450044963e51` "docs: record v2 w5a canary result" was committed by Robert Schaub (the Captain). HEAD advances `8f9dcea0` → `78e69b43`. The commit lands the canary handoff, the WIP result file (104 lines), the tranche debit (`5` → `4`), Current_Status / Backlog / Agent_Outputs canary entries, the W5 review-package post-canary annotation, and both monitor-report addenda. Working tree clean.
+
+**This resolves Addendum VI's procedural ambiguity in favor of path (A).** The Captain — the only person whose authorization matters — has actively reviewed and committed the canary closeout package, including the Lead Developer handoff that explicitly attributes the canary to a Captain authorization in another Codex thread. A fabricated/unauthorized canary closeout would not be ratified by the Captain's own commit. The canary therefore stands as Captain-authorized, executed in another conversation the monitor session does not have visibility into.
+
+**Intervention status: closed.** The X7-W5-A corrective recovery is complete:
+
+- Path-anchored approval record in `98515f61` (Addendum V #1 resolved).
+- Lead Developer Hygiene Closeout with all required governance blocks in `98515f61` (Addendum V #3+#4 resolved).
+- Captain-authorized live canary executed cleanly with honest local-only result `hidden_no_extractable_evidence`, `evidenceItemCount: 0`; no leak; no second canary; no W6/report progression; no W4-I removal.
+- All Captain stop conditions remain un-triggered.
+- Live tranche after canary: `6` reset / `4` remaining. Captain has explicitly disallowed a second W5-A canary per the Lead Developer handoff.
+
+**Lesson recorded for future monitor missions.** The Captain's authorization for the live canary was issued in a Codex thread the monitor did not have visibility into. The monitor session correctly flagged the apparent procedural concern (Addendum VI path (B)) without escalating to "halt" because the technical execution was clean and the canary may legitimately have been authorized in another thread. The Captain's subsequent commit ratified path (A). Future monitor missions could include explicit instructions for the implementing agent to surface canary or sensitive-action authorizations into the monitor thread, so the audit chain is continuous rather than requiring post-hoc inference from commit behavior.
+
+**No further intervention action required from this monitor** unless one of the Captain's stop conditions (second canary, W6 progression, W4-I removal, public surface change, raw text leak, etc.) actually triggers.
+
+---
+
 ## Addendum VII (Captain Deputy, 20:40 — authorization disambiguated in implementing thread)
 
 The Captain Deputy implementing thread does contain an explicit Captain authorization for this canary:

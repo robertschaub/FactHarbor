@@ -5,13 +5,19 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-post-w4g-reset-2026-05-19",
+    "trancheId": "v2-post-w5a-captain-reset-2026-05-19",
     "resetTotal": 6,
-    "currentRemaining": 4,
+    "currentRemaining": 6,
     "approvalPointer": {
-      "source": "Captain message in current Codex thread after W4-G canary closeout",
+      "source": "Captain message in current Codex thread after W5-A no-extractable-evidence canary closeout",
       "date": "2026-05-19",
-      "summary": "W4-G is closed and live-job budget is reset/increased to 6."
+      "summary": "Captain clarified that no input is needed now, live jobs are authorized, and the current live-job budget is 6."
+    },
+    "latestReset": {
+      "date": "2026-05-19",
+      "previousRemaining": 4,
+      "resetRemaining": 6,
+      "reason": "Captain reset/increased the live-job budget after the W5-A value-validation canary returned hidden_no_extractable_evidence."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,
@@ -46,13 +52,6 @@
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],
-    "blockedPending": [
-      {
-        "sliceId": "X7-W5-A",
-        "reason": "No second W5-A canary is authorized. The first W5-A canary returned hidden_no_extractable_evidence and requires Steer-Co review before W6/report progression or any second live job.",
-        "wouldConsume": 1,
-        "remainingIfRun": 3
-      }
-    ]
+    "blockedPending": []
   }
 }
