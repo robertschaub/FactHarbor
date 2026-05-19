@@ -34,12 +34,20 @@ export type EvidenceRetrievalPolicyCatalogEntry = {
 export type EvidenceTaskPolicySnapshot = {
   snapshotVersion: typeof EVIDENCE_TASK_POLICY_SNAPSHOT_VERSION;
   source: "static_contract_only";
-  policyStatus: "not_executable" | "query_planning_hidden_internal_executable";
+  policyStatus:
+    | "not_executable"
+    | "query_planning_hidden_internal_executable"
+    | "query_planning_and_evidence_extraction_hidden_internal_executable";
   plannedTasks: readonly EvidenceTaskPolicyPlannedTask[];
   retrievalPolicyCatalog: readonly EvidenceRetrievalPolicyCatalogEntry[];
   cachePolicy: "no_store_no_read";
-  providerExecution: "not_wired";
-  promptModelExecution: "not_approved" | "query_planning_approved_only";
+  providerExecution:
+    | "not_wired"
+    | "query_planning_and_bounded_evidence_extraction_wired_hidden_internal";
+  promptModelExecution:
+    | "not_approved"
+    | "query_planning_approved_only"
+    | "query_planning_and_bounded_evidence_extraction_approved_only";
   publicExposure: "forbidden";
   sourceReliabilityIntegration: "thin_port_pending";
   sourceLanguagePolicy:

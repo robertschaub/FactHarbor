@@ -67,6 +67,10 @@ const analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath =
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-execution-readiness-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -128,6 +132,7 @@ const evidenceLifecycleSourceAcquisitionPreIoFencePath = path.resolve(
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
+const evidenceLifecycleEvidenceItemsRoot = path.resolve(evidenceLifecycleRoot, "evidence-items");
 const evidenceLifecycleQueryPlanningRoot = path.resolve(evidenceLifecycleRoot, "query-planning");
 const evidenceLifecycleQueryPlanningPreexecutionObservationPath = path.resolve(
   evidenceLifecycleQueryPlanningRoot,
@@ -166,6 +171,10 @@ const evidenceLifecycleExtractionInputBoundedAuthorizationPath = path.resolve(
 const evidenceLifecycleExecutionReadinessDenialPath = path.resolve(
   evidenceLifecycleExecutionReadinessRoot,
   "execution-readiness-denial.ts",
+);
+const evidenceLifecycleBoundedEvidenceExtractionPath = path.resolve(
+  evidenceLifecycleEvidenceItemsRoot,
+  "bounded-evidence-extraction.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -329,6 +338,18 @@ const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialProvenancePath =
 const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-execution-readiness-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-bounded-evidence-extraction-owner.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionProvenancePath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-bounded-evidence-extraction-provenance.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-bounded-evidence-extraction-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -1074,6 +1095,31 @@ const analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkApprovedIm
       new Set(["sha256Json"]),
     ],
   ]);
+const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkApprovedImports =
+  new Map<string, Set<string>>([
+    [
+      "@/lib/analyzer-v2/run-context",
+      new Set(["PipelineRunContext"]),
+    ],
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
+      new Set([
+        "BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_VERSION",
+        "BoundedEvidenceExtractionDecision",
+      ]),
+    ],
+    [
+      "@/lib/analyzer-v2/util",
+      new Set(["sha256Json"]),
+    ],
+    [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-provenance",
+      new Set([
+        "BoundedEvidenceExtractionRuntimeOwnedDecision",
+        "isBoundedEvidenceExtractionRuntimeOwnedDecision",
+      ]),
+    ],
+  ]);
 const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
   [
     toPosix(analyzerV2OrchestratorPath),
@@ -1105,6 +1151,14 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink",
     ]),
   ],
   [
@@ -1989,6 +2043,7 @@ function isApprovedProviderFactorySdkImport(filePath: string, specifier: string)
   return (
     normalizedFilePath === toPosix(analyzerV2RuntimeProviderFactoryPath)
     || normalizedFilePath === toPosix(analyzerV2RuntimeEvidenceQueryPlanningProviderFactoryPath)
+    || normalizedFilePath === toPosix(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath)
   )
     && approvedProviderFactorySdkSpecifiers.has(specifier);
 }
@@ -5793,6 +5848,168 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps X7-W5 bounded evidence extraction hidden, redacted by default, and pre-report", () => {
+    const violations: string[] = [];
+
+    for (const requiredPath of [
+      evidenceLifecycleBoundedEvidenceExtractionPath,
+      analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath,
+      analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionProvenancePath,
+      analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath,
+      analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath,
+    ]) {
+      expect(existsSync(requiredPath)).toBe(true);
+    }
+
+    const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath);
+    for (const importBinding of collectImportBindings(sinkSourceFile)) {
+      const approvedNames =
+        analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkApprovedImports.get(
+          importBinding.specifier,
+        );
+      if (!approvedNames) {
+        violations.push(`W5 bounded evidence extraction artifact sink imports unapproved module ${importBinding.specifier}`);
+        continue;
+      }
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(
+            `W5 bounded evidence extraction artifact sink imports unapproved symbol ${importedName} from ${importBinding.specifier}`,
+          );
+        }
+      }
+    }
+
+    const coreContent = readFileSync(evidenceLifecycleBoundedEvidenceExtractionPath, "utf8");
+    const ownerContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath, "utf8");
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath, "utf8");
+    const routeContent = readFileSync(
+      analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath,
+      "utf8",
+    );
+    for (const requiredText of [
+      "v2.evidence-lifecycle.bounded-evidence-extraction.x7w5",
+      "bounded_evidence_extraction_execution",
+      "hidden_evidence_item_extraction_completed",
+      "hidden_no_extractable_evidence",
+      "V2_EVIDENCE_EXTRACTION",
+      "EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION",
+      "merged_by_parity_rechecked_not_deleted",
+      "first_positive_w5_executor_proof_plus_reviewed_followup",
+      "defaultProjection: \"hash_length_provenance_only\"",
+      "evidenceItemTextReturnedByDefault: false",
+      "sourceTextReturnedByDefault: false",
+      "cacheDecision: \"no_store_no_read\"",
+      "parserExecuted: false",
+      "reportGenerated: false",
+      "verdictGenerated: false",
+      "warningGenerated: false",
+      "confidenceGenerated: false",
+      "publicSurfaceWritten: false",
+      "publicProjectionWritten: false",
+      "sourceReliabilityRead: false",
+      "sourceReliabilityWrite: false",
+      "storageWrite: false",
+    ]) {
+      if (!coreContent.includes(requiredText) && !sinkContent.includes(requiredText)) {
+        violations.push(`W5 bounded evidence extraction implementation missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "Bounded Evidence Extraction provider call failed.",
+      "generateText",
+      "anthropic",
+      "maxRetries: 0",
+      "timeout: params.request.modelPolicy.timeoutMs",
+    ]) {
+      if (!ownerContent.includes(requiredText)) {
+        violations.push(`W5 bounded evidence extraction owner missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_MAX_SERIALIZED_BYTES = 32_768",
+      "redacted_default_hash_length_provenance_only",
+      "inputTextReturned: false",
+      "evidenceItemTextReturned: false",
+      "sourceTextReturned: false",
+      "readBoundedEvidenceExtractionRuntimeArtifactDefaultProjections",
+      "defaultProjection: \"hash_length_provenance_only\"",
+    ]) {
+      if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
+        violations.push(`W5 bounded evidence extraction default route projection missing required text ${requiredText}`);
+      }
+    }
+
+    const routeImports = collectModuleSpecifiers(
+      parseSource(analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath),
+    ).sort();
+    expect(routeImports).toEqual([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink",
+      "@/lib/auth",
+      "next/server",
+    ]);
+    for (const location of collectDirectFetchCallLocations(
+      parseSource(analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath),
+    )) {
+      violations.push(`W5 route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+    }
+
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    for (const requiredSpecifier of [
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink",
+    ]) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W5 import ${requiredSpecifier}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "parserExecuted: true",
+      "cacheRead: true",
+      "cacheWrite: true",
+      "sourceReliabilityRead: true",
+      "sourceReliabilityWrite: true",
+      "storageWrite: true",
+      "reportGenerated: true",
+      "verdictGenerated: true",
+      "warningGenerated: true",
+      "confidenceGenerated: true",
+      "publicSurfaceWritten: true",
+      "publicProjectionWritten: true",
+      "reportMarkdown",
+      "truthPercentage",
+      "parserPacket",
+      "providerReturnedUrl",
+      "requestUrl",
+      "rawProviderJson",
+      "retryCount: 1",
+      "schemaRetryCount: 1",
+    ]) {
+      if (
+        coreContent.includes(forbiddenText) ||
+        ownerContent.includes(forbiddenText) ||
+        sinkContent.includes(forbiddenText) ||
+        routeContent.includes(forbiddenText)
+      ) {
+        violations.push(`W5 bounded evidence extraction path contains forbidden text ${forbiddenText}`);
+      }
+    }
+    for (const forbiddenRouteText of [
+      "\"inputText\":",
+      "\"statement\":",
+      "source text",
+      "snippet",
+      "summary",
+    ]) {
+      if (routeContent.includes(forbiddenRouteText)) {
+        violations.push(`W5 default route references forbidden text surface ${forbiddenRouteText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -7282,6 +7499,9 @@ describe("analyzer-v2 boundary guard", () => {
     ]);
     expect((
       importsByFactory.get(toPosix(analyzerV2RuntimeEvidenceQueryPlanningProviderFactoryPath)) ?? []
+    ).sort()).toEqual(["@ai-sdk/anthropic", "ai"]);
+    expect((
+      importsByFactory.get(toPosix(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath)) ?? []
     ).sort()).toEqual(["@ai-sdk/anthropic", "ai"]);
   });
 
@@ -8851,6 +9071,7 @@ describe("analyzer-v2 boundary guard", () => {
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskPolicyRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskContractsRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExecutionReadinessRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceItemsRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleQueryPlanningRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExtractionInputRoot)}/`)
@@ -8914,6 +9135,7 @@ describe("analyzer-v2 boundary guard", () => {
     expect(subdirectories).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/downstream-denial",
       "src/lib/analyzer-v2/evidence-lifecycle/evidence-corpus",
+      "src/lib/analyzer-v2/evidence-lifecycle/evidence-items",
       "src/lib/analyzer-v2/evidence-lifecycle/execution-readiness",
       "src/lib/analyzer-v2/evidence-lifecycle/extraction-input",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning",

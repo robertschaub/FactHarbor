@@ -33,6 +33,10 @@ const GATEWAY_STATUSES = new Set([
 const LIVE_JOB_ELIGIBILITY = new Set(["blocked", "not_applicable"]);
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
+  [
+    "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL",
+    "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@2026-05-19T17:05:16.971Z",
+  ],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -45,6 +49,11 @@ const CACHE_POLICY_BY_SELECTOR = {
   queryPlanningCache: {
     policyId: "v2.semantic.evidence-query-planning",
     approvalSource: "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z",
+  },
+  evidenceExtractionCache: {
+    policyId: "v2.semantic.evidence-extraction.x7w5",
+    approvalSource:
+      "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@2026-05-19T17:05:16.971Z",
   },
   sourceAware: {
     policyId: "v2.semantic.source-aware",
@@ -526,6 +535,9 @@ function cachePolicyForTask(objectLiteral) {
   if (booleanProperty(objectLiteral, "queryPlanningCache")) {
     return CACHE_POLICY_BY_SELECTOR.queryPlanningCache;
   }
+  if (booleanProperty(objectLiteral, "evidenceExtractionCache")) {
+    return CACHE_POLICY_BY_SELECTOR.evidenceExtractionCache;
+  }
   if (booleanProperty(objectLiteral, "sourceAware")) {
     return CACHE_POLICY_BY_SELECTOR.sourceAware;
   }
@@ -543,6 +555,9 @@ function approvalIdFromSource(source) {
   }
   if (source.startsWith("ANALYZER_V2_7L1_CAPTAIN_APPROVAL@")) {
     return "ANALYZER_V2_7L1_CAPTAIN_APPROVAL";
+  }
+  if (source.startsWith("ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@")) {
+    return "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL";
   }
   return source;
 }

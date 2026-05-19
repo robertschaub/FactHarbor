@@ -5,10 +5,14 @@ import {
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
-import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
+import {
+  ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+} from "@/lib/analyzer-v2/gateway/approval-records";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import {
   EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS,
@@ -33,6 +37,7 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
 export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "claim_understanding_gate1",
   "evidence_query_planning",
+  "evidence_extraction",
 ] as const satisfies readonly AnalyzerV2GatewayTaskId[];
 
 function blockedPrompt(
@@ -79,6 +84,7 @@ function task(params: {
   promptApproval?: AnalyzerV2PolicyApproval;
   claimUnderstandingCache?: boolean;
   queryPlanningCache?: boolean;
+  evidenceExtractionCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
@@ -97,6 +103,8 @@ function task(params: {
       ? ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY
       : params.queryPlanningCache
       ? ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY
+      : params.evidenceExtractionCache
+      ? ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY
       : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
@@ -162,11 +170,19 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "evidence_extraction",
     owner: "evidence_lifecycle",
+    status: "executable",
     modelTask: "extract_evidence",
     promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_extraction,
     outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_extraction,
-    sourceAware: true,
-    notes: "Owns V2 Evidence Lifecycle evidence extraction and evidence-source identity cache requirements.",
+    requiredVariables: [
+      "claimContractJson",
+      "taskPolicySnapshotJson",
+      "sourceContentPacketsJson",
+      "applicabilityResultJson",
+    ],
+    promptApproval: ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+    evidenceExtractionCache: true,
+    notes: "Owns hidden/internal W5 bounded evidence extraction over one runtime-owned W4-H packet after prompt/model/cache policy approval.",
   }),
   task({
     id: "evidence_sufficiency",

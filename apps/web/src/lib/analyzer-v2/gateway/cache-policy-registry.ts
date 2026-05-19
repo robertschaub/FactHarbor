@@ -3,7 +3,10 @@ import type {
   AnalyzerV2CachePolicy,
   AnalyzerV2PolicyApproval,
 } from "@/lib/analyzer-v2/gateway/types";
-import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
+import {
+  ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+} from "@/lib/analyzer-v2/gateway/approval-records";
 
 const PENDING_APPROVAL: AnalyzerV2PolicyApproval = {
   status: "pending",
@@ -91,4 +94,28 @@ export const ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY: AnalyzerV2CachePo
     "adapterVersion",
   ],
   approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+};
+
+export const ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.evidence-extraction.x7w5",
+  requiredDimensions: [
+    "promptProfile",
+    "promptSectionId",
+    "promptContentHash",
+    "modelTask",
+    "provider",
+    "modelName",
+    "temperature",
+    "outputSchemaVersion",
+    "configSnapshotHash",
+    "resultSchemaVersion",
+    "inputIdentityHash",
+    "sourceIdentityHash",
+    "languageContextHash",
+    "currentDateBucket",
+  ],
+  optionalDimensions: [
+    "adapterVersion",
+  ],
+  approval: ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
 };

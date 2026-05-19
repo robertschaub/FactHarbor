@@ -5,11 +5,11 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy";
 
 describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
-  it("builds the exact hidden query-planning policy snapshot", () => {
+  it("builds the exact hidden query-planning and W5 evidence-extraction policy snapshot", () => {
     expect(buildStaticEvidenceTaskPolicySnapshot()).toEqual({
       snapshotVersion: "v2.evidence-lifecycle.task-policy.0",
       source: "static_contract_only",
-      policyStatus: "query_planning_hidden_internal_executable",
+      policyStatus: "query_planning_and_evidence_extraction_hidden_internal_executable",
       plannedTasks: [
         {
           taskKey: "evidence_query_planning",
@@ -31,12 +31,12 @@ describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
         },
         {
           taskKey: "evidence_extraction",
-          status: "symbolic_not_executable",
+          status: "hidden_internal_executable",
           promptSectionId: "V2_EVIDENCE_EXTRACTION",
           outputSchemaVersion: "v2.evidence_extraction_result.0",
-          promptApprovalStatus: "missing",
-          modelPolicyStatus: "not_approved",
-          executionAuthority: "not_executable",
+          promptApprovalStatus: "approved",
+          modelPolicyStatus: "approved",
+          executionAuthority: "gateway_executable_hidden_internal",
         },
         {
           taskKey: "evidence_sufficiency",
@@ -56,8 +56,8 @@ describe("analyzer-v2 Evidence Lifecycle static task policy", () => {
         { policyKey: "evidence_scarcity_handling", status: "planned_not_executable", source: "static_contract_only" },
       ],
       cachePolicy: "no_store_no_read",
-      providerExecution: "not_wired",
-      promptModelExecution: "query_planning_approved_only",
+      providerExecution: "query_planning_and_bounded_evidence_extraction_wired_hidden_internal",
+      promptModelExecution: "query_planning_and_bounded_evidence_extraction_approved_only",
       publicExposure: "forbidden",
       sourceReliabilityIntegration: "thin_port_pending",
       sourceLanguagePolicy: "source_language_first_query_planning_approved",

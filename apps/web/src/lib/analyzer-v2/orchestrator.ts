@@ -38,6 +38,9 @@ import {
   buildEvidenceLifecycleExecutionReadinessDenialDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-denial-owner";
 import {
+  runBoundedEvidenceExtractionDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -93,6 +96,9 @@ import {
 import {
   recordEvidenceLifecycleExecutionReadinessRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink";
+import {
+  recordBoundedEvidenceExtractionRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -300,6 +306,16 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleExecutionReadinessRuntimeArtifact({
           context,
           executionReadinessDenial,
+        });
+        const boundedEvidenceExtraction = await runBoundedEvidenceExtractionDecision({
+          context,
+          claimContract: claimUnderstandingHandoff.claimContract,
+          extractionInputAuthorization,
+          executionReadinessDenial,
+        });
+        recordBoundedEvidenceExtractionRuntimeArtifact({
+          context,
+          boundedEvidenceExtraction,
         });
       }
     } catch {

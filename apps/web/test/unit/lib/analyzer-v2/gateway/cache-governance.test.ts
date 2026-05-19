@@ -3,6 +3,7 @@ import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
   buildAnalyzerV2ClaimUnderstandingCacheDecision,
@@ -13,6 +14,7 @@ import {
   validateAnalyzerV2CacheKeyInput,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
 import { ANALYZER_V2_7L1_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
+import { ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 
 const completeBaseInput = {
@@ -114,6 +116,51 @@ describe("analyzer-v2 cache governance", () => {
       ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
       {
         ...completeBaseInput,
+        languageContextHash: "language-hash",
+      },
+    ).valid).toBe(true);
+  });
+
+  it("declares exact approved cache-policy metadata for W5 bounded evidence extraction", () => {
+    expect(ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY).toEqual({
+      policyId: "v2.semantic.evidence-extraction.x7w5",
+      requiredDimensions: [
+        "promptProfile",
+        "promptSectionId",
+        "promptContentHash",
+        "modelTask",
+        "provider",
+        "modelName",
+        "temperature",
+        "outputSchemaVersion",
+        "configSnapshotHash",
+        "resultSchemaVersion",
+        "inputIdentityHash",
+        "sourceIdentityHash",
+        "languageContextHash",
+        "currentDateBucket",
+      ],
+      optionalDimensions: [
+        "adapterVersion",
+      ],
+      approval: ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+    });
+
+    expect(validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
+      {
+        ...completeBaseInput,
+        languageContextHash: "language-hash",
+      },
+    )).toMatchObject({
+      valid: false,
+      missingDimensions: ["sourceIdentityHash"],
+    });
+    expect(validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
+      {
+        ...completeBaseInput,
+        sourceIdentityHash: "source-hash",
         languageContextHash: "language-hash",
       },
     ).valid).toBe(true);

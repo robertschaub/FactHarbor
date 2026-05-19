@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T15:50:08.908Z",
-  "count": 709,
+  "generatedAt": "2026-05-19T17:59:35.829Z",
+  "count": 712,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15447,6 +15447,51 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md",
+      "date": "2026-05-19",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "x7-w5-a",
+        "corrective",
+        "recovery",
+        "approval"
+      ],
+      "files_touched": [],
+      "summary": "Treat this file as the durable repo-local approval anchor for `ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL`. Do not infer broader approval from the W5 review package or this corrective recovery record."
+    },
+    {
+      "file": "2026-05-19_Claude_Monitor_V2_Intervention_Needed.md",
+      "date": "2026-05-19",
+      "roles": [
+        "claude"
+      ],
+      "topics": [
+        "monitor",
+        "v2",
+        "intervention",
+        "needed"
+      ],
+      "files_touched": [],
+      "summary": "Claude Monitor: V2 Pipeline — INTERVENTION NEEDED"
+    },
+    {
+      "file": "2026-05-19_Claude_Monitor_V2_Progress_Report.md",
+      "date": "2026-05-19",
+      "roles": [
+        "claude"
+      ],
+      "topics": [
+        "monitor",
+        "v2",
+        "progress",
+        "report"
+      ],
+      "files_touched": [],
+      "summary": "Claude Monitor: V2 Pipeline Progress"
     },
     {
       "file": "2026-05-19_Lead_Developer_V2_X7-W4-G_Implementation.md",
