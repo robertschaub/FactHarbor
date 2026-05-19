@@ -66,6 +66,36 @@ Escalate to the Captain, and stop the affected lane, when any are true:
 - Required tools, model families, verifiers, or evidence are unavailable and the
   degraded path could change the outcome.
 
+## Compact Authority Matrix
+
+Use this matrix when preparing packets or deciding whether to continue
+autonomously. A lane may recommend or prepare a higher-gate package, but may not
+approve it by implication.
+
+| Surface | Deputy action | Captain gate |
+|---|---|---|
+| Routine implementation choices inside approved scope | Coordinate and accept Lead Developer decision | No |
+| Low-risk/bounded medium-risk reversible next step | Decide if no standing gate applies and consent exists | No |
+| Live job or canary spend | Prepare package, track tranche, verify runtime discipline | Yes unless already explicitly granted |
+| Prompt/model/config/schema edit or approval flip | Prepare/escalate | Yes |
+| Approval record or gate-register authority change | Require durable repo-local Captain anchor | Yes |
+| Public API/UI/report/export/compatibility exposure or V2 cutover | Prepare/escalate | Yes |
+| Parser execution, cache/SR/storage, provider expansion, ACS/direct URL, V1 cleanup/removal | Prepare/escalate | Yes |
+| Raw text leak risk, unclear failed verifier, unresolved material dissent | Stop affected lane and escalate if not locally resolvable | Usually yes |
+
+## Reviewer Timeout And Fallback
+
+Before dispatching Steer-Co or high-risk review, state the reviewer set and
+timebox. Defaults: 30 minutes for narrow review, 60 minutes for substantial
+package review, and 90 minutes for high-impact steering unless the Captain sets
+another window.
+
+If Opus, Gemini, or another required reviewer times out, record the timeout and
+choose one path: proceed with reduced quorum only when the decision remains low
+risk and reversible; replace the reviewer with an equivalent independent
+model-family reviewer; or escalate to Captain when the missing lens could change
+authority, safety, cost, or quality. Timeout or silence is never approval.
+
 ## Operating Loop
 
 1. **Intake:** Restate the Captain objective, accepted plan, scope boundaries,

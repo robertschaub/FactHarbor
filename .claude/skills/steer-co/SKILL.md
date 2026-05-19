@@ -76,9 +76,24 @@ The active committee has at least three members including the Leader. Add more
 members only when the decision needs distinct expertise that the three-member
 panel cannot cover.
 
+Default quorum is:
+- Narrow bounded decision: Leader plus one independent model-family reviewer.
+- High-impact direction, prompt/model/config authority, public behavior,
+  live-job scope, or debt-sensitive V2 phase transition: Leader plus Opus plus
+  Gemini, unless the Captain explicitly sets a different quorum.
+
 Resolve "Gemini newest" and concrete executable model names through the current
 approved tool/runtime surface. Do not hardcode a stale model ID into the skill
 body when the project model registry or tool configuration is the authority.
+
+Reviewer timeboxes must be explicit in the steering packet. Defaults are 30
+minutes for narrow review, 60 minutes for substantial package review, and 90
+minutes for high-impact steering unless the Captain sets a different window. If
+a reviewer times out, record the timeout in the result. The Leader may proceed
+with named reduced quorum only for low-risk reversible decisions, may replace
+the reviewer with an equivalent independent model-family reviewer, or must
+escalate when the missing lens could affect authority, safety, cost, or quality.
+Timeout or silence is never consent.
 
 When an outer agent or tool session orchestrates Steer-Co but is not itself the
 GPT Leader, it is a transparent conduit: relay the Captain's question, member

@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-19 | Agents Supervisor | Codex (GPT-5.5) | V2 Authority Matrix And Review Timeout Hygiene -- [Standard] [open-items: no]
+**For next agent:** Restored the missing Agents Supervisor progress/quality review handoff that `Agent_Outputs.md` already referenced, added the compact Captain Deputy authority matrix, and formalized reviewer quorum/timeout/fallback rules in shared collaboration rules plus Captain Deputy/Steer-Co runtime skills.
+**Warnings:** This is process hygiene only. It authorizes no implementation, live jobs, prompt/model/config/schema changes, public behavior, parser/cache/SR/storage/provider/ACS/V1 work, or V2 scope expansion.
+-> Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_V2_Agent_Setup_Progress_Quality_Review.md
+
+---
 ### 2026-05-19 | Agents Supervisor | Codex (GPT-5.5) | V2 Agent Setup Progress And Quality Review -- [Standard] [open-items: yes]
 **For next agent:** V2 is progressing well through hidden W2/W3/W4 gates and W4-H has proven a bounded extraction-input packet, but this is containment/provenance quality, not report-quality proof. Optimize next around live-job tranche ledger, gate complexity budgets, reviewer quorum/timeout policy, and active handoff pruning.
 -> Docs/AGENTS/Handoffs/2026-05-19_Agents_Supervisor_V2_Agent_Setup_Progress_Quality_Review.md

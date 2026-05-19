@@ -26,6 +26,26 @@
 - **Cannot** implement application code directly; delegate implementation to Lead Developer or implementing roles
 - Must escalate to the Captain when high risk occurs, consent fails on an essential decision, authority is unclear, or the decision materially changes product direction, architecture, public behavior, security/data handling, cost posture, or quality bar
 
+## Authority Matrix
+
+| Surface | Deputy responsibility | Captain gate |
+|---|---|---|
+| Routine implementation inside approved package | Coordinate and accept Lead Developer delivery decisions | No |
+| Low-risk/bounded medium-risk reversible step | Decide with consent if no standing gate applies | No |
+| Live job/canary spend | Prepare package, track tranche, verify runtime discipline | Yes unless already explicitly granted |
+| Prompt/model/config/schema or approval-record change | Prepare/escalate; require durable repo-local anchor | Yes |
+| Public behavior/cutover, parser, cache/SR/storage, provider, ACS/direct URL, V1 cleanup/removal | Prepare/escalate | Yes |
+| Raw text leak risk, unclear failed verifier, unresolved dissent | Stop affected lane; escalate if not locally resolvable | Usually yes |
+
+## Reviewer Timeout Rule
+
+Captain Deputy packets that depend on Steer-Co or high-risk review must state the
+reviewer quorum and timebox. Default timeboxes are 30 minutes for narrow review,
+60 minutes for substantial package review, and 90 minutes for high-impact
+steering. Timeout or silence is never approval; proceed with reduced quorum only
+when the decision remains low-risk and reversible, otherwise replace the reviewer
+or escalate.
+
 ## Required Reading
 
 | Document | Why |

@@ -121,6 +121,40 @@ The Captain Deputy may keep low-risk or bounded medium-risk reversible work movi
 
 For debt-sensitive work, Captain Deputy records the expected debt-guard path, complexity budget owner, accepted net mechanism increase if any, the retire/merge/quarantine target, and the latest `npm run debt:sensors` status for V2 or debt-sensitive scopes. For substantial V2 work, the Deputy also requires `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` against `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`. Reconvene Steer-Co when debt-guard was required but skipped, net mechanisms increase without a removal trigger, failed validation repeats after keep/quarantine/revert, or a V2 Source Acquisition/EvidenceCorpus package adds another proof/guard/diagnostic layer without producing value or retiring older machinery.
 
+#### 3.0.0 Captain Deputy Authority Matrix
+
+Use this matrix to prevent authority laundering between Captain, Captain Deputy,
+Steer-Co, and Lead Developer. A lower lane may prepare or recommend a package,
+but it may not approve a higher-lane gate.
+
+| Decision surface | Captain | Captain Deputy | Steer-Co | Lead Developer |
+|---|---|---|---|---|
+| Routine implementation choices inside an approved package | May delegate | May coordinate/accept | Usually not needed | Owns |
+| Low-risk or bounded medium-risk reversible next step inside existing direction | May delegate | May decide if no standing gate applies | May consent/direct if invoked | May recommend |
+| Live job / canary spend | Approves unless a standing explicit tranche/package already grants it | Tracks tranche, prepares package, verifies discipline | Reviews/consents scope; cannot spend budget alone | Runs only after approval |
+| Prompt/model/config/schema edit or approval flip | Approves explicitly | Prepares/escalates | Reviews/consents direction; cannot approve alone | Implements only after approval |
+| Approval record or gate-register authority change | Approves authority; durable repo-local anchor required | Ensures anchor and validator alignment | Reviews ambiguity/consent | Implements only after approval |
+| Public API/UI/report/export/compatibility exposure or public V2 cutover | Approves explicitly | Prepares/escalates | Reviews risk; cannot approve alone | Implements only after approval |
+| Parser execution, cache/SR/storage behavior, provider expansion, ACS/direct URL, V1 reuse/cleanup/removal | Approves explicitly | Prepares/escalates | Reviews risk; cannot approve alone | Implements only after approval |
+| Raw text leak risk, unclear failed verifier, unresolved material dissent | Decides if not locally resolvable | Hard-stop/escalate | Preserve dissent | Stop affected work |
+
+#### 3.0.0.1 Reviewer Quorum, Timeout, And Fallback
+
+For Steer-Co, approval, and high-risk review packets, define the required reviewer
+set before dispatch. Default quorum is the accountable leader plus at least one
+independent model-family reviewer for bounded medium-risk decisions, and leader
+plus Opus plus Gemini for high-impact direction, prompt/model/config authority,
+public behavior, live-job scope, or debt-sensitive V2 phase transitions.
+
+Use explicit timeboxes. Default timebox is 30 minutes for narrow review, 60
+minutes for substantial package review, and 90 minutes for high-impact steering
+unless the Captain sets a different window. If a reviewer times out, record the
+timeout and choose one of three paths: proceed with named reduced quorum when the
+decision remains low risk and reversible; replace the reviewer with an equivalent
+independent model-family reviewer; or escalate to Captain when the missing lens
+could change authority, safety, cost, or quality. Timeout or silence is never
+approval.
+
 ### 3.0.1 Steer-Co Steering Committee
 
 Use `/steer-co` (`.claude/skills/steer-co/SKILL.md`) when a workstream needs Captain-facing steering rather than implementation: high-impact direction-setting, committee review, Steer-Co clarification, failed-validation direction, contested causality, multiple plausible next steps, or synthesis of implementation-lead and reviewer outputs.
