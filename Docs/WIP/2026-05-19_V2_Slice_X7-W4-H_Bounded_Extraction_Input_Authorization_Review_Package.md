@@ -126,7 +126,7 @@ The accepted sidecar must also carry non-empty opaque lineage/provenance values:
 - `sourceMaterialRef`
 - `locatorRef`
 - `candidatePreviewId`
-- `providerId`
+- `providerId` (current upstream value is `wikimedia_core`; W4-H must preserve the exact W4-G sidecar value)
 - `sourceMaterialEndpointId`
 - `languageCode`
 - `sourceMaterialRecordVersion`
@@ -158,7 +158,7 @@ type BoundedExtractionInputPacket = {
   sourceMaterialRef: string;
   locatorRef: string;
   candidatePreviewId: string;
-  providerId: "wikimedia";
+  providerId: string;
   sourceMaterialEndpointId: string;
   sourceMaterialKind: "wikimedia_page_summary_extract_text";
   languageCode: string;
@@ -185,6 +185,8 @@ type BoundedExtractionInputPacket = {
 ```
 
 `inputText` is allowed only inside the hidden/admin-only packet state because the packet is the future extraction boundary. It must not appear in default admin route responses, public result JSON, UI, reports, exports, compatibility projections, logs, or errors.
+
+`providerId` must be copied from the W4-G sidecar without remapping. The current W3-B/W4-G lineage value is `wikimedia_core`; W4-H must not introduce `wikimedia` or any other new provider id. Future implementation must fail closed if the packet provider id differs from the parent W4-G sidecar provider id.
 
 No prompt profile, model policy, cache policy, schema prompt, or UCM behavior should be added in W4-H.
 
@@ -248,6 +250,7 @@ Recommended stop reasons:
 - `source_material_hash_mismatch`
 - `source_material_length_mismatch`
 - `lineage_missing_or_invalid`
+- `provider_id_mismatch`
 - `corpus_text_access_invalid`
 - `w4g_downstream_flags_open`
 - `public_cutover_not_blocked`
@@ -328,6 +331,8 @@ git diff --check
 git status --short --untracked-files=all
 ```
 
+The focused extraction-input authorization tests must include a mutated-provider case proving W4-H fails closed when the W4-H packet provider id would differ from the parent W4-G sidecar provider id.
+
 Before any later W4-H canary:
 
 ```powershell
@@ -359,6 +364,7 @@ A later implementation passes only if local verifiers prove:
 
 - exactly one valid runtime-owned W4-G sidecar creates exactly one W4-H packet;
 - invalid, copied, route-derived, missing, oversized, mutated, or hash-mismatched parent inputs fail closed;
+- packet provider id differing from the W4-G sidecar provider id fails closed;
 - W4-H does not mutate W4-D, W4-E, or W4-G state;
 - W4-H does not introduce prompt/model/config/cache policy changes;
 - the artifact route is authenticated/no-store/internal-only;
@@ -410,6 +416,7 @@ Canary pass target:
 - W4-H records one `bounded_text_extraction_input_packet`.
 - W4-H packet byte length is `> 0` and `<= 4096`.
 - W4-H packet hash equals the W4-G sidecar hash and W3-B Source Material text hash.
+- W4-H packet provider id equals the W4-G sidecar provider id exactly.
 - Default W4-H route projection is hash/length/provenance-only.
 - Public result JSON, UI, report markdown, export, compatibility projection, logs, and errors show no text and no hidden markers.
 - Extraction execution, EvidenceItems, parser, report/verdict/warning/confidence, cache/SR/storage, provider expansion, W2/W3 widening, ACS/direct URL, and V1 work remain closed.

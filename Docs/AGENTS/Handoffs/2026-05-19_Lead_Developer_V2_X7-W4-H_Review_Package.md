@@ -33,6 +33,13 @@ The package defines:
 - pass/stop criteria;
 - a recommendation for one later canary from the reset `6`-job tranche after implementation review.
 
+Provider-id amendment after review:
+
+- packet `providerId` is now a `string` copied from the W4-G sidecar, not a new literal;
+- the package states that the current upstream provider id is `wikimedia_core`;
+- W4-H must fail closed on packet/provider lineage mismatch;
+- future focused tests must include a mutated-provider mismatch case.
+
 Updated:
 
 - `Docs/STATUS/Current_Status.md`
@@ -57,6 +64,8 @@ bounded_text_extraction_input_packet
 ```
 
 The packet may retain `inputText` internally because it is the future extraction boundary, but the default admin route and all public surfaces must remain hash/length/provenance-only.
+
+The packet must preserve the W4-G sidecar provider id exactly. It must not introduce `wikimedia` when the upstream lineage is `wikimedia_core`.
 
 ## Closed Scope
 
@@ -84,6 +93,14 @@ Docs-only verifier set:
 
 - `npm run validate:v2-gates`: pass
 - `node scripts/validate-v2-gate-register.mjs --self-test`: pass
+- `npm run index`: pass
+- `git diff --check`: pass
+
+Provider-id amendment verifier set:
+
+- `npm run validate:v2-gates`: pass
+- `node scripts/validate-v2-gate-register.mjs --self-test`: pass
+- W4-H provider drift scan for `providerId: "wikimedia"`: pass, no matches
 - `npm run index`: pass
 - `git diff --check`: pass
 
