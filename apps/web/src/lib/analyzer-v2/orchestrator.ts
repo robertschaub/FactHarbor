@@ -123,6 +123,9 @@ import {
 import {
   recordBoundedEvidenceExtractionRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink";
+import {
+  recordInternalAlphaReportResultRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -380,7 +383,7 @@ export async function runClaimBoundaryPipelineV2(
             sufficiencyAssessment,
             boundaryVerdictCandidate,
           });
-          await runBoundaryVerdictExecutionDecision({
+          const boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({
             context,
             boundedEvidenceExtraction,
             evidenceItemHandoff,
@@ -388,6 +391,16 @@ export async function runClaimBoundaryPipelineV2(
             sufficiencyAssessment,
             boundaryVerdictCandidate,
             internalAlphaReportStop,
+          });
+          recordInternalAlphaReportResultRuntimeArtifact({
+            context,
+            boundedEvidenceExtraction,
+            evidenceItemHandoff,
+            sufficiencyIntake,
+            sufficiencyAssessment,
+            boundaryVerdictCandidate,
+            internalAlphaReportStop,
+            boundaryVerdictExecution,
           });
         }
       }
