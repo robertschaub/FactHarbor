@@ -20,12 +20,31 @@ The package requires:
 - statement-bearing input packet from approved W5/W5-F lineage;
 - no direct W4-I access;
 - strict parent/hash/count/byte/provider/model lineage checks;
-- one combined LLM boundary/verdict task by default;
+- one combined LLM boundary/verdict task through new gateway task id
+  `boundary_verdict_execution`;
+- gateway surface-ledger alignment and focused gateway tests;
+- focused prompt contract tests before implementation commit;
 - strict schema, citation, provider/model, parse-failure, and leak-negative
   tests;
 - Product Trust public-cutover gate;
 - warning-materiality contract without user-visible warning publication;
 - W7-A merge trigger after W7-B fail-closed parity.
+
+## Review Result
+
+Reviewer positions:
+
+- Claude Opus 4.6 senior architect / LLM expert: `modify`; amendments applied
+  for real benchmark-capable input caps, combined-call quality trigger, 4000
+  output-token cap, closed verdict-label enum, prompt review checkpoint, and
+  boundary citation minimum.
+- Product Trust: `approve`.
+- Code Reviewer / implementation practicality: `modify`; amendments applied for
+  explicit new `boundary_verdict_execution` gateway id, surface-ledger envelope,
+  gateway verifier, parent provider/model naming, and prompt contract tests.
+
+Consolidated consent: proceed to Lead Developer implementation only after this
+amended package is committed cleanly.
 
 ## Authorization State
 
@@ -71,7 +90,7 @@ Net mechanism count: no runtime mechanism added yet.
 Budget reconciliation: docs-only package stayed within planned package/status
 scope.
 Verification: `npm run index` passed; `npm run debt:sensors` returned
-`advisory_warn` at 2026-05-20T17:21:55Z; `git diff --check` passed.
+`advisory_warn` at 2026-05-20T17:32:53Z; `git diff --check` passed.
 Debt accepted and removal trigger: proposed W7-B owner only if approved; W7-A
 merge trigger required.
 Residual debt: boundary guard and WIP/handoff volume remain advisory pressure.

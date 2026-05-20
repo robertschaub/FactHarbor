@@ -97,8 +97,8 @@ BoundaryVerdictExecutionInputPacket
   sufficiencyAssessmentProjection
   warningMaterialitySeed
   sourceMaterialLineageHash
-  providerId
-  modelId
+  sourceProviderId
+  parentEvidenceExtractionModelId
 ```
 
 Packet rules:
@@ -110,10 +110,12 @@ Packet rules:
   and default admin routes must never expose the statements, source text,
   snippets, summaries, prompt text, provider payloads, hidden ledger ids, or
   internal statuses.
-- Input packet cap: maximum 12 EvidenceItems and maximum 24,000 serialized
-  UTF-8 bytes. If exceeded, fail closed with `boundary_verdict_input_too_large`
-  until a later LLM-owned compression/selection package is approved. Do not add
-  deterministic semantic selection logic.
+- Input packet cap: maximum 50 EvidenceItems and maximum 100,000 serialized
+  UTF-8 bytes. The cap is intentionally sized to admit the lower and mid-range
+  Captain benchmark families while still bounding context and leak surface. If
+  exceeded, fail closed with `boundary_verdict_input_too_large` until a later
+  LLM-owned compression/selection package is approved. Do not add deterministic
+  semantic selection logic.
 - W5/W5-F statement hash and byte-length parity must be checked before packet
   construction and after packet construction.
 
@@ -127,14 +129,28 @@ Proposed task:
 
 ```text
 taskKey: boundary_verdict_execution
+gatewayTaskId: boundary_verdict_execution
 promptSectionId: V2_BOUNDARY_VERDICT_EXECUTION
 outputSchemaVersion: v2.boundary_verdict_execution.0
 modelTask: verdict
 cache: no-store/no-read
 maxCalls: 2 total attempts, including one schema retry
 timeout: 90 seconds
-outputTokens: 2500 maximum
+outputTokens: 4000 maximum
 ```
+
+Gateway identity decision:
+
+- W7-B uses a new combined gateway task id:
+  `boundary_verdict_execution`.
+- It does not reuse the existing `boundary_clustering` or `verdict_debate`
+  task ids because this slice intentionally tests one combined
+  boundary-before-verdict execution contract.
+- The implementation must update gateway task typing, gateway policy, model
+  policy, cache policy, and surface ledger ownership consistently.
+- If implementation discovers that the existing split task ids are required for
+  correctness, stop and reconvene Steer-Co instead of silently changing the task
+  identity.
 
 The output schema must be strict and must distinguish internal candidate labels
 from any future final public labels.
@@ -170,6 +186,25 @@ Internal truth and confidence candidates are allowed only as LLM-owned review
 candidates. They are not final public truth, final public confidence, published
 warning severity, or cutover behavior. Fixed deterministic truth/confidence or
 sufficiency formulas are forbidden.
+
+`internalVerdictLabelCandidate` must be one of `TRUE`, `MOSTLY-TRUE`,
+`LEANING-TRUE`, `MIXED`, `LEANING-FALSE`, `MOSTLY-FALSE`, `FALSE`, or
+`UNVERIFIED`. Any other value is a schema validation failure.
+
+Every boundary candidate must cite at least one `evidenceItemId`. A boundary
+candidate with zero cited evidence items is a schema validation failure.
+
+Combined-call quality trigger:
+
+- After the first successful W7-B candidate execution on a benchmark-family
+  input, compare the boundary groupings against the best available comparator
+  structure for that family.
+- If W7-B shows verdict-fitting behavior, such as one mega-boundary containing
+  all items or boundary splits that mirror verdict direction rather than
+  evidence-scope grouping, reconvene Steer-Co before accepting the prompt as
+  stable.
+- If the combined call is adequate, record the comparison as positive evidence
+  in the W7-B closeout or canary result.
 
 ## 6. W7-B Decision Owner
 
@@ -221,8 +256,8 @@ governed files after approval:
 - `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts`
 - `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`
 - `apps/web/src/lib/analyzer-v2/gateway/policy.ts`
-- `apps/web/src/lib/analyzer-v2/gateway/types.ts` only if the new task id
-  requires a union extension;
+- `apps/web/src/lib/analyzer-v2/gateway/surface-ledger.ts`
+- `apps/web/src/lib/analyzer-v2/gateway/types.ts`
 - `apps/web/prompts/claimboundary-v2.prompt.md` only for the approved
   `V2_BOUNDARY_VERDICT_EXECUTION` section;
 - focused tests and boundary guard updates;
@@ -231,6 +266,20 @@ governed files after approval:
 The prompt must be generic, multilingual, topic-neutral, and must not contain
 Captain benchmark terms, example-specific wording, deterministic semantic
 rules, or report-specific hacks.
+
+The `V2_BOUNDARY_VERDICT_EXECUTION` prompt section must receive one focused
+Steer-Co review before the Lead Developer commits implementation. That review
+covers generic/multilingual compliance, no benchmark terms, citation instruction
+clarity, and boundary-before-verdict reasoning order if the combined call is
+retained.
+
+The implementation must include focused prompt contract tests that prove:
+
+- the `V2_BOUNDARY_VERDICT_EXECUTION` section exists;
+- the expected output schema/version is referenced;
+- required variables are present and renderable;
+- the section avoids Captain benchmark terms and report-specific examples;
+- render succeeds with bounded structural fixtures.
 
 Cache posture is no-store/no-read for W7-B. Any cache read/write proposal is out
 of scope and requires separate approval.
@@ -377,7 +426,7 @@ Removal / merge trigger: W7-A merges into W7-B after stable fail-closed parity.
 
 ## 14. Latest Debt Sensor Status
 
-`npm run debt:sensors` on 2026-05-20T17:21:55Z returned `advisory_warn`:
+`npm run debt:sensors` on 2026-05-20T17:32:53Z returned `advisory_warn`:
 
 - V2 source: `151` files / `44771` lines.
 - V2 tests: `132` files / `49502` lines.
@@ -409,6 +458,7 @@ Implementation verifier after approval:
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/task-contracts/
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/report-result/
+npm -w apps/web run test -- test/unit/lib/analyzer-v2/gateway/
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/
 npm -w apps/web run test -- test/unit/lib/analyzer-v2/boundary-guard.test.ts
 npm run validate:v2-gates
@@ -427,7 +477,12 @@ Focused tests required before closeout:
 - provider/model/prompt/cache gate missing fails closed;
 - provider unavailable, parse failure, schema invalid, and citation mismatch
   produce damaged/non-public decisions;
+- prompt section exists, declares the expected schema/version, includes required
+  variables, avoids benchmark terms, and renders with bounded structural
+  fixtures;
 - output evidence ids must reference input EvidenceItems;
+- every boundary candidate cites at least one input EvidenceItem;
+- internal verdict labels are restricted to the approved eight-label set;
 - no deterministic semantic fallback when the model returns unusable output;
 - public/default-admin/log/error/export leak-negative checks.
 
