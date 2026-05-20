@@ -9,7 +9,10 @@ import {
   buildInternalAlphaReportResultCandidate,
   INTERNAL_ALPHA_REPORT_RESULT_DECISION_VERSION,
 } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result";
-import type { InternalAlphaReportStopCandidate } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
+import {
+  buildInternalAlphaReportStopCandidate,
+  type InternalAlphaReportStopCandidate,
+} from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
 import type { SufficiencyAssessmentDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
 import type { SufficiencyIntakeDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
 
@@ -68,6 +71,22 @@ function evidenceItemHandoff(
     w4hPacketHash: "2".repeat(64),
     providerId: "wikimedia_core",
     modelId: "claude-haiku-4-5-20251001",
+    sideEffects: {
+      evidenceItemTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+      parserExecuted: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      warningGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+      cacheRead: false,
+      cacheWrite: false,
+      sourceReliabilityRead: false,
+      sourceReliabilityWrite: false,
+      storageWrite: false,
+    },
     ...overrides,
   } as EvidenceItemHandoffDecision;
 }
@@ -85,6 +104,22 @@ function sufficiencyIntake(
     publicCutoverStatus: "blocked_precutover",
     defaultProjection: "hash_length_provenance_only",
     parentEvidenceItemHandoffDecisionId: "EVIDENCE_ITEM_HANDOFF_W8B_TEST",
+    assessmentExecution: "closed_contract_only",
+    sideEffects: {
+      sufficiencyLlmCalled: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      warningGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+      cacheRead: false,
+      cacheWrite: false,
+      sourceReliabilityRead: false,
+      sourceReliabilityWrite: false,
+      storageWrite: false,
+      providerCalled: false,
+      parserExecuted: false,
+    },
     ...overrides,
   } as SufficiencyIntakeDecision;
 }
@@ -105,8 +140,50 @@ function sufficiencyAssessment(
     parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_TEST",
     sufficiencyResultStatus: "accepted",
     reportStopRecommendation: "continue_to_boundary_formation",
+    sideEffects: {
+      sufficiencyLlmCalled: true,
+      promptLoaded: true,
+      promptRendered: true,
+      adapterCalled: true,
+      modelCalled: true,
+      providerCallbackCreated: true,
+      providerSdkLoaded: true,
+      cacheDecisionConstructed: true,
+      cacheRead: false,
+      cacheWrite: false,
+      parserExecuted: false,
+      sourceReliabilityRead: false,
+      sourceReliabilityWrite: false,
+      storageWrite: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      warningGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
     ...overrides,
   } as SufficiencyAssessmentDecision;
+}
+
+function closedBoundaryVerdictCandidateSideEffects(): BoundaryVerdictCandidateDecision["sideEffects"] {
+  return {
+    boundaryLlmCalled: false,
+    verdictLlmCalled: false,
+    promptLoaded: false,
+    promptRendered: false,
+    modelCalled: false,
+    cacheRead: false,
+    cacheWrite: false,
+    parserExecuted: false,
+    sourceReliabilityRead: false,
+    sourceReliabilityWrite: false,
+    storageWrite: false,
+    reportGenerated: false,
+    verdictGenerated: false,
+    warningGenerated: false,
+    confidenceGenerated: false,
+    publicSurfaceWritten: false,
+  };
 }
 
 function boundaryVerdictCandidate(
@@ -127,6 +204,9 @@ function boundaryVerdictCandidate(
       sufficiencyIntakeDecisionId: "SUFFICIENCY_INTAKE_W8B_TEST",
       sufficiencyAssessmentDecisionId: "SUFFICIENCY_ASSESSMENT_W8B_TEST",
     },
+    boundaryCandidates: [],
+    verdictCandidate: null,
+    sideEffects: closedBoundaryVerdictCandidateSideEffects(),
     ...overrides,
   } as BoundaryVerdictCandidateDecision;
 }
@@ -236,26 +316,83 @@ function boundaryVerdictExecution(
 
 function build(
   overrides: {
-    readonly boundedEvidenceExtraction?: BoundedEvidenceExtractionDecision;
-    readonly handoff?: EvidenceItemHandoffDecision;
-    readonly intake?: SufficiencyIntakeDecision;
-    readonly assessment?: SufficiencyAssessmentDecision;
-    readonly boundaryVerdict?: BoundaryVerdictCandidateDecision;
-    readonly stop?: InternalAlphaReportStopCandidate;
-    readonly execution?: BoundaryVerdictExecutionDecision;
+    readonly boundedEvidenceExtraction?: BoundedEvidenceExtractionDecision | null;
+    readonly handoff?: EvidenceItemHandoffDecision | null;
+    readonly intake?: SufficiencyIntakeDecision | null;
+    readonly assessment?: SufficiencyAssessmentDecision | null;
+    readonly boundaryVerdict?: BoundaryVerdictCandidateDecision | null;
+    readonly stop?: InternalAlphaReportStopCandidate | null;
+    readonly execution?: BoundaryVerdictExecutionDecision | null;
     readonly ownership?: "owned" | "not_owned" | "mutated_after_provenance";
   } = {},
 ) {
   return buildInternalAlphaReportResultCandidate({
-    boundedEvidenceExtraction: overrides.boundedEvidenceExtraction ?? boundedEvidenceExtraction(),
-    evidenceItemHandoff: overrides.handoff ?? evidenceItemHandoff(),
-    sufficiencyIntake: overrides.intake ?? sufficiencyIntake(),
-    sufficiencyAssessment: overrides.assessment ?? sufficiencyAssessment(),
-    boundaryVerdictCandidate: overrides.boundaryVerdict ?? boundaryVerdictCandidate(),
-    internalAlphaReportStop: overrides.stop ?? internalAlphaReportStop(),
-    boundaryVerdictExecution: overrides.execution ?? boundaryVerdictExecution(),
+    boundedEvidenceExtraction: overrides.boundedEvidenceExtraction === undefined
+      ? boundedEvidenceExtraction()
+      : overrides.boundedEvidenceExtraction,
+    evidenceItemHandoff: overrides.handoff === undefined ? evidenceItemHandoff() : overrides.handoff,
+    sufficiencyIntake: overrides.intake === undefined ? sufficiencyIntake() : overrides.intake,
+    sufficiencyAssessment: overrides.assessment === undefined ? sufficiencyAssessment() : overrides.assessment,
+    boundaryVerdictCandidate: overrides.boundaryVerdict === undefined
+      ? boundaryVerdictCandidate()
+      : overrides.boundaryVerdict,
+    internalAlphaReportStop: overrides.stop === undefined ? internalAlphaReportStop() : overrides.stop,
+    boundaryVerdictExecution: overrides.execution === undefined ? boundaryVerdictExecution() : overrides.execution,
     boundaryVerdictExecutionRuntimeOwnership: overrides.ownership ?? "owned",
   });
+}
+
+function buildW8aW8bPair(
+  overrides: {
+    readonly boundedEvidenceExtraction?: BoundedEvidenceExtractionDecision | null;
+    readonly handoff?: EvidenceItemHandoffDecision | null;
+    readonly intake?: SufficiencyIntakeDecision | null;
+    readonly assessment?: SufficiencyAssessmentDecision | null;
+    readonly boundaryVerdict?: BoundaryVerdictCandidateDecision | null;
+    readonly execution?: BoundaryVerdictExecutionDecision | null;
+    readonly ownership?: "owned" | "not_owned" | "mutated_after_provenance";
+  } = {},
+) {
+  const handoff = overrides.handoff === undefined ? evidenceItemHandoff() : overrides.handoff;
+  const intake = overrides.intake === undefined ? sufficiencyIntake() : overrides.intake;
+  const assessment = overrides.assessment === undefined ? sufficiencyAssessment() : overrides.assessment;
+  const boundaryVerdict = overrides.boundaryVerdict === undefined
+    ? boundaryVerdictCandidate()
+    : overrides.boundaryVerdict;
+  const stop = buildInternalAlphaReportStopCandidate({
+    evidenceItemHandoff: handoff,
+    sufficiencyIntake: intake,
+    sufficiencyAssessment: assessment,
+    boundaryVerdictCandidate: boundaryVerdict,
+  });
+  const result = build({
+    boundedEvidenceExtraction: overrides.boundedEvidenceExtraction,
+    handoff,
+    intake,
+    assessment,
+    boundaryVerdict,
+    stop,
+    execution: overrides.execution,
+    ownership: overrides.ownership,
+  });
+
+  return { stop, result };
+}
+
+function expectInternalOnlyFailClosed(
+  candidate: {
+    readonly status: string;
+    readonly publicPointerExposure: "forbidden";
+    readonly publicCutoverStatus: "blocked_precutover";
+    readonly redaction: object;
+    readonly sideEffects: object;
+  },
+): void {
+  expect(candidate.status).not.toMatch(/created$/);
+  expect(candidate.publicPointerExposure).toBe("forbidden");
+  expect(candidate.publicCutoverStatus).toBe("blocked_precutover");
+  expect(Object.values(candidate.redaction).every((value) => value === false)).toBe(true);
+  expect(Object.values(candidate.sideEffects).every((value) => value === false)).toBe(true);
 }
 
 describe("W8-B internal Alpha report-result candidate", () => {
@@ -307,8 +444,129 @@ describe("W8-B internal Alpha report-result candidate", () => {
       triggerName: "merge_w8a_stop_owner_after_w8b_fail_closed_parity_covered",
       triggerCondition: "accepted_runtime_owned_w7b2_output_supersedes_w8a_non_verdict_stop_candidate",
       parityVerifierName: "internal_alpha_report_result_fail_closed_parity_for_blocked_and_damaged_parents",
-      status: "pending",
+      status: "parity_covered",
     });
+  });
+
+  it("proves W8-A and W8-B fail-closed parity for shared missing, blocked, damaged, public-open, side-effect-open, and lineage-mismatched parents", () => {
+    const cases = [
+      {
+        name: "missing handoff",
+        overrides: { handoff: null },
+        w8aReason: "evidence_item_handoff_missing",
+        w8bReason: "evidence_item_handoff_missing",
+      },
+      {
+        name: "blocked handoff",
+        overrides: {
+          handoff: evidenceItemHandoff({
+            handoffStatus: "evidence_item_handoff_blocked",
+            blockedReason: "w5_result_not_accepted",
+          }),
+        },
+        w8aReason: "evidence_item_handoff_not_ready",
+        w8bReason: "evidence_item_handoff_not_ready",
+      },
+      {
+        name: "public-open handoff contract",
+        overrides: {
+          handoff: evidenceItemHandoff({
+            publicCutoverStatus: "public_open" as EvidenceItemHandoffDecision["publicCutoverStatus"],
+          }),
+        },
+        w8aReason: "parent_contract_invalid",
+        w8bReason: "parent_contract_invalid",
+      },
+      {
+        name: "side-effect-open handoff",
+        overrides: {
+          handoff: evidenceItemHandoff({
+            sideEffects: {
+              ...evidenceItemHandoff().sideEffects,
+              publicSurfaceWritten: true as false,
+            },
+          }),
+        },
+        w8aReason: "side_effects_not_closed",
+        w8bReason: "internal_alpha_report_stop_not_ready",
+      },
+      {
+        name: "lineage-mismatched sufficiency intake",
+        overrides: {
+          intake: sufficiencyIntake({
+            parentEvidenceItemHandoffDecisionId: "OTHER_HANDOFF",
+          }),
+        },
+        w8aReason: "lineage_mismatch",
+        w8bReason: "internal_alpha_report_stop_not_ready",
+      },
+    ] as const;
+
+    for (const parityCase of cases) {
+      const { stop, result } = buildW8aW8bPair(parityCase.overrides);
+
+      expectInternalOnlyFailClosed(stop);
+      expectInternalOnlyFailClosed(result);
+      expect(stop.blockedReason ?? stop.damagedReason, parityCase.name).toBe(parityCase.w8aReason);
+      expect(result.blockedReason ?? result.damagedReason, parityCase.name).toBe(parityCase.w8bReason);
+    }
+  });
+
+  it("keeps W8-B fail-closed for W7-B2-only rejected states while W8-A remains an internal non-public stop owner", () => {
+    const cases = [
+      {
+        name: "missing bounded extraction",
+        overrides: { boundedEvidenceExtraction: null },
+        reason: "bounded_evidence_extraction_missing",
+      },
+      {
+        name: "non-runtime-owned boundary verdict execution",
+        overrides: { ownership: "not_owned" as const },
+        reason: "boundary_verdict_execution_not_runtime_owned",
+      },
+      {
+        name: "public-open boundary verdict execution",
+        overrides: {
+          execution: boundaryVerdictExecution({
+            publicCutoverStatus: "public_open" as BoundaryVerdictExecutionDecision["publicCutoverStatus"],
+          }),
+        },
+        reason: "boundary_verdict_execution_public_cutover_not_blocked",
+      },
+      {
+        name: "side-effect-open boundary verdict execution",
+        overrides: {
+          execution: boundaryVerdictExecution({
+            sideEffects: {
+              ...closedBoundaryVerdictSideEffects(),
+              publicSurfaceWritten: true as false,
+            },
+          }),
+        },
+        reason: "boundary_verdict_execution_side_effects_not_closed",
+      },
+      {
+        name: "lineage-mismatched cited EvidenceItem refs",
+        overrides: {
+          execution: boundaryVerdictExecution({
+            citedEvidenceItemRefs: ["UNKNOWN_EVIDENCE_ITEM"],
+          }),
+        },
+        reason: "cited_evidence_item_ref_mismatch",
+      },
+    ] as const;
+
+    for (const parityCase of cases) {
+      const { stop, result } = buildW8aW8bPair(parityCase.overrides);
+
+      expect(stop).toMatchObject({
+        status: "alpha_report_stop_created_not_report_ready",
+        publicPointerExposure: "forbidden",
+        publicCutoverStatus: "blocked_precutover",
+      });
+      expectInternalOnlyFailClosed(result);
+      expect(result.blockedReason ?? result.damagedReason, parityCase.name).toBe(parityCase.reason);
+    }
   });
 
   it("blocks accepted output when W7-B2 lacks runtime ownership or accepted state", () => {

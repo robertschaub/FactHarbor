@@ -201,7 +201,7 @@ export type InternalAlphaReportResultCandidate = {
     readonly triggerCondition: "accepted_runtime_owned_w7b2_output_supersedes_w8a_non_verdict_stop_candidate";
     readonly parityVerifierName:
       "internal_alpha_report_result_fail_closed_parity_for_blocked_and_damaged_parents";
-    readonly status: "pending";
+    readonly status: "parity_covered";
   };
   readonly approvalPointer: typeof INTERNAL_ALPHA_REPORT_RESULT_SOURCE_PACKAGE;
 };
@@ -830,7 +830,7 @@ function decision(
       triggerName: "merge_w8a_stop_owner_after_w8b_fail_closed_parity_covered",
       triggerCondition: "accepted_runtime_owned_w7b2_output_supersedes_w8a_non_verdict_stop_candidate",
       parityVerifierName: "internal_alpha_report_result_fail_closed_parity_for_blocked_and_damaged_parents",
-      status: "pending",
+      status: "parity_covered",
     },
     approvalPointer: INTERNAL_ALPHA_REPORT_RESULT_SOURCE_PACKAGE,
   };

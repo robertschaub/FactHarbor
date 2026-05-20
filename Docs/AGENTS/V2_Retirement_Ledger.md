@@ -47,9 +47,11 @@ normal approval gates.
 | V2-RL-010 | W4-G bounded corpus-text sidecar | keep | Lead Developer | EvidenceCorpus text-bearing record becomes the stable internal owner | Keep W4-G as parent text lineage for W5-E admission; merge sidecar into EvidenceCorpus storage/contract when extraction/report path is approved |
 | V2-RL-011 | W4-H bounded extraction-input packet | keep | Lead Developer | Approved extraction executor and W5-E admission consume the packet and own the stable input contract | Keep exact lineage checks; do not widen before downstream EvidenceItem/report owner review |
 | V2-RL-012 | W4-I execution-readiness denial | merge | Lead Developer | After W7-A/W8-A canonical downstream owners verify EvidenceItem/sufficiency lineage without direct W4-I dependence, quarantine or remove remaining W4-I core/sink state unless a reviewed package proves a still-required lineage role | X7-W5-G verified the W5-F route projection live with job `19f831aa36084ab6a2cee9e89698f87c`. X7-W5-H retires the standalone W4-I admin route and route test. W6-C did not import, read, call, or consume W4-I runtime/sink/provenance state directly. W4-I core eligibility logic, runtime ownership, provenance, and process-local sink are retained temporarily only for existing W5 lineage; do not add new W4-I consumers. |
-| V2-RL-013 | Boundary guard monolith test (`boundary-guard.test.ts`) | merge | Lead Developer | Guard sections are split into focused owners without losing coverage | Plan a test-structure split after current gates stabilize |
+| V2-RL-013 | Boundary guard monolith test (`boundary-guard.test.ts`) | merge | Lead Developer | Guard sections are split into focused owners without losing coverage | W8-C no-safe-split decision: the W7/W8 report-result guard is still interleaved with route, sink, product-chain, and adjacent W6/W7 ownership assertions; do not force a split until a focused package can move the whole cluster without coverage loss |
 | V2-RL-014 | V2 WIP/handoff volume | retire | Captain Deputy | Consolidated current-truth docs cover active decisions and old WIP is archived | Run docs consolidation after next bounded orchestration review |
 | V2-RL-015 | Captain Deputy / Steer-Co / reasoning-budget governance package | keep | Agents Supervisor | Operating model proves too heavy or review finds authority duplication | Bounded orchestration review checks scope and cost discipline |
+| V2-RL-016 | W7-A contract-only boundary/verdict candidate bridge | keep | Lead Developer | W7-B/W8-B own accepted and rejected parent validation without depending on the W7-A decision/lineage contract | W8-C actual result: keep. W7-A remains load-bearing for orchestrator chain assembly, W7-B execution input validation, W8-A stop construction, and W8-B lineage checks; do not delete or merge without a dedicated verifier-backed merge slice |
+| V2-RL-017 | W8-A internal Alpha report stop owner | merge | Lead Developer | W8-B fail-closed parity is covered and a later W7-A/W8-A merge slice can remove the stop helper without weakening rejected-parent behavior | W8-C actual result: parity covered in focused W8-A/W8-B tests and W8-B `w8aMergeTrigger.status` is `parity_covered`; keep W8-A as a non-public fail-closed compatibility helper until the W7-A dependency is merged or retired |
 
 ## Required Block In Future Packages
 
@@ -64,14 +66,15 @@ Debt accepted:
 
 ## Current Debt Sensor Snapshot
 
-Latest observed `npm run debt:sensors` state on 2026-05-20:
+Latest observed `npm run debt:sensors` state on 2026-05-20T21:10:18Z
+after W8-C implementation:
 
-- V2 source: `41734` lines over advisory threshold `30000`
-- V2 tests: `46867` lines over advisory threshold `40000`
-- Boundary guard: `10131` lines over advisory threshold `6000`
-- Docs/WIP markdown files: `213` over advisory threshold `180`
-- Handoff markdown files: `727` over advisory threshold `650`
-- Net mechanism increases: `14`
+- V2 source: `48683` lines over advisory threshold `30000`
+- V2 tests: `53926` lines over advisory threshold `40000`
+- Boundary guard: `11598` lines over advisory threshold `6000`
+- Docs/WIP markdown files: `242` over advisory threshold `180`
+- Handoff markdown files: `763` over advisory threshold `650`
+- Net mechanism increases: `18`
 - V2 consolidation-marker review files: `5`
 
 The snapshot is a steering signal. It does not block work by itself.
@@ -82,7 +85,8 @@ The snapshot is a steering signal. It does not block work by itself.
    hidden-only denial layer unless Steer-Co grants an exception.
 2. Merge or quarantine W4 readiness/shell/denial chain pieces once a stable
    EvidenceCorpus/extraction owner exists.
-3. Split or consolidate the oversized boundary guard after the next V2 gate is
-   stable.
+3. Split or consolidate the oversized boundary guard only through a focused
+   coverage-preserving package; W8-C found no safe low-risk split for the
+   interleaved W7/W8 report-result guard cluster.
 4. Archive or consolidate stale WIP/handoff material after the bounded
    orchestration review.

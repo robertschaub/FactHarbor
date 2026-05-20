@@ -10509,6 +10509,7 @@ describe("analyzer-v2 boundary guard", () => {
       "post_execution_cited_refs",
       "w7b2_exposes_post_execution_cited_refs_but_not_full_parent_input_packet",
       "merge_w8a_stop_owner_after_w8b_fail_closed_parity_covered",
+      "parity_covered",
       "admin_structured_candidate_no_source_text",
     ]) {
       if (!candidateContent.includes(requiredText)) {
