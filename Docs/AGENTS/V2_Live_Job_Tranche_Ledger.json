@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 8,
+    "currentRemaining": 7,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
@@ -192,6 +192,17 @@
         "count": 1,
         "remainingAfter": 7,
         "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_W8-D_W8B_W8C_Product_Route_Canary_Package.md",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W8-F-W8E-UPSTREAM-STOP-ATTRIBUTION-CANARY",
+        "jobId": "5a9f11c1b3e34be18b6bf49ed6fc4d65",
+        "classification": "PASS_X7_W8_F_UPSTREAM_STOP_ATTRIBUTION_CANARY",
+        "implementationCommit": "75c7a786e073db2f099864837ce537d3a859697c",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 7,
+        "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_W8-F_W8E_Attribution_Product_Route_Canary_Package.md",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

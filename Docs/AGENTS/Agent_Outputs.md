@@ -37,6 +37,12 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W8-F_Attribution_Canary_Package.md
 
 ---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W8-F Attribution Canary Result -- [Significant] [open-items: yes]
+**For next agent:** W8-F ran one authorized `claimboundary-v2` product-route canary, job `5a9f11c1b3e34be18b6bf49ed6fc4d65`, on runtime `75c7a786e073db2f099864837ce537d3a859697c`. Classification is `PASS_X7_W8_F_UPSTREAM_STOP_ATTRIBUTION_CANARY`: W8-B route was reachable/no-store/text-free, public V2 stayed damaged/precutover with no W8-E/W8-B leak, and attribution identified `firstIncompleteStage = sufficiency_assessment` with W6-C `sufficiency_assessment_damaged` / `schema_validation_failed`.
+**Warnings:** This is diagnostic success, not report-quality success. Remaining live-job budget is `7`. No second W8-F canary is authorized. Next package should be narrow W6-C/W6-C2 sufficiency-assessment schema/contract repair; prompt/model/config/schema/UCM/gateway edits remain Captain-gated unless explicitly approved in that package.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W8-F_Attribution_Canary_Result.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | V2 Stop-Line And Executable Plan -- [Significant] [open-items: yes]
 **For next agent:** V2 implementation should pause now. W6-A is review-only accepted; amended W6-B package needs short confirmation before implementation. If confirmed, implement only `EvidenceItemHandoffDecision -> SufficiencyIntakeDecision` (`v2.evidence-lifecycle.sufficiency-intake.w6b`) as contract/test-only. Read `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` and `Docs/WIP/2026-05-20_V2_Slice_W6-B_EvidenceItem_Handoff_To_Sufficiency_Intake_Review_Package.md`.
 **Warnings:** W5-G proves hidden EvidenceItem handoff reachability, not report readiness. No public cutover, V1 cleanup, prompt/model/config/schema behavior, provider/parser/ACS/direct URL widening, source-reliability weighting, deterministic semantic logic, fixed epistemic formulas, route/orchestrator wiring, W4-I direct reads, parent spreading/cloning, text/language/semantic branching, or hidden-only machinery without retirement impact is authorized.
