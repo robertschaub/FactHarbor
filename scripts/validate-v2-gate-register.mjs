@@ -35,10 +35,13 @@ const X7_W5_A_APPROVAL_ANCHOR =
   "ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-A_Corrective_Recovery_Approval.md#approval-anchor";
 const X7_W5_B_APPROVAL_ANCHOR =
   "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@Docs/AGENTS/Handoffs/2026-05-19_Captain_X7-W5-B_Claim_Understanding_Activation_Approval.md#approval-anchor";
+const W6_C_APPROVAL_ANCHOR =
+  "ANALYZER_V2_W6_C_CAPTAIN_APPROVAL@Docs/WIP/2026-05-20_V2_Slice_W6-C_Sufficiency_Assessment_Implementation_Approval_Package.md@fdbe42dc#captain-approved-w6-c";
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
   ["ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL", X7_W5_A_APPROVAL_ANCHOR],
   ["ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL", X7_W5_B_APPROVAL_ANCHOR],
+  ["ANALYZER_V2_W6_C_CAPTAIN_APPROVAL", W6_C_APPROVAL_ANCHOR],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -55,6 +58,10 @@ const CACHE_POLICY_BY_SELECTOR = {
   evidenceExtractionCache: {
     policyId: "v2.semantic.evidence-extraction.x7w5",
     approvalSource: X7_W5_A_APPROVAL_ANCHOR,
+  },
+  evidenceSufficiencyCache: {
+    policyId: "v2.semantic.evidence-sufficiency.w6c",
+    approvalSource: W6_C_APPROVAL_ANCHOR,
   },
   sourceAware: {
     policyId: "v2.semantic.source-aware",
@@ -539,6 +546,9 @@ function cachePolicyForTask(objectLiteral) {
   if (booleanProperty(objectLiteral, "evidenceExtractionCache")) {
     return CACHE_POLICY_BY_SELECTOR.evidenceExtractionCache;
   }
+  if (booleanProperty(objectLiteral, "evidenceSufficiencyCache")) {
+    return CACHE_POLICY_BY_SELECTOR.evidenceSufficiencyCache;
+  }
   if (booleanProperty(objectLiteral, "sourceAware")) {
     return CACHE_POLICY_BY_SELECTOR.sourceAware;
   }
@@ -562,6 +572,9 @@ function approvalIdFromSource(source) {
   }
   if (source.startsWith("ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL@")) {
     return "ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL";
+  }
+  if (source.startsWith("ANALYZER_V2_W6_C_CAPTAIN_APPROVAL@")) {
+    return "ANALYZER_V2_W6_C_CAPTAIN_APPROVAL";
   }
   return source;
 }

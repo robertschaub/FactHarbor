@@ -1,0 +1,19 @@
+---
+### 2026-05-20 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 W6-C Sufficiency Assessment Implementation
+**Task:** Implement the approved W6-C hidden/internal sufficiency assessment execution owner over W6-B intake plus W5 EvidenceItems.
+**Files touched:** `apps/web/src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.ts`; `apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.test.ts`; `apps/web/src/lib/analyzer-v2/gateway/approval-records.ts`; `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts`; `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`; `apps/web/src/lib/analyzer-v2/gateway/policy.ts`; `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`; `Docs/AGENTS/V2_Gate_Register.json`; `scripts/validate-v2-gate-register.mjs`; `Docs/AGENTS/Agent_Outputs.md`; `Docs/AGENTS/index/handoff-index.json`.
+**Key decisions:** W6-C is implemented as one hidden/internal `SufficiencyAssessmentDecision` owner with decision version `v2.evidence-lifecycle.sufficiency-assessment.w6c`. It accepts only matching W6-B `SufficiencyIntakeDecision` plus accepted W5 `BoundedEvidenceExtractionDecision`, admits EvidenceItem `statement` text only into the provider input packet, projects evidence-scope/provenance/source lineage as hash/length/structural metadata, and returns a default text-free admin decision with sufficiency result status/hash and next-action enum only. The gateway/model/cache registry now mirrors the Captain-approved W6-C execution authority while the V2 gate register remains audit-only.
+**Open items:** No live job was run or authorized. Product/orchestrator/public route wiring remains closed. W6-C currently expects a caller-provided rendered prompt/provider callback inside approved test/runtime owner boundaries; any product wiring, prompt rendering owner change, or canary requires a separate reviewed package.
+**Warnings:** Do not expose EvidenceItem statements, source text, prompt text, rendered prompt, provider payload, sufficiency rationale, or input packets in public/default-admin/log/error surfaces. Do not add report/verdict/warning/confidence behavior, cache IO, Source Reliability/storage, provider expansion, parser execution, ACS/direct URL, prompt/schema text edits, V1 reuse, or V1 cleanup under this package.
+**For next agent:** W6-C is verifier-clean locally. The next bounded step should be a reviewed package, not implicit product wiring: decide whether to project/observe W6-C through an existing hidden route, prepare a canary package, or move toward the next report-value stage only after Steer-Co confirms scorecard/retirement impact and live-job budget.
+**Learnings:** Not appended to `Role_Learnings.md`; no durable role learning beyond the handoff warnings.
+
+**Verification:**
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` -> pass, 3 files / 99 tests.
+- `npm run validate:v2-gates` -> pass.
+- `node scripts/validate-v2-gate-register.mjs --self-test` -> pass.
+- `npm run debt:sensors` -> `advisory_warn` with known V2 source/test/boundary/docs footprint and consolidation-marker warnings.
+- `npm -w apps/web run build` -> pass.
+- `git diff --check` -> pass.
+
+**DEBT-GUARD RESULT:** W6-C implementation was not a bugfix. One failed verifier recovery used compact debt-guard: `validate:v2-gates` lacked W6-C approval-id mapping after the new register mirror. Chosen option: amend existing `approvalIdFromSource()` in `scripts/validate-v2-gate-register.mjs`. Rejected path: changing register ids to full approval-source strings. Net mechanisms: unchanged. Residual debt: gate-register validator remains intentionally brittle and must be updated for each executable gate approval.

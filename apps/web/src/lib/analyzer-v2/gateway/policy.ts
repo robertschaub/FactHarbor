@@ -7,10 +7,12 @@ import {
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
@@ -39,6 +41,7 @@ export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "claim_understanding_gate1",
   "evidence_query_planning",
   "evidence_extraction",
+  "evidence_sufficiency",
 ] as const satisfies readonly AnalyzerV2GatewayTaskId[];
 
 function blockedPrompt(
@@ -86,6 +89,7 @@ function task(params: {
   claimUnderstandingCache?: boolean;
   queryPlanningCache?: boolean;
   evidenceExtractionCache?: boolean;
+  evidenceSufficiencyCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
@@ -106,6 +110,8 @@ function task(params: {
       ? ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY
       : params.evidenceExtractionCache
       ? ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY
+      : params.evidenceSufficiencyCache
+      ? ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY
       : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
@@ -190,11 +196,19 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "evidence_sufficiency",
     owner: "evidence_lifecycle",
+    status: "executable",
     modelTask: "context_refinement",
     promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_sufficiency,
     outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_sufficiency,
-    sourceAware: true,
-    notes: "Owns V2 Evidence Lifecycle sufficiency assessment after prompt/model/cache policy approval.",
+    requiredVariables: [
+      "claimContractJson",
+      "taskPolicySnapshotJson",
+      "evidenceCorpusJson",
+      "sourceAcquisitionTraceJson",
+    ],
+    promptApproval: ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
+    evidenceSufficiencyCache: true,
+    notes: "Owns hidden/internal W6-C sufficiency assessment over W5 EvidenceItem statements after prompt/model/cache policy approval.",
   }),
   task({
     id: "boundary_clustering",

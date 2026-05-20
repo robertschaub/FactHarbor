@@ -185,6 +185,10 @@ const evidenceLifecycleSufficiencyIntakePath = path.resolve(
   evidenceLifecycleSufficiencyRoot,
   "sufficiency-intake.ts",
 );
+const evidenceLifecycleSufficiencyAssessmentPath = path.resolve(
+  evidenceLifecycleSufficiencyRoot,
+  "sufficiency-assessment.ts",
+);
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
 const evidenceLifecycleSourceMaterialLocatorMaterializationPath = path.resolve(
@@ -9176,25 +9180,85 @@ describe("analyzer-v2 boundary guard", () => {
     ]);
   });
 
-  it("keeps W6-B sufficiency intake contract-only and isolated from runtime/product surfaces", () => {
+  it("keeps W6 sufficiency owners isolated, redacted by default, and inside approved dependencies", () => {
     const sufficiencyFiles = collectFiles(evidenceLifecycleSufficiencyRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     );
     const violations: string[] = [];
 
     expect(sufficiencyFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake.ts",
     ]);
     expect(existsSync(evidenceLifecycleSufficiencyIntakePath)).toBe(true);
+    expect(existsSync(evidenceLifecycleSufficiencyAssessmentPath)).toBe(true);
 
-    const approvedImports = new Map<string, Set<string>>([
+    const approvedImportsByFile = new Map<string, Map<string, Set<string>>>([
       [
-        "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
-        new Set(["EvidenceItemHandoffDecision", "EVIDENCE_ITEM_HANDOFF_DECISION_VERSION"]),
+        toPosix(evidenceLifecycleSufficiencyIntakePath),
+        new Map<string, Set<string>>([
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
+            new Set(["EvidenceItemHandoffDecision", "EVIDENCE_ITEM_HANDOFF_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/util",
+            new Set(["sha256Json"]),
+          ],
+        ]),
       ],
       [
-        "@/lib/analyzer-v2/util",
-        new Set(["sha256Json"]),
+        toPosix(evidenceLifecycleSufficiencyAssessmentPath),
+        new Map<string, Set<string>>([
+          [
+            "node:crypto",
+            new Set(["createHash"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
+            new Set(["BoundedEvidenceExtractionDecision"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",
+            new Set(["SufficiencyIntakeDecision", "SUFFICIENCY_INTAKE_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas",
+            new Set(["EvidenceSufficiencyResultSchema"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types",
+            new Set([
+              "EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION",
+              "EVIDENCE_TASK_PROMPT_SECTION_IDS",
+              "EvidenceSufficiencyAssessment",
+              "EvidenceLifecycleTaskBlockedReason",
+              "EvidenceLifecycleTaskDamagedReason",
+              "EvidenceSufficiencyResult",
+              "ExtractedEvidenceItemContract",
+            ]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/approval-records",
+            new Set(["ANALYZER_V2_W6_C_CAPTAIN_APPROVAL"]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/policy",
+            new Set(["canExecuteAnalyzerV2GatewayTask"]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/types",
+            new Set(["AnalyzerV2CacheDecision", "AnalyzerV2CacheDimension", "AnalyzerV2TaskModelPolicy"]),
+          ],
+          [
+            "@/lib/analyzer-v2/run-context",
+            new Set(["getPipelineRunGatewayTask", "getPipelineRunTaskModelPolicy", "PipelineRunContext"]),
+          ],
+          [
+            "@/lib/analyzer-v2/util",
+            new Set(["sha256Json"]),
+          ],
+        ]),
       ],
     ]);
 
@@ -9202,6 +9266,8 @@ describe("analyzer-v2 boundary guard", () => {
       const sourceFile = parseSource(sourcePath);
       const sourceContent = readFileSync(sourcePath, "utf8");
       const relativePath = toPosix(path.relative(webRoot, sourcePath));
+      const approvedImports = approvedImportsByFile.get(toPosix(sourcePath)) ?? new Map();
+      const isAssessmentSource = sourcePath === evidenceLifecycleSufficiencyAssessmentPath;
 
       for (const importBinding of collectImportBindings(sourceFile)) {
         const approvedNames = approvedImports.get(importBinding.specifier);
@@ -9240,7 +9306,7 @@ describe("analyzer-v2 boundary guard", () => {
         if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
           violations.push(`${relativePath} imports cache governance ${specifier}`);
         }
-        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+        if (!isAssessmentSource && isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
           violations.push(`${relativePath} imports gateway policy ${specifier}`);
         }
         if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
@@ -9287,18 +9353,20 @@ describe("analyzer-v2 boundary guard", () => {
           "/config-",
           "/configs/",
         ]) {
-          if (toPosix(specifier).includes(forbiddenSpecifierFragment)) {
+          if (
+            toPosix(specifier).includes(forbiddenSpecifierFragment) &&
+            !(isAssessmentSource && forbiddenSpecifierFragment === "/gateway")
+          ) {
             violations.push(`${relativePath} imports forbidden sufficiency surface ${specifier}`);
           }
         }
       }
 
-      for (const forbiddenText of [
+      const forbiddenTexts = [
         "...evidenceItemHandoff",
         "...parent",
         "JSON.stringify(evidenceItemHandoff",
         "JSON.stringify(parent",
-        "sufficiencyLlmCalled: true",
         "reportGenerated: true",
         "verdictGenerated: true",
         "warningGenerated: true",
@@ -9316,14 +9384,18 @@ describe("analyzer-v2 boundary guard", () => {
         "reportMarkdown",
         "sourceText:",
         "inputText:",
-      ]) {
+      ];
+      if (!isAssessmentSource) {
+        forbiddenTexts.push("sufficiencyLlmCalled: true");
+      }
+      for (const forbiddenText of forbiddenTexts) {
         if (sourceContent.includes(forbiddenText)) {
           violations.push(`${relativePath} contains forbidden sufficiency text ${forbiddenText}`);
         }
       }
 
       for (const location of collectDirectFetchCallLocations(sourceFile)) {
-        violations.push(`W6-B sufficiency intake makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+        violations.push(`W6 sufficiency owner makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
       }
     }
 
@@ -9336,8 +9408,8 @@ describe("analyzer-v2 boundary guard", () => {
         violations.push(`${relativePath} creates a W6-B app/public route surface`);
       }
       for (const specifier of collectModuleSpecifiers(parseSource(publicPath))) {
-        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-intake")) {
-          violations.push(`${relativePath} imports W6-B sufficiency intake ${specifier}`);
+        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-")) {
+          violations.push(`${relativePath} imports W6 sufficiency owner ${specifier}`);
         }
       }
     }
@@ -9348,8 +9420,8 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RunnerIngressPath,
     ]) {
       for (const specifier of collectModuleSpecifiers(parseSource(productPath))) {
-        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-intake")) {
-          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W6-B sufficiency intake ${specifier}`);
+        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-")) {
+          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W6 sufficiency owner ${specifier}`);
         }
       }
     }

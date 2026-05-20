@@ -4602,3 +4602,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This is not W6-C implementation approval. Do not implement W6-C, run live jobs, edit prompt/model/config/schema/UCM/gateway state, expose public/API/UI/report/export/compat behavior, add report/verdict/warning/confidence behavior, use Source Reliability/truth/confidence formulas, widen provider/parser/ACS/direct URL behavior, touch V1, or directly consume W4-I state without explicit Captain approval.
 **Verification:** `npm run debt:sensors` returned `advisory_warn` at `2026-05-20T14:04:55.826Z` with known V2 footprint/docs/guard warnings; `git diff --check` passed before reviewer calls. No source verifier, build, or live job was run because this is a review package only.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-C_Approval_Package.md
+
+---
+### 2026-05-20 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 W6-C Sufficiency Assessment Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented W6-C as one hidden/internal `SufficiencyAssessmentDecision` owner at `apps/web/src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.ts`, consuming W6-B intake plus accepted W5 EvidenceItems. EvidenceItem statements are admitted only to the provider input packet; evidence-scope/provenance/source lineage are hash/length/structural projections; default decision/admin projection remains text-free.
+**Warnings:** No live job was run. Product/orchestrator/public route wiring remains closed. Do not add report/verdict/warning/confidence behavior, cache IO, SR/storage, provider expansion, parser execution, ACS/direct URL, prompt/schema text edits, V1 reuse, or V1 cleanup under this package.
+**Verification:** Focused W6 sufficiency + boundary tests passed (3 files / 99 tests); `npm run validate:v2-gates` passed; gate-register self-test passed; `npm run debt:sensors` returned known `advisory_warn`; `npm -w apps/web run build` passed; `git diff --check` passed.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W6-C_Sufficiency_Assessment_Implementation.md
