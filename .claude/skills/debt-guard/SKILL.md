@@ -48,6 +48,30 @@ Do not skip `/debt-guard` because the fix is small. Small fixes use Compact Path
 
 For analysis-pipeline fixes, apply `AGENTS.md` §Analysis Pipeline Fix Protocol priority: quality first, then speed, then cost.
 
+## Balanced Risk Mitigation For New Safeguards
+
+Use the same decision discipline when adding safety, containment, governance,
+diagnostic, proof, guard, fallback, route, or hidden-artifact mechanisms, even
+when there is no failing test yet.
+
+Before adding a safeguard, compare whether the named risk is better handled by:
+
+1. amending an existing mechanism;
+2. narrowing an existing mechanism;
+3. deleting obsolete machinery;
+4. quarantining a temporary or speculative path;
+5. adding a new mechanism.
+
+Adding new machinery is justified only when existing mechanisms cannot mitigate
+the risk effectively with lower net complexity. A good safeguard is
+proportionate, owned, verifiable, and has a merge, stabilization, or retirement
+path. Do not underbuild real safety, and do not accumulate permanent scaffolding
+for speculative risks.
+
+For substantial safety/governance additions, record the decision result
+(`amend`, `narrow`, `delete`, `quarantine`, or `add`), rejected alternatives,
+net-complexity impact, verifier, residual risk, and removal or merge trigger.
+
 ## Required Path Selection
 
 Before editing, choose exactly one path:

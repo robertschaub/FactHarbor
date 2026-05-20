@@ -156,6 +156,22 @@ Bugfixes should stay small and self-contained. If the required fix expands into 
 
 Trivial single-site bugfixes may use `/debt-guard`'s compact path, but they still must load and apply the skill before editing.
 
+### Balanced Risk Mitigation
+
+Use `/debt-guard`'s balanced decision discipline before adding safety,
+containment, governance, diagnostic, proof, guard, fallback, route, or
+hidden-artifact mechanisms, even when the work is not a bugfix.
+
+Before adding new machinery, compare whether the named risk is better handled by
+amending, narrowing, deleting, or quarantining an existing mechanism. Add a new
+mechanism only when existing mechanisms cannot mitigate the risk effectively
+with lower net complexity.
+
+Risk mitigation should be proportionate and maintainable: it must name the
+concrete risk, owner, verifier, stop condition, net-complexity impact, and
+merge/stabilization/removal path. Do not underbuild real safety, and do not
+accumulate permanent scaffolding for speculative risks.
+
 ### Active Debt-Guard Control
 
 In Captain Deputy workstreams, `/debt-guard` is actively controlled rather than

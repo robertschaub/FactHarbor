@@ -31,12 +31,12 @@ machinery, it requires a Steer-Co exception under the V2 Consolidation Gate.
 Safety, containment, governance, and diagnostic work must be proportionate to a
 named risk and must preserve forward progress toward report-quality value.
 
-This is the package-level counterpart to `/debt-guard`. Before adding a safety
-mechanism, reviewers must compare whether the risk is better handled by amending
-an existing mechanism, narrowing or deleting obsolete machinery, quarantining a
-temporary path, or adding a new mechanism. Adding new machinery is justified
-only when the existing path cannot carry the risk mitigation with lower net
-complexity.
+This applies the repository-wide `/debt-guard` Balanced Risk Mitigation rule to
+V2 packages. Before adding a safety mechanism, reviewers must compare whether
+the risk is better handled by amending an existing mechanism, narrowing or
+deleting obsolete machinery, quarantining a temporary path, or adding a new
+mechanism. Adding new machinery is justified only when the existing path cannot
+carry the risk mitigation with lower net complexity.
 
 A mitigation is well-balanced when it:
 
