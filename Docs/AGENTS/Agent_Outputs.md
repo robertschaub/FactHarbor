@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-C4 Sufficiency Prompt Repair Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W6-C4_Sufficiency_Prompt_Contract_Repair_Package.md` after W6-C3 captured exact schema issue paths. Claude Opus reviewed as `APPROVE_WITH_AMENDMENTS`; amendments were applied. Recommended repair: W6-C prompt-contract enumeration for missing-evidence dimension/materiality, blocked/damaged reasons, and task-event fields; no schema relaxation.
+**Warnings:** W6-C4 implementation edits the prompt and remains approval-gated. Package preparation authorizes no prompt/model/config/schema/UCM/gateway implementation, public behavior, second canary, parser/cache/SR/storage, provider expansion, ACS/direct URL, or V1 work.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-C4_Sufficiency_Prompt_Repair_Package.md
+
+---
 ### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W6-C3 Sufficiency Diagnostics Canary -- [Significant] [open-items: yes]
 **For next agent:** Ran exactly one authorized W6-C3 canary, job `0456086280104979b74da724d9d58308`, on runtime `132d90ae141a72f2a492e8acf936d587229b0a03`. Classified it as `PASS_X7_W6_C3_SUFFICIENCY_SCHEMA_DIAGNOSTICS_CAPTURED`: public V2 stayed damaged/precutover; hidden W8-B stayed internal/admin-only and text-free by default; W6-C diagnostics captured invalid enum values under `sufficiencyAssessment.missingEvidenceDimensions.*` and integrity event shape drift at `integrityEvents.0`.
 **Warnings:** W6-C3 authorizes no second canary and no direct prompt/model/config/schema/UCM/gateway edit. Next step is a narrow W6-C4 prompt/contract repair review package based on the captured issue paths.

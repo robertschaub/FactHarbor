@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T22:52:33.916Z",
-  "count": 772,
+  "generatedAt": "2026-05-20T23:00:16.648Z",
+  "count": 773,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15936,6 +15936,28 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Captain Deputy V2 W6-C3 Sufficiency Diagnostics Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W6-C4_Sufficiency_Prompt_Repair_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain_deputy",
+        "steer-co"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "w6-c4",
+        "sufficiency",
+        "prompt",
+        "repair",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-20_V2_Slice_W6-C4_Sufficiency_Prompt_Contract_Repair_Package.md"
+      ],
+      "summary": "If approved, implement inside the package envelope. Use the W6-C3 captured paths as the falsifiable target: no recurrence of those eight paths after one canary. If schema-source-derived prompt tests require exporting existing Zod enum constants, keep it export-only with no literal or validation beha"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W6-C_Approval_Package.md",
