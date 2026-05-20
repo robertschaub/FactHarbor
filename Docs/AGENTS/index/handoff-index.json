@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T19:18:18.645Z",
-  "count": 757,
+  "generatedAt": "2026-05-20T19:34:46.913Z",
+  "count": 758,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16027,6 +16027,25 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Captain Deputy V2 W7-B / W8-B Steer-Co Review Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W7-C_Product_Chain_Integration_Review_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w7-c",
+        "product",
+        "chain",
+        "integration",
+        "review",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 W7-C Product Chain Integration Review Package"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W8-A_Review_Package.md",
