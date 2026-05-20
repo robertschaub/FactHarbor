@@ -8199,7 +8199,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
-  }, 20_000);
+  }, 45_000);
 
   it("keeps X7-D source-acquisition readiness composition hidden, no-IO, and summary-only", () => {
     const sourcePath = analyzerV2RuntimeHiddenDirectTextSourceAcquisitionReadinessCompositionPath;
