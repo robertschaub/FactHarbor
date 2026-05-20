@@ -4525,3 +4525,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Ran exactly one W5-E3 canary, job `b827c14c474d4a12b4f4e9c876e5cb12`, on runtime commit `c2ad605e27a97ca9d9f5602aa719035d4c70d157`. It passed: public V2 stayed pre-cutover/damaged; W3-B default admin output stayed redacted; W5 accepted `2` EvidenceItems; W5-E admitted `2` with matching hash/byte-length arrays and no block/damage reason.
 **Warnings:** Remaining live-job budget is `1`. Do not run another W5-E canary. Do not claim public report quality yet. Next package should address evidence-handoff convergence and the W4-I route merge/removal trigger.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E3_Canary_Result.md
+
+---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 X7-W5-F Convergence Review Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-F_EvidenceItem_Handoff_Convergence_Review_Package.md`. Recommendation: define the next EvidenceItem handoff owner first, then merge/remove or explicitly retain W4-I route surface with owner/trigger. No implementation or live job is authorized by the package.
+**Warnings:** Do not spend the final live-job slot on another W5-E rerun. Do not delete W4-I before successor ownership exists. Do not jump to report/verdict readiness yet.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-F_Convergence_Review_Package.md
