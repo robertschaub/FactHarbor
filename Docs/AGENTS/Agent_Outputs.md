@@ -7,6 +7,13 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-D Evidence Extraction Prompt Contract Live Result -- [Significant] [open-items: yes]
+**For next agent:** W5-D is closed as `PASS_X7_W5_D_EVIDENCE_EXTRACTION_SCHEMA_REPAIR_VERIFIED`. Valid job `08291671a7d44a74b9fc048b6a32a7b5` ran `claimboundary-v2` on commit/runtime `76984bca20840c3c2e9c02449a0e481ec151a02b` and reached hidden CU -> Query Planning -> W2 -> W3-B -> W4-G/H/I -> W5; W5 completed with `extractionResultStatus: accepted`, `extractionStatus: evidence_extracted`, `evidenceItemCount: 2`, and `schemaDiagnostics: null`.
+**Warnings:** Wrong-variant job `ee086cd0e9b44c3ea88c388e96f2eaf6` was cancelled and is not V2 evidence; it still consumed one live-job slot. Public V2 remains damaged/precutover with zero public evidence items, no source-text leak, and no report/verdict/warning/confidence behavior. Remaining live-job tranche is `4`; no second W5-D canary is authorized.
+**Learnings:** Hidden-chain conclusions must use `claimboundary-v2` submissions and persisted authenticated artifact routes. W5-C diagnostics can now be folded or quarantined, and W4-I/W4-chain merge/retirement planning is unblocked in principle because W5 produced accepted hidden EvidenceItems.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md
+
+---
 ### 2026-05-19 | Agents Supervisor | Codex (GPT-5.5) | V2 Authority Matrix And Review Timeout Hygiene -- [Standard] [open-items: no]
 **For next agent:** Restored the missing Agents Supervisor progress/quality review handoff that `Agent_Outputs.md` already referenced, added the compact Captain Deputy authority matrix, and formalized reviewer quorum/timeout/fallback rules in shared collaboration rules plus Captain Deputy/Steer-Co runtime skills.
 **Warnings:** This is process hygiene only. It authorizes no implementation, live jobs, prompt/model/config/schema changes, public behavior, parser/cache/SR/storage/provider/ACS/V1 work, or V2 scope expansion.
@@ -4445,3 +4452,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Marked the process items previously classified as "do not address now" in `Docs/STATUS/Backlog.md`: `V2-ORCH-HANDOFF-PRUNE`, `V2-ORCH-GUARD-SPLIT`, and `V2-ORCH-DEBT-SENSOR-BASELINE`. These are now visible backlog items but explicitly deferred until the active W5 evidence-extraction value path stabilizes or Captain pauses implementation.
 **Warnings:** Do not pull these into the current W5 hot path unless guard size/timeouts become an actual verifier blocker or Captain explicitly asks for cleanup. The intent is to prevent losing the items, not to redirect the implementation team away from EvidenceItem value validation.
 **Learnings:** Deferred orchestration debt should be tracked in the canonical backlog with explicit activation triggers; otherwise teams either forget it or prematurely interrupt active value validation.
+
+---
+### 2026-05-20 | Senior Developer | Codex (GPT-5.5) | Daily Bug Scan No Confirmed Recent Bug -- [Standard] [open-items: yes]
+**For next agent:** Scanned commits since `2026-05-19T20:20:13.444Z` through HEAD `76984bca20840c3c2e9c02449a0e481ec151a02b`. Code-bearing commits reviewed were `68cbae32d0343bed2fcb273c3e4bc0dd646e520e` (W5 schema diagnostics and hidden artifact route) and `76984bca20840c3c2e9c02449a0e481ec151a02b` (W5 prompt contract alignment). The apparent retry concern was skipped because the approved W5 policy still requires `maxCalls === 1` and `schemaRetryCount === 0`.
+**Verification:** Focused W5 extraction/artifact/prompt-contract tests passed (4 files / 19 tests); `npm -w apps/web run build` passed; worktree stayed clean. `npm run debt:sensors` returned `advisory_warn` only.
+**Warnings:** Debt sensor warnings are the existing V2/test/docs footprint, boundary-guard size, debt-guard telemetry, and consolidation-marker advisories. No concrete commit-backed bug had enough evidence for a source patch.

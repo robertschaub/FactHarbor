@@ -183,4 +183,4 @@ Verifier results:
 - `npm -w apps/web run build`: passed.
 - `git diff --check`: passed.
 
-Live jobs: none run for W5-D. A later W5-D canary still requires explicit Captain authorization, committed/refreshed runtime, clean status, and the pass/stop criteria above.
+Live result: `Docs/WIP/2026-05-20_V2_Slice_X7-W5-D_Evidence_Extraction_Prompt_Contract_Live_Result.md` classifies the valid W5-D canary as `PASS_X7_W5_D_EVIDENCE_EXTRACTION_SCHEMA_REPAIR_VERIFIED`. Job `08291671a7d44a74b9fc048b6a32a7b5` ran `claimboundary-v2` on runtime `76984bca20840c3c2e9c02449a0e481ec151a02b` and W5 completed with `extractionResultStatus: accepted`, `extractionStatus: evidence_extracted`, `evidenceItemCount: 2`, and `schemaDiagnostics: null`. Wrong-variant job `ee086cd0e9b44c3ea88c388e96f2eaf6` was cancelled and is not V2 evidence. No second W5-D canary is authorized.
