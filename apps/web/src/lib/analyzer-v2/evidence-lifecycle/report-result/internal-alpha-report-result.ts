@@ -176,6 +176,7 @@ export type InternalAlphaReportResultUpstreamStopAttribution = {
       readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
       readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
       readonly admittedEvidenceItemCount: SufficiencyAssessmentDecision["admittedEvidenceItemCount"];
+      readonly schemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
     };
     readonly boundaryVerdictCandidate: {
       readonly status: BoundaryVerdictCandidateDecision["status"] | null;
@@ -301,6 +302,7 @@ type ParentProjection = {
   readonly sufficiencyAssessmentParentW5DecisionId: string | null;
   readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
+  readonly sufficiencyAssessmentSchemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
   readonly boundaryVerdictCandidateDecisionId: string | null;
   readonly boundaryVerdictCandidateVersion: typeof BOUNDARY_VERDICT_CANDIDATE_DECISION_VERSION | null;
   readonly boundaryVerdictCandidateStatus: BoundaryVerdictCandidateDecision["status"] | null;
@@ -436,6 +438,7 @@ function projectParents(input: {
     sufficiencyAssessmentParentW5DecisionId: input.sufficiencyAssessment?.parentW5DecisionId ?? null,
     sufficiencyResultStatus: input.sufficiencyAssessment?.sufficiencyResultStatus ?? null,
     reportStopRecommendation: input.sufficiencyAssessment?.reportStopRecommendation ?? null,
+    sufficiencyAssessmentSchemaDiagnostics: input.sufficiencyAssessment?.executionTelemetry?.schemaDiagnostics ?? null,
     boundaryVerdictCandidateDecisionId: input.boundaryVerdictCandidate?.decisionId ?? null,
     boundaryVerdictCandidateVersion:
       input.boundaryVerdictCandidate?.decisionVersion === BOUNDARY_VERDICT_CANDIDATE_DECISION_VERSION
@@ -749,6 +752,7 @@ function upstreamStopAttribution(
         sufficiencyResultStatus: projection.sufficiencyResultStatus,
         reportStopRecommendation: projection.reportStopRecommendation,
         admittedEvidenceItemCount: projection.sufficiencyAssessmentAdmittedEvidenceItemCount,
+        schemaDiagnostics: projection.sufficiencyAssessmentSchemaDiagnostics,
       },
       boundaryVerdictCandidate: {
         status: projection.boundaryVerdictCandidateStatus,

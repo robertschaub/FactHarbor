@@ -165,6 +165,33 @@ function sufficiencyAssessment(
   } as SufficiencyAssessmentDecision;
 }
 
+function sufficiencySchemaDiagnostics(): NonNullable<
+  SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"]
+> {
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3",
+    contractName: "EvidenceSufficiencyResultSchema",
+    contractVersion: "v2.evidence_sufficiency_assessment.0",
+    outputParseStatus: "parsed",
+    failureCategory: "schema_validation",
+    issueCount: 2,
+    issues: [
+      { path: ["integrityEvents", "0", "type"], code: "invalid_type" },
+      { path: ["sufficiencyAssessment", "rationale"], code: "invalid_type" },
+    ],
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger:
+      "remove_or_fold_into_stable_w6c_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary",
+  };
+}
+
 function closedBoundaryVerdictCandidateSideEffects(): BoundaryVerdictCandidateDecision["sideEffects"] {
   return {
     boundaryLlmCalled: false,
@@ -655,6 +682,44 @@ describe("W8-B internal Alpha report-result candidate", () => {
         },
       },
     });
+  });
+
+  it("projects bounded W6-C schema diagnostics through existing upstream attribution without raw text", () => {
+    const diagnostics = sufficiencySchemaDiagnostics();
+    const decision = build({
+      assessment: sufficiencyAssessment({
+        assessmentStatus: "sufficiency_assessment_damaged",
+        damagedReason: "schema_validation_failed",
+        sufficiencyResultStatus: null,
+        reportStopRecommendation: null,
+        executionTelemetry: {
+          schemaDiagnostics: diagnostics,
+        } as SufficiencyAssessmentDecision["executionTelemetry"],
+      }),
+      boundaryVerdict: boundaryVerdictCandidate({
+        status: "boundary_verdict_candidate_blocked",
+      }),
+      stop: internalAlphaReportStop({
+        status: "alpha_report_stop_blocked",
+      }),
+      execution: boundaryVerdictExecution({
+        status: "boundary_verdict_execution_blocked",
+        boundaryCandidateCount: 0,
+        verdictCandidateCount: 0,
+        citedEvidenceItemRefs: [],
+      }),
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision.upstreamStopAttribution.parentStatuses.sufficiencyAssessment.schemaDiagnostics)
+      .toEqual(diagnostics);
+    expect(serialized).toContain("schema_validation");
+    expect(serialized).not.toContain(STATEMENT);
+    expect(serialized).not.toContain(UNSAFE_TEXT);
+    expect(serialized).not.toContain("raw provider");
+    expect(serialized).not.toContain("message");
+    expect(serialized).not.toContain("expected");
+    expect(serialized).not.toContain("received");
   });
 
   it("attributes post-sufficiency stops to W7-B2 without relaxing readiness", () => {

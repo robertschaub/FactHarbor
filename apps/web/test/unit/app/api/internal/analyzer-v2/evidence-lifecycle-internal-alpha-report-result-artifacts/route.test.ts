@@ -41,6 +41,30 @@ function routeUrl(query: string): string {
   return `http://localhost/api/internal/analyzer-v2/evidence-lifecycle-internal-alpha-report-result-artifacts${query}`;
 }
 
+function sufficiencySchemaDiagnostics(): NonNullable<
+  SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"]
+> {
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3",
+    contractName: "EvidenceSufficiencyResultSchema",
+    contractVersion: "v2.evidence_sufficiency_assessment.0",
+    outputParseStatus: "parsed",
+    failureCategory: "schema_validation",
+    issueCount: 1,
+    issues: [{ path: ["integrityEvents", "0", "type"], code: "invalid_type" }],
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger:
+      "remove_or_fold_into_stable_w6c_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary",
+  };
+}
+
 function parents() {
   return {
     boundedEvidenceExtraction: {
@@ -235,6 +259,32 @@ function seedArtifact(runId = "job-v2-w8b-route") {
   return runContext.observabilityLedger.ledgerId;
 }
 
+function seedArtifactWithSufficiencyDiagnostics(runId = "job-v2-w8b-route-diagnostics") {
+  const runContext = context(runId);
+  const parentSet = parents();
+  clearInternalAlphaReportResultRuntimeArtifacts(runContext.observabilityLedger.ledgerId);
+  recordInternalAlphaReportResultRuntimeArtifact({
+    context: runContext,
+    ...parentSet,
+    sufficiencyAssessment: {
+      ...parentSet.sufficiencyAssessment,
+      assessmentStatus: "sufficiency_assessment_damaged",
+      damagedReason: "schema_validation_failed",
+      sufficiencyResultStatus: null,
+      reportStopRecommendation: null,
+      executionTelemetry: {
+        schemaDiagnostics: sufficiencySchemaDiagnostics(),
+      } as SufficiencyAssessmentDecision["executionTelemetry"],
+    },
+    boundaryVerdictCandidate: {
+      ...parentSet.boundaryVerdictCandidate,
+      status: "boundary_verdict_candidate_blocked",
+    },
+    boundaryVerdictExecution: markBoundaryVerdictExecutionRuntimeOwnedDecision(boundaryVerdictExecution()),
+  });
+  return runContext.observabilityLedger.ledgerId;
+}
+
 afterEach(() => {
   process.env = { ...originalEnv };
 });
@@ -298,6 +348,45 @@ describe("Analyzer V2 internal Alpha report-result artifact route", () => {
     expect(serialized).not.toContain(SECRET_TEXT);
     expect(serialized).not.toContain("reportMarkdown");
     expect(serialized).not.toContain("\"truthPercentage\":");
+  });
+
+  it("returns bounded W6-C diagnostics through the existing default projection only", async () => {
+    const ledgerId = seedArtifactWithSufficiencyDiagnostics();
+    process.env.FH_ADMIN_KEY = "test-admin-key";
+    const { GET } = await import(
+      "@/app/api/internal/analyzer-v2/evidence-lifecycle-internal-alpha-report-result-artifacts/route"
+    );
+
+    const response = await GET(new Request(
+      routeUrl(`?ledgerId=${encodeURIComponent(ledgerId)}`),
+      { headers: { "x-admin-key": "test-admin-key" } },
+    ));
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body.artifacts[0].internalAlphaReportResult).toMatchObject({
+      status: "internal_alpha_report_result_blocked",
+      blockedReason: "sufficiency_assessment_not_completed",
+      upstreamStopAttribution: {
+        firstIncompleteStage: "sufficiency_assessment",
+        parentStatuses: {
+          sufficiencyAssessment: {
+            assessmentStatus: "sufficiency_assessment_damaged",
+            damagedReason: "schema_validation_failed",
+            schemaDiagnostics: sufficiencySchemaDiagnostics(),
+          },
+        },
+      },
+    });
+    expect(serialized).not.toContain(ledgerId);
+    expect(serialized).not.toContain(STATEMENT);
+    expect(serialized).not.toContain(SECRET_TEXT);
+    expect(serialized).not.toContain("provider output");
+    expect(serialized).not.toContain("message");
+    expect(serialized).not.toContain("expected");
+    expect(serialized).not.toContain("received");
   });
 
   it("requires admin auth and rejects malformed ledger queries", async () => {

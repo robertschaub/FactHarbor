@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T22:26:26.133Z",
-  "count": 770,
+  "generatedAt": "2026-05-20T22:39:43.816Z",
+  "count": 771,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16444,6 +16444,25 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Lead Developer V2 W6-C2 Sufficiency Product Runtime Owner Implementation"
+    },
+    {
+      "file": "2026-05-20_Lead_Developer_V2_W6-C3_Sufficiency_Diagnostics_Implementation.md",
+      "date": "2026-05-20",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "w6-c3",
+        "sufficiency",
+        "diagnostics",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.ts",
+        "apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result.ts"
+      ],
+      "summary": "Use commit-local W6-C3 verifier results before running the canary. If the canary returns populated W6-C `schemaDiagnostics`, prepare a narrow repair package from those paths/codes. If diagnostics are absent, raw values leak, W6-C unexpectedly completes, or route/public preflight fails with unclear c"
     },
     {
       "file": "2026-05-20_Lead_Developer_V2_W6-C_Sufficiency_Assessment_Implementation.md",

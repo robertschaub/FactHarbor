@@ -340,6 +340,7 @@ describe("sufficiency assessment runtime", () => {
       confidenceGenerated: false,
       publicSurfaceWritten: false,
     });
+    expect(decision.executionTelemetry.schemaDiagnostics).toBeNull();
   });
 
   it("keeps default projection text-free while admitting statements only to the provider input packet", async () => {
@@ -473,7 +474,7 @@ describe("sufficiency assessment runtime", () => {
     expect(providerCalls).toBe(0);
   });
 
-  it("parses accepted provider output and fails closed on blocked, damaged, and malformed output", async () => {
+  it("parses accepted provider output and fails closed with bounded diagnostics on blocked, damaged, and malformed output", async () => {
     const w5Decision = w5();
     const request = {
       context: context(),
@@ -528,9 +529,36 @@ describe("sufficiency assessment runtime", () => {
       ...request,
       providerCall: providerCall("{not json"),
     });
+    const invalidSchema = await runSufficiencyAssessmentRuntime({
+      ...request,
+      providerCall: providerCall({
+        schemaVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+        taskKey: "evidence_sufficiency",
+        status: "accepted",
+        sufficiencyAssessment: {
+          sufficiencyStatus: "caveated",
+          missingEvidenceDimensions: [{
+            dimension: "method_quality",
+            materiality: "minor",
+            rationale: "raw schema message must not be returned",
+          }],
+          recommendedNextAction: "caveat_report",
+          materialScarcityCandidate: "possible",
+          extraUnsafeField: STATEMENT,
+        },
+        integrityEvents: [{
+          eventType: "schema_validation_failed",
+          severity: "error",
+          message: STATEMENT,
+        }],
+        blockedReason: null,
+        damagedReason: null,
+      }),
+    });
 
     expect(accepted.assessmentStatus).toBe("sufficiency_assessment_completed");
     expect(accepted.sufficiencyResultPayloadHash).toEqual(expect.any(String));
+    expect(accepted.executionTelemetry.schemaDiagnostics).toBeNull();
     expect(blockedDecision.assessmentStatus).toBe("sufficiency_assessment_blocked");
     expect(blockedDecision.blockedReason).toBe("task_policy_not_executable");
     expect(damagedDecision.assessmentStatus).toBe("sufficiency_assessment_damaged");
@@ -538,6 +566,39 @@ describe("sufficiency assessment runtime", () => {
     expect(malformed.assessmentStatus).toBe("sufficiency_assessment_damaged");
     expect(malformed.damagedReason).toBe("parse_failure");
     expect(JSON.stringify(malformed)).not.toContain("{not json");
+    expect(malformed.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceSufficiencyResultSchema",
+      outputParseStatus: "parse_failure",
+      failureCategory: "parse_failure",
+      issueCount: 1,
+      issues: [{ path: [], code: "json_parse_error" }],
+      rawProviderOutputReturned: false,
+      rawSchemaMessagesReturned: false,
+      providerCompletionTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    expect(invalidSchema.assessmentStatus).toBe("sufficiency_assessment_damaged");
+    expect(invalidSchema.damagedReason).toBe("schema_validation_failed");
+    expect(invalidSchema.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "EvidenceSufficiencyResultSchema",
+      outputParseStatus: "parsed",
+      failureCategory: "schema_validation",
+      rawProviderOutputReturned: false,
+      rawSchemaMessagesReturned: false,
+      providerCompletionTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    expect(invalidSchema.executionTelemetry.schemaDiagnostics?.issueCount).toBeGreaterThan(0);
+    const serializedDiagnostics = JSON.stringify(invalidSchema.executionTelemetry.schemaDiagnostics);
+    expect(serializedDiagnostics).not.toContain(STATEMENT);
+    expect(serializedDiagnostics).not.toContain("raw schema message must not be returned");
+    expect(serializedDiagnostics).not.toContain("message");
+    expect(serializedDiagnostics).not.toContain("expected");
+    expect(serializedDiagnostics).not.toContain("received");
   });
 
   it("does not import W4-I, public, parser, Source Reliability, storage, or provider surfaces", () => {

@@ -38,6 +38,13 @@ export const SUFFICIENCY_ASSESSMENT_INPUT_PACKET_VERSION =
 export const SUFFICIENCY_ASSESSMENT_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-20_V2_Slice_W6-C_Sufficiency_Assessment_Implementation_Approval_Package.md" as const;
 export const SUFFICIENCY_ASSESSMENT_CACHE_NAMESPACE = "analyzer-v2:v2.semantic.evidence-sufficiency.w6c:evidence_sufficiency" as const;
+export const SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
+  "remove_or_fold_into_stable_w6c_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary" as const;
+
+const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES = 8;
+const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_PATH_SEGMENTS = 8;
+const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_PATH_SEGMENT_LENGTH = 64;
+const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_CODE_LENGTH = 80;
 
 export type SufficiencyAssessmentStatus =
   | "sufficiency_assessment_completed"
@@ -92,6 +99,30 @@ export type SufficiencyAssessmentProviderCallResponse = {
 export type SufficiencyAssessmentProviderCall = (
   request: SufficiencyAssessmentProviderCallRequest,
 ) => Promise<SufficiencyAssessmentProviderCallResponse>;
+
+export type SufficiencyAssessmentSchemaDiagnosticIssue = {
+  readonly path: readonly string[];
+  readonly code: string;
+};
+
+export type SufficiencyAssessmentSchemaDiagnostics = {
+  readonly diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3";
+  readonly contractName: "EvidenceSufficiencyResultSchema";
+  readonly contractVersion: typeof EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION;
+  readonly outputParseStatus: "not_attempted" | "parse_failure" | "parsed";
+  readonly failureCategory: "none" | "parse_failure" | "schema_validation";
+  readonly issueCount: number;
+  readonly issues: readonly SufficiencyAssessmentSchemaDiagnosticIssue[];
+  readonly rawProviderOutputReturned: false;
+  readonly rawSchemaMessagesReturned: false;
+  readonly providerCompletionTextReturned: false;
+  readonly sourceTextReturned: false;
+  readonly inputTextReturned: false;
+  readonly evidenceItemTextReturned: false;
+  readonly promptTextReturned: false;
+  readonly stackTraceReturned: false;
+  readonly removalTrigger: typeof SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER;
+};
 
 export type SufficiencyAssessmentEvidenceScopeProjection = {
   readonly scopeIdHash: string;
@@ -157,6 +188,7 @@ export type SufficiencyAssessmentExecutionTelemetry = {
     readonly totalTokens: number | null;
   };
   readonly durationMs: number | null;
+  readonly schemaDiagnostics: SufficiencyAssessmentSchemaDiagnostics | null;
   readonly cacheDecision: "no_store_no_read";
   readonly cacheDecisionReason: AnalyzerV2CacheDecision["reason"] | null;
   readonly cachePolicyId: string | null;
@@ -305,6 +337,7 @@ function telemetry(
       totalTokens: null,
     },
     durationMs: null,
+    schemaDiagnostics: null,
     cacheDecision: "no_store_no_read",
     cacheDecisionReason: null,
     cachePolicyId: null,
@@ -341,6 +374,126 @@ function coerceProviderOutput(output: unknown): { readonly status: "parsed"; rea
   } catch {
     return { status: "parse_failure" };
   }
+}
+
+function boundedDiagnosticCode(value: string): string {
+  return value.slice(0, SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_CODE_LENGTH);
+}
+
+function boundedDiagnosticPathSegment(value: string): string {
+  return value.slice(0, SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_PATH_SEGMENT_LENGTH);
+}
+
+function sanitizeSchemaPathSegment(segment: unknown): string {
+  if (typeof segment === "string" && /^[A-Za-z0-9_-]+$/.test(segment)) {
+    return boundedDiagnosticPathSegment(segment);
+  }
+  if (typeof segment === "number" && Number.isInteger(segment) && segment >= 0) {
+    return String(segment);
+  }
+  return "[non_structural]";
+}
+
+function isDiagnosticRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function collectSchemaIssueDiagnostics(rawIssues: readonly unknown[]): readonly {
+  readonly path?: readonly unknown[];
+  readonly code: string;
+}[] {
+  const collected: Array<{ path?: readonly unknown[]; code: string }> = [];
+
+  function visit(issue: unknown): void {
+    if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      return;
+    }
+    if (!isDiagnosticRecord(issue)) {
+      return;
+    }
+    const code = typeof issue.code === "string" ? issue.code : "unknown";
+    const path = Array.isArray(issue.path) ? issue.path : [];
+    collected.push({ path, code });
+
+    const unionErrors = issue.unionErrors;
+    if (Array.isArray(unionErrors)) {
+      for (const error of unionErrors) {
+        if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (isDiagnosticRecord(error) && Array.isArray(error.issues)) {
+          for (const childIssue of error.issues) {
+            visit(childIssue);
+            if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const errors = issue.errors;
+    if (Array.isArray(errors)) {
+      for (const child of errors) {
+        if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (Array.isArray(child)) {
+          for (const childIssue of child) {
+            visit(childIssue);
+            if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        } else {
+          visit(child);
+        }
+      }
+    }
+  }
+
+  for (const issue of rawIssues) {
+    visit(issue);
+    if (collected.length >= SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      break;
+    }
+  }
+
+  return collected;
+}
+
+function schemaDiagnostics(params: {
+  readonly outputParseStatus: SufficiencyAssessmentSchemaDiagnostics["outputParseStatus"];
+  readonly failureCategory: SufficiencyAssessmentSchemaDiagnostics["failureCategory"];
+  readonly issues?: readonly { readonly path?: readonly unknown[]; readonly code: string }[];
+}): SufficiencyAssessmentSchemaDiagnostics {
+  const issues = (params.issues ?? [])
+    .slice(0, SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES)
+    .map((issue) => ({
+      path: (issue.path ?? [])
+        .slice(0, SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_PATH_SEGMENTS)
+        .map(sanitizeSchemaPathSegment),
+      code: boundedDiagnosticCode(issue.code),
+    }));
+
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3",
+    contractName: "EvidenceSufficiencyResultSchema",
+    contractVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+    outputParseStatus: params.outputParseStatus,
+    failureCategory: params.failureCategory,
+    issueCount: issues.length,
+    issues,
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger: SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER,
+  };
 }
 
 function providerTelemetryValid(input: SufficiencyAssessmentProviderTelemetry): boolean {
@@ -808,12 +961,26 @@ export async function runSufficiencyAssessmentRuntime(
   };
   const parsedOutput = coerceProviderOutput(providerResponse.output);
   if (parsedOutput.status === "parse_failure") {
-    return damagedDecision(request, "parse_failure", calledSideEffects, completedTelemetry);
+    return damagedDecision(request, "parse_failure", calledSideEffects, {
+      ...completedTelemetry,
+      schemaDiagnostics: schemaDiagnostics({
+        outputParseStatus: "parse_failure",
+        failureCategory: "parse_failure",
+        issues: [{ path: [], code: "json_parse_error" }],
+      }),
+    });
   }
 
   const parsedResult = EvidenceSufficiencyResultSchema.safeParse(parsedOutput.value);
   if (!parsedResult.success) {
-    return damagedDecision(request, "schema_validation_failed", calledSideEffects, completedTelemetry);
+    return damagedDecision(request, "schema_validation_failed", calledSideEffects, {
+      ...completedTelemetry,
+      schemaDiagnostics: schemaDiagnostics({
+        outputParseStatus: "parsed",
+        failureCategory: "schema_validation",
+        issues: collectSchemaIssueDiagnostics(parsedResult.error.issues),
+      }),
+    });
   }
 
   const result = parsedResult.data as EvidenceSufficiencyResult;
