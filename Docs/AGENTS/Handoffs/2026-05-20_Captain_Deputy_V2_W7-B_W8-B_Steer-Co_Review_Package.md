@@ -30,6 +30,14 @@ Positions:
 - Gemini: `support`
 - unresolved dissent: none
 
+Package-review pass after initial preparation:
+
+- Claude Opus 4.6 package review: `modify`.
+- Product Trust review: `modify`.
+- Code Reviewer review: `modify`.
+- Gemini systems review: `support`.
+- Consolidated result: amendments applied; no unresolved dissent remains.
+
 Consolidated direction:
 
 - prepare W7-B/W8-B as the next review-only package;
@@ -37,6 +45,14 @@ Consolidated direction:
 - do not implement or authorize live jobs in this package;
 - require a separate prompt/model/schema/gateway approval package before any
   W7-B semantic LLM execution.
+- make W7-B the default next implementation approval package;
+- split W8-B into a follow-up unless it is proven to be only a thin,
+  non-semantic internal wrapper over W7-B output;
+- require a bounded internal-only statement-bearing W7-B input packet from
+  approved W5/W5-F lineage, with no direct W4-I access and no redaction
+  weakening;
+- require Product Trust public-cutover, comparator, leak-verification, and
+  warning-materiality gates before implementation approval.
 
 ## Package Shape
 
@@ -66,7 +82,8 @@ The prepared package frames:
 
 ## Debt Sensor Status
 
-Latest W8-A closeout `npm run debt:sensors` returned `advisory_warn` with:
+Latest package-amendment `npm run debt:sensors` returned `advisory_warn` at
+2026-05-20T17:14:54Z with:
 
 - V2 source: `151` files / `44771` lines.
 - V2 tests: `132` files / `49502` lines.
@@ -91,9 +108,10 @@ This package does not authorize:
 
 ## Next Action
 
-Have the W7-B/W8-B review package inspected by the required reviewers. If
-consent holds, the next delivery task is to prepare a dedicated W7-B
-implementation approval package, including prompt/model/schema/gateway details.
+Prepare a dedicated W7-B implementation approval package, including
+prompt/model/schema/gateway details, the statement-bearing W5/W5-F input path,
+comparator acceptance targets, leak-negative tests, warning-materiality contract,
+and W7-A merge trigger.
 
 Do not implement W7-B or spend live-job budget until that package is separately
 approved and the live-job tranche ledger is updated.

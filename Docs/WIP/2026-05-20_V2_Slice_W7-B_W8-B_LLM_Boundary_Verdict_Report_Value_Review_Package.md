@@ -55,6 +55,34 @@ Consolidated decision:
 - Keep the first implementation package bounded and explicitly approval-gated
   because it introduces semantic LLM execution and report-value behavior.
 
+Package-review addendum:
+
+- Claude Opus 4.6 package reviewer: `modify`; require a W7-B-first default,
+  explicit internal verdict-candidate label posture, concrete comparator
+  acceptance targets, and a single W7-A merge trigger.
+- Gemini systems reviewer: `support`; preserve the direction and make the
+  W7-A/W8-A merge/retirement path concrete.
+- Product Trust reviewer: `modify`; require a public-cutover gate, stronger
+  comparator labeling, mandatory leak-boundary verification before internal
+  Alpha acceptance, and a `warningMaterialityInputs` contract before
+  implementation.
+- Code Reviewer: `modify`; require W7-B as the next implementation package,
+  treat W8-B as follow-up unless it is a thin non-semantic wrapper, explicitly
+  authorize a bounded statement-bearing W5/W5-F input path, and add citation
+  mismatch tests before report-result tests.
+
+Consolidated amendment:
+
+- W7-B is the default next approval package.
+- W8-B is split into a follow-up package unless Steer-Co confirms it remains a
+  thin, non-semantic internal wrapper over W7-B output.
+- W7-B must define a bounded internal-only statement-bearing LLM input packet
+  from approved W5/W5-F lineage; W7-A/W8-A hash-only projections are not
+  sufficient by themselves.
+- Product Trust gates, comparator evidence, warning materiality, and leak
+  verification are mandatory package requirements.
+- No unresolved dissent remains after these amendments.
+
 Key evidence:
 
 - W8-A package and handoff state that W8-A is non-report-ready and next should
@@ -147,6 +175,22 @@ W7-B/W8-B may depend only on the current V2 lineage:
 W7-B/W8-B must not import, read, call, or consume W4-I runtime/sink/provenance
 state directly.
 
+Statement-bearing input rule:
+
+- W7-B cannot be implemented from W7-A or W8-A hash/length/provenance
+  projections alone, because the LLM boundary/verdict task needs bounded
+  EvidenceItem statements and citation context.
+- The W7-B package must define a bounded internal-only LLM input packet sourced
+  from the approved W5/W5-F evidence extraction lineage and cross-checked
+  against W5-F, W6-B, W6-C, W7-A, and W8-A hashes/provenance.
+- The package may follow the W6-C pattern of consuming accepted bounded
+  extraction state alongside downstream intake state, but it must not directly
+  read W4-I runtime/sink/provenance state and must not weaken public or
+  default-admin redaction.
+- Stop if the package cannot construct the statement-bearing input packet from
+  approved W5/W5-F lineage without direct W4-I access or public/default-admin
+  leakage.
+
 ## 6. Output Shape To Design Before Implementation
 
 The implementation package must define exact TypeScript names, but the target
@@ -185,6 +229,30 @@ two sequential slices. Steer-Co recommendation: start with W7-B only if the
 prompt/schema approval surface is large; combine W7-B+W8-B only if the report
 assembly remains a thin internal wrapper over W7-B output.
 
+Default split decision after package review:
+
+- W7-B is the next implementation approval package.
+- W8-B is a separate follow-up package by default.
+- W8-B may be combined with W7-B only if the package proves it is a thin,
+  non-semantic internal wrapper over W7-B output and introduces no additional
+  prompt/model/schema/gateway authority, no public projection, and no new
+  report-quality publication semantics.
+- If W8-B needs its own report-result contract, comparator review logic, warning
+  materiality behavior, or route/product wiring, split it.
+
+Verdict-label posture:
+
+- W7-B may produce internal verdict-direction candidates where the approved LLM
+  task needs them for review and citation coherence.
+- These labels are internal candidates only. They are not final public verdicts,
+  not public truth percentages, not public confidence, and not user-visible
+  warning decisions.
+- The contract must distinguish internal candidate labels from any future final
+  public label surface.
+- Fixed deterministic truth, confidence, sufficiency, or epistemic formulas are
+  forbidden here; if a later package needs truth/confidence behavior, it must be
+  LLM-owned or separately approved.
+
 ## 7. Prompt / Model / Schema Gate
 
 W7-B requires a separate, explicit approval package before implementation
@@ -217,6 +285,14 @@ Acceptance criteria must be grounded in:
 - `Docs/AGENTS/report-quality-expectations.json`;
 - exact Captain-defined inputs only.
 
+The W7-B approval package must extract concrete acceptance targets from those
+documents before implementation. Where exact comparator job IDs exist, list them
+and label each comparator as:
+
+- exact or variant input;
+- local or deployed artifact;
+- current-stack or historical comparator.
+
 Minimum internal Alpha checks:
 
 - every verdict candidate cites supporting or opposing EvidenceItems;
@@ -229,6 +305,28 @@ Minimum internal Alpha checks:
 - public/default-admin/log/error surfaces do not leak source text, EvidenceItem
   statements, prompt text, provider payloads, hidden ledger ids, or internal
   statuses.
+
+Product Trust / public cutover gate:
+
+- No public report, warning, confidence, verdict, export, compatibility
+  projection, UI surface, or API behavior may open until comparator review is
+  accepted and Captain/cutover approval is durably recorded.
+- Public V2 remains blocked/precutover/report_damaged during W7-B and W8-B.
+
+Leak-boundary verification gate:
+
+- Automated negative checks are mandatory before any internal Alpha acceptance,
+  not only before a later live canary.
+- Checks must cover public/default-admin/log/error/export surfaces for source
+  text, EvidenceItem statements, snippets, summaries, prompt text, provider
+  payloads, hidden ledger ids, and internal statuses.
+
+Warning-materiality contract:
+
+- `warningMaterialityInputs` must be defined before implementation.
+- Warning severity must derive from verdict-impact materiality and registered
+  warning types.
+- W7-B/W8-B must not publish user-visible warnings.
 
 ## 9. Live-Job Posture
 
@@ -305,8 +403,9 @@ New mechanism owner:
 Removal / merge trigger:
 
 - W8-A stop owner merges into real internal ReportResult after W8-B.
-- W7-A contract-only candidate owner either becomes a compatibility precursor
-  to W7-B or is merged into W7-B once W7-B is stable.
+- W7-A contract-only candidate owner merges into the W7-B owner after W7-B is
+  verifier-stable and W7-A contract-only failure coverage has an equivalent
+  W7-B fail-closed path.
 
 Debt accepted:
 
@@ -327,10 +426,18 @@ W7-B/W8-B passes the consolidation gate only if:
 If the next implementation package only adds another readiness/denial/diagnostic
 owner, Steer-Co must reconvene before implementation.
 
+Default consolidation commitments:
+
+- W7-B must include the W7-A merge trigger described in the retirement section.
+- W8-B must include a W8-A merge trigger before it is implemented.
+- W7-B must not create a new hidden diagnostic, readiness, or proof owner only
+  to prepare semantics; its added mechanism must be the missing semantic LLM
+  execution capability itself.
+
 ## 13. Latest Debt Sensor Status
 
-`npm run debt:sensors` on 2026-05-20 after W8-A closeout returned
-`advisory_warn`:
+`npm run debt:sensors` on 2026-05-20T17:14:54Z after package-review
+amendments returned `advisory_warn`:
 
 - V2 source: `151` files / `44771` lines.
 - V2 tests: `132` files / `49502` lines.
@@ -370,6 +477,10 @@ git diff --check
 git status --short --untracked-files=all
 ```
 
+The W7-B package must include focused schema, citation-mismatch, provider/model
+failure, parse-failure, and leak-negative tests before report-result assembly
+tests are treated as meaningful.
+
 If a live canary is later approved:
 
 - commit first;
@@ -405,6 +516,8 @@ Stop and reconvene Steer-Co or escalate to Captain if:
   meaning;
 - implementation would add fixed epistemic/truth/confidence formulas;
 - direct W4-I runtime/sink/provenance access appears necessary;
+- a statement-bearing W7-B LLM input packet cannot be constructed from approved
+  W5/W5-F lineage without direct W4-I access or public/default-admin leakage;
 - source text, EvidenceItem statements, prompt text, provider payloads, hidden
   ledger ids, or internal statuses could leak through public/default-admin/log
   or error surfaces;
@@ -418,13 +531,15 @@ Approve with modifications likely:
 
 1. Require a dedicated prompt/model/schema/gateway approval package before W7-B
    implementation.
-2. Prefer W7-B as the first implementation slice, unless W8-B is only a thin
-   internal wrapper over W7-B output.
+2. Make W7-B the first implementation slice; W8-B is a follow-up unless proven
+   to be only a thin, non-semantic internal wrapper over W7-B output.
 3. Require W7-B to target Captain-defined report-quality expectations and
    comparator families.
 4. Keep public V2 blocked/precutover/report_damaged.
 5. Require a new live-job tranche ledger entry before any canary.
-6. Require an explicit merge path for W7-A/W8-A and no new W4-I consumer.
+6. Require a bounded statement-bearing input path from approved W5/W5-F lineage,
+   with no direct W4-I access and no redaction weakening.
+7. Require an explicit merge path for W7-A/W8-A and no new W4-I consumer.
 
 ## 18. Copy-Ready Lead Developer Packet After Approval
 
@@ -437,18 +552,30 @@ Prepare the W7-B implementation approval package only. Do not implement.
 Goal:
 Define the first LLM-owned V2 boundary/verdict candidate execution package after
 W8-A. Scope it to internal-only BoundarySet/VerdictSet candidates over the
-current W5-F/W6-B/W6-C/W7-A/W8-A lineage. The package must decide whether W8-B
-internal report-result assembly is included as a thin wrapper or split into a
-separate follow-up.
+current W5-F/W6-B/W6-C/W7-A/W8-A lineage. Treat W7-B as the next package.
+Split W8-B into a follow-up unless it is proven to be only a thin,
+non-semantic internal wrapper over W7-B output.
 
 Required package sections:
 - exact accepted inputs and parent lineage checks;
+- bounded internal-only statement-bearing W7-B LLM input-packet path from
+  approved W5/W5-F evidence extraction lineage, cross-checked against
+  W5-F/W6-B/W6-C/W7-A/W8-A hashes/provenance;
 - proposed prompt section, UCM location, output schema, model policy, gateway
   activation, cache posture, timeout/token/cost budget, and failure modes;
 - internal output contracts and redaction/leak boundaries;
 - citation requirements to EvidenceItems;
-- report-quality acceptance criteria against Captain expectations and
-  benchmark/comparator docs;
+- focused schema, citation-mismatch, provider/model failure, parse-failure, and
+  leak-negative tests before any report-result tests;
+- report-quality acceptance criteria against Captain expectations,
+  `benchmark-expectations.json`, `report-quality-expectations.json`, and
+  comparator IDs labeled exact/variant, local/deployed, and
+  current-stack/historical where available;
+- `warningMaterialityInputs` contract with verdict-impact materiality and
+  registered warning types, but no user-visible warning publication;
+- Product Trust gate: no public report/warning/confidence/verdict/export/compat
+  projection until comparator review is accepted and Captain/cutover approval is
+  recorded;
 - V2 SCORECARD IMPACT;
 - V2 RETIREMENT LEDGER IMPACT;
 - V2 CONSOLIDATION GATE;
@@ -463,6 +590,17 @@ approval flips, public/API/UI/report/export/compatibility behavior, parser/cache
 /SR/storage/provider widening, ACS/direct URL, V1 work, V1 cleanup, fixed
 epistemic formulas, deterministic semantic boundary/verdict logic, and direct
 W4-I access.
+
+Stop if:
+- the statement-bearing W7-B LLM input packet cannot be constructed from
+  approved W5/W5-F lineage without direct W4-I access or public/default-admin
+  leakage;
+- W8-B becomes more than a thin non-semantic wrapper and is still being bundled
+  into W7-B;
+- the package would publish or expose source text, EvidenceItem statements,
+  prompt text, provider payloads, hidden ledger ids, internal statuses, verdict
+  labels, confidence, warnings, or report prose through public/default-admin/log
+  or error surfaces.
 
 Run:
 npm run debt:sensors
