@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T09:12:29.332Z",
-  "count": 734,
+  "generatedAt": "2026-05-20T09:18:16.321Z",
+  "count": 735,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15958,6 +15958,26 @@
         "Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Package.md"
       ],
       "summary": "Use the W5-E3 package as execution authority. The previous W5-E2 job already proved W5-E admission but stopped on W3-B default-admin source text exposure."
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_X7-W5-E3_Canary_Result.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "x7-w5-e3",
+        "canary",
+        "result"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Result.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Result.md`. W5-E passed its value/containment canary; the next high-value move is convergence plus the next evidence-handoff owner, not another W5-E rerun."
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-E_Canary_Result.md",

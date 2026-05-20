@@ -4519,3 +4519,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Package.md` for exactly one product-route canary after W3-B redaction repair commit `4a86e2cf`. It must prove both W5-E accepted admission and same-ledger W3-B/W4/W5 default-admin redaction.
 **Warnings:** Claude Opus 4.6 reviewed the package as `approve` with no required changes. This package authorizes no source changes, no second canary, and no public/report/verdict/warning/confidence/parser/cache/SR/storage/provider expansion/prompt/model/config/schema/ACS/direct URL/V1 work. Remaining live-job budget before execution is `2`.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E3_Canary_Package.md
+
+---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-E3 Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Ran exactly one W5-E3 canary, job `b827c14c474d4a12b4f4e9c876e5cb12`, on runtime commit `c2ad605e27a97ca9d9f5602aa719035d4c70d157`. It passed: public V2 stayed pre-cutover/damaged; W3-B default admin output stayed redacted; W5 accepted `2` EvidenceItems; W5-E admitted `2` with matching hash/byte-length arrays and no block/damage reason.
+**Warnings:** Remaining live-job budget is `1`. Do not run another W5-E canary. Do not claim public report quality yet. Next package should address evidence-handoff convergence and the W4-I route merge/removal trigger.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E3_Canary_Result.md
