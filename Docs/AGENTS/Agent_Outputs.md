@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | V2 Stop-Line And Executable Plan -- [Significant] [open-items: yes]
+**For next agent:** V2 implementation should pause now. W6-A is review-only accepted; amended W6-B package needs short confirmation before implementation. If confirmed, implement only `EvidenceItemHandoffDecision -> SufficiencyIntakeDecision` (`v2.evidence-lifecycle.sufficiency-intake.w6b`) as contract/test-only. Read `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` and `Docs/WIP/2026-05-20_V2_Slice_W6-B_EvidenceItem_Handoff_To_Sufficiency_Intake_Review_Package.md`.
+**Warnings:** W5-G proves hidden EvidenceItem handoff reachability, not report readiness. No public cutover, V1 cleanup, prompt/model/config/schema behavior, provider/parser/ACS/direct URL widening, source-reliability weighting, deterministic semantic logic, fixed epistemic formulas, route/orchestrator wiring, W4-I direct reads, parent spreading/cloning, text/language/semantic branching, or hidden-only machinery without retirement impact is authorized.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Architect_V2_Stop_Line_Executable_Plan.md
+
+---
 ### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-D Evidence Extraction Prompt Contract Live Result -- [Significant] [open-items: yes]
 **For next agent:** W5-D is closed as `PASS_X7_W5_D_EVIDENCE_EXTRACTION_SCHEMA_REPAIR_VERIFIED`. Valid job `08291671a7d44a74b9fc048b6a32a7b5` ran `claimboundary-v2` on commit/runtime `76984bca20840c3c2e9c02449a0e481ec151a02b` and reached hidden CU -> Query Planning -> W2 -> W3-B -> W4-G/H/I -> W5; W5 completed with `extractionResultStatus: accepted`, `extractionStatus: evidence_extracted`, `evidenceItemCount: 2`, and `schemaDiagnostics: null`.
 **Warnings:** Wrong-variant job `ee086cd0e9b44c3ea88c388e96f2eaf6` was cancelled and is not V2 evidence; it still consumed one live-job slot. Public V2 remains damaged/precutover with zero public evidence items, no source-text leak, and no report/verdict/warning/confidence behavior. Remaining live-job tranche is `4`; no second W5-D canary is authorized.

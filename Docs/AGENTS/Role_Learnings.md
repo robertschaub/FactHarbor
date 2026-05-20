@@ -72,6 +72,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Rev 2 of the Phase 2 Gate G2 replay plan carried Phase 3/4 judgments ("keep Option G", "refactor `isVerdictDirectionPlausible`", "queue for Phase 4") inside the G2 package body. Both the LLM Expert and Captain Deputy reviewers independently flagged this as scope drift — decisions being made outside the gate they belong to. The fix was a dedicated "Strong priors (NOT decisions)" section at the end of the plan that (a) explicitly labels each hypothesis as a prior, (b) gives each prior a "replay may show" falsification condition, (c) states "none of these priors are being acted on until Phase 3 data is in". This preserves the value of the investigator's intuition without letting it bleed into premature decisions. Reuse this pattern whenever a plan document drifts into pre-solving later work. Also surfaced by the same review: per-input acceptance criteria (e.g. "R2 must have `rechtskräftig` in primary claim + verdict in 11–31 range") are more useful than generic Stage-1 signals (e.g. "Q-S1.3 modifier preservation") when the replay set is narrow, because they give concrete measurable pass/fail per input without forcing the Phase 3 analyst to re-derive the mapping.
 **Files:** `Docs/WIP/2026-04-11_Phase2_Gate_G2_Replay_Plan.md`, `Docs/WIP/2026-04-11_Phase2_Per_Input_Expectations.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_Captain_Deputy_Review.md`
 
+### 2026-05-20 — Stop lines must distinguish proof-ready from report-ready
+**Role:** Lead Architect / LLM Expert  **Agent/Tool:** Codex (GPT-5.5)
+**Category:** useful-pattern
+**Learning:** In V2, a passed hidden handoff canary is a good place to pause, but it is not report-quality evidence. A stop-line plan should name the next positive stop, the hard stop triggers, and the exact review required before public cutover so hidden proof machinery does not become socially treated as a report-ready pipeline.
+**Files:** `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
