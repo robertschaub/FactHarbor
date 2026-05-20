@@ -26,6 +26,7 @@ function context(runId = "job-v2-x7w3b-route") {
 }
 
 function decision(): EvidenceLifecycleSourceMaterialPageSummaryDecision {
+  const sourceMaterialText = "Hydrogen vehicles use hydrogen to power an electric motor.";
   return {
     sourceMaterialVersion: "v2.evidence-lifecycle.source-material.page-summary.x7w3b",
     visibility: "internal_admin_only",
@@ -39,7 +40,42 @@ function decision(): EvidenceLifecycleSourceMaterialPageSummaryDecision {
     attemptedFetchCount: 1,
     sourceMaterialRecordCount: 1,
     fetchDiagnosticCount: 0,
-    sourceMaterialRecords: [],
+    sourceMaterialRecords: [
+      {
+        recordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
+        sourceMaterialId: "SOURCE_MATERIAL_PAGE_SUMMARY_TEST",
+        locatorRef: "OPAQUE_SOURCE_LOCATOR_TEST",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_TEST",
+        providerId: "wikimedia_core",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        languageCode: "en",
+        sourceMaterialKind: "wikimedia_page_summary_extract_text",
+        sourceMaterialText,
+        sourceMaterialTextHash: "0".repeat(64),
+        sourceMaterialTextByteLength: Buffer.byteLength(sourceMaterialText, "utf8"),
+        sourceMaterialTextCharLength: Array.from(sourceMaterialText).length,
+        truncationApplied: false,
+        responseStatusCategory: "success_2xx",
+        contentTypeCategory: "accepted_json",
+        compressedBytes: 120,
+        decompressedBytes: 120,
+        durationMs: 40,
+        timeoutMs: 1500,
+        publicPointerExposure: "forbidden",
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    ],
     fetchDiagnostics: [],
     sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
     locatorVersion: "v2.evidence-lifecycle.source-material.page-summary-fetch-locator.x7w3b",
@@ -110,6 +146,7 @@ describe("Analyzer V2 internal page-summary Source Material artifact route", () 
       sinkKind: "v2_evidence_lifecycle_source_material_page_summary_artifact_ledger",
       visibility: "internal_admin_only",
       publicPointerExposure: "forbidden",
+      defaultProjection: "hash_length_provenance_only",
       ledgerId,
       artifactCount: 1,
     });
@@ -130,6 +167,14 @@ describe("Analyzer V2 internal page-summary Source Material artifact route", () 
         }),
       }),
     ]);
+    expect(serialized).not.toContain("sourceMaterialText\":\"");
+    expect(serialized).not.toContain("Hydrogen vehicles use hydrogen");
+    expect(body.artifacts[0].sourceMaterialPageSummary.sourceMaterialRecords[0]).toMatchObject({
+      sourceMaterialTextHash: "0".repeat(64),
+      sourceMaterialTextByteLength: 58,
+      sourceMaterialTextCharLength: 58,
+      sourceMaterialTextReturned: false,
+    });
     expect(serialized).not.toContain("Hydrogen_vehicle");
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("sk_test");

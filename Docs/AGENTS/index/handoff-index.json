@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T09:03:48.599Z",
-  "count": 732,
+  "generatedAt": "2026-05-20T09:08:39.447Z",
+  "count": 733,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15954,6 +15954,39 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Captain Deputy V2 X7-W5-E Canary Result"
+    },
+    {
+      "file": "2026-05-20_Lead_Developer_V2_X7-W3B_Default_Admin_Redaction_Repair.md",
+      "date": "2026-05-20",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w3b",
+        "default",
+        "admin",
+        "redaction",
+        "repair"
+      ],
+      "files_touched": [
+        "apps/web/src/app/api/internal/analyzer-v2/evidence-lifecycle-source-material-page-summary-artifacts/route.ts"
+      ],
+      "summary": "Use `Docs/WIP/2026-05-20_V2_Slice_X7-W3B_Default_Admin_Redaction_Repair.md` as the repair record. The next logical package is a one-job W5-E rerun package after commit/runtime refresh; live-job budget is still `2` unless Captain resets it.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend existing W3-B internal route projection in place.",
+            "net_mechanism_count": "unchanged.",
+            "verification": "focused W3-B route test, W3-B/W5 focused tests, V2 gate validation, debt sensors, build, manual route projection check.",
+            "residual_debt": "W5-E2 still needs a separately packaged canary rerun after this repair commit and runtime refresh; no second canary is authorized by this repair."
+          }
+        }
+      }
     },
     {
       "file": "2026-05-20_Lead_Developer_V2_X7-W5-D_Prompt_Contract_Alignment.md",

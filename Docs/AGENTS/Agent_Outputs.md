@@ -4507,3 +4507,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Ran exactly one W5-E2 canary, job `9584597389504d74af6dcfd684755bff`, on runtime commit `c0c8f9cc8f40ac87c5d0fa05ccb0973d620f890c`. W5-E admission itself passed for the fresh run (`1` accepted W5 EvidenceItem, `1` admitted W5-E item, no block/damage), but package classification is `STOP_X7_W5_E2_W3B_DEFAULT_ADMIN_SOURCE_TEXT_EXPOSURE` because the same-ledger W3-B source-material page-summary admin route returns `sourceMaterialText` by default.
 **Warnings:** Remaining live-job budget is `2`. Do not run a second W5-E2 canary. Do not claim W5-E2 package pass, W4-I retirement readiness, or W6/report progression. Next bounded work is a W3-B default-admin redaction repair package, then a separately reviewed canary package if needed.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E2_Canary_Result.md
+
+---
+### 2026-05-20 | Lead Developer / Captain Deputy | Codex (GPT-5.5) | V2 X7-W3B Default Admin Redaction Repair -- [Significant] [open-items: yes]
+**For next agent:** Repaired the W3-B source-material page-summary admin route projection that stopped W5-E2. The route now removes `sourceMaterialText` from default responses, preserves hash/length/provenance metadata, and records `sourceMaterialTextReturned: false`; stored runtime artifacts still retain source text for downstream W4/W5 consumption.
+**Warnings:** This is not a W5-E2 pass and no live job was run. A separate W5-E rerun package, committed runtime refresh, and one live-job spend are still required to prove the full path after this repair. Remaining live-job budget is `2`.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_X7-W3B_Default_Admin_Redaction_Repair.md

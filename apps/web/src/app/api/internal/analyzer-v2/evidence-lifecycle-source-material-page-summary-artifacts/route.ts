@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkAdminKey } from "@/lib/auth";
 import {
+  type EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact,
   EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_ARTIFACT_MAX_LEDGER_ID_LENGTH,
   readEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifacts,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-artifact-sink";
@@ -34,6 +35,52 @@ function readLedgerId(req: Request): string | null {
   return ledgerId;
 }
 
+type RedactedSourceMaterialRecord = Omit<
+  EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact["sourceMaterialPageSummary"]["sourceMaterialRecords"][number],
+  "sourceMaterialText"
+> & {
+  readonly sourceMaterialTextReturned: false;
+};
+
+type RedactedSourceMaterialPageSummary = Omit<
+  EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact["sourceMaterialPageSummary"],
+  "sourceMaterialRecords"
+> & {
+  readonly sourceMaterialRecords: readonly RedactedSourceMaterialRecord[];
+  readonly defaultProjection: "hash_length_provenance_only";
+};
+
+type RedactedSourceMaterialPageSummaryRuntimeArtifact = Omit<
+  EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact,
+  "sourceMaterialPageSummary"
+> & {
+  readonly sourceMaterialPageSummary: RedactedSourceMaterialPageSummary;
+};
+
+function redactSourceMaterialRecord(
+  record: EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact["sourceMaterialPageSummary"]["sourceMaterialRecords"][number],
+): RedactedSourceMaterialRecord {
+  const { sourceMaterialText: _sourceMaterialText, ...redacted } = record;
+  void _sourceMaterialText;
+  return {
+    ...redacted,
+    sourceMaterialTextReturned: false,
+  };
+}
+
+function redactArtifact(
+  artifact: EvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact,
+): RedactedSourceMaterialPageSummaryRuntimeArtifact {
+  return {
+    ...artifact,
+    sourceMaterialPageSummary: {
+      ...artifact.sourceMaterialPageSummary,
+      defaultProjection: "hash_length_provenance_only",
+      sourceMaterialRecords: artifact.sourceMaterialPageSummary.sourceMaterialRecords.map(redactSourceMaterialRecord),
+    },
+  };
+}
+
 export async function GET(req: Request) {
   if (!checkAdminKey(req)) {
     return json({ ok: false, error: "Unauthorized" }, 401);
@@ -59,8 +106,9 @@ export async function GET(req: Request) {
     sinkKind: "v2_evidence_lifecycle_source_material_page_summary_artifact_ledger",
     visibility: "internal_admin_only",
     publicPointerExposure: "forbidden",
+    defaultProjection: "hash_length_provenance_only",
     ledgerId,
     artifactCount: artifacts.length,
-    artifacts,
+    artifacts: artifacts.map(redactArtifact),
   }, 200);
 }
