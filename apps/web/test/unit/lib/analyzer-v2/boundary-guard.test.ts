@@ -129,6 +129,7 @@ const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "tas
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
 const evidenceLifecycleEvidenceItemsRoot = path.resolve(evidenceLifecycleRoot, "evidence-items");
+const evidenceLifecycleSufficiencyRoot = path.resolve(evidenceLifecycleRoot, "sufficiency");
 const evidenceLifecycleQueryPlanningRoot = path.resolve(evidenceLifecycleRoot, "query-planning");
 const evidenceLifecycleQueryPlanningPreexecutionObservationPath = path.resolve(
   evidenceLifecycleQueryPlanningRoot,
@@ -179,6 +180,10 @@ const evidenceLifecycleBoundedEvidenceItemAdmissionPath = path.resolve(
 const evidenceLifecycleEvidenceItemHandoffPath = path.resolve(
   evidenceLifecycleEvidenceItemsRoot,
   "evidence-item-handoff.ts",
+);
+const evidenceLifecycleSufficiencyIntakePath = path.resolve(
+  evidenceLifecycleSufficiencyRoot,
+  "sufficiency-intake.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -9094,6 +9099,7 @@ describe("analyzer-v2 boundary guard", () => {
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskContractsRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExecutionReadinessRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceItemsRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSufficiencyRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleQueryPlanningRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleExtractionInputRoot)}/`)
@@ -9164,9 +9170,191 @@ describe("analyzer-v2 boundary guard", () => {
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port",
       "src/lib/analyzer-v2/evidence-lifecycle/source-material",
+      "src/lib/analyzer-v2/evidence-lifecycle/sufficiency",
       "src/lib/analyzer-v2/evidence-lifecycle/task-contracts",
       "src/lib/analyzer-v2/evidence-lifecycle/task-policy",
     ]);
+  });
+
+  it("keeps W6-B sufficiency intake contract-only and isolated from runtime/product surfaces", () => {
+    const sufficiencyFiles = collectFiles(evidenceLifecycleSufficiencyRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const violations: string[] = [];
+
+    expect(sufficiencyFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake.ts",
+    ]);
+    expect(existsSync(evidenceLifecycleSufficiencyIntakePath)).toBe(true);
+
+    const approvedImports = new Map<string, Set<string>>([
+      [
+        "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
+        new Set(["EvidenceItemHandoffDecision", "EVIDENCE_ITEM_HANDOFF_DECISION_VERSION"]),
+      ],
+      [
+        "@/lib/analyzer-v2/util",
+        new Set(["sha256Json"]),
+      ],
+    ]);
+
+    for (const sourcePath of sufficiencyFiles) {
+      const sourceFile = parseSource(sourcePath);
+      const sourceContent = readFileSync(sourcePath, "utf8");
+      const relativePath = toPosix(path.relative(webRoot, sourcePath));
+
+      for (const importBinding of collectImportBindings(sourceFile)) {
+        const approvedNames = approvedImports.get(importBinding.specifier);
+        if (!approvedNames) {
+          violations.push(`${relativePath} imports unapproved sufficiency dependency ${importBinding.specifier}`);
+          continue;
+        }
+        for (const importedName of importBinding.names) {
+          if (!approvedNames.has(importedName)) {
+            violations.push(`${relativePath} imports unapproved symbol ${importedName} from ${importBinding.specifier}`);
+          }
+        }
+      }
+
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (
+          specifier.includes("execution-readiness")
+          || specifier.includes("w4i")
+          || specifier.includes("artifact-sink")
+          || specifier.includes("provenance")
+        ) {
+          violations.push(`${relativePath} imports direct W4-I/runtime lineage dependency ${specifier}`);
+        }
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports V1 analyzer ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports prompt loader ${specifier}`);
+        }
+        if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports cache governance ${specifier}`);
+        }
+        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports gateway policy ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports runtime dispatch ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${relativePath} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${relativePath} imports network/parser dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${relativePath} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${relativePath} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${relativePath} imports provider SDK ${specifier}`);
+        }
+        if (isAcsDirectUrlRuntimeImport(specifier)) {
+          violations.push(`${relativePath} imports ACS/direct URL runtime ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${relativePath} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${relativePath} imports product/orchestrator surface ${specifier}`);
+        }
+        for (const forbiddenSpecifierFragment of [
+          "/report",
+          "/verdict",
+          "/warning-display",
+          "/warning",
+          "/confidence",
+          "/model-adapter",
+          "/prompt-loader",
+          "/gateway",
+          "/config-",
+          "/configs/",
+        ]) {
+          if (toPosix(specifier).includes(forbiddenSpecifierFragment)) {
+            violations.push(`${relativePath} imports forbidden sufficiency surface ${specifier}`);
+          }
+        }
+      }
+
+      for (const forbiddenText of [
+        "...evidenceItemHandoff",
+        "...parent",
+        "JSON.stringify(evidenceItemHandoff",
+        "JSON.stringify(parent",
+        "sufficiencyLlmCalled: true",
+        "reportGenerated: true",
+        "verdictGenerated: true",
+        "warningGenerated: true",
+        "confidenceGenerated: true",
+        "publicSurfaceWritten: true",
+        "cacheRead: true",
+        "cacheWrite: true",
+        "sourceReliabilityRead: true",
+        "sourceReliabilityWrite: true",
+        "storageWrite: true",
+        "providerCalled: true",
+        "parserExecuted: true",
+        "assessmentExecution: \"open",
+        "truthPercentage",
+        "reportMarkdown",
+        "sourceText:",
+        "inputText:",
+      ]) {
+        if (sourceContent.includes(forbiddenText)) {
+          violations.push(`${relativePath} contains forbidden sufficiency text ${forbiddenText}`);
+        }
+      }
+
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`W6-B sufficiency intake makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+    }
+
+    for (const publicPath of publicSurfaceFiles) {
+      const relativePath = toPosix(path.relative(webRoot, publicPath));
+      if (
+        relativePath.startsWith("src/app/") &&
+        (relativePath.includes("/sufficiency/") || relativePath.includes("sufficiency-intake"))
+      ) {
+        violations.push(`${relativePath} creates a W6-B app/public route surface`);
+      }
+      for (const specifier of collectModuleSpecifiers(parseSource(publicPath))) {
+        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-intake")) {
+          violations.push(`${relativePath} imports W6-B sufficiency intake ${specifier}`);
+        }
+      }
+    }
+
+    for (const productPath of [
+      analyzerV2OrchestratorPath,
+      analyzerV2PipelineShellPath,
+      analyzerV2RunnerIngressPath,
+    ]) {
+      for (const specifier of collectModuleSpecifiers(parseSource(productPath))) {
+        if (specifier.includes("evidence-lifecycle/sufficiency/sufficiency-intake")) {
+          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W6-B sufficiency intake ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 
   it("keeps Evidence Lifecycle source-acquisition owners explicit through W2 provider wiring", () => {
