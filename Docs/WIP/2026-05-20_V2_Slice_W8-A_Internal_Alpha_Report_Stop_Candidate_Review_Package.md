@@ -1,9 +1,9 @@
 # V2 Slice W8-A Internal Alpha Report Stop Candidate Review Package
 
-**Status:** review package only; no implementation authorized
+**Status:** locally implemented and verifier-clean; no live job run or authorized
 **Date:** 2026-05-20
 **Owner:** Captain Deputy
-**Proposed implementer:** Lead Developer after review approval only
+**Implementer:** Lead Developer / Captain Deputy
 **Required reviewers:** Lead Architect, Product Trust, LLM Expert, Complexity/Retirement reviewer
 **Canary runner:** none; live-job ledger currently has `currentRemaining = 0`
 **Source direction:** `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` section W8-A plus W7-A implementation commit `00bd1674`
@@ -29,7 +29,8 @@ presume a verdict/narrative owner. Those criteria are deferred to a later
 post-W7-B package, not abandoned. This W8-A slice must not be treated as
 satisfying full Alpha report completeness.
 
-This package does not authorize implementation, live jobs, public projection,
+This package has now been implemented locally as a contract-only W8-A stop owner.
+It still does not authorize live jobs, public projection,
 prompt/model/config/schema/UCM/gateway edits, LLM boundary/verdict/report
 execution, report text generation, verdict/truth/confidence generation, warning
 publication, compatibility projection, exports, UI/API behavior, V1 work, or V1
@@ -300,13 +301,15 @@ Observable consolidation condition:
 
 ## 12. Latest Debt Sensor Status
 
-`npm run debt:sensors` on 2026-05-20 returned `advisory_warn`:
+`npm run debt:sensors` on 2026-05-20 after W8-A implementation returned
+`advisory_warn`:
 
-- V2 source: `150` files / `44162` lines.
-- V2 tests: `131` files / `48827` lines.
-- Boundary guard: `10573` lines.
+- V2 source: `151` files / `44771` lines.
+- V2 tests: `132` files / `49502` lines.
+- Boundary guard: `10745` lines.
 - Docs/WIP markdown files: `235`.
-- Handoff markdown files: `751`.
+- Handoff markdown files: `752`.
+- Debt-guard blocks: `161`.
 - Net mechanism increases: `14`.
 - V2 consolidation-marker review files: `5`.
 
@@ -501,3 +504,42 @@ For W8-A and every later substantial V2 package, Captain Deputy must require:
 Packages that cannot show either report-value progress, retirement/merge of old
 machinery, or a concrete risk-proportionate mitigation require Steer-Co consent
 before implementation.
+
+## 19. Implementation Closeout
+
+W8-A is locally implemented as
+`apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate.ts`
+with focused tests at
+`apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate.test.ts`
+and a narrow boundary-guard ownership/isolation assertion.
+
+Implementation delta:
+
+- adds `InternalAlphaReportStopCandidate` as the canonical internal
+  non-verdict-bearing Alpha stop owner after W7-A;
+- constructs a new decision from allowlisted W5-F/W6-B/W6-C/W7-A projections
+  only;
+- marks report quality as `alpha_candidate_not_report_ready`;
+- keeps `publicCutoverStatus` mirror-only and public V2 closed/precutover;
+- keeps default/admin projection hash/length/provenance-only;
+- adds no route, sink, product/orchestrator wiring, live job, public behavior,
+  LLM call, prompt/model/config/schema/UCM/gateway edit, cache/SR/storage,
+  parser, provider widening, ACS/direct URL, V1 work, or V1 cleanup.
+
+Verifier results:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate.test.ts`
+  passed: 1 file / 6 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+  passed after rerun with a longer timeout: 2 files / 95 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/`
+  passed: 41 files / 192 tests.
+- `npm run validate:v2-gates` passed.
+- `node scripts/validate-v2-gate-register.mjs --self-test` passed.
+- `npm run debt:sensors` returned known `advisory_warn`.
+- `npm -w apps/web run build` passed.
+- `git diff --check` passed.
+
+W8-A remains non-report-ready by design. The next report-value phase should be a
+separately reviewed W7-B / W8-B LLM-owned boundary/verdict/report package, not a
+second W8-A stop/proof layer.
