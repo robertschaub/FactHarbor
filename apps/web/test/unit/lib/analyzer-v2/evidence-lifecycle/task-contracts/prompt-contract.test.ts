@@ -122,6 +122,32 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable");
   });
 
+  it("renders the evidence-extraction strict output branch contract", () => {
+    const content = readPrompt();
+    const section = readSection(content, EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_extraction);
+
+    expect(section).toContain("Branch rules");
+    expect(section).toContain("Accepted with extracted evidence");
+    expect(section).toContain("Accepted with no extractable evidence");
+    expect(section).toContain("Blocked");
+    expect(section).toContain("Damaged");
+    expect(section).toContain("`evidenceScope`: strict object with exactly these keys");
+    for (const field of [
+      "`scopeId`",
+      "`method`",
+      "`temporalBounds`",
+      "`populationOrDomain`",
+      "`geographicScope`",
+      "`limitations`",
+    ]) {
+      expect(section).toContain(field);
+    }
+    expect(section).toContain("otherwise `null`");
+    expect(section).toContain("use an empty array when no limitation is extractable");
+    expect(section).toContain("`provenance`: strict object with exactly `locator` and `rationale`");
+    expect(section).toContain("both are non-empty strings");
+  });
+
   it("keeps Evidence Lifecycle prompt sections generic and free of Captain canary terms", () => {
     const content = readPrompt();
 

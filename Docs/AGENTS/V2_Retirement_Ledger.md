@@ -67,9 +67,9 @@ Debt accepted:
 Latest observed `npm run debt:sensors` state on 2026-05-19:
 
 - V2 source: `41734` lines over advisory threshold `30000`
-- V2 tests: `46841` lines over advisory threshold `40000`
+- V2 tests: `46867` lines over advisory threshold `40000`
 - Boundary guard: `10131` lines over advisory threshold `6000`
-- Docs/WIP markdown files: `211` over advisory threshold `180`
+- Docs/WIP markdown files: `212` over advisory threshold `180`
 - Handoff markdown files: `725` over advisory threshold `650`
 - Net mechanism increases: `14`
 - V2 consolidation-marker review files: `5`

@@ -1,7 +1,7 @@
 # V2 Slice X7-W5-D Evidence Extraction Prompt/Contract Alignment Review Package
 
 Date: 2026-05-19
-Status: review package only
+Status: locally implemented and verifier-clean; no live job run
 Author: Captain Deputy / Lead Developer
 
 ## 1. Purpose
@@ -163,3 +163,24 @@ Latest debt-sensor status at package drafting: `advisory_warn` on 2026-05-19T21:
 Claude Opus 4.6 reviewed the initial package as `approve_with_changes`. Required amendment: do not limit W5-D to `evidenceScope` alone, because W5-C also reported a top-level union mismatch and the current prompt underspecifies strict `provenance` shape plus branch-specific null/empty-array requirements. This package was amended to allow only these additional contract clarifications: `provenance.{locator,rationale}` and branch-specific `null` versus empty-array rules.
 
 Gemini reviewed the amended package text as `approve`, with no further changes required. Gemini agreed that W5-D is the direct bounded next step and that the approval boundary, forbidden list, pass/stop criteria, and later canary criteria are clear.
+
+## Implementation Closeout
+
+Captain approved analysis prompt edits on 2026-05-20 in the current Codex thread.
+
+Implemented scope:
+
+- `apps/web/prompts/claimboundary-v2.prompt.md`: clarified only the `V2_EVIDENCE_EXTRACTION` output contract.
+- `apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/task-contracts/prompt-contract.test.ts`: added focused prompt-contract coverage for strict branch rules, `evidenceScope`, and `provenance`.
+
+No schema files, runtime code, provider/model routing, retries, public behavior, parser/cache/SR/storage, report/verdict/warning/confidence behavior, ACS/direct URL, or V1 files were changed.
+
+Verifier results:
+
+- Focused W5-D verifier set passed: 6 files, 111 tests.
+- `npm run validate:v2-gates`: passed.
+- `npm run debt:sensors`: `advisory_warn` with existing V2 footprint, boundary guard, docs volume, and consolidation-marker warnings.
+- `npm -w apps/web run build`: passed.
+- `git diff --check`: passed.
+
+Live jobs: none run for W5-D. A later W5-D canary still requires explicit Captain authorization, committed/refreshed runtime, clean status, and the pass/stop criteria above.

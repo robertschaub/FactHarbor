@@ -367,6 +367,13 @@ Top-level object:
 - `blockedReason`: blocked reason, otherwise `null`
 - `damagedReason`: damaged reason, otherwise `null`
 
+Branch rules:
+
+- Accepted with extracted evidence: `status` is `accepted`, `extractionStatus` is `evidence_extracted`, `rationale` is a non-empty string, `evidenceItems` is a non-empty array, and both `blockedReason` and `damagedReason` are `null`.
+- Accepted with no extractable evidence: `status` is `accepted`, `extractionStatus` is `no_extractable_evidence`, `rationale` is a non-empty string, `evidenceItems` is an empty array, and both `blockedReason` and `damagedReason` are `null`.
+- Blocked: `status` is `blocked`; `extractionStatus`, `rationale`, `evidenceItems`, and `damagedReason` are `null`; `blockedReason` is populated from the allowed blocked-reason values.
+- Damaged: `status` is `damaged`; `extractionStatus`, `rationale`, `evidenceItems`, and `blockedReason` are `null`; `damagedReason` is populated from the allowed damaged-reason values.
+
 Accepted `evidenceItems` payload:
 
 - `evidenceItems` may be empty only when `extractionStatus` is `no_extractable_evidence`.
@@ -375,11 +382,17 @@ Accepted `evidenceItems` payload:
 - `statement`: evidence statement extracted from the supplied content.
 - `targetAtomicClaimIds`: selected AtomicClaims addressed by the evidence.
 - `claimDirection`: `supports`, `opposes`, `mixed`, `contextual`, or `unclear`.
-- `evidenceScope`: source-local methodology, temporal, population/domain, geography, and limitation metadata.
+- `evidenceScope`: strict object with exactly these keys:
+  - `scopeId`: non-empty scope identifier.
+  - `method`: string when the source content states or implies a method; otherwise `null`.
+  - `temporalBounds`: string when the source content states a time window or date boundary; otherwise `null`.
+  - `populationOrDomain`: string when the source content states a population, domain, subject class, or system boundary; otherwise `null`.
+  - `geographicScope`: string when the source content states a geographic boundary; otherwise `null`.
+  - `limitations`: array of limitation strings; use an empty array when no limitation is extractable.
 - `probativeValue`: `high`, `medium`, `low`, or `insufficient`.
 - `evidenceStrength`: `strong`, `moderate`, `limited`, or `unclear`.
 - `extractionConfidence`: `high`, `medium`, or `low`.
-- `provenance`: bounded source-content locator and rationale.
+- `provenance`: strict object with exactly `locator` and `rationale`; both are non-empty strings.
 
 ### Rules
 

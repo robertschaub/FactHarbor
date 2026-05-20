@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T21:58:09.867Z",
-  "count": 724,
+  "generatedAt": "2026-05-20T04:44:33.797Z",
+  "count": 725,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15863,6 +15863,31 @@
         "Docs/AGENTS/Handoffs/2026-05-19_Lead_Developer_V2_X7-W5-C_Schema_Diagnosis_Repair.md"
       ],
       "summary": "Do not run another live job from this uncommitted work. If Captain approves a W5-C follow-up canary, commit first, refresh runtime, then inspect `executionTelemetry.schemaDiagnostics` on the authenticated W5 artifact route if W5 still returns `schema_validation_failed`."
+    },
+    {
+      "file": "2026-05-20_Lead_Developer_V2_X7-W5-D_Prompt_Contract_Alignment.md",
+      "date": "2026-05-20",
+      "roles": [
+        "lead_developer",
+        "captain_deputy"
+      ],
+      "topics": [
+        "v2",
+        "x7-w5-d",
+        "prompt",
+        "contract",
+        "alignment"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary-v2.prompt.md",
+        "apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/task-contracts/prompt-contract.test.ts",
+        "Docs/WIP/2026-05-19_V2_Slice_X7-W5-D_Evidence_Extraction_Prompt_Contract_Alignment_Review_Package.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/V2_Retirement_Ledger.md"
+      ],
+      "summary": "Implement the Captain-approved W5-D analysis prompt edit after W5-C proved schema-validation failure at W5 evidence extraction."
     }
   ]
 }
