@@ -444,3 +444,67 @@ Amendment applied:
 - The package sets an `18` top-level-field default projection ceiling.
 - The package adds exact lineage equality checks, allowed status/reason labels,
   net-mechanism accounting, and focused verifier names.
+- Implementation review then clarified the lineage authority: W5-E verifies the
+  runtime-owned W5 parent snapshot and local W5 EvidenceItem/projection
+  consistency against that snapshot. It does not add cross-store W3-B/W4-G/W4-H
+  /W4-I reads in this slice, because that would add coupling and a new
+  mechanism. The later W5-E canary package must inspect the same-ledger parent
+  artifacts against the W5 snapshot at least once before W4-I route removal or
+  merge.
+
+## Implementation Closeout
+
+Status: locally implemented and verifier-clean. No live job has run.
+
+Implementation delta:
+
+- Added the hidden/internal bounded EvidenceItem admission owner at
+  `apps/web/src/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-item-admission.ts`.
+- Reused the existing W5 bounded evidence-extraction artifact sink/route as the
+  only projection carrier; no new route or sink was added.
+- Added the admission decision to the default W5 artifact projection with
+  hash/length/provenance-only fields, all text redacted, and an `18` top-level
+  field ceiling.
+- Marked the W4-I route response as historical same-ledger eligibility evidence
+  merged by W5-E, with removal trigger
+  `remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner`.
+- Added focused admission, W5 sink, W5 route, W4-I route, and boundary-guard
+  coverage.
+
+Validation:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-item-admission.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route.test.ts test/unit/app/api/internal/analyzer-v2/evidence-lifecycle-execution-readiness-artifacts/route.test.ts` passed: 4 files / 14 tests.
+- `npm -w apps/web exec -- vitest run test/unit/lib/analyzer-v2/boundary-guard.test.ts --testNamePattern "X7-W5"` passed: 1 file / 87 tests. The command still loaded the full boundary-guard file; all guards passed.
+- `npm run validate:v2-gates` passed.
+- `npm run debt:sensors` returned `advisory_warn` with the known V2/test/docs footprint and consolidation-marker warnings.
+- `npm -w apps/web run build` passed.
+
+Failed-attempt note:
+
+- One earlier full boundary-guard run failed on the older X7-D test-level
+  `20_000ms` timeout. The W5-E guard had passed in that run. The attempt was
+  classified as `keep`; no source changes were made for that unrelated timeout.
+
+DEBT-GUARD RESULT:
+
+- Implementation review: Claude Opus returned `PASS_WITH_CONCERNS`; the
+  concrete retry-count gap was fixed, local W5 parent-snapshot lineage checks
+  were strengthened, and a follow-up Steer-Co reviewer returned `CONSENT` for
+  treating the W5 runtime-owned parent snapshot as admission authority in this
+  slice.
+
+- Classification: `missing-capability` plus `obsolete-parallel-mechanism`
+  pressure.
+- Chosen option: add the missing W5-E admission decision while amending the
+  existing W5 sink/route and W4-I route metadata in place.
+- Rejected path: adding a new route/sink, opening public/report behavior, or
+  deleting W4-I before replacement evidence exists.
+- What was removed/simplified: no deletion yet; W4-I standalone route is now
+  explicitly historical/merged and has a concrete removal trigger.
+- What was added: one structural hidden/internal admission decision and focused
+  tests.
+- Net mechanism count: bounded increase in one core decision; route/sink count
+  unchanged and W4-I is marked for merge/removal.
+- Debt accepted and removal trigger: W4-I route remains temporarily for
+  same-ledger eligibility inspection until
+  `remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner`.

@@ -176,6 +176,10 @@ const evidenceLifecycleBoundedEvidenceExtractionPath = path.resolve(
   evidenceLifecycleEvidenceItemsRoot,
   "bounded-evidence-extraction.ts",
 );
+const evidenceLifecycleBoundedEvidenceItemAdmissionPath = path.resolve(
+  evidenceLifecycleEvidenceItemsRoot,
+  "bounded-evidence-item-admission.ts",
+);
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
 const evidenceLifecycleSourceMaterialLocatorMaterializationPath = path.resolve(
@@ -1100,6 +1104,14 @@ const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkApp
     [
       "@/lib/analyzer-v2/run-context",
       new Set(["PipelineRunContext"]),
+    ],
+    [
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-item-admission",
+      new Set([
+        "buildBoundedEvidenceItemAdmissionDecision",
+        "BOUNDED_EVIDENCE_ITEM_ADMISSION_DEFAULT_PROJECTION_MAX_TOP_LEVEL_FIELDS",
+        "BoundedEvidenceItemAdmissionDecision",
+      ]),
     ],
     [
       "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
@@ -5779,6 +5791,9 @@ describe("analyzer-v2 boundary guard", () => {
       "inputTextReturned: false",
       "readEvidenceLifecycleExecutionReadinessRuntimeArtifactDefaultProjections",
       "defaultProjection: \"hash_length_provenance_only\"",
+      "historical_same_ledger_eligibility_evidence",
+      "x7-w5-e_bounded_evidence_item_admission_projection",
+      "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
     ]) {
       if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
         violations.push(`W4-I execution-readiness default route projection missing required text ${requiredText}`);
@@ -5853,6 +5868,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     for (const requiredPath of [
       evidenceLifecycleBoundedEvidenceExtractionPath,
+      evidenceLifecycleBoundedEvidenceItemAdmissionPath,
       analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath,
       analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionProvenancePath,
       analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath,
@@ -5881,6 +5897,7 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     const coreContent = readFileSync(evidenceLifecycleBoundedEvidenceExtractionPath, "utf8");
+    const admissionContent = readFileSync(evidenceLifecycleBoundedEvidenceItemAdmissionPath, "utf8");
     const ownerContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionOwnerPath, "utf8");
     const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPath, "utf8");
     const routeContent = readFileSync(
@@ -5911,8 +5928,29 @@ describe("analyzer-v2 boundary guard", () => {
       "sourceReliabilityWrite: false",
       "storageWrite: false",
     ]) {
-      if (!coreContent.includes(requiredText) && !sinkContent.includes(requiredText)) {
+      if (
+        !coreContent.includes(requiredText) &&
+        !admissionContent.includes(requiredText) &&
+        !sinkContent.includes(requiredText)
+      ) {
         violations.push(`W5 bounded evidence extraction implementation missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "v2.evidence-lifecycle.bounded-evidence-item-admission.x7w5e",
+      "bounded_evidence_items_admitted_internal_consumption_pending",
+      "evidence_item_admission_blocked",
+      "evidence_item_admission_damaged",
+      "BOUNDED_EVIDENCE_ITEM_ADMISSION_DEFAULT_PROJECTION_MAX_TOP_LEVEL_FIELDS = 18",
+      "w5_result_not_accepted",
+      "evidence_item_count_not_positive",
+      "lineage_mismatch",
+      "w4h_parent_not_closed_packet",
+      "w4i_parent_not_eligible_denial",
+      "missing_evidence_item_provenance",
+    ]) {
+      if (!admissionContent.includes(requiredText) && !sinkContent.includes(requiredText)) {
+        violations.push(`W5-E bounded EvidenceItem admission missing required text ${requiredText}`);
       }
     }
     for (const requiredText of [
@@ -5988,6 +6026,7 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (
         coreContent.includes(forbiddenText) ||
+        admissionContent.includes(forbiddenText) ||
         ownerContent.includes(forbiddenText) ||
         sinkContent.includes(forbiddenText) ||
         routeContent.includes(forbiddenText)

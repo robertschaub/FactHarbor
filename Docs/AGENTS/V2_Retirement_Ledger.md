@@ -2,7 +2,7 @@
 
 **Status:** Active draft
 **Owner:** Captain Deputy / Lead Developer
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-20
 **Purpose:** Track what must be kept, retired, merged, quarantined, or deferred so V2 converges instead of accumulating permanent proof machinery.
 
 This ledger is not a cleanup authorization. Deletions, public cutover, prompt
@@ -43,10 +43,10 @@ normal approval gates.
 | V2-RL-006 | W2/TR1 transport repair result package | quarantine | Lead Developer | PIV1-A remains accepted as the current path and no TR1 rerun is authorized | Keep as historical pivot evidence; do not continue TR1 repair |
 | V2-RL-007 | W3-A search-result preview materialization | merge | Lead Developer | W3-B or later Source Material path owns the useful locator/materialization contract | Merge preview-only checks into Source Material path or quarantine as diagnostic |
 | V2-RL-008 | W3-B bounded page-summary Source Material | keep | Lead Developer | Broader Source Material owner exists and W3-B behavior is absorbed into the general source-material contract | Use as first real Source Material reference until generalized |
-| V2-RL-009 | W4-A/W4-C/W4-D/W4-E readiness/shell/denial chain | merge | Lead Developer | W4-G/H/I or later EvidenceCorpus/extraction readiness owner supersedes the intermediate proof chain | Consolidate same-ledger corpus closure and denial checks into fewer owners |
-| V2-RL-010 | W4-G bounded corpus-text sidecar | keep | Lead Developer | EvidenceCorpus text-bearing record becomes the stable internal owner | Merge sidecar into EvidenceCorpus storage/contract when extraction path is approved |
-| V2-RL-011 | W4-H bounded extraction-input packet | keep | Lead Developer | Approved extraction executor consumes the packet and owns the stable input contract | Keep exact lineage checks; do not widen before executor review |
-| V2-RL-012 | W4-I execution-readiness denial | merge | Lead Developer | X7-W5-A owns equivalent W4-H/W4-I pre-call eligibility checks, then one accepted W5 product-route canary either produces hidden EvidenceItem value or returns to Steer-Co without progressing to W6 | Keep W4-I as same-ledger closure evidence for W5-A; after the first accepted W5 canary, merge/delete the standalone W4-I denial route/sink or quarantine it as historical containment evidence |
+| V2-RL-009 | W4-A/W4-C/W4-D/W4-E readiness/shell/denial chain | merge | Lead Developer | W5-E or later EvidenceItem admission owner supersedes intermediate proof-chain inspection while preserving parent lineage checks | X7-W5-E marks the W4 proof role as merged into W5/W5-E same-ledger lineage; do not add new W4 proof consumers |
+| V2-RL-010 | W4-G bounded corpus-text sidecar | keep | Lead Developer | EvidenceCorpus text-bearing record becomes the stable internal owner | Keep W4-G as parent text lineage for W5-E admission; merge sidecar into EvidenceCorpus storage/contract when extraction/report path is approved |
+| V2-RL-011 | W4-H bounded extraction-input packet | keep | Lead Developer | Approved extraction executor and W5-E admission consume the packet and own the stable input contract | Keep exact lineage checks; do not widen before downstream EvidenceItem/report owner review |
+| V2-RL-012 | W4-I execution-readiness denial | merge | Lead Developer | W5-E consumes W4-I status through the W5 admission projection and a later W5-E canary proves the combined route; then remove or merge the standalone W4-I route/sink | X7-W5-E keeps W4-I core eligibility logic but marks the standalone W4-I route as historical same-ledger eligibility evidence with removal trigger `remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner`. W5-E treats the runtime-owned W5 parent snapshot as admission-time lineage authority; the later W5-E canary package must inspect same-ledger W3-B/W4-G/W4-H/W4-I artifacts against the W5 snapshot at least once before this route is removed or merged. |
 | V2-RL-013 | Boundary guard monolith test (`boundary-guard.test.ts`) | merge | Lead Developer | Guard sections are split into focused owners without losing coverage | Plan a test-structure split after current gates stabilize |
 | V2-RL-014 | V2 WIP/handoff volume | retire | Captain Deputy | Consolidated current-truth docs cover active decisions and old WIP is archived | Run docs consolidation after next bounded orchestration review |
 | V2-RL-015 | Captain Deputy / Steer-Co / reasoning-budget governance package | keep | Agents Supervisor | Operating model proves too heavy or review finds authority duplication | Bounded orchestration review checks scope and cost discipline |
@@ -64,13 +64,13 @@ Debt accepted:
 
 ## Current Debt Sensor Snapshot
 
-Latest observed `npm run debt:sensors` state on 2026-05-19:
+Latest observed `npm run debt:sensors` state on 2026-05-20:
 
 - V2 source: `41734` lines over advisory threshold `30000`
 - V2 tests: `46867` lines over advisory threshold `40000`
 - Boundary guard: `10131` lines over advisory threshold `6000`
-- Docs/WIP markdown files: `212` over advisory threshold `180`
-- Handoff markdown files: `725` over advisory threshold `650`
+- Docs/WIP markdown files: `213` over advisory threshold `180`
+- Handoff markdown files: `727` over advisory threshold `650`
 - Net mechanism increases: `14`
 - V2 consolidation-marker review files: `5`
 

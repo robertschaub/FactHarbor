@@ -198,6 +198,15 @@ describe("bounded evidence extraction artifact sink", () => {
     expect(projections[0]?.boundedEvidenceExtraction.extractionResult).toBeNull();
     expect(projections[0]?.boundedEvidenceExtraction.executionTelemetry.schemaDiagnostics).toBeNull();
     expect(projections[0]?.boundedEvidenceExtraction.evidenceItemTextReturnedByDefault).toBe(false);
+    expect(projections[0]?.boundedEvidenceItemAdmission.admissionStatus).toBe(
+      "bounded_evidence_items_admitted_internal_consumption_pending",
+    );
+    expect(projections[0]?.boundedEvidenceItemAdmission.redaction).toEqual({
+      evidenceItemTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+    });
+    expect(Object.keys(projections[0]?.boundedEvidenceItemAdmission ?? {})).toHaveLength(18);
     expect(serialized).not.toContain(STATEMENT_TEXT);
     expect(serialized).not.toContain(SOURCE_TEXT);
     expect(serialized).not.toContain('"statement":');

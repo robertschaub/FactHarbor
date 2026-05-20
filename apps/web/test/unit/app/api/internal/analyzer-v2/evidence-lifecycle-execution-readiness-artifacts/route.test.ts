@@ -71,6 +71,9 @@ describe("Analyzer V2 internal execution-readiness artifact route", () => {
       visibility: "internal_admin_only",
       publicPointerExposure: "forbidden",
       defaultProjection: "hash_length_provenance_only",
+      inspectionRole: "historical_same_ledger_eligibility_evidence",
+      mergedBy: "x7-w5-e_bounded_evidence_item_admission_projection",
+      removalTrigger: "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
       ledgerId,
       artifactCount: 1,
     });

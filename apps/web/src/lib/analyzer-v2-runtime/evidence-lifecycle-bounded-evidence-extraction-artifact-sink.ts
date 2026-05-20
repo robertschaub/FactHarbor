@@ -1,5 +1,10 @@
 import type { PipelineRunContext } from "@/lib/analyzer-v2/run-context";
 import {
+  buildBoundedEvidenceItemAdmissionDecision,
+  BOUNDED_EVIDENCE_ITEM_ADMISSION_DEFAULT_PROJECTION_MAX_TOP_LEVEL_FIELDS,
+  type BoundedEvidenceItemAdmissionDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-item-admission";
+import {
   BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_VERSION,
   type BoundedEvidenceExtractionDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
@@ -96,6 +101,7 @@ export type BoundedEvidenceExtractionRuntimeArtifact = {
   readonly evidenceItemTextReturned: false;
   readonly sourceTextReturned: false;
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionRuntimeOwnedDecision;
+  readonly boundedEvidenceItemAdmission: BoundedEvidenceItemAdmissionDecision;
 };
 
 export type BoundedEvidenceExtractionItemDefaultProjection = Pick<
@@ -163,6 +169,10 @@ export function recordBoundedEvidenceExtractionRuntimeArtifact(input: {
     evidenceItemTextReturned: false,
     sourceTextReturned: false,
     boundedEvidenceExtraction: input.boundedEvidenceExtraction,
+    boundedEvidenceItemAdmission: buildBoundedEvidenceItemAdmissionDecision({
+      ledgerId: input.context.observabilityLedger.ledgerId,
+      boundedEvidenceExtraction: input.boundedEvidenceExtraction,
+    }),
   };
 
   if (!isWithinSerializedLimit(artifact)) {
@@ -235,7 +245,56 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
       evidenceItemTextAccess: "redacted_default_hash_length_provenance_only",
       sourceTextAccess: "redacted_default_hash_length_provenance_only",
     },
+    boundedEvidenceItemAdmission: redactBoundedEvidenceItemAdmissionDecision(
+      artifact.boundedEvidenceItemAdmission,
+    ),
   });
+}
+
+function redactBoundedEvidenceItemAdmissionDecision(
+  decision: BoundedEvidenceItemAdmissionDecision,
+): BoundedEvidenceItemAdmissionDecision {
+  const sideEffects = {
+    ...decision.sideEffects,
+    evidenceItemTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    parserExecuted: false,
+    reportGenerated: false,
+    verdictGenerated: false,
+    warningGenerated: false,
+    confidenceGenerated: false,
+    publicSurfaceWritten: false,
+    cacheRead: false,
+    cacheWrite: false,
+    sourceReliabilityRead: false,
+    sourceReliabilityWrite: false,
+    storageWrite: false,
+  } satisfies BoundedEvidenceItemAdmissionDecision["sideEffects"];
+  const redaction = {
+    evidenceItemTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+  } satisfies BoundedEvidenceItemAdmissionDecision["redaction"];
+  const projection = {
+    ...decision,
+    sideEffects,
+    redaction,
+  };
+
+  if (Object.keys(projection).length > BOUNDED_EVIDENCE_ITEM_ADMISSION_DEFAULT_PROJECTION_MAX_TOP_LEVEL_FIELDS) {
+    return {
+      ...projection,
+      admissionStatus: "evidence_item_admission_damaged",
+      blockedReason: null,
+      damagedReason: "projection_redaction_violation",
+      admittedEvidenceItemCount: 0,
+      evidenceItemStatementHashes: [],
+      evidenceItemStatementByteLengths: [],
+    };
+  }
+
+  return projection;
 }
 
 function redactEvidenceItemStatementProjection(

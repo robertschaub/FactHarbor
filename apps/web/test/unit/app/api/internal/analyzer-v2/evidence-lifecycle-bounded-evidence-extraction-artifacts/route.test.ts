@@ -253,6 +253,17 @@ describe("Analyzer V2 internal bounded evidence extraction artifact route", () =
     expect(body.artifacts[0].inputTextReturned).toBe(false);
     expect(body.artifacts[0].evidenceItemTextReturned).toBe(false);
     expect(body.artifacts[0].boundedEvidenceExtraction.extractionResult).toBeNull();
+    expect(body.artifacts[0].boundedEvidenceItemAdmission).toMatchObject({
+      admissionStatus: "bounded_evidence_items_admitted_internal_consumption_pending",
+      admittedEvidenceItemCount: 1,
+      defaultProjection: "hash_length_provenance_only",
+      redaction: {
+        evidenceItemTextReturned: false,
+        sourceTextReturned: false,
+        inputTextReturned: false,
+      },
+    });
+    expect(Object.keys(body.artifacts[0].boundedEvidenceItemAdmission)).toHaveLength(18);
     expect(serialized).not.toContain(FORBIDDEN_TEXT);
     expect(serialized).not.toContain('"statement":');
     expect(serialized).not.toContain("reportMarkdown");
