@@ -4513,3 +4513,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Repaired the W3-B source-material page-summary admin route projection that stopped W5-E2. The route now removes `sourceMaterialText` from default responses, preserves hash/length/provenance metadata, and records `sourceMaterialTextReturned: false`; stored runtime artifacts still retain source text for downstream W4/W5 consumption.
 **Warnings:** This is not a W5-E2 pass and no live job was run. A separate W5-E rerun package, committed runtime refresh, and one live-job spend are still required to prove the full path after this repair. Remaining live-job budget is `2`.
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_X7-W3B_Default_Admin_Redaction_Repair.md
+
+---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-E3 Canary Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Package.md` for exactly one product-route canary after W3-B redaction repair commit `4a86e2cf`. It must prove both W5-E accepted admission and same-ledger W3-B/W4/W5 default-admin redaction.
+**Warnings:** Claude Opus 4.6 reviewed the package as `approve` with no required changes. This package authorizes no source changes, no second canary, and no public/report/verdict/warning/confidence/parser/cache/SR/storage/provider expansion/prompt/model/config/schema/ACS/direct URL/V1 work. Remaining live-job budget before execution is `2`.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E3_Canary_Package.md
