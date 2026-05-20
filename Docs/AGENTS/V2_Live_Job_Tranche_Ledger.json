@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 7,
+    "currentRemaining": 8,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
@@ -17,7 +17,7 @@
       "date": "2026-05-20",
       "previousRemaining": 7,
       "resetRemaining": 8,
-      "reason": "Captain authorized job submission after W8-E and reset/increased the current live-job budget to 8, instructing the team to use it wisely."
+      "reason": "Captain re-authorized job submission after W6-C3 implementation and set the active job budget to 8, instructing the team to use it wisely."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,
