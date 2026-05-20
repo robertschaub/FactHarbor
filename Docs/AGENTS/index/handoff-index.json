@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T22:39:43.816Z",
-  "count": 771,
+  "generatedAt": "2026-05-20T22:52:33.916Z",
+  "count": 772,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15897,6 +15897,28 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-B Closeout And W6-C0 Steer-Co"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W6-C3_Sufficiency_Diagnostics_Canary.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "w6-c3",
+        "sufficiency",
+        "diagnostics",
+        "canary"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-20_V2_Slice_W6-C3_Sufficiency_Schema_Diagnostics_Canary_Result.md",
+        "Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json"
+      ],
+      "summary": "Use `Docs/WIP/2026-05-20_V2_Slice_W6-C3_Sufficiency_Schema_Diagnostics_Canary_Result.md` as the source of truth for issue paths. The next package should repair W6-C with the smallest balanced change and preserve no public behavior, no parser/cache/SR/storage, no provider expansion, no W2/W3 widening"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W6-C3_Sufficiency_Diagnostics_Package.md",

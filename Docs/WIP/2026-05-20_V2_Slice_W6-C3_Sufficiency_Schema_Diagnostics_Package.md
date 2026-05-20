@@ -1,10 +1,12 @@
 # V2 Slice W6-C3 Sufficiency Schema Diagnostics Package
 
-**Status:** Steer-Co-authorized implementation package
+**Status:** implemented and canary-passed; closed for W6-C3
 **Date:** 2026-05-20
 **Author:** Captain Deputy / Steer-Co
 **Package type:** code-only diagnostic amendment plus one gated canary
 **Implementation baseline:** `5d9c6ef3`
+**Implementation commit:** `cb070a7d`
+**Canary result:** `PASS_X7_W6_C3_SUFFICIENCY_SCHEMA_DIAGNOSTICS_CAPTURED` on job `0456086280104979b74da724d9d58308`
 
 ## 1. Purpose
 

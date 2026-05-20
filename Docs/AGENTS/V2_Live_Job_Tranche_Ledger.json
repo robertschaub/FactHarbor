@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 8,
+    "currentRemaining": 7,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
@@ -203,6 +203,18 @@
         "count": 1,
         "remainingAfter": 7,
         "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_W8-F_W8E_Attribution_Product_Route_Canary_Package.md",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W6-C3-SUFFICIENCY-SCHEMA-DIAGNOSTICS-CANARY",
+        "jobId": "0456086280104979b74da724d9d58308",
+        "classification": "PASS_X7_W6_C3_SUFFICIENCY_SCHEMA_DIAGNOSTICS_CAPTURED",
+        "implementationCommit": "cb070a7d",
+        "runtimeCommit": "132d90ae141a72f2a492e8acf936d587229b0a03",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 7,
+        "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_W6-C3_Sufficiency_Schema_Diagnostics_Package.md",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

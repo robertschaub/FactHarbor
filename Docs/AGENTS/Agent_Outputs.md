@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W6-C3 Sufficiency Diagnostics Canary -- [Significant] [open-items: yes]
+**For next agent:** Ran exactly one authorized W6-C3 canary, job `0456086280104979b74da724d9d58308`, on runtime `132d90ae141a72f2a492e8acf936d587229b0a03`. Classified it as `PASS_X7_W6_C3_SUFFICIENCY_SCHEMA_DIAGNOSTICS_CAPTURED`: public V2 stayed damaged/precutover; hidden W8-B stayed internal/admin-only and text-free by default; W6-C diagnostics captured invalid enum values under `sufficiencyAssessment.missingEvidenceDimensions.*` and integrity event shape drift at `integrityEvents.0`.
+**Warnings:** W6-C3 authorizes no second canary and no direct prompt/model/config/schema/UCM/gateway edit. Next step is a narrow W6-C4 prompt/contract repair review package based on the captured issue paths.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-C3_Sufficiency_Diagnostics_Canary.md
+
+---
 ### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W8-E Upstream Stop Attribution Package -- [Significant] [open-items: yes]
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W8-E_W8B_Upstream_Stop_Attribution_Package.md` after W8-D stopped on `sufficiency_assessment_not_completed`. Steer-Co agreed W8-B route reachability is proven and zero cited refs are downstream fallout; the next bounded step is to amend the existing W8-B projection with enum-only upstream stop attribution, not add another route/sink and not spend another live job.
 **Warnings:** W8-E authorizes no prompt/model/config/schema/UCM/gateway edits, live jobs, public/API/UI/report/export/compatibility behavior, new route/sink/storage/cache/SR/parser/provider expansion, V1 work, V1 cleanup, or readiness relaxation. Non-completed W6-C must remain blocked.
