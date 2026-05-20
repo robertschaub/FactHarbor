@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T16:59:16.480Z",
-  "count": 751,
+  "generatedAt": "2026-05-20T17:05:12.282Z",
+  "count": 752,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15958,6 +15958,24 @@
       ],
       "files_touched": [],
       "summary": "Prepare the next review package after W6-C hygiene, following the consolidated Steer-Co direction."
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W7-B_W8-B_Steer-Co_Review_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w7-b",
+        "w8-b",
+        "steer-co",
+        "review",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 W7-B / W8-B Steer-Co Review Package"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W8-A_Review_Package.md",
