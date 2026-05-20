@@ -4559,6 +4559,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-G_Canary_Result.md
 
 ---
+### 2026-05-20 | Lead Developer / Captain Deputy | Codex (GPT-5.5) + reviewer sidecars | V2 X7-W5-H W4-I Standalone Route Retirement -- [Significant] [open-items: yes]
+**For next agent:** Retired the standalone W4-I internal admin route and route test after X7-W5-G proved the W5-F handoff projection live. W4-I core denial, runtime ownership, provenance, process-local sink, and orchestrator recording remain for W5 lineage. W5 route projection remains the replacement inspection owner.
+**Warnings:** No live job was run; live-job budget remains `0`. Do not reintroduce the standalone W4-I route. Do not remove W4-I core/sink/provenance until a later stable EvidenceItem/report owner no longer needs W4-I lineage. No public/report/verdict/warning/confidence/parser/cache/SR/storage/provider expansion/prompt/model/config/schema/ACS/direct URL/V1 work was authorized.
+**Verification:** Focused W5 route/boundary verifier passed (2 files / 92 tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned known `advisory_warn`; `npm -w apps/web run build` passed after clearing stale generated `.next` route types; `git diff --check` passed; explicit `rg` route-reference check returned no output except the boundary guard retired-route assertion.
+**DEBT-GUARD RESULT:** Classification: obsolete-parallel-mechanism / planned retirement. Chosen option: delete standalone W4-I route and route test, amend existing guard/docs, keep W4-I core lineage state. Rejected path: tombstone route or indefinite retention. Net mechanisms: decreases. Residual debt: W4-I core/sink remains temporary lineage debt; boundary guard remains oversized.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_X7-W5-H_W4I_Route_Retirement.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | Philosophy Weaknesses To Pipeline V2 Plan -- [Significant] [open-items: yes]
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-05-20_Lead_Architect_Philosophy_V2_Epistemology_Plan.md` before drafting any philosophy-driven V2 package. Consolidated debate result is `MODIFY`: address source-dependency inflation, proxy/causal gaps, expected-evidence scarcity, normative/evaluative claims, temporal fragility, and source-language/source-justice risks through existing V2 owners (`ClaimContract`, `EvidenceCorpus`, `SufficiencyAssessment`, `BoundarySet`, `VerdictSet`, `ReportResult`), not a separate epistemology subsystem. Prioritize report-visible evidence/provenance value and retirement/convergence over new hidden-only diagnostics.
 **Warnings:** No implementation was done. Any future prompt/schema/model/config/runtime slice still needs normal approval gates, LLM Expert review, scorecard/retirement/consolidation blocks, and Captain-approved validation inputs only.

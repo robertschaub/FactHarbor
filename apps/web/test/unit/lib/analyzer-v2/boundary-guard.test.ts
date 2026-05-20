@@ -63,10 +63,6 @@ const analyzerV2EvidenceLifecycleExtractionInputArtifactInspectionRoutePath = pa
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-extraction-input-artifacts/route.ts",
 );
-const analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath = path.resolve(
-  appRoot,
-  "api/internal/analyzer-v2/evidence-lifecycle-execution-readiness-artifacts/route.ts",
-);
 const analyzerV2EvidenceLifecycleBoundedEvidenceExtractionArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route.ts",
@@ -179,6 +175,10 @@ const evidenceLifecycleBoundedEvidenceExtractionPath = path.resolve(
 const evidenceLifecycleBoundedEvidenceItemAdmissionPath = path.resolve(
   evidenceLifecycleEvidenceItemsRoot,
   "bounded-evidence-item-admission.ts",
+);
+const evidenceLifecycleEvidenceItemHandoffPath = path.resolve(
+  evidenceLifecycleEvidenceItemsRoot,
+  "evidence-item-handoff.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -1405,12 +1405,6 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleExtractionInputArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-extraction-input-artifact-sink",
-    ]),
-  ],
-  [
-    toPosix(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
-    new Set([
-      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
     ]),
   ],
 ]);
@@ -5738,10 +5732,13 @@ describe("analyzer-v2 boundary guard", () => {
       analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialOwnerPath,
       analyzerV2RuntimeEvidenceLifecycleExecutionReadinessDenialProvenancePath,
       analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath,
-      analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath,
     ]) {
       expect(existsSync(requiredPath)).toBe(true);
     }
+    expect(existsSync(path.resolve(
+      appRoot,
+      "api/internal/analyzer-v2/evidence-lifecycle-execution-readiness-artifacts/route.ts",
+    ))).toBe(false);
 
     const sinkSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath);
     for (const importBinding of collectImportBindings(sinkSourceFile)) {
@@ -5762,7 +5759,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     const coreContent = readFileSync(evidenceLifecycleExecutionReadinessDenialPath, "utf8");
     const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleExecutionReadinessArtifactSinkPath, "utf8");
-    const routeContent = readFileSync(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath, "utf8");
+    const w5HandoffContent = readFileSync(evidenceLifecycleEvidenceItemHandoffPath, "utf8");
     for (const requiredText of [
       "v2.evidence-lifecycle.execution-readiness-denial.x7w4i",
       "evidence_lifecycle_execution_readiness_denial",
@@ -5795,28 +5792,19 @@ describe("analyzer-v2 boundary guard", () => {
       "inputTextReturned: false",
       "readEvidenceLifecycleExecutionReadinessRuntimeArtifactDefaultProjections",
       "defaultProjection: \"hash_length_provenance_only\"",
-      "historical_same_ledger_eligibility_evidence",
-      "x7-w5-f_evidence_item_handoff_projection",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`W4-I execution-readiness sink projection missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "historical_same_ledger_evidence_merged",
       "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
       "after_w5f_handoff_route_projection_verified",
     ]) {
-      if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
-        violations.push(`W4-I execution-readiness default route projection missing required text ${requiredText}`);
+      if (!w5HandoffContent.includes(requiredText)) {
+        violations.push(`W5-F handoff missing W4-I retirement text ${requiredText}`);
       }
-    }
-
-    const routeImports = collectModuleSpecifiers(
-      parseSource(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
-    ).sort();
-    expect(routeImports).toEqual([
-      "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
-      "@/lib/auth",
-      "next/server",
-    ]);
-    for (const location of collectDirectFetchCallLocations(
-      parseSource(analyzerV2EvidenceLifecycleExecutionReadinessArtifactInspectionRoutePath),
-    )) {
-      violations.push(`W4-I route makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
     }
 
     const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
@@ -5850,18 +5838,8 @@ describe("analyzer-v2 boundary guard", () => {
       "requestUrl",
       "rawProviderJson",
     ]) {
-      if (coreContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+      if (coreContent.includes(forbiddenText) || sinkContent.includes(forbiddenText)) {
         violations.push(`W4-I execution-readiness path contains forbidden text ${forbiddenText}`);
-      }
-    }
-    for (const forbiddenRouteText of [
-      "\"inputText\":",
-      "source text",
-      "snippet",
-      "summary",
-    ]) {
-      if (routeContent.includes(forbiddenRouteText)) {
-        violations.push(`W4-I default route references forbidden text surface ${forbiddenRouteText}`);
       }
     }
 
