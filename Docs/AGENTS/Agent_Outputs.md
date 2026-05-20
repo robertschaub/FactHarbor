@@ -4583,3 +4583,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Implemented W6-B as one contract-only `SufficiencyIntakeDecision` owner at `apps/web/src/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake.ts`, consuming only `EvidenceItemHandoffDecision` fields and producing hash/length/provenance-only internal intake with `assessmentExecution = closed_contract_only`.
 **Warnings:** No live jobs were run. W6-B adds no sufficiency semantics, LLM execution, route/sink/product/orchestrator wiring, public/report/verdict/warning/confidence behavior, prompt/model/config/schema/UCM/gateway change, provider/parser/ACS/direct URL widening, SR/truth/confidence formula, W4-I direct access, or V1 work. W6-C must own the next sufficiency assessment gate and revise provenance-group rules into LLM-owned judgment before execution.
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W6-B_Sufficiency_Intake_Implementation.md
+
+---
+### 2026-05-20 | Captain Deputy | Codex (GPT-5.5) | V2 W6-B Closeout And W6-C0 Steer-Co -- [Significant] [open-items: yes]
+**For next agent:** W6-B is committed as `d1458c96` and verifier-clean. Steer-Co approved W6-C0 as the next review-only package, documented at `Docs/WIP/2026-05-20_V2_Slice_W6-C0_Sufficiency_Portfolio_Input_And_LLM_Assessment_Design.md`.
+**Warnings:** W6-C implementation remains a hard Captain approval gate. W6-C0 authorizes no implementation, live job, prompt/model/config/schema/UCM/gateway edit, text-exposure widening, public/API/UI/report/export/compatibility behavior, report/verdict/warning/confidence behavior, Source Reliability/truth/confidence/sufficiency formula, provider/parser/ACS/direct URL widening, V1 work, new route/product wiring, or direct W4-I sink access.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-B_Closeout_W6-C0_Steer-Co.md

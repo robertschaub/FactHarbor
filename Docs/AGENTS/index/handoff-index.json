@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T13:06:43.012Z",
-  "count": 743,
+  "generatedAt": "2026-05-20T13:28:28.945Z",
+  "count": 744,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15880,6 +15880,23 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy / Steer-Co V2 X7-W5-E Direction"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W6-B_Closeout_W6-C0_Steer-Co.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-b",
+        "closeout",
+        "w6-c0",
+        "steer-co"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 W6-B Closeout And W6-C0 Steer-Co"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md",
