@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w5d-captain-reset-2026-05-20",
     "resetTotal": 6,
-    "currentRemaining": 1,
+    "currentRemaining": 0,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W5-B implementation closeout",
       "date": "2026-05-20",
@@ -170,6 +170,17 @@
         "count": 1,
         "remainingAfter": 1,
         "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_X7-W5-E3_EvidenceItem_Admission_Containment_Rerun_Package.md",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W5-G-EVIDENCE-ITEM-HANDOFF-PROJECTION-CANARY",
+        "jobId": "19f831aa36084ab6a2cee9e89698f87c",
+        "classification": "PASS_X7_W5_G_EVIDENCE_ITEM_HANDOFF_PROJECTION_CANARY",
+        "implementationCommit": "8d36e68ab81e09c0a59ebd60aa1f37cced610a33",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "approvalPointer": "Docs/WIP/2026-05-20_V2_Slice_X7-W5-G_EvidenceItem_Handoff_Projection_Canary_Package.md",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

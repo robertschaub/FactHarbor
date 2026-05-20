@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T09:53:52.550Z",
-  "count": 739,
+  "generatedAt": "2026-05-20T10:04:21.571Z",
+  "count": 740,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16051,6 +16051,22 @@
       ],
       "files_touched": [],
       "summary": "Handoff - V2 X7-W5-G EvidenceItem Handoff Projection Canary Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_X7-W5-G_Canary_Result.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "x7-w5-g",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Handoff - V2 X7-W5-G EvidenceItem Handoff Projection Canary Result"
     },
     {
       "file": "2026-05-20_Lead_Developer_V2_X7-W3B_Default_Admin_Redaction_Repair.md",

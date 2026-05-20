@@ -4553,6 +4553,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-G_Canary_Package.md
 
 ---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-G EvidenceItem Handoff Projection Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Ran exactly one X7-W5-G canary, job `19f831aa36084ab6a2cee9e89698f87c`, on runtime commit `8d36e68ab81e09c0a59ebd60aa1f37cced610a33` using explicit `claimboundary-v2`. It passed: public V2 stayed pre-cutover/damaged; W5 accepted `1` EvidenceItem; W5-E admitted `1`; W5-F `evidenceItemHandoff` was present and ready; W5-F lineage matched W5/W5-E; W4-I reported the W5-F merge owner plus retired/replacement triggers; refined leak scan found no forbidden statement/source/input/snippet/summary terms.
+**Warnings:** Remaining live-job budget is `0`. No second W5-G canary is authorized. No public/report/verdict/warning/confidence behavior, parser/cache/SR/storage/provider expansion, W2/W3 widening, prompt/model/config/schema edit, ACS/direct URL, or V1 work is authorized. Next package should not spend live jobs until a new tranche is authorized.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-G_Canary_Result.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | Philosophy Weaknesses To Pipeline V2 Plan -- [Significant] [open-items: yes]
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-05-20_Lead_Architect_Philosophy_V2_Epistemology_Plan.md` before drafting any philosophy-driven V2 package. Consolidated debate result is `MODIFY`: address source-dependency inflation, proxy/causal gaps, expected-evidence scarcity, normative/evaluative claims, temporal fragility, and source-language/source-justice risks through existing V2 owners (`ClaimContract`, `EvidenceCorpus`, `SufficiencyAssessment`, `BoundarySet`, `VerdictSet`, `ReportResult`), not a separate epistemology subsystem. Prioritize report-visible evidence/provenance value and retirement/convergence over new hidden-only diagnostics.
 **Warnings:** No implementation was done. Any future prompt/schema/model/config/runtime slice still needs normal approval gates, LLM Expert review, scorecard/retirement/consolidation blocks, and Captain-approved validation inputs only.
