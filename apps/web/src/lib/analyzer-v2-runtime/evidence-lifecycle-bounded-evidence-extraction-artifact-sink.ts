@@ -23,6 +23,8 @@ const BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
   "remove_or_fold_into_stable_w5_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary" as const;
 const BOUNDED_EVIDENCE_EXTRACTION_SCHEMA_DIAGNOSTIC_VERSION =
   "v2.evidence-lifecycle.bounded-evidence-extraction.schema-diagnostics.x7w5c" as const;
+const BOUNDED_EVIDENCE_ITEM_ADMISSION_DECISION_VERSION =
+  "v2.evidence-lifecycle.bounded-evidence-item-admission.x7w5e" as const;
 const BOUNDED_EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION = "v2.evidence_extraction_result.0" as const;
 const MAX_DEFAULT_PROJECTION_SCHEMA_DIAGNOSTIC_ISSUES = 8;
 const MAX_DEFAULT_PROJECTION_SCHEMA_PATH_SEGMENTS = 8;
@@ -127,6 +129,10 @@ export type BoundedEvidenceExtractionDecisionDefaultProjection =
 export type BoundedEvidenceExtractionRuntimeArtifactDefaultProjection =
   Omit<BoundedEvidenceExtractionRuntimeArtifact, "boundedEvidenceExtraction"> & {
     readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecisionDefaultProjection;
+  };
+type PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact =
+  Omit<BoundedEvidenceExtractionRuntimeArtifact, "boundedEvidenceItemAdmission"> & {
+    readonly boundedEvidenceItemAdmission?: BoundedEvidenceItemAdmissionDecision;
   };
 
 type ArtifactLedger = Map<string, BoundedEvidenceExtractionRuntimeArtifact[]>;
@@ -245,10 +251,49 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
       evidenceItemTextAccess: "redacted_default_hash_length_provenance_only",
       sourceTextAccess: "redacted_default_hash_length_provenance_only",
     },
-    boundedEvidenceItemAdmission: redactBoundedEvidenceItemAdmissionDecision(
-      artifact.boundedEvidenceItemAdmission,
+    boundedEvidenceItemAdmission: redactBoundedEvidenceItemAdmissionDecisionOrFailClosed(
+      artifact as PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact,
     ),
   });
+}
+
+function redactBoundedEvidenceItemAdmissionDecisionOrFailClosed(
+  artifact: PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact,
+): BoundedEvidenceItemAdmissionDecision {
+  if (artifact.boundedEvidenceItemAdmission) {
+    return redactBoundedEvidenceItemAdmissionDecision(artifact.boundedEvidenceItemAdmission);
+  }
+  return missingAdmissionSnapshotDecision(artifact);
+}
+
+function missingAdmissionSnapshotDecision(
+  artifact: PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact,
+): BoundedEvidenceItemAdmissionDecision {
+  const decision = artifact.boundedEvidenceExtraction;
+  return {
+    ledgerIdHash: sha256Json({ ledgerId: artifact.ledgerId, projection: "missing_w5e_admission" }),
+    parentW5ArtifactId: decision.decisionId,
+    admittedEvidenceItemCount: 0,
+    evidenceItemStatementHashes: [],
+    evidenceItemStatementByteLengths: [],
+    sourceMaterialLineageHash: null,
+    w4hPacketHash: decision.parent.parentPacketHash,
+    w4iEligibilityStatus: decision.parent.w4iStatus,
+    providerId: decision.parent.parentProviderId,
+    modelId: decision.executionTelemetry.modelId,
+    promptProfileId: "claimboundary-v2",
+    schemaVersion: BOUNDED_EVIDENCE_ITEM_ADMISSION_DECISION_VERSION,
+    admissionStatus: "evidence_item_admission_damaged",
+    blockedReason: null,
+    damagedReason: "missing_runtime_admission_snapshot",
+    sideEffects: noAdmissionSideEffects(),
+    defaultProjection: "hash_length_provenance_only",
+    redaction: {
+      evidenceItemTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+    },
+  };
 }
 
 function redactBoundedEvidenceItemAdmissionDecision(
@@ -295,6 +340,25 @@ function redactBoundedEvidenceItemAdmissionDecision(
   }
 
   return projection;
+}
+
+function noAdmissionSideEffects(): BoundedEvidenceItemAdmissionDecision["sideEffects"] {
+  return {
+    evidenceItemTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    parserExecuted: false,
+    reportGenerated: false,
+    verdictGenerated: false,
+    warningGenerated: false,
+    confidenceGenerated: false,
+    publicSurfaceWritten: false,
+    cacheRead: false,
+    cacheWrite: false,
+    sourceReliabilityRead: false,
+    sourceReliabilityWrite: false,
+    storageWrite: false,
+  };
 }
 
 function redactEvidenceItemStatementProjection(

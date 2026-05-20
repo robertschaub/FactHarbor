@@ -183,6 +183,16 @@ function seedArtifact(runId = "job-v2-w5-route") {
   return runContext.observabilityLedger.ledgerId;
 }
 
+function removeStoredAdmissionSnapshot(ledgerId: string): void {
+  const globalLedger = globalThis as typeof globalThis & {
+    __factHarborV2BoundedEvidenceExtractionArtifactLedgers?: Map<string, Array<Record<string, unknown>>>;
+  };
+  const records = globalLedger.__factHarborV2BoundedEvidenceExtractionArtifactLedgers?.get(ledgerId);
+  if (records?.[0]) {
+    delete records[0].boundedEvidenceItemAdmission;
+  }
+}
+
 function seedSchemaFailureArtifact(
   schemaDiagnostics: NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>,
 ) {
@@ -292,6 +302,37 @@ describe("Analyzer V2 internal bounded evidence extraction artifact route", () =
     expect(JSON.stringify(await unauthenticated.json())).not.toContain(FORBIDDEN_TEXT);
     expect(JSON.stringify(await malformed.json())).not.toContain(FORBIDDEN_TEXT);
     expect(JSON.stringify(await missing.json())).not.toContain(FORBIDDEN_TEXT);
+  });
+
+  it("fails closed instead of throwing when a stored W5 artifact predates W5-E admission", async () => {
+    const ledgerId = seedArtifact("job-v2-w5-route-legacy");
+    removeStoredAdmissionSnapshot(ledgerId);
+    process.env.FH_ADMIN_KEY = "test-admin-key";
+    const { GET } = await import(
+      "@/app/api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route"
+    );
+
+    const response = await GET(new Request(
+      artifactUrl(`?ledgerId=${encodeURIComponent(ledgerId)}`),
+      { headers: { "x-admin-key": "test-admin-key" } },
+    ));
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(body.artifacts[0].boundedEvidenceItemAdmission).toMatchObject({
+      admissionStatus: "evidence_item_admission_damaged",
+      damagedReason: "missing_runtime_admission_snapshot",
+      admittedEvidenceItemCount: 0,
+      defaultProjection: "hash_length_provenance_only",
+      redaction: {
+        evidenceItemTextReturned: false,
+        sourceTextReturned: false,
+        inputTextReturned: false,
+      },
+    });
+    expect(serialized).not.toContain(FORBIDDEN_TEXT);
+    expect(serialized).not.toContain('"statement":');
   });
 
   it("returns schema-failure diagnostics without raw provider, source, prompt, or stack text", async () => {

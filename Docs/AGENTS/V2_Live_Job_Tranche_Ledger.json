@@ -142,7 +142,7 @@
       {
         "sliceId": "X7-W5-E-EVIDENCE-ITEM-ADMISSION-CANARY",
         "jobId": "68f7dba28c9441b7ab702e5a7b2c1a17",
-        "classification": "STOP_X7_W5_E_SHELL_ONLY_NO_HIDDEN_ARTIFACT_EVIDENCE",
+        "classification": "STOP_X7_W5_E_MISSING_ADMISSION_SNAPSHOT",
         "implementationCommit": "51b2264d7360a1b4176cfa9faef80c0d8fb3ad0d",
         "docsCommit": "same_commit_as_this_ledger_update",
         "count": 1,

@@ -25,6 +25,7 @@ export type BoundedEvidenceItemAdmissionBlockedReason =
 export type BoundedEvidenceItemAdmissionDamagedReason =
   | "malformed_w5_decision"
   | "missing_evidence_item_provenance"
+  | "missing_runtime_admission_snapshot"
   | "projection_redaction_violation";
 
 export type BoundedEvidenceItemAdmissionSideEffects = {
