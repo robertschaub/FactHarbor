@@ -433,6 +433,26 @@ describe("W8-B internal Alpha report-result candidate", () => {
       citedEvidenceItemRefsReturned: false,
       evidenceItemTextReturned: false,
     });
+    expect(decision.upstreamStopAttribution).toMatchObject({
+      attributionVersion: "v2.evidence-lifecycle.internal-alpha-report-result.upstream-stop-attribution.w8e",
+      firstIncompleteStage: "none",
+      firstIncompleteReason: null,
+      parentStatuses: {
+        sufficiencyAssessment: {
+          assessmentStatus: "sufficiency_assessment_completed",
+          blockedReason: null,
+          damagedReason: null,
+          sufficiencyResultStatus: "accepted",
+          reportStopRecommendation: "continue_to_boundary_formation",
+        },
+        boundaryVerdictExecution: {
+          status: "boundary_verdict_candidates_created_internal",
+          runtimeOwnership: "owned",
+          citedEvidenceItemRefCount: 1,
+        },
+      },
+    });
+    expect(Object.values(decision.upstreamStopAttribution.redaction).every((value) => value === false)).toBe(true);
     expect(decision.providerAndCostTelemetry).toMatchObject({
       providerId: "anthropic",
       modelId: "claude-haiku-4-5-20251001",
@@ -587,6 +607,80 @@ describe("W8-B internal Alpha report-result candidate", () => {
     })).toMatchObject({
       status: "internal_alpha_report_result_blocked",
       blockedReason: "boundary_verdict_execution_not_accepted",
+    });
+  });
+
+  it("attributes W8-D-shaped stop to the non-completed W6-C sufficiency assessment", () => {
+    const decision = build({
+      assessment: sufficiencyAssessment({
+        assessmentStatus: "sufficiency_assessment_blocked",
+        blockedReason: "input_contract_invalid",
+        sufficiencyResultStatus: null,
+        reportStopRecommendation: null,
+      }),
+      boundaryVerdict: boundaryVerdictCandidate({
+        status: "boundary_verdict_candidate_blocked",
+      }),
+      stop: internalAlphaReportStop({
+        status: "alpha_report_stop_blocked",
+      }),
+      execution: boundaryVerdictExecution({
+        status: "boundary_verdict_execution_blocked",
+        boundaryCandidateCount: 0,
+        verdictCandidateCount: 0,
+        citedEvidenceItemRefs: [],
+      }),
+    });
+
+    expect(decision).toMatchObject({
+      status: "internal_alpha_report_result_blocked",
+      blockedReason: "sufficiency_assessment_not_completed",
+      upstreamStopAttribution: {
+        firstIncompleteStage: "sufficiency_assessment",
+        firstIncompleteReason: "sufficiency_assessment_not_completed",
+        parentStatuses: {
+          sufficiencyAssessment: {
+            assessmentStatus: "sufficiency_assessment_blocked",
+            blockedReason: "input_contract_invalid",
+            damagedReason: null,
+            sufficiencyResultStatus: null,
+            reportStopRecommendation: null,
+          },
+          boundaryVerdictExecution: {
+            status: "boundary_verdict_execution_blocked",
+            boundaryCandidateCount: 0,
+            verdictCandidateCount: 0,
+            citedEvidenceItemRefCount: 0,
+          },
+        },
+      },
+    });
+  });
+
+  it("attributes post-sufficiency stops to W7-B2 without relaxing readiness", () => {
+    const decision = build({
+      execution: boundaryVerdictExecution({
+        status: "boundary_verdict_execution_blocked",
+      }),
+    });
+
+    expect(decision).toMatchObject({
+      status: "internal_alpha_report_result_blocked",
+      blockedReason: "boundary_verdict_execution_not_accepted",
+      upstreamStopAttribution: {
+        firstIncompleteStage: "boundary_verdict_execution",
+        firstIncompleteReason: "boundary_verdict_execution_not_accepted",
+        parentStatuses: {
+          sufficiencyAssessment: {
+            assessmentStatus: "sufficiency_assessment_completed",
+            sufficiencyResultStatus: "accepted",
+          },
+          boundaryVerdictExecution: {
+            status: "boundary_verdict_execution_blocked",
+            runtimeOwnership: "owned",
+          },
+        },
+      },
     });
   });
 

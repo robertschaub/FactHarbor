@@ -25,6 +25,12 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W7-C_Product_Chain_Integration.md
 
 ---
+### 2026-05-20 | Lead Developer | Codex (GPT-5.5) | V2 W8-E Upstream Stop Attribution Implementation -- [Significant] [open-items: yes]
+**For next agent:** W8-E is implemented inside the existing W8-B result/projection path. W8-B now reports enum-only `upstreamStopAttribution` with first incomplete stage/reason plus W5/W5-F/W6-B/W6-C/W7-A/W8-A/W7-B2 status summaries. No new route/sink/live job/public behavior was added.
+**Warnings:** W8-E does not fix the upstream W6-C sufficiency completion stop and does not authorize another canary. Next step should be a reviewed canary or repair package using the W8-E attribution, with no prompt/model/config/schema/UCM/gateway edits unless Captain explicitly approves that exact package.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W8-E_Upstream_Stop_Attribution_Implementation.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | V2 Stop-Line And Executable Plan -- [Significant] [open-items: yes]
 **For next agent:** V2 implementation should pause now. W6-A is review-only accepted; amended W6-B package needs short confirmation before implementation. If confirmed, implement only `EvidenceItemHandoffDecision -> SufficiencyIntakeDecision` (`v2.evidence-lifecycle.sufficiency-intake.w6b`) as contract/test-only. Read `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` and `Docs/WIP/2026-05-20_V2_Slice_W6-B_EvidenceItem_Handoff_To_Sufficiency_Intake_Review_Package.md`.
 **Warnings:** W5-G proves hidden EvidenceItem handoff reachability, not report readiness. No public cutover, V1 cleanup, prompt/model/config/schema behavior, provider/parser/ACS/direct URL widening, source-reliability weighting, deterministic semantic logic, fixed epistemic formulas, route/orchestrator wiring, W4-I direct reads, parent spreading/cloning, text/language/semantic branching, or hidden-only machinery without retirement impact is authorized.

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T21:44:34.270Z",
-  "count": 766,
+  "generatedAt": "2026-05-20T21:54:35.150Z",
+  "count": 767,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16593,6 +16593,23 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-20_Lead_Developer_V2_W8-E_Upstream_Stop_Attribution_Implementation.md",
+      "date": "2026-05-20",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "w8-e",
+        "upstream",
+        "stop",
+        "attribution",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Lead Developer V2 W8-E Upstream Stop Attribution Implementation"
     },
     {
       "file": "2026-05-20_Lead_Developer_V2_X7-W3B_Default_Admin_Redaction_Repair.md",

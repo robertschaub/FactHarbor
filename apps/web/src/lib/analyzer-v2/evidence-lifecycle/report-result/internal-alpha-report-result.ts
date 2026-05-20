@@ -140,6 +140,69 @@ export type InternalAlphaReportResultProviderAndCostTelemetry = {
   readonly cacheDecision: "no_store_no_read";
 };
 
+export type InternalAlphaReportResultUpstreamStopAttribution = {
+  readonly attributionVersion: "v2.evidence-lifecycle.internal-alpha-report-result.upstream-stop-attribution.w8e";
+  readonly firstIncompleteStage:
+    | "none"
+    | "bounded_evidence_extraction"
+    | "evidence_item_handoff"
+    | "sufficiency_intake"
+    | "sufficiency_assessment"
+    | "boundary_verdict_candidate"
+    | "internal_alpha_report_stop"
+    | "boundary_verdict_execution";
+  readonly firstIncompleteReason:
+    | InternalAlphaReportResultBlockedReason
+    | InternalAlphaReportResultDamagedReason
+    | null;
+  readonly parentStatuses: {
+    readonly boundedEvidenceExtraction: {
+      readonly status: BoundedEvidenceExtractionDecision["status"] | null;
+      readonly extractionResultStatus: BoundedEvidenceExtractionDecision["extractionResultStatus"] | null;
+      readonly extractionStatus: BoundedEvidenceExtractionDecision["extractionStatus"] | null;
+      readonly evidenceItemCount: number;
+    };
+    readonly evidenceItemHandoff: {
+      readonly handoffStatus: EvidenceItemHandoffDecision["handoffStatus"] | null;
+      readonly admittedEvidenceItemCount: number;
+    };
+    readonly sufficiencyIntake: {
+      readonly intakeStatus: SufficiencyIntakeDecision["intakeStatus"] | null;
+    };
+    readonly sufficiencyAssessment: {
+      readonly assessmentStatus: SufficiencyAssessmentDecision["assessmentStatus"] | null;
+      readonly blockedReason: SufficiencyAssessmentDecision["blockedReason"] | null;
+      readonly damagedReason: SufficiencyAssessmentDecision["damagedReason"] | null;
+      readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+      readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
+      readonly admittedEvidenceItemCount: SufficiencyAssessmentDecision["admittedEvidenceItemCount"];
+    };
+    readonly boundaryVerdictCandidate: {
+      readonly status: BoundaryVerdictCandidateDecision["status"] | null;
+      readonly candidatePopulation: BoundaryVerdictCandidateDecision["candidatePopulation"] | null;
+    };
+    readonly internalAlphaReportStop: {
+      readonly status: InternalAlphaReportStopCandidate["status"] | null;
+    };
+    readonly boundaryVerdictExecution: {
+      readonly status: BoundaryVerdictExecutionDecision["status"] | null;
+      readonly runtimeOwnership: BoundaryVerdictExecutionRuntimeOwnershipStatus;
+      readonly boundaryCandidateCount: number;
+      readonly verdictCandidateCount: number;
+      readonly citedEvidenceItemRefCount: number;
+    };
+  };
+  readonly redaction: {
+    readonly sourceTextReturned: false;
+    readonly evidenceItemTextReturned: false;
+    readonly inputTextReturned: false;
+    readonly promptTextReturned: false;
+    readonly providerPayloadReturned: false;
+    readonly hiddenLedgerReferenceReturned: false;
+    readonly rawInternalStateReturned: false;
+  };
+};
+
 export type InternalAlphaReportResultSideEffects = {
   readonly reportProseGenerated: false;
   readonly publicReportGenerated: false;
@@ -175,6 +238,7 @@ export type InternalAlphaReportResultCandidate = {
   readonly reportReadiness: InternalAlphaReportResultReadiness;
   readonly boundaryVerdictSummary: InternalAlphaReportResultBoundaryVerdictSummary;
   readonly evidenceTraceability: InternalAlphaReportResultEvidenceTraceability;
+  readonly upstreamStopAttribution: InternalAlphaReportResultUpstreamStopAttribution;
   readonly warningMaterialityInputs: InternalAlphaReportResultWarningMaterialityInputs;
   readonly providerAndCostTelemetry: InternalAlphaReportResultProviderAndCostTelemetry;
   readonly redaction: {
@@ -207,8 +271,12 @@ export type InternalAlphaReportResultCandidate = {
 };
 
 type ParentProjection = {
+  readonly boundedEvidenceExtractionStatus: BoundedEvidenceExtractionDecision["status"] | null;
+  readonly boundedEvidenceExtractionResultStatus: BoundedEvidenceExtractionDecision["extractionResultStatus"] | null;
+  readonly boundedEvidenceExtractionStatusDetail: BoundedEvidenceExtractionDecision["extractionStatus"] | null;
   readonly evidenceItemHandoffDecisionId: string | null;
   readonly evidenceItemHandoffVersion: typeof EVIDENCE_ITEM_HANDOFF_DECISION_VERSION | null;
+  readonly evidenceItemHandoffStatus: EvidenceItemHandoffDecision["handoffStatus"] | null;
   readonly boundedEvidenceExtractionDecisionId: string | null;
   readonly boundedEvidenceExtractionVersion: typeof BOUNDED_EVIDENCE_EXTRACTION_DECISION_VERSION | null;
   readonly boundedEvidenceExtractionEvidenceItemIdRefs: readonly string[];
@@ -221,9 +289,14 @@ type ParentProjection = {
   readonly modelId: string | null;
   readonly sufficiencyIntakeDecisionId: string | null;
   readonly sufficiencyIntakeVersion: typeof SUFFICIENCY_INTAKE_DECISION_VERSION | null;
+  readonly sufficiencyIntakeStatus: SufficiencyIntakeDecision["intakeStatus"] | null;
   readonly sufficiencyIntakeParentEvidenceItemHandoffDecisionId: string | null;
   readonly sufficiencyAssessmentDecisionId: string | null;
   readonly sufficiencyAssessmentVersion: typeof SUFFICIENCY_ASSESSMENT_DECISION_VERSION | null;
+  readonly sufficiencyAssessmentStatus: SufficiencyAssessmentDecision["assessmentStatus"] | null;
+  readonly sufficiencyAssessmentBlockedReason: SufficiencyAssessmentDecision["blockedReason"] | null;
+  readonly sufficiencyAssessmentDamagedReason: SufficiencyAssessmentDecision["damagedReason"] | null;
+  readonly sufficiencyAssessmentAdmittedEvidenceItemCount: number;
   readonly sufficiencyAssessmentParentSufficiencyIntakeDecisionId: string | null;
   readonly sufficiencyAssessmentParentW5DecisionId: string | null;
   readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
@@ -320,6 +393,9 @@ function projectParents(input: {
     ? input.boundedEvidenceExtraction.extractionResult.evidenceItems
     : [];
   return {
+    boundedEvidenceExtractionStatus: input.boundedEvidenceExtraction?.status ?? null,
+    boundedEvidenceExtractionResultStatus: input.boundedEvidenceExtraction?.extractionResultStatus ?? null,
+    boundedEvidenceExtractionStatusDetail: input.boundedEvidenceExtraction?.extractionStatus ?? null,
     boundedEvidenceExtractionDecisionId: input.boundedEvidenceExtraction?.decisionId ?? null,
     boundedEvidenceExtractionVersion:
       input.boundedEvidenceExtraction?.decisionVersion === BOUNDED_EVIDENCE_EXTRACTION_DECISION_VERSION
@@ -330,6 +406,7 @@ function projectParents(input: {
     evidenceItemHandoffVersion: input.evidenceItemHandoff?.decisionVersion === EVIDENCE_ITEM_HANDOFF_DECISION_VERSION
       ? EVIDENCE_ITEM_HANDOFF_DECISION_VERSION
       : null,
+    evidenceItemHandoffStatus: input.evidenceItemHandoff?.handoffStatus ?? null,
     evidenceItemCount: input.evidenceItemHandoff?.admittedEvidenceItemCount ?? 0,
     evidenceItemStatementHashes: input.evidenceItemHandoff?.evidenceItemStatementHashes.map((hash) => hash) ?? [],
     evidenceItemStatementByteLengths:
@@ -342,6 +419,7 @@ function projectParents(input: {
     sufficiencyIntakeVersion: input.sufficiencyIntake?.decisionVersion === SUFFICIENCY_INTAKE_DECISION_VERSION
       ? SUFFICIENCY_INTAKE_DECISION_VERSION
       : null,
+    sufficiencyIntakeStatus: input.sufficiencyIntake?.intakeStatus ?? null,
     sufficiencyIntakeParentEvidenceItemHandoffDecisionId:
       input.sufficiencyIntake?.parentEvidenceItemHandoffDecisionId ?? null,
     sufficiencyAssessmentDecisionId: input.sufficiencyAssessment?.decisionId ?? null,
@@ -349,6 +427,10 @@ function projectParents(input: {
       input.sufficiencyAssessment?.decisionVersion === SUFFICIENCY_ASSESSMENT_DECISION_VERSION
         ? SUFFICIENCY_ASSESSMENT_DECISION_VERSION
         : null,
+    sufficiencyAssessmentStatus: input.sufficiencyAssessment?.assessmentStatus ?? null,
+    sufficiencyAssessmentBlockedReason: input.sufficiencyAssessment?.blockedReason ?? null,
+    sufficiencyAssessmentDamagedReason: input.sufficiencyAssessment?.damagedReason ?? null,
+    sufficiencyAssessmentAdmittedEvidenceItemCount: input.sufficiencyAssessment?.admittedEvidenceItemCount ?? 0,
     sufficiencyAssessmentParentSufficiencyIntakeDecisionId:
       input.sufficiencyAssessment?.parentSufficiencyIntakeDecisionId ?? null,
     sufficiencyAssessmentParentW5DecisionId: input.sufficiencyAssessment?.parentW5DecisionId ?? null,
@@ -635,6 +717,117 @@ function parentProjectionDamagedReason(
   return null;
 }
 
+function upstreamStopAttribution(
+  projection: ParentProjection,
+  reason:
+    | InternalAlphaReportResultBlockedReason
+    | InternalAlphaReportResultDamagedReason
+    | null,
+): InternalAlphaReportResultUpstreamStopAttribution {
+  return {
+    attributionVersion: "v2.evidence-lifecycle.internal-alpha-report-result.upstream-stop-attribution.w8e",
+    firstIncompleteStage: firstIncompleteStage(projection, reason),
+    firstIncompleteReason: reason,
+    parentStatuses: {
+      boundedEvidenceExtraction: {
+        status: projection.boundedEvidenceExtractionStatus,
+        extractionResultStatus: projection.boundedEvidenceExtractionResultStatus,
+        extractionStatus: projection.boundedEvidenceExtractionStatusDetail,
+        evidenceItemCount: projection.boundedEvidenceExtractionEvidenceItemIdRefs.length,
+      },
+      evidenceItemHandoff: {
+        handoffStatus: projection.evidenceItemHandoffStatus,
+        admittedEvidenceItemCount: projection.evidenceItemCount,
+      },
+      sufficiencyIntake: {
+        intakeStatus: projection.sufficiencyIntakeStatus,
+      },
+      sufficiencyAssessment: {
+        assessmentStatus: projection.sufficiencyAssessmentStatus,
+        blockedReason: projection.sufficiencyAssessmentBlockedReason,
+        damagedReason: projection.sufficiencyAssessmentDamagedReason,
+        sufficiencyResultStatus: projection.sufficiencyResultStatus,
+        reportStopRecommendation: projection.reportStopRecommendation,
+        admittedEvidenceItemCount: projection.sufficiencyAssessmentAdmittedEvidenceItemCount,
+      },
+      boundaryVerdictCandidate: {
+        status: projection.boundaryVerdictCandidateStatus,
+        candidatePopulation: projection.boundaryVerdictCandidatePopulation,
+      },
+      internalAlphaReportStop: {
+        status: projection.internalAlphaReportStopStatus,
+      },
+      boundaryVerdictExecution: {
+        status: projection.boundaryVerdictExecutionStatus,
+        runtimeOwnership: projection.boundaryVerdictExecutionRuntimeOwnership,
+        boundaryCandidateCount: projection.boundaryCandidateCount,
+        verdictCandidateCount: projection.verdictCandidateCount,
+        citedEvidenceItemRefCount: projection.citedEvidenceItemRefs.length,
+      },
+    },
+    redaction: {
+      sourceTextReturned: false,
+      evidenceItemTextReturned: false,
+      inputTextReturned: false,
+      promptTextReturned: false,
+      providerPayloadReturned: false,
+      hiddenLedgerReferenceReturned: false,
+      rawInternalStateReturned: false,
+    },
+  };
+}
+
+function firstIncompleteStage(
+  projection: ParentProjection,
+  reason:
+    | InternalAlphaReportResultBlockedReason
+    | InternalAlphaReportResultDamagedReason
+    | null,
+): InternalAlphaReportResultUpstreamStopAttribution["firstIncompleteStage"] {
+  if (!reason) {
+    return "none";
+  }
+  if (
+    !projection.boundedEvidenceExtractionDecisionId ||
+    projection.boundedEvidenceExtractionStatus !== "hidden_evidence_item_extraction_completed" ||
+    projection.boundedEvidenceExtractionResultStatus !== "accepted" ||
+    projection.boundedEvidenceExtractionStatusDetail !== "evidence_extracted"
+  ) {
+    return "bounded_evidence_extraction";
+  }
+  if (
+    !projection.evidenceItemHandoffDecisionId ||
+    projection.evidenceItemHandoffStatus !== "evidence_items_ready_for_downstream_internal_handoff"
+  ) {
+    return "evidence_item_handoff";
+  }
+  if (
+    !projection.sufficiencyIntakeDecisionId ||
+    projection.sufficiencyIntakeStatus !== "sufficiency_intake_ready_for_contract_only_assessment"
+  ) {
+    return "sufficiency_intake";
+  }
+  if (
+    !projection.sufficiencyAssessmentDecisionId ||
+    projection.sufficiencyAssessmentStatus !== "sufficiency_assessment_completed"
+  ) {
+    return "sufficiency_assessment";
+  }
+  if (
+    !projection.boundaryVerdictCandidateDecisionId ||
+    projection.boundaryVerdictCandidateStatus !== "boundary_verdict_candidate_ready"
+  ) {
+    return "boundary_verdict_candidate";
+  }
+  if (
+    !projection.internalAlphaReportStopDecisionId ||
+    projection.internalAlphaReportStopStatus !== "alpha_report_stop_created_not_report_ready"
+  ) {
+    return "internal_alpha_report_stop";
+  }
+  return "boundary_verdict_execution";
+}
+
 function inputLineage(projection: ParentProjection): InternalAlphaReportResultInputLineage {
   return {
     boundedEvidenceExtractionDecisionId: projection.boundedEvidenceExtractionDecisionId,
@@ -813,6 +1006,10 @@ function decision(
       citedEvidenceItemRefsReturned: false,
       evidenceItemTextReturned: false,
     },
+    upstreamStopAttribution: upstreamStopAttribution(
+      projection,
+      state.blockedReason ?? state.damagedReason,
+    ),
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,

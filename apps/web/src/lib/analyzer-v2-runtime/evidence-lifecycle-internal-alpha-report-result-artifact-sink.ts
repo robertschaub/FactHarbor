@@ -63,6 +63,7 @@ export type InternalAlphaReportResultRuntimeArtifactDefaultProjection = {
     readonly reportReadiness: InternalAlphaReportResultCandidate["reportReadiness"];
     readonly boundaryVerdictSummary: InternalAlphaReportResultCandidate["boundaryVerdictSummary"];
     readonly evidenceTraceability: InternalAlphaReportResultCandidate["evidenceTraceability"];
+    readonly upstreamStopAttribution: InternalAlphaReportResultCandidate["upstreamStopAttribution"];
     readonly warningMaterialityInputs: InternalAlphaReportResultCandidate["warningMaterialityInputs"];
     readonly providerAndCostTelemetry: InternalAlphaReportResultCandidate["providerAndCostTelemetry"];
     readonly redaction: InternalAlphaReportResultCandidate["redaction"];
@@ -271,6 +272,7 @@ export function redactInternalAlphaReportResultRuntimeArtifact(
       reportReadiness: result.reportReadiness,
       boundaryVerdictSummary: result.boundaryVerdictSummary,
       evidenceTraceability: result.evidenceTraceability,
+      upstreamStopAttribution: result.upstreamStopAttribution,
       warningMaterialityInputs: result.warningMaterialityInputs,
       providerAndCostTelemetry: result.providerAndCostTelemetry,
       redaction: result.redaction,

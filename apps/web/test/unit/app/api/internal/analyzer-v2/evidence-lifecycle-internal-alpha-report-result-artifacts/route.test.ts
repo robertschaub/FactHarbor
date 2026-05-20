@@ -274,6 +274,20 @@ describe("Analyzer V2 internal Alpha report-result artifact route", () => {
             citedEvidenceItemRefsReturned: false,
             citedEvidenceItemRefCount: 1,
           }),
+          upstreamStopAttribution: expect.objectContaining({
+            firstIncompleteStage: "none",
+            firstIncompleteReason: null,
+            parentStatuses: expect.objectContaining({
+              sufficiencyAssessment: expect.objectContaining({
+                assessmentStatus: "sufficiency_assessment_completed",
+                sufficiencyResultStatus: "accepted",
+              }),
+              boundaryVerdictExecution: expect.objectContaining({
+                status: "boundary_verdict_candidates_created_internal",
+                citedEvidenceItemRefCount: 1,
+              }),
+            }),
+          }),
         }),
       }),
     ]);
