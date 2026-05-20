@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T21:19:51.215Z",
-  "count": 764,
+  "generatedAt": "2026-05-20T21:37:44.312Z",
+  "count": 765,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16115,6 +16115,24 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Captain Deputy V2 W8-D Product Route Canary Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W8-D_Product_Route_Canary_Result.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w8-d",
+        "product",
+        "route",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 W8-D Product Route Canary Result"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md",

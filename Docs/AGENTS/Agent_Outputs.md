@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W8-D Product Route Canary Result -- [Significant] [open-items: yes]
+**For next agent:** W8-D ran exactly one authorized `claimboundary-v2` canary, job `828aacb298ed43a885b8d2f41379f25e`, on runtime commit `86eabdf27aa1ba7b67b181cd92d86da04af9603b`. Classification is `STOP_X7_W8_D_INTERNAL_ALPHA_RESULT_BLOCKED_BY_SUFFICIENCY_ASSESSMENT`: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, and same-ledger W8-B route returned one hidden/admin-only no-store artifact, but artifact status was `internal_alpha_report_result_blocked` with `blockedReason = sufficiency_assessment_not_completed`, not the required created candidate.
+**Warnings:** No second W8-D canary is authorized. Remaining live-job budget is `7`. Do not repair inside W8-D; next step is Steer-Co review of the W6-C/W7-B2/W8-B readiness mismatch before any repair or new live-job package.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W8-D_Product_Route_Canary_Result.md
+
+---
 ### 2026-05-20 | Lead Developer | Codex (GPT-5.5) | V2 W7-C Product Chain Integration -- [Significant] [open-items: yes]
 **For next agent:** W7-C wires `orchestrator.ts` from W5 bounded extraction through W5-F/W6-B/W6-C2/W7-A/W8-A/W7-B2 inside the hidden containment block. No live job was run and no chain observability was added; next package must add hidden chain observability or W8-B output unless Steer-Co grants an exception.
 **Warnings:** Public V2 output remains damaged/precutover. Boundary guard allows the W7-C chain imports only in `orchestrator.ts`; do not add routes, sinks, public/default-admin projections, report wrappers, provider seams, prompt/config/schema/UCM changes, parser execution, cache/SR/storage, warning publication, or final verdict behavior.
