@@ -4501,3 +4501,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E2_EvidenceItem_Admission_Fresh_Canary_Package.md` for exactly one fresh W5-E2 `claimboundary-v2` product-route canary after repair commit `f534107f`. The package requires commit-before-preflight, clean git status, full runtime restart from committed source, focused W5 route/admission/sink verifiers, authenticated no-store route preflight, public leak checks, and same-ledger W5/W5-E inspection.
 **Warnings:** This package authorizes no source changes, no second canary, no prompt/model/config/schema edit, no public/report/verdict/warning/confidence behavior, no parser/cache/SR/storage/provider expansion/ACS/direct URL/V1 work. If W5-E2 again shows `missing_runtime_admission_snapshot`, stop and diagnose locally without spending another job.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E2_Canary_Package.md
+
+---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-E2 Canary Result -- [Significant] [open-items: yes]
+**For next agent:** Ran exactly one W5-E2 canary, job `9584597389504d74af6dcfd684755bff`, on runtime commit `c0c8f9cc8f40ac87c5d0fa05ccb0973d620f890c`. W5-E admission itself passed for the fresh run (`1` accepted W5 EvidenceItem, `1` admitted W5-E item, no block/damage), but package classification is `STOP_X7_W5_E2_W3B_DEFAULT_ADMIN_SOURCE_TEXT_EXPOSURE` because the same-ledger W3-B source-material page-summary admin route returns `sourceMaterialText` by default.
+**Warnings:** Remaining live-job budget is `2`. Do not run a second W5-E2 canary. Do not claim W5-E2 package pass, W4-I retirement readiness, or W6/report progression. Next bounded work is a W3-B default-admin redaction repair package, then a separately reviewed canary package if needed.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E2_Canary_Result.md
