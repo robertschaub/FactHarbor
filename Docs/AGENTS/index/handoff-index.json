@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T22:14:54.394Z",
-  "count": 769,
+  "generatedAt": "2026-05-20T22:26:26.133Z",
+  "count": 770,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15897,6 +15897,23 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-B Closeout And W6-C0 Steer-Co"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W6-C3_Sufficiency_Diagnostics_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-c3",
+        "sufficiency",
+        "diagnostics",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 W6-C3 Sufficiency Diagnostics Package"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W6-C_Approval_Package.md",
