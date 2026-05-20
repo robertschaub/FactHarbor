@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T15:10:39.102Z",
-  "count": 747,
+  "generatedAt": "2026-05-20T15:14:29.542Z",
+  "count": 748,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15942,6 +15942,22 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Draft W7-A review package using `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` §W7-A, W6-C handoff `8f7856b5`, current debt sensor snapshot, V2 scorecard, and retirement ledger. Package must include scorecard impact, retirement impact, consolidation gate, verifier plan, explicit boundaries, a"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W7-A_Review_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w7-a",
+        "review",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "Prepare the next review package after W6-C hygiene, following the consolidated Steer-Co direction."
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md",

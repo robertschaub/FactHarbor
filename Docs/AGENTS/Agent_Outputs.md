@@ -4616,3 +4616,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No implementation, live job, product route, public/report/verdict/warning/confidence behavior, prompt/model/config/schema change, provider/parser/ACS/direct URL widening, SR/storage/cache behavior, V1 work, or W4-I consumer was authorized by this hygiene pass. Live-job ledger remains `currentRemaining = 0`.
 **Verification:** `npm run debt:sensors` returned known `advisory_warn`; `git diff --check` passed.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-C_Hygiene_Closeout_W7-A_Direction.md
+
+---
+### 2026-05-20 | Captain Deputy | Codex (GPT-5.5) | V2 W7-A Boundary/Verdict Candidate Contract Review Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W7-A_Boundary_Verdict_Candidate_Contract_Review_Package.md` as review-only and applied Steer-Co amendments. It frames W7-A as the next bounded phase transition after W6-C: internal-only Boundary/Verdict candidate contract, stop-on-insufficiency, EvidenceItem id traceability, W8-A readiness, no new W4-I consumers, and no hidden proof-lane drift. Contract-only mode may populate only status, lineage, and sufficiency-gate fields; semantic boundary candidates stay empty and verdict candidate stays null until separately approved LLM-task execution exists.
+**Warnings:** No implementation, live job, prompt/model/config/schema/UCM/gateway edit, LLM verdict execution, report/verdict/warning/confidence behavior, public/API/UI/report/export/compatibility behavior, provider/parser/ACS/direct URL widening, cache/SR/storage behavior, V1 work, or V1 cleanup is authorized. Boundary/verdict semantic decisions must be LLM-owned if implemented; deterministic semantic logic is a stop condition. Live-job ledger remains `currentRemaining = 0`.
+**Verification:** `npm run debt:sensors` returned known `advisory_warn`; `git diff --check` passed.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W7-A_Review_Package.md
