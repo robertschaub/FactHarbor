@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T08:21:39.353Z",
-  "count": 730,
+  "generatedAt": "2026-05-20T08:48:06.567Z",
+  "count": 731,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15898,6 +15898,26 @@
       ],
       "files_touched": [],
       "summary": "Validate the Captain-approved W5-D analysis prompt edit through development-team review and one product-route live canary."
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_X7-W5-E2_Canary_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "x7-w5-e2",
+        "canary",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-20_V2_Slice_X7-W5-E2_EvidenceItem_Admission_Fresh_Canary_Package.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E2_EvidenceItem_Admission_Fresh_Canary_Package.md` as the execution authority. Remaining live-job budget before W5-E2 is `3`; this package consumes exactly `1` if submitted."
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-E_Canary_Result.md",

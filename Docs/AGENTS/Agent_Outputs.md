@@ -4495,3 +4495,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Verification:** Focused W5 route/admission/sink tests passed (3 files / 13 tests); boundary guard passed (1 file / 87 tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned `advisory_warn`; `npm -w apps/web run build` passed; `git diff --check` passed.
 **DEBT-GUARD RESULT:** Classification: incomplete-existing-mechanism. Chosen option: amend existing W5 artifact projection fail-closed. Rejected paths: new route, new hidden mechanism, synthetic W5-E admission pass, or a second live job. Net mechanisms: unchanged. Residual risk: W5-E runtime recording still needs a fresh committed/refreshed canary to prove admission snapshots are recorded at job time.
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_X7-W5-E_Route_Fail_Closed_Repair.md
+
+---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-E2 Fresh Canary Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-E2_EvidenceItem_Admission_Fresh_Canary_Package.md` for exactly one fresh W5-E2 `claimboundary-v2` product-route canary after repair commit `f534107f`. The package requires commit-before-preflight, clean git status, full runtime restart from committed source, focused W5 route/admission/sink verifiers, authenticated no-store route preflight, public leak checks, and same-ledger W5/W5-E inspection.
+**Warnings:** This package authorizes no source changes, no second canary, no prompt/model/config/schema edit, no public/report/verdict/warning/confidence behavior, no parser/cache/SR/storage/provider expansion/ACS/direct URL/V1 work. If W5-E2 again shows `missing_runtime_admission_snapshot`, stop and diagnose locally without spending another job.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-E2_Canary_Package.md
