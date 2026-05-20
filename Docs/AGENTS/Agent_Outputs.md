@@ -4545,3 +4545,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Verification:** W5/W4-I route tests plus boundary guard passed (3 files / 94 tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned `advisory_warn` with known V2/docs/guard-size warnings; `npm -w apps/web run build` passed; `git diff --check` passed.
 **DEBT-GUARD RESULT:** Compact path. Prior attempt: keep. The failed verifier was stale boundary-guard alignment, not contradicted runtime behavior. Chosen option: amend existing boundary guard expectations/import allow-list. Rejected path: new route, W4-I deletion, runtime behavior change, or broad guard restructure. Net mechanisms: unchanged for verifier repair; W5-F adds one handoff decision while reusing the W5 route and converging W4-I evidence.
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_X7-W5-F_Implementation.md
+
+---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + reviewer lenses | V2 X7-W5-G EvidenceItem Handoff Projection Canary Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-G_EvidenceItem_Handoff_Projection_Canary_Package.md` after Steer-Co reviewers agreed the next bounded step is one live W5-F projection proof, not another implementation slice. The package requires commit, clean status, runtime refresh, runtime commit match, focused W5/W4-I/boundary verifier, V2 gate validation, route preflight, and exactly one `claimboundary-v2` canary using `Using hydrogen for cars is more efficient than using electricity`.
+**Warnings:** No source changes, second canary, public/report/verdict/warning/confidence behavior, parser/cache/SR/storage/provider expansion, W2/W3 widening, prompt/model/config/schema edits, ACS/direct URL, or V1 work are authorized. Machine ledger records `1` live-job slot remaining before X7-W5-G.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-G_Canary_Package.md
+
+---
+### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | Philosophy Weaknesses To Pipeline V2 Plan -- [Significant] [open-items: yes]
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-05-20_Lead_Architect_Philosophy_V2_Epistemology_Plan.md` before drafting any philosophy-driven V2 package. Consolidated debate result is `MODIFY`: address source-dependency inflation, proxy/causal gaps, expected-evidence scarcity, normative/evaluative claims, temporal fragility, and source-language/source-justice risks through existing V2 owners (`ClaimContract`, `EvidenceCorpus`, `SufficiencyAssessment`, `BoundarySet`, `VerdictSet`, `ReportResult`), not a separate epistemology subsystem. Prioritize report-visible evidence/provenance value and retirement/convergence over new hidden-only diagnostics.
+**Warnings:** No implementation was done. Any future prompt/schema/model/config/runtime slice still needs normal approval gates, LLM Expert review, scorecard/retirement/consolidation blocks, and Captain-approved validation inputs only.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Architect_Philosophy_V2_Epistemology_Plan.md
