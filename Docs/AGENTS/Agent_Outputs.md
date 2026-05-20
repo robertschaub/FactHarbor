@@ -4660,3 +4660,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** This remains review/package work only. No implementation, live job, prompt/model/config/schema/UCM/gateway edit, approval flip, LLM boundary/verdict execution, public/API/UI/report/export/compatibility behavior, provider/parser/cache/SR/storage widening, ACS/direct URL, V1 work, or V1 cleanup is authorized. Stop if W7-B cannot build the statement-bearing input packet from W5/W5-F lineage without direct W4-I access or redaction weakening.
 **Verification:** `npm run index` passed; `npm run debt:sensors` returned known `advisory_warn` at 2026-05-20T17:14:54Z; `git diff --check` passed.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W7-B_W8-B_Steer-Co_Review_Package.md
+
+---
+### 2026-05-20 | Captain Deputy | Codex (GPT-5.5) | V2 W7-B Boundary/Verdict LLM Execution Approval Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W7-B_Boundary_Verdict_LLM_Execution_Approval_Package.md` as the W7-B implementation approval package. It proposes one internal-only LLM-owned `BoundaryVerdictExecutionDecision` over approved W5/W5-F statement-bearing lineage plus W6-B/W6-C/W7-A/W8-A closure evidence, with no direct W4-I access, no public/default-admin text widening, concrete comparator targets, Product Trust cutover gate, warning-materiality contract, and W7-A merge trigger.
+**Warnings:** This package does not itself authorize implementation, live jobs, prompt/model/config/schema/UCM/gateway edits, approval flips, public/API/UI/report/export/compatibility behavior, parser/cache/SR/storage behavior, provider expansion, ACS/direct URL, V1 work, V1 cleanup, or cutover. W7-B implementation requires Steer-Co/Captain package acceptance first; any later canary requires committed implementation, runtime refresh, tranche ledger update, and explicit canary authorization.
+**Verification:** `npm run index` passed; `npm run debt:sensors` returned known `advisory_warn` at 2026-05-20T17:21:55Z; `git diff --check` passed.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W7-B_Implementation_Approval_Package.md
