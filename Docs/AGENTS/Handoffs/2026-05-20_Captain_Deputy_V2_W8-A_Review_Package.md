@@ -27,6 +27,9 @@ Applied amendments:
   `Docs/AGENTS/V2_Excellence_Scorecard.md`; after reviewer feedback, the
   `/debt-guard` skill now owns the canonical decision-record field list and the
   root Named Workflows table/skill metadata expose the non-bugfix trigger;
+- added an explicit W8-A Lead Developer instruction block and future V2 package
+  instruction block to the W8-A package so implementation packets must carry the
+  canonical Balanced Risk Mitigation decision record where applicable;
 - stated that this W8-A is narrower than the full stop-line W8-A acceptance
   criteria and defers narrative/citation/empirical-vs-normative report fields to
   a post-W7-B package;
@@ -70,5 +73,5 @@ canonical internal stop owner and makes the next decision cleaner:
 ## Next Step
 
 If W8-A is approved, issue a Lead Developer implementation prompt limited to the
-review package. If reviewers dissent on stop-owner versus W7-B-first ordering,
-reconvene Steer-Co before implementation.
+review package section 17. If reviewers dissent on stop-owner versus W7-B-first
+ordering, reconvene Steer-Co before implementation.

@@ -223,9 +223,8 @@ Hidden-only value:
 - acceptable only if W8-A becomes the canonical internal stop owner and does not
   add a new route/proof lane.
 - safety value must be risk-proportionate and effective: the implementation
-  package must state the risk, mitigation, debt-guard-style decision result,
-  rejected alternatives, complexity cost, verification method, and merge/removal
-  path for each new safeguard.
+  package must include the canonical `/debt-guard` Balanced Risk Mitigation
+  decision record for each new safeguard.
 
 Cost/latency impact:
 
@@ -395,3 +394,110 @@ Captain Deputy recommends **approve with strict contract-only scope**:
 5. After W8-A, reconvene for the next real report-value phase decision:
    W7-B LLM boundary/verdict execution versus W9-A report-review of the internal
    stop candidate.
+
+## 17. Lead Developer Instruction After Approval
+
+If Captain approves W8-A implementation, issue this packet exactly and keep the
+delivery lane inside it.
+
+```text
+As Lead Developer,
+Skill: debt-guard
+
+Objective:
+Implement W8-A as one internal-only Alpha report stop candidate owner after
+W7-A. The owner consolidates W5-F/W6-B/W6-C/W7-A lineage and readiness into a
+non-verdict-bearing internal stop candidate. It must not generate report prose,
+boundary candidates, verdict candidates, truth percentage, confidence, public
+warnings, public output, compatibility projection, or live jobs.
+
+Authority:
+Captain Deputy delegated workstream after W8-A approval. Proceed autonomously
+inside this package. Escalate to Captain Deputy only on stop triggers.
+
+Scope:
+- Allowed: one new W8-A internal contract owner under
+  `apps/web/src/lib/analyzer-v2/evidence-lifecycle/`, focused unit tests,
+  narrow boundary-guard assertions only if local tests cannot prove import/leak
+  rules, and required closeout docs/handoff/index.
+- Forbidden: product/admin route, public/API/UI/report/export/compatibility
+  behavior, generated report prose, verdict/truth/confidence/warning
+  publication, LLM calls, prompt/model/config/schema/UCM/gateway edits, live
+  jobs, parser/cache/SR/storage/provider widening, ACS/direct URL, W4-I direct
+  import/read/call/sink access, V1 work, and V1 cleanup.
+
+Mandatory workflows:
+- Apply `/debt-guard` Balanced Risk Mitigation before source edits.
+- Required path: Full, because W8-A adds a new internal owner and must prove
+  consolidation value.
+
+BALANCED RISK MITIGATION:
+- Named risk: adapter-side or downstream code invents report semantics from
+  scattered W5/W6/W7 hidden state before LLM boundary/verdict execution exists.
+- Decision result expected: add, only if amend/narrow/delete/quarantine cannot
+  create one canonical internal stop owner.
+- Rejected alternatives to evaluate explicitly: amend W7-A, narrow W6-C,
+  quarantine W8-A until W7-B, delete/retire W4-I remnants first, or add W8-A.
+- Owner: Lead Developer.
+- Verifier: focused W8-A tests, W7-A test, evidence-lifecycle tests, boundary
+  guard as needed, `validate:v2-gates`, gate-register self-test, build,
+  `git diff --check`, `git status`.
+- Net-complexity impact: must be justified as consolidation, not another
+  readiness/proof lane.
+- Residual risk: no real report value until W7-B/W8-B.
+- Removal / merge trigger: W8-A stop candidate is merged into the real internal
+  ReportResult owner after approved W7-B/W8-B verdict/report generation exists.
+
+Implementation rules:
+- Construct W8-A output from allowlisted W5-F/W6-B/W6-C/W7-A fields only.
+- Do not spread, clone, embed, serialize, or return parent decision objects.
+- `publicCutoverStatus` is mirror-only, not a second source of truth.
+- Default/admin projection remains hash/length/provenance-only.
+- W8-A must fail closed on missing, blocked, damaged, mismatched, or
+  side-effect-open parent state.
+- If W7-A has empty `boundaryCandidates` or `verdictCandidate: null`, W8-A must
+  mark `reportQualityStatus = alpha_candidate_not_report_ready`.
+- W8-A must not satisfy full Alpha report completeness criteria.
+
+Required verifiers:
+npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/
+npm run validate:v2-gates
+node scripts/validate-v2-gate-register.mjs --self-test
+npm run debt:sensors
+npm -w apps/web run build
+git diff --check
+git status --short --untracked-files=all
+
+Stop triggers:
+- Need for prompt/model/config/schema/UCM/gateway approval.
+- Need for LLM execution or generated report prose.
+- Need for public/API/UI/report/export/compatibility exposure.
+- Need for EvidenceItem/source text in default/admin/public/log/error surfaces.
+- Need for direct or indirect W4-I runtime/sink/provenance access.
+- W8-A becomes another readiness/proof layer instead of one canonical stop owner.
+- Any verifier failure with unclear root cause after the first debt-guard pass.
+
+Output:
+Follow the Exchange Protocol. Include the Balanced Risk Mitigation decision
+record, V2 scorecard impact, retirement-ledger impact, consolidation result,
+debt-sensor status, verifier results, warnings, and next-step recommendation.
+```
+
+## 18. Future V2 Package Instruction
+
+For W8-A and every later substantial V2 package, Captain Deputy must require:
+
+- explicit `/debt-guard` applicability statement;
+- canonical Balanced Risk Mitigation decision record whenever the package adds
+  safety, containment, governance, diagnostic, proof, guard, fallback, route, or
+  hidden-artifact machinery;
+- `V2 SCORECARD IMPACT`;
+- `V2 RETIREMENT LEDGER IMPACT`;
+- `V2 CONSOLIDATION GATE`;
+- latest `npm run debt:sensors` status;
+- exact approval boundaries and stop triggers.
+
+Packages that cannot show either report-value progress, retirement/merge of old
+machinery, or a concrete risk-proportionate mitigation require Steer-Co consent
+before implementation.
