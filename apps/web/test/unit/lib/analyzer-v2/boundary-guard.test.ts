@@ -1208,6 +1208,8 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-execution-readiness-artifact-sink",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-sufficiency-assessment-owner",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-boundary-verdict-execution-owner",
     ]),
   ],
   [
@@ -9456,7 +9458,6 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     for (const productPath of [
-      analyzerV2OrchestratorPath,
       analyzerV2PipelineShellPath,
       analyzerV2RunnerIngressPath,
     ]) {
@@ -9621,7 +9622,6 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     for (const productPath of [
-      analyzerV2OrchestratorPath,
       analyzerV2PipelineShellPath,
       analyzerV2RunnerIngressPath,
     ]) {
@@ -9870,7 +9870,6 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     for (const productPath of [
-      analyzerV2OrchestratorPath,
       analyzerV2PipelineShellPath,
       analyzerV2RunnerIngressPath,
     ]) {
@@ -10088,7 +10087,6 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     for (const productPath of [
-      analyzerV2OrchestratorPath,
       analyzerV2PipelineShellPath,
       analyzerV2RunnerIngressPath,
     ]) {
@@ -10343,7 +10341,6 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     for (const productPath of [
-      analyzerV2OrchestratorPath,
       analyzerV2PipelineShellPath,
       analyzerV2RunnerIngressPath,
     ]) {
@@ -10351,6 +10348,64 @@ describe("analyzer-v2 boundary guard", () => {
         if (specifier.includes("evidence-lifecycle-boundary-verdict-execution-owner")) {
           violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W7-B2 owner ${specifier}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps W7-C product chain integration limited to orchestrator imports with no public surface", () => {
+    const violations: string[] = [];
+    const orchestratorImports = collectModuleSpecifiers(parseSource(analyzerV2OrchestratorPath));
+    const requiredOrchestratorImports = [
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
+      "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-sufficiency-assessment-owner",
+      "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate",
+      "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-boundary-verdict-execution-owner",
+    ];
+
+    for (const requiredSpecifier of requiredOrchestratorImports) {
+      if (!orchestratorImports.includes(requiredSpecifier)) {
+        violations.push(`orchestrator missing required W7-C chain import ${requiredSpecifier}`);
+      }
+    }
+
+    for (const productPath of [
+      analyzerV2PipelineShellPath,
+      analyzerV2RunnerIngressPath,
+      analyzerV2CompatibilityViewPath,
+      analyzerV2ResultEnvelopePath,
+    ]) {
+      for (const specifier of collectModuleSpecifiers(parseSource(productPath))) {
+        if (requiredOrchestratorImports.includes(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W7-C chain module ${specifier}`);
+        }
+      }
+    }
+
+    for (const publicPath of publicSurfaceFiles) {
+      for (const specifier of collectModuleSpecifiers(parseSource(publicPath))) {
+        if (requiredOrchestratorImports.includes(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, publicPath))} imports W7-C chain module ${specifier}`);
+        }
+      }
+    }
+
+    const orchestratorContent = readFileSync(analyzerV2OrchestratorPath, "utf8");
+    for (const forbiddenText of [
+      "readBoundedEvidenceExtractionRuntimeArtifactDefaultProjections",
+      "readSufficiencyAssessmentRuntime",
+      "readBoundaryVerdictExecutionRuntime",
+      "reportMarkdown",
+      "truthPercentage",
+      "confidenceGenerated: true",
+      "warningGenerated: true",
+      "publicSurfaceWritten: true",
+    ]) {
+      if (orchestratorContent.includes(forbiddenText)) {
+        violations.push(`orchestrator contains forbidden W7-C public/observability text ${forbiddenText}`);
       }
     }
 

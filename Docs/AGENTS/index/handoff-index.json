@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T19:34:46.913Z",
-  "count": 758,
+  "generatedAt": "2026-05-20T19:55:55.407Z",
+  "count": 759,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16387,6 +16387,43 @@
             "verification": "all required local tests, V2 gate checks, debt sensors, build, diff check, and status check completed as recorded above.",
             "debt_accepted_and_removal_trigger": "planned hidden mechanism; later chain integration must consume W7-B2 directly instead of cloning provider-call or prompt-rendering logic.",
             "residual_debt": "W7-B2 remains unreachable from the product orchestrator until a later chain package; boundary guard size remains advisory debt."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-20_Lead_Developer_V2_W7-C_Product_Chain_Integration.md",
+      "date": "2026-05-20",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "v2",
+        "w7-c",
+        "product",
+        "chain",
+        "integration"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/orchestrator.ts"
+      ],
+      "summary": "Start from `orchestrator.ts` W7-C chain after `recordBoundedEvidenceExtractionRuntimeArtifact(...)`. Preserve the current precondition and hidden containment. Do not add another sink-less integration slice without Steer-Co exception; next work should be hidden chain observability or W8-B output.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "missing-capability",
+            "chosen_option": "add",
+            "rejected_path_and_why": "Amending W6-C2/W7-B2 owners, adding provider seams, or adding a new sink/route would violate the approved W7-C package; leaving owners unwired keeps committed capability unreachable.",
+            "what_was_removed_simplified": "No production code removed. Boundary guard assertions were narrowed so only orchestrator imports are allowed for W7-C.",
+            "what_was_added": "Orchestrator calls for existing W5-F/W6-B/W6-C2/W7-A/W8-A/W7-B2 chain; focused W7-C tests; boundary guard coverage for no public surface.",
+            "net_mechanism_count": "Increased, bounded to orchestration calls only; no new owner, sink, route, ledger, config, prompt, or public mechanism.",
+            "budget_reconciliation": "Actual touched files matched the budget. No new retries, fallbacks, flags, provider seams, routes, sinks, public projections, parser execution, cache/SR/storage behavior, or report/verdict output appeared.",
+            "verification": "All required local tests, V2 gates, register self-test, debt sensors, build, and diff check passed; debt sensors returned advisory warnings only.",
+            "debt_accepted_and_removal_trigger": "Process-local hidden chain state is deliberate temporary debt. Removal/merge trigger is the next package adding hidden chain observability or W8-B output; a second sink-less integration slice requires Steer-Co exception.",
+            "residual_debt": "V2 hidden machinery and boundary guard footprint remain large; W7-A is still temporary scaffolding."
           }
         }
       }

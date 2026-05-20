@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Lead Developer | Codex (GPT-5.5) | V2 W7-C Product Chain Integration -- [Significant] [open-items: yes]
+**For next agent:** W7-C wires `orchestrator.ts` from W5 bounded extraction through W5-F/W6-B/W6-C2/W7-A/W8-A/W7-B2 inside the hidden containment block. No live job was run and no chain observability was added; next package must add hidden chain observability or W8-B output unless Steer-Co grants an exception.
+**Warnings:** Public V2 output remains damaged/precutover. Boundary guard allows the W7-C chain imports only in `orchestrator.ts`; do not add routes, sinks, public/default-admin projections, report wrappers, provider seams, prompt/config/schema/UCM changes, parser execution, cache/SR/storage, warning publication, or final verdict behavior.
+-> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W7-C_Product_Chain_Integration.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | V2 Stop-Line And Executable Plan -- [Significant] [open-items: yes]
 **For next agent:** V2 implementation should pause now. W6-A is review-only accepted; amended W6-B package needs short confirmation before implementation. If confirmed, implement only `EvidenceItemHandoffDecision -> SufficiencyIntakeDecision` (`v2.evidence-lifecycle.sufficiency-intake.w6b`) as contract/test-only. Read `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` and `Docs/WIP/2026-05-20_V2_Slice_W6-B_EvidenceItem_Handoff_To_Sufficiency_Intake_Review_Package.md`.
 **Warnings:** W5-G proves hidden EvidenceItem handoff reachability, not report readiness. No public cutover, V1 cleanup, prompt/model/config/schema behavior, provider/parser/ACS/direct URL widening, source-reliability weighting, deterministic semantic logic, fixed epistemic formulas, route/orchestrator wiring, W4-I direct reads, parent spreading/cloning, text/language/semantic branching, or hidden-only machinery without retirement impact is authorized.

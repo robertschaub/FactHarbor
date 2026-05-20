@@ -41,14 +41,38 @@ import {
   runBoundedEvidenceExtractionDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner";
 import {
+  buildEvidenceItemHandoffDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff";
+import {
+  buildSufficiencyIntakeDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
+import {
+  buildBoundaryVerdictCandidateDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate";
+import {
+  buildInternalAlphaReportStopCandidate,
+} from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
+import {
+  runSufficiencyAssessmentDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-sufficiency-assessment-owner";
+import {
+  runBoundaryVerdictExecutionDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-boundary-verdict-execution-owner";
+import {
   buildClaimBoundaryV2RunContext,
   type BuildClaimBoundaryV2RunContextOptions,
   QUERY_PLANNING_RUNTIME_ACTIVATION_PROFILE_ID,
 } from "@/lib/analyzer-v2/run-context";
+import type {
+  BoundedEvidenceExtractionDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
 import type { SourceCandidatePreviewProjection } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type { SourceMaterialPageSummaryFetchLocator } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
+import type {
+  BoundedEvidenceExtractionRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-artifact-sink";
 import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
 import { createClaimUnderstandingRuntimeInMemoryArtifactSink } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
 import { recordEvidenceLifecycleIntakeRuntimeArtifact } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-intake-artifact-sink";
@@ -115,6 +139,18 @@ function queryPlanningActivationIsOpen(context: ReturnType<typeof buildClaimBoun
     && activation.hiddenArtifactSink.kind === "v2_evidence_query_planning_runtime_artifact_ledger"
     && activation.hiddenArtifactSink.visibility === "internal_admin_only"
     && activation.hiddenArtifactSink.publicPointerExposure === "forbidden";
+}
+
+function boundedEvidenceExtractionAcceptedForProductChain(
+  boundedEvidenceExtraction: BoundedEvidenceExtractionDecision,
+  artifact: BoundedEvidenceExtractionRuntimeArtifact | null,
+): artifact is BoundedEvidenceExtractionRuntimeArtifact {
+  return artifact !== null &&
+    artifact.boundedEvidenceExtraction === boundedEvidenceExtraction &&
+    boundedEvidenceExtraction.status === "hidden_evidence_item_extraction_completed" &&
+    boundedEvidenceExtraction.extractionResultStatus === "accepted" &&
+    boundedEvidenceExtraction.extractionStatus === "evidence_extracted" &&
+    boundedEvidenceExtraction.extractionResult?.status === "accepted";
 }
 
 async function emit(input: ClaimBoundaryV2Ingress, message: string, progress: number): Promise<void> {
@@ -313,10 +349,47 @@ export async function runClaimBoundaryPipelineV2(
           extractionInputAuthorization,
           executionReadinessDenial,
         });
-        recordBoundedEvidenceExtractionRuntimeArtifact({
+        const boundedEvidenceExtractionArtifact = recordBoundedEvidenceExtractionRuntimeArtifact({
           context,
           boundedEvidenceExtraction,
         });
+        if (
+          boundedEvidenceExtractionAcceptedForProductChain(
+            boundedEvidenceExtraction,
+            boundedEvidenceExtractionArtifact,
+          )
+        ) {
+          const evidenceItemHandoff = buildEvidenceItemHandoffDecision({
+            boundedEvidenceExtraction,
+            boundedEvidenceItemAdmission: boundedEvidenceExtractionArtifact.boundedEvidenceItemAdmission,
+          });
+          const sufficiencyIntake = buildSufficiencyIntakeDecision(evidenceItemHandoff);
+          const sufficiencyAssessment = await runSufficiencyAssessmentDecision({
+            context,
+            sufficiencyIntake,
+            boundedEvidenceExtraction,
+          });
+          const boundaryVerdictCandidate = buildBoundaryVerdictCandidateDecision({
+            evidenceItemHandoff,
+            sufficiencyIntake,
+            sufficiencyAssessment,
+          });
+          const internalAlphaReportStop = buildInternalAlphaReportStopCandidate({
+            evidenceItemHandoff,
+            sufficiencyIntake,
+            sufficiencyAssessment,
+            boundaryVerdictCandidate,
+          });
+          await runBoundaryVerdictExecutionDecision({
+            context,
+            boundedEvidenceExtraction,
+            evidenceItemHandoff,
+            sufficiencyIntake,
+            sufficiencyAssessment,
+            boundaryVerdictCandidate,
+            internalAlphaReportStop,
+          });
+        }
       }
     } catch {
       // X7-S hidden runtime execution must never affect the public damaged/precutover envelope.
