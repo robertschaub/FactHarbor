@@ -4531,3 +4531,9 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-F_EvidenceItem_Handoff_Convergence_Review_Package.md`. Recommendation: define the next EvidenceItem handoff owner first, then merge/remove or explicitly retain W4-I route surface with owner/trigger. No implementation or live job is authorized by the package.
 **Warnings:** Do not spend the final live-job slot on another W5-E rerun. Do not delete W4-I before successor ownership exists. Do not jump to report/verdict readiness yet.
 -> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-F_Convergence_Review_Package.md
+
+---
+### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 X7-W5-F Implementation Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_X7-W5-F_EvidenceItem_Handoff_Implementation_Package.md`. It proposes `EvidenceItemHandoffOwner`, W5 route projection reuse, and temporary W4-I retention marked as merged with a concrete deletion trigger.
+**Warnings:** Claude Opus 4.6 reviewed as `approve_with_changes`; amendments were applied to remove the incorrect V2-Q5 scorecard citation and explicitly retire/replace the original W4-I trigger. No live job, public/report/verdict/warning/confidence behavior, parser/cache/SR/storage/provider expansion/prompt/model/config/schema/ACS/direct URL/V1 work is authorized. Stop if a new route or W4-I deletion becomes necessary.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_X7-W5-F_Implementation_Package.md
