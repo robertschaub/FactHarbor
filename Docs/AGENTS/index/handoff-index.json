@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T07:26:13.629Z",
-  "count": 728,
+  "generatedAt": "2026-05-20T08:02:38.597Z",
+  "count": 729,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15898,6 +15898,22 @@
       ],
       "files_touched": [],
       "summary": "Validate the Captain-approved W5-D analysis prompt edit through development-team review and one product-route live canary."
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_X7-W5-E_Canary_Result.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "x7-w5-e",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 X7-W5-E Canary Result"
     },
     {
       "file": "2026-05-20_Lead_Developer_V2_X7-W5-D_Prompt_Contract_Alignment.md",
