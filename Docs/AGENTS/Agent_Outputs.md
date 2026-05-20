@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W8-E Upstream Stop Attribution Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W8-E_W8B_Upstream_Stop_Attribution_Package.md` after W8-D stopped on `sufficiency_assessment_not_completed`. Steer-Co agreed W8-B route reachability is proven and zero cited refs are downstream fallout; the next bounded step is to amend the existing W8-B projection with enum-only upstream stop attribution, not add another route/sink and not spend another live job.
+**Warnings:** W8-E authorizes no prompt/model/config/schema/UCM/gateway edits, live jobs, public/API/UI/report/export/compatibility behavior, new route/sink/storage/cache/SR/parser/provider expansion, V1 work, V1 cleanup, or readiness relaxation. Non-completed W6-C must remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W8-E_Upstream_Stop_Attribution_Package.md
+
+---
 ### 2026-05-20 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W8-D Product Route Canary Result -- [Significant] [open-items: yes]
 **For next agent:** W8-D ran exactly one authorized `claimboundary-v2` canary, job `828aacb298ed43a885b8d2f41379f25e`, on runtime commit `86eabdf27aa1ba7b67b181cd92d86da04af9603b`. Classification is `STOP_X7_W8_D_INTERNAL_ALPHA_RESULT_BLOCKED_BY_SUFFICIENCY_ASSESSMENT`: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, and same-ledger W8-B route returned one hidden/admin-only no-store artifact, but artifact status was `internal_alpha_report_result_blocked` with `blockedReason = sufficiency_assessment_not_completed`, not the required created candidate.
 **Warnings:** No second W8-D canary is authorized. Remaining live-job budget is `7`. Do not repair inside W8-D; next step is Steer-Co review of the W6-C/W7-B2/W8-B readiness mismatch before any repair or new live-job package.
