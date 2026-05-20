@@ -488,3 +488,50 @@ Captain Deputy explicitly states "should not implement application code directly
 The implementing Captain Deputy thread contains the explicit Captain canary authorization that was not visible to this monitor session: "I authorize exactly one bounded X7-W5-A live canary..." using the Captain-defined input. Addendum VI is therefore a visibility-gap warning, not a finding of fabricated approval.
 
 The result classification remains a stop, not a pass: `STOP_X7_W5_A_HIDDEN_NO_EXTRACTABLE_EVIDENCE`, job `b7f8561316dd4ab18d3e8aeadf496a9c`, `evidenceItemCount: 0`, tranche remaining `4`. No second W5-A canary, W6/report progression, W4-I merge/delete, or scope expansion is authorized.
+
+---
+
+## Session 2 — 2026-05-20 (~14:00–ongoing, monitoring until 24:00)
+
+### Resume update (~15:20) — W6 stop-line plan + W6-B
+
+Two commits since session-1 final HEAD (`b9286fb1`):
+
+| Commit | Time | Description | Type |
+|---|---|---|---|
+| `4a7decff` | 14:56 | V2 stop-line plan | docs |
+| `d1458c96` | 15:14 | W6-B sufficiency intake contract | contract-only code + tests |
+
+W6-B verified: contract-only `SufficiencyIntakeDecision`, all containment flags correct, sentinel test passes, boundary guard assertions added, net mechanism count unchanged at 14. No hard-stop signals.
+
+### Resume update (~15:40) — W6-C0 design package
+
+| Commit | Time | Description | Type |
+|---|---|---|---|
+| `00ddddfc` | 15:29 | W6-C0 sufficiency design package | docs |
+
+Docs-only. Steer-Co dual-approve (Opus 4.6 + Gemini). Defines text-exposure widening gate, LLM-owned judgment rule, accepted parent contract. No implementation authority.
+
+### Resume update (~16:10) — W6-C approval package
+
+| Commit | Time | Description | Type |
+|---|---|---|---|
+| `fdbe42dc` | 16:05 | W6-C sufficiency approval package | docs |
+
+Review-package-only. `Status: review-package-only; not implementation-approved`. Defines exact file envelope, text-exposure widening contract, stop conditions. Captain-committed.
+
+### Resume update (~16:50) — W6-C implementation committed
+
+| Commit | Time | Description | Type |
+|---|---|---|---|
+| `8f7856b5` | 16:47 | W6-C sufficiency assessment implementation | code + tests + gateway |
+
+12 files, +1689/-45 lines. Captain-committed. Contains `sufficiency-assessment.ts` (848 lines), tests (559 lines), gateway edits (approval-records, cache-policy, model-policy, policy), boundary guard, gate register, validator, Lead Developer handoff.
+
+Verification per Lead Developer handoff: 3 files / 99 tests, v2-gates, gate register self-test, debt sensors, build, diff check — all passed. No live jobs. No prompt/schema edits. No routes added.
+
+**Authorization visibility gap (resolved by closeout hygiene):**
+
+`ANALYZER_V2_W6_C_CAPTAIN_APPROVAL` referenced anchor `#captain-approved-w6-c` in `Docs/WIP/2026-05-20_V2_Slice_W6-C_Sufficiency_Assessment_Implementation_Approval_Package.md` before that anchor existed. The W6-C closeout hygiene pass adds the explicit anchor and records the Captain thread approval, implementation commit `8f7856b5`, verifier set, and W4-I retirement decision. This resolves the durable-anchor visibility gap without changing runtime behavior or authorizing additional scope.
+
+Implementation scope matches the W6-C approval package file envelope exactly. No hard-stop signals. Tranche remains 0. Public V2 remains `blocked_precutover`.

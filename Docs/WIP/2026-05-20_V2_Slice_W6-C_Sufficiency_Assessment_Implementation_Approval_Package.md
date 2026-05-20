@@ -1,13 +1,23 @@
 # V2 Slice W6-C Sufficiency Assessment Implementation Approval Package
 
 Date: 2026-05-20
-Status: review-package-only; not implementation-approved
+Status: implemented and verifier-clean; no live job authorized
 Package author: Captain Deputy
 Baseline design: `Docs/WIP/2026-05-20_V2_Slice_W6-C0_Sufficiency_Portfolio_Input_And_LLM_Assessment_Design.md`
 Current prerequisite commit: `d1458c96` (`feat: add v2 w6b sufficiency intake contract`)
 Current governing docs commit: `00ddddfc` (`docs: prepare v2 w6c0 sufficiency design package`)
-Future implementer: Lead Developer, only after Captain approval
+Implementation commit: `8f7856b5` (`feat: add v2 w6c sufficiency assessment`)
+Implementer: Lead Developer / Captain Deputy delivery lane after Captain approval
 Canary runner: none; no live job is proposed by W6-C
+
+<a id="captain-approved-w6-c"></a>
+Captain approval anchor: Captain approved W6-C implementation in the current
+Codex thread on 2026-05-20 with "Aproved, go" after the Steer-Co-approved
+package at `fdbe42dc`. This anchor records that approval for the W6-C
+gateway/model/cache approval metadata. It does not authorize live jobs,
+public/product/report/verdict/warning/confidence behavior, prompt/schema text
+edits, provider/parser/ACS/direct URL widening, Source Reliability/storage,
+fixed sufficiency formulas, V1 work, or any scope outside this package.
 
 ## 1. Approval Question
 
@@ -25,8 +35,9 @@ provider expansion, parser work, ACS/direct URL support, Source Reliability
 weighting, fixed sufficiency formulas, or V1 work is approved.
 ```
 
-This package is not itself approval to implement. It is the review artifact for
-Captain approval.
+This package was the review artifact for Captain approval. W6-C was later
+approved and implemented at `8f7856b5`; sections below intentionally retain the
+original review-package requirements as the implementation contract.
 
 ## 2. Current State
 
@@ -565,3 +576,41 @@ bounded EvidenceItem text-exposure gate and LLM sufficiency execution gate under
 the exact constraints above.
 
 If not ready, stop here. The current V2 state remains stable at W6-B.
+
+## 22. Implementation Closeout
+
+W6-C was implemented at `8f7856b5` as one hidden/internal
+`SufficiencyAssessmentDecision` owner. It consumes W6-B sufficiency intake plus
+accepted W5 bounded EvidenceItems, admits only EvidenceItem statements into the
+process-local provider input packet, reduces evidence-scope and provenance text
+to hash/length/structural projections, and keeps the default decision projection
+text-free.
+
+Verifier evidence:
+
+- focused W6 sufficiency and boundary tests passed: 3 files / 99 tests;
+- `npm run validate:v2-gates` passed;
+- gate-register self-test passed;
+- `npm run debt:sensors` returned `advisory_warn` with known V2 footprint,
+  boundary-guard, docs-volume, net-mechanism, and consolidation-marker warnings;
+- `npm -w apps/web run build` passed;
+- `git diff --check` passed.
+
+V2-RL-012 decision:
+
+- W6-C did not import, read, call, or consume W4-I runtime/sink/provenance
+  state directly.
+- W4-I core eligibility logic, runtime ownership, provenance, and process-local
+  sink remain temporarily retained only for existing W5 lineage.
+- No new W4-I consumers are allowed.
+- Sharper removal trigger: after W7-A/W8-A canonical downstream owners verify
+  EvidenceItem/sufficiency lineage without direct W4-I dependence, quarantine
+  or remove the remaining W4-I core/sink state unless a reviewed package proves
+  a still-required lineage role.
+
+Next package direction:
+
+- W7-A Boundary/Verdict Candidate Contract review package is the preferred next
+  report-value step after this W6-C hygiene closeout.
+- No W6-C product-route observation, canary, live job, or hidden route is
+  authorized by this closeout.

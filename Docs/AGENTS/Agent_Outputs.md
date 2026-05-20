@@ -4609,3 +4609,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Warnings:** No live job was run. Product/orchestrator/public route wiring remains closed. Do not add report/verdict/warning/confidence behavior, cache IO, SR/storage, provider expansion, parser execution, ACS/direct URL, prompt/schema text edits, V1 reuse, or V1 cleanup under this package.
 **Verification:** Focused W6 sufficiency + boundary tests passed (3 files / 99 tests); `npm run validate:v2-gates` passed; gate-register self-test passed; `npm run debt:sensors` returned known `advisory_warn`; `npm -w apps/web run build` passed; `git diff --check` passed.
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W6-C_Sufficiency_Assessment_Implementation.md
+
+---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 + systems reviewer | V2 W6-C Hygiene Closeout And W7-A Direction -- [Significant] [open-items: yes]
+**For next agent:** Resolved the post-W6-C Steer-Co split by applying a bounded docs/governance hygiene pass: added the durable `#captain-approved-w6-c` anchor to the W6-C package, recorded W6-C implementation/verifier evidence, sharpened `V2-RL-012` W4-I retirement trigger, and updated status/backlog/monitor docs. Consolidated direction: prepare W7-A Boundary/Verdict Candidate Contract review package next.
+**Warnings:** No implementation, live job, product route, public/report/verdict/warning/confidence behavior, prompt/model/config/schema change, provider/parser/ACS/direct URL widening, SR/storage/cache behavior, V1 work, or W4-I consumer was authorized by this hygiene pass. Live-job ledger remains `currentRemaining = 0`.
+**Verification:** `npm run debt:sensors` returned known `advisory_warn`; `git diff --check` passed.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W6-C_Hygiene_Closeout_W7-A_Direction.md
