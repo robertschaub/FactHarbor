@@ -31,6 +31,12 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 -> Docs/AGENTS/Handoffs/2026-05-20_Lead_Developer_V2_W8-E_Upstream_Stop_Attribution_Implementation.md
 
 ---
+### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W8-F Attribution Canary Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W8-F_W8E_Attribution_Product_Route_Canary_Package.md` after W8-E commit `dfe430b5`. Steer-Co consented to spend exactly one product-route canary on W8-E attribution before scoping any W6-C repair. Captain latest job budget is recorded as `8`; W8-F consumes one slot if submitted.
+**Warnings:** W8-F authorizes no source changes, no W6-C repair, no second canary, no prompt/model/config/schema/UCM/gateway edits, no public/API/UI/report/export/compatibility behavior, no parser/cache/SR/storage/provider expansion, no W2/W3 widening, no ACS/direct URL, no V1 work, and no V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-20_Captain_Deputy_V2_W8-F_Attribution_Canary_Package.md
+
+---
 ### 2026-05-20 | Lead Architect / LLM Expert | Codex (GPT-5.5) | V2 Stop-Line And Executable Plan -- [Significant] [open-items: yes]
 **For next agent:** V2 implementation should pause now. W6-A is review-only accepted; amended W6-B package needs short confirmation before implementation. If confirmed, implement only `EvidenceItemHandoffDecision -> SufficiencyIntakeDecision` (`v2.evidence-lifecycle.sufficiency-intake.w6b`) as contract/test-only. Read `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` and `Docs/WIP/2026-05-20_V2_Slice_W6-B_EvidenceItem_Handoff_To_Sufficiency_Intake_Review_Package.md`.
 **Warnings:** W5-G proves hidden EvidenceItem handoff reachability, not report readiness. No public cutover, V1 cleanup, prompt/model/config/schema behavior, provider/parser/ACS/direct URL widening, source-reliability weighting, deterministic semantic logic, fixed epistemic formulas, route/orchestrator wiring, W4-I direct reads, parent spreading/cloning, text/language/semantic branching, or hidden-only machinery without retirement impact is authorized.

@@ -5,19 +5,19 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-w8d-captain-reset-2026-05-20",
+    "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 7,
+    "currentRemaining": 8,
     "approvalPointer": {
-      "source": "Captain message in current Codex thread after W5-B implementation closeout",
+      "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
-      "summary": "Captain authorized job submission and set the current live-job budget to 8."
+      "summary": "Captain authorized job submission and set the current job budget to 8, instructing the team to use it wisely."
     },
     "latestReset": {
       "date": "2026-05-20",
-      "previousRemaining": 0,
+      "previousRemaining": 7,
       "resetRemaining": 8,
-      "reason": "Captain authorized job submission after W8-C and set the live-job budget to 8, instructing the team to use it wisely."
+      "reason": "Captain authorized job submission after W8-E and reset/increased the current live-job budget to 8, instructing the team to use it wisely."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,

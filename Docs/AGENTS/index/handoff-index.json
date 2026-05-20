@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T21:54:35.150Z",
-  "count": 767,
+  "generatedAt": "2026-05-20T22:03:48.216Z",
+  "count": 768,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16151,6 +16151,23 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 Captain Deputy V2 W8-E Upstream Stop Attribution Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W8-F_Attribution_Canary_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w8-f",
+        "attribution",
+        "canary",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-20 Captain Deputy V2 W8-F Attribution Canary Package"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md",
