@@ -47,6 +47,12 @@ make the current stop condition explicit: V2 has traceable internal evidence and
 sufficiency inputs, but no approved boundary/verdict LLM task and therefore no
 verdict-bearing report.
 
+Balance rule: W8-A is not required to be tiny. It is required to be
+well-balanced: every safety mechanism must name the concrete risk it mitigates,
+why the mitigation is proportionate, what owns it, and how it will merge or
+retire when the next report-value owner exists. Underbuilding real safety is not
+acceptable; overbuilding permanent hidden scaffolding is also not acceptable.
+
 ## 3. Gate Summary
 
 What this gate unlocks:
@@ -216,6 +222,9 @@ Hidden-only value:
 
 - acceptable only if W8-A becomes the canonical internal stop owner and does not
   add a new route/proof lane.
+- safety value must be risk-proportionate, not merely minimal: the
+  implementation package must state the risk, mitigation, complexity cost, and
+  merge/removal path for each new safeguard.
 
 Cost/latency impact:
 

@@ -22,6 +22,9 @@ Applied amendments:
 
 - renamed the proposed artifact from `ReportResultCandidate` to
   `ReportStopCandidate`;
+- added Captain's balance rule: safety work is not required to be tiny, but each
+  safeguard must name the concrete risk, proportional mitigation, owner, and
+  merge/removal path;
 - stated that this W8-A is narrower than the full stop-line W8-A acceptance
   criteria and defers narrative/citation/empirical-vs-normative report fields to
   a post-W7-B package;
