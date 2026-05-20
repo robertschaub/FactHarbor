@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T19:55:55.407Z",
-  "count": 759,
+  "generatedAt": "2026-05-20T20:09:25.309Z",
+  "count": 760,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16062,6 +16062,22 @@
       ],
       "files_touched": [],
       "summary": "2026-05-20 - Captain Deputy - V2 W8-A Review Package"
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W8-B_Review_Package.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w8-b",
+        "review",
+        "package"
+      ],
+      "files_touched": [],
+      "summary": "Prepare the next V2 review package after W7-C product chain integration."
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_X7-W5-D_Live_Result.md",
