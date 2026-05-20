@@ -55,9 +55,10 @@ speculative risks. The target is a simple, capable, maintainable pipeline whose
 safety mechanisms are load-bearing and reviewable.
 
 Substantial V2 packages that add safety, containment, governance, diagnostic,
-proof, guard, route, or hidden-artifact machinery must include the debt-guard
-style decision result: `amend`, `narrow`, `delete`, `quarantine`, or `add`, with
-the rejected alternatives and net-complexity impact stated explicitly.
+proof, guard, route, or hidden-artifact machinery must include the canonical
+Balanced Risk Mitigation decision record defined in `/debt-guard`:
+`Named risk`, `Decision result`, `Rejected alternatives`, `Owner`, `Verifier`,
+`Net-complexity impact`, `Residual risk`, and `Removal / merge trigger`.
 
 ## Release-Quality Inputs
 

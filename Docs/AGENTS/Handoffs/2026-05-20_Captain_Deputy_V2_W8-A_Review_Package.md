@@ -24,9 +24,9 @@ Applied amendments:
   `ReportStopCandidate`;
 - added Captain's general Balanced Risk Mitigation Rule to root `AGENTS.md`,
   `.claude/skills/debt-guard/SKILL.md`, and
-  `Docs/AGENTS/V2_Excellence_Scorecard.md`; W8-A links to it and requires a
-  named risk, proportional mitigation, owner, verifier, rejected alternatives,
-  net-complexity impact, and merge/removal path;
+  `Docs/AGENTS/V2_Excellence_Scorecard.md`; after reviewer feedback, the
+  `/debt-guard` skill now owns the canonical decision-record field list and the
+  root Named Workflows table/skill metadata expose the non-bugfix trigger;
 - stated that this W8-A is narrower than the full stop-line W8-A acceptance
   criteria and defers narrative/citation/empirical-vs-normative report fields to
   a post-W7-B package;

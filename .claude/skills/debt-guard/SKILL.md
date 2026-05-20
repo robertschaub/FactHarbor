@@ -8,8 +8,9 @@ description: >
   quarantining/deleting obsolete code, or adding new code. Also use for
   refactors, PR reviews, agent-generated patches, net-complexity assessment,
   technical debt, maintainability, workaround stacking, fallback/flag/helper
-  additions, parallel mechanisms, or whether a previous code change should be
-  undone.
+  additions, safety, containment, governance, diagnostic, proof, guard, route,
+  hidden-artifact additions, parallel mechanisms, or whether a previous code
+  change should be undone.
 allowed-tools: Read Glob Grep Bash Agent
 ---
 
@@ -68,9 +69,20 @@ proportionate, owned, verifiable, and has a merge, stabilization, or retirement
 path. Do not underbuild real safety, and do not accumulate permanent scaffolding
 for speculative risks.
 
-For substantial safety/governance additions, record the decision result
-(`amend`, `narrow`, `delete`, `quarantine`, or `add`), rejected alternatives,
-net-complexity impact, verifier, residual risk, and removal or merge trigger.
+For substantial safety/governance additions, this is the canonical decision
+record:
+
+```text
+BALANCED RISK MITIGATION
+Named risk:
+Decision result: amend | narrow | delete | quarantine | add
+Rejected alternatives:
+Owner:
+Verifier:
+Net-complexity impact:
+Residual risk:
+Removal / merge trigger:
+```
 
 ## Required Path Selection
 

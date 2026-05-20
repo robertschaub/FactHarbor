@@ -48,12 +48,10 @@ sufficiency inputs, but no approved boundary/verdict LLM task and therefore no
 verdict-bearing report.
 
 Balance rule: W8-A follows the general Balanced Risk Mitigation Rule in
-`Docs/AGENTS/V2_Excellence_Scorecard.md`, which is the package-level counterpart
-to `/debt-guard`. Any W8-A safety mechanism must name the concrete risk it
-mitigates, why the mitigation is proportionate, what owns it, how it is
-verified, how it will merge or retire when the next report-value owner exists,
-and why amend/narrow/delete/quarantine would be insufficient if new machinery is
-added.
+`Docs/AGENTS/V2_Excellence_Scorecard.md`, which applies the repository-wide
+`/debt-guard` Balanced Risk Mitigation rule to V2 packages. Any W8-A safety
+mechanism must include the canonical `/debt-guard` decision record and state why
+amend/narrow/delete/quarantine would be insufficient if new machinery is added.
 
 ## 3. Gate Summary
 
