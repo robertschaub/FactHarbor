@@ -193,6 +193,20 @@ function removeStoredAdmissionSnapshot(ledgerId: string): void {
   }
 }
 
+function mutateStoredAdmissionSnapshot(
+  ledgerId: string,
+  mutate: (admission: Record<string, unknown>) => void,
+): void {
+  const globalLedger = globalThis as typeof globalThis & {
+    __factHarborV2BoundedEvidenceExtractionArtifactLedgers?: Map<string, Array<Record<string, unknown>>>;
+  };
+  const records = globalLedger.__factHarborV2BoundedEvidenceExtractionArtifactLedgers?.get(ledgerId);
+  const admission = records?.[0]?.boundedEvidenceItemAdmission;
+  if (admission && typeof admission === "object") {
+    mutate(admission as Record<string, unknown>);
+  }
+}
+
 function seedSchemaFailureArtifact(
   schemaDiagnostics: NonNullable<BoundedEvidenceExtractionDecision["executionTelemetry"]["schemaDiagnostics"]>,
 ) {
@@ -273,6 +287,19 @@ describe("Analyzer V2 internal bounded evidence extraction artifact route", () =
         inputTextReturned: false,
       },
     });
+    expect(body.artifacts[0].evidenceItemHandoff).toMatchObject({
+      kind: "evidence_item_handoff",
+      handoffStatus: "evidence_items_ready_for_downstream_internal_handoff",
+      admittedEvidenceItemCount: 1,
+      w4iDisposition: "historical_same_ledger_evidence_merged",
+      retiredW4iTrigger: "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
+      replacementW4iTrigger: "after_w5f_handoff_route_projection_verified",
+      redaction: {
+        evidenceItemTextReturned: false,
+        sourceTextReturned: false,
+        inputTextReturned: false,
+      },
+    });
     expect(Object.keys(body.artifacts[0].boundedEvidenceItemAdmission)).toHaveLength(18);
     expect(serialized).not.toContain(FORBIDDEN_TEXT);
     expect(serialized).not.toContain('"statement":');
@@ -330,6 +357,42 @@ describe("Analyzer V2 internal bounded evidence extraction artifact route", () =
         sourceTextReturned: false,
         inputTextReturned: false,
       },
+    });
+    expect(body.artifacts[0].evidenceItemHandoff).toMatchObject({
+      handoffStatus: "evidence_item_handoff_blocked",
+      blockedReason: "w5e_admission_not_accepted",
+      admittedEvidenceItemCount: 0,
+      evidenceItemStatementHashes: [],
+      evidenceItemStatementByteLengths: [],
+    });
+    expect(serialized).not.toContain(FORBIDDEN_TEXT);
+    expect(serialized).not.toContain('"statement":');
+  });
+
+  it("marks the W5-F handoff damaged when admitted counts drift from W5 projections", async () => {
+    const ledgerId = seedArtifact("job-v2-w5-route-handoff-damaged");
+    mutateStoredAdmissionSnapshot(ledgerId, (admission) => {
+      admission.admittedEvidenceItemCount = 2;
+    });
+    process.env.FH_ADMIN_KEY = "test-admin-key";
+    const { GET } = await import(
+      "@/app/api/internal/analyzer-v2/evidence-lifecycle-bounded-evidence-extraction-artifacts/route"
+    );
+
+    const response = await GET(new Request(
+      artifactUrl(`?ledgerId=${encodeURIComponent(ledgerId)}`),
+      { headers: { "x-admin-key": "test-admin-key" } },
+    ));
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(body.artifacts[0].evidenceItemHandoff).toMatchObject({
+      handoffStatus: "evidence_item_handoff_damaged",
+      damagedReason: "admitted_count_mismatch",
+      admittedEvidenceItemCount: 0,
+      evidenceItemStatementHashes: [],
+      evidenceItemStatementByteLengths: [],
     });
     expect(serialized).not.toContain(FORBIDDEN_TEXT);
     expect(serialized).not.toContain('"statement":');

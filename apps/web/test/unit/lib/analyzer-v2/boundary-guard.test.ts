@@ -1121,6 +1121,10 @@ const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkApp
       ]),
     ],
     [
+      "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
+      new Set(["EvidenceItemHandoffDecision", "buildEvidenceItemHandoffDecision"]),
+    ],
+    [
       "@/lib/analyzer-v2/util",
       new Set(["sha256Json"]),
     ],
@@ -5792,8 +5796,9 @@ describe("analyzer-v2 boundary guard", () => {
       "readEvidenceLifecycleExecutionReadinessRuntimeArtifactDefaultProjections",
       "defaultProjection: \"hash_length_provenance_only\"",
       "historical_same_ledger_eligibility_evidence",
-      "x7-w5-e_bounded_evidence_item_admission_projection",
+      "x7-w5-f_evidence_item_handoff_projection",
       "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
+      "after_w5f_handoff_route_projection_verified",
     ]) {
       if (!sinkContent.includes(requiredText) && !routeContent.includes(requiredText)) {
         violations.push(`W4-I execution-readiness default route projection missing required text ${requiredText}`);

@@ -72,8 +72,9 @@ describe("Analyzer V2 internal execution-readiness artifact route", () => {
       publicPointerExposure: "forbidden",
       defaultProjection: "hash_length_provenance_only",
       inspectionRole: "historical_same_ledger_eligibility_evidence",
-      mergedBy: "x7-w5-e_bounded_evidence_item_admission_projection",
-      removalTrigger: "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
+      mergedBy: "x7-w5-f_evidence_item_handoff_projection",
+      retiredRemovalTrigger: "remove_or_merge_route_after_w5e_canary_and_next_evidence_handoff_owner",
+      removalTrigger: "after_w5f_handoff_route_projection_verified",
       ledgerId,
       artifactCount: 1,
     });

@@ -5,6 +5,10 @@ import {
   type BoundedEvidenceItemAdmissionDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-item-admission";
 import {
+  buildEvidenceItemHandoffDecision,
+  type EvidenceItemHandoffDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff";
+import {
   BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_VERSION,
   type BoundedEvidenceExtractionDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
@@ -129,6 +133,7 @@ export type BoundedEvidenceExtractionDecisionDefaultProjection =
 export type BoundedEvidenceExtractionRuntimeArtifactDefaultProjection =
   Omit<BoundedEvidenceExtractionRuntimeArtifact, "boundedEvidenceExtraction"> & {
     readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecisionDefaultProjection;
+    readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
   };
 type PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact =
   Omit<BoundedEvidenceExtractionRuntimeArtifact, "boundedEvidenceItemAdmission"> & {
@@ -228,6 +233,9 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
   artifact: BoundedEvidenceExtractionRuntimeArtifact,
 ): BoundedEvidenceExtractionRuntimeArtifactDefaultProjection {
   const decision = artifact.boundedEvidenceExtraction;
+  const boundedEvidenceItemAdmission = redactBoundedEvidenceItemAdmissionDecisionOrFailClosed(
+    artifact as PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact,
+  );
   const executionTelemetry = {
     ...decision.executionTelemetry,
     schemaDiagnostics: sanitizeSchemaDiagnosticsForDefaultProjection(
@@ -251,9 +259,11 @@ export function redactBoundedEvidenceExtractionRuntimeArtifact(
       evidenceItemTextAccess: "redacted_default_hash_length_provenance_only",
       sourceTextAccess: "redacted_default_hash_length_provenance_only",
     },
-    boundedEvidenceItemAdmission: redactBoundedEvidenceItemAdmissionDecisionOrFailClosed(
-      artifact as PossiblyLegacyBoundedEvidenceExtractionRuntimeArtifact,
-    ),
+    boundedEvidenceItemAdmission,
+    evidenceItemHandoff: buildEvidenceItemHandoffDecision({
+      boundedEvidenceExtraction: decision,
+      boundedEvidenceItemAdmission,
+    }),
   });
 }
 
