@@ -26,6 +26,39 @@ Scorecard risk:
 If a package is hidden-only and does not retire/merge/quarantine older
 machinery, it requires a Steer-Co exception under the V2 Consolidation Gate.
 
+## Balanced Risk Mitigation Rule
+
+Safety, containment, governance, and diagnostic work must be proportionate to a
+named risk and must preserve forward progress toward report-quality value.
+
+This is the package-level counterpart to `/debt-guard`. Before adding a safety
+mechanism, reviewers must compare whether the risk is better handled by amending
+an existing mechanism, narrowing or deleting obsolete machinery, quarantining a
+temporary path, or adding a new mechanism. Adding new machinery is justified
+only when the existing path cannot carry the risk mitigation with lower net
+complexity.
+
+A mitigation is well-balanced when it:
+
+- prevents, detects, or contains a plausible failure that would materially harm
+  report quality, security, provenance, cutover safety, or user trust;
+- is scoped no broader than needed for that risk, while still being strong enough
+  to be effective;
+- has a clear owner, verifier, and success/stop condition;
+- defines a merge, retirement, or stabilization path when it adds hidden,
+  temporary, or duplicated machinery;
+- does not displace the next report-value slice unless the risk would make that
+  slice unreliable or unsafe.
+
+Do not underbuild real safety. Do not overbuild permanent scaffolding for
+speculative risks. The target is a simple, capable, maintainable pipeline whose
+safety mechanisms are load-bearing and reviewable.
+
+Substantial V2 packages that add safety, containment, governance, diagnostic,
+proof, guard, route, or hidden-artifact machinery must include the debt-guard
+style decision result: `amend`, `narrow`, `delete`, `quarantine`, or `add`, with
+the rejected alternatives and net-complexity impact stated explicitly.
+
 ## Release-Quality Inputs
 
 Use only Captain-approved exact inputs. Do not paraphrase, translate, or invent
