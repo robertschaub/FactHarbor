@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+  BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION,
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
@@ -21,6 +22,7 @@ const expectedSchemaVersions = [
   EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+  BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
 ];
 
 function readPrompt(): string {
@@ -146,6 +148,24 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("use an empty array when no limitation is extractable");
     expect(section).toContain("`provenance`: strict object with exactly `locator` and `rationale`");
     expect(section).toContain("both are non-empty strings");
+  });
+
+  it("renders the boundary/verdict execution prompt contract with citation and internal-label constraints", () => {
+    const content = readPrompt();
+    const section = readSection(content, EVIDENCE_TASK_PROMPT_SECTION_IDS.boundary_verdict_execution);
+
+    expect(section).toContain("v2.boundary_verdict_execution.0");
+    expect(section).toContain("boundary_verdict_execution");
+    expect(section).toContain("Boundary-First Reasoning");
+    expect(section).toContain("Every boundary candidate must cite at least one supplied EvidenceItem ID");
+    expect(section).toContain("Every verdict candidate must cite at least one supplied EvidenceItem ID");
+    expect(section).toContain("internalVerdictLabelCandidate");
+    expect(section).toContain("TRUE");
+    expect(section).toContain("UNVERIFIED");
+    expect(section).toContain("userVisibleWarningPublication");
+    expect(section).toContain("closed");
+    expect(section).toContain("Return only one JSON object");
+    expect(section).not.toMatch(/\$\{\w+\}/);
   });
 
   it("keeps Evidence Lifecycle prompt sections generic and free of Captain canary terms", () => {

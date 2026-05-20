@@ -6,6 +6,7 @@ import type {
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
+  ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
@@ -143,4 +144,27 @@ export const ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY: AnalyzerV2CachePolic
     "adapterVersion",
   ],
   approval: ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
+};
+
+export const ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.boundary-verdict-execution.w7b",
+  requiredDimensions: [
+    "promptProfile",
+    "promptSectionId",
+    "promptContentHash",
+    "modelTask",
+    "provider",
+    "modelName",
+    "temperature",
+    "outputSchemaVersion",
+    "configSnapshotHash",
+    "resultSchemaVersion",
+    "inputIdentityHash",
+    "sourceIdentityHash",
+    "currentDateBucket",
+  ],
+  optionalDimensions: [
+    "adapterVersion",
+  ],
+  approval: ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
 };

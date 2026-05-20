@@ -2,12 +2,14 @@ export const EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION = "v2.evidence_query_
 export const EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION = "v2.evidence_applicability_result.0";
 export const EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION = "v2.evidence_extraction_result.0";
 export const EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION = "v2.evidence_sufficiency_assessment.0";
+export const BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION = "v2.boundary_verdict_execution.0";
 
 export const EVIDENCE_TASK_PROMPT_SECTION_IDS = {
   evidence_query_planning: "V2_EVIDENCE_QUERY_PLANNING",
   evidence_applicability: "V2_EVIDENCE_APPLICABILITY",
   evidence_extraction: "V2_EVIDENCE_EXTRACTION",
   evidence_sufficiency: "V2_EVIDENCE_SUFFICIENCY_GATE",
+  boundary_verdict_execution: "V2_BOUNDARY_VERDICT_EXECUTION",
 } as const;
 
 export const EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS = {
@@ -15,6 +17,7 @@ export const EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS = {
   evidence_applicability: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   evidence_extraction: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   evidence_sufficiency: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+  boundary_verdict_execution: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
 } as const;
 
 export type EvidenceLifecycleTaskKey = keyof typeof EVIDENCE_TASK_PROMPT_SECTION_IDS;
@@ -272,8 +275,88 @@ export type EvidenceSufficiencyResult =
     damagedReason: EvidenceLifecycleTaskDamagedReason;
   };
 
+export type BoundaryVerdictInternalLabel =
+  | "TRUE"
+  | "MOSTLY-TRUE"
+  | "LEANING-TRUE"
+  | "MIXED"
+  | "LEANING-FALSE"
+  | "MOSTLY-FALSE"
+  | "FALSE"
+  | "UNVERIFIED";
+
+export type BoundaryVerdictExecutionBoundaryCandidate = {
+  boundaryCandidateId: string;
+  title: string;
+  targetAtomicClaimIds: string[];
+  evidenceItemIds: [string, ...string[]];
+  evidenceScopeSummary: string;
+  rationale: string;
+};
+
+export type BoundaryVerdictExecutionVerdictCandidate = {
+  verdictCandidateId: string;
+  boundaryCandidateIds: [string, ...string[]];
+  targetAtomicClaimIds: string[];
+  evidenceItemIds: [string, ...string[]];
+  internalVerdictLabelCandidate: BoundaryVerdictInternalLabel;
+  internalTruthPercentageCandidate: number;
+  internalConfidenceCandidate: number;
+  rationale: string;
+  caveats: string[];
+  materialUncertaintySignals: string[];
+};
+
+export type BoundaryVerdictWarningMaterialityInputs = {
+  upstreamSufficiencyStatus: EvidenceSufficiencyAssessment["sufficiencyStatus"];
+  upstreamRecommendedNextAction: EvidenceSufficiencyAssessment["recommendedNextAction"];
+  boundaryVerdictIntegrityEventCount: number;
+  candidateMaterialUncertaintySignalCount: number;
+  userVisibleWarningPublication: "closed";
+};
+
+export type BoundaryVerdictExecutionResult =
+  | {
+    schemaVersion: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION;
+    taskKey: "boundary_verdict_execution";
+    status: "accepted";
+    boundarySetCandidate: {
+      boundaries: [BoundaryVerdictExecutionBoundaryCandidate, ...BoundaryVerdictExecutionBoundaryCandidate[]];
+    };
+    verdictSetCandidate: {
+      verdictCandidates: [BoundaryVerdictExecutionVerdictCandidate, ...BoundaryVerdictExecutionVerdictCandidate[]];
+    };
+    warningMaterialityInputs: BoundaryVerdictWarningMaterialityInputs;
+    integrityEvents: EvidenceLifecycleTaskEvent[];
+    blockedReason: null;
+    damagedReason: null;
+  }
+  | {
+    schemaVersion: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION;
+    taskKey: "boundary_verdict_execution";
+    status: "blocked";
+    boundarySetCandidate: null;
+    verdictSetCandidate: null;
+    warningMaterialityInputs: null;
+    integrityEvents: EvidenceLifecycleTaskEvent[];
+    blockedReason: EvidenceLifecycleTaskBlockedReason;
+    damagedReason: null;
+  }
+  | {
+    schemaVersion: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION;
+    taskKey: "boundary_verdict_execution";
+    status: "damaged";
+    boundarySetCandidate: null;
+    verdictSetCandidate: null;
+    warningMaterialityInputs: null;
+    integrityEvents: EvidenceLifecycleTaskEvent[];
+    blockedReason: null;
+    damagedReason: EvidenceLifecycleTaskDamagedReason;
+  };
+
 export type EvidenceLifecycleTaskResult =
   | EvidenceQueryPlanningResult
   | EvidenceApplicabilityResult
   | EvidenceExtractionResult
-  | EvidenceSufficiencyResult;
+  | EvidenceSufficiencyResult
+  | BoundaryVerdictExecutionResult;

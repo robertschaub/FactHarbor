@@ -8,6 +8,8 @@ import {
 } from "@/lib/analyzer-v2/gateway/policy";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
+  ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
@@ -32,7 +34,9 @@ describe("analyzer-v2 gateway policy registry", () => {
       expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(
         task.id === "claim_understanding_gate1" ||
         task.id === "evidence_query_planning" ||
-        task.id === "evidence_extraction",
+        task.id === "evidence_extraction" ||
+        task.id === "evidence_sufficiency" ||
+        task.id === "boundary_verdict_execution",
       );
     }
   });
@@ -46,7 +50,9 @@ describe("analyzer-v2 gateway policy registry", () => {
       if (
         task.id === "claim_understanding_gate1" ||
         task.id === "evidence_query_planning" ||
-        task.id === "evidence_extraction"
+        task.id === "evidence_extraction" ||
+        task.id === "evidence_sufficiency" ||
+        task.id === "boundary_verdict_execution"
       ) {
         expect(task.status).toBe("executable");
         expect(task.promptPolicy?.approval).toMatchObject({
@@ -118,12 +124,15 @@ describe("analyzer-v2 gateway policy registry", () => {
       "evidence_applicability",
       "evidence_extraction",
       "evidence_sufficiency",
+      "boundary_verdict_execution",
     ];
 
     for (const taskKey of evidenceTaskKeys) {
       const task = getAnalyzerV2GatewayTask(taskKey);
 
-      expect(task.owner).toBe("evidence_lifecycle");
+      expect(task.owner).toBe(
+        taskKey === "boundary_verdict_execution" ? "boundary_verdict" : "evidence_lifecycle",
+      );
       expect(task.promptPolicy?.sectionId).toBe(EVIDENCE_TASK_PROMPT_SECTION_IDS[taskKey]);
       expect(task.promptPolicy?.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
       expect(task.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
@@ -150,6 +159,40 @@ describe("analyzer-v2 gateway policy registry", () => {
           ]);
           expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.evidence_extraction.x7w5");
           expect(task.cachePolicy?.policyId).toBe("v2.semantic.evidence-extraction.x7w5");
+          expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
+          expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
+          continue;
+        }
+        if (taskKey === "evidence_sufficiency") {
+          expect(task.status).toBe("executable");
+          expect(task.promptPolicy?.requiredVariables).toEqual([
+            "claimContractJson",
+            "taskPolicySnapshotJson",
+            "evidenceCorpusJson",
+            "sourceAcquisitionTraceJson",
+          ]);
+          expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.evidence_sufficiency.w6c");
+          expect(task.cachePolicy?.policyId).toBe("v2.semantic.evidence-sufficiency.w6c");
+          expect(task.promptPolicy?.approval).toBe(ANALYZER_V2_W6_C_CAPTAIN_APPROVAL);
+          expect(task.modelPolicy?.approval).toBe(ANALYZER_V2_W6_C_CAPTAIN_APPROVAL);
+          expect(task.cachePolicy?.approval).toBe(ANALYZER_V2_W6_C_CAPTAIN_APPROVAL);
+          expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
+          expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
+          continue;
+        }
+        if (taskKey === "boundary_verdict_execution") {
+          expect(task.status).toBe("executable");
+          expect(task.promptPolicy?.requiredVariables).toEqual([
+            "boundaryVerdictInputPacketJson",
+            "taskPolicySnapshotJson",
+            "sufficiencyAssessmentProjectionJson",
+            "warningMaterialitySeedJson",
+          ]);
+          expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.boundary_verdict_execution.w7b");
+          expect(task.cachePolicy?.policyId).toBe("v2.semantic.boundary-verdict-execution.w7b");
+          expect(task.promptPolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+          expect(task.modelPolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+          expect(task.cachePolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
           expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
           expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
           continue;
@@ -214,6 +257,32 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL);
   });
 
+  it("declares the exact Captain-approved W7-B boundary/verdict execution model policy", () => {
+    const policy = getAnalyzerV2TaskModelPolicy("boundary_verdict_execution");
+    const gatewayTask = getAnalyzerV2GatewayTask("boundary_verdict_execution");
+
+    expect(policy).toMatchObject({
+      policyId: "v2.model.boundary_verdict_execution.w7b",
+      gatewayTaskId: "boundary_verdict_execution",
+      modelTask: "verdict",
+      modelTier: "standard",
+      providerPolicy: "from_config_snapshot",
+      temperature: 0.1,
+      maxCalls: 2,
+      schemaRetryCount: 1,
+      timeoutMs: 90000,
+      maxOutputTokens: 4000,
+      fallbackBehavior: "none_fail_closed",
+      escalationBehavior: "surface_provider_failure",
+      execution: "blocked_until_prompt_model_cache_approval",
+      approval: ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
+    });
+    expect(policy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+    expect(gatewayTask.promptPolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+    expect(gatewayTask.modelPolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+    expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
+  });
+
   it("does not allow executable status without approved prompt, model, and cache policies", () => {
     const base = getAnalyzerV2GatewayTask("claim_understanding_gate1");
     const approved = {
@@ -246,7 +315,7 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(canExecuteAnalyzerV2GatewayTask(executable)).toBe(true);
   });
 
-  it("keeps only claim understanding, query planning, and W5 extraction structurally eligible for execution", () => {
+  it("keeps only approved hidden execution slices structurally eligible for execution", () => {
     const approved = {
       status: "approved" as const,
       reviewer: "LLM Expert",
@@ -257,13 +326,17 @@ describe("analyzer-v2 gateway policy registry", () => {
       "claim_understanding_gate1",
       "evidence_query_planning",
       "evidence_extraction",
+      "evidence_sufficiency",
+      "boundary_verdict_execution",
     ]);
 
     for (const task of ANALYZER_V2_GATEWAY_TASKS) {
       expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(
         task.id === "claim_understanding_gate1" ||
         task.id === "evidence_query_planning" ||
-        task.id === "evidence_extraction",
+        task.id === "evidence_extraction" ||
+        task.id === "evidence_sufficiency" ||
+        task.id === "boundary_verdict_execution",
       );
     }
 
@@ -285,5 +358,7 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(getAnalyzerV2GatewayTask("claim_understanding_gate1").status).toBe("executable");
     expect(getAnalyzerV2GatewayTask("evidence_query_planning").status).toBe("executable");
     expect(getAnalyzerV2GatewayTask("evidence_extraction").status).toBe("executable");
+    expect(getAnalyzerV2GatewayTask("evidence_sufficiency").status).toBe("executable");
+    expect(getAnalyzerV2GatewayTask("boundary_verdict_execution").status).toBe("executable");
   });
 });

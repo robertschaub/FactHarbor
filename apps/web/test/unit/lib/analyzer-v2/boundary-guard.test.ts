@@ -195,6 +195,10 @@ const evidenceLifecycleBoundaryVerdictCandidatePath = path.resolve(
   evidenceLifecycleBoundaryVerdictRoot,
   "boundary-verdict-candidate.ts",
 );
+const evidenceLifecycleBoundaryVerdictExecutionPath = path.resolve(
+  evidenceLifecycleBoundaryVerdictRoot,
+  "boundary-verdict-execution.ts",
+);
 const evidenceLifecycleReportStopCandidatePath = path.resolve(
   evidenceLifecycleReportResultRoot,
   "report-stop-candidate.ts",
@@ -9194,7 +9198,7 @@ describe("analyzer-v2 boundary guard", () => {
     ]);
   });
 
-  it("keeps W7-A boundary/verdict candidate contract isolated and non-semantic", () => {
+  it("keeps W7-A/W7-B boundary/verdict owners isolated to their approved contracts", () => {
     const boundaryVerdictFiles = collectFiles(evidenceLifecycleBoundaryVerdictRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     );
@@ -9202,8 +9206,10 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(boundaryVerdictFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-execution.ts",
     ]);
     expect(existsSync(evidenceLifecycleBoundaryVerdictCandidatePath)).toBe(true);
+    expect(existsSync(evidenceLifecycleBoundaryVerdictExecutionPath)).toBe(true);
 
     const approvedImportsByFile = new Map<string, Map<string, Set<string>>>([
       [
@@ -9220,6 +9226,75 @@ describe("analyzer-v2 boundary guard", () => {
           [
             "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",
             new Set(["SufficiencyIntakeDecision", "SUFFICIENCY_INTAKE_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/util",
+            new Set(["sha256Json"]),
+          ],
+        ]),
+      ],
+      [
+        toPosix(evidenceLifecycleBoundaryVerdictExecutionPath),
+        new Map<string, Set<string>>([
+          [
+            "node:crypto",
+            new Set(["createHash"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
+            new Set(["BoundedEvidenceExtractionDecision"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff",
+            new Set(["EvidenceItemHandoffDecision", "EVIDENCE_ITEM_HANDOFF_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate",
+            new Set(["InternalAlphaReportStopCandidate", "INTERNAL_ALPHA_REPORT_STOP_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment",
+            new Set(["SufficiencyAssessmentDecision", "SUFFICIENCY_ASSESSMENT_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",
+            new Set(["SufficiencyIntakeDecision", "SUFFICIENCY_INTAKE_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas",
+            new Set(["BoundaryVerdictExecutionResultSchema"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types",
+            new Set([
+              "BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION",
+              "EVIDENCE_TASK_PROMPT_SECTION_IDS",
+              "BoundaryVerdictExecutionResult",
+              "EvidenceLifecycleTaskBlockedReason",
+              "EvidenceLifecycleTaskDamagedReason",
+              "EvidenceLifecycleTaskEvent",
+              "ExtractedEvidenceItemContract",
+            ]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate",
+            new Set(["BoundaryVerdictCandidateDecision", "BOUNDARY_VERDICT_CANDIDATE_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/approval-records",
+            new Set(["ANALYZER_V2_W7_B_CAPTAIN_APPROVAL"]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/policy",
+            new Set(["canExecuteAnalyzerV2GatewayTask"]),
+          ],
+          [
+            "@/lib/analyzer-v2/gateway/types",
+            new Set(["AnalyzerV2CacheDecision", "AnalyzerV2CacheDimension", "AnalyzerV2TaskModelPolicy"]),
+          ],
+          [
+            "@/lib/analyzer-v2/run-context",
+            new Set(["getPipelineRunGatewayTask", "getPipelineRunTaskModelPolicy", "PipelineRunContext"]),
           ],
           [
             "@/lib/analyzer-v2/util",
@@ -9269,7 +9344,10 @@ describe("analyzer-v2 boundary guard", () => {
         if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
           violations.push(`${relativePath} imports prompt loader ${specifier}`);
         }
-        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+        if (
+          relativePath.endsWith("boundary-verdict-candidate.ts")
+          && isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)
+        ) {
           violations.push(`${relativePath} imports gateway policy ${specifier}`);
         }
         if (isSearchFetchProviderImport(specifier)) {
@@ -9295,7 +9373,7 @@ describe("analyzer-v2 boundary guard", () => {
         }
       }
 
-      for (const forbiddenText of [
+      const commonForbiddenText = [
         "...evidenceItemHandoff",
         "...sufficiencyIntake",
         "...sufficiencyAssessment",
@@ -9321,14 +9399,24 @@ describe("analyzer-v2 boundary guard", () => {
         "reportMarkdown",
         "sourceText:",
         "inputText:",
-      ]) {
+      ];
+      const forbiddenTextByFile = relativePath.endsWith("boundary-verdict-candidate.ts")
+        ? commonForbiddenText
+        : commonForbiddenText.filter((forbiddenText) =>
+          ![
+            "modelCalled: true",
+            "truthPercentage",
+          ].includes(forbiddenText)
+        );
+
+      for (const forbiddenText of forbiddenTextByFile) {
         if (sourceContent.includes(forbiddenText)) {
-          violations.push(`${relativePath} contains forbidden W7-A text ${forbiddenText}`);
+          violations.push(`${relativePath} contains forbidden boundary/verdict text ${forbiddenText}`);
         }
       }
 
       for (const location of collectDirectFetchCallLocations(sourceFile)) {
-        violations.push(`W7-A boundary/verdict owner makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+        violations.push(`boundary/verdict owner makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
       }
     }
 
@@ -9339,7 +9427,7 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       for (const specifier of collectModuleSpecifiers(parseSource(productPath))) {
         if (specifier.includes("evidence-lifecycle/boundary-verdict/")) {
-          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports W7-A boundary/verdict owner ${specifier}`);
+          violations.push(`${toPosix(path.relative(webRoot, productPath))} imports boundary/verdict owner ${specifier}`);
         }
       }
     }

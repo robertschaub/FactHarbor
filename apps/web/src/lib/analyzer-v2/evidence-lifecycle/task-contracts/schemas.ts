@@ -1,9 +1,11 @@
 import { z } from "zod";
 import {
+  BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
   EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION,
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+  type BoundaryVerdictExecutionResult,
   type EvidenceApplicabilityResult,
   type EvidenceExtractionResult,
   type EvidenceQueryPlanningResult,
@@ -294,6 +296,98 @@ export const EvidenceSufficiencyResultSchema = z.discriminatedUnion("status", [
   DamagedSufficiencyResultSchema,
 ]);
 
+export const BoundaryVerdictInternalLabelSchema = z.enum([
+  "TRUE",
+  "MOSTLY-TRUE",
+  "LEANING-TRUE",
+  "MIXED",
+  "LEANING-FALSE",
+  "MOSTLY-FALSE",
+  "FALSE",
+  "UNVERIFIED",
+]);
+
+const BoundaryVerdictBoundaryCandidateSchema = z.object({
+  boundaryCandidateId: z.string().min(1),
+  title: z.string().min(1),
+  targetAtomicClaimIds: z.array(z.string().min(1)),
+  evidenceItemIds: z.array(z.string().min(1)).min(1),
+  evidenceScopeSummary: z.string().min(1),
+  rationale: z.string().min(1),
+}).strict();
+
+const BoundaryVerdictVerdictCandidateSchema = z.object({
+  verdictCandidateId: z.string().min(1),
+  boundaryCandidateIds: z.array(z.string().min(1)).min(1),
+  targetAtomicClaimIds: z.array(z.string().min(1)),
+  evidenceItemIds: z.array(z.string().min(1)).min(1),
+  internalVerdictLabelCandidate: BoundaryVerdictInternalLabelSchema,
+  internalTruthPercentageCandidate: z.number().min(0).max(100),
+  internalConfidenceCandidate: z.number().min(0).max(100),
+  rationale: z.string().min(1),
+  caveats: z.array(z.string()),
+  materialUncertaintySignals: z.array(z.string()),
+}).strict();
+
+const BoundaryVerdictWarningMaterialityInputsSchema = z.object({
+  upstreamSufficiencyStatus: z.enum(["sufficient", "insufficient", "needs_refinement", "caveated"]),
+  upstreamRecommendedNextAction: z.enum([
+    "continue_to_boundary_formation",
+    "refine_retrieval",
+    "caveat_report",
+    "damage_report",
+  ]),
+  boundaryVerdictIntegrityEventCount: z.number().int().min(0),
+  candidateMaterialUncertaintySignalCount: z.number().int().min(0),
+  userVisibleWarningPublication: z.literal("closed"),
+}).strict();
+
+const AcceptedBoundaryVerdictExecutionResultSchema = z.object({
+  schemaVersion: z.literal(BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION),
+  taskKey: z.literal("boundary_verdict_execution"),
+  status: z.literal("accepted"),
+  boundarySetCandidate: z.object({
+    boundaries: z.array(BoundaryVerdictBoundaryCandidateSchema).min(1),
+  }).strict(),
+  verdictSetCandidate: z.object({
+    verdictCandidates: z.array(BoundaryVerdictVerdictCandidateSchema).min(1),
+  }).strict(),
+  warningMaterialityInputs: BoundaryVerdictWarningMaterialityInputsSchema,
+  integrityEvents: z.array(EvidenceLifecycleTaskEventSchema),
+  blockedReason: z.null(),
+  damagedReason: z.null(),
+}).strict();
+
+const BlockedBoundaryVerdictExecutionResultSchema = z.object({
+  schemaVersion: z.literal(BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION),
+  taskKey: z.literal("boundary_verdict_execution"),
+  status: z.literal("blocked"),
+  boundarySetCandidate: z.null(),
+  verdictSetCandidate: z.null(),
+  warningMaterialityInputs: z.null(),
+  integrityEvents: z.array(EvidenceLifecycleTaskEventSchema).min(1),
+  blockedReason: EvidenceLifecycleTaskBlockedReasonSchema,
+  damagedReason: z.null(),
+}).strict();
+
+const DamagedBoundaryVerdictExecutionResultSchema = z.object({
+  schemaVersion: z.literal(BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION),
+  taskKey: z.literal("boundary_verdict_execution"),
+  status: z.literal("damaged"),
+  boundarySetCandidate: z.null(),
+  verdictSetCandidate: z.null(),
+  warningMaterialityInputs: z.null(),
+  integrityEvents: z.array(EvidenceLifecycleTaskEventSchema).min(1),
+  blockedReason: z.null(),
+  damagedReason: EvidenceLifecycleTaskDamagedReasonSchema,
+}).strict();
+
+export const BoundaryVerdictExecutionResultSchema = z.discriminatedUnion("status", [
+  AcceptedBoundaryVerdictExecutionResultSchema,
+  BlockedBoundaryVerdictExecutionResultSchema,
+  DamagedBoundaryVerdictExecutionResultSchema,
+]);
+
 export function parseEvidenceQueryPlanningResult(value: unknown): EvidenceQueryPlanningResult {
   return EvidenceQueryPlanningResultSchema.parse(value) as EvidenceQueryPlanningResult;
 }
@@ -308,4 +402,8 @@ export function parseEvidenceExtractionResult(value: unknown): EvidenceExtractio
 
 export function parseEvidenceSufficiencyResult(value: unknown): EvidenceSufficiencyResult {
   return EvidenceSufficiencyResultSchema.parse(value) as EvidenceSufficiencyResult;
+}
+
+export function parseBoundaryVerdictExecutionResult(value: unknown): BoundaryVerdictExecutionResult {
+  return BoundaryVerdictExecutionResultSchema.parse(value) as BoundaryVerdictExecutionResult;
 }

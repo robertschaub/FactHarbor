@@ -4,6 +4,7 @@ import {
 } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
+  ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
@@ -13,6 +14,7 @@ import {
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
+  ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL,
 } from "@/lib/analyzer-v2/gateway/approval-records";
@@ -20,6 +22,7 @@ import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-po
 import {
   EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS,
   EVIDENCE_TASK_PROMPT_SECTION_IDS,
+  BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import type {
   AnalyzerV2GatewayTask,
@@ -42,6 +45,7 @@ export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "evidence_query_planning",
   "evidence_extraction",
   "evidence_sufficiency",
+  "boundary_verdict_execution",
 ] as const satisfies readonly AnalyzerV2GatewayTaskId[];
 
 function blockedPrompt(
@@ -90,6 +94,7 @@ function task(params: {
   queryPlanningCache?: boolean;
   evidenceExtractionCache?: boolean;
   evidenceSufficiencyCache?: boolean;
+  boundaryVerdictExecutionCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
@@ -112,6 +117,8 @@ function task(params: {
       ? ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY
       : params.evidenceSufficiencyCache
       ? ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY
+      : params.boundaryVerdictExecutionCache
+      ? ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY
       : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
@@ -209,6 +216,23 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
     promptApproval: ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
     evidenceSufficiencyCache: true,
     notes: "Owns hidden/internal W6-C sufficiency assessment over W5 EvidenceItem statements after prompt/model/cache policy approval.",
+  }),
+  task({
+    id: "boundary_verdict_execution",
+    owner: "boundary_verdict",
+    status: "executable",
+    modelTask: "verdict",
+    promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.boundary_verdict_execution,
+    outputSchemaVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+    requiredVariables: [
+      "boundaryVerdictInputPacketJson",
+      "taskPolicySnapshotJson",
+      "sufficiencyAssessmentProjectionJson",
+      "warningMaterialitySeedJson",
+    ],
+    promptApproval: ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
+    boundaryVerdictExecutionCache: true,
+    notes: "Owns hidden/internal W7-B combined boundary/verdict candidate execution over W5 EvidenceItem statements after prompt/model/cache policy approval.",
   }),
   task({
     id: "boundary_clustering",

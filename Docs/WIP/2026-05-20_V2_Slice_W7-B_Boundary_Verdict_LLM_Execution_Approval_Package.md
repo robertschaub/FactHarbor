@@ -246,6 +246,8 @@ Side effects must make the new semantic work explicit:
 
 ## 7. Prompt / Model / Schema / Gateway Approval
 
+<a id="captain-approved-w7-b"></a>
+
 This package requests review approval for the Lead Developer to implement these
 governed files after approval:
 
@@ -258,6 +260,9 @@ governed files after approval:
 - `apps/web/src/lib/analyzer-v2/gateway/policy.ts`
 - `apps/web/src/lib/analyzer-v2/gateway/surface-ledger.ts`
 - `apps/web/src/lib/analyzer-v2/gateway/types.ts`
+- `Docs/AGENTS/V2_Gate_Register.json` for audit-only W7-B gate registration;
+- `scripts/validate-v2-gate-register.mjs` for validator awareness of the
+  W7-B approval token and cache-policy selector;
 - `apps/web/prompts/claimboundary-v2.prompt.md` only for the approved
   `V2_BOUNDARY_VERDICT_EXECUTION` section;
 - focused tests and boundary guard updates;
@@ -283,6 +288,11 @@ The implementation must include focused prompt contract tests that prove:
 
 Cache posture is no-store/no-read for W7-B. Any cache read/write proposal is out
 of scope and requires separate approval.
+
+Approval authority: Captain-delegated Steer-Co consent under the current
+Captain Deputy operating model, after Claude Opus, Product Trust, and Code
+Reviewer review amendments. The approval anchor is audit evidence only and does
+not authorize live jobs or public behavior.
 
 ## 8. Warning Materiality Contract
 

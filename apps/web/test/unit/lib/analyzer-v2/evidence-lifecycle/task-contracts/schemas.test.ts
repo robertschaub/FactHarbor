@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
   EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION,
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
+  type BoundaryVerdictExecutionResult,
   type EvidenceApplicabilityResult,
   type EvidenceExtractionResult,
   type EvidenceLifecycleTaskEvent,
@@ -12,10 +14,12 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import {
   EvidenceApplicabilityResultSchema,
+  BoundaryVerdictExecutionResultSchema,
   EvidenceExtractionResultSchema,
   EvidenceQueryPlanningResultSchema,
   EvidenceSufficiencyResultSchema,
   parseEvidenceApplicabilityResult,
+  parseBoundaryVerdictExecutionResult,
   parseEvidenceExtractionResult,
   parseEvidenceQueryPlanningResult,
   parseEvidenceSufficiencyResult,
@@ -296,6 +300,93 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
     expect(EvidenceSufficiencyResultSchema.safeParse(withExtraField(accepted)).success).toBe(false);
   });
 
+  it("validates boundary/verdict execution accepted, blocked, and damaged envelopes", () => {
+    const accepted: BoundaryVerdictExecutionResult = {
+      schemaVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+      taskKey: "boundary_verdict_execution",
+      status: "accepted",
+      boundarySetCandidate: {
+        boundaries: [{
+          boundaryCandidateId: "BV_BOUNDARY_001",
+          title: "Boundary candidate title",
+          targetAtomicClaimIds: ["AC_001"],
+          evidenceItemIds: ["EI_001"],
+          evidenceScopeSummary: "Evidence-scope summary for internal review.",
+          rationale: "The cited evidence belongs in this boundary.",
+        }],
+      },
+      verdictSetCandidate: {
+        verdictCandidates: [{
+          verdictCandidateId: "BV_VERDICT_001",
+          boundaryCandidateIds: ["BV_BOUNDARY_001"],
+          targetAtomicClaimIds: ["AC_001"],
+          evidenceItemIds: ["EI_001"],
+          internalVerdictLabelCandidate: "MIXED",
+          internalTruthPercentageCandidate: 50,
+          internalConfidenceCandidate: 60,
+          rationale: "The evidence is mixed.",
+          caveats: [],
+          materialUncertaintySignals: [],
+        }],
+      },
+      warningMaterialityInputs: {
+        upstreamSufficiencyStatus: "caveated",
+        upstreamRecommendedNextAction: "caveat_report",
+        boundaryVerdictIntegrityEventCount: 0,
+        candidateMaterialUncertaintySignalCount: 0,
+        userVisibleWarningPublication: "closed",
+      },
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+    const blocked: BoundaryVerdictExecutionResult = {
+      schemaVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+      taskKey: "boundary_verdict_execution",
+      status: "blocked",
+      boundarySetCandidate: null,
+      verdictSetCandidate: null,
+      warningMaterialityInputs: null,
+      integrityEvents: [taskBlockedEvent],
+      blockedReason: "task_policy_not_executable",
+      damagedReason: null,
+    };
+    const damaged: BoundaryVerdictExecutionResult = {
+      schemaVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+      taskKey: "boundary_verdict_execution",
+      status: "damaged",
+      boundarySetCandidate: null,
+      verdictSetCandidate: null,
+      warningMaterialityInputs: null,
+      integrityEvents: [schemaFailureEvent],
+      blockedReason: null,
+      damagedReason: "schema_validation_failed",
+    };
+
+    expect(parseBoundaryVerdictExecutionResult(accepted)).toEqual(accepted);
+    expect(parseBoundaryVerdictExecutionResult(blocked)).toEqual(blocked);
+    expect(parseBoundaryVerdictExecutionResult(damaged)).toEqual(damaged);
+    expect(BoundaryVerdictExecutionResultSchema.safeParse(withExtraField(accepted)).success).toBe(false);
+    expect(BoundaryVerdictExecutionResultSchema.safeParse({
+      ...accepted,
+      boundarySetCandidate: {
+        boundaries: [{
+          ...accepted.boundarySetCandidate.boundaries[0],
+          evidenceItemIds: [],
+        }],
+      },
+    }).success).toBe(false);
+    expect(BoundaryVerdictExecutionResultSchema.safeParse({
+      ...accepted,
+      verdictSetCandidate: {
+        verdictCandidates: [{
+          ...accepted.verdictSetCandidate.verdictCandidates[0],
+          internalVerdictLabelCandidate: "PUBLIC_TRUE",
+        }],
+      },
+    }).success).toBe(false);
+  });
+
   it("does not let accepted payloads masquerade across task schemas", () => {
     const queryAccepted: EvidenceQueryPlanningResult = {
       schemaVersion: EVIDENCE_QUERY_PLANNING_RESULT_SCHEMA_VERSION,
@@ -326,5 +417,6 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
     expect(EvidenceApplicabilityResultSchema.safeParse(queryAccepted).success).toBe(false);
     expect(EvidenceExtractionResultSchema.safeParse(queryAccepted).success).toBe(false);
     expect(EvidenceSufficiencyResultSchema.safeParse(queryAccepted).success).toBe(false);
+    expect(BoundaryVerdictExecutionResultSchema.safeParse(queryAccepted).success).toBe(false);
   });
 });

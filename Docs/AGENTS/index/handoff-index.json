@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-20T17:21:55.201Z",
-  "count": 753,
+  "generatedAt": "2026-05-20T18:19:07.296Z",
+  "count": 754,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -15958,6 +15958,24 @@
       ],
       "files_touched": [],
       "summary": "Prepare the next review package after W6-C hygiene, following the consolidated Steer-Co direction."
+    },
+    {
+      "file": "2026-05-20_Captain_Deputy_V2_W7-B_Boundary_Verdict_Execution_Implementation.md",
+      "date": "2026-05-20",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w7-b",
+        "boundary",
+        "verdict",
+        "execution",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy / Lead Developer Handoff: V2 W7-B Boundary/Verdict Execution Implementation"
     },
     {
       "file": "2026-05-20_Captain_Deputy_V2_W7-B_Implementation_Approval_Package.md",

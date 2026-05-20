@@ -5,6 +5,7 @@ export type AnalyzerV2GatewayTaskId =
   | "evidence_applicability"
   | "evidence_extraction"
   | "evidence_sufficiency"
+  | "boundary_verdict_execution"
   | "boundary_clustering"
   | "verdict_debate"
   | "verdict_validation"
