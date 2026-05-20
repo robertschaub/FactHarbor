@@ -1,21 +1,23 @@
 # V2 Slice W7-A Boundary And Verdict Candidate Contract Review Package
 
-**Status:** review package only; no implementation authorized
+**Status:** implementation-complete locally; verifier-clean; commit in closeout
 **Date:** 2026-05-20
 **Owner:** Captain Deputy
-**Proposed implementer:** Lead Developer after review approval only
+**Implementer:** Lead Developer after Captain approval
 **Required reviewers:** Lead Architect, LLM Expert, Product Trust, Complexity/Retirement reviewer
 **Canary runner:** none; live-job ledger currently has `currentRemaining = 0`
 **Source direction:** `Docs/WIP/2026-05-20_V2_Stop_Line_Executable_Plan.md` section W7-A plus W6-C hygiene closeout at `06402d95`
 
-## 1. Decision Requested
+## 1. Decision And Closeout State
 
-Approve, reject, or amend a narrow W7-A implementation package whose only
-purpose is to define the first internal-only Boundary/Verdict candidate contract
-after W6-C sufficiency.
+Captain approved W7-A implementation after this review package. The implemented
+scope is the narrow contract-only path whose only purpose is to define the first
+internal-only Boundary/Verdict candidate contract after W6-C sufficiency.
 
-This package does not authorize code changes, live jobs, public projection,
-prompt edits, model-policy changes, schema changes, or gateway approval flips.
+The implementation adds no live jobs, public projection, prompt edits,
+model-policy changes, schema changes, gateway approval flips, LLM boundary or
+verdict execution, report/verdict/warning/confidence behavior, provider/parser
+expansion, cache/SR/storage behavior, ACS/direct URL behavior, or V1 work.
 
 ## 2. Why W7-A Now
 
@@ -237,12 +239,13 @@ Rows touched:
 
 Status changes:
 
-- none in this review package.
+- W7-A is implementation-complete locally as a contract-only
+  `BoundaryVerdictCandidateDecision` owner.
+- No live job was run and no canary is authorized.
 
 New mechanism owner:
 
-- proposed future owner: Lead Developer under Lead Architect / LLM Expert
-  review.
+- Lead Developer under Captain Deputy / Lead Architect direction.
 
 Removal / merge trigger:
 
@@ -251,15 +254,15 @@ Removal / merge trigger:
 
 Debt accepted:
 
-- review-package docs only. Any implementation debt must be explicitly stated in
-  a later implementation package.
+- one internal contract-only owner and focused tests; no route, product wiring,
+  LLM execution, public projection, or new W4-I consumer.
 
 ## 11. V2 CONSOLIDATION GATE
 
-W7-A is hidden/internal. It passes the consolidation gate only if the later
-implementation package:
+W7-A is hidden/internal. It passes the consolidation gate because the
+implementation:
 
-- directly bridges W6-C to W8-A internal Alpha `ReportResult`;
+- directly bridges W6-C toward W8-A internal Alpha `ReportResult`;
 - adds no product/admin route;
 - adds no W4-I consumer;
 - uses allowlisted field construction instead of parent-object cloning;
@@ -271,25 +274,26 @@ readiness value, Steer-Co must reconvene.
 
 ## 12. Latest Debt Sensor Status
 
-`npm run debt:sensors` on 2026-05-20 returned `advisory_warn`:
+`npm run debt:sensors` on 2026-05-20 after implementation returned
+`advisory_warn`:
 
-- V2 source: `149` files / `43633` lines.
-- V2 tests: `130` files / `48279` lines.
-- Boundary guard: `10413` lines.
-- Docs/WIP markdown files: `233`.
-- Handoff markdown files: `748`.
+- V2 source: `150` files / `44162` lines.
+- V2 tests: `131` files / `48827` lines.
+- Boundary guard: `10573` lines.
+- Docs/WIP markdown files: `234`.
+- Handoff markdown files: `750`.
 - Net mechanism increases: `14`.
 - V2 consolidation-marker review files: `5`.
 
 These warnings are steering context, not a blocker. W7-A must avoid broad guard
 growth and hidden mechanism sprawl.
 
-## 13. Proposed Verifier Set For Future Implementation
+## 13. Verifier Set
 
-Minimum local verifiers for an approved W7-A implementation package:
+Local verifiers for W7-A implementation:
 
 ```powershell
-npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
 npm run validate:v2-gates
 node scripts/validate-v2-gate-register.mjs --self-test
 npm run debt:sensors
@@ -298,7 +302,7 @@ git diff --check
 git status --short --untracked-files=all
 ```
 
-If W7-A adds a new module, add focused tests for:
+The implementation added focused tests for:
 
 - no verdict candidate when sufficiency blocks;
 - no parent object spread/clone/embed/serialization;
@@ -308,15 +312,14 @@ If W7-A adds a new module, add focused tests for:
 - default projection remains hash/length/provenance-only;
 - public shell remains blocked/precutover/report_damaged.
 
-Boundary guard growth rule: implementation should prefer focused W7-A tests. Add
-new `boundary-guard.test.ts` assertions only for cross-boundary import/leakage
-rules that cannot be covered locally.
+Boundary guard growth rule was followed: the W7-A guard addition is limited to
+cross-boundary import/leakage rules that cannot be covered locally.
 
 ## 14. Approval Boundaries
 
-This package does not approve:
+The Captain-approved W7-A implementation is limited to contract-only source and
+test work. It does not approve:
 
-- implementation;
 - live jobs or canaries;
 - prompt/model/config/schema/UCM/gateway edits or approval flips;
 - LLM boundary clustering, verdict debate, or verdict validation calls;
@@ -344,13 +347,12 @@ Stop and reconvene Steer-Co or ask Captain if:
 - W7-A cannot directly prepare W8-A and instead becomes another hidden proof
   layer.
 
-## 16. Recommended Review Outcome
+## 16. Closeout Outcome
 
-Captain Deputy recommends **approve with amendment discipline**:
+W7-A closeout result:
 
-1. Approve W7-A as the next review direction.
-2. Require Lead Architect and LLM Expert to decide whether implementation is:
-   - contract-only stop/candidate scaffolding first; or
-   - a separately approved prompt/model/schema phase transition.
-3. Keep W8-A internal Alpha `ReportResult` as the next positive stop-line target.
-4. Do not spend live-job budget, and do not request a tranche reset for W7-A.
+1. W7-A was implemented as contract-only stop/candidate scaffolding.
+2. No prompt/model/schema/UCM/gateway phase transition was taken.
+3. Boundary candidates remain empty and verdict candidate remains `null`.
+4. W8-A internal Alpha `ReportResult` remains the next positive stop-line target.
+5. No live-job budget was spent; ledger remains `currentRemaining = 0`.
