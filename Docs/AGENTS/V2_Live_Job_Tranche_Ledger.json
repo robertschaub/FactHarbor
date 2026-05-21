@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w6f1-captain-reset-2026-05-21",
     "resetTotal": 8,
-    "currentRemaining": 5,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after W6-F1 implementation and canary steering",
       "date": "2026-05-21",
@@ -326,6 +326,18 @@
         "repairCommit": "pending_w5e_multi_source_admission_repair",
         "count": 1,
         "remainingAfter": 5,
+        "approvalPointer": "Captain messages in current Codex thread authorizing job submission, prompt edits, more job submissions, schema changes, and naturally needed work to complete the plan",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
+        "jobId": "2c60d8e749514f0d84e1158ae7dc9354",
+        "classification": "PASS_X7_W6_F1_W5E_MULTI_SOURCE_ADMISSION_REPAIR_VERIFIED_RETRIEVAL_REFINEMENT_REMAINS",
+        "implementationCommit": "7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37",
+        "runtimeCommit": "7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
         "approvalPointer": "Captain messages in current Codex thread authorizing job submission, prompt edits, more job submissions, schema changes, and naturally needed work to complete the plan",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }

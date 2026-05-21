@@ -7,9 +7,15 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Captain Deputy | Codex (GPT-5.5) | V2 W6-F1 Successor Team Handoff Pause -- [Significant] [open-items: yes]
+**For next agent:** W6-F1/W5E is closed at a stable transfer point. Canary job `2c60d8e749514f0d84e1158ae7dc9354` on runtime `7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37` passed W5E multi-source admission repair; W5-F handoff is ready and the remaining stop is retrieval refinement / `boundary_verdict_candidate_not_ready`.
+**Warnings:** Do not start a new package from this handoff automatically. Live-job budget is `4`; no second W6-F1/W5E canary is authorized. Runtime was refreshed to the application-code commit for the canary, not to the later docs-only handoff commit.
+-> Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-F1_Agent_Handoff_Pause.md
+
+---
 ### 2026-05-21 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F1 OpenAlex Lineage Repair -- [Significant] [open-items: yes]
-**For next agent:** Current W6-F1 state supersedes the earlier implementation/package rows below. W4-H/W4-I/W5 multi-provider lineage repair was committed at `778be4b2403de8cfe60b0d21d72239c96180f772`; canary job `0389a60644f749fb86208bb7d8e2c4ce` reached W5 accepted `4` hidden EvidenceItems, then W5E blocked `lineage_mismatch`. Local W5E multi-source admission repair is implemented/verifier-clean, with commit/runtime refresh/canary still pending.
-**Warnings:** Do not act on earlier `currentRemaining = 1`, `7`, or `6` W6-F1 rows as current authority; the live-job ledger is authoritative and records `currentRemaining = 5` after job `0389a60644f749fb86208bb7d8e2c4ce`. Do not weaken W6, relax W7, add providers, expose public output, or touch V1 while closing this W5E repair.
+**For next agent:** Current W6-F1 state supersedes the earlier implementation/package rows below. W5E repair commit `7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37` passed canary job `2c60d8e749514f0d84e1158ae7dc9354`: W5E admitted `3` OpenAlex/Wikimedia EvidenceItems, W5-F handoff is ready, W6-C accepted with `schemaDiagnostics = null`, and the remaining stop is `refine_retrieval` / `boundary_verdict_candidate_not_ready`.
+**Warnings:** Do not act on earlier `currentRemaining = 1`, `7`, `6`, or `5` W6-F1 rows as current authority; the live-job ledger is authoritative and records `currentRemaining = 4` after job `2c60d8e749514f0d84e1158ae7dc9354`. Do not run another W6-F1/W5E canary, weaken W6, relax W7, add providers, expose public output, or touch V1 from this result.
 -> Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Lineage_Repair.md
 
 ---

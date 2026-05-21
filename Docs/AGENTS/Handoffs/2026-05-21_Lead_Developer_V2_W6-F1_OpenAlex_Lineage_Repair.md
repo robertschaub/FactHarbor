@@ -4,7 +4,8 @@
 **Package:** `Docs/WIP/2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md`
 **Base commit:** `7e3dafe8ce674765e77737e3b3aa007be02a7a06`
 **Lineage repair commit:** `778be4b2403de8cfe60b0d21d72239c96180f772`
-**Status:** W4-H/W4-I/W5 lineage repair committed and canary-run; W5E multi-source admission repair implemented locally, verifier-clean, not yet committed or canary-run
+**W5E repair commit:** `7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37`
+**Status:** W6-F1/W5E multi-source admission repair canary passed; retrieval refinement remains
 
 ## Summary
 
@@ -35,6 +36,21 @@ packets, and W5 extraction accepted four hidden EvidenceItems. W5E then blocked
 with `lineage_mismatch` because it still validated all accepted EvidenceItems
 against one scalar parent source/content pair.
 
+The W5E follow-up repair was committed as
+`7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37` and ran exactly one canary job
+`2c60d8e749514f0d84e1158ae7dc9354`.
+
+Classification:
+
+`PASS_X7_W6_F1_W5E_MULTI_SOURCE_ADMISSION_REPAIR_VERIFIED_RETRIEVAL_REFINEMENT_REMAINS`
+
+This canary closed the W5E lineage blocker. Hidden Source Material produced one
+OpenAlex record and two Wikimedia records; W4-H produced one packet with three
+source-content packets; W5 accepted three EvidenceItems; W5E admitted all three;
+W5-F handoff is ready. W6-C completed accepted with `schemaDiagnostics = null`
+and still recommended `refine_retrieval`; W8-B/W8-F attributes the remaining
+downstream stop to `boundary_verdict_candidate_not_ready`.
+
 ## Implementation
 
 Implemented the narrowed multi-provider lineage repair recommended by Claude
@@ -51,7 +67,7 @@ Opus 4.6:
 - W5 renders `sourceContentPacketsJson` from the approved per-source packets and
   accepts EvidenceItems copied from any approved source/content packet pair.
 
-Follow-up W5E admission repair is now implemented locally:
+Follow-up W5E admission repair:
 
 - W5 parent summaries carry the approved `sourceContentPackets` projection.
 - W5E validates accepted EvidenceItems and statement projections against the
@@ -92,6 +108,17 @@ Passed after the local W5E follow-up repair:
   passed, `140` files / `838` tests.
 - `npm -w apps/web run build` passed.
 - `git diff --check` passed before docs closeout updates.
+
+Canary preflight and result:
+
+- Clean git status before submission.
+- Web `/api/version` and API `/version` both reported
+  `7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37`.
+- Route preflight passed for Source Material, W4-G, W4-H, and W5 routes:
+  unauthenticated `401`, authenticated fake ledger `404`, `Cache-Control:
+  no-store`.
+- Canary job `2c60d8e749514f0d84e1158ae7dc9354` reached `SUCCEEDED` and kept
+  public V2 damaged/precutover with no leak.
 
 ## Debt-Guard
 
@@ -174,10 +201,10 @@ contract.
 
 ## Next Step
 
-Update ledger/status/package docs for job `0389a60644f749fb86208bb7d8e2c4ce`,
-run the remaining gates, commit the focused W5E repair, refresh runtime from
-that commit, preflight authenticated no-store default-redacted routes, and run
-exactly one W6-F1 W5E-repair canary if the runtime and git status are clean.
+Record the docs-only canary result commit, then move to a Steer-Co reviewed
+retrieval-quality/source-diversity decision. Do not run another W6-F1/W5E
+canary; the lineage blocker is closed and the remaining stop is
+`refine_retrieval` / `boundary_verdict_candidate_not_ready`.
 
 Do not run another canary before commit/runtime refresh. Do not broaden into
 another provider, public output, V1 cleanup, or report/verdict behavior.

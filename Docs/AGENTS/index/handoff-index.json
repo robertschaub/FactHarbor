@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T06:46:17.922Z",
-  "count": 789,
+  "generatedAt": "2026-05-21T07:39:27.672Z",
+  "count": 790,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16954,6 +16954,23 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-E Query-Balanced Selection Canary Result"
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-F1_Agent_Handoff_Pause.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-f1",
+        "agent",
+        "handoff",
+        "pause"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff Pause - V2 W6-F1"
     },
     {
       "file": "2026-05-21_Captain_Deputy_V2_W6-F1_OpenAlex_Source_Material_Diversity_Package.md",

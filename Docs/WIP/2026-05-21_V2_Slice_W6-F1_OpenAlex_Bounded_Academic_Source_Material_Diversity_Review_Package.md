@@ -1,14 +1,14 @@
 # V2 Slice W6-F1 OpenAlex Bounded Academic Source Material Diversity Review Package
 
-**Status:** Implemented; OpenAlex materialized after authority repair; W5E multi-source admission repair verifier-clean
+**Status:** Implemented; W5E multi-source admission repair canary passed; retrieval refinement remains
 **Date:** 2026-05-21
 **Author:** Captain Deputy
 **Intended implementer:** Lead Developer
 **Reviewer:** Steer-Co, with Claude Opus 4.6 senior architect/LLM-quality review
 **Canary runner:** Captain Deputy after separate canary authorization only
 **Parent steering package:** `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md`
-**Current stop evidence:** W6-F1 lineage-repair canary job `0389a60644f749fb86208bb7d8e2c4ce`
-**Live-job budget:** machine ledger records `5` remaining after job `0389a60644f749fb86208bb7d8e2c4ce`
+**Current stop evidence:** W6-F1 W5E-repair canary job `2c60d8e749514f0d84e1158ae7dc9354`
+**Live-job budget:** machine ledger records `4` remaining after job `2c60d8e749514f0d84e1158ae7dc9354`
 **Latest debt sensor:** `advisory_warn` at 2026-05-21T06:14:20.200Z
 
 ## Decision
@@ -560,6 +560,39 @@ Verifier state after the W5E amendment:
 - `npm -w apps/web run build` passed;
 - `git diff --check` passed before docs closeout updates.
 
-One later W6-F1 W5E-repair product-route canary is worth spending only after
-commit, runtime refresh, route/default-admin preflight, and clean final
-verifiers.
+The authorized W6-F1 W5E-repair product-route canary has run. Do not spend
+another W6-F1/W5E repair canary.
+
+## W5E Repair Canary Closeout Addendum - 2026-05-21
+
+W5E repair commit `7f5fe959b2a9c60b3ee86a0d69bc3ad6cee29b37` ran exactly one
+repair canary:
+
+- job: `2c60d8e749514f0d84e1158ae7dc9354`;
+- input: `Using hydrogen for cars is more efficient than using electricity`;
+- classification:
+  `PASS_X7_W6_F1_W5E_MULTI_SOURCE_ADMISSION_REPAIR_VERIFIED_RETRIEVAL_REFINEMENT_REMAINS`;
+- live-job budget after canary: `4`.
+
+Observed result:
+
+- public V2 remained `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- Source Material contained one `openalex_work_abstract_text` record and two
+  `wikimedia_page_summary_extract_text` records;
+- W4-G created bounded text sidecars for all `3` records;
+- W4-H created one bounded extraction-input packet with `3`
+  source-content packets;
+- W5 completed with `extractionResultStatus = accepted`,
+  `schemaDiagnostics = null`, and `3` EvidenceItems;
+- W5E admitted the EvidenceItems with no blocked or damaged reason;
+- W5-F returned `evidence_items_ready_for_downstream_internal_handoff`;
+- W6-C completed with `sufficiencyResultStatus = accepted`,
+  `schemaDiagnostics = null`, and `reportStopRecommendation =
+  refine_retrieval`;
+- W8-B/W8-F still attributes the stop to `boundary_verdict_candidate_not_ready`.
+
+Interpretation: W6-F1/W5E lineage repair is closed as passed. The remaining
+blocker is retrieval-quality/source-diversity value, not W5E admission. The
+next workstream should be Steer-Co reviewed by the successor team; this package
+does not authorize another repair canary or a new package.
