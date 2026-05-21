@@ -4887,3 +4887,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Preserved boundaries: no live job, provider expansion, endpoint migration, semantic ranking, W6 prompt weakening, W7 gate relaxation, public behavior, prompt/model/config/schema changes, parser/cache/SR/storage, ACS/direct URL, V1 work, or V1 cleanup.
 - Verifiers passed: focused W3-B selector test (7 tests), runtime suite (73 files / 345 tests), evidence-lifecycle suite (43 files / 214 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), and build.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-E_Query_Balanced_Source_Material_Selection_Implementation.md`.
+
+## 2026-05-21 - Captain Deputy / Lead Developer - V2 W6-E Query-Balanced Selection Canary Result
+
+- Prepared and Claude Opus-reviewed the W6-E one-job canary package at `Docs/WIP/2026-05-21_V2_Slice_W6-E_Product_Route_Canary_Package.md`; Claude returned `APPROVE`.
+- Ran the one authorized W6-E canary on job `6a09d149d5d046cb95d0cdd67e02c095` against runtime `f1a45285f2d2b22fceb03d91007f9d24c47fdce8`.
+- Classification: `PASS_X7_W6_E_QUERY_BALANCED_SELECTION_VERIFIED_PROVIDER_DIVERSITY_REQUIRED`.
+- W3-B selected three records across provider-attempt groups `1`, `2`, and `3`; W5 accepted `3` EvidenceItems; containment held.
+- W6-C still completed accepted with `schemaDiagnostics = null` and `reportStopRecommendation = refine_retrieval`.
+- Live-job budget after W6-E: `1`.
+- Next action: prepare a provider/source diversity review package. Do not spend another same-provider refinement canary, weaken W6 prompts, relax W7 gates, expose public output, or start V1 work.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-E_Query_Balanced_Selection_Canary_Result.md`.

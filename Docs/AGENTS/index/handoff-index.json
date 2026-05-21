@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T04:30:05.427Z",
-  "count": 783,
+  "generatedAt": "2026-05-21T04:39:35.755Z",
+  "count": 784,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16935,6 +16935,25 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-D Retrieval Refinement Review Package"
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-E_Query_Balanced_Selection_Canary_Result.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-e",
+        "query",
+        "balanced",
+        "selection",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 W6-E Query-Balanced Selection Canary Result"
     },
     {
       "file": "2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md",
