@@ -2,7 +2,7 @@
 
 **Status:** Active draft for Captain/Deputy/Steer-Co use
 **Owner:** Captain Deputy with Steer-Co review
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-22
 **Purpose:** Define what "excellent V2" means before more hidden machinery is added.
 
 This file is the short convergence target for the V2 pipeline rebuild. It does
@@ -59,6 +59,27 @@ proof, guard, route, or hidden-artifact machinery must include the canonical
 Balanced Risk Mitigation decision record defined in `/debt-guard`:
 `Named risk`, `Decision result`, `Rejected alternatives`, `Owner`, `Verifier`,
 `Net-complexity impact`, `Residual risk`, and `Removal / merge trigger`.
+
+## HighJump Bar-Ladder Rule
+
+When Captain authorizes a HighJump-style phase, V2 may lower premature internal
+blocking bars to obtain report evidence, then must raise bars again where the
+generated report proves a higher bar is needed.
+
+HighJump lowering is valid only for internal Alpha progression. It must not:
+
+- change public V2 from blocked/precutover/report_damaged;
+- bypass EvidenceItem citation/provenance requirements;
+- hide leaks, schema failures, or runtime integrity failures;
+- become permanent policy without report-review evidence;
+- consume live-job budget without ledger accounting.
+
+Each HighJump package must name:
+
+- which bar is being lowered;
+- what successful report evidence would prove;
+- what failure would stop or revert the lowering;
+- when the bar will be raised, merged, quarantined, or retired.
 
 ## Release-Quality Inputs
 

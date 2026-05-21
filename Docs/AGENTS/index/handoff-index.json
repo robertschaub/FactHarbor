@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T22:08:46.901Z",
-  "count": 411,
+  "generatedAt": "2026-05-21T22:15:31.334Z",
+  "count": 412,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9163,6 +9163,27 @@
       ],
       "files_touched": [],
       "summary": "V2 Active Workstream Index Prep"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_Bar_Ladder_Plan_Update.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain_deputy"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "highjump",
+        "bar",
+        "ladder",
+        "plan",
+        "update"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md`. The first implementation package should target the current active blocker after `fc5e7f8e`, prefer prompt-only or existing-gate repair over new mechanisms, keep public V2 blocked, and spend at most one canary after commit/runtime refre"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md",

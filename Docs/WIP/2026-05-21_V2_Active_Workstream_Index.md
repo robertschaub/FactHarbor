@@ -1,7 +1,7 @@
 # V2 Active Workstream Index
 
 **Date:** 2026-05-21
-**Status:** Pointer document only; updated 2026-05-22 for W6-C HighJump takeover
+**Status:** Pointer document only; updated 2026-05-22 for HighJump bar-ladder plan
 **Purpose:** Reduce successor-agent startup burden while preserving the full May V2 WIP package history.
 
 This document is not a new execution authority and does not archive or supersede
@@ -13,21 +13,23 @@ New Captain Deputy / Lead Developer agents should start here:
 
 1. Latest HighJump takeover checkpoint:
    [2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md](../AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md)
-2. HighJump handover supplied to successor:
+2. Active HighJump bar-ladder plan:
+   [2026-05-22_V2_HighJump_Bar_Ladder_Plan.md](2026-05-22_V2_HighJump_Bar_Ladder_Plan.md)
+3. HighJump handover supplied to successor:
    [2026-05-21_V2_W6-C_HighJump_Handover.md](2026-05-21_V2_W6-C_HighJump_Handover.md)
-3. HighJump canary result:
+4. HighJump canary result:
    [2026-05-21_V2_W6-C_HighJump_Phase1_Canary_Result.md](2026-05-21_V2_W6-C_HighJump_Phase1_Canary_Result.md)
-4. Prior W6-F1 stable handoff:
+5. Prior W6-F1 stable handoff:
    [2026-05-21_Captain_Deputy_V2_W6-F1_Agent_Handoff_Pause.md](../AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-F1_Agent_Handoff_Pause.md)
-5. Canonical status:
+6. Canonical status:
    [Current_Status.md](../STATUS/Current_Status.md)
-6. Canonical active queue:
+7. Canonical active queue:
    [Backlog.md](../STATUS/Backlog.md)
-7. Guardrails:
+8. Guardrails:
    [V2_Pipeline_Implementation_Guardrails.md](../AGENTS/V2_Pipeline_Implementation_Guardrails.md)
-8. Live-job budget authority:
+9. Live-job budget authority:
    [V2_Live_Job_Tranche_Ledger.json](../AGENTS/V2_Live_Job_Tranche_Ledger.json)
-9. Retirement/convergence pressure:
+10. Retirement/convergence pressure:
    [V2_Retirement_Ledger.md](../AGENTS/V2_Retirement_Ledger.md)
 
 Use the May WIP package set only after these files identify a specific package
@@ -67,18 +69,20 @@ readiness and not as authorization for another canary.
 
 ## Current Next Decision
 
-The immediate next action is provenance and validation stabilization, not more
-implementation:
+The immediate next action is now HighJump bar-ladder execution planning, not
+open-ended retrieval/source expansion:
 
-1. Reconcile the HighJump 20-slot budget with the machine live-job ledger or
-   record an explicit no-more-jobs stop.
-2. Re-run focused local verifiers for the prompt and dedup commits before
-   treating `fc5e7f8e` as accepted implementation state.
-3. Do not further lower W6/W7/W8 bars until Steer-Co or Captain explicitly
-   approves the next bounded package.
+1. Use [2026-05-22_V2_HighJump_Bar_Ladder_Plan.md](2026-05-22_V2_HighJump_Bar_Ladder_Plan.md)
+   as the active core-plan addendum.
+2. The machine live-job ledger now starts a new `12` job tranche for this phase.
+3. Prompt edits are Captain-authorized when they stay topic-neutral,
+   UCM/file-prompt compliant, and verifier-backed.
+4. Lower only bars that block the first internal V2 report result; after the
+   first report result, raise bars based on report-review evidence.
 
 Relevant immediate WIP anchors:
 
+- [2026-05-22_V2_HighJump_Bar_Ladder_Plan.md](2026-05-22_V2_HighJump_Bar_Ladder_Plan.md)
 - [2026-05-21_V2_W6-C_HighJump_Handover.md](2026-05-21_V2_W6-C_HighJump_Handover.md)
 - [2026-05-21_V2_W6-C_HighJump_Phase1_Canary_Result.md](2026-05-21_V2_W6-C_HighJump_Phase1_Canary_Result.md)
 - [2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md](2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md)
@@ -105,9 +109,10 @@ stale.
 Stop and use Steer-Co or Captain approval before:
 
 - changing prompt/model/config/schema/UCM/gateway policy;
-- running live jobs or resetting live-job budget;
+- running live jobs outside the `12` job HighJump tranche or without ledger
+  accounting;
 - exposing V2 output publicly through API/UI/report/export/compatibility paths;
-- relaxing W6/W7/W8 gates to force report progress;
+- relaxing W6/W7/W8 gates beyond the active HighJump bar-ladder plan;
 - accepting the HighJump lowered-bar prompt as a public/report-quality policy;
 - adding another provider or widening source material without a reviewed package;
 - touching V1 runtime cleanup/removal;

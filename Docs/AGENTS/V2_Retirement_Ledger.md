@@ -2,7 +2,7 @@
 
 **Status:** Active draft
 **Owner:** Captain Deputy / Lead Developer
-**Last updated:** 2026-05-21
+**Last updated:** 2026-05-22
 **Purpose:** Track what must be kept, retired, merged, quarantined, or deferred so V2 converges instead of accumulating permanent proof machinery.
 
 This ledger is not a cleanup authorization. Deletions, public cutover, prompt
@@ -55,6 +55,7 @@ normal approval gates.
 | V2-RL-018 | W6-C3 temporary sufficiency schema diagnostics | retire | Lead Developer | W6-C4 canary verifies W6-C schema root cause fixed with `schemaDiagnostics = null` | W6-C5 folds W6-C3-specific diagnostic version/removal-trigger scaffolding into stable W6-C schema-failure telemetry; keep the bounded `schemaDiagnostics` field for future parse/schema failures |
 | V2-RL-019 | W6-F1 OpenAlex bounded academic Source Material diversity | keep | Lead Developer | W6-F1 canary still leaves W6-C at `refine_retrieval`, or OpenAlex live authority/no-key posture is unavailable | Keep until W6-F1 canary proves value or Steer-Co quarantines/removes the OpenAlex path; do not generalize into a provider framework yet |
 | V2-RL-020 | W6-C sufficiency diagnostic dimension/materiality enum projection (`missingEvidenceDimensionProjections`) | **retire — triggers fired** | Lead Developer | ~~Retire at earliest of: first `continue_to_boundary_formation`, Steer-Co `caveat_report` authorization, Captain sufficiency-bar escalation after two targeted failures, diagnostic plan exhaustion, or fixed calendar/iteration limit.~~ **Fired 2026-05-21:** (1) Steer-Co authorized Option C (accept stop as correct for this claim profile) with full 3-model-family consent — satisfies `caveat_report` authorization trigger. (2) Phase 1 calibration canary plan declared conclusive at N=3 — satisfies diagnostic plan exhaustion trigger. See `Docs/WIP/2026-05-21_V2_W6-C_Phase1_SteerCo_Result.md`. | Remove `materialScarcityCandidate` field, `missingEvidenceDimensionProjections` projection, and provenance validation from source and tests. Retirement execution is a routine Lead Developer task — no further Steer-Co or Captain gate. |
+| V2-RL-021 | HighJump temporary bar-lowering prompt/gate loosenings | keep | Captain Deputy / Lead Developer | First internal V2 report result is produced and reviewed, or two focused HighJump attempts fail to move the active stop, or a leak/schema/provenance failure appears | Track every lowered bar used by `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md`; after first report-review, raise, merge, quarantine, or retire each lowering explicitly. Do not let HighJump loosenings become public report policy by default. |
 
 ## Required Block In Future Packages
 

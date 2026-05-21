@@ -1,23 +1,27 @@
 {
   "schemaVersion": "v2-live-job-tranche-ledger.v1",
-  "lastUpdated": "2026-05-21",
+  "lastUpdated": "2026-05-22",
   "authority": "captain_deputy_governance_record",
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-w6f1-captain-reset-2026-05-21",
-    "resetTotal": 8,
-    "currentRemaining": 4,
+    "trancheId": "v2-highjump-bar-ladder-2026-05-22",
+    "resetTotal": 12,
+    "currentRemaining": 12,
     "approvalPointer": {
-      "source": "Captain messages in current Codex thread after W6-F1 implementation and canary steering",
-      "date": "2026-05-21",
-      "summary": "Captain authorized job submission with budget 8, then approved prompt edits, more job submissions, schema changes, and work naturally needed to complete the plan."
+      "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
+      "date": "2026-05-22",
+      "summary": "Captain directed updating the core V2 plan and creating a HighJump-style lower-then-raise plan; live jobs are allowed up to 12 and prompt edits are allowed."
     },
     "latestReset": {
-      "date": "2026-05-21",
-      "previousRemaining": 1,
-      "resetRemaining": 8,
-      "reason": "Captain re-authorized job submission with budget 8 and subsequently approved prompt edits, more job submissions, schema changes, and naturally needed work to complete the plan."
+      "date": "2026-05-22",
+      "previousRemaining": 4,
+      "resetRemaining": 12,
+      "reason": "Captain authorized a new HighJump bar-ladder phase with max 12 live jobs and prompt edits allowed."
+    },
+    "unreconciledHistoricalNote": {
+      "date": "2026-05-22",
+      "summary": "The supplied 2026-05-21 HighJump handover claimed a separate 20-slot budget that was not reflected in this ledger. This 12-job tranche supersedes prior remaining balance for future accounting only; it does not validate or reclassify any unledgered historical job."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,

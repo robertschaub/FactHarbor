@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy | Codex (GPT-5.5) | V2 HighJump Bar Ladder Plan Update -- [Standard] [open-items: yes]
+**For next agent:** `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md` is now the active core-plan addendum. It amends the old stop-line, records Captain authority for topic-neutral prompt edits and a 12-job live tranche, and requires raising bars again after the first internal report-review cycle.
+**Warnings:** Do not treat the validated HighJump canary as report-quality evidence. Public V2 remains blocked/precutover/report_damaged; model/config/schema/UCM/gateway changes beyond prompt edits remain separately gated.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_Bar_Ladder_Plan_Update.md
+
+---
 ### 2026-05-22 | Captain Deputy | Codex (GPT-5.5) | V2 W6-C HighJump Takeover Checkpoint -- [Standard] [open-items: yes]
 **For next agent:** Took over W6-C HighJump from the supplied handover, sanitized local secret literals from the untracked handover, and updated the active workstream index to point to HighJump state. Current HEAD is `fc5e7f8e`; one HighJump canary `099eb05cbbca408a87f7168327926762` is validated, while `68a4fa4fa99f48c18679e9b68e3ff344` is incomplete.
 **Warnings:** Treat the HighJump handover skeptically: live-job ledger still needs reconciliation against the claimed 20-slot tranche, the second validation canary did not record report-result artifacts, and no more live jobs or further W6/W7/W8 bar lowering should proceed without a reviewed package.

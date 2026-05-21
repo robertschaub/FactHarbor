@@ -1,16 +1,40 @@
 # V2 Stop-Line And Executable Plan
 
 Date: 2026-05-20
-Status: final after second review
+Status: amended by 2026-05-22 HighJump bar-ladder plan
 Owner: Lead Architect / Captain Deputy
 Scope: V2 only
 
+## 0. 2026-05-22 HighJump Amendment
+
+Captain changed the active V2 direction after the W6-C HighJump evidence. The
+historical stop-line plan below remains useful context, but its "pause/no live
+jobs/no prompt edits" posture is superseded for the current workstream by:
+
+- `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md`
+- `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`
+
+New active direction:
+
+- lower only the bars that prevent the first internal V2 report result;
+- keep public V2 blocked/precutover/report_damaged;
+- allow topic-neutral prompt edits under normal prompt hygiene;
+- allow up to `12` live jobs in the new tranche;
+- after the first successful internal report result, raise bars step by step
+  where report-review evidence shows they are needed.
+
+This amendment does not authorize public cutover, V1 cleanup, cache/SR/storage,
+parser execution, ACS/direct URL widening, provider expansion beyond a reviewed
+package, or model/config/schema/UCM/gateway changes beyond prompt edits.
+
 ## 1. Decision
 
-V2 source/runtime implementation should pause now.
+Historical decision as of 2026-05-20: V2 source/runtime implementation should
+pause now.
 
-This is not a permanent stop. It is a governance and convergence stop after a
-clean tranche boundary:
+This was not a permanent stop. It was a governance and convergence stop after a
+clean tranche boundary. The current active plan is now the HighJump bar-ladder
+plan above.
 
 - X7-W5-G proved the live hidden EvidenceItem handoff projection.
 - X7-W5-H retired the standalone W4-I internal admin route and route test.
