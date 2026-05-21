@@ -14,7 +14,7 @@ import {
   INTERNAL_ALPHA_REPORT_STOP_DECISION_VERSION,
   type InternalAlphaReportStopCandidate,
 } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
-import type { SufficiencyAssessmentDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
+import type { SufficiencyAssessmentDecision, SufficiencyAssessmentMissingDimensionProjection } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
 import { SUFFICIENCY_ASSESSMENT_DECISION_VERSION } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
 import type { SufficiencyIntakeDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
 import { SUFFICIENCY_INTAKE_DECISION_VERSION } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
@@ -177,6 +177,7 @@ export type InternalAlphaReportResultUpstreamStopAttribution = {
       readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
       readonly admittedEvidenceItemCount: SufficiencyAssessmentDecision["admittedEvidenceItemCount"];
       readonly schemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
+      readonly missingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
     };
     readonly boundaryVerdictCandidate: {
       readonly status: BoundaryVerdictCandidateDecision["status"] | null;
@@ -303,6 +304,7 @@ type ParentProjection = {
   readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
   readonly sufficiencyAssessmentSchemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
+  readonly sufficiencyAssessmentMissingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
   readonly boundaryVerdictCandidateDecisionId: string | null;
   readonly boundaryVerdictCandidateVersion: typeof BOUNDARY_VERDICT_CANDIDATE_DECISION_VERSION | null;
   readonly boundaryVerdictCandidateStatus: BoundaryVerdictCandidateDecision["status"] | null;
@@ -439,6 +441,7 @@ function projectParents(input: {
     sufficiencyResultStatus: input.sufficiencyAssessment?.sufficiencyResultStatus ?? null,
     reportStopRecommendation: input.sufficiencyAssessment?.reportStopRecommendation ?? null,
     sufficiencyAssessmentSchemaDiagnostics: input.sufficiencyAssessment?.executionTelemetry?.schemaDiagnostics ?? null,
+    sufficiencyAssessmentMissingEvidenceDimensionProjections: input.sufficiencyAssessment?.missingEvidenceDimensionProjections ?? [],
     boundaryVerdictCandidateDecisionId: input.boundaryVerdictCandidate?.decisionId ?? null,
     boundaryVerdictCandidateVersion:
       input.boundaryVerdictCandidate?.decisionVersion === BOUNDARY_VERDICT_CANDIDATE_DECISION_VERSION
@@ -753,6 +756,7 @@ function upstreamStopAttribution(
         reportStopRecommendation: projection.reportStopRecommendation,
         admittedEvidenceItemCount: projection.sufficiencyAssessmentAdmittedEvidenceItemCount,
         schemaDiagnostics: projection.sufficiencyAssessmentSchemaDiagnostics,
+        missingEvidenceDimensionProjections: projection.sufficiencyAssessmentMissingEvidenceDimensionProjections,
       },
       boundaryVerdictCandidate: {
         status: projection.boundaryVerdictCandidateStatus,
