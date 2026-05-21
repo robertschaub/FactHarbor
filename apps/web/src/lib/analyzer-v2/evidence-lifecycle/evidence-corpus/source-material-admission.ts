@@ -521,13 +521,14 @@ export function buildEvidenceCorpusSourceMaterialAdmission(params: {
       );
     }
     const sourceMaterialRecordCount = boundedCount(params.sourceMaterialReadiness.sourceMaterialRecordCount);
+    const admittedCount = boundedCount(params.sourceMaterialReadiness.admittedSourceMaterialRecordCount);
     if (
       sourceMaterialRecordCount < 1
       || sourceMaterialRecordCount > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
-      || params.sourceMaterialReadiness.admittedSourceMaterialRecordCount !== sourceMaterialRecordCount
-      || params.sourceMaterialReadiness.rejectedSourceMaterialRecordCount !== 0
+      || admittedCount < 1
+      || admittedCount > sourceMaterialRecordCount
       || !Array.isArray(params.sourceMaterialReadiness.sourceMaterialRecords)
-      || params.sourceMaterialReadiness.sourceMaterialRecords.length !== sourceMaterialRecordCount
+      || params.sourceMaterialReadiness.sourceMaterialRecords.length !== admittedCount
     ) {
       return failure(
         params.sourceMaterialReadiness,

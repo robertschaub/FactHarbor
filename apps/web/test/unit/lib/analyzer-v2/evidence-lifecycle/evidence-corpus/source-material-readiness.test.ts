@@ -252,14 +252,6 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
         "blocked_pre_evidence_corpus_parent_not_completed",
         "w3b_not_completed",
       ],
-      [
-        readiness(validDecision({
-          sourceMaterialRecordCount: 2,
-          sourceMaterialRecords: [validDecision().sourceMaterialRecords[0], validDecision().sourceMaterialRecords[0]],
-        })),
-        "blocked_pre_evidence_corpus_source_material_contract_invalid",
-        "source_material_record_count_unsupported",
-      ],
     ];
 
     for (const [result, status, stopReason] of cases) {
@@ -272,6 +264,38 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
         evidenceItems: [],
       });
     }
+  });
+
+  it("deduplicates records with identical text hashes instead of blocking", () => {
+    const base = validDecision();
+    const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
+    const duplicateRecord = {
+      ...firstRecord,
+      sourceMaterialId: "SOURCE_MATERIAL_PAGE_SUMMARY_DUPLICATE_ID",
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_DUP_1_ABCDEF123456",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_DUP_1",
+    };
+    const decision = validDecision({
+      attemptedFetchCount: 2,
+      sourceMaterialRecordCount: 2,
+      fetchDiagnosticCount: 2,
+      sourceMaterialRecords: [firstRecord, duplicateRecord],
+      fetchDiagnostics: [
+        validDecision().fetchDiagnostics[0],
+        { ...(validDecision().fetchDiagnostics[0] as Record<string, unknown>), attemptOrdinal: 2 },
+      ],
+    });
+
+    const result = readiness(decision);
+
+    expect(result.status).toBe("source_material_structurally_admissible_evidence_corpus_gate_closed");
+    expect(result.sourceMaterialRecordCount).toBe(2);
+    expect(result.admittedSourceMaterialRecordCount).toBe(1);
+    expect(result.rejectedSourceMaterialRecordCount).toBe(1);
+    expect(result.sourceMaterialRecords).toHaveLength(1);
+    expect(result.sourceMaterialRecords[0].sourceMaterialTextHash).toBe(
+      (firstRecord as { sourceMaterialTextHash: string }).sourceMaterialTextHash,
+    );
   });
 
   it("rejects invalid Source Material text, hash, kind, diagnostics, and downstream execution flags", () => {
