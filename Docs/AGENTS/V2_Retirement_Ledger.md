@@ -54,7 +54,7 @@ normal approval gates.
 | V2-RL-017 | W8-A internal Alpha report stop owner | merge | Lead Developer | W8-B fail-closed parity is covered and a later W7-A/W8-A merge slice can remove the stop helper without weakening rejected-parent behavior | W8-C actual result: parity covered in focused W8-A/W8-B tests and W8-B `w8aMergeTrigger.status` is `parity_covered`; keep W8-A as a non-public fail-closed compatibility helper until the W7-A dependency is merged or retired |
 | V2-RL-018 | W6-C3 temporary sufficiency schema diagnostics | retire | Lead Developer | W6-C4 canary verifies W6-C schema root cause fixed with `schemaDiagnostics = null` | W6-C5 folds W6-C3-specific diagnostic version/removal-trigger scaffolding into stable W6-C schema-failure telemetry; keep the bounded `schemaDiagnostics` field for future parse/schema failures |
 | V2-RL-019 | W6-F1 OpenAlex bounded academic Source Material diversity | keep | Lead Developer | W6-F1 canary still leaves W6-C at `refine_retrieval`, or OpenAlex live authority/no-key posture is unavailable | Keep until W6-F1 canary proves value or Steer-Co quarantines/removes the OpenAlex path; do not generalize into a provider framework yet |
-| V2-RL-020 | W6-C sufficiency diagnostic dimension/materiality enum projection (`missingEvidenceDimensionProjections`) | retire | Lead Developer | Retire at earliest of: first `continue_to_boundary_formation`, Steer-Co `caveat_report` authorization, Captain sufficiency-bar escalation after two targeted failures, diagnostic plan exhaustion, or fixed calendar/iteration limit. Max 2 post-diagnostic canaries before Steer-Co reconvenes. | Internal diagnostic use only. Do not expose in public behavior, reports, user outputs, provider scoring, or claim adjudication. Remove field and provenance validation when retirement trigger fires. |
+| V2-RL-020 | W6-C sufficiency diagnostic dimension/materiality enum projection (`missingEvidenceDimensionProjections`) | **retire — triggers fired** | Lead Developer | ~~Retire at earliest of: first `continue_to_boundary_formation`, Steer-Co `caveat_report` authorization, Captain sufficiency-bar escalation after two targeted failures, diagnostic plan exhaustion, or fixed calendar/iteration limit.~~ **Fired 2026-05-21:** (1) Steer-Co authorized Option C (accept stop as correct for this claim profile) with full 3-model-family consent — satisfies `caveat_report` authorization trigger. (2) Phase 1 calibration canary plan declared conclusive at N=3 — satisfies diagnostic plan exhaustion trigger. See `Docs/WIP/2026-05-21_V2_W6-C_Phase1_SteerCo_Result.md`. | Remove `materialScarcityCandidate` field, `missingEvidenceDimensionProjections` projection, and provenance validation from source and tests. Retirement execution is a routine Lead Developer task — no further Steer-Co or Captain gate. |
 
 ## Required Block In Future Packages
 
@@ -69,16 +69,16 @@ Debt accepted:
 
 ## Current Debt Sensor Snapshot
 
-Latest observed `npm run debt:sensors` state on 2026-05-20T21:10:18Z
-after W8-C implementation:
+Latest observed `npm run debt:sensors` state on 2026-05-21 after W6-C
+Phase 1 closeout:
 
-- V2 source: `48683` lines over advisory threshold `30000`
-- V2 tests: `53926` lines over advisory threshold `40000`
-- Boundary guard: `11598` lines over advisory threshold `6000`
-- Docs/WIP markdown files: `242` over advisory threshold `180`
-- Handoff markdown files: `763` over advisory threshold `650`
+- V2 source: `50362` lines over advisory threshold `30000`
+- V2 tests: `55479` lines over advisory threshold `40000`
+- Boundary guard: `11628` lines over advisory threshold `6000`
+- Docs/WIP markdown files: `277` over advisory threshold `180`
+- Handoff markdown files: see above
 - Net mechanism increases: `18`
-- V2 consolidation-marker review files: `5`
+- V2 consolidation-marker review files: `6`
 
 The snapshot is a steering signal. It does not block work by itself.
 
