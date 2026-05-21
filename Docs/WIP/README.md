@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-05-17
-**Status**: V2 WIP packages preserved. V1 pipeline-only plans moved to `Docs/ARCHIVE/PipelineV1/`; V2-relevant lessons and deferred V2-native decisions remain in current WIP notes.
+**Last Updated**: 2026-05-21
+**Status**: V2 WIP packages preserved as governance history. V1 pipeline-only plans moved to `Docs/ARCHIVE/PipelineV1/`; V2-relevant lessons and deferred V2-native decisions remain in current WIP notes. Current execution authority is the latest role handoff, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`.
 
 ---
 
@@ -15,6 +15,21 @@ This directory contains only:
 - **reference analyses still relevant for future decisions**
 
 Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`. V1 pipeline plans that are no longer valid for V2 execution live in `Docs/ARCHIVE/PipelineV1/`; retained V2 lessons and deferred V2-native decisions stay in WIP notes such as [2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md](2026-05-17_V2_Retained_Lessons_From_PipelineV1_Docs.md) and [2026-05-17_Dominant_Proposition_V2_Disposition.md](2026-05-17_Dominant_Proposition_V2_Disposition.md).
+
+### Current V2 Intake Note
+
+As of 2026-05-21, `Docs/WIP/` intentionally contains a large May V2 package
+history. New Captain Deputy and implementation agents should not scan every WIP
+file during startup. Use this intake order instead:
+
+1. Read the latest relevant handoff from `Docs/AGENTS/Agent_Outputs.md` or
+   `Docs/AGENTS/index/handoff-index.json`.
+2. Read `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and
+   `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`.
+3. Read only the package(s) named by the latest handoff or active backlog item.
+
+The May WIP slice packages remain useful provenance, but they are not the active
+queue when the canonical status/backlog/handoff state is newer.
 
 ---
 
@@ -122,6 +137,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-05-21 | Handoff archive + intake guidance | 382 April handoffs and 418 April Agent_Outputs rows moved to `Docs/ARCHIVE/`; no WIP files archived in this quick pass | 263 |
 | 2026-05-17 | Additional V1 plan retirement | 4 PipelineV1 `claimboundary` / report-quality / snapshot-integration plans archived to `Docs/ARCHIVE/PipelineV1/`; retained-lessons note expanded | 148 |
 | 2026-05-17 | V1 selection/clarification reclassification | 5 pre-V2 selection/clarification plans archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 152 |
 | 2026-05-17 | Dominant Proposition V2 reclassification | 1 pre-V2 Dominant Proposition plan archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 144 |
