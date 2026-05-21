@@ -15,7 +15,8 @@ describe("Analyzer V2 W8-B product chain integration", () => {
     expect(source).toContain(
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink",
     );
-    expect(source).toContain("const boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({");
+    expect(source).toContain("boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({");
+    expect(source).toContain("} finally {");
     expect(recordCallIndex).toBeGreaterThan(hiddenRuntimeBlockStart);
     expect(recordCallIndex).toBeLessThan(hiddenRuntimeCatchIndex);
     expect(source.slice(recordCallIndex, hiddenRuntimeCatchIndex)).toContain("boundedEvidenceExtraction,");

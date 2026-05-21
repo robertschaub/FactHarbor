@@ -211,6 +211,18 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("userVisibleWarningPublication");
     expect(section).toContain("closed");
     expect(section).toContain("Return only one JSON object");
+    expect(section).toContain("Branch rules");
+    expect(section).toContain("Never omit these four event fields");
+    expect(section).toContain("`eventType`");
+    expect(section).toContain("`refs`");
+    expect(section).toContain("`reference`");
+    expect(section).toContain("`detail`");
+    expect(section).toContain("`details`");
+    expect(section).toContain("`boundaryCandidates`");
+    expect(section).toContain("`verdicts`");
+    expect(section).toContain("`truthPercentage`");
+    expect(section).toContain("`confidence`");
+    expect(section).toContain("`evidenceIds`");
     expect(section).not.toMatch(/\$\{\w+\}/);
   });
 

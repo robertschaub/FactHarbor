@@ -42,15 +42,19 @@ import {
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-bounded-evidence-extraction-owner";
 import {
   buildEvidenceItemHandoffDecision,
+  type EvidenceItemHandoffDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff";
 import {
   buildSufficiencyIntakeDecision,
+  type SufficiencyIntakeDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
 import {
   buildBoundaryVerdictCandidateDecision,
+  type BoundaryVerdictCandidateDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate";
 import {
   buildInternalAlphaReportStopCandidate,
+  type InternalAlphaReportStopCandidate,
 } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
 import {
   runSufficiencyAssessmentDecision,
@@ -66,6 +70,12 @@ import {
 import type {
   BoundedEvidenceExtractionDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
+import type {
+  BoundaryVerdictExecutionDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-execution";
+import type {
+  SufficiencyAssessmentDecision,
+} from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
 import type { SourceCandidatePreviewProjection } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type { SourceMaterialPageSummaryFetchLocator } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import type { SourceMaterialPageSummaryRecord } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
@@ -366,46 +376,56 @@ export async function runClaimBoundaryPipelineV2(
             boundedEvidenceExtractionArtifact,
           )
         ) {
-          const evidenceItemHandoff = buildEvidenceItemHandoffDecision({
-            boundedEvidenceExtraction,
-            boundedEvidenceItemAdmission: boundedEvidenceExtractionArtifact.boundedEvidenceItemAdmission,
-          });
-          const sufficiencyIntake = buildSufficiencyIntakeDecision(evidenceItemHandoff);
-          const sufficiencyAssessment = await runSufficiencyAssessmentDecision({
-            context,
-            sufficiencyIntake,
-            boundedEvidenceExtraction,
-          });
-          const boundaryVerdictCandidate = buildBoundaryVerdictCandidateDecision({
-            evidenceItemHandoff,
-            sufficiencyIntake,
-            sufficiencyAssessment,
-          });
-          const internalAlphaReportStop = buildInternalAlphaReportStopCandidate({
-            evidenceItemHandoff,
-            sufficiencyIntake,
-            sufficiencyAssessment,
-            boundaryVerdictCandidate,
-          });
-          const boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({
-            context,
-            boundedEvidenceExtraction,
-            evidenceItemHandoff,
-            sufficiencyIntake,
-            sufficiencyAssessment,
-            boundaryVerdictCandidate,
-            internalAlphaReportStop,
-          });
-          recordInternalAlphaReportResultRuntimeArtifact({
-            context,
-            boundedEvidenceExtraction,
-            evidenceItemHandoff,
-            sufficiencyIntake,
-            sufficiencyAssessment,
-            boundaryVerdictCandidate,
-            internalAlphaReportStop,
-            boundaryVerdictExecution,
-          });
+          let evidenceItemHandoff: EvidenceItemHandoffDecision | null = null;
+          let sufficiencyIntake: SufficiencyIntakeDecision | null = null;
+          let sufficiencyAssessment: SufficiencyAssessmentDecision | null = null;
+          let boundaryVerdictCandidate: BoundaryVerdictCandidateDecision | null = null;
+          let internalAlphaReportStop: InternalAlphaReportStopCandidate | null = null;
+          let boundaryVerdictExecution: BoundaryVerdictExecutionDecision | null = null;
+
+          try {
+            evidenceItemHandoff = buildEvidenceItemHandoffDecision({
+              boundedEvidenceExtraction,
+              boundedEvidenceItemAdmission: boundedEvidenceExtractionArtifact.boundedEvidenceItemAdmission,
+            });
+            sufficiencyIntake = buildSufficiencyIntakeDecision(evidenceItemHandoff);
+            sufficiencyAssessment = await runSufficiencyAssessmentDecision({
+              context,
+              sufficiencyIntake,
+              boundedEvidenceExtraction,
+            });
+            boundaryVerdictCandidate = buildBoundaryVerdictCandidateDecision({
+              evidenceItemHandoff,
+              sufficiencyIntake,
+              sufficiencyAssessment,
+            });
+            internalAlphaReportStop = buildInternalAlphaReportStopCandidate({
+              evidenceItemHandoff,
+              sufficiencyIntake,
+              sufficiencyAssessment,
+              boundaryVerdictCandidate,
+            });
+            boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({
+              context,
+              boundedEvidenceExtraction,
+              evidenceItemHandoff,
+              sufficiencyIntake,
+              sufficiencyAssessment,
+              boundaryVerdictCandidate,
+              internalAlphaReportStop,
+            });
+          } finally {
+            recordInternalAlphaReportResultRuntimeArtifact({
+              context,
+              boundedEvidenceExtraction,
+              evidenceItemHandoff,
+              sufficiencyIntake,
+              sufficiencyAssessment,
+              boundaryVerdictCandidate,
+              internalAlphaReportStop,
+              boundaryVerdictExecution,
+            });
+          }
         }
       }
     } catch {

@@ -618,6 +618,10 @@ async function runScenario(options: ScenarioOptions = {}) {
     runBoundaryVerdictExecutionDecision: boundaryVerdictOwner,
   }));
 
+  const reportResultSink = await import(
+    "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink"
+  );
+  reportResultSink.clearInternalAlphaReportResultRuntimeArtifacts(LEDGER_ID);
   const { runClaimBoundaryPipelineV2 } = await import("@/lib/analyzer-v2/orchestrator");
   const result = await runClaimBoundaryPipelineV2(
     {
@@ -642,6 +646,8 @@ async function runScenario(options: ScenarioOptions = {}) {
     anthropic,
     sufficiencyOwner,
     boundaryVerdictOwner,
+    reportResultArtifacts: reportResultSink.readInternalAlphaReportResultRuntimeArtifacts(LEDGER_ID),
+    reportResultProjections: reportResultSink.readInternalAlphaReportResultRuntimeArtifactDefaultProjections(LEDGER_ID),
   };
 }
 
@@ -727,8 +733,16 @@ describe("Analyzer V2 W7-C product chain integration", () => {
   ] as const)("keeps the public envelope fail-closed when %s throws", async (_label, options, expectedOrder) => {
     const scenario = await runScenario(options);
     const serializedPublic = JSON.stringify(scenario.result.resultJson);
+    const [reportProjection] = scenario.reportResultProjections;
 
     expect(scenario.order).toEqual(expectedOrder);
+    expect(scenario.reportResultArtifacts).toHaveLength(1);
+    expect(reportProjection?.internalAlphaReportResult).toMatchObject({
+      status: "internal_alpha_report_result_blocked",
+      upstreamStopAttribution: {
+        firstIncompleteStage: _label === "W6-C2" ? "sufficiency_assessment" : "boundary_verdict_execution",
+      },
+    });
     expect(scenario.result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       meta: { publicCutoverStatus: "blocked_precutover" },

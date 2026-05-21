@@ -509,6 +509,13 @@ Top-level object:
 - `blockedReason`: blocked reason, otherwise `null`
 - `damagedReason`: damaged reason, otherwise `null`
 
+Branch rules:
+
+- For `status: accepted`, `boundarySetCandidate`, `verdictSetCandidate`, and `warningMaterialityInputs` must be present and non-null; `blockedReason` and `damagedReason` must both be `null`.
+- For `status: blocked`, `boundarySetCandidate`, `verdictSetCandidate`, and `warningMaterialityInputs` must be `null`; `blockedReason` must be one allowed blocked reason; `damagedReason` must be `null`; `integrityEvents` must contain at least one valid event.
+- For `status: damaged`, `boundarySetCandidate`, `verdictSetCandidate`, and `warningMaterialityInputs` must be `null`; `blockedReason` must be `null`; `damagedReason` must be one allowed damaged reason; `integrityEvents` must contain at least one valid event.
+- Do not omit required keys. Use empty arrays only where the schema says an array may be empty. Use `null` only where this contract explicitly says `null`.
+
 Accepted `boundarySetCandidate` payload:
 
 - `boundaries`: non-empty array of boundary candidates.
@@ -537,6 +544,7 @@ Integrity event object:
 - `severity`: `info`, `warning`, or `error`.
 - `message`: non-empty concise structural explanation.
 - `references`: string array of relevant structural references. Use `[]` when no specific reference applies.
+- Never omit these four event fields. Never use alias keys such as `eventType`, `refs`, `reference`, `detail`, or `details`.
 
 Blocked reasons:
 
@@ -555,3 +563,5 @@ Damaged reasons:
 ### Rules
 
 Use LLM judgment for boundary formation and verdict candidacy. Do not use keyword rules, topic-specific shortcuts, or language-specific assumptions. Preserve multilingual evidence meaning without translating as a prerequisite. Extract no new EvidenceItems; use only the supplied EvidenceItems. If the supplied packet is insufficient or policy approval is missing, return the narrowest valid blocked envelope. If the output cannot satisfy citation, schema, or ID-reference requirements, return a damaged envelope rather than fabricating IDs or uncited candidates.
+
+Keep the contract strict. Do not rename `boundarySetCandidate` to `boundaryCandidates`, `verdictSetCandidate` to `verdicts`, `internalTruthPercentageCandidate` to `truthPercentage`, `internalConfidenceCandidate` to `confidence`, or `evidenceItemIds` to `evidenceIds`. Do not include public report prose, final public verdict fields, warning publications, source text, prompt text, provider payloads, hidden ledger IDs, or commentary outside the single JSON object.

@@ -19,6 +19,14 @@
       "resetRemaining": 12,
       "reason": "Captain authorized a new HighJump bar-ladder phase with max 12 live jobs and prompt edits allowed."
     },
+    "currentTrancheAccounting": {
+      "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
+      "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
+      "startingRemaining": 12,
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
+    },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
       "summary": "The supplied 2026-05-21 HighJump handover claimed a separate 20-slot budget that was not reflected in this ledger. This 12-job tranche supersedes prior remaining balance for future accounting only; it does not validate or reclassify any unledgered historical job."

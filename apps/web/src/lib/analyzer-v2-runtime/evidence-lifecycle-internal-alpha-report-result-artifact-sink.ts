@@ -158,13 +158,13 @@ function serializedByteLength(artifact: InternalAlphaReportResultRuntimeArtifact
 
 export function buildInternalAlphaReportResultRuntimeArtifact(input: {
   readonly context: PipelineRunContext;
-  readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
-  readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
-  readonly sufficiencyIntake: SufficiencyIntakeDecision;
-  readonly sufficiencyAssessment: SufficiencyAssessmentDecision;
-  readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision;
-  readonly internalAlphaReportStop: InternalAlphaReportStopCandidate;
-  readonly boundaryVerdictExecution: BoundaryVerdictExecutionDecision;
+  readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision | null | undefined;
+  readonly evidenceItemHandoff: EvidenceItemHandoffDecision | null | undefined;
+  readonly sufficiencyIntake: SufficiencyIntakeDecision | null | undefined;
+  readonly sufficiencyAssessment: SufficiencyAssessmentDecision | null | undefined;
+  readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision | null | undefined;
+  readonly internalAlphaReportStop: InternalAlphaReportStopCandidate | null | undefined;
+  readonly boundaryVerdictExecution: BoundaryVerdictExecutionDecision | null | undefined;
 }): InternalAlphaReportResultRuntimeArtifact {
   const internalAlphaReportResult = buildInternalAlphaReportResultCandidate({
     boundedEvidenceExtraction: input.boundedEvidenceExtraction,
@@ -194,13 +194,13 @@ export function buildInternalAlphaReportResultRuntimeArtifact(input: {
 
 export function recordInternalAlphaReportResultRuntimeArtifact(input: {
   readonly context: PipelineRunContext;
-  readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
-  readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
-  readonly sufficiencyIntake: SufficiencyIntakeDecision;
-  readonly sufficiencyAssessment: SufficiencyAssessmentDecision;
-  readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision;
-  readonly internalAlphaReportStop: InternalAlphaReportStopCandidate;
-  readonly boundaryVerdictExecution: BoundaryVerdictExecutionDecision;
+  readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision | null | undefined;
+  readonly evidenceItemHandoff: EvidenceItemHandoffDecision | null | undefined;
+  readonly sufficiencyIntake: SufficiencyIntakeDecision | null | undefined;
+  readonly sufficiencyAssessment: SufficiencyAssessmentDecision | null | undefined;
+  readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision | null | undefined;
+  readonly internalAlphaReportStop: InternalAlphaReportStopCandidate | null | undefined;
+  readonly boundaryVerdictExecution: BoundaryVerdictExecutionDecision | null | undefined;
 }): InternalAlphaReportResultArtifactRecordResult {
   if (!ledgerIdIsBounded(input.context.observabilityLedger.ledgerId)) {
     return { status: "skipped_invalid_ledger_id", artifact: null };
