@@ -251,7 +251,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.sourceMaterialRecords[1]?.providerId).toBe("wikimedia_core");
   });
 
-  it("fetches up to three structurally distinct page summaries in provider-attempt balanced order", async () => {
+  it("fetches up to six structurally distinct page summaries in provider-attempt balanced order", async () => {
     const previewRecords = [
       projection("Hydrogen_vehicle", "Hydrogen vehicle", 1),
       projection("Electric_vehicle", "Electric vehicle", 2),
@@ -292,25 +292,26 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
         },
       },
     });
-    const serialized = JSON.stringify(decision);
 
     expect(decision.status).toBe("source_material_page_summary_completed");
-    expect(decision.attemptedFetchCount).toBe(3);
-    expect(decision.sourceMaterialRecordCount).toBe(3);
-    expect(decision.fetchDiagnosticCount).toBe(3);
+    expect(decision.attemptedFetchCount).toBe(5);
+    expect(decision.sourceMaterialRecordCount).toBe(5);
+    expect(decision.fetchDiagnosticCount).toBe(5);
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
     ]);
-    expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3]);
+    expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3, 4, 5]);
     expect(requestedPaths).toEqual([
       "/api/rest_v1/page/summary/Hydrogen_vehicle",
       "/api/rest_v1/page/summary/Vehicle_efficiency",
       "/api/rest_v1/page/summary/Fuel_cell_vehicle",
+      "/api/rest_v1/page/summary/Electric_vehicle",
+      "/api/rest_v1/page/summary/Battery_electric_vehicle",
     ]);
-    expect(serialized).not.toContain("Electric_vehicle");
-    expect(serialized).not.toContain("Battery_electric_vehicle");
   });
 
   it("uses preview order rather than incoming locator order for provider-attempt balancing", async () => {
@@ -394,6 +395,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
+      "SOURCE_CANDIDATE_PREVIEW_1_4",
     ]);
   });
 

@@ -13,7 +13,7 @@ import {
 
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION =
   "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a";
-export const EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS = 3;
+export const EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS = 6;
 
 export type EvidenceCorpusSourceMaterialReadinessStatus =
   | "source_material_structurally_admissible_evidence_corpus_gate_closed"
