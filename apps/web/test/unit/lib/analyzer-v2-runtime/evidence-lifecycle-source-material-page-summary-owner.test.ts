@@ -99,14 +99,15 @@ function projection(
   key = "Hydrogen_vehicle",
   title = "Hydrogen vehicle",
   candidateOrdinal = 1,
+  providerAttemptOrdinal = 1,
 ) {
   return buildSourceCandidatePreviewProjection({
     providerId: "wikimedia_core",
     endpointId: "ep_wikimedia_core_page_search",
-    providerAttemptOrdinal: 1,
+    providerAttemptOrdinal,
     providerRank: 1,
     candidateOrdinal,
-    sourceCandidateRef: `OPAQUE_SOURCE_CANDIDATE_ATT_1_${candidateOrdinal}`,
+    sourceCandidateRef: `OPAQUE_SOURCE_CANDIDATE_ATT_${providerAttemptOrdinal}_${candidateOrdinal}`,
     candidate: candidate(key, title),
   });
 }
@@ -115,10 +116,11 @@ function locator(
   key = "Hydrogen_vehicle",
   title = "Hydrogen vehicle",
   candidateOrdinal = 1,
+  providerAttemptOrdinal = 1,
 ) {
   const candidateRecord = candidate(key, title);
   return buildSourceMaterialPageSummaryFetchLocator({
-    projection: projection(key, title, candidateOrdinal),
+    projection: projection(key, title, candidateOrdinal, providerAttemptOrdinal),
     candidate: candidateRecord,
   });
 }
@@ -181,20 +183,21 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
-  it("fetches up to three structurally distinct page summaries in existing candidate order", async () => {
+  it("fetches up to three structurally distinct page summaries in provider-attempt balanced order", async () => {
     const previewRecords = [
       projection("Hydrogen_vehicle", "Hydrogen vehicle", 1),
       projection("Electric_vehicle", "Electric vehicle", 2),
       projection("Battery_electric_vehicle", "Battery electric vehicle", 3),
-      projection("Vehicle_efficiency", "Vehicle efficiency", 4),
+      projection("Vehicle_efficiency", "Vehicle efficiency", 1, 2),
+      projection("Fuel_cell_vehicle", "Fuel cell vehicle", 1, 3),
     ];
     const requestedPaths: string[] = [];
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision({
         telemetry: {
           ...networkDecision().telemetry,
-          candidateCount: 4,
-          totalCandidateCount: 4,
+          candidateCount: 5,
+          totalCandidateCount: 5,
         },
       }),
       previewDecision: previewDecision(previewRecords),
@@ -202,7 +205,8 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
         locator("Hydrogen_vehicle", "Hydrogen vehicle", 1),
         locator("Electric_vehicle", "Electric vehicle", 2),
         locator("Battery_electric_vehicle", "Battery electric vehicle", 3),
-        locator("Vehicle_efficiency", "Vehicle efficiency", 4),
+        locator("Vehicle_efficiency", "Vehicle efficiency", 1, 2),
+        locator("Fuel_cell_vehicle", "Fuel cell vehicle", 1, 3),
       ],
       lowLevelTransport: {
         resolve: async () => [{ address: "93.184.216.34", family: 4 }],
@@ -228,16 +232,147 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.fetchDiagnosticCount).toBe(3);
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
-      "SOURCE_CANDIDATE_PREVIEW_1_2",
-      "SOURCE_CANDIDATE_PREVIEW_1_3",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
     ]);
     expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3]);
     expect(requestedPaths).toEqual([
       "/api/rest_v1/page/summary/Hydrogen_vehicle",
-      "/api/rest_v1/page/summary/Electric_vehicle",
-      "/api/rest_v1/page/summary/Battery_electric_vehicle",
+      "/api/rest_v1/page/summary/Vehicle_efficiency",
+      "/api/rest_v1/page/summary/Fuel_cell_vehicle",
     ]);
-    expect(serialized).not.toContain("Vehicle_efficiency");
+    expect(serialized).not.toContain("Electric_vehicle");
+    expect(serialized).not.toContain("Battery_electric_vehicle");
+  });
+
+  it("uses preview order rather than incoming locator order for provider-attempt balancing", async () => {
+    const previewRecords = [
+      projection("First_query_candidate", "First query candidate", 1, 1),
+      projection("Second_query_candidate", "Second query candidate", 1, 2),
+      projection("Third_query_candidate", "Third query candidate", 1, 3),
+    ];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 3,
+          totalCandidateCount: 3,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        locator("Third_query_candidate", "Third query candidate", 1, 3),
+        locator("First_query_candidate", "First query candidate", 1, 1),
+        locator("Second_query_candidate", "Second query candidate", 1, 2),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from(
+            JSON.stringify({ extract: `Bounded summary text for ${request.pathWithQuery}.` }),
+            "utf8",
+          ),
+        }),
+      },
+    });
+
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+    ]);
+  });
+
+  it("fills remaining slots from the same provider-attempt group when fewer groups are eligible", async () => {
+    const previewRecords = [
+      projection("Hydrogen_vehicle", "Hydrogen vehicle", 1),
+      projection("Electric_vehicle", "Electric vehicle", 2),
+      projection("Battery_electric_vehicle", "Battery electric vehicle", 3),
+      projection("Vehicle_efficiency", "Vehicle efficiency", 4),
+    ];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 4,
+          totalCandidateCount: 4,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        locator("Hydrogen_vehicle", "Hydrogen vehicle", 1),
+        locator("Electric_vehicle", "Electric vehicle", 2),
+        locator("Battery_electric_vehicle", "Battery electric vehicle", 3),
+        locator("Vehicle_efficiency", "Vehicle efficiency", 4),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from(
+            JSON.stringify({ extract: `Bounded summary text for ${request.pathWithQuery}.` }),
+            "utf8",
+          ),
+        }),
+      },
+    });
+
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
+    ]);
+  });
+
+  it("keeps dedupe ahead of provider-attempt balancing", async () => {
+    const previewRecords = [
+      projection("Shared_page", "Shared page", 1, 1),
+      projection("Shared_page", "Shared page", 1, 2),
+      projection("Distinct_page", "Distinct page", 1, 3),
+    ];
+    const firstSharedLocator = locator("Shared_page", "Shared page", 1, 1);
+    const duplicatedSharedLocator = {
+      ...firstSharedLocator,
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_2_1",
+    };
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 3,
+          totalCandidateCount: 3,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        firstSharedLocator,
+        duplicatedSharedLocator,
+        locator("Distinct_page", "Distinct page", 1, 3),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from(
+            JSON.stringify({ extract: `Bounded summary text for ${request.pathWithQuery}.` }),
+            "utf8",
+          ),
+        }),
+      },
+    });
+
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+    ]);
+    expect(decision.attemptedFetchCount).toBe(2);
   });
 
   it("blocks before fetch when W2/W3-A/locator prerequisites are not met", async () => {

@@ -4879,3 +4879,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Live-job budget after W6-D3: `2`.
 - Next action: prepare a bounded query/source diversity review package before W6-C. Do not spend another same-provider W6-D canary, weaken W6 prompts, relax W7 gates, expose public output, or start V1 work.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D3_Containment_Repair_Rerun_Result.md`.
+
+## 2026-05-21 - Lead Developer - V2 W6-E Query-Balanced Source Material Selection Implementation
+
+- Implemented W6-E under `Docs/WIP/2026-05-21_V2_Slice_W6-E_Query_Balanced_Source_Material_Selection_Review_Package.md`.
+- W3-B Source Material page-summary selection now derives provider-attempt groups from W3-A preview records and selects one eligible locator from each distinct group before filling remaining slots, preserving the hard cap of `3`.
+- Preserved boundaries: no live job, provider expansion, endpoint migration, semantic ranking, W6 prompt weakening, W7 gate relaxation, public behavior, prompt/model/config/schema changes, parser/cache/SR/storage, ACS/direct URL, V1 work, or V1 cleanup.
+- Verifiers passed: focused W3-B selector test (7 tests), runtime suite (73 files / 345 tests), evidence-lifecycle suite (43 files / 214 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), and build.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-E_Query_Balanced_Source_Material_Selection_Implementation.md`.

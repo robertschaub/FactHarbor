@@ -275,7 +275,7 @@ export function redactEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact(
   const redactedSidecar = authorization.boundedTextSidecar
     ? redactSidecar(authorization.boundedTextSidecar)
     : null;
-  const redactedSidecars = authorization.boundedTextSidecars.map(redactSidecar);
+  const redactedSidecars = (authorization.boundedTextSidecars ?? []).map(redactSidecar);
 
   return cloneJson({
     ...artifact,

@@ -157,12 +157,12 @@ function baseDecision(params: {
   });
 }
 
-function matchingMaterializedPreviewIds(
+function matchingMaterializedPreviewRecords(
   previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision,
-): Set<string> {
-  return new Set(previewDecision.previewRecords
+): Map<string, EvidenceLifecycleSourceCandidatePreviewDecision["previewRecords"][number]> {
+  return new Map(previewDecision.previewRecords
     .filter((record) => record.materializationStatus === "source_candidate_preview_materialized")
-    .map((record) => record.candidatePreviewId));
+    .map((record) => [record.candidatePreviewId, record]));
 }
 
 function locatorDedupeKey(locator: SourceMaterialPageSummaryFetchLocator): string | null {
@@ -176,28 +176,67 @@ function eligibleLocators(
   previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision,
   locators: readonly SourceMaterialPageSummaryFetchLocator[],
 ): readonly SourceMaterialPageSummaryFetchLocator[] {
-  const acceptedPreviewIds = matchingMaterializedPreviewIds(previewDecision);
-  const selected: SourceMaterialPageSummaryFetchLocator[] = [];
+  const acceptedPreviewRecords = matchingMaterializedPreviewRecords(previewDecision);
+  const eligible: {
+    readonly locator: SourceMaterialPageSummaryFetchLocator;
+    readonly providerAttemptOrdinal: number;
+    readonly candidateOrdinal: number;
+    readonly locatorOrdinal: number;
+  }[] = [];
   const seen = new Set<string>();
-  for (const locator of locators) {
+  for (const [locatorOrdinal, locator] of locators.entries()) {
     const dedupeKey = locatorDedupeKey(locator);
+    const previewRecord = acceptedPreviewRecords.get(locator.candidatePreviewId);
     if (
       locator.eligibility !== "eligible_for_w3b_fetch"
       || locator.locatorRef === null
       || locator.encodedTitlePathSegment === null
-      || !acceptedPreviewIds.has(locator.candidatePreviewId)
+      || previewRecord === undefined
       || dedupeKey === null
       || seen.has(dedupeKey)
     ) {
       continue;
     }
     seen.add(dedupeKey);
-    selected.push(locator);
+    eligible.push({
+      locator,
+      providerAttemptOrdinal: previewRecord.providerAttemptOrdinal,
+      candidateOrdinal: previewRecord.candidateOrdinal,
+      locatorOrdinal,
+    });
+  }
+
+  const ordered = [...eligible].sort((left, right) =>
+    left.providerAttemptOrdinal - right.providerAttemptOrdinal
+    || left.candidateOrdinal - right.candidateOrdinal
+    || left.locatorOrdinal - right.locatorOrdinal
+  );
+  const selected: typeof ordered = [];
+  const selectedKeys = new Set<string>();
+  const firstByProviderAttempt = new Map<number, (typeof ordered)[number]>();
+  for (const item of ordered) {
+    if (!firstByProviderAttempt.has(item.providerAttemptOrdinal)) {
+      firstByProviderAttempt.set(item.providerAttemptOrdinal, item);
+    }
+  }
+  for (const item of firstByProviderAttempt.values()) {
+    selected.push(item);
+    selectedKeys.add(item.locator.candidatePreviewId);
     if (selected.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
       break;
     }
   }
-  return selected;
+  for (const item of ordered) {
+    if (selected.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+      break;
+    }
+    if (selectedKeys.has(item.locator.candidatePreviewId)) {
+      continue;
+    }
+    selected.push(item);
+    selectedKeys.add(item.locator.candidatePreviewId);
+  }
+  return selected.map((item) => item.locator);
 }
 
 function statusFromTransportStatus(
