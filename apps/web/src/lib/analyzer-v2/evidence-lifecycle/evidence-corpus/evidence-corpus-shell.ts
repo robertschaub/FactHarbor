@@ -531,14 +531,21 @@ function isValidationFailure(value: EvidenceCorpusAdmissionInput | EvidenceCorpu
   return "status" in value;
 }
 
-function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): EvidenceCorpusShell | ValidationFailure {
-  if (inputs.length < 1 || inputs.length > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS) {
+function buildCorpusShell(
+  inputs: readonly EvidenceCorpusAdmissionInput[],
+  sourceMaterialRecordCount: number,
+): EvidenceCorpusShell | ValidationFailure {
+  if (
+    inputs.length < 1
+    || inputs.length > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
+    || sourceMaterialRecordCount < inputs.length
+    || sourceMaterialRecordCount > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
+  ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
       stopReason: "source_material_record_count_unsupported",
     };
   }
-  const expectedRecordCount = inputs.length;
   const validatedInputs: EvidenceCorpusAdmissionInput[] = [];
   const seenInputIds = new Set<string>();
   const seenHashes = new Set<string>();
@@ -548,7 +555,7 @@ function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): Evid
       return validated;
     }
     if (
-      validated.sourceMaterialRecordCount !== expectedRecordCount
+      validated.sourceMaterialRecordCount !== sourceMaterialRecordCount
       || seenInputIds.has(validated.corpusAdmissionInputId)
     ) {
       return {
@@ -663,13 +670,16 @@ export function buildEvidenceCorpusShell(params: {
       );
     }
     const sourceMaterialRecordCount = boundedCount(params.sourceMaterialAdmission.sourceMaterialRecordCount);
+    const admittedCount = boundedCount(params.sourceMaterialAdmission.admittedCorpusAdmissionInputCount);
+    const rejectedCount = boundedCount(params.sourceMaterialAdmission.rejectedCorpusAdmissionInputCount);
     if (
       sourceMaterialRecordCount < 1
       || sourceMaterialRecordCount > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
-      || params.sourceMaterialAdmission.admittedCorpusAdmissionInputCount !== sourceMaterialRecordCount
-      || params.sourceMaterialAdmission.rejectedCorpusAdmissionInputCount !== 0
+      || admittedCount < 1
+      || admittedCount > sourceMaterialRecordCount
+      || rejectedCount !== sourceMaterialRecordCount - admittedCount
       || !Array.isArray(params.sourceMaterialAdmission.corpusAdmissionInputs)
-      || params.sourceMaterialAdmission.corpusAdmissionInputs.length !== sourceMaterialRecordCount
+      || params.sourceMaterialAdmission.corpusAdmissionInputs.length !== admittedCount
     ) {
       return failure(
         params.sourceMaterialAdmission,
@@ -704,7 +714,10 @@ export function buildEvidenceCorpusShell(params: {
       );
     }
 
-    const evidenceCorpus = buildCorpusShell(params.sourceMaterialAdmission.corpusAdmissionInputs);
+    const evidenceCorpus = buildCorpusShell(
+      params.sourceMaterialAdmission.corpusAdmissionInputs,
+      sourceMaterialRecordCount,
+    );
     if (isValidationFailure(evidenceCorpus)) {
       return failure(params.sourceMaterialAdmission, evidenceCorpus.status, evidenceCorpus.stopReason);
     }

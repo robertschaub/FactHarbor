@@ -232,6 +232,45 @@ describe("Analyzer V2 W4-D EvidenceCorpus shell core", () => {
     expect(serialized).not.toContain("reportMarkdown");
   });
 
+  it("creates a text-free shell from deduplicated W4-C admission fan-in", () => {
+    const base = validSourceMaterialPageSummary();
+    const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
+    const duplicateRecord = {
+      ...firstRecord,
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_DUP_1_ABCDEF123456",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_DUP_1",
+    };
+    const readiness = buildEvidenceCorpusSourceMaterialReadiness({
+      sourceMaterialPageSummary: validSourceMaterialPageSummary({
+        attemptedFetchCount: 2,
+        sourceMaterialRecordCount: 2,
+        fetchDiagnosticCount: 2,
+        sourceMaterialRecords: [firstRecord, duplicateRecord],
+        fetchDiagnostics: [
+          base.fetchDiagnostics[0],
+          { ...(base.fetchDiagnostics[0] as Record<string, unknown>), attemptOrdinal: 2 },
+        ],
+      }),
+      runtimeOwned: true,
+    });
+    const admission = buildEvidenceCorpusSourceMaterialAdmission({
+      sourceMaterialReadiness: readiness,
+      runtimeOwned: true,
+    });
+
+    const result = shell(admission);
+
+    expect(admission).toMatchObject({
+      sourceMaterialRecordCount: 2,
+      admittedCorpusAdmissionInputCount: 1,
+      rejectedCorpusAdmissionInputCount: 1,
+    });
+    expect(result.status).toBe("evidence_corpus_shell_created_extraction_gate_closed");
+    expect(result.sourceMaterialRecordCount).toBe(2);
+    expect(result.evidenceCorpus?.sourceMaterialTextHashes).toHaveLength(1);
+    expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
+  });
+
   it("blocks absent, non-W4-C, non-owned, and post-mark-mutated admissions", () => {
     const admission = validAdmission();
     const cases = [
