@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const DEFAULT_MODEL = 'gemini-2.5-pro';
+const DEFAULT_MODEL = 'gemini-3.1-pro-preview';
 const DEFAULT_MAX_TOKENS = 4096;
 
 function apiUrl(model, apiKey) {

@@ -15,7 +15,7 @@ date on every change.
 |---|---|---|---|
 | Leader | Claude Opus 4.6 | Anthropic Claude | Strongest synthesis + governance discipline; direct repo-local code visibility via Claude Code |
 | Member A | GPT-5.5 | OpenAI GPT | Adversarial reviewer, governance consistency, independent cross-model verification |
-| Member B | Gemini newest approved pro | Google Gemini | Independent systems review, implementation practicality, cross-tool portability |
+| Member B | Gemini 3.1 Pro Preview | Google Gemini | Independent systems review, implementation practicality, cross-tool portability |
 
 ## Delivery Lane
 
@@ -46,7 +46,7 @@ code or config and must be updated separately when the active team changes:
 |---|---|---|
 | `invoke-claude.cjs` | `scripts/agents/invoke-claude.cjs` | Non-Claude agents call Claude via this wrapper. Update if Leader is no longer Claude. |
 | `invoke-gpt.cjs` | `scripts/agents/invoke-gpt.cjs` | Claude Code calls GPT via OpenAI API. Requires `OPENAI_API_KEY`. Default model: `gpt-5.5`. |
-| `invoke-gemini.cjs` | `scripts/agents/invoke-gemini.cjs` | Claude Code calls Gemini via Google API. Requires `GOOGLE_GENERATIVE_AI_API_KEY`. Default model: `gemini-2.5-pro`. |
+| `invoke-gemini.cjs` | `scripts/agents/invoke-gemini.cjs` | Claude Code calls Gemini via Google API. Requires `GOOGLE_GENERATIVE_AI_API_KEY`. Default model: `gemini-3.1-pro-preview`. |
 | Claude Code MCP config | `.claude/settings.json` | Tool permissions and MCP server config are Claude Code-specific. |
 | Codex/GPT tool sessions | External (OpenAI Codex) | If GPT-5.5 was executor and a different model takes over, stop/redirect active Codex sessions. |
 
