@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T04:39:35.755Z",
-  "count": 784,
+  "generatedAt": "2026-05-21T04:53:31.116Z",
+  "count": 785,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16954,6 +16954,24 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-E Query-Balanced Selection Canary Result"
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-F_OpenAlex_Source_Diversity_Steering.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-f",
+        "openalex",
+        "source",
+        "diversity",
+        "steering"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-21 - Captain Deputy - V2 W6-F OpenAlex Source Diversity Steering"
     },
     {
       "file": "2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md",

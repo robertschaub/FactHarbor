@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F OpenAlex Source Diversity Steering -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md` after W6-E proved query-balanced same-provider Wikimedia selection but W6-C still recommended `refine_retrieval`. Direction: W6-F1 should be an OpenAlex-first bounded academic Source Material diversity package before W6-C.
+**Warnings:** W6-F authorizes no code and no live job by itself. Remaining live-job budget is `1`; do not spend it before OpenAlex credential/no-key posture is settled. Do not weaken W6 prompts, relax W7 gates, add a generic provider framework, reuse V1 provider code, or expose source text publicly/default-admin/log/error.
+-> Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-F_OpenAlex_Source_Diversity_Steering.md
+
+---
 ### 2026-05-21 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W6-C4 Sufficiency Prompt Repair Canary -- [Significant] [open-items: yes]
 **For next agent:** Ran exactly one W6-C4 canary, job `cbb4f6b5ae9d49a3bb6f941c7ae6c231`, on runtime `621f8efe062f66deda190c30832a5feaa2dbe74d`. Classified it as `PASS_X7_W6_C4_SUFFICIENCY_PROMPT_CONTRACT_REPAIR_CANARY`: W6-C now completes with accepted sufficiency result and `schemaDiagnostics = null`; public V2 stayed damaged/precutover; hidden W8-B stayed text-free by default.
 **Warnings:** The next stop-line is `boundary_verdict_candidate_not_ready` / W7-A `closed_until_llm_task_approved`. No second W6-C4 canary is authorized. Boundary/verdict prompt/model/gateway activation remains package-gated.
