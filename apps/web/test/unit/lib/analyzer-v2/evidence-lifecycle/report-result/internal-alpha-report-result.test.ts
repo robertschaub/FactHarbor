@@ -190,6 +190,33 @@ function sufficiencySchemaDiagnostics(): NonNullable<
   };
 }
 
+function boundaryVerdictSchemaDiagnostics(): NonNullable<
+  BoundaryVerdictExecutionDecision["executionTelemetry"]["schemaDiagnostics"]
+> {
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.boundary-verdict-execution.schema-diagnostics.hj2",
+    contractName: "BoundaryVerdictExecutionResultSchema",
+    contractVersion: "v2.boundary_verdict_execution.0",
+    outputParseStatus: "parsed",
+    failureCategory: "schema_validation",
+    issueCount: 2,
+    issues: [
+      { path: ["boundarySetCandidate", "boundaries"], code: "invalid_type" },
+      { path: ["verdictSetCandidate", "verdictCandidates"], code: "invalid_type" },
+    ],
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger:
+      "remove_or_fold_into_stable_w7b_telemetry_after_two_successive_highjump_boundary_verdict_canaries_or_end_of_current_highjump_tranche",
+  };
+}
+
 function closedBoundaryVerdictCandidateSideEffects(): BoundaryVerdictCandidateDecision["sideEffects"] {
   return {
     boundaryLlmCalled: false,
@@ -312,6 +339,7 @@ function boundaryVerdictExecution(
     executionTelemetry: {
       providerId: "anthropic",
       modelId: "claude-haiku-4-5-20251001",
+      schemaDiagnostics: null,
       tokenUsage: {
         inputTokens: 100,
         outputTokens: 50,
@@ -712,6 +740,38 @@ describe("W8-B internal Alpha report-result candidate", () => {
     expect(decision.upstreamStopAttribution.parentStatuses.sufficiencyAssessment.schemaDiagnostics)
       .toEqual(diagnostics);
     expect(serialized).toContain("schema_validation");
+    expect(serialized).not.toContain(STATEMENT);
+    expect(serialized).not.toContain(UNSAFE_TEXT);
+    expect(serialized).not.toContain("raw provider");
+    expect(serialized).not.toContain("message");
+    expect(serialized).not.toContain("expected");
+    expect(serialized).not.toContain("received");
+  });
+
+  it("projects bounded W7-B schema diagnostics through existing upstream attribution without raw text", () => {
+    const diagnostics = boundaryVerdictSchemaDiagnostics();
+    const decision = build({
+      execution: boundaryVerdictExecution({
+        status: "boundary_verdict_execution_damaged",
+        damagedReason: "schema_validation_failed",
+        boundaryCandidateCount: 0,
+        verdictCandidateCount: 0,
+        citedEvidenceItemRefs: [],
+        executionTelemetry: {
+          ...boundaryVerdictExecution().executionTelemetry,
+          schemaDiagnostics: diagnostics,
+          attemptCount: 2,
+          schemaRetryCount: 2,
+        },
+      }),
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision.upstreamStopAttribution.parentStatuses.boundaryVerdictExecution.schemaDiagnostics)
+      .toEqual(diagnostics);
+    expect(decision.upstreamStopAttribution.firstIncompleteStage).toBe("boundary_verdict_execution");
+    expect(serialized).toContain("BoundaryVerdictExecutionResultSchema");
+    expect(serialized).toContain("boundarySetCandidate");
     expect(serialized).not.toContain(STATEMENT);
     expect(serialized).not.toContain(UNSAFE_TEXT);
     expect(serialized).not.toContain("raw provider");

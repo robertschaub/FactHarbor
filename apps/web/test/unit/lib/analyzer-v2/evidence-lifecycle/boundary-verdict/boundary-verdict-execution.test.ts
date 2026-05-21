@@ -568,6 +568,70 @@ describe("boundary/verdict execution runtime", () => {
     expect(decision.status).toBe("boundary_verdict_candidates_created_internal");
     expect(decision.executionTelemetry.attemptCount).toBe(2);
     expect(decision.executionTelemetry.schemaRetryCount).toBe(1);
+    expect(decision.executionTelemetry.schemaDiagnostics).toBeNull();
+  });
+
+  it("records bounded W7-B schema diagnostics without retaining provider output text", async () => {
+    const w5Decision = w5();
+    const lineage = await parents(w5Decision);
+    const rawProviderText = "RAW_BOUNDARY_VERDICT_PROVIDER_TEXT_MUST_NOT_LEAK";
+    const invalidOutput = {
+      schemaVersion: TASK_BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+      taskKey: "boundary_verdict_execution",
+      status: "accepted",
+      boundarySetCandidate: {
+        boundaryCandidates: [{
+          boundaryCandidateId: "BVC_BAD",
+          rationale: rawProviderText,
+        }],
+      },
+      verdictSetCandidate: {
+        verdicts: [],
+      },
+      warningMaterialityInputs: null,
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+
+    const decision = await runBoundaryVerdictExecutionRuntime({
+      context: context(),
+      boundedEvidenceExtraction: w5Decision,
+      evidenceItemHandoff: lineage.handoff,
+      sufficiencyIntake: lineage.intake,
+      sufficiencyAssessment: lineage.assessment,
+      boundaryVerdictCandidate: lineage.boundaryVerdict,
+      internalAlphaReportStop: lineage.reportStop,
+      renderedPrompt: "rendered boundary verdict prompt",
+      promptContentHash: "9".repeat(64),
+      configSnapshotHash: "config-hash-w7b",
+      providerCall: providerCall(invalidOutput),
+    });
+    const serializedDiagnostics = JSON.stringify(decision.executionTelemetry.schemaDiagnostics);
+
+    expect(decision.status).toBe("boundary_verdict_execution_damaged");
+    expect(decision.damagedReason).toBe("schema_validation_failed");
+    expect(decision.executionTelemetry.attemptCount).toBe(2);
+    expect(decision.executionTelemetry.schemaRetryCount).toBe(2);
+    expect(decision.executionTelemetry.schemaDiagnostics).toMatchObject({
+      contractName: "BoundaryVerdictExecutionResultSchema",
+      contractVersion: TASK_BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+      outputParseStatus: "parsed",
+      failureCategory: "schema_validation",
+      rawProviderOutputReturned: false,
+      providerCompletionTextReturned: false,
+      sourceTextReturned: false,
+      inputTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      stackTraceReturned: false,
+    });
+    expect(decision.executionTelemetry.schemaDiagnostics?.issueCount).toBeGreaterThan(0);
+    expect(decision.executionTelemetry.schemaDiagnostics?.issueCount).toBeLessThanOrEqual(8);
+    expect(serializedDiagnostics).toContain("boundarySetCandidate");
+    expect(serializedDiagnostics).not.toContain(rawProviderText);
+    expect(serializedDiagnostics).not.toContain(STATEMENT);
+    expect(JSON.stringify(decision)).not.toContain(rawProviderText);
   });
 
   it("damages provider output that cites unknown EvidenceItems or boundaries", async () => {

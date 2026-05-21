@@ -3359,3 +3359,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HighJump live-job budget is now `11`.
 - Next action: narrow W7-B repair under `/debt-guard`, preferably prompt/schema-contract repair; if exact evidence is insufficient, add bounded W7-B schema diagnostics to existing hidden evidence with a removal or merge trigger.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump W7-B Schema Diagnostics Repair
+
+- Implemented the Steer-Co-approved W7-B repair direction after HJ-2 stopped at `boundary_verdict_execution_damaged`: add bounded path/code-only schema diagnostics to W7-B telemetry and project them through existing W8-B upstream stop attribution.
+- Preserved containment: no raw provider output, schema messages, source text, EvidenceItem text, prompt text, stack traces, public output, schema loosening, prompt edit, or new route.
+- Added V2 retirement row `V2-RL-022` with removal/merge trigger: remove or fold diagnostics into stable W7-B telemetry after two successive HighJump boundary/verdict canaries no longer need them, or at the end of the current HighJump tranche.
+- Verifiers passed: focused W7/W8 suite (`7` files / `53` tests), boundary guard (`94` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Next action: commit, refresh runtime, and run one diagnostic HighJump canary on the Captain-defined hydrogen input. HighJump live-job budget remains `11` before that canary.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W7B_Schema_Diagnostics_Repair.md

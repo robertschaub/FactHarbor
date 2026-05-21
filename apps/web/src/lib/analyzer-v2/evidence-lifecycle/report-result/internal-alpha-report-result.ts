@@ -191,6 +191,7 @@ export type InternalAlphaReportResultUpstreamStopAttribution = {
       readonly boundaryCandidateCount: number;
       readonly verdictCandidateCount: number;
       readonly citedEvidenceItemRefCount: number;
+      readonly schemaDiagnostics: BoundaryVerdictExecutionDecision["executionTelemetry"]["schemaDiagnostics"];
     };
   };
   readonly redaction: {
@@ -331,6 +332,8 @@ type ParentProjection = {
   readonly citedEvidenceItemRefs: readonly string[];
   readonly resultPayloadHash: string | null;
   readonly warningMaterialityInputs: BoundaryVerdictExecutionDecision["warningMaterialityInputs"] | null;
+  readonly boundaryVerdictExecutionSchemaDiagnostics:
+    BoundaryVerdictExecutionDecision["executionTelemetry"]["schemaDiagnostics"];
   readonly providerAndCostTelemetry: InternalAlphaReportResultProviderAndCostTelemetry;
 };
 
@@ -482,6 +485,7 @@ function projectParents(input: {
     citedEvidenceItemRefs: w7b2?.citedEvidenceItemRefs.map((ref) => ref) ?? [],
     resultPayloadHash: w7b2?.resultPayloadHash ?? null,
     warningMaterialityInputs: w7b2?.warningMaterialityInputs ?? null,
+    boundaryVerdictExecutionSchemaDiagnostics: w7b2?.executionTelemetry.schemaDiagnostics ?? null,
     providerAndCostTelemetry: providerAndCostTelemetry(w7b2),
   };
 }
@@ -767,6 +771,7 @@ function upstreamStopAttribution(
         boundaryCandidateCount: projection.boundaryCandidateCount,
         verdictCandidateCount: projection.verdictCandidateCount,
         citedEvidenceItemRefCount: projection.citedEvidenceItemRefs.length,
+        schemaDiagnostics: projection.boundaryVerdictExecutionSchemaDiagnostics,
       },
     },
     redaction: {

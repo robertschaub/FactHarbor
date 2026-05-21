@@ -45,6 +45,13 @@ export const BOUNDARY_VERDICT_EXECUTION_CACHE_NAMESPACE =
   "analyzer-v2:v2.semantic.boundary-verdict-execution.w7b:boundary_verdict_execution" as const;
 export const BOUNDARY_VERDICT_EXECUTION_MAX_EVIDENCE_ITEMS = 50 as const;
 export const BOUNDARY_VERDICT_EXECUTION_MAX_PACKET_BYTES = 100_000 as const;
+export const BOUNDARY_VERDICT_EXECUTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
+  "remove_or_fold_into_stable_w7b_telemetry_after_two_successive_highjump_boundary_verdict_canaries_or_end_of_current_highjump_tranche" as const;
+
+const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES = 8;
+const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_PATH_SEGMENTS = 8;
+const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_PATH_SEGMENT_LENGTH = 64;
+const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_CODE_LENGTH = 80;
 
 export type BoundaryVerdictExecutionStatus =
   | "boundary_verdict_candidates_created_internal"
@@ -163,12 +170,41 @@ export type BoundaryVerdictExecutionProviderCall = (
   request: BoundaryVerdictExecutionProviderCallRequest,
 ) => Promise<BoundaryVerdictExecutionProviderCallResponse>;
 
+export type BoundaryVerdictExecutionSchemaDiagnosticIssue = {
+  readonly path: readonly string[];
+  readonly code: string;
+};
+
+export type BoundaryVerdictExecutionSchemaDiagnostics = {
+  readonly diagnosticVersion: "v2.evidence-lifecycle.boundary-verdict-execution.schema-diagnostics.hj2";
+  readonly contractName: "BoundaryVerdictExecutionResultSchema";
+  readonly contractVersion: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION;
+  readonly outputParseStatus: "not_attempted" | "parse_failure" | "parsed";
+  readonly failureCategory:
+    | "none"
+    | "parse_failure"
+    | "schema_validation"
+    | "task_contract_validation";
+  readonly issueCount: number;
+  readonly issues: readonly BoundaryVerdictExecutionSchemaDiagnosticIssue[];
+  readonly rawProviderOutputReturned: false;
+  readonly rawSchemaMessagesReturned: false;
+  readonly providerCompletionTextReturned: false;
+  readonly sourceTextReturned: false;
+  readonly inputTextReturned: false;
+  readonly evidenceItemTextReturned: false;
+  readonly promptTextReturned: false;
+  readonly stackTraceReturned: false;
+  readonly removalTrigger: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER;
+};
+
 export type BoundaryVerdictExecutionModelAttempt = {
   readonly attemptNumber: number;
   readonly promptContentHash: string;
   readonly status: "accepted" | "invalid_schema" | "parse_failure" | "provider_failure";
   readonly providerTelemetry: BoundaryVerdictExecutionProviderTelemetry | null;
   readonly failureCode: string | null;
+  readonly schemaDiagnostics: BoundaryVerdictExecutionSchemaDiagnostics | null;
 };
 
 export type BoundaryVerdictExecutionTelemetry = {
@@ -179,6 +215,7 @@ export type BoundaryVerdictExecutionTelemetry = {
   readonly inputPacketHash: string | null;
   readonly inputPacketByteLength: number | null;
   readonly outputSchemaVersion: typeof BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION;
+  readonly schemaDiagnostics: BoundaryVerdictExecutionSchemaDiagnostics | null;
   readonly modelPolicyId: string | null;
   readonly providerId: string | null;
   readonly modelId: string | null;
@@ -337,6 +374,7 @@ function telemetry(
     inputPacketHash: null,
     inputPacketByteLength: null,
     outputSchemaVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+    schemaDiagnostics: null,
     modelPolicyId: null,
     providerId: null,
     modelId: null,
@@ -739,6 +777,128 @@ function providerTelemetryValid(input: BoundaryVerdictExecutionProviderTelemetry
       .every((value) => Number.isFinite(value) && value >= 0);
 }
 
+function boundedDiagnosticCode(value: string): string {
+  return value
+    .replace(/[^A-Za-z0-9_.-]/g, "_")
+    .slice(0, BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_CODE_LENGTH) || "unknown";
+}
+
+function boundedDiagnosticPathSegment(value: string): string {
+  return value.slice(0, BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_PATH_SEGMENT_LENGTH);
+}
+
+function sanitizeSchemaPathSegment(segment: unknown): string {
+  if (typeof segment === "string" && /^[A-Za-z0-9_-]+$/.test(segment)) {
+    return boundedDiagnosticPathSegment(segment);
+  }
+  if (typeof segment === "number" && Number.isInteger(segment) && segment >= 0) {
+    return String(segment);
+  }
+  return "[non_structural]";
+}
+
+function isDiagnosticRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function collectSchemaIssueDiagnostics(rawIssues: readonly unknown[]): readonly {
+  readonly path?: readonly unknown[];
+  readonly code: string;
+}[] {
+  const collected: Array<{ path?: readonly unknown[]; code: string }> = [];
+
+  function visit(issue: unknown): void {
+    if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      return;
+    }
+    if (!isDiagnosticRecord(issue)) {
+      return;
+    }
+    const code = typeof issue.code === "string" ? issue.code : "unknown";
+    const path = Array.isArray(issue.path) ? issue.path : [];
+    collected.push({ path, code });
+
+    const unionErrors = issue.unionErrors;
+    if (Array.isArray(unionErrors)) {
+      for (const error of unionErrors) {
+        if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (isDiagnosticRecord(error) && Array.isArray(error.issues)) {
+          for (const childIssue of error.issues) {
+            visit(childIssue);
+            if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const errors = issue.errors;
+    if (Array.isArray(errors)) {
+      for (const child of errors) {
+        if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+          break;
+        }
+        if (Array.isArray(child)) {
+          for (const childIssue of child) {
+            visit(childIssue);
+            if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+              break;
+            }
+          }
+        } else {
+          visit(child);
+        }
+      }
+    }
+  }
+
+  for (const issue of rawIssues) {
+    visit(issue);
+    if (collected.length >= BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES) {
+      break;
+    }
+  }
+
+  return collected;
+}
+
+function schemaDiagnostics(params: {
+  readonly outputParseStatus: BoundaryVerdictExecutionSchemaDiagnostics["outputParseStatus"];
+  readonly failureCategory: BoundaryVerdictExecutionSchemaDiagnostics["failureCategory"];
+  readonly issues?: readonly { readonly path?: readonly unknown[]; readonly code: string }[];
+}): BoundaryVerdictExecutionSchemaDiagnostics {
+  const issues = (params.issues ?? [])
+    .slice(0, BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES)
+    .map((issue) => ({
+      path: (issue.path ?? [])
+        .slice(0, BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_PATH_SEGMENTS)
+        .map(sanitizeSchemaPathSegment),
+      code: boundedDiagnosticCode(issue.code),
+    }));
+
+  return {
+    diagnosticVersion: "v2.evidence-lifecycle.boundary-verdict-execution.schema-diagnostics.hj2",
+    contractName: "BoundaryVerdictExecutionResultSchema",
+    contractVersion: BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
+    outputParseStatus: params.outputParseStatus,
+    failureCategory: params.failureCategory,
+    issueCount: issues.length,
+    issues,
+    rawProviderOutputReturned: false,
+    rawSchemaMessagesReturned: false,
+    providerCompletionTextReturned: false,
+    sourceTextReturned: false,
+    inputTextReturned: false,
+    evidenceItemTextReturned: false,
+    promptTextReturned: false,
+    stackTraceReturned: false,
+    removalTrigger: BOUNDARY_VERDICT_EXECUTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER,
+  };
+}
+
 function isApprovedW7BModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
   return policy.policyId === "v2.model.boundary_verdict_execution.w7b"
     && policy.gatewayTaskId === "boundary_verdict_execution"
@@ -992,6 +1152,7 @@ function telemetryFromAttempts(params: {
     renderedPromptHash: sha256Text(params.renderedPrompt),
     inputPacketHash: params.inputPacketHash,
     inputPacketByteLength: params.inputPacketByteLength,
+    schemaDiagnostics: params.attempts.at(-1)?.schemaDiagnostics ?? null,
     modelPolicyId: params.modelPolicy.policyId,
     providerId: lastTelemetry?.providerId ?? null,
     modelId: lastTelemetry?.modelId ?? null,
@@ -1109,6 +1270,7 @@ export async function runBoundaryVerdictExecutionRuntime(
         status: "provider_failure",
         providerTelemetry: null,
         failureCode: "provider_unavailable",
+        schemaDiagnostics: null,
       });
       return damagedDecision(request, "provider_unavailable", noSideEffects({
         ...postCacheSideEffects,
@@ -1133,6 +1295,7 @@ export async function runBoundaryVerdictExecutionRuntime(
         status: "provider_failure",
         providerTelemetry: null,
         failureCode: "provider_telemetry_invalid",
+        schemaDiagnostics: null,
       });
       return damagedDecision(request, "provider_telemetry_invalid", calledSideEffects, {
         ...baseTelemetry,
@@ -1148,6 +1311,11 @@ export async function runBoundaryVerdictExecutionRuntime(
         status: "parse_failure",
         providerTelemetry: providerResponse.telemetry,
         failureCode: "parse_failure",
+        schemaDiagnostics: schemaDiagnostics({
+          outputParseStatus: "parse_failure",
+          failureCategory: "parse_failure",
+          issues: [{ path: [], code: "json_parse_error" }],
+        }),
       });
       if (attemptNumber < maxAttempts) {
         continue;
@@ -1166,12 +1334,18 @@ export async function runBoundaryVerdictExecutionRuntime(
 
     const parsedResult = BoundaryVerdictExecutionResultSchema.safeParse(parsedOutput.value);
     if (!parsedResult.success) {
+      const diagnostics = schemaDiagnostics({
+        outputParseStatus: "parsed",
+        failureCategory: "schema_validation",
+        issues: collectSchemaIssueDiagnostics(parsedResult.error.issues),
+      });
       attempts.push({
         attemptNumber,
         promptContentHash: request.promptContentHash,
         status: "invalid_schema",
         providerTelemetry: providerResponse.telemetry,
         failureCode: "schema_validation_failed",
+        schemaDiagnostics: diagnostics,
       });
       if (attemptNumber < maxAttempts) {
         continue;
@@ -1197,6 +1371,11 @@ export async function runBoundaryVerdictExecutionRuntime(
         status: "invalid_schema",
         providerTelemetry: providerResponse.telemetry,
         failureCode: contractError,
+        schemaDiagnostics: schemaDiagnostics({
+          outputParseStatus: "parsed",
+          failureCategory: "task_contract_validation",
+          issues: [{ path: ["boundaryVerdictExecutionResult"], code: contractError }],
+        }),
       });
       if (attemptNumber < maxAttempts) {
         continue;
@@ -1219,6 +1398,7 @@ export async function runBoundaryVerdictExecutionRuntime(
       status: "accepted",
       providerTelemetry: providerResponse.telemetry,
       failureCode: null,
+      schemaDiagnostics: null,
     });
     if (result.status === "blocked") {
       return decision({
