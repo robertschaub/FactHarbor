@@ -13,7 +13,7 @@ import {
   buildInternalAlphaReportStopCandidate,
   type InternalAlphaReportStopCandidate,
 } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate";
-import type { SufficiencyAssessmentDecision, SufficiencyAssessmentMissingDimensionProjection } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
+import type { SufficiencyAssessmentDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment";
 import type { SufficiencyIntakeDecision } from "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake";
 
 const STATEMENT = "Battery electric cars use electricity more directly than hydrogen cars.";
@@ -140,8 +140,6 @@ function sufficiencyAssessment(
     parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_TEST",
     sufficiencyResultStatus: "accepted",
     reportStopRecommendation: "continue_to_boundary_formation",
-    materialScarcityCandidate: null,
-    missingEvidenceDimensionProjections: [],
     sideEffects: {
       sufficiencyLlmCalled: true,
       promptLoaded: true,
@@ -777,64 +775,4 @@ describe("W8-B internal Alpha report-result candidate", () => {
     expect(serialized).not.toContain("confidenceTier");
   });
 
-  it("projects missingEvidenceDimensionProjections through upstream stop attribution with negative-scope (V2-RL-020)", () => {
-    const projections: readonly SufficiencyAssessmentMissingDimensionProjection[] = [
-      { dimension: "source_diversity", materiality: "material" },
-      { dimension: "direct_evidence", materiality: "material" },
-      { dimension: "counter_evidence", materiality: "minor" },
-      { dimension: "temporal_coverage", materiality: "none" },
-    ];
-    const decision = build({
-      assessment: sufficiencyAssessment({
-        reportStopRecommendation: "refine_retrieval",
-        missingEvidenceDimensionProjections: projections,
-      }),
-      boundaryVerdict: boundaryVerdictCandidate({
-        status: "boundary_verdict_candidate_blocked",
-      }),
-      stop: internalAlphaReportStop({
-        status: "alpha_report_stop_blocked",
-      }),
-      execution: boundaryVerdictExecution({
-        status: "boundary_verdict_execution_blocked",
-        boundaryCandidateCount: 0,
-        verdictCandidateCount: 0,
-        citedEvidenceItemRefs: [],
-      }),
-    });
-    const serialized = JSON.stringify(decision);
-    const suffAttr = decision.upstreamStopAttribution.parentStatuses.sufficiencyAssessment;
-
-    expect(suffAttr.missingEvidenceDimensionProjections).toEqual(projections);
-    expect(suffAttr.reportStopRecommendation).toBe("refine_retrieval");
-    expect(suffAttr.materialScarcityCandidate).toBeNull();
-
-    const ALLOWED_DIMENSIONS = new Set([
-      "source_diversity", "direct_evidence", "counter_evidence",
-      "temporal_coverage", "method_quality", "source_access", "other",
-    ]);
-    const ALLOWED_MATERIALITY = new Set(["none", "minor", "material"]);
-    for (const p of suffAttr.missingEvidenceDimensionProjections) {
-      expect(ALLOWED_DIMENSIONS.has(p.dimension)).toBe(true);
-      expect(ALLOWED_MATERIALITY.has(p.materiality)).toBe(true);
-      expect(Object.keys(p)).toEqual(["dimension", "materiality"]);
-    }
-
-    expect(serialized).not.toContain("rationale");
-    expect(serialized).not.toContain("sufficiencyStatus");
-    expect(serialized).not.toContain(STATEMENT);
-    expect(serialized).not.toContain(UNSAFE_TEXT);
-  });
-
-  it("projects empty missingEvidenceDimensionProjections when sufficiency assessment has none", () => {
-    const decision = build({
-      assessment: sufficiencyAssessment({
-        reportStopRecommendation: "continue_to_boundary_formation",
-        missingEvidenceDimensionProjections: [],
-      }),
-    });
-
-    expect(decision.upstreamStopAttribution.parentStatuses.sufficiencyAssessment
-      .missingEvidenceDimensionProjections).toEqual([]);
-  });
 });

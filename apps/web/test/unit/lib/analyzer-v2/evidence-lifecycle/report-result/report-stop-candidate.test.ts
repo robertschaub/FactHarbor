@@ -149,7 +149,6 @@ function sufficiencyAssessment(
     sufficiencyResultStatus: "accepted",
     sufficiencyResultPayloadHash: "5".repeat(64),
     reportStopRecommendation: "continue_to_boundary_formation",
-    missingEvidenceDimensionProjections: [],
     redaction: {
       evidenceItemTextReturned: false,
       sourceTextReturned: false,

@@ -9603,7 +9603,7 @@ describe("analyzer-v2 boundary guard", () => {
           ],
           [
             "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-assessment",
-            new Set(["SufficiencyAssessmentDecision", "SufficiencyAssessmentMissingDimensionProjection", "SUFFICIENCY_ASSESSMENT_DECISION_VERSION"]),
+            new Set(["SufficiencyAssessmentDecision", "SUFFICIENCY_ASSESSMENT_DECISION_VERSION"]),
           ],
           [
             "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",

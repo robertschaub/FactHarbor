@@ -333,7 +333,6 @@ function sufficiencyAssessment(): SufficiencyAssessmentDecision {
     sufficiencyResultStatus: "accepted",
     sufficiencyResultPayloadHash: "8".repeat(64),
     reportStopRecommendation: "caveat_report",
-    missingEvidenceDimensionProjections: [],
     redaction: {
       evidenceItemTextReturned: false,
       sourceTextReturned: false,
