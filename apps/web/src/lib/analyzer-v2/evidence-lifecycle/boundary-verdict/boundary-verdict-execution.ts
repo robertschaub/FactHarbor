@@ -909,6 +909,29 @@ function schemaDiagnostics(params: {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function applyServerOwnedWarningMaterialitySeed(
+  value: unknown,
+  inputPacket: BoundaryVerdictExecutionInputPacket,
+): unknown {
+  if (!isRecord(value) || value.status !== "accepted" || !isRecord(value.warningMaterialityInputs)) {
+    return value;
+  }
+
+  return {
+    ...value,
+    warningMaterialityInputs: {
+      ...value.warningMaterialityInputs,
+      upstreamSufficiencyStatus: inputPacket.warningMaterialitySeed.upstreamSufficiencyStatus,
+      upstreamRecommendedNextAction: inputPacket.warningMaterialitySeed.upstreamRecommendedNextAction,
+      userVisibleWarningPublication: inputPacket.warningMaterialitySeed.userVisibleWarningPublication,
+    },
+  };
+}
+
 function isApprovedW7BModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
   return policy.policyId === "v2.model.boundary_verdict_execution.w7b"
     && policy.gatewayTaskId === "boundary_verdict_execution"
@@ -1345,7 +1368,8 @@ export async function runBoundaryVerdictExecutionRuntime(
       }), null, inputPacket);
     }
 
-    const parsedResult = BoundaryVerdictExecutionResultSchema.safeParse(parsedOutput.value);
+    const canonicalProviderOutput = applyServerOwnedWarningMaterialitySeed(parsedOutput.value, inputPacket);
+    const parsedResult = BoundaryVerdictExecutionResultSchema.safeParse(canonicalProviderOutput);
     if (!parsedResult.success) {
       const diagnostics = schemaDiagnostics({
         outputParseStatus: "parsed",

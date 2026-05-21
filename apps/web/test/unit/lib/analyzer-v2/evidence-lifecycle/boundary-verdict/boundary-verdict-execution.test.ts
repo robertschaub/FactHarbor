@@ -571,6 +571,42 @@ describe("boundary/verdict execution runtime", () => {
     expect(decision.executionTelemetry.schemaDiagnostics).toBeNull();
   });
 
+  it("canonicalizes server-owned warning seed fields before schema validation", async () => {
+    const w5Decision = w5();
+    const lineage = await parents(w5Decision);
+    const output = {
+      ...acceptedBoundaryVerdictResult(),
+      warningMaterialityInputs: {
+        upstreamSufficiencyStatus: "accepted",
+        upstreamRecommendedNextAction: "accepted",
+        boundaryVerdictIntegrityEventCount: 0,
+        candidateMaterialUncertaintySignalCount: 0,
+        userVisibleWarningPublication: "open",
+      },
+    };
+
+    const decision = await runBoundaryVerdictExecutionRuntime({
+      context: context(),
+      boundedEvidenceExtraction: w5Decision,
+      evidenceItemHandoff: lineage.handoff,
+      sufficiencyIntake: lineage.intake,
+      sufficiencyAssessment: lineage.assessment,
+      boundaryVerdictCandidate: lineage.boundaryVerdict,
+      internalAlphaReportStop: lineage.reportStop,
+      renderedPrompt: "rendered boundary verdict prompt",
+      promptContentHash: "9".repeat(64),
+      configSnapshotHash: "config-hash-w7b",
+      providerCall: providerCall(output),
+    });
+
+    expect(decision.status).toBe("boundary_verdict_candidates_created_internal");
+    expect(decision.executionTelemetry.attemptCount).toBe(1);
+    expect(decision.executionTelemetry.schemaRetryCount).toBe(0);
+    expect(decision.executionTelemetry.schemaDiagnostics).toBeNull();
+    expect(decision.warningMaterialityInputs.upstreamSufficiencyStatus).toBe("caveated");
+    expect(decision.warningMaterialityInputs.upstreamRecommendedNextAction).toBe("caveat_report");
+  });
+
   it("records bounded W7-B schema diagnostics without retaining provider output text", async () => {
     const w5Decision = w5();
     const lineage = await parents(w5Decision);
