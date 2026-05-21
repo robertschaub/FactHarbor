@@ -6,7 +6,7 @@ const path = require('path');
 const https = require('https');
 
 const DEFAULT_MODEL = 'gpt-5.5';
-const DEFAULT_MAX_TOKENS = 4096;
+const DEFAULT_MAX_TOKENS = 16384;
 const API_URL = 'https://api.openai.com/v1/chat/completions';
 
 // ---------------------------------------------------------------------------
