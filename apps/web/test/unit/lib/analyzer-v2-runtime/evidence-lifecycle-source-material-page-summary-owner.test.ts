@@ -79,10 +79,10 @@ function networkDecision(
   };
 }
 
-function candidate() {
+function candidate(key = "Hydrogen_vehicle", title = "Hydrogen vehicle") {
   return {
-    key: "Hydrogen_vehicle",
-    title: "Hydrogen vehicle",
+    key,
+    title,
     excerpt: "Fuel cell vehicles use hydrogen.",
     description: "Public encyclopedia page",
   };
@@ -95,22 +95,31 @@ function previewDecision(records = [projection()]): EvidenceLifecycleSourceCandi
   });
 }
 
-function projection() {
+function projection(
+  key = "Hydrogen_vehicle",
+  title = "Hydrogen vehicle",
+  candidateOrdinal = 1,
+) {
   return buildSourceCandidatePreviewProjection({
     providerId: "wikimedia_core",
     endpointId: "ep_wikimedia_core_page_search",
     providerAttemptOrdinal: 1,
     providerRank: 1,
-    candidateOrdinal: 1,
-    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
-    candidate: candidate(),
+    candidateOrdinal,
+    sourceCandidateRef: `OPAQUE_SOURCE_CANDIDATE_ATT_1_${candidateOrdinal}`,
+    candidate: candidate(key, title),
   });
 }
 
-function locator() {
+function locator(
+  key = "Hydrogen_vehicle",
+  title = "Hydrogen vehicle",
+  candidateOrdinal = 1,
+) {
+  const candidateRecord = candidate(key, title);
   return buildSourceMaterialPageSummaryFetchLocator({
-    projection: projection(),
-    candidate: candidate(),
+    projection: projection(key, title, candidateOrdinal),
+    candidate: candidateRecord,
   });
 }
 
@@ -170,6 +179,65 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("EvidenceCorpus");
     expect(serialized).not.toContain("truthPercentage");
+  });
+
+  it("fetches up to three structurally distinct page summaries in existing candidate order", async () => {
+    const previewRecords = [
+      projection("Hydrogen_vehicle", "Hydrogen vehicle", 1),
+      projection("Electric_vehicle", "Electric vehicle", 2),
+      projection("Battery_electric_vehicle", "Battery electric vehicle", 3),
+      projection("Vehicle_efficiency", "Vehicle efficiency", 4),
+    ];
+    const requestedPaths: string[] = [];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 4,
+          totalCandidateCount: 4,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        locator("Hydrogen_vehicle", "Hydrogen vehicle", 1),
+        locator("Electric_vehicle", "Electric vehicle", 2),
+        locator("Battery_electric_vehicle", "Battery electric vehicle", 3),
+        locator("Vehicle_efficiency", "Vehicle efficiency", 4),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          requestedPaths.push(request.pathWithQuery);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(
+              JSON.stringify({ extract: `Bounded summary text for ${request.pathWithQuery}.` }),
+              "utf8",
+            ),
+          };
+        },
+      },
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.attemptedFetchCount).toBe(3);
+    expect(decision.sourceMaterialRecordCount).toBe(3);
+    expect(decision.fetchDiagnosticCount).toBe(3);
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
+    ]);
+    expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3]);
+    expect(requestedPaths).toEqual([
+      "/api/rest_v1/page/summary/Hydrogen_vehicle",
+      "/api/rest_v1/page/summary/Electric_vehicle",
+      "/api/rest_v1/page/summary/Battery_electric_vehicle",
+    ]);
+    expect(serialized).not.toContain("Vehicle_efficiency");
   });
 
   it("blocks before fetch when W2/W3-A/locator prerequisites are not met", async () => {

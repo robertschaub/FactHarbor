@@ -6,6 +6,8 @@ import {
   type EvidenceCorpusSourceMaterialReadinessStopReason,
 } from "./source-material-readiness";
 
+export { EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS };
+
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_VERSION =
   "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c";
 

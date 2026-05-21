@@ -1,7 +1,7 @@
 # V2 Slice W6-D Retrieval Refinement Source-Material Fan-In Review Package
 
 **Date:** 2026-05-21
-**Status:** amended review package only
+**Status:** W6-D1 and W6-D2 locally implemented/verifier-clean; W6-D canary not run
 **Author:** Captain Deputy
 **Trigger:** W6-C5 corrected canary `305176cf9cd34829b08dc826cf850b64`
 **Predecessor:** `Docs/WIP/2026-05-21_V2_Slice_W6-C5_Sufficiency_Decision_Gate_Canary_Result.md`
@@ -312,3 +312,17 @@ Implementation must proceed as W6-D1 then W6-D2. A live canary requires both
 implementation commits clean, runtime refresh, route preflight, clean status, and
 explicit Steer-Co/Captain Deputy canary authorization under the active live-job
 ledger.
+
+## Implementation Closeout Addendum
+
+W6-D1 is committed at `1abfacf9` and W6-D2 is locally implemented/verifier-clean pending its focused commit.
+
+W6-D2 implemented only the approved runtime same-provider page-summary fan-in path:
+
+- up to `3` structurally eligible W3-A materialized Wikimedia locators;
+- existing candidate order;
+- provider/locator/page-key hash dedupe;
+- existing W3-B page-summary transport and Source Material record construction;
+- no retries, provider expansion, parser, public behavior, prompt/model/config/schema edit, cache/SR/storage, report/verdict/warning/confidence behavior, ACS/direct URL, V1 work, or V1 cleanup.
+
+No W6-D canary has run. A later W6-D canary still requires focused commit, clean status, runtime refresh, route preflight, live-job ledger update, and exactly one authorized product-route submission.

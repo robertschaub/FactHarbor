@@ -2,6 +2,7 @@ import {
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_INPUT_VERSION,
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_MAX_TEXT_BYTES,
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_VERSION,
+  EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS,
   type EvidenceCorpusAdmissionInput,
   type EvidenceCorpusSourceMaterialAdmissionDecision,
   type EvidenceCorpusSourceMaterialAdmissionStatus,
@@ -397,7 +398,12 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusAdmissionInput | 
       stopReason: "readiness_lineage_inconsistent",
     };
   }
-  if (value.sourceMaterialRecordCount !== 1) {
+  const sourceMaterialRecordCount = value.sourceMaterialRecordCount;
+  if (
+    !Number.isInteger(sourceMaterialRecordCount)
+    || Number(sourceMaterialRecordCount) < 1
+    || Number(sourceMaterialRecordCount) > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
+  ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
       stopReason: "source_material_record_count_unsupported",
@@ -522,7 +528,7 @@ function isValidationFailure(value: EvidenceCorpusAdmissionInput | EvidenceCorpu
 }
 
 function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): EvidenceCorpusShell | ValidationFailure {
-  if (inputs.length < 1 || inputs.length > 3) {
+  if (inputs.length < 1 || inputs.length > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
       stopReason: "source_material_record_count_unsupported",
@@ -647,7 +653,7 @@ export function buildEvidenceCorpusShell(params: {
     const sourceMaterialRecordCount = boundedCount(params.sourceMaterialAdmission.sourceMaterialRecordCount);
     if (
       sourceMaterialRecordCount < 1
-      || sourceMaterialRecordCount > 3
+      || sourceMaterialRecordCount > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
       || params.sourceMaterialAdmission.admittedCorpusAdmissionInputCount !== sourceMaterialRecordCount
       || params.sourceMaterialAdmission.rejectedCorpusAdmissionInputCount !== 0
       || !Array.isArray(params.sourceMaterialAdmission.corpusAdmissionInputs)

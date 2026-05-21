@@ -10,7 +10,7 @@ export const SOURCE_MATERIAL_PAGE_SUMMARY_FETCH_LOCATOR_VERSION =
 export const SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID = "ep_wikimedia_project_page_summary";
 export const SOURCE_MATERIAL_PAGE_SUMMARY_PROJECT_ID = "wikipedia";
 export const SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE = "en";
-export const SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN = 1;
+export const SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN = 3;
 
 export type SourceMaterialPageSummaryFetchLocatorEligibility =
   | "eligible_for_w3b_fetch"

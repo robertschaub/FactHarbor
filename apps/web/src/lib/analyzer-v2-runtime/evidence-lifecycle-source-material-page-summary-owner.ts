@@ -165,17 +165,39 @@ function matchingMaterializedPreviewIds(
     .map((record) => record.candidatePreviewId));
 }
 
-function eligibleLocator(
+function locatorDedupeKey(locator: SourceMaterialPageSummaryFetchLocator): string | null {
+  if (!locator.locatorRef || !locator.pageKeyHash) {
+    return null;
+  }
+  return `${locator.providerId}:${locator.locatorRef}:${locator.pageKeyHash}`;
+}
+
+function eligibleLocators(
   previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision,
   locators: readonly SourceMaterialPageSummaryFetchLocator[],
-): SourceMaterialPageSummaryFetchLocator | null {
+): readonly SourceMaterialPageSummaryFetchLocator[] {
   const acceptedPreviewIds = matchingMaterializedPreviewIds(previewDecision);
-  return locators.find((locator) =>
-    locator.eligibility === "eligible_for_w3b_fetch"
-    && locator.locatorRef !== null
-    && locator.encodedTitlePathSegment !== null
-    && acceptedPreviewIds.has(locator.candidatePreviewId)
-  ) ?? null;
+  const selected: SourceMaterialPageSummaryFetchLocator[] = [];
+  const seen = new Set<string>();
+  for (const locator of locators) {
+    const dedupeKey = locatorDedupeKey(locator);
+    if (
+      locator.eligibility !== "eligible_for_w3b_fetch"
+      || locator.locatorRef === null
+      || locator.encodedTitlePathSegment === null
+      || !acceptedPreviewIds.has(locator.candidatePreviewId)
+      || dedupeKey === null
+      || seen.has(dedupeKey)
+    ) {
+      continue;
+    }
+    seen.add(dedupeKey);
+    selected.push(locator);
+    if (selected.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+      break;
+    }
+  }
+  return selected;
 }
 
 function statusFromTransportStatus(
@@ -230,8 +252,8 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       });
     }
 
-    const locator = eligibleLocator(params.previewDecision, params.fetchLocators);
-    if (!locator) {
+    const locators = eligibleLocators(params.previewDecision, params.fetchLocators);
+    if (locators.length === 0) {
       return baseDecision({
         status: "blocked_pre_source_material_page_summary",
         stopReason: "eligible_fetch_locator_missing",
@@ -240,39 +262,47 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       });
     }
 
-    const transportOutcome = await executeEvidenceLifecycleSourceMaterialPageSummaryTransport({
-      locator,
-      attemptOrdinal: 1,
-      lowLevelTransport: params.lowLevelTransport,
-    });
-    const diagnostics = [transportOutcome.diagnostic];
-    if (transportOutcome.status !== "success") {
-      return baseDecision({
-        status: statusFromTransportStatus(transportOutcome.diagnostic.status),
-        stopReason: transportOutcome.diagnostic.stopReason,
-        networkDecision: params.networkDecision,
-        previewDecision: params.previewDecision,
-        attemptedFetchCount: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
-        diagnostics,
-        extraHttpCallMade: true,
+    const diagnostics: EvidenceLifecycleSourceMaterialPageSummaryFetchDiagnostic[] = [];
+    const records: SourceMaterialPageSummaryRecord[] = [];
+    for (const [index, locator] of locators.entries()) {
+      const attemptOrdinal = index + 1;
+      const transportOutcome = await executeEvidenceLifecycleSourceMaterialPageSummaryTransport({
+        locator,
+        attemptOrdinal,
+        lowLevelTransport: params.lowLevelTransport,
       });
-    }
+      diagnostics.push(transportOutcome.diagnostic);
+      if (transportOutcome.status !== "success") {
+        return baseDecision({
+          status: statusFromTransportStatus(transportOutcome.diagnostic.status),
+          stopReason: transportOutcome.diagnostic.stopReason,
+          networkDecision: params.networkDecision,
+          previewDecision: params.previewDecision,
+          attemptedFetchCount: diagnostics.length,
+          records,
+          diagnostics,
+          extraHttpCallMade: true,
+        });
+      }
 
-    const recordDecision = buildSourceMaterialPageSummaryRecord({
-      locator,
-      responseJson: transportOutcome.json,
-      diagnostic: transportOutcome.diagnostic,
-    });
-    if (recordDecision.status !== "record_created") {
-      return baseDecision({
-        status: "source_material_page_summary_failed_structural",
-        stopReason: recordDecision.bodyStatus,
-        networkDecision: params.networkDecision,
-        previewDecision: params.previewDecision,
-        attemptedFetchCount: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
-        diagnostics,
-        extraHttpCallMade: true,
+      const recordDecision = buildSourceMaterialPageSummaryRecord({
+        locator,
+        responseJson: transportOutcome.json,
+        diagnostic: transportOutcome.diagnostic,
       });
+      if (recordDecision.status !== "record_created") {
+        return baseDecision({
+          status: "source_material_page_summary_failed_structural",
+          stopReason: recordDecision.bodyStatus,
+          networkDecision: params.networkDecision,
+          previewDecision: params.previewDecision,
+          attemptedFetchCount: diagnostics.length,
+          records,
+          diagnostics,
+          extraHttpCallMade: true,
+        });
+      }
+      records.push(recordDecision.record);
     }
 
     return baseDecision({
@@ -280,8 +310,8 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       stopReason: "not_stopped",
       networkDecision: params.networkDecision,
       previewDecision: params.previewDecision,
-      attemptedFetchCount: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
-      records: [recordDecision.record],
+      attemptedFetchCount: diagnostics.length,
+      records,
       diagnostics,
       extraHttpCallMade: true,
     });
