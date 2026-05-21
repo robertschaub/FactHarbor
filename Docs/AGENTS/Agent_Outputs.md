@@ -4868,3 +4868,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Live-job budget after this W6-D canary: `3`.
 - Next action: prepare a narrow W6-D containment-repair rerun package if Steer-Co agrees; do not treat the rerun as a victory lap and do not widen sources, weaken W6, relax W7, expose public output, or start V1 work.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D_Canary_Containment_Stop.md`.
+
+## 2026-05-21 - Captain Deputy / Lead Developer - V2 W6-D3 Containment Repair Rerun Result
+
+- Prepared and Claude Opus-reviewed the W6-D3 containment repair rerun package at `Docs/WIP/2026-05-21_V2_Slice_W6-D3_Containment_Repair_Rerun_Package.md`; Claude returned `APPROVE`.
+- Ran the one authorized W6-D3 canary on job `be008b8b3bdd4c7fa6edd19c368061db` against runtime `5ea83b5a67b655d39de2703b970dd9acbc63e3b5`.
+- Classification: `PASS_X7_W6_D3_CONTAINMENT_REPAIR_VERIFIED_RETRIEVAL_REFINEMENT_REMAINS`.
+- W4-G default-admin bounded-text route now redacts both singular and plural sidecar projections; no default `text` fields were returned.
+- Hidden chain reached W3-B with `3` bounded Source Material records, W5 accepted `3` EvidenceItems, and W6-C accepted with `schemaDiagnostics = null`; W6-C still recommended `refine_retrieval`.
+- Live-job budget after W6-D3: `2`.
+- Next action: prepare a bounded query/source diversity review package before W6-C. Do not spend another same-provider W6-D canary, weaken W6 prompts, relax W7 gates, expose public output, or start V1 work.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D3_Containment_Repair_Rerun_Result.md`.

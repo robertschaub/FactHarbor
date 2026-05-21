@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 3,
+    "currentRemaining": 2,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
@@ -264,6 +264,18 @@
         "count": 1,
         "remainingAfter": 3,
         "approvalPointer": "Docs/WIP/2026-05-21_V2_Slice_W6-D_Product_Route_Canary_Package.md",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W6-D3-CONTAINMENT-REPAIR-RERUN",
+        "jobId": "be008b8b3bdd4c7fa6edd19c368061db",
+        "classification": "PASS_X7_W6_D3_CONTAINMENT_REPAIR_VERIFIED_RETRIEVAL_REFINEMENT_REMAINS",
+        "implementationCommit": "8dcbb982",
+        "runtimeCommit": "5ea83b5a67b655d39de2703b970dd9acbc63e3b5",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 2,
+        "approvalPointer": "Docs/WIP/2026-05-21_V2_Slice_W6-D3_Containment_Repair_Rerun_Package.md",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

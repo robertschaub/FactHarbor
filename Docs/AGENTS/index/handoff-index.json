@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T04:07:10.980Z",
-  "count": 781,
+  "generatedAt": "2026-05-21T04:17:30.275Z",
+  "count": 782,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16882,6 +16882,24 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 W6-C5 Canary Result"
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-D3_Containment_Repair_Rerun_Result.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-d3",
+        "containment",
+        "repair",
+        "rerun",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 W6-D3 Containment Repair Rerun Result"
     },
     {
       "file": "2026-05-21_Captain_Deputy_V2_W6-D_Canary_Containment_Stop.md",
