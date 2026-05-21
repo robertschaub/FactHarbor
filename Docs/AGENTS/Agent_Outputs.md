@@ -4910,3 +4910,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Live-job budget after W6-E: `1`.
 - Next action: prepare a provider/source diversity review package. Do not spend another same-provider refinement canary, weaken W6 prompts, relax W7 gates, expose public output, or start V1 work.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-E_Query_Balanced_Selection_Canary_Result.md`.
+
+## 2026-05-21 - Lead Developer - V2 W6-F1 OpenAlex Source Material Implementation
+
+- Implemented W6-F1 under `Docs/WIP/2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md`.
+- Added one bounded OpenAlex Works path with provider `openalex`, endpoint `ep_openalex_works_search`, and Source Material kind `openalex_work_abstract_text`.
+- Reconstructed `abstract_inverted_index` structurally with fail-closed validation, kept raw provider candidates in-process only, and merged one eligible OpenAlex record before Wikimedia records while preserving the total Source Material cap of `3`.
+- Preserved boundaries: no live job, public behavior, parser, cache/SR/storage, report/verdict/warning/confidence behavior, prompt/model/config/UCM/gateway edit, provider framework, ACS/direct URL behavior, V1 work, or V1 cleanup.
+- Verifiers passed: focused W6-F1 tests (7 files / 34 tests), focused EvidenceCorpus/runtime chain (10 files / 41 tests), boundary guard (94 tests), full V2 local suite (140 files / 836 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), and build.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Source_Material_Implementation.md`.

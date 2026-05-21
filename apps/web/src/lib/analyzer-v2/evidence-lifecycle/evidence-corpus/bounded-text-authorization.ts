@@ -3,6 +3,8 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES,
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
+  sourceMaterialKindIsSupported,
+  type SourceMaterialKind,
   type SourceMaterialPageSummaryRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import {
@@ -102,7 +104,7 @@ export type EvidenceCorpusBoundedTextSidecar = {
   readonly candidatePreviewId: string;
   readonly providerId: string;
   readonly sourceMaterialEndpointId: string;
-  readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
+  readonly sourceMaterialKind: SourceMaterialKind;
   readonly languageCode: string;
   readonly textKind: "bounded_page_summary_extract_text";
   readonly text: string;
@@ -370,7 +372,7 @@ function validateSourceMaterialRecord(record: unknown): SourceMaterialPageSummar
   }
   if (
     record.recordVersion !== SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION
-    || record.sourceMaterialKind !== "wikimedia_page_summary_extract_text"
+    || !sourceMaterialKindIsSupported(record.sourceMaterialKind)
   ) {
     return {
       status: "blocked_pre_bounded_corpus_text_kind_unsupported",
@@ -507,7 +509,7 @@ function buildSidecar(params: {
     candidatePreviewId: params.sourceMaterialRecord.candidatePreviewId,
     providerId: params.sourceMaterialRecord.providerId,
     sourceMaterialEndpointId: params.sourceMaterialRecord.sourceMaterialEndpointId,
-    sourceMaterialKind: "wikimedia_page_summary_extract_text",
+    sourceMaterialKind: params.sourceMaterialRecord.sourceMaterialKind,
     languageCode: params.sourceMaterialRecord.languageCode,
     textKind: "bounded_page_summary_extract_text",
     text: params.sourceMaterialRecord.sourceMaterialText,

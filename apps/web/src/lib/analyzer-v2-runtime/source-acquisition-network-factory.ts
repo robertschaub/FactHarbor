@@ -22,6 +22,7 @@ import {
 } from "./source-acquisition-network-authority";
 import {
   executeSourceAcquisitionNetworkTransport,
+  type SourceAcquisitionNetworkCandidateProjectionInput,
   type SourceAcquisitionNetworkLowLevelTransport,
 } from "./source-acquisition-network-transport";
 import {
@@ -33,6 +34,21 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE,
   type SourceMaterialPageSummaryFetchLocator,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
+import {
+  buildOpenAlexAbstractSourceMaterialRecord,
+  OPENALEX_PROVIDER_ID,
+  OPENALEX_WORKS_ENDPOINT_ID,
+  OPENALEX_WORKS_SELECT_FIELDS,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/openalex-abstract-source-material";
+import type {
+  SourceMaterialPageSummaryRecord,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
+
+type OpenAlexSourceMaterialQueryEntry = {
+  readonly queryId: string;
+  readonly retrievalPolicyKey: string;
+  readonly queryText: string;
+};
 
 export type SourceAcquisitionCandidateNetworkProviderFactory = {
   readonly buildProvider: () => SourceAcquisitionCandidateProviderBoundary;
@@ -233,6 +249,9 @@ function requestParameterValue(
   if (source === "retrieval_policy_key") {
     return request.retrievalPolicyKey;
   }
+  if (source === "openalex_minimal_works_select") {
+    return OPENALEX_WORKS_SELECT_FIELDS;
+  }
   return String(finiteNonNegativeInteger(request.maxCandidateRecords));
 }
 
@@ -254,6 +273,32 @@ function buildNetworkRequest(params: {
       value: requestParameterValue(parameter.valueSource, params.request),
     })),
     requestHeaders: params.endpoint.allowedRequestHeaders.map((header) => ({ ...header })),
+  };
+}
+
+function buildOpenAlexNetworkRequest(params: {
+  readonly endpoint: SourceAcquisitionNetworkEndpointSnapshot;
+  readonly queryEntry: OpenAlexSourceMaterialQueryEntry;
+  readonly attemptId: string;
+  readonly maxCandidateRecords: number;
+}): SourceAcquisitionNetworkRequestEnvelope {
+  return {
+    version: params.endpoint.version,
+    visibility: "internal_only",
+    providerId: params.endpoint.providerId,
+    endpointId: params.endpoint.endpointId,
+    queryId: params.queryEntry.queryId,
+    retrievalPolicyKey: params.queryEntry.retrievalPolicyKey,
+    providerAttemptId: params.attemptId,
+    requestParameters: [
+      { key: "search", value: params.queryEntry.queryText },
+      { key: "per_page", value: String(params.maxCandidateRecords) },
+      { key: "select", value: OPENALEX_WORKS_SELECT_FIELDS },
+    ],
+    requestHeaders: [
+      { key: "accept", valueSource: "application_json" },
+      { key: "user-agent", valueSource: "factharbor_internal_agent" },
+    ],
   };
 }
 
@@ -470,4 +515,95 @@ export function buildSourceAcquisitionCandidateNetworkProviderBoundary(
       };
     },
   };
+}
+
+export async function collectOpenAlexSourceMaterialRecordsFromNetwork(params: {
+  readonly authority: SourceAcquisitionNetworkAuthority;
+  readonly endpoint: SourceAcquisitionNetworkEndpointSnapshot;
+  readonly budget: SourceAcquisitionNetworkBudgetSnapshot;
+  readonly queryEntries: readonly OpenAlexSourceMaterialQueryEntry[];
+  readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
+  readonly startingAttemptOrdinal: number;
+  readonly attemptTelemetrySink: (record: SourceAcquisitionNetworkAttemptTelemetryRecord) => void;
+  readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
+}): Promise<readonly SourceMaterialPageSummaryRecord[]> {
+  const records: SourceMaterialPageSummaryRecord[] = [];
+  let attemptOrdinal = params.startingAttemptOrdinal;
+  for (const queryEntry of params.queryEntries) {
+    if (records.length > 0) {
+      break;
+    }
+    attemptOrdinal += 1;
+    const attemptId = providerAttemptId(attemptOrdinal);
+    const controller = new AbortController();
+    const timeoutMs = Math.min(
+      params.endpoint.timeoutMs,
+      params.budget.perQueryTimeoutMs,
+      params.budget.totalNetworkTimeoutMs,
+    );
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const projectedCandidates: SourceAcquisitionNetworkCandidateProjectionInput[] = [];
+    const outcome = await executeSourceAcquisitionNetworkTransport({
+      authority: params.authority,
+      endpoint: params.endpoint,
+      budget: params.budget,
+      request: buildOpenAlexNetworkRequest({
+        endpoint: params.endpoint,
+        queryEntry,
+        attemptId,
+        maxCandidateRecords: params.budget.maxCandidatesPerQuery,
+      }),
+      signal: controller.signal,
+      lowLevelTransport: params.lowLevelTransport,
+      candidateProjectionHook: (candidate) => {
+        projectedCandidates.push(candidate);
+      },
+    }).finally(() => clearTimeout(timeout));
+    params.attemptTelemetrySink(telemetryFromOutcome({
+      endpoint: params.endpoint,
+      attemptOrdinal,
+      structuralStatus: structuralStatusFromTransport(outcome),
+      candidateCount: outcome.candidateCount,
+      timeoutMs,
+      outcome,
+    }));
+    if (outcome.status !== "success") {
+      continue;
+    }
+    for (const candidateProjection of projectedCandidates) {
+      const projection = buildSourceCandidatePreviewProjection({
+        providerId: OPENALEX_PROVIDER_ID,
+        endpointId: OPENALEX_WORKS_ENDPOINT_ID,
+        providerAttemptOrdinal: candidateProjection.providerAttemptOrdinal,
+        providerRank: candidateProjection.providerRank,
+        candidateOrdinal: candidateProjection.candidateOrdinal,
+        sourceCandidateRef: candidateProjection.sourceCandidateRef,
+        candidate: candidateProjection.candidate,
+      });
+      emitCandidatePreviewProjection(params.candidatePreviewProjectionSink, projection);
+      if (projection.materializationStatus !== "source_candidate_preview_materialized") {
+        continue;
+      }
+      const recordDecision = buildOpenAlexAbstractSourceMaterialRecord({
+        candidate: candidateProjection.candidate,
+        candidatePreviewId: projection.candidatePreviewId,
+        sourceCandidateRef: candidateProjection.sourceCandidateRef,
+        providerAttemptId: candidateProjection.providerAttemptId,
+        providerRank: candidateProjection.providerRank,
+        diagnostic: {
+          responseStatusCategory: "success_2xx",
+          contentTypeCategory: "accepted_json",
+          compressedBytes: outcome.diagnostic.compressedBytes,
+          decompressedBytes: outcome.diagnostic.decompressedBytes,
+          durationMs: outcome.diagnostic.durationMs,
+          timeoutMs: outcome.diagnostic.timeoutMs,
+        },
+      });
+      if (recordDecision.status === "record_created") {
+        records.push(recordDecision.record);
+        break;
+      }
+    }
+  }
+  return records;
 }

@@ -12,6 +12,19 @@ export const SOURCE_MATERIAL_PAGE_SUMMARY_VERSION =
 export const SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION =
   "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b";
 export const SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES = 4_096;
+export const SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT =
+  "wikimedia_page_summary_extract_text";
+export const SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT =
+  "openalex_work_abstract_text";
+
+export type SourceMaterialKind =
+  | typeof SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
+  | typeof SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT;
+
+export function sourceMaterialKindIsSupported(value: unknown): value is SourceMaterialKind {
+  return value === SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
+    || value === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT;
+}
 
 export type SourceMaterialPageSummaryResponseStatusCategory =
   | "not_reached"
@@ -37,10 +50,10 @@ export type SourceMaterialPageSummaryRecord = {
   readonly sourceMaterialId: string;
   readonly locatorRef: string;
   readonly candidatePreviewId: string;
-  readonly providerId: typeof SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID;
-  readonly sourceMaterialEndpointId: typeof SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID;
+  readonly providerId: string;
+  readonly sourceMaterialEndpointId: string;
   readonly languageCode: string;
-  readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
+  readonly sourceMaterialKind: SourceMaterialKind;
   readonly sourceMaterialText: string;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
@@ -168,7 +181,7 @@ export function buildSourceMaterialPageSummaryRecord(params: {
       providerId: SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
       sourceMaterialEndpointId: SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
       languageCode: params.locator.languageCode,
-      sourceMaterialKind: "wikimedia_page_summary_extract_text",
+      sourceMaterialKind: SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT,
       sourceMaterialText,
       sourceMaterialTextHash,
       sourceMaterialTextByteLength: byteLength,

@@ -33,14 +33,18 @@ import {
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope";
 import {
   buildSourceAcquisitionCandidateNetworkProviderBoundary,
+  collectOpenAlexSourceMaterialRecordsFromNetwork,
   type SourceAcquisitionNetworkAttemptTelemetryRecord,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
-import type {
-  SourceCandidatePreviewProjection,
+import {
+  type SourceCandidatePreviewProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type {
   SourceMaterialPageSummaryFetchLocator,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
+import type {
+  SourceMaterialPageSummaryRecord,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import { sha256Json } from "@/lib/analyzer-v2/util";
 import {
   EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
@@ -74,6 +78,10 @@ const WIKIMEDIA_PROVIDER_ID = "wikimedia_core";
 const WIKIMEDIA_ENDPOINT_ID = "ep_wikimedia_core_page_search";
 const WIKIMEDIA_HOSTNAME = "api.wikimedia.org";
 const WIKIMEDIA_SEARCH_PATH = "/core/v1/wikipedia/en/search/page";
+const OPENALEX_PROVIDER_ID = "openalex";
+const OPENALEX_WORKS_ENDPOINT_ID = "ep_openalex_works_search";
+const OPENALEX_HOSTNAME = "api.openalex.org";
+const OPENALEX_WORKS_PATH = "/works";
 
 export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES = 6;
 export const SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_CANDIDATES_PER_QUERY = 3;
@@ -498,6 +506,56 @@ export function buildSourceAcquisitionCandidateProviderNetworkEndpointSnapshot()
       fieldName: "pages",
     },
     decompressionPolicy: "identity_only",
+    compressedByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
+    decompressedByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
+    totalByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
+    timeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS,
+    noCache: true,
+    noStorage: true,
+    noSourceReliability: true,
+    noProduct: true,
+    noPublic: true,
+  } as const;
+
+  return {
+    ...base,
+    endpointSnapshotHash: sha256Json(base),
+  };
+}
+
+export function buildOpenAlexWorksSourceMaterialEndpointSnapshot():
+  SourceAcquisitionNetworkEndpointSnapshot {
+  const base = {
+    version: SOURCE_ACQUISITION_NETWORK_RUNTIME_VERSION,
+    approval: sourceAcquisitionNetworkApproval(),
+    providerId: OPENALEX_PROVIDER_ID,
+    endpointId: OPENALEX_WORKS_ENDPOINT_ID,
+    canonicalAsciiHostname: OPENALEX_HOSTNAME,
+    protocol: "https",
+    port: 443,
+    path: OPENALEX_WORKS_PATH,
+    method: "GET",
+    allowedRequestParameters: [
+      { key: "search", valueSource: "query_text" },
+      { key: "per_page", valueSource: "max_candidate_records" },
+      { key: "select", valueSource: "openalex_minimal_works_select" },
+    ],
+    allowedRequestHeaders: [
+      { key: "accept", valueSource: "application_json" },
+      { key: "user-agent", valueSource: "factharbor_internal_agent" },
+    ],
+    credentialsState: "not_required",
+    redirectPolicy: "deny",
+    proxyPolicy: "none",
+    responseContentTypePolicy: {
+      allowedContentTypes: ["application/json"],
+    },
+    responseSniffPolicy: "json_object_or_array",
+    responseCandidatePointer: {
+      kind: "object_array_field",
+      fieldName: "results",
+    },
+    decompressionPolicy: "gzip_allowed",
     compressedByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
     decompressedByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
     totalByteCap: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_BYTE_CAP,
@@ -952,6 +1010,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   readonly lowLevelTransport?: LowLevelTransportOption;
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
   readonly sourceMaterialPageSummaryFetchLocatorSink?: (locator: SourceMaterialPageSummaryFetchLocator) => void;
+  readonly openAlexSourceMaterialRecordSink?: (record: SourceMaterialPageSummaryRecord) => void;
 }): Promise<SourceAcquisitionCandidateProviderNetworkLoopDecision> {
   const closedLoopStatus = params.candidateRuntimeClosedLoop.status;
   const handoffStatus = params.handoffDecision.status;
@@ -1318,6 +1377,37 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
       queryOutcomeSummaries,
       networkAttempts,
     });
+  }
+
+  if (params.openAlexSourceMaterialRecordSink) {
+    try {
+      const endpoint = buildOpenAlexWorksSourceMaterialEndpointSnapshot();
+      const budget = buildSourceAcquisitionCandidateProviderNetworkBudgetSnapshot({
+        endpointSnapshot: endpoint,
+        providerAllowlist,
+        candidateBudget,
+      });
+      const authority = createSourceAcquisitionNetworkAuthority({
+        candidateAuthority: runtimeContract.candidateAuthority,
+        endpointSnapshot: endpoint,
+        budgetSnapshot: budget,
+      });
+      const openAlexRecords = await collectOpenAlexSourceMaterialRecordsFromNetwork({
+        authority,
+        endpoint,
+        budget,
+        queryEntries: handoff.queryEntries,
+        lowLevelTransport: params.lowLevelTransport,
+        startingAttemptOrdinal: networkAttempts.length,
+        attemptTelemetrySink: (record) => networkAttempts.push(record),
+        candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
+      });
+      for (const record of openAlexRecords) {
+        params.openAlexSourceMaterialRecordSink(record);
+      }
+    } catch {
+      // OpenAlex source-material diversity is additive for W6-F1 and must not corrupt the completed Wikimedia path.
+    }
   }
 
   return {

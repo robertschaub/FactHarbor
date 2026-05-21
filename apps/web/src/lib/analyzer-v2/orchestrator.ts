@@ -68,6 +68,7 @@ import type {
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
 import type { SourceCandidatePreviewProjection } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type { SourceMaterialPageSummaryFetchLocator } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
+import type { SourceMaterialPageSummaryRecord } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import type {
@@ -266,6 +267,7 @@ export async function runClaimBoundaryPipelineV2(
         });
         const sourceCandidatePreviewProjections: SourceCandidatePreviewProjection[] = [];
         const sourceMaterialPageSummaryFetchLocators: SourceMaterialPageSummaryFetchLocator[] = [];
+        const openAlexSourceMaterialRecords: SourceMaterialPageSummaryRecord[] = [];
         const candidateProviderNetwork = await runSourceAcquisitionCandidateProviderNetworkLoop({
           handoffDecision: sourceAcquisitionHandoff,
           sourceAcquisitionStartDecision,
@@ -274,6 +276,7 @@ export async function runClaimBoundaryPipelineV2(
           candidatePreviewProjectionSink: (projection) => sourceCandidatePreviewProjections.push(projection),
           sourceMaterialPageSummaryFetchLocatorSink: (locator) =>
             sourceMaterialPageSummaryFetchLocators.push(locator),
+          openAlexSourceMaterialRecordSink: (record) => openAlexSourceMaterialRecords.push(record),
         });
         recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
           context,
@@ -291,6 +294,7 @@ export async function runClaimBoundaryPipelineV2(
           networkDecision: candidateProviderNetwork,
           previewDecision: sourceCandidatePreview,
           fetchLocators: sourceMaterialPageSummaryFetchLocators,
+          openAlexSourceMaterialRecords,
         });
         recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
           context,

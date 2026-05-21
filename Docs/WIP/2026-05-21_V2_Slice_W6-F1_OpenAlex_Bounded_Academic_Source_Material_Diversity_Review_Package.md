@@ -1,6 +1,6 @@
 # V2 Slice W6-F1 OpenAlex Bounded Academic Source Material Diversity Review Package
 
-**Status:** Steer-Co reviewed, approved with amendments applied
+**Status:** Locally implemented and verifier-clean; no live job run
 **Date:** 2026-05-21
 **Author:** Captain Deputy
 **Intended implementer:** Lead Developer
@@ -9,7 +9,7 @@
 **Parent steering package:** `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md`
 **Current stop evidence:** W6-E canary job `6a09d149d5d046cb95d0cdd67e02c095`
 **Live-job budget:** `1` remaining; no live job authorized by this package
-**Latest debt sensor:** `advisory_warn` at 2026-05-21T04:54:33.279Z
+**Latest debt sensor:** `advisory_warn` at 2026-05-21T05:51:24.020Z
 
 ## Decision
 
@@ -382,8 +382,10 @@ If implementation starts to become a general provider framework, stop and split.
 
 ## Approval Boundaries
 
-This package authorizes local implementation after Steer-Co review and
-amendment closure.
+This package authorized local implementation after Steer-Co review and
+amendment closure. W6-F1 is now locally implemented and verifier-clean as one
+bounded OpenAlex Works search/abstract Source Material path plus the closed
+two-endpoint/two-kind contract widening. No W6-F1 live job has run.
 
 Still separately approval-gated:
 
@@ -409,3 +411,23 @@ The canary would use the Captain-defined input:
 `Using hydrogen for cars is more efficient than using electricity`
 
 It would consume the remaining `1` live-job slot.
+
+## Implementation Closeout
+
+W6-F1 implementation stayed inside the approved package envelope:
+
+- OpenAlex Works request construction uses `search`, `per_page`, and `select`
+  with `select = id,display_name,abstract_inverted_index,language,publication_year`.
+- OpenAlex raw provider candidates are consumed only in-process by the runtime
+  factory projection hook and are not serialized on transport outcomes or
+  default-admin/public surfaces.
+- `abstract_inverted_index` reconstruction is structural only and fails closed
+  for blank, invalid, duplicate/gapped, over-cap, or raw-leak fragments.
+- Source Material merging includes one eligible OpenAlex record first, then
+  fills with Wikimedia records while preserving the existing total cap of `3`.
+- No public behavior, parser, cache/SR/storage, report/verdict/warning/confidence
+  behavior, prompt/model/config/UCM/gateway change, provider framework, ACS/direct
+  URL behavior, V1 work, or V1 cleanup was added.
+
+Verifier state is recorded in
+`Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Source_Material_Implementation.md`.

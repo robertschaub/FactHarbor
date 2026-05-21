@@ -15,6 +15,9 @@ import {
 import {
   runEvidenceLifecycleSourceMaterialPageSummaryDecision,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
+import type {
+  SourceMaterialPageSummaryRecord,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 function networkDecision(
   overrides: Partial<SourceAcquisitionCandidateProviderNetworkLoopDecision> = {},
@@ -125,6 +128,43 @@ function locator(
   });
 }
 
+function openAlexRecord(): SourceMaterialPageSummaryRecord {
+  return {
+    recordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
+    sourceMaterialId: "SOURCE_MATERIAL_OPENALEX_ABCDEF1234567890",
+    locatorRef: "OPAQUE_OPENALEX_WORK_ABCDEF1234567890",
+    candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_4_1",
+    providerId: "openalex",
+    sourceMaterialEndpointId: "ep_openalex_works_search",
+    languageCode: "en",
+    sourceMaterialKind: "openalex_work_abstract_text",
+    sourceMaterialText: "Hydrogen vehicles use electricity",
+    sourceMaterialTextHash: "a".repeat(64),
+    sourceMaterialTextByteLength: 33,
+    sourceMaterialTextCharLength: 33,
+    truncationApplied: false,
+    responseStatusCategory: "success_2xx",
+    contentTypeCategory: "accepted_json",
+    compressedBytes: 200,
+    decompressedBytes: 300,
+    durationMs: 25,
+    timeoutMs: 1500,
+    publicPointerExposure: "forbidden",
+    parserExecuted: false,
+    cacheRead: false,
+    cacheWrite: false,
+    storageWrite: false,
+    sourceReliabilityCalled: false,
+    evidenceCorpusCreated: false,
+    evidenceItemGenerated: false,
+    warningGenerated: false,
+    reportGenerated: false,
+    verdictGenerated: false,
+    confidenceGenerated: false,
+    publicSurfaceWritten: false,
+  };
+}
+
 describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
   it("creates one hidden Source Material record from a completed W2 and materialized W3-A locator", async () => {
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
@@ -181,6 +221,34 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("EvidenceCorpus");
     expect(serialized).not.toContain("truthPercentage");
+  });
+
+  it("prefers one eligible OpenAlex Source Material record before Wikimedia fill records", async () => {
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision(),
+      previewDecision: previewDecision(),
+      fetchLocators: [locator()],
+      openAlexSourceMaterialRecords: [openAlexRecord()],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async () => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from("{\"extract\":\"Hydrogen vehicles store hydrogen and power an electric motor.\"}", "utf8"),
+        }),
+      },
+    });
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      sourceMaterialRecordCount: 2,
+      attemptedFetchCount: 1,
+      fetchDiagnosticCount: 1,
+    });
+    expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
+    expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind).toBe("openalex_work_abstract_text");
+    expect(decision.sourceMaterialRecords[1]?.providerId).toBe("wikimedia_core");
   });
 
   it("fetches up to three structurally distinct page summaries in provider-attempt balanced order", async () => {

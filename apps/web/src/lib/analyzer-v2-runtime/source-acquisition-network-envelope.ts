@@ -14,7 +14,11 @@ export type SourceAcquisitionNetworkApproval = {
 
 export type SourceAcquisitionNetworkRequestParameter = {
   readonly key: string;
-  readonly valueSource: "query_text" | "retrieval_policy_key" | "max_candidate_records";
+  readonly valueSource:
+    | "query_text"
+    | "retrieval_policy_key"
+    | "max_candidate_records"
+    | "openalex_minimal_works_select";
 };
 
 export type SourceAcquisitionNetworkRequestHeader = {
@@ -380,7 +384,12 @@ function requestParametersAreValid(
       isRecord(parameter)
       && hasExactKeys(parameter, ["key", "valueSource"])
       && structuralKeyIsValid(parameter.key)
-      && ["query_text", "retrieval_policy_key", "max_candidate_records"].includes(parameter.valueSource)
+      && [
+        "query_text",
+        "retrieval_policy_key",
+        "max_candidate_records",
+        "openalex_minimal_works_select",
+      ].includes(parameter.valueSource)
     );
 }
 

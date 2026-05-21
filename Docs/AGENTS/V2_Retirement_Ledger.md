@@ -2,7 +2,7 @@
 
 **Status:** Active draft
 **Owner:** Captain Deputy / Lead Developer
-**Last updated:** 2026-05-20
+**Last updated:** 2026-05-21
 **Purpose:** Track what must be kept, retired, merged, quarantined, or deferred so V2 converges instead of accumulating permanent proof machinery.
 
 This ledger is not a cleanup authorization. Deletions, public cutover, prompt
@@ -53,6 +53,7 @@ normal approval gates.
 | V2-RL-016 | W7-A contract-only boundary/verdict candidate bridge | keep | Lead Developer | W7-B/W8-B own accepted and rejected parent validation without depending on the W7-A decision/lineage contract | W8-C actual result: keep. W7-A remains load-bearing for orchestrator chain assembly, W7-B execution input validation, W8-A stop construction, and W8-B lineage checks; do not delete or merge without a dedicated verifier-backed merge slice |
 | V2-RL-017 | W8-A internal Alpha report stop owner | merge | Lead Developer | W8-B fail-closed parity is covered and a later W7-A/W8-A merge slice can remove the stop helper without weakening rejected-parent behavior | W8-C actual result: parity covered in focused W8-A/W8-B tests and W8-B `w8aMergeTrigger.status` is `parity_covered`; keep W8-A as a non-public fail-closed compatibility helper until the W7-A dependency is merged or retired |
 | V2-RL-018 | W6-C3 temporary sufficiency schema diagnostics | retire | Lead Developer | W6-C4 canary verifies W6-C schema root cause fixed with `schemaDiagnostics = null` | W6-C5 folds W6-C3-specific diagnostic version/removal-trigger scaffolding into stable W6-C schema-failure telemetry; keep the bounded `schemaDiagnostics` field for future parse/schema failures |
+| V2-RL-019 | W6-F1 OpenAlex bounded academic Source Material diversity | keep | Lead Developer | W6-F1 canary still leaves W6-C at `refine_retrieval`, or OpenAlex live authority/no-key posture is unavailable | Keep until W6-F1 canary proves value or Steer-Co quarantines/removes the OpenAlex path; do not generalize into a provider framework yet |
 
 ## Required Block In Future Packages
 

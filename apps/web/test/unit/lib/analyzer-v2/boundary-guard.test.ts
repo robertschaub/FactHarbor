@@ -229,6 +229,10 @@ const evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath = path.resolv
   evidenceLifecycleSourceMaterialRoot,
   "page-summary-source-material.ts",
 );
+const evidenceLifecycleSourceMaterialOpenAlexAbstractSourceMaterialPath = path.resolve(
+  evidenceLifecycleSourceMaterialRoot,
+  "openalex-abstract-source-material.ts",
+);
 const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -4223,6 +4227,7 @@ describe("analyzer-v2 boundary guard", () => {
         new Set([
           "SourceAcquisitionNetworkAttemptTelemetryRecord",
           "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+          "collectOpenAlexSourceMaterialRecordsFromNetwork",
         ]),
       ],
     ]);
@@ -5025,7 +5030,10 @@ describe("analyzer-v2 boundary guard", () => {
     const admissionImports = collectModuleSpecifiers(
       parseSource(evidenceLifecycleEvidenceCorpusSourceMaterialAdmissionPath),
     ).sort();
-    expect(admissionImports).toEqual(["./source-material-readiness"]);
+    expect(admissionImports).toEqual([
+      "./source-material-readiness",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+    ].sort());
     for (const specifier of admissionImports) {
       if (isAnalyzerV2RuntimeImport(evidenceLifecycleEvidenceCorpusSourceMaterialAdmissionPath, specifier)) {
         violations.push(`W4-C pure admission imports runtime module ${specifier}`);
@@ -5105,7 +5113,6 @@ describe("analyzer-v2 boundary guard", () => {
       "runEvidenceLifecycleSourceMaterialPageSummaryDecision",
       "readEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision",
       "readEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifacts",
-      "page-summary-source-material",
       "page-summary-fetch-locator",
       "fetch(",
       "EvidenceCorpusBuilder",
@@ -5148,7 +5155,10 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     const shellImports = collectModuleSpecifiers(parseSource(evidenceLifecycleEvidenceCorpusShellPath)).sort();
-    expect(shellImports).toEqual(["./source-material-admission"]);
+    expect(shellImports).toEqual([
+      "./source-material-admission",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+    ].sort());
     for (const specifier of shellImports) {
       if (isAnalyzerV2RuntimeImport(evidenceLifecycleEvidenceCorpusShellPath, specifier)) {
         violations.push(`W4-D pure shell imports runtime module ${specifier}`);
@@ -5245,7 +5255,6 @@ describe("analyzer-v2 boundary guard", () => {
       "runEvidenceLifecycleSourceMaterialPageSummaryDecision",
       "readEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision",
       "readEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessRuntimeOwnedDecision",
-      "page-summary-source-material",
       "page-summary-fetch-locator",
       "fetch(",
       "EvidenceCorpusBuilder",
@@ -6522,6 +6531,7 @@ describe("analyzer-v2 boundary guard", () => {
       "SourceAcquisitionCandidateNetworkProviderFactory",
       "SourceAcquisitionNetworkAttemptTelemetryRecord",
       "buildSourceAcquisitionCandidateNetworkProviderBoundary",
+      "collectOpenAlexSourceMaterialRecordsFromNetwork",
     ].sort();
     const approvedImports = new Map<string, Map<string, string[]>>([
       [
@@ -6627,6 +6637,7 @@ describe("analyzer-v2 boundary guard", () => {
           [
             "./source-acquisition-network-transport",
             [
+              "SourceAcquisitionNetworkCandidateProjectionInput",
               "SourceAcquisitionNetworkLowLevelTransport",
               "executeSourceAcquisitionNetworkTransport",
             ].sort(),
@@ -6644,6 +6655,21 @@ describe("analyzer-v2 boundary guard", () => {
               "SOURCE_MATERIAL_PAGE_SUMMARY_DEFAULT_LANGUAGE_CODE",
               "SourceMaterialPageSummaryFetchLocator",
               "buildSourceMaterialPageSummaryFetchLocator",
+            ].sort(),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/source-material/openalex-abstract-source-material",
+            [
+              "OPENALEX_PROVIDER_ID",
+              "OPENALEX_WORKS_ENDPOINT_ID",
+              "OPENALEX_WORKS_SELECT_FIELDS",
+              "buildOpenAlexAbstractSourceMaterialRecord",
+            ].sort(),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+            [
+              "SourceMaterialPageSummaryRecord",
             ].sort(),
           ],
         ]),
@@ -8026,6 +8052,7 @@ describe("analyzer-v2 boundary guard", () => {
       ![
         evidenceLifecycleSourceMaterialPageSummaryFetchLocatorPath,
         evidenceLifecycleSourceMaterialPageSummarySourceMaterialPath,
+        evidenceLifecycleSourceMaterialOpenAlexAbstractSourceMaterialPath,
       ].map(toPosix).includes(toPosix(filePath))
     );
     const harnessPath = analyzerV2RuntimeHiddenDirectTextSourceMaterialReadinessHarnessPath;

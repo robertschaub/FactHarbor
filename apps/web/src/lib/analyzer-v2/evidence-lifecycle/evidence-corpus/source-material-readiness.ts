@@ -7,6 +7,8 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES,
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
+  sourceMaterialKindIsSupported,
+  type SourceMaterialKind,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION =
@@ -55,9 +57,9 @@ export type EvidenceCorpusSourceMaterialReadinessRecordSummary = {
   readonly locatorRef: string;
   readonly candidatePreviewId: string;
   readonly providerId: string;
-  readonly sourceMaterialEndpointId: typeof SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID;
+  readonly sourceMaterialEndpointId: string;
   readonly languageCode: string;
-  readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
+  readonly sourceMaterialKind: SourceMaterialKind;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextCharLength: number;
@@ -303,8 +305,8 @@ function downstreamW3BExecutionRemainsClosed(input: Record<string, unknown>): bo
   return isRecord(productExecution)
     && productExecution.candidateProviderNetworkObserved === true
     && productExecution.sourceCandidatePreviewObserved === true
-    && productExecution.extraHttpCallMade === true
-    && productExecution.contentDereferenceCalled === true
+    && typeof productExecution.extraHttpCallMade === "boolean"
+    && typeof productExecution.contentDereferenceCalled === "boolean"
     && productExecution.sourceMaterialCreated === true
     && productExecution.parserExecuted === false
     && productExecution.cacheRead === false
@@ -340,8 +342,8 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     };
   }
   if (
-    record.sourceMaterialKind !== "wikimedia_page_summary_extract_text"
-    || record.sourceMaterialEndpointId !== SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID
+    !sourceMaterialKindIsSupported(record.sourceMaterialKind)
+    || !isNonBlankString(record.sourceMaterialEndpointId)
   ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
@@ -441,9 +443,9 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     locatorRef,
     candidatePreviewId,
     providerId,
-    sourceMaterialEndpointId: SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
+    sourceMaterialEndpointId,
     languageCode,
-    sourceMaterialKind: "wikimedia_page_summary_extract_text",
+    sourceMaterialKind: record.sourceMaterialKind,
     sourceMaterialTextHash,
     sourceMaterialTextByteLength: byteLength,
     sourceMaterialTextCharLength: charLength(record.sourceMaterialText),
@@ -533,8 +535,12 @@ function validateCompletedW3B(input: Record<string, unknown>):
     || !Number.isInteger(input.fetchDiagnosticCount)
     || Number(input.sourceMaterialRecordCount) < 1
     || Number(input.sourceMaterialRecordCount) > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
-    || input.attemptedFetchCount !== input.sourceMaterialRecordCount
-    || input.fetchDiagnosticCount !== input.sourceMaterialRecordCount
+    || !Number.isInteger(input.attemptedFetchCount)
+    || !Number.isInteger(input.fetchDiagnosticCount)
+    || Number(input.attemptedFetchCount) < 0
+    || Number(input.fetchDiagnosticCount) < 0
+    || Number(input.attemptedFetchCount) > Number(input.sourceMaterialRecordCount)
+    || input.fetchDiagnosticCount !== input.attemptedFetchCount
   ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
@@ -557,7 +563,7 @@ function validateCompletedW3B(input: Record<string, unknown>):
     };
   }
   const diagnostics = input.fetchDiagnostics;
-  if (!Array.isArray(diagnostics) || diagnostics.length !== records.length) {
+  if (!Array.isArray(diagnostics) || diagnostics.length !== input.fetchDiagnosticCount) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
       stopReason: "fetch_diagnostic_not_success",

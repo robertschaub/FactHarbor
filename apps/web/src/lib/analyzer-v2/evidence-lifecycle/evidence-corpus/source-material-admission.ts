@@ -5,6 +5,10 @@ import {
   type EvidenceCorpusSourceMaterialReadinessStatus,
   type EvidenceCorpusSourceMaterialReadinessStopReason,
 } from "./source-material-readiness";
+import {
+  sourceMaterialKindIsSupported,
+  type SourceMaterialKind,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 export { EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS };
 
@@ -55,7 +59,7 @@ export type EvidenceCorpusAdmissionInput = {
   readonly candidatePreviewId: string;
   readonly providerId: string;
   readonly sourceMaterialEndpointId: string;
-  readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
+  readonly sourceMaterialKind: SourceMaterialKind;
   readonly languageCode: string;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
@@ -353,7 +357,7 @@ function validateRecord(
       stopReason: "structural_exception",
     };
   }
-  if (record.sourceMaterialKind !== "wikimedia_page_summary_extract_text") {
+  if (!sourceMaterialKindIsSupported(record.sourceMaterialKind)) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_kind_unsupported",
       stopReason: "source_material_kind_unsupported",
@@ -439,7 +443,7 @@ function validateRecord(
     candidatePreviewId,
     providerId,
     sourceMaterialEndpointId,
-    sourceMaterialKind: "wikimedia_page_summary_extract_text",
+    sourceMaterialKind: record.sourceMaterialKind,
     languageCode,
     sourceMaterialTextHash,
     sourceMaterialTextByteLength: Number(sourceMaterialTextByteLength),

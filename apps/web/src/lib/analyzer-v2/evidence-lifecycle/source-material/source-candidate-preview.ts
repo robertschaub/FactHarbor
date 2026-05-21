@@ -1,9 +1,14 @@
+import { createHash } from "node:crypto";
 import {
   materializeSourceCandidatePageId,
   materializeSourceCandidatePageKey,
   materializeSourceCandidatePreviewText,
   type SourceCandidatePreviewFieldState,
 } from "./locator-materialization";
+import {
+  OPENALEX_PROVIDER_ID,
+  OPENALEX_WORKS_ENDPOINT_ID,
+} from "./openalex-abstract-source-material";
 
 export const SOURCE_CANDIDATE_PREVIEW_VERSION =
   "v2.evidence-lifecycle.source-candidate-preview.x7w3a";
@@ -11,6 +16,14 @@ export const SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID = "wikimedia_core";
 export const SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID = "ep_wikimedia_core_page_search";
 export const SOURCE_CANDIDATE_PREVIEW_MAX_RECORDS_PER_RUN = 9;
 export const SOURCE_CANDIDATE_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 8_192;
+
+export type SourceCandidatePreviewProviderId =
+  | typeof SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID
+  | typeof OPENALEX_PROVIDER_ID;
+
+export type SourceCandidatePreviewEndpointId =
+  | typeof SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID
+  | typeof OPENALEX_WORKS_ENDPOINT_ID;
 
 export type SourceCandidatePreviewMaterializationStatus =
   | "source_candidate_preview_materialized"
@@ -36,8 +49,8 @@ export type SourceCandidatePreviewProjection = {
   readonly candidatePreviewId: string;
   readonly sourceCandidateRef: string;
   readonly locatorRef: string | null;
-  readonly providerId: typeof SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID;
-  readonly endpointId: typeof SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
+  readonly providerId: SourceCandidatePreviewProviderId;
+  readonly endpointId: SourceCandidatePreviewEndpointId;
   readonly providerAttemptOrdinal: number;
   readonly providerRank: number;
   readonly candidateOrdinal: number;
@@ -109,6 +122,38 @@ function sourceCandidateRef(input: BuildSourceCandidatePreviewProjectionInput): 
     : `OPAQUE_SOURCE_CANDIDATE_${boundedOrdinal(input.providerAttemptOrdinal)}_${boundedOrdinal(input.candidateOrdinal)}`;
 }
 
+function supportedProviderId(value: string): SourceCandidatePreviewProviderId {
+  return value === OPENALEX_PROVIDER_ID ? OPENALEX_PROVIDER_ID : SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID;
+}
+
+function supportedEndpointId(value: string): SourceCandidatePreviewEndpointId {
+  return value === OPENALEX_WORKS_ENDPOINT_ID ? OPENALEX_WORKS_ENDPOINT_ID : SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
+}
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function materializeOpenAlexWorkHash(value: unknown): string | null {
+  if (typeof value !== "string" || value.trim() !== value || value.length === 0 || value.length > 512) {
+    return null;
+  }
+  const lower = value.toLowerCase();
+  if (
+    lower.includes("api_key")
+    || lower.includes("apikey")
+    || lower.includes("secret")
+    || lower.includes("token")
+    || lower.includes("password")
+    || lower.includes("credential")
+    || lower.includes("bearer")
+    || lower.includes("sk_")
+  ) {
+    return null;
+  }
+  return sha256Text(value);
+}
+
 function blockedProjection(params: {
   readonly input: BuildSourceCandidatePreviewProjectionInput;
   readonly materializationStatus: SourceCandidatePreviewMaterializationStatus;
@@ -122,8 +167,8 @@ function blockedProjection(params: {
     candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${providerAttemptOrdinal}_${candidateOrdinal}`,
     sourceCandidateRef: sourceCandidateRef(params.input),
     locatorRef: null,
-    providerId: SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
-    endpointId: SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID,
+    providerId: supportedProviderId(params.input.providerId),
+    endpointId: supportedEndpointId(params.input.endpointId),
     providerAttemptOrdinal,
     providerRank: boundedOrdinal(params.input.providerRank),
     candidateOrdinal,
@@ -201,14 +246,100 @@ function readPageId(candidate: Record<string, unknown>): unknown {
   return candidate.id ?? candidate.pageid ?? candidate.pageId;
 }
 
+function buildOpenAlexPreviewProjection(
+  input: BuildSourceCandidatePreviewProjectionInput,
+  candidate: Record<string, unknown>,
+): SourceCandidatePreviewProjection {
+  const pageKeyHash = materializeOpenAlexWorkHash(candidate.id ?? candidate.display_name);
+  if (pageKeyHash === null) {
+    return blockedProjection({
+      input,
+      materializationStatus: "blocked_invalid_locator",
+      stopReason: "locator_invalid",
+      pageKeyState: "missing",
+    });
+  }
+  const title = materializeSourceCandidatePreviewText(candidate.display_name, {
+    maxChars: 160,
+    maxBytes: 320,
+  });
+  const excerpt = materializeSourceCandidatePreviewText(null, {
+    maxChars: 512,
+    maxBytes: 1_024,
+  });
+  const description = materializeSourceCandidatePreviewText(candidate.publication_year, {
+    maxChars: 80,
+    maxBytes: 160,
+  });
+  const status = previewStatus({
+    locatorAccepted: true,
+    titleState: title.state,
+    excerptState: excerpt.state,
+    descriptionState: description.state,
+  });
+  const providerAttemptOrdinal = boundedOrdinal(input.providerAttemptOrdinal);
+  const candidateOrdinal = boundedOrdinal(input.candidateOrdinal);
+
+  return {
+    previewVersion: SOURCE_CANDIDATE_PREVIEW_VERSION,
+    candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${providerAttemptOrdinal}_${candidateOrdinal}`,
+    sourceCandidateRef: sourceCandidateRef(input),
+    locatorRef: `OPAQUE_OPENALEX_WORK_${providerAttemptOrdinal}_${candidateOrdinal}_${pageKeyHash.slice(0, 12).toUpperCase()}`,
+    providerId: OPENALEX_PROVIDER_ID,
+    endpointId: OPENALEX_WORKS_ENDPOINT_ID,
+    providerAttemptOrdinal,
+    providerRank: boundedOrdinal(input.providerRank),
+    candidateOrdinal,
+    pageKeyHash,
+    pageIdHash: pageKeyHash,
+    titlePreviewText: title.value,
+    excerptPreviewText: excerpt.value,
+    descriptionPreviewText: description.value,
+    fieldStates: {
+      pageKey: "accepted_bounded",
+      pageId: "accepted_bounded",
+      titlePreviewText: title.state,
+      excerptPreviewText: excerpt.state,
+      descriptionPreviewText: description.state,
+    },
+    fieldHashes: {
+      titlePreviewText: title.hash,
+      excerptPreviewText: excerpt.hash,
+      descriptionPreviewText: description.hash,
+    },
+    fieldByteLengths: {
+      titlePreviewText: title.byteLength,
+      excerptPreviewText: excerpt.byteLength,
+      descriptionPreviewText: description.byteLength,
+    },
+    fieldCharLengths: {
+      titlePreviewText: title.charLength,
+      excerptPreviewText: excerpt.charLength,
+      descriptionPreviewText: description.charLength,
+    },
+    truncation: {
+      titlePreviewText: title.truncated,
+      excerptPreviewText: excerpt.truncated,
+      descriptionPreviewText: description.truncated,
+    },
+    markupStripped: {
+      titlePreviewText: title.markupStripped,
+      excerptPreviewText: excerpt.markupStripped,
+      descriptionPreviewText: description.markupStripped,
+    },
+    ...status,
+  };
+}
+
 export function buildSourceCandidatePreviewProjection(
   input: BuildSourceCandidatePreviewProjectionInput,
 ): SourceCandidatePreviewProjection {
   try {
-    if (
-      input.providerId !== SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID
-      || input.endpointId !== SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID
-    ) {
+    const isWikimedia = input.providerId === SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID
+      && input.endpointId === SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
+    const isOpenAlex = input.providerId === OPENALEX_PROVIDER_ID
+      && input.endpointId === OPENALEX_WORKS_ENDPOINT_ID;
+    if (!isWikimedia && !isOpenAlex) {
       return blockedProjection({
         input,
         materializationStatus: "blocked_provider_mismatch",
@@ -222,6 +353,10 @@ export function buildSourceCandidatePreviewProjection(
         materializationStatus: "blocked_public_or_artifact_input",
         stopReason: "candidate_not_plain_record",
       });
+    }
+
+    if (isOpenAlex) {
+      return buildOpenAlexPreviewProjection(input, input.candidate);
     }
 
     const locator = materializeSourceCandidatePageKey(input.candidate.key);

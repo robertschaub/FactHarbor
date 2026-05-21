@@ -8,6 +8,10 @@ import {
   type EvidenceCorpusSourceMaterialAdmissionStatus,
   type EvidenceCorpusSourceMaterialAdmissionStopReason,
 } from "./source-material-admission";
+import {
+  sourceMaterialKindIsSupported,
+  type SourceMaterialKind,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 export const EVIDENCE_CORPUS_SHELL_DECISION_VERSION =
   "v2.evidence-lifecycle.evidence-corpus-shell.x7w4d";
@@ -70,7 +74,7 @@ export type EvidenceCorpusShell = {
   readonly providerIds: readonly string[];
   readonly sourceMaterialEndpointIds: readonly string[];
   readonly languageCodes: readonly string[];
-  readonly sourceMaterialKinds: readonly "wikimedia_page_summary_extract_text"[];
+  readonly sourceMaterialKinds: readonly SourceMaterialKind[];
   readonly sourceMaterialTextHashes: readonly string[];
   readonly aggregateSourceMaterialTextByteLength: number;
   readonly aggregateSourceMaterialTextCharLength: number;
@@ -430,7 +434,7 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusAdmissionInput | 
       stopReason: "source_material_metadata_incomplete",
     };
   }
-  if (value.sourceMaterialKind !== "wikimedia_page_summary_extract_text") {
+  if (!sourceMaterialKindIsSupported(value.sourceMaterialKind)) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_metadata_incomplete",
       stopReason: "source_material_identity_missing",
@@ -571,7 +575,7 @@ function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): Evid
     providerIds: validatedInputs.map((input) => input.providerId),
     sourceMaterialEndpointIds: validatedInputs.map((input) => input.sourceMaterialEndpointId),
     languageCodes: validatedInputs.map((input) => input.languageCode),
-    sourceMaterialKinds: validatedInputs.map(() => "wikimedia_page_summary_extract_text"),
+    sourceMaterialKinds: validatedInputs.map((input) => input.sourceMaterialKind),
     sourceMaterialTextHashes: validatedInputs.map((input) => input.sourceMaterialTextHash),
     aggregateSourceMaterialTextByteLength: validatedInputs.reduce(
       (total, input) => total + input.sourceMaterialTextByteLength,

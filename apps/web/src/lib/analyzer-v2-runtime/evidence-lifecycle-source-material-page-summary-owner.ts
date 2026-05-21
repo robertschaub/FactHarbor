@@ -11,6 +11,7 @@ import {
   type SourceMaterialPageSummaryFetchLocator,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
+  SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   buildSourceMaterialPageSummaryRecord,
   type SourceMaterialPageSummaryBodyStatus,
@@ -251,11 +252,31 @@ function statusFromTransportStatus(
   return "source_material_page_summary_failed_structural";
 }
 
+function mergedSourceMaterialRecords(params: {
+  readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
+  readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
+}): readonly SourceMaterialPageSummaryRecord[] {
+  const openAlexRecord = params.openAlexRecords.find((record) =>
+    record.providerId === "openalex"
+    && record.sourceMaterialKind === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
+    && record.sourceMaterialTextByteLength > 0
+    && record.sourceMaterialTextByteLength <= 4_096
+  );
+  if (!openAlexRecord) {
+    return params.wikimediaRecords.slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+  }
+  return [
+    openAlexRecord,
+    ...params.wikimediaRecords,
+  ].slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+}
+
 export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(params: {
   readonly networkDecision: SourceAcquisitionCandidateProviderNetworkLoopDecision;
   readonly previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision;
   readonly fetchLocators: readonly SourceMaterialPageSummaryFetchLocator[];
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
+  readonly openAlexSourceMaterialRecords?: readonly SourceMaterialPageSummaryRecord[];
 }): Promise<EvidenceLifecycleSourceMaterialPageSummaryDecision> {
   try {
     if (params.networkDecision.status !== "candidate_provider_network_completed") {
@@ -293,6 +314,21 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
 
     const locators = eligibleLocators(params.previewDecision, params.fetchLocators);
     if (locators.length === 0) {
+      const openAlexOnlyRecords = mergedSourceMaterialRecords({
+        openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+        wikimediaRecords: [],
+      });
+      if (openAlexOnlyRecords.length > 0) {
+        return baseDecision({
+          status: "source_material_page_summary_completed",
+          stopReason: "not_stopped",
+          networkDecision: params.networkDecision,
+          previewDecision: params.previewDecision,
+          records: openAlexOnlyRecords,
+          diagnostics: [],
+          extraHttpCallMade: false,
+        });
+      }
       return baseDecision({
         status: "blocked_pre_source_material_page_summary",
         stopReason: "eligible_fetch_locator_missing",
@@ -344,13 +380,17 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       records.push(recordDecision.record);
     }
 
+    const mergedRecords = mergedSourceMaterialRecords({
+      openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+      wikimediaRecords: records,
+    });
     return baseDecision({
       status: "source_material_page_summary_completed",
       stopReason: "not_stopped",
       networkDecision: params.networkDecision,
       previewDecision: params.previewDecision,
       attemptedFetchCount: diagnostics.length,
-      records,
+      records: mergedRecords,
       diagnostics,
       extraHttpCallMade: true,
     });

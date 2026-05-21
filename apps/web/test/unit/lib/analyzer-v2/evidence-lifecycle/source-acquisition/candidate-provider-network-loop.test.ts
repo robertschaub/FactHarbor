@@ -548,6 +548,87 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     expect(serializedLocators).not.toContain("sk_test");
   });
 
+  it("collects one hidden OpenAlex abstract source-material record when the W6-F1 sink is provided", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const records: unknown[] = [];
+    const previews: unknown[] = [];
+    const wikimediaTransport = fakeTransport(calls);
+    const transport: SourceAcquisitionNetworkLowLevelTransport = {
+      resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+      request: async (request) => {
+        if (request.hostname === "api.openalex.org") {
+          calls.push(request);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify({
+              results: [
+                {
+                  id: "https://openalex.org/W123",
+                  display_name: "Hydrogen vehicle efficiency",
+                  language: "en",
+                  abstract_inverted_index: {
+                    Hydrogen: [0],
+                    vehicles: [1],
+                    use: [2],
+                    electricity: [3],
+                  },
+                },
+              ],
+            }), "utf8"),
+          };
+        }
+        return wikimediaTransport.request(request);
+      },
+      now: () => 100,
+    };
+
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: transport,
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+      openAlexSourceMaterialRecordSink: (record) => records.push(record),
+    });
+    const serializedRecords = JSON.stringify(records);
+    const openAlexCall = calls.find((call) => call.hostname === "api.openalex.org");
+
+    expect(decision.status).toBe("candidate_provider_network_completed");
+    expect(calls.some((call) => call.hostname === "api.wikimedia.org")).toBe(true);
+    expect(openAlexCall?.pathWithQuery).toContain("/works?search=");
+    expect(openAlexCall?.pathWithQuery).toContain("&per_page=3");
+    expect(openAlexCall?.pathWithQuery)
+      .toContain("select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year");
+    expect(records).toEqual([
+      expect.objectContaining({
+        providerId: "openalex",
+        sourceMaterialEndpointId: "ep_openalex_works_search",
+        sourceMaterialKind: "openalex_work_abstract_text",
+        sourceMaterialText: "Hydrogen vehicles use electricity",
+        publicPointerExposure: "forbidden",
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        publicSurfaceWritten: false,
+      }),
+    ]);
+    expect(previews.some((preview) =>
+      typeof preview === "object"
+      && preview !== null
+      && "providerId" in preview
+      && preview.providerId === "openalex"
+    )).toBe(true);
+    expect(serializedRecords).not.toContain("https://openalex.org/W123");
+    expect(serializedRecords).not.toContain("abstract_inverted_index");
+  });
+
   it("admits the reviewed six-query cap and keeps multi-query artifacts sanitized", async () => {
     expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(6);
     expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(
