@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T02:20:37.884Z",
-  "count": 774,
+  "generatedAt": "2026-05-21T02:25:30.916Z",
+  "count": 775,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16843,6 +16843,29 @@
       ],
       "files_touched": [],
       "summary": "Lead Developer Handoff - V2 X7-W5-H W4-I Route Retirement"
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-C4_Sufficiency_Prompt_Repair_Canary.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "w6-c4",
+        "sufficiency",
+        "prompt",
+        "repair",
+        "canary"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-21_V2_Slice_W6-C4_Sufficiency_Prompt_Repair_Canary_Result.md",
+        "Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json"
+      ],
+      "summary": "Use the W6-C4 canary result as proof that W6-C accepted. The next functional block is `boundary_verdict_candidate_not_ready` / `closed_until_llm_task_approved`. If continuing toward first Alpha report material, focus on W7-A/W7-B readiness and keep public/report/verdict publication closed."
     },
     {
       "file": "2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md",

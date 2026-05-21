@@ -1,6 +1,6 @@
 # V2 Slice W6-C4 Sufficiency Prompt Contract Repair Package
 
-**Status:** locally implemented and verifier-clean; canary pending
+**Status:** implemented and canary-passed; closed for W6-C4
 **Date:** 2026-05-20
 **Author:** Captain Deputy / Steer-Co
 **Package type:** prompt-contract repair approval package
@@ -8,6 +8,7 @@
 **Source implementation baseline:** `cb070a7d`
 **Latest result commit:** `d1ba9c4d`
 **Implementation handoff:** `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md`
+**Canary result:** `PASS_X7_W6_C4_SUFFICIENCY_PROMPT_CONTRACT_REPAIR_CANARY` on job `cbb4f6b5ae9d49a3bb6f941c7ae6c231`
 
 ## 1. Purpose
 

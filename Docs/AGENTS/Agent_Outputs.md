@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 W6-C4 Sufficiency Prompt Repair Canary -- [Significant] [open-items: yes]
+**For next agent:** Ran exactly one W6-C4 canary, job `cbb4f6b5ae9d49a3bb6f941c7ae6c231`, on runtime `621f8efe062f66deda190c30832a5feaa2dbe74d`. Classified it as `PASS_X7_W6_C4_SUFFICIENCY_PROMPT_CONTRACT_REPAIR_CANARY`: W6-C now completes with accepted sufficiency result and `schemaDiagnostics = null`; public V2 stayed damaged/precutover; hidden W8-B stayed text-free by default.
+**Warnings:** The next stop-line is `boundary_verdict_candidate_not_ready` / W7-A `closed_until_llm_task_approved`. No second W6-C4 canary is authorized. Boundary/verdict prompt/model/gateway activation remains package-gated.
+-> Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-C4_Sufficiency_Prompt_Repair_Canary.md
+
+---
 ### 2026-05-21 | Lead Developer | Codex (GPT-5.5) | V2 W6-C4 Sufficiency Prompt Repair Implementation -- [Significant] [open-items: yes]
 **For next agent:** Implemented W6-C4 inside the approved package: amended only `V2_EVIDENCE_SUFFICIENCY_GATE` to enumerate schema-owned literals for sufficiency dimensions/materiality, task-event fields/literals, blocked reasons, and damaged reasons. Added schema-derived prompt-contract tests and anti-canary-domain checks. No schema literals/validation behavior, model/config/UCM/gateway, runtime provider seam, public surface, or retry behavior changed.
 **Warnings:** One W6-C4 canary remains pending. If W6-C repeats the W6-C3 issue paths or exposes broader schema drift, stop after the single canary and prepare a new package. Do not run a second canary without review.
