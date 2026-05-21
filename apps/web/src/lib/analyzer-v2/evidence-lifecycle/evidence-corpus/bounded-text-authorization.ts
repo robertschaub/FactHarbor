@@ -596,11 +596,7 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
         return failure(failureParams, sourceMaterialRecord.status, sourceMaterialRecord.stopReason);
       }
       if (seenHashes.has(sourceMaterialRecord.sourceMaterialTextHash)) {
-        return failure(
-          failureParams,
-          "blocked_pre_bounded_corpus_text_record_count_unsupported",
-          "source_material_record_count_unsupported",
-        );
+        continue;
       }
       seenHashes.add(sourceMaterialRecord.sourceMaterialTextHash);
       sourceMaterialRecords.push(sourceMaterialRecord);

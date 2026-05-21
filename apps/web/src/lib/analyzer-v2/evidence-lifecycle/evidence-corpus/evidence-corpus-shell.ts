@@ -550,7 +550,6 @@ function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): Evid
     if (
       validated.sourceMaterialRecordCount !== expectedRecordCount
       || seenInputIds.has(validated.corpusAdmissionInputId)
-      || seenHashes.has(validated.sourceMaterialTextHash)
     ) {
       return {
         status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
@@ -558,8 +557,17 @@ function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): Evid
       };
     }
     seenInputIds.add(validated.corpusAdmissionInputId);
+    if (seenHashes.has(validated.sourceMaterialTextHash)) {
+      continue;
+    }
     seenHashes.add(validated.sourceMaterialTextHash);
     validatedInputs.push(validated);
+  }
+  if (validatedInputs.length === 0) {
+    return {
+      status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
+      stopReason: "source_material_record_count_unsupported",
+    };
   }
 
   const aggregateHash = validatedInputs.map((input) => input.sourceMaterialTextHash).join(".");
