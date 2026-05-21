@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy | Codex (GPT-5.5) | V2 W6-C HighJump Takeover Checkpoint -- [Standard] [open-items: yes]
+**For next agent:** Took over W6-C HighJump from the supplied handover, sanitized local secret literals from the untracked handover, and updated the active workstream index to point to HighJump state. Current HEAD is `fc5e7f8e`; one HighJump canary `099eb05cbbca408a87f7168327926762` is validated, while `68a4fa4fa99f48c18679e9b68e3ff344` is incomplete.
+**Warnings:** Treat the HighJump handover skeptically: live-job ledger still needs reconciliation against the claimed 20-slot tranche, the second validation canary did not record report-result artifacts, and no more live jobs or further W6/W7/W8 bar lowering should proceed without a reviewed package.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md
+
+---
 ### 2026-05-21 | Unassigned | Codex (GPT-5.5) | V2 Active Workstream Index Prep -- [Standard] [open-items: yes]
 **For next agent:** Added `Docs/WIP/2026-05-21_V2_Active_Workstream_Index.md` as a compact successor-team intake pointer. It cites the W6-F1 handoff, canonical status/backlog/guardrails, live-job ledger, retirement ledger, and immediate W6-F1/W6-C package anchors.
 **Warnings:** This is not a WIP archive pass and does not classify May packages. Full `wip-update` should wait until the successor team confirms the current W6-C retrieval-quality/source-diversity direction and reaches a clean implementation checkpoint.

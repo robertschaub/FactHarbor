@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T10:23:29.432Z",
-  "count": 410,
+  "generatedAt": "2026-05-21T22:08:46.901Z",
+  "count": 411,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9163,6 +9163,23 @@
       ],
       "files_touched": [],
       "summary": "V2 Active Workstream Index Prep"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-c",
+        "highjump",
+        "takeover",
+        "checkpoint"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Takeover Checkpoint - V2 W6-C HighJump"
     }
   ]
 }
