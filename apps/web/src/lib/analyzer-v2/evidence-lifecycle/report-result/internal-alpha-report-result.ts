@@ -122,7 +122,8 @@ export type InternalAlphaReportResultBoundaryVerdictSummary = {
 export type InternalAlphaReportResultWarningMaterialityInputs = {
   readonly warningPublication: "closed";
   readonly userVisibleWarningCount: 0;
-  readonly upstreamSufficiencyStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+  readonly upstreamSufficiencyStatus:
+    NonNullable<BoundaryVerdictExecutionDecision["warningMaterialityInputs"]>["upstreamSufficiencyStatus"];
   readonly upstreamRecommendedNextAction: SufficiencyAssessmentDecision["reportStopRecommendation"];
   readonly boundaryVerdictIntegrityEventCount: number;
   readonly candidateMaterialUncertaintySignalCount: number;

@@ -129,11 +129,13 @@ export type BoundaryVerdictExecutionInputPacket = {
   readonly evidenceItems: readonly BoundaryVerdictExecutionInputPacketItem[];
   readonly sufficiencyAssessmentProjection: {
     readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+    readonly sufficiencyAssessmentStatus: SufficiencyAssessmentDecision["sufficiencyAssessmentStatus"];
     readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
     readonly sufficiencyResultPayloadHash: string | null;
   };
   readonly warningMaterialitySeed: {
-    readonly upstreamSufficiencyStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+    readonly upstreamSufficiencyStatus:
+      NonNullable<BoundaryVerdictExecutionResult["warningMaterialityInputs"]>["upstreamSufficiencyStatus"];
     readonly upstreamRecommendedNextAction: SufficiencyAssessmentDecision["reportStopRecommendation"];
     readonly userVisibleWarningPublication: "closed";
   };
@@ -279,7 +281,8 @@ export type BoundaryVerdictExecutionDecision = {
   readonly warningMaterialityInputs: {
     readonly warningPublication: "closed";
     readonly userVisibleWarningCount: 0;
-    readonly upstreamSufficiencyStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+    readonly upstreamSufficiencyStatus:
+      NonNullable<BoundaryVerdictExecutionResult["warningMaterialityInputs"]>["upstreamSufficiencyStatus"] | null;
     readonly upstreamRecommendedNextAction: SufficiencyAssessmentDecision["reportStopRecommendation"];
     readonly boundaryVerdictIntegrityEventCount: number;
     readonly candidateMaterialUncertaintySignalCount: number;
@@ -550,6 +553,9 @@ function validateParents(request: RunBoundaryVerdictExecutionRequest): BoundaryV
   if (assessment.assessmentStatus !== "sufficiency_assessment_completed") {
     return "sufficiency_assessment_not_completed";
   }
+  if (!assessment.sufficiencyAssessmentStatus) {
+    return "sufficiency_assessment_not_completed";
+  }
   if (assessment.reportStopRecommendation === "refine_retrieval") return "sufficiency_stop_refine_retrieval";
   if (assessment.reportStopRecommendation === "damage_report") return "sufficiency_stop_damage_report";
   if (!w7a) return "boundary_verdict_candidate_missing";
@@ -652,6 +658,9 @@ function buildInputPacket(request: RunBoundaryVerdictExecutionRequest): Boundary
   const assessment = request.sufficiencyAssessment!;
   const w7a = request.boundaryVerdictCandidate!;
   const w8a = request.internalAlphaReportStop!;
+  const sufficiencyAssessmentStatus = assessment.sufficiencyAssessmentStatus as NonNullable<
+    SufficiencyAssessmentDecision["sufficiencyAssessmentStatus"]
+  >;
   const evidenceItems = w5.extractionResult?.status === "accepted"
     ? w5.extractionResult.evidenceItems.map(packetItem)
     : [];
@@ -667,11 +676,12 @@ function buildInputPacket(request: RunBoundaryVerdictExecutionRequest): Boundary
     evidenceItems,
     sufficiencyAssessmentProjection: {
       sufficiencyResultStatus: assessment.sufficiencyResultStatus,
+      sufficiencyAssessmentStatus,
       reportStopRecommendation: assessment.reportStopRecommendation,
       sufficiencyResultPayloadHash: assessment.sufficiencyResultPayloadHash,
     },
     warningMaterialitySeed: {
-      upstreamSufficiencyStatus: assessment.sufficiencyResultStatus,
+      upstreamSufficiencyStatus: sufficiencyAssessmentStatus,
       upstreamRecommendedNextAction: assessment.reportStopRecommendation,
       userVisibleWarningPublication: "closed" as const,
     },
@@ -1067,6 +1077,7 @@ function decision(params: {
       ...accepted.verdictSetCandidate.verdictCandidates.flatMap((verdict) => verdict.evidenceItemIds),
     ])).sort()
     : [];
+  const acceptedWarningMaterialityInputs = accepted?.warningMaterialityInputs ?? null;
   const uncertaintySignalCount = accepted
     ? accepted.verdictSetCandidate.verdictCandidates.reduce(
       (total, candidate) => total + candidate.materialUncertaintySignals.length,
@@ -1105,7 +1116,9 @@ function decision(params: {
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
-      upstreamSufficiencyStatus: params.request.sufficiencyAssessment?.sufficiencyResultStatus ?? null,
+      upstreamSufficiencyStatus: acceptedWarningMaterialityInputs?.upstreamSufficiencyStatus
+        ?? params.request.sufficiencyAssessment?.sufficiencyAssessmentStatus
+        ?? null,
       upstreamRecommendedNextAction: params.request.sufficiencyAssessment?.reportStopRecommendation ?? null,
       boundaryVerdictIntegrityEventCount: params.result?.integrityEvents.length ?? 0,
       candidateMaterialUncertaintySignalCount: uncertaintySignalCount,

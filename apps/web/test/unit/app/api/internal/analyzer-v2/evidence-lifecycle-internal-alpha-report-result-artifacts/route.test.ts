@@ -120,6 +120,7 @@ function parents() {
       parentSufficiencyIntakeDecisionId: "SUFFICIENCY_INTAKE_W8B_ROUTE",
       parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_ROUTE",
       sufficiencyResultStatus: "accepted",
+      sufficiencyAssessmentStatus: "sufficient",
       reportStopRecommendation: "continue_to_boundary_formation",
     } as SufficiencyAssessmentDecision,
     boundaryVerdictCandidate: {
@@ -182,7 +183,7 @@ function boundaryVerdictExecution(): BoundaryVerdictExecutionDecision {
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
-      upstreamSufficiencyStatus: "accepted",
+      upstreamSufficiencyStatus: "sufficient",
       upstreamRecommendedNextAction: "continue_to_boundary_formation",
       boundaryVerdictIntegrityEventCount: 1,
       candidateMaterialUncertaintySignalCount: 0,

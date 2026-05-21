@@ -3368,3 +3368,16 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Verifiers passed: focused W7/W8 suite (`7` files / `53` tests), boundary guard (`94` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
 - Next action: commit, refresh runtime, and run one diagnostic HighJump canary on the Captain-defined hydrogen input. HighJump live-job budget remains `11` before that canary.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W7B_Schema_Diagnostics_Repair.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ-3 Diagnostic Canary And W7-B Status Projection Repair
+
+- Ran HJ-3 diagnostic canary job `ed3a7a7c2e8d405bba30b3ac475f265a` on runtime `90d83d6bdf5142b1bc8cfa69ed330b5b038f56da`.
+- Classification: `STOP_X7_HJ3_W7B_SCHEMA_DIAGNOSTICS_CAPTURED`.
+- The hidden chain reached W7-B; W8-B recorded bounded schema diagnostics at `warningMaterialityInputs.upstreamSufficiencyStatus` with code `invalid_enum_value`.
+- Root cause: W6-C's LLM-owned sufficiency judgment was `caveated`, but W6-C decision/W7-B warning materiality used task status `accepted`.
+- Steer-Co consented to amend the existing W6-C -> W7-B projection path, keep W7-B schema strict, and avoid deterministic status mapping. Claude Opus 4.6 supported the same direction and flagged W8-A/W8-B projection alignment.
+- Implemented locally: W6-C now preserves `sufficiencyAssessmentStatus`, W6-C runtime ownership allowlist includes it, W7-B uses it for warning materiality, W7-B owner fails closed before prompt rendering if it is missing, W8-A/W8-B warning-materiality projections are aligned, and the W7-B prompt clarifies use of the warning seed.
+- Verifiers passed: focused W6/W7/W8 suite (`11` files / `73` tests), boundary guard (`94` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- HighJump live-job budget is now `10` before the repair canary.
+- Next action: commit, refresh runtime, verify API/Web runtime commits, preflight W8-B internal route, and run one repair canary on the Captain-defined hydrogen input.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W7B_Sufficiency_Status_Projection_Repair.md

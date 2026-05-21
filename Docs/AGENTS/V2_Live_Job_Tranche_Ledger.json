@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-bar-ladder-2026-05-22",
     "resetTotal": 12,
-    "currentRemaining": 11,
+    "currentRemaining": 10,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
       "date": "2026-05-22",
@@ -23,8 +23,8 @@
       "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
-      "currentRemaining": 11,
-      "consumptionEntriesInThisTranche": 1,
+      "currentRemaining": 10,
+      "consumptionEntriesInThisTranche": 2,
       "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
     },
     "unreconciledHistoricalNote": {
@@ -363,6 +363,18 @@
         "count": 1,
         "remainingAfter": 11,
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-3-W7B-SCHEMA-DIAGNOSTIC-CANARY",
+        "jobId": "ed3a7a7c2e8d405bba30b3ac475f265a",
+        "classification": "STOP_X7_HJ3_W7B_SCHEMA_DIAGNOSTICS_CAPTURED",
+        "implementationCommit": "90d83d6bdf5142b1bc8cfa69ed330b5b038f56da",
+        "runtimeCommit": "90d83d6bdf5142b1bc8cfa69ed330b5b038f56da",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 10,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_W7B_Schema_Diagnostics_Repair.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

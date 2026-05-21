@@ -36,6 +36,7 @@ const DECISION_KEYS = [
   "sourceMaterialLineageHash",
   "sufficiencyResultPayloadHash",
   "sufficiencyResultStatus",
+  "sufficiencyAssessmentStatus",
   "taskKey",
   "taskSchemaVersion",
   "visibility",

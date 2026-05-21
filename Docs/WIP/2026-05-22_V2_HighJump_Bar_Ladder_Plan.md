@@ -33,6 +33,8 @@ Recent HighJump evidence:
 - HJ-1 traceability/prompt repair commit: `00693155`.
 - HJ-2 first internal report attempt job:
   `0069f28abad14644abd3584652be933a`.
+- HJ-3 W7-B diagnostic canary job:
+  `ed3a7a7c2e8d405bba30b3ac475f265a`.
 
 The validated canary proves that a lowered W6-C path can move from
 `refine_retrieval` to `caveat_report` and reach W7-A
@@ -47,6 +49,14 @@ report result.
 
 Current HJ-2 classification:
 `STOP_X7_HJ2_BOUNDARY_VERDICT_EXECUTION_SCHEMA_DAMAGED_REPORT_TRACEABLE`.
+
+Current HJ-3 classification:
+`STOP_X7_HJ3_W7B_SCHEMA_DIAGNOSTICS_CAPTURED`.
+
+HJ-3 identified the next concrete repair: preserve W6-C's LLM-owned
+`sufficiencyAssessment.sufficiencyStatus` and use it as W7-B
+`warningMaterialityInputs.upstreamSufficiencyStatus`, instead of reusing W6-C's
+task-level result status `accepted`.
 
 ## New Authority
 
@@ -233,7 +243,7 @@ Each bar-raise change needs:
 
 New tranche: `12`.
 
-Current remaining after HJ-2 canary `0069f28abad14644abd3584652be933a`: `11`.
+Current remaining after HJ-3 canary `ed3a7a7c2e8d405bba30b3ac475f265a`: `10`.
 
 Planned allocation:
 

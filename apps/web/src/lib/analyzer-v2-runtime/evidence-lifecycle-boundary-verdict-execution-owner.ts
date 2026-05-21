@@ -95,6 +95,11 @@ type RenderedBoundaryVerdictExecutionPrompt = {
   readonly renderedPrompt: string;
 };
 
+type PromptReadySufficiencyAssessmentDecision = SufficiencyAssessmentDecision & {
+  readonly sufficiencyAssessmentStatus:
+    NonNullable<SufficiencyAssessmentDecision["sufficiencyAssessmentStatus"]>;
+};
+
 function sha256Text(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -263,7 +268,7 @@ function buildPromptInputPacket(params: {
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
   readonly sufficiencyIntake: SufficiencyIntakeDecision;
-  readonly sufficiencyAssessment: SufficiencyAssessmentDecision;
+  readonly sufficiencyAssessment: PromptReadySufficiencyAssessmentDecision;
   readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision;
   readonly internalAlphaReportStop: InternalAlphaReportStopCandidate;
 }): BoundaryVerdictExecutionInputPacket {
@@ -282,11 +287,12 @@ function buildPromptInputPacket(params: {
     evidenceItems,
     sufficiencyAssessmentProjection: {
       sufficiencyResultStatus: params.sufficiencyAssessment.sufficiencyResultStatus,
+      sufficiencyAssessmentStatus: params.sufficiencyAssessment.sufficiencyAssessmentStatus,
       reportStopRecommendation: params.sufficiencyAssessment.reportStopRecommendation,
       sufficiencyResultPayloadHash: params.sufficiencyAssessment.sufficiencyResultPayloadHash,
     },
     warningMaterialitySeed: {
-      upstreamSufficiencyStatus: params.sufficiencyAssessment.sufficiencyResultStatus,
+      upstreamSufficiencyStatus: params.sufficiencyAssessment.sufficiencyAssessmentStatus,
       upstreamRecommendedNextAction: params.sufficiencyAssessment.reportStopRecommendation,
       userVisibleWarningPublication: "closed" as const,
     },
@@ -305,7 +311,7 @@ function buildPromptVariables(params: {
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
   readonly sufficiencyIntake: SufficiencyIntakeDecision;
-  readonly sufficiencyAssessment: SufficiencyAssessmentDecision;
+  readonly sufficiencyAssessment: PromptReadySufficiencyAssessmentDecision;
   readonly boundaryVerdictCandidate: BoundaryVerdictCandidateDecision;
   readonly internalAlphaReportStop: InternalAlphaReportStopCandidate;
 }): Record<BoundaryVerdictExecutionPromptVariable, string> {
@@ -410,6 +416,7 @@ export async function runBoundaryVerdictExecutionDecision(
     !input.evidenceItemHandoff ||
     !input.sufficiencyIntake ||
     !runtimeOwnedSufficiencyAssessment ||
+    !runtimeOwnedSufficiencyAssessment.sufficiencyAssessmentStatus ||
     !input.boundaryVerdictCandidate ||
     !input.internalAlphaReportStop
   ) {
@@ -435,12 +442,14 @@ export async function runBoundaryVerdictExecutionDecision(
     return markBoundaryVerdictExecutionRuntimeOwnedDecision(decision);
   }
 
+  const promptReadySufficiencyAssessment =
+    runtimeOwnedSufficiencyAssessment as PromptReadySufficiencyAssessmentDecision;
   const renderedPrompt = await loadAndRenderPrompt(buildPromptVariables({
     context: input.context,
     boundedEvidenceExtraction: runtimeOwnedW5,
     evidenceItemHandoff: input.evidenceItemHandoff,
     sufficiencyIntake: input.sufficiencyIntake,
-    sufficiencyAssessment: runtimeOwnedSufficiencyAssessment,
+    sufficiencyAssessment: promptReadySufficiencyAssessment,
     boundaryVerdictCandidate: input.boundaryVerdictCandidate,
     internalAlphaReportStop: input.internalAlphaReportStop,
   }));

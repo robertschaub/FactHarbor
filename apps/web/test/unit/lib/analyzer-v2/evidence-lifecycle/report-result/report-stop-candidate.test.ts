@@ -147,6 +147,7 @@ function sufficiencyAssessment(
     taskKey: "evidence_sufficiency",
     taskSchemaVersion: "v2.evidence_sufficiency_assessment.0",
     sufficiencyResultStatus: "accepted",
+    sufficiencyAssessmentStatus: "sufficient",
     sufficiencyResultPayloadHash: "5".repeat(64),
     reportStopRecommendation: "continue_to_boundary_formation",
     redaction: {

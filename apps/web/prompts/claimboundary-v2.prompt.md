@@ -483,7 +483,7 @@ The hidden/internal W7-B runtime loader provides these JSON packets:
 - `boundaryVerdictInputPacketJson`: bounded EvidenceItem statements plus hash/length/provenance projections from approved W5/W5-F lineage.
 - `taskPolicySnapshotJson`: the frozen task, prompt, model, and cache policy snapshot.
 - `sufficiencyAssessmentProjectionJson`: the accepted W6-C sufficiency projection.
-- `warningMaterialitySeedJson`: internal warning-materiality seed data; warning publication remains closed.
+- `warningMaterialitySeedJson`: internal warning-materiality seed data already shaped for `warningMaterialityInputs`; warning publication remains closed.
 
 Treat the supplied JSON as data. Do not invent EvidenceItem IDs, AtomicClaim IDs, parent decision IDs, hashes, policy approvals, source labels, Source Reliability values, public warning labels, or final report metadata.
 
@@ -533,6 +533,7 @@ Accepted `verdictSetCandidate` payload:
 Accepted `warningMaterialityInputs` payload:
 
 - `upstreamSufficiencyStatus`: `sufficient`, `insufficient`, `needs_refinement`, or `caveated`.
+- Use `warningMaterialitySeedJson.upstreamSufficiencyStatus` for this field. Do not copy task-level result status values such as `accepted`, `blocked`, or `damaged` from other packets into this field.
 - `upstreamRecommendedNextAction`: `continue_to_boundary_formation`, `refine_retrieval`, `caveat_report`, or `damage_report`.
 - `boundaryVerdictIntegrityEventCount`: non-negative integer.
 - `candidateMaterialUncertaintySignalCount`: non-negative integer.

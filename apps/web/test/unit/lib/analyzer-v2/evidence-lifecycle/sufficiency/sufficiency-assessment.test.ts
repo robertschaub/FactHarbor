@@ -298,6 +298,7 @@ describe("sufficiency assessment runtime", () => {
       taskKey: "evidence_sufficiency",
       taskSchemaVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
       sufficiencyResultStatus: "accepted",
+      sufficiencyAssessmentStatus: "caveated",
       reportStopRecommendation: "caveat_report",
     });
     expect(capturedPacket).toMatchObject({

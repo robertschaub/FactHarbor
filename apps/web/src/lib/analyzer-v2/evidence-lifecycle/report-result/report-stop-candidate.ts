@@ -83,7 +83,7 @@ export type InternalAlphaReportSufficiencyAndStopState = {
 export type InternalAlphaReportWarningMaterialityInputs = {
   readonly warningPublication: "closed";
   readonly userVisibleWarningCount: 0;
-  readonly upstreamSufficiencyStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+  readonly upstreamSufficiencyStatus: SufficiencyAssessmentDecision["sufficiencyAssessmentStatus"];
   readonly upstreamRecommendedNextAction: SufficiencyAssessmentDecision["reportStopRecommendation"];
 };
 
@@ -172,6 +172,7 @@ type ParentProjection = {
   readonly boundaryCandidateCount: number;
   readonly verdictCandidatePresent: boolean;
   readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
+  readonly sufficiencyAssessmentStatus: SufficiencyAssessmentDecision["sufficiencyAssessmentStatus"];
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
 };
 
@@ -260,6 +261,7 @@ function projectParents(input: {
     verdictCandidatePresent: input.boundaryVerdictCandidate?.verdictCandidate !== null &&
       input.boundaryVerdictCandidate?.verdictCandidate !== undefined,
     sufficiencyResultStatus: input.sufficiencyAssessment?.sufficiencyResultStatus ?? null,
+    sufficiencyAssessmentStatus: input.sufficiencyAssessment?.sufficiencyAssessmentStatus ?? null,
     reportStopRecommendation: input.sufficiencyAssessment?.reportStopRecommendation ?? null,
   };
 }
@@ -467,6 +469,7 @@ function inputLineage(projection: ParentProjection): InternalAlphaReportInputLin
         decisionVersion: projection.sufficiencyAssessmentVersion,
         parentSufficiencyIntakeDecisionId: projection.sufficiencyAssessmentParentSufficiencyIntakeDecisionId,
         sufficiencyResultStatus: projection.sufficiencyResultStatus,
+        sufficiencyAssessmentStatus: projection.sufficiencyAssessmentStatus,
         reportStopRecommendation: projection.reportStopRecommendation,
       })
       : null,
@@ -553,7 +556,7 @@ function decision(
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
-      upstreamSufficiencyStatus: projection.sufficiencyResultStatus,
+      upstreamSufficiencyStatus: projection.sufficiencyAssessmentStatus,
       upstreamRecommendedNextAction: projection.reportStopRecommendation,
     },
     publicProjection: "closed_precutover_report_damaged",

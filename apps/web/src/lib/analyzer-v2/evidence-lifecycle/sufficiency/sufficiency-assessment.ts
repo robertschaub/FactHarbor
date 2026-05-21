@@ -238,6 +238,7 @@ export type SufficiencyAssessmentDecision = {
   readonly taskKey: "evidence_sufficiency";
   readonly taskSchemaVersion: typeof EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION;
   readonly sufficiencyResultStatus: EvidenceSufficiencyResult["status"] | null;
+  readonly sufficiencyAssessmentStatus: EvidenceSufficiencyAssessment["sufficiencyStatus"] | null;
   readonly sufficiencyResultPayloadHash: string | null;
   readonly reportStopRecommendation: EvidenceSufficiencyAssessment["recommendedNextAction"] | null;
   readonly redaction: {
@@ -580,6 +581,7 @@ function blockedDecision(
     blockedReason: reason,
     damagedReason: null,
     sufficiencyResultStatus: null,
+    sufficiencyAssessmentStatus: null,
     sufficiencyResultPayloadHash: null,
     reportStopRecommendation: null,
     sideEffects,
@@ -600,6 +602,9 @@ function damagedDecision(
     blockedReason: null,
     damagedReason: reason,
     sufficiencyResultStatus: sufficiencyResult?.status ?? null,
+    sufficiencyAssessmentStatus: sufficiencyResult?.status === "accepted"
+      ? sufficiencyResult.sufficiencyAssessment.sufficiencyStatus
+      : null,
     sufficiencyResultPayloadHash: sufficiencyResult ? sha256Json(sufficiencyResult) : null,
     reportStopRecommendation: null,
     sideEffects,
@@ -613,6 +618,7 @@ function decision(params: {
   readonly blockedReason: SufficiencyAssessmentBlockedReason | null;
   readonly damagedReason: SufficiencyAssessmentDamagedReason | null;
   readonly sufficiencyResultStatus: EvidenceSufficiencyResult["status"] | null;
+  readonly sufficiencyAssessmentStatus: EvidenceSufficiencyAssessment["sufficiencyStatus"] | null;
   readonly sufficiencyResultPayloadHash: string | null;
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
   readonly sideEffects: SufficiencyAssessmentSideEffects;
@@ -628,6 +634,7 @@ function decision(params: {
     blockedReason: params.blockedReason,
     damagedReason: params.damagedReason,
     sufficiencyResultStatus: params.sufficiencyResultStatus,
+    sufficiencyAssessmentStatus: params.sufficiencyAssessmentStatus,
     sufficiencyResultPayloadHash: params.sufficiencyResultPayloadHash,
   });
 
@@ -657,6 +664,7 @@ function decision(params: {
     taskKey: "evidence_sufficiency",
     taskSchemaVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
     sufficiencyResultStatus: params.sufficiencyResultStatus,
+    sufficiencyAssessmentStatus: params.sufficiencyAssessmentStatus,
     sufficiencyResultPayloadHash: params.sufficiencyResultPayloadHash,
     reportStopRecommendation: params.reportStopRecommendation,
     redaction: {
@@ -987,6 +995,7 @@ export async function runSufficiencyAssessmentRuntime(
       blockedReason: result.blockedReason,
       damagedReason: null,
       sufficiencyResultStatus: result.status,
+      sufficiencyAssessmentStatus: null,
       sufficiencyResultPayloadHash: sha256Json(result),
       reportStopRecommendation: null,
       sideEffects: calledSideEffects,
@@ -1003,6 +1012,7 @@ export async function runSufficiencyAssessmentRuntime(
     blockedReason: null,
     damagedReason: null,
     sufficiencyResultStatus: result.status,
+    sufficiencyAssessmentStatus: result.sufficiencyAssessment.sufficiencyStatus,
     sufficiencyResultPayloadHash: sha256Json(result),
     reportStopRecommendation: result.sufficiencyAssessment.recommendedNextAction,
     sideEffects: calledSideEffects,
