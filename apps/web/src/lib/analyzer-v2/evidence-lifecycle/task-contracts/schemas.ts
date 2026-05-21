@@ -12,7 +12,7 @@ import {
   type EvidenceSufficiencyResult,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 
-const EvidenceLifecycleTaskBlockedReasonSchema = z.enum([
+export const EvidenceLifecycleTaskBlockedReasonSchema = z.enum([
   "task_policy_not_executable",
   "prompt_not_approved",
   "input_contract_invalid",
@@ -20,7 +20,7 @@ const EvidenceLifecycleTaskBlockedReasonSchema = z.enum([
   "source_content_missing",
 ]);
 
-const EvidenceLifecycleTaskDamagedReasonSchema = z.enum([
+export const EvidenceLifecycleTaskDamagedReasonSchema = z.enum([
   "schema_validation_failed",
   "provider_unavailable",
   "task_contract_validation_failed",
@@ -50,7 +50,7 @@ const EvidenceRetrievalPolicyKeySchema = z.enum([
   "evidence_scarcity_handling",
 ]);
 
-const EvidenceMissingDimensionSchema = z.enum([
+export const EvidenceMissingDimensionSchema = z.enum([
   "source_diversity",
   "direct_evidence",
   "counter_evidence",
@@ -58,6 +58,12 @@ const EvidenceMissingDimensionSchema = z.enum([
   "method_quality",
   "source_access",
   "other",
+]);
+
+export const EvidenceSufficiencyMissingDimensionMaterialitySchema = z.enum([
+  "none",
+  "minor",
+  "material",
 ]);
 
 const EvidenceQueryPlanSchema = z.object({
@@ -247,7 +253,7 @@ const EvidenceSufficiencyAssessmentSchema = z.object({
   sufficiencyStatus: z.enum(["sufficient", "insufficient", "needs_refinement", "caveated"]),
   missingEvidenceDimensions: z.array(z.object({
     dimension: EvidenceMissingDimensionSchema,
-    materiality: z.enum(["none", "minor", "material"]),
+    materiality: EvidenceSufficiencyMissingDimensionMaterialitySchema,
     rationale: z.string().min(1),
   }).strict()),
   recommendedNextAction: z.enum([

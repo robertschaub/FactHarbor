@@ -9,6 +9,13 @@ import {
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
   EVIDENCE_TASK_PROMPT_SECTION_IDS,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
+import {
+  EvidenceLifecycleTaskBlockedReasonSchema,
+  EvidenceLifecycleTaskDamagedReasonSchema,
+  EvidenceLifecycleTaskEventSchema,
+  EvidenceMissingDimensionSchema,
+  EvidenceSufficiencyMissingDimensionMaterialitySchema,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas";
 import { buildStaticEvidenceTaskPolicySnapshot } from "@/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy";
 
 const webRoot = process.cwd();
@@ -62,6 +69,12 @@ function captainDefinedAnalysisInputs(): string[] {
   return inputs;
 }
 
+function expectContainsAll(section: string, values: readonly string[]): void {
+  for (const value of values) {
+    expect(section).toContain(value);
+  }
+}
+
 describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
   it("adds Evidence Lifecycle sections while requiring only approved loader sections", () => {
     const content = readPrompt();
@@ -110,6 +123,36 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Never omit this field");
     expect(section).toContain("`eventType`");
     expect(section).toContain("For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event");
+  });
+
+  it("renders the sufficiency prompt contract from schema-owned literals without canary-domain terms", () => {
+    const content = readPrompt();
+    const section = readSection(content, EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_sufficiency);
+    const eventShape = EvidenceLifecycleTaskEventSchema.shape;
+
+    expect(section).toContain("v2.evidence_sufficiency_assessment.0");
+    expect(section).toContain("Evidence scarcity is a candidate analytical reality");
+    expectContainsAll(section, EvidenceMissingDimensionSchema.options);
+    expectContainsAll(section, EvidenceSufficiencyMissingDimensionMaterialitySchema.options);
+    expectContainsAll(section, eventShape.type.options);
+    expectContainsAll(section, eventShape.severity.options);
+    expectContainsAll(section, EvidenceLifecycleTaskBlockedReasonSchema.options);
+    expectContainsAll(section, EvidenceLifecycleTaskDamagedReasonSchema.options);
+    expect(section).toContain("`type`");
+    expect(section).toContain("`severity`");
+    expect(section).toContain("`message`");
+    expect(section).toContain("`references`");
+    expect(section).toContain("Never omit this field");
+    expect(section).toContain("`eventType`");
+    expect(section).toContain("`refs`");
+    expect(section).toContain("`reference`");
+    expect(section).toContain("`detail`");
+    expect(section).toContain("`details`");
+    expect(section).toContain("Preserve multilingual evidence meaning without translating as a prerequisite");
+
+    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
+      expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
+    }
   });
 
   it("keeps closed downstream source acquisition from blocking query planning by itself", () => {

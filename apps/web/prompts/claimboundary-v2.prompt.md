@@ -433,13 +433,38 @@ Accepted `sufficiencyAssessment` payload:
 
 - `sufficiencyStatus`: `sufficient`, `insufficient`, `needs_refinement`, or `caveated`.
 - `missingEvidenceDimensions`: structured categorical dimensions with `dimension`, `materiality`, and `rationale`.
+- Each `dimension` must be one of `source_diversity`, `direct_evidence`, `counter_evidence`, `temporal_coverage`, `method_quality`, `source_access`, or `other`.
+- Each `materiality` must be one of `none`, `minor`, or `material`.
 - `recommendedNextAction`: `continue_to_boundary_formation`, `refine_retrieval`, `caveat_report`, or `damage_report`.
 - `materialScarcityCandidate`: `none`, `possible`, or `material`.
 - `rationale`: concise sufficiency rationale.
 
+Integrity event object:
+
+- `type`: one of `task_policy_blocked`, `prompt_not_approved`, `input_contract_invalid`, `source_acquisition_not_executable`, `source_content_missing`, `schema_validation_failed`, `provider_unavailable`, or `task_contract_validation_failed`.
+- `severity`: `info`, `warning`, or `error`.
+- `message`: non-empty concise structural explanation.
+- `references`: string array of relevant structural references. Use `[]` when no specific reference applies. Never omit this field.
+
+Do not emit alternate event field names such as `eventType`, `refs`, `reference`, `detail`, or `details`. For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event. For `accepted`, use `[]` when no event applies.
+
+Blocked reasons:
+
+- `task_policy_not_executable`
+- `prompt_not_approved`
+- `input_contract_invalid`
+- `source_acquisition_not_executable`
+- `source_content_missing`
+
+Damaged reasons:
+
+- `schema_validation_failed`
+- `provider_unavailable`
+- `task_contract_validation_failed`
+
 ### Rules
 
-Evidence scarcity is a candidate analytical reality only after approved acquisition and extraction. System/provider failure remains a system-failure candidate, not scarcity. Warning materialization, registration, and user visibility belong to a later warning/result/report gate. If the corpus has not been built, return a blocked envelope rather than describing scarcity.
+Evidence scarcity is a candidate analytical reality only after approved acquisition and extraction. System/provider failure remains a system-failure candidate, not scarcity. Warning materialization, registration, and user visibility belong to a later warning/result/report gate. If the corpus has not been built, return a blocked envelope rather than describing scarcity. Use LLM judgment without keyword rules, topic-specific shortcuts, or language-specific assumptions. Preserve multilingual evidence meaning without translating as a prerequisite.
 
 ## V2_BOUNDARY_VERDICT_EXECUTION
 

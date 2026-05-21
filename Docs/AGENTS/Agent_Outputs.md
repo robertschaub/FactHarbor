@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Lead Developer | Codex (GPT-5.5) | V2 W6-C4 Sufficiency Prompt Repair Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented W6-C4 inside the approved package: amended only `V2_EVIDENCE_SUFFICIENCY_GATE` to enumerate schema-owned literals for sufficiency dimensions/materiality, task-event fields/literals, blocked reasons, and damaged reasons. Added schema-derived prompt-contract tests and anti-canary-domain checks. No schema literals/validation behavior, model/config/UCM/gateway, runtime provider seam, public surface, or retry behavior changed.
+**Warnings:** One W6-C4 canary remains pending. If W6-C repeats the W6-C3 issue paths or exposes broader schema drift, stop after the single canary and prepare a new package. Do not run a second canary without review.
+-> Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md
+
+---
 ### 2026-05-20 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-C4 Sufficiency Prompt Repair Package -- [Significant] [open-items: yes]
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W6-C4_Sufficiency_Prompt_Contract_Repair_Package.md` after W6-C3 captured exact schema issue paths. Claude Opus reviewed as `APPROVE_WITH_AMENDMENTS`; amendments were applied. Recommended repair: W6-C prompt-contract enumeration for missing-evidence dimension/materiality, blocked/damaged reasons, and task-event fields; no schema relaxation.
 **Warnings:** W6-C4 implementation edits the prompt and remains approval-gated. Package preparation authorizes no prompt/model/config/schema/UCM/gateway implementation, public behavior, second canary, parser/cache/SR/storage, provider expansion, ACS/direct URL, or V1 work.
