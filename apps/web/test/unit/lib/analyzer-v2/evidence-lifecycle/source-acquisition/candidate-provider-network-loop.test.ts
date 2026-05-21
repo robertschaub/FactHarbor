@@ -644,7 +644,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES).toBe(
       EVIDENCE_QUERY_PLANNING_MAX_QUERY_ENTRIES,
     );
-    expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS).toBe(9000);
+    expect(SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS).toBe(18000);
 
     const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
     const maxQueryHandoff = handoff({
@@ -1016,7 +1016,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
           providerId: "wikimedia_core",
           endpointKind: "candidate_search_api_future",
           maxQueries: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
-          timeoutMs: 1500,
+          timeoutMs: 3000,
           credentialsState: "not_required_for_approved_network_provider",
         },
       ],
@@ -1031,7 +1031,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       queryEntryCount: 1,
       maxAttemptsPerQuery: 1,
       maxCandidateRecordsPerQuery: 3,
-      providerTimeoutMs: 1500,
+      providerTimeoutMs: 3000,
       totalCandidateAcquisitionTimeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS,
       cancellationState: "not_requested",
       retryPolicy: "none",
@@ -1041,7 +1041,7 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
       maxQueriesPerProvider: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
       maxAttemptsPerQuery: 1,
       maxCandidatesPerQuery: 3,
-      perQueryTimeoutMs: 1500,
+      perQueryTimeoutMs: 3000,
       totalNetworkTimeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_TOTAL_TIMEOUT_MS,
       retryPolicy: "none",
       noCache: true,
