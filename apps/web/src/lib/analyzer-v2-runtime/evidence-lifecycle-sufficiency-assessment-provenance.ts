@@ -23,6 +23,7 @@ const DECISION_KEYS = [
   "evidenceItemStatementHashes",
   "executionTelemetry",
   "kind",
+  "materialScarcityCandidate",
   "missingEvidenceDimensionProjections",
   "modelId",
   "parentSufficiencyIntakeDecisionId",

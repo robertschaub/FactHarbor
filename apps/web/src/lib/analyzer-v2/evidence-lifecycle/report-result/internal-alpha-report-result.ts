@@ -175,6 +175,7 @@ export type InternalAlphaReportResultUpstreamStopAttribution = {
       readonly damagedReason: SufficiencyAssessmentDecision["damagedReason"] | null;
       readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
       readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
+      readonly materialScarcityCandidate: SufficiencyAssessmentDecision["materialScarcityCandidate"];
       readonly admittedEvidenceItemCount: SufficiencyAssessmentDecision["admittedEvidenceItemCount"];
       readonly schemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
       readonly missingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
@@ -303,6 +304,7 @@ type ParentProjection = {
   readonly sufficiencyAssessmentParentW5DecisionId: string | null;
   readonly sufficiencyResultStatus: SufficiencyAssessmentDecision["sufficiencyResultStatus"];
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
+  readonly materialScarcityCandidate: SufficiencyAssessmentDecision["materialScarcityCandidate"];
   readonly sufficiencyAssessmentSchemaDiagnostics: SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"];
   readonly sufficiencyAssessmentMissingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
   readonly boundaryVerdictCandidateDecisionId: string | null;
@@ -440,6 +442,7 @@ function projectParents(input: {
     sufficiencyAssessmentParentW5DecisionId: input.sufficiencyAssessment?.parentW5DecisionId ?? null,
     sufficiencyResultStatus: input.sufficiencyAssessment?.sufficiencyResultStatus ?? null,
     reportStopRecommendation: input.sufficiencyAssessment?.reportStopRecommendation ?? null,
+    materialScarcityCandidate: input.sufficiencyAssessment?.materialScarcityCandidate ?? null,
     sufficiencyAssessmentSchemaDiagnostics: input.sufficiencyAssessment?.executionTelemetry?.schemaDiagnostics ?? null,
     sufficiencyAssessmentMissingEvidenceDimensionProjections: input.sufficiencyAssessment?.missingEvidenceDimensionProjections ?? [],
     boundaryVerdictCandidateDecisionId: input.boundaryVerdictCandidate?.decisionId ?? null,
@@ -754,6 +757,7 @@ function upstreamStopAttribution(
         damagedReason: projection.sufficiencyAssessmentDamagedReason,
         sufficiencyResultStatus: projection.sufficiencyResultStatus,
         reportStopRecommendation: projection.reportStopRecommendation,
+        materialScarcityCandidate: projection.materialScarcityCandidate,
         admittedEvidenceItemCount: projection.sufficiencyAssessmentAdmittedEvidenceItemCount,
         schemaDiagnostics: projection.sufficiencyAssessmentSchemaDiagnostics,
         missingEvidenceDimensionProjections: projection.sufficiencyAssessmentMissingEvidenceDimensionProjections,
@@ -883,6 +887,7 @@ function inputLineage(projection: ParentProjection): InternalAlphaReportResultIn
         parentSufficiencyIntakeDecisionId: projection.sufficiencyAssessmentParentSufficiencyIntakeDecisionId,
         sufficiencyResultStatus: projection.sufficiencyResultStatus,
         reportStopRecommendation: projection.reportStopRecommendation,
+        materialScarcityCandidate: projection.materialScarcityCandidate,
       })
       : null,
     boundaryVerdictCandidateDecisionId: projection.boundaryVerdictCandidateDecisionId,

@@ -299,6 +299,7 @@ describe("sufficiency assessment runtime", () => {
       taskSchemaVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
       sufficiencyResultStatus: "accepted",
       reportStopRecommendation: "caveat_report",
+      materialScarcityCandidate: "possible",
     });
     expect(capturedPacket).toMatchObject({
       parentW5DecisionId: w5Decision.decisionId,
@@ -634,6 +635,7 @@ describe("sufficiency assessment runtime", () => {
 
     expect(decision.assessmentStatus).toBe("sufficiency_assessment_completed");
     expect(decision.reportStopRecommendation).toBe("refine_retrieval");
+    expect(decision.materialScarcityCandidate).toBe("possible");
     expect(decision.missingEvidenceDimensionProjections).toEqual([
       { dimension: "source_diversity", materiality: "material" },
       { dimension: "counter_evidence", materiality: "material" },
@@ -699,6 +701,7 @@ describe("sufficiency assessment runtime", () => {
 
     expect(decision.assessmentStatus).toBe("sufficiency_assessment_completed");
     expect(decision.reportStopRecommendation).toBe("continue_to_boundary_formation");
+    expect(decision.materialScarcityCandidate).toBe("none");
     expect(decision.missingEvidenceDimensionProjections).toEqual([]);
   });
 
@@ -717,6 +720,7 @@ describe("sufficiency assessment runtime", () => {
       providerCall: providerCall(acceptedSufficiencyResult()),
     });
     expect(blockedDecision.assessmentStatus).toBe("sufficiency_assessment_blocked");
+    expect(blockedDecision.materialScarcityCandidate).toBeNull();
     expect(blockedDecision.missingEvidenceDimensionProjections).toEqual([]);
 
     // Damaged decision (parse failure)
@@ -730,6 +734,7 @@ describe("sufficiency assessment runtime", () => {
       providerCall: providerCall("{not json"),
     });
     expect(damagedDecision.assessmentStatus).toBe("sufficiency_assessment_damaged");
+    expect(damagedDecision.materialScarcityCandidate).toBeNull();
     expect(damagedDecision.missingEvidenceDimensionProjections).toEqual([]);
   });
 

@@ -140,6 +140,7 @@ function sufficiencyAssessment(
     parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_TEST",
     sufficiencyResultStatus: "accepted",
     reportStopRecommendation: "continue_to_boundary_formation",
+    materialScarcityCandidate: null,
     missingEvidenceDimensionProjections: [],
     sideEffects: {
       sufficiencyLlmCalled: true,
@@ -806,6 +807,7 @@ describe("W8-B internal Alpha report-result candidate", () => {
 
     expect(suffAttr.missingEvidenceDimensionProjections).toEqual(projections);
     expect(suffAttr.reportStopRecommendation).toBe("refine_retrieval");
+    expect(suffAttr.materialScarcityCandidate).toBeNull();
 
     const ALLOWED_DIMENSIONS = new Set([
       "source_diversity", "direct_evidence", "counter_evidence",
@@ -820,7 +822,6 @@ describe("W8-B internal Alpha report-result candidate", () => {
 
     expect(serialized).not.toContain("rationale");
     expect(serialized).not.toContain("sufficiencyStatus");
-    expect(serialized).not.toContain("materialScarcityCandidate");
     expect(serialized).not.toContain(STATEMENT);
     expect(serialized).not.toContain(UNSAFE_TEXT);
   });
