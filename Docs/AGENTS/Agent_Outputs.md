@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F1 OpenAlex Source Material Diversity Package -- [Significant] [open-items: yes]
+**For next agent:** Prepared `Docs/WIP/2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md`. Claude Opus returned `APPROVE_WITH_AMENDMENTS`; amendments were applied for two-endpoint budget/authority hash widening, OpenAlex selection preference, and explicit no-key authority asymmetry handling.
+**Warnings:** W6-F1 is approved for local implementation only. No live job is authorized. Remaining live-job budget is `1`; canary remains blocked until W6-F1 is committed/verifier-clean and credential/no-key posture is settled. Stop on generic provider framework work, V1 provider reuse, public/source-text leak, W6 prompt weakening, W7 relaxation, or cap above `3`.
+-> Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-F1_OpenAlex_Source_Material_Diversity_Package.md
+
+---
 ### 2026-05-21 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F OpenAlex Source Diversity Steering -- [Significant] [open-items: yes]
 **For next agent:** Prepared `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md` after W6-E proved query-balanced same-provider Wikimedia selection but W6-C still recommended `refine_retrieval`. Direction: W6-F1 should be an OpenAlex-first bounded academic Source Material diversity package before W6-C.
 **Warnings:** W6-F authorizes no code and no live job by itself. Remaining live-job budget is `1`; do not spend it before OpenAlex credential/no-key posture is settled. Do not weaken W6 prompts, relax W7 gates, add a generic provider framework, reuse V1 provider code, or expose source text publicly/default-admin/log/error.
