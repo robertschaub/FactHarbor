@@ -30,11 +30,23 @@ Recent HighJump evidence:
 - W4G/corpus-shell duplicate text-hash dedup: `fc5e7f8e`.
 - Validated canary: `099eb05cbbca408a87f7168327926762`.
 - Incomplete canary: `68a4fa4fa99f48c18679e9b68e3ff344`.
+- HJ-1 traceability/prompt repair commit: `00693155`.
+- HJ-2 first internal report attempt job:
+  `0069f28abad14644abd3584652be933a`.
 
 The validated canary proves that a lowered W6-C path can move from
 `refine_retrieval` to `caveat_report` and reach W7-A
 `boundary_verdict_candidate_ready`. It does not prove public report quality and
 does not validate the incomplete second canary.
+
+The HJ-2 canary on runtime `00693155` reached W2/W3/W5/W6-C/W7-A and recorded a
+W8-B internal Alpha report-result artifact. It stopped at W7-B because boundary
+verdict execution returned `boundary_verdict_execution_damaged` after schema
+validation failed across two attempts. This is a traceable stop, not a public
+report result.
+
+Current HJ-2 classification:
+`STOP_X7_HJ2_BOUNDARY_VERDICT_EXECUTION_SCHEMA_DAMAGED_REPORT_TRACEABLE`.
 
 ## New Authority
 
@@ -220,6 +232,8 @@ Each bar-raise change needs:
 ## Live-Job Budget Plan
 
 New tranche: `12`.
+
+Current remaining after HJ-2 canary `0069f28abad14644abd3584652be933a`: `11`.
 
 Planned allocation:
 

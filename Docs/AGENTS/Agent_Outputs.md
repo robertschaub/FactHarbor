@@ -3347,3 +3347,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Implemented locally: W4-H packet keeps scalar first-sidecar fields but adds aligned provider/source-kind/source-content-packet arrays; W4-H default admin redacts both aggregate `inputText` and per-source `contentText`; W4-I and W5 validate approved source-content packet identities instead of one source/content pair.
 - Verifiers passed: W4-H/W4-I/W5 extraction-input lineage suite plus boundary guard (`5` files / `112` tests), full V2 local suite (`140` files / `838` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn` at `2026-05-21T06:43:46.375Z`), and build. Commit/runtime refresh/canary are still pending.
 -> Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Lineage_Repair.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ-2 Canary Result
+
+- Ran HJ-2 canary job `0069f28abad14644abd3584652be933a` on runtime `00693155a189147d4b2a4846fb53f6ba8f596fd6` using `claimboundary-v2` and Captain input `Using hydrogen for cars is more efficient than using electricity`.
+- Classification: `STOP_X7_HJ2_BOUNDARY_VERDICT_EXECUTION_SCHEMA_DAMAGED_REPORT_TRACEABLE`.
+- Public V2 remained `4.0.0-cb-precutover`, `blocked_precutover`, and `report_damaged`; runtime commit fields matched.
+- Hidden chain reached W2/W3-B/W5/W6-C/W7-A: `12` retained candidates, `6` Source Material records, `4` EvidenceItems, sufficiency accepted with `caveat_report`, and W7-A `boundary_verdict_candidate_ready`.
+- W7-B executed but ended `boundary_verdict_execution_damaged` after `2` attempts / `2` schema retries / `15593` tokens. W8-B recorded the first incomplete stage as `boundary_verdict_execution`.
+- W8-B route containment held: authenticated `200`, unauthenticated `401`, `no-store`, no ledger id/run id/evidence/source text in default projection.
+- HighJump live-job budget is now `11`.
+- Next action: narrow W7-B repair under `/debt-guard`, preferably prompt/schema-contract repair; if exact evidence is insufficient, add bounded W7-B schema diagnostics to existing hidden evidence with a removal or merge trigger.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md

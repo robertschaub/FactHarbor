@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-bar-ladder-2026-05-22",
     "resetTotal": 12,
-    "currentRemaining": 12,
+    "currentRemaining": 11,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
       "date": "2026-05-22",
@@ -23,8 +23,8 @@
       "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
-      "currentRemaining": 12,
-      "consumptionEntriesInThisTranche": 0,
+      "currentRemaining": 11,
+      "consumptionEntriesInThisTranche": 1,
       "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
     },
     "unreconciledHistoricalNote": {
@@ -351,6 +351,18 @@
         "count": 1,
         "remainingAfter": 4,
         "approvalPointer": "Captain messages in current Codex thread authorizing job submission, prompt edits, more job submissions, schema changes, and naturally needed work to complete the plan",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-2-FIRST-INTERNAL-REPORT-ATTEMPT",
+        "jobId": "0069f28abad14644abd3584652be933a",
+        "classification": "STOP_X7_HJ2_BOUNDARY_VERDICT_EXECUTION_SCHEMA_DAMAGED_REPORT_TRACEABLE",
+        "implementationCommit": "00693155a189147d4b2a4846fb53f6ba8f596fd6",
+        "runtimeCommit": "00693155a189147d4b2a4846fb53f6ba8f596fd6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],
