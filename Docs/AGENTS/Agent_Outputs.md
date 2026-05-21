@@ -4814,3 +4814,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **For next agent:** Prepared `Docs/WIP/2026-05-20_V2_Slice_W8-D_W8B_W8C_Product_Route_Canary_Package.md` after W8-C commit `9dca1af8`. Captain explicitly authorized job submission and reset the live-job budget to `8`; `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json` records tranche `v2-w8d-captain-reset-2026-05-20` with `currentRemaining = 8`. W8-D authorizes exactly one `claimboundary-v2` product-route canary using `Using hydrogen for cars is more efficient than using electricity`, after package commit, clean git status, runtime refresh, W8-B route auth/no-store preflight, focused W8-B/W8-C verifiers, and V2 gate validation.
 **Warnings:** No source implementation, second canary, prompt/model/config/schema/UCM/gateway edit, public/API/UI/report/export/compatibility behavior, parser/cache/SR/storage/provider expansion, ACS/direct URL, V1 work, V1 cleanup, or cutover is authorized. Every submitted live job consumes one budget slot even if it stops.
 **Verification:** Package closeout verifiers pending: `npm run index`, `git diff --check`, final status. Runtime preflight and canary execution pending after commit.
+## 2026-05-21 - Lead Developer - V2 W6-C5 Sufficiency Decision Gate Implementation
+
+- Implemented W6-C5 under `Docs/WIP/2026-05-21_V2_Slice_W6-C5_Sufficiency_Decision_Gate_And_Diagnostic_Retirement_Package.md`.
+- Clarified W6-C prompt decision semantics without lowering the sufficiency bar or relaxing W7 gates.
+- Folded W6-C3-specific schema diagnostic version/removal-trigger scaffolding into stable W6-C schema-failure telemetry.
+- Verifiers passed: focused W6-C/W8-B/prompt-contract tests (3 files, 24 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, index, and `git diff --check`.
+- Warnings: no live canary has run yet; W7 remains separately gated; if W6-C5 canary still returns `refine_retrieval`, retrieval refinement is the next package.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-C5_Sufficiency_Decision_Gate_Implementation.md`.

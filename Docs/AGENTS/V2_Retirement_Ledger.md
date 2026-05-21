@@ -52,6 +52,7 @@ normal approval gates.
 | V2-RL-015 | Captain Deputy / Steer-Co / reasoning-budget governance package | keep | Agents Supervisor | Operating model proves too heavy or review finds authority duplication | Bounded orchestration review checks scope and cost discipline |
 | V2-RL-016 | W7-A contract-only boundary/verdict candidate bridge | keep | Lead Developer | W7-B/W8-B own accepted and rejected parent validation without depending on the W7-A decision/lineage contract | W8-C actual result: keep. W7-A remains load-bearing for orchestrator chain assembly, W7-B execution input validation, W8-A stop construction, and W8-B lineage checks; do not delete or merge without a dedicated verifier-backed merge slice |
 | V2-RL-017 | W8-A internal Alpha report stop owner | merge | Lead Developer | W8-B fail-closed parity is covered and a later W7-A/W8-A merge slice can remove the stop helper without weakening rejected-parent behavior | W8-C actual result: parity covered in focused W8-A/W8-B tests and W8-B `w8aMergeTrigger.status` is `parity_covered`; keep W8-A as a non-public fail-closed compatibility helper until the W7-A dependency is merged or retired |
+| V2-RL-018 | W6-C3 temporary sufficiency schema diagnostics | retire | Lead Developer | W6-C4 canary verifies W6-C schema root cause fixed with `schemaDiagnostics = null` | W6-C5 folds W6-C3-specific diagnostic version/removal-trigger scaffolding into stable W6-C schema-failure telemetry; keep the bounded `schemaDiagnostics` field for future parse/schema failures |
 
 ## Required Block In Future Packages
 

@@ -466,6 +466,8 @@ Damaged reasons:
 
 Evidence scarcity is a candidate analytical reality only after approved acquisition and extraction. System/provider failure remains a system-failure candidate, not scarcity. Warning materialization, registration, and user visibility belong to a later warning/result/report gate. If the corpus has not been built, return a blocked envelope rather than describing scarcity. Use LLM judgment without keyword rules, topic-specific shortcuts, or language-specific assumptions. Preserve multilingual evidence meaning without translating as a prerequisite.
 
+Internal Alpha visibility does not lower the sufficiency bar. Choose `continue_to_boundary_formation` only when the current evidence is sufficient for fair boundary and verdict-candidate formation. Choose `caveat_report` when boundary and verdict-candidate formation can proceed but scarcity or limitations must remain explicit for later report review. Choose `refine_retrieval` when material missing dimensions mean more retrieval is needed before fair boundary and verdict-candidate formation. Choose `damage_report` only when a trustworthy internal candidate cannot be produced from the available contracts.
+
 ## V2_BOUNDARY_VERDICT_EXECUTION
 
 ### Purpose

@@ -169,7 +169,7 @@ function sufficiencySchemaDiagnostics(): NonNullable<
   SufficiencyAssessmentDecision["executionTelemetry"]["schemaDiagnostics"]
 > {
   return {
-    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3",
+    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c",
     contractName: "EvidenceSufficiencyResultSchema",
     contractVersion: "v2.evidence_sufficiency_assessment.0",
     outputParseStatus: "parsed",
@@ -187,8 +187,6 @@ function sufficiencySchemaDiagnostics(): NonNullable<
     evidenceItemTextReturned: false,
     promptTextReturned: false,
     stackTraceReturned: false,
-    removalTrigger:
-      "remove_or_fold_into_stable_w6c_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary",
   };
 }
 

@@ -38,8 +38,6 @@ export const SUFFICIENCY_ASSESSMENT_INPUT_PACKET_VERSION =
 export const SUFFICIENCY_ASSESSMENT_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-20_V2_Slice_W6-C_Sufficiency_Assessment_Implementation_Approval_Package.md" as const;
 export const SUFFICIENCY_ASSESSMENT_CACHE_NAMESPACE = "analyzer-v2:v2.semantic.evidence-sufficiency.w6c:evidence_sufficiency" as const;
-export const SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
-  "remove_or_fold_into_stable_w6c_telemetry_after_schema_root_cause_resolution_and_later_captain_approved_canary" as const;
 
 const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_DIAGNOSTIC_ISSUES = 8;
 const SUFFICIENCY_ASSESSMENT_MAX_SCHEMA_PATH_SEGMENTS = 8;
@@ -106,7 +104,7 @@ export type SufficiencyAssessmentSchemaDiagnosticIssue = {
 };
 
 export type SufficiencyAssessmentSchemaDiagnostics = {
-  readonly diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3";
+  readonly diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c";
   readonly contractName: "EvidenceSufficiencyResultSchema";
   readonly contractVersion: typeof EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION;
   readonly outputParseStatus: "not_attempted" | "parse_failure" | "parsed";
@@ -121,7 +119,6 @@ export type SufficiencyAssessmentSchemaDiagnostics = {
   readonly evidenceItemTextReturned: false;
   readonly promptTextReturned: false;
   readonly stackTraceReturned: false;
-  readonly removalTrigger: typeof SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER;
 };
 
 export type SufficiencyAssessmentEvidenceScopeProjection = {
@@ -477,7 +474,7 @@ function schemaDiagnostics(params: {
     }));
 
   return {
-    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c3",
+    diagnosticVersion: "v2.evidence-lifecycle.sufficiency-assessment.schema-diagnostics.w6c",
     contractName: "EvidenceSufficiencyResultSchema",
     contractVersion: EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
     outputParseStatus: params.outputParseStatus,
@@ -492,7 +489,6 @@ function schemaDiagnostics(params: {
     evidenceItemTextReturned: false,
     promptTextReturned: false,
     stackTraceReturned: false,
-    removalTrigger: SUFFICIENCY_ASSESSMENT_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER,
   };
 }
 
