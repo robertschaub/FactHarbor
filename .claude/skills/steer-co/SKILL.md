@@ -2,10 +2,10 @@
 name: steer-co
 description: >
   Convene a model-diverse Steering Committee for high-impact direction-setting,
-  committee review, or Steer-Co clarification. The GPT-5.5 xhigh Leader holds
-  bounded consent-based steering authority for low-risk or bounded medium-risk
-  next steps and returns concise current state, directions, decision/proposal,
-  escalation needs, and a Lead Developer handoff prompt.
+  committee review, or Steer-Co clarification. The Captain-pinned xhigh Leader
+  holds bounded consent-based steering authority for low-risk or bounded
+  medium-risk next steps and returns concise current state, directions,
+  decision/proposal, escalation needs, and a Lead Developer handoff prompt.
 allowed-tools: Read Bash Agent
 ---
 
@@ -62,15 +62,20 @@ workflow invoked Steer-Co, that deputy retains workstream coordination authority
 and uses the Leader's output for delivery assignment or Captain escalation.
 
 Required structure:
-- **Leader:** GPT-5.5, extra-high reasoning. Owns intake, committee selection,
-  member briefing, synthesis, Captain Deputy authority checks, and
-  Captain-facing output. This Leader model is Captain-pinned by policy; change
-  it only when the Captain explicitly updates the Steer-Co policy.
-- **Member:** Claude Opus 4.6. Default use: adversarial reviewer, architecture
-  pressure, prompt/LLM-quality critique, or governance consistency review.
-- **Member:** Gemini newest approved pro model. Default use: independent
-  systems review, implementation practicality, alternative path, or
-  cross-tool/process portability.
+- **Leader:** Captain-pinned model, extra-high reasoning. Must have strong
+  synthesis and governance discipline. When the Leader also serves as Captain
+  Deputy, prefer a model with direct code visibility in the repo-local tool
+  surface. Owns intake, committee selection, member briefing, synthesis,
+  Captain Deputy authority checks, and Captain-facing output. Change the
+  Leader assignment only when the Captain explicitly updates
+  `Docs/AGENTS/Active_Team_Composition.md`.
+- **Member:** Independent reviewer from a different model family than the
+  Leader. Default use: adversarial reviewer, architecture pressure,
+  prompt/LLM-quality critique, or governance consistency review.
+- **Member:** Independent reviewer from a third model family, distinct from
+  both Leader and first Member. Default use: independent systems review,
+  implementation practicality, alternative path, or cross-tool/process
+  portability.
 
 The active committee has at least three members including the Leader. Add more
 members only when the decision needs distinct expertise that the three-member
@@ -79,8 +84,9 @@ panel cannot cover.
 Default quorum is:
 - Narrow bounded decision: Leader plus one independent model-family reviewer.
 - High-impact direction, prompt/model/config authority, public behavior,
-  live-job scope, or debt-sensitive V2 phase transition: Leader plus Opus plus
-  Gemini, unless the Captain explicitly sets a different quorum.
+  live-job scope, or debt-sensitive V2 phase transition: Leader plus both
+  independent model-family Members, unless the Captain explicitly sets a
+  different quorum.
 
 Resolve "Gemini newest" and concrete executable model names through the current
 approved tool/runtime surface. Do not hardcode a stale model ID into the skill
@@ -96,9 +102,9 @@ escalate when the missing lens could affect authority, safety, cost, or quality.
 Timeout or silence is never consent.
 
 When an outer agent or tool session orchestrates Steer-Co but is not itself the
-GPT Leader, it is a transparent conduit: relay the Captain's question, member
-briefs, and Leader output without editorializing, overriding, or re-synthesizing
-the Leader's final result.
+Steer-Co Leader, it is a transparent conduit: relay the Captain's question,
+member briefs, and Leader output without editorializing, overriding, or
+re-synthesizing the Leader's final result.
 
 Expertise is task-specific. Choose roles from the FactHarbor role registry or
 from a narrow expertise label, for example:
@@ -296,11 +302,12 @@ validation, and stopping/escalation triggers>
 1. **Leader accountability:** The Leader owns the final synthesis. Member advice
    is input, not an unfiltered transcript.
 2. **Captain Deputy by consent:** Low-risk or bounded medium-risk within-scope
-   steering may proceed through the GPT Leader only when consent exists and no
+   steering may proceed through the Leader only when consent exists and no
    standing Captain gate applies.
-3. **Model diversity:** At least Claude Opus 4.6 and Gemini newest approved pro
-   model must be consulted for a full Steer-Co session unless a tool is
-   unavailable; if unavailable, state the degraded panel explicitly.
+3. **Model diversity:** At least two independent model families (besides the
+   Leader's) must be consulted for a full Steer-Co session unless a tool is
+   unavailable; if unavailable, state the degraded panel explicitly. Resolve
+   current model assignments from `Docs/AGENTS/Active_Team_Composition.md`.
 4. **Evidence first:** Committee members must cite concrete evidence IDs or
    source pointers from the steering packet.
 5. **No authority laundering:** Steer-Co cannot approve what the Captain or a
@@ -315,7 +322,8 @@ validation, and stopping/escalation triggers>
 9. **Cost discipline:** Convene only when the decision needs model-diverse
    judgment. Keep member briefs compact and bounded.
 10. **Leader is not an alias:** "Steer-Co Leader" is not a standalone
-    activatable role. It is the GPT-5.5-pinned function inside this skill.
+    activatable role. It is the Captain-pinned function inside this skill;
+    see `Docs/AGENTS/Active_Team_Composition.md` for the current assignment.
 11. **Debt-guard consent:** When Steer-Co reviews a debt-sensitive proposal, the
     Leader must explicitly consent to the mechanism direction: amend, revert,
     quarantine, delete, add, or defer. Net mechanism increases require a

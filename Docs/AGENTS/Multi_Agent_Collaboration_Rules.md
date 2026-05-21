@@ -729,9 +729,12 @@ Any agent working on FactHarbor can invoke `/debate` when a decision needs adver
 
 Captain Deputy owns active debt-guard control for autonomous workstreams: it assigns the debt-guard owner, checks the output block before closeout, tracks accepted temporary debt, runs `npm run debt:sensors` automatically for V2 or debt-sensitive intake/Steer-Co/closeout checkpoints, and uses Steer-Co for contested keep/quarantine/revert decisions or net mechanism increases. Steer-Co does not replace `/debt-guard`; it decides whether a proposed complexity direction has consent. The sensor is advisory unless Captain explicitly promotes `--fail-on-warn`.
 
-### 6.6 Current Tool Assignment Defaults
+### 6.6 Current Team Composition
 
-In Robert's current workflow, Codex/GPT-5.5 is the default executor for repo-local implementation, verification, and direct file edits. Claude Opus 4.6 and Gemini Pro are normally review and secondary-advice surfaces unless the Captain explicitly assigns implementation.
+Active model-to-role assignments are in `Docs/AGENTS/Active_Team_Composition.md`.
+That file is the single source of truth for which model holds Leader, Member, and
+executor roles. Skill bodies use capability-tier language (Leader, independent
+model-family Member) and resolve concrete models from the composition file.
 
 Tool-specific defaults do not override role activation, Captain assignment, mandatory workflows, or path-specific `AGENTS.md` files.
 

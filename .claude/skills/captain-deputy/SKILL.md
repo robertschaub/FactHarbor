@@ -26,15 +26,15 @@ assignments, role activation, `fhAgentKnowledge.preflight_task`, and path rules
 still apply before the deputy chooses how to coordinate work.
 
 Captain Deputy is model-agnostic unless the Captain pins a model. For active
-autonomous coordination, prefer the strongest available repo-local GPT/Codex
-model and raise reasoning through `/reasoning-budget`; for status-only checks,
-use lower effort.
+autonomous coordination, prefer the Captain-assigned Leader model from
+`Docs/AGENTS/Active_Team_Composition.md` and raise reasoning through
+`/reasoning-budget`; for status-only checks, use lower effort.
 
-When the Captain Deputy invokes `/steer-co`, the GPT Leader holds Steer-Co
+When the Captain Deputy invokes `/steer-co`, the Steer-Co Leader holds
 steering authority for that session. The Captain Deputy retains workstream
 coordination authority and uses the Leader's output to assign delivery work,
 reconvene, or escalate to the Captain. Deputy and Leader are distinct functions
-even when one GPT session performs both.
+even when one agent session performs both.
 
 ## Authority Model
 

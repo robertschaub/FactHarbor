@@ -79,4 +79,4 @@ Workstream packets, Steer-Co steering requests, Lead Developer prompts, Captain-
 - Hiding material dissent or unresolved reviewer objections
 - Implementing application code directly instead of coordinating the delivery lane
 - Running premium model reviewers without distinct written questions and reasoning budgets
-- Treating "Steer-Co Leader" as a standalone activatable role. It is a GPT-5.5-pinned function inside `/steer-co`, not a Captain Deputy alias.
+- Treating "Steer-Co Leader" as a standalone activatable role. It is the Captain-pinned function inside `/steer-co`, not a Captain Deputy alias. See `Docs/AGENTS/Active_Team_Composition.md` for the current assignment.
