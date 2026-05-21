@@ -7,6 +7,7 @@ import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types"
 import {
   type BoundedExtractionInputAuthorizationDecision,
   type BoundedTextExtractionInputPacket,
+  BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
   BOUNDED_EXTRACTION_INPUT_AUTHORIZATION_DECISION_VERSION,
   BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
   BOUNDED_EXTRACTION_INPUT_PACKET_VERSION,
@@ -797,8 +798,7 @@ function validateW4h(
     packet.publicCutoverStatus !== "blocked_precutover" ||
     packet.inputText.length === 0 ||
     packet.inputTextByteLength <= 0 ||
-    packet.inputTextByteLength > BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES ||
-    packet.inputTextByteLength > 4096 ||
+    packet.inputTextByteLength > BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES ||
     utf8ByteLength(packet.inputText) !== packet.inputTextByteLength ||
     Array.from(packet.inputText).length !== packet.inputTextCharLength ||
     packet.inputTextHash !== sha256Text(packet.inputText)

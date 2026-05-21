@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
   BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
   buildBoundedExtractionInputAuthorization,
 } from "@/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization";
@@ -185,7 +186,7 @@ describe("bounded extraction-input authorization", () => {
       inputText: TEXT,
       inputTextHash: parent.boundedTextSidecar?.textHash,
       inputTextByteLength: Buffer.byteLength(TEXT, "utf8"),
-      maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
+      maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
       extractionExecutionAuthorized: false,
       llmExtractionCallAuthorized: false,
       evidenceItemExtractionAuthorized: false,

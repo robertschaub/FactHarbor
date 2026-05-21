@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import {
+  BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
   BOUNDED_EXTRACTION_INPUT_AUTHORIZATION_DECISION_VERSION,
   BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
   BOUNDED_EXTRACTION_INPUT_PACKET_VERSION,
@@ -15,7 +16,7 @@ export const EVIDENCE_LIFECYCLE_EXECUTION_READINESS_DENIAL_ARTIFACT_VERSION =
   "v2.evidence-lifecycle.execution-readiness-denial-artifact.x7w4i" as const;
 
 export const EVIDENCE_LIFECYCLE_EXECUTION_READINESS_INPUT_MAX_TEXT_BYTES =
-  BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES;
+  BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES;
 
 export type EvidenceLifecycleExecutionReadinessDenialStatus =
   | "extraction_input_structurally_eligible_execution_denied"

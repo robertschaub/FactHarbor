@@ -87,7 +87,7 @@ function authorization(text = TEXT): EvidenceLifecycleExtractionInputAuthorizati
       inputTextHash: "0".repeat(64),
       inputTextByteLength: textByteLength,
       inputTextCharLength: Array.from(text).length,
-      maxInputTextBytes: 4096,
+      maxInputTextBytes: 12288,
       truncationApplied: false,
       sourceMaterialTextHash: "0".repeat(64),
       sourceMaterialTextHashes: ["0".repeat(64)],

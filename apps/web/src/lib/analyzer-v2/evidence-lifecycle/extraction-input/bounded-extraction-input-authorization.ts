@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES,
   EVIDENCE_CORPUS_BOUNDED_TEXT_AUTHORIZATION_DECISION_VERSION,
   EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES,
   EVIDENCE_CORPUS_BOUNDED_TEXT_SIDECAR_VERSION,
@@ -16,11 +17,12 @@ export const BOUNDED_EXTRACTION_INPUT_AUTHORIZATION_DECISION_VERSION =
 export const BOUNDED_EXTRACTION_INPUT_PACKET_VERSION =
   "v2.evidence-lifecycle.extraction-input.bounded-text-packet.x7w4h";
 export const BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES = EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES;
+export const BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES = EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES;
 export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS = [
   "wikimedia_core",
   "openalex",
 ] as const;
-export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 3;
+export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 6;
 
 export type BoundedExtractionInputRuntimeOwnership =
   | "owned"
@@ -120,7 +122,7 @@ export type BoundedTextExtractionInputPacket = {
   readonly inputTextHash: string;
   readonly inputTextByteLength: number;
   readonly inputTextCharLength: number;
-  readonly maxInputTextBytes: typeof BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES;
+  readonly maxInputTextBytes: typeof BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES;
   readonly truncationApplied: false;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextHashes: readonly string[];
@@ -547,7 +549,7 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
   const aggregateTextHash = sha256Text(aggregateText);
   const aggregateByteLength = utf8ByteLength(aggregateText);
   const aggregateCharLength = Array.from(aggregateText).length;
-  if (aggregateByteLength > BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES) {
+  if (aggregateByteLength > BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES) {
     return {
       status: "blocked_pre_extraction_input_text_oversized",
       stopReason: "w4g_sidecar_text_oversized",
@@ -602,7 +604,7 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
     inputTextHash: aggregateTextHash,
     inputTextByteLength: aggregateByteLength,
     inputTextCharLength: aggregateCharLength,
-    maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
+    maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
     truncationApplied: false,
     sourceMaterialTextHash: aggregateTextHash,
     sourceMaterialTextHashes: sidecars.map((sidecar) => sidecar.sourceMaterialTextHash),
