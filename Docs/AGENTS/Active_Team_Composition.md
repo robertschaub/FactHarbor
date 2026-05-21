@@ -44,7 +44,9 @@ code or config and must be updated separately when the active team changes:
 
 | Mechanism | Location | What to update |
 |---|---|---|
-| `invoke-claude.cjs` | `scripts/agents/invoke-claude.cjs` | Cross-model invocation wrapper used by non-Claude agents to call Claude. Update if the Leader is no longer Claude. |
+| `invoke-claude.cjs` | `scripts/agents/invoke-claude.cjs` | Non-Claude agents call Claude via this wrapper. Update if Leader is no longer Claude. |
+| `invoke-gpt.cjs` | `scripts/agents/invoke-gpt.cjs` | Claude Code calls GPT via OpenAI API. Requires `OPENAI_API_KEY`. Default model: `gpt-5.5`. |
+| `invoke-gemini.cjs` | `scripts/agents/invoke-gemini.cjs` | Claude Code calls Gemini via Google API. Requires `GOOGLE_GENERATIVE_AI_API_KEY`. Default model: `gemini-2.5-pro`. |
 | Claude Code MCP config | `.claude/settings.json` | Tool permissions and MCP server config are Claude Code-specific. |
 | Codex/GPT tool sessions | External (OpenAI Codex) | If GPT-5.5 was executor and a different model takes over, stop/redirect active Codex sessions. |
 
