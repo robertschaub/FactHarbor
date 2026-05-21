@@ -67,7 +67,7 @@ function buildRequestBody(args) {
   return {
     model: args.model,
     messages,
-    max_tokens: args.maxTokens,
+    max_completion_tokens: args.maxTokens,
   };
 }
 
