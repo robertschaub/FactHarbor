@@ -72,6 +72,7 @@ function buildRequestBody(args) {
     ],
     generationConfig: {
       maxOutputTokens: args.maxTokens,
+      thinkingConfig: { thinkingBudget: 1024 },
     },
   };
   if (args.system) {
@@ -162,11 +163,12 @@ async function main() {
   }
 
   const data = JSON.parse(response.body);
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (text == null) {
-    throw new Error(`Unexpected API response shape: no candidates[0].content.parts[0].text.\n${response.body}`);
+  const parts = data.candidates?.[0]?.content?.parts;
+  const textPart = parts?.find((p) => p.text != null);
+  if (!textPart) {
+    throw new Error(`Unexpected API response shape: no text part in candidates[0].content.parts.\n${response.body}`);
   }
-  process.stdout.write(text);
+  process.stdout.write(textPart.text);
 }
 
 main().catch((err) => {
