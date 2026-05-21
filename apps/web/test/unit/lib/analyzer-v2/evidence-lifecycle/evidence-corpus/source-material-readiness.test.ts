@@ -196,6 +196,45 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
+  it("admits bounded multi-record W3-B fan-in while keeping corpus build closed", () => {
+    const base = validDecision();
+    const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
+    const secondText = "Second bounded page summary text for fan-in.";
+    const secondHash = sha256Text(secondText);
+    const secondRecord = {
+      ...firstRecord,
+      sourceMaterialId: `SOURCE_MATERIAL_PAGE_SUMMARY_${secondHash.slice(0, 16).toUpperCase()}`,
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_2_1_ABCDEF123456",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_2_1",
+      sourceMaterialText: secondText,
+      sourceMaterialTextHash: secondHash,
+      sourceMaterialTextByteLength: Buffer.byteLength(secondText, "utf8"),
+      sourceMaterialTextCharLength: Array.from(secondText).length,
+    };
+    const decision = validDecision({
+      attemptedFetchCount: 2,
+      sourceMaterialRecordCount: 2,
+      fetchDiagnosticCount: 2,
+      sourceMaterialRecords: [firstRecord, secondRecord],
+      fetchDiagnostics: [
+        validDecision().fetchDiagnostics[0],
+        { ...(validDecision().fetchDiagnostics[0] as Record<string, unknown>), attemptOrdinal: 2 },
+      ],
+    });
+
+    const result = readiness(decision);
+
+    expect(result.status).toBe("source_material_structurally_admissible_evidence_corpus_gate_closed");
+    expect(result.sourceMaterialRecordCount).toBe(2);
+    expect(result.admittedSourceMaterialRecordCount).toBe(2);
+    expect(result.rejectedSourceMaterialRecordCount).toBe(0);
+    expect(result.sourceMaterialRecords.map((record) => record.sourceMaterialTextHash)).toEqual([
+      firstRecord.sourceMaterialTextHash,
+      secondHash,
+    ]);
+    expect(JSON.stringify(result)).not.toContain(secondText);
+  });
+
   it("blocks non-runtime-owned, absent, incomplete, and count-unsupported inputs without fabricating corpus data", () => {
     const cases = [
       [

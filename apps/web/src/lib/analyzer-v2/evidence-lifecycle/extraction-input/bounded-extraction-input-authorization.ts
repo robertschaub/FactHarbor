@@ -13,6 +13,7 @@ export const BOUNDED_EXTRACTION_INPUT_PACKET_VERSION =
   "v2.evidence-lifecycle.extraction-input.bounded-text-packet.x7w4h";
 export const BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES = EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES;
 export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_ID = "wikimedia_core";
+export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 3;
 
 export type BoundedExtractionInputRuntimeOwnership =
   | "owned"
@@ -95,8 +96,11 @@ export type BoundedTextExtractionInputPacket = {
   readonly parentSidecarId: string;
   readonly linkedEvidenceCorpusId: string;
   readonly sourceMaterialRef: string;
+  readonly sourceMaterialRefs: readonly string[];
   readonly locatorRef: string;
+  readonly locatorRefs: readonly string[];
   readonly candidatePreviewId: string;
+  readonly candidatePreviewIds: readonly string[];
   readonly providerId: string;
   readonly sourceMaterialEndpointId: string;
   readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
@@ -108,7 +112,9 @@ export type BoundedTextExtractionInputPacket = {
   readonly maxInputTextBytes: typeof BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES;
   readonly truncationApplied: false;
   readonly sourceMaterialTextHash: string;
+  readonly sourceMaterialTextHashes: readonly string[];
   readonly sourceMaterialTextByteLength: number;
+  readonly sourceMaterialTextByteLengths: readonly number[];
   readonly sourceMaterialTextCharLength: number;
   readonly extractionExecutionAuthorized: false;
   readonly llmExtractionCallAuthorized: false;
@@ -480,10 +486,34 @@ function validateClosedDownstream(
   return null;
 }
 
-function buildPacket(sidecar: EvidenceCorpusBoundedTextSidecar): BoundedTextExtractionInputPacket | ValidationFailure {
+function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): BoundedTextExtractionInputPacket | ValidationFailure {
+  if (sidecars.length < 1 || sidecars.length > BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS) {
+    return {
+      status: "blocked_pre_extraction_input_sidecar_count_unsupported",
+      stopReason: "w4g_sidecar_count_unsupported",
+    };
+  }
+  const [firstSidecar] = sidecars;
+  const providerIds = new Set(sidecars.map((sidecar) => sidecar.providerId));
+  if (providerIds.size !== 1) {
+    return {
+      status: "blocked_pre_extraction_input_provider_id_mismatch",
+      stopReason: "provider_id_mismatch",
+    };
+  }
+  const aggregateText = sidecars.map((sidecar) => sidecar.text).join("\n\n");
+  const aggregateTextHash = sha256Text(aggregateText);
+  const aggregateByteLength = utf8ByteLength(aggregateText);
+  const aggregateCharLength = Array.from(aggregateText).length;
+  if (aggregateByteLength > BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES) {
+    return {
+      status: "blocked_pre_extraction_input_text_oversized",
+      stopReason: "w4g_sidecar_text_oversized",
+    };
+  }
   const packet: BoundedTextExtractionInputPacket = {
     packetVersion: BOUNDED_EXTRACTION_INPUT_PACKET_VERSION,
-    packetId: `BOUNDED_EXTRACTION_INPUT_${sidecar.textHash.slice(0, 16).toUpperCase()}`,
+    packetId: `BOUNDED_EXTRACTION_INPUT_${aggregateTextHash.slice(0, 16).toUpperCase()}`,
     kind: "bounded_text_extraction_input_packet",
     visibility: "internal_admin_only",
     publicPointerExposure: "forbidden",
@@ -491,24 +521,29 @@ function buildPacket(sidecar: EvidenceCorpusBoundedTextSidecar): BoundedTextExtr
     parentDecisionVersion: EVIDENCE_CORPUS_BOUNDED_TEXT_AUTHORIZATION_DECISION_VERSION,
     parentStatus: "bounded_corpus_text_sidecar_created_extraction_gate_closed",
     parentSidecarVersion: EVIDENCE_CORPUS_BOUNDED_TEXT_SIDECAR_VERSION,
-    parentSidecarId: sidecar.boundedTextSidecarId,
-    linkedEvidenceCorpusId: sidecar.linkedEvidenceCorpusId,
-    sourceMaterialRef: sidecar.sourceMaterialRef,
-    locatorRef: sidecar.locatorRef,
-    candidatePreviewId: sidecar.candidatePreviewId,
-    providerId: sidecar.providerId,
-    sourceMaterialEndpointId: sidecar.sourceMaterialEndpointId,
+    parentSidecarId: firstSidecar.boundedTextSidecarId,
+    linkedEvidenceCorpusId: firstSidecar.linkedEvidenceCorpusId,
+    sourceMaterialRef: sidecars.length === 1 ? firstSidecar.sourceMaterialRef : `AGGREGATE_SOURCE_MATERIAL_${aggregateTextHash.slice(0, 16).toUpperCase()}`,
+    sourceMaterialRefs: sidecars.map((sidecar) => sidecar.sourceMaterialRef),
+    locatorRef: firstSidecar.locatorRef,
+    locatorRefs: sidecars.map((sidecar) => sidecar.locatorRef),
+    candidatePreviewId: firstSidecar.candidatePreviewId,
+    candidatePreviewIds: sidecars.map((sidecar) => sidecar.candidatePreviewId),
+    providerId: firstSidecar.providerId,
+    sourceMaterialEndpointId: firstSidecar.sourceMaterialEndpointId,
     sourceMaterialKind: "wikimedia_page_summary_extract_text",
-    languageCode: sidecar.languageCode,
-    inputText: sidecar.text,
-    inputTextHash: sidecar.textHash,
-    inputTextByteLength: sidecar.textByteLength,
-    inputTextCharLength: sidecar.textCharLength,
+    languageCode: firstSidecar.languageCode,
+    inputText: aggregateText,
+    inputTextHash: aggregateTextHash,
+    inputTextByteLength: aggregateByteLength,
+    inputTextCharLength: aggregateCharLength,
     maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
     truncationApplied: false,
-    sourceMaterialTextHash: sidecar.sourceMaterialTextHash,
-    sourceMaterialTextByteLength: sidecar.sourceMaterialTextByteLength,
-    sourceMaterialTextCharLength: sidecar.sourceMaterialTextCharLength,
+    sourceMaterialTextHash: aggregateTextHash,
+    sourceMaterialTextHashes: sidecars.map((sidecar) => sidecar.sourceMaterialTextHash),
+    sourceMaterialTextByteLength: aggregateByteLength,
+    sourceMaterialTextByteLengths: sidecars.map((sidecar) => sidecar.sourceMaterialTextByteLength),
+    sourceMaterialTextCharLength: aggregateCharLength,
     extractionExecutionAuthorized: false,
     llmExtractionCallAuthorized: false,
     parserExecuted: false,
@@ -518,7 +553,7 @@ function buildPacket(sidecar: EvidenceCorpusBoundedTextSidecar): BoundedTextExtr
     publicCutoverStatus: "blocked_precutover",
   };
 
-  if (packet.providerId !== sidecar.providerId) {
+  if (packet.providerId !== firstSidecar.providerId) {
     return {
       status: "blocked_pre_extraction_input_provider_id_mismatch",
       stopReason: "provider_id_mismatch",
@@ -564,7 +599,16 @@ export function buildBoundedExtractionInputAuthorization(params: {
         "public_cutover_not_blocked",
       );
     }
-    if (boundedTextAuthorization.boundedTextSidecarCount !== 1) {
+    const boundedTextSidecars = Array.isArray(boundedTextAuthorization.boundedTextSidecars)
+      ? boundedTextAuthorization.boundedTextSidecars
+      : boundedTextAuthorization.boundedTextSidecar
+        ? [boundedTextAuthorization.boundedTextSidecar]
+        : [];
+    if (
+      boundedTextAuthorization.boundedTextSidecarCount < 1
+      || boundedTextAuthorization.boundedTextSidecarCount > BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS
+      || boundedTextSidecars.length !== boundedTextAuthorization.boundedTextSidecarCount
+    ) {
       return failure(
         failureParams,
         "blocked_pre_extraction_input_sidecar_count_unsupported",
@@ -578,21 +622,23 @@ export function buildBoundedExtractionInputAuthorization(params: {
         "w4g_sidecar_missing",
       );
     }
-    const sidecar = boundedTextAuthorization.boundedTextSidecar as unknown as EvidenceCorpusBoundedTextSidecar;
-    const validationFailures = [
-      validateSidecarShape(sidecar),
-      validateSidecarText(sidecar),
-      validateLineage(sidecar),
-      validateClosedDownstream(boundedTextAuthorization, sidecar),
-    ];
-    const firstFailure = validationFailures.find((failureResult): failureResult is ValidationFailure =>
-      failureResult !== null
-    );
-    if (firstFailure) {
-      return failure(failureParams, firstFailure.status, firstFailure.stopReason);
+    const sidecars = boundedTextSidecars as unknown as EvidenceCorpusBoundedTextSidecar[];
+    for (const sidecar of sidecars) {
+      const validationFailures = [
+        validateSidecarShape(sidecar),
+        validateSidecarText(sidecar),
+        validateLineage(sidecar),
+        validateClosedDownstream(boundedTextAuthorization, sidecar),
+      ];
+      const firstFailure = validationFailures.find((failureResult): failureResult is ValidationFailure =>
+        failureResult !== null
+      );
+      if (firstFailure) {
+        return failure(failureParams, firstFailure.status, firstFailure.stopReason);
+      }
     }
 
-    const packet = buildPacket(sidecar);
+    const packet = buildPacket(sidecars);
     if ("status" in packet) {
       return failure(failureParams, packet.status, packet.stopReason);
     }

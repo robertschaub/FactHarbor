@@ -17,6 +17,7 @@ const SOURCE_MATERIAL_ADMISSION_VERSION =
 const DECISION_KEYS = [
   "admittedCorpusAdmissionInputCount",
   "corpusAdmissionInput",
+  "corpusAdmissionInputs",
   "decisionVersion",
   "downstreamGate",
   "evidenceCorpus",

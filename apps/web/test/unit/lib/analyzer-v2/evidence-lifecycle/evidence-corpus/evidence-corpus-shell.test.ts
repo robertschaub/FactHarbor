@@ -151,12 +151,14 @@ function shell(sourceMaterialAdmission: unknown, runtimeOwnership: "owned" | "no
 }
 
 function withAdmissionInput(admission: ReturnType<typeof validAdmission>, inputOverrides: Record<string, unknown>) {
+  const corpusAdmissionInput = {
+    ...(admission.corpusAdmissionInput as Record<string, unknown>),
+    ...inputOverrides,
+  };
   return {
     ...admission,
-    corpusAdmissionInput: {
-      ...(admission.corpusAdmissionInput as Record<string, unknown>),
-      ...inputOverrides,
-    },
+    corpusAdmissionInput,
+    corpusAdmissionInputs: [corpusAdmissionInput],
   };
 }
 

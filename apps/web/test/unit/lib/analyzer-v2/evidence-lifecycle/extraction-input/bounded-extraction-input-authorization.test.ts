@@ -26,8 +26,8 @@ function sidecar(text = TEXT): EvidenceCorpusBoundedTextSidecar {
     linkedEvidenceCorpusId: `EVIDENCE_CORPUS_SHELL_${hash.slice(0, 16).toUpperCase()}`,
     linkedEvidenceCorpusShellVersion: "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d",
     sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
-    locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
-    candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+    locatorRef: `OPAQUE_SOURCE_LOCATOR_${hash.slice(0, 8).toUpperCase()}`,
+    candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${hash.slice(0, 8).toUpperCase()}`,
     providerId: "wikimedia_core",
     sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
     sourceMaterialKind: "wikimedia_page_summary_extract_text",
@@ -76,6 +76,8 @@ function boundedTextAuthorization(
   overrides: Partial<EvidenceCorpusBoundedTextAuthorizationDecision> = {},
 ): EvidenceCorpusBoundedTextAuthorizationDecision {
   const boundedTextSidecar = overrides.boundedTextSidecar ?? sidecar();
+  const boundedTextSidecars = overrides.boundedTextSidecars
+    ?? (boundedTextSidecar ? [boundedTextSidecar] : []);
   return {
     decisionVersion: "v2.evidence-lifecycle.evidence-corpus-bounded-text-authorization.x7w4g",
     visibility: "internal_admin_only",
@@ -99,9 +101,10 @@ function boundedTextAuthorization(
       extractionDenialStatus: "extraction_denied_shell_only",
       extractionDenialStopReason: "shell_only_corpus",
     },
-    sourceMaterialRecordCount: 1,
-    boundedTextSidecarCount: boundedTextSidecar ? 1 : 0,
-    boundedTextSidecar,
+    sourceMaterialRecordCount: boundedTextSidecars.length,
+    boundedTextSidecarCount: boundedTextSidecars.length,
+    boundedTextSidecar: boundedTextSidecars[0] ?? null,
+    boundedTextSidecars,
     evidenceCorpus: null,
     extractionInput: null,
     evidenceItems: [],
@@ -172,6 +175,32 @@ describe("bounded extraction-input authorization", () => {
       llmExtractionCallAuthorized: false,
       evidenceItemExtractionAuthorized: false,
       publicCutoverStatus: "blocked_precutover",
+    });
+  });
+
+  it("creates one aggregate extraction-input packet from bounded W4-G fan-in sidecars", () => {
+    const firstText = "First bounded page-summary text.";
+    const secondText = "Second bounded page-summary text.";
+    const sidecars = [sidecar(firstText), sidecar(secondText)];
+    const decision = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: boundedTextAuthorization({
+        boundedTextSidecars: sidecars,
+      }),
+      boundedTextRuntimeOwnership: "owned",
+    });
+    const expectedAggregateText = [firstText, secondText].join("\n\n");
+
+    expect(decision.status).toBe("bounded_extraction_input_packet_created_extraction_execution_closed");
+    expect(decision.boundedTextSidecarCount).toBe(2);
+    expect(decision.extractionInputPacketCount).toBe(1);
+    expect(decision.extractionInputPacket).toMatchObject({
+      sourceMaterialRef: `AGGREGATE_SOURCE_MATERIAL_${sha256Text(expectedAggregateText).slice(0, 16).toUpperCase()}`,
+      sourceMaterialRefs: sidecars.map((entry) => entry.sourceMaterialRef),
+      inputText: expectedAggregateText,
+      inputTextHash: sha256Text(expectedAggregateText),
+      inputTextByteLength: Buffer.byteLength(expectedAggregateText, "utf8"),
+      sourceMaterialTextHashes: sidecars.map((entry) => entry.sourceMaterialTextHash),
+      sourceMaterialTextByteLengths: sidecars.map((entry) => entry.sourceMaterialTextByteLength),
     });
   });
 

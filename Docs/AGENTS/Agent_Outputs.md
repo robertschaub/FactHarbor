@@ -4841,3 +4841,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - W6-D is page fan-in over existing Wikimedia path, not true provider/source diversity. If W6-C still recommends `refine_retrieval` after W6-D, next direction should be query/source diversity rather than W6 prompt weakening.
 - Live-job budget remains `4`; no W6-D canary is authorized until W6-D1 and W6-D2 are separately verifier-clean, runtime is refreshed, routes are preflighted, and the ledger is updated.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D_Retrieval_Refinement_Review_Package.md`.
+
+## 2026-05-21 - Lead Developer - V2 W6-D1 Contract Widening Implementation
+
+- Implemented W6-D1 as contract-only bounded fan-in widening across Source Material readiness/admission, EvidenceCorpus shell, bounded-text sidecars, aggregate extraction-input packet, runtime provenance guards, and focused tests.
+- Preserved the one-record path and singular compatibility projections while making canonical arrays accept `1..3` records and enforcing the 4096-byte aggregate extraction-input cap.
+- No W6-D2 runtime fan-in fetch, live job, provider expansion, parser, public behavior, prompt/model/config/schema change, cache/SR/storage, report/verdict/warning/confidence behavior, ACS/direct URL, V1 work, or V1 cleanup was added.
+- Verifiers passed: focused W6-D1 tests (5 files / 20 tests), analyzer-v2-runtime (73 files / 341 tests), analyzer-v2 evidence-lifecycle (43 files / 214 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-D1_Contract_Widening_Implementation.md`.

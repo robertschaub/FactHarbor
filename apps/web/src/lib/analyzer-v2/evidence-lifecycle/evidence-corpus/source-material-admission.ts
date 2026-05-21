@@ -1,5 +1,6 @@
 import {
   EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION,
+  EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS,
   type EvidenceCorpusSourceMaterialReadinessDecision,
   type EvidenceCorpusSourceMaterialReadinessStatus,
   type EvidenceCorpusSourceMaterialReadinessStopReason,
@@ -60,7 +61,7 @@ export type EvidenceCorpusAdmissionInput = {
   readonly responseStatusCategory: "success_2xx";
   readonly contentTypeCategory: "accepted_json";
   readonly truncationApplied: false;
-  readonly sourceMaterialRecordCount: 1;
+  readonly sourceMaterialRecordCount: number;
   readonly readinessDecisionVersion: typeof EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION;
   readonly readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed";
   readonly readinessStopReason: "not_stopped";
@@ -92,6 +93,7 @@ export type EvidenceCorpusSourceMaterialAdmissionDecision = {
   readonly admittedCorpusAdmissionInputCount: number;
   readonly rejectedCorpusAdmissionInputCount: number;
   readonly corpusAdmissionInput: EvidenceCorpusAdmissionInput | null;
+  readonly corpusAdmissionInputs: readonly EvidenceCorpusAdmissionInput[];
   readonly evidenceCorpus: null;
   readonly evidenceCorpusBuildAuthorized: false;
   readonly evidenceItems: readonly [];
@@ -139,6 +141,7 @@ const READINESS_DECISION_KEYS = [
   "publicPointerExposure",
   "rejectedSourceMaterialRecordCount",
   "sourceMaterialRecord",
+  "sourceMaterialRecords",
   "sourceMaterialRecordCount",
   "status",
   "stopReason",
@@ -248,12 +251,14 @@ function decision(params: {
   readonly status: EvidenceCorpusSourceMaterialAdmissionStatus;
   readonly stopReason: EvidenceCorpusSourceMaterialAdmissionStopReason;
   readonly corpusAdmissionInput?: EvidenceCorpusAdmissionInput | null;
+  readonly corpusAdmissionInputs?: readonly EvidenceCorpusAdmissionInput[];
 }): EvidenceCorpusSourceMaterialAdmissionDecision {
-  const corpusAdmissionInput = params.corpusAdmissionInput ?? null;
+  const corpusAdmissionInputs = params.corpusAdmissionInputs ?? (params.corpusAdmissionInput ? [params.corpusAdmissionInput] : []);
+  const corpusAdmissionInput = corpusAdmissionInputs[0] ?? params.corpusAdmissionInput ?? null;
   const input = isRecord(params.input) ? params.input : null;
   const sourceMaterialRecordCount = boundedCount(input?.sourceMaterialRecordCount);
   const admittedCorpusAdmissionInputCount =
-    params.status === "source_material_admitted_to_corpus_input_gate_closed" && corpusAdmissionInput ? 1 : 0;
+    params.status === "source_material_admitted_to_corpus_input_gate_closed" ? corpusAdmissionInputs.length : 0;
 
   return {
     decisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_VERSION,
@@ -266,6 +271,7 @@ function decision(params: {
     admittedCorpusAdmissionInputCount,
     rejectedCorpusAdmissionInputCount: Math.max(0, sourceMaterialRecordCount - admittedCorpusAdmissionInputCount),
     corpusAdmissionInput,
+    corpusAdmissionInputs,
     evidenceCorpus: null,
     evidenceCorpusBuildAuthorized: false,
     evidenceItems: [],
@@ -335,7 +341,10 @@ function downstreamExecutionRemainsClosed(readiness: Record<string, unknown>): b
     && productExecution.publicSurfaceWritten === false;
 }
 
-function validateRecord(record: unknown): EvidenceCorpusAdmissionInput | ValidationFailure {
+function validateRecord(
+  record: unknown,
+  sourceMaterialRecordCount: number,
+): EvidenceCorpusAdmissionInput | ValidationFailure {
   if (!isRecord(record) || !hasExactKeys(record, SOURCE_MATERIAL_RECORD_KEYS)) {
     return {
       status: "blocked_pre_evidence_corpus_readiness_not_admissible",
@@ -436,7 +445,7 @@ function validateRecord(record: unknown): EvidenceCorpusAdmissionInput | Validat
     responseStatusCategory: "success_2xx",
     contentTypeCategory: "accepted_json",
     truncationApplied: false,
-    sourceMaterialRecordCount: 1,
+    sourceMaterialRecordCount,
     readinessDecisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION,
     readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed",
     readinessStopReason: "not_stopped",
@@ -505,15 +514,31 @@ export function buildEvidenceCorpusSourceMaterialAdmission(params: {
         "w4a_not_completed",
       );
     }
+    const sourceMaterialRecordCount = boundedCount(params.sourceMaterialReadiness.sourceMaterialRecordCount);
     if (
-      params.sourceMaterialReadiness.sourceMaterialRecordCount !== 1
-      || params.sourceMaterialReadiness.admittedSourceMaterialRecordCount !== 1
+      sourceMaterialRecordCount < 1
+      || sourceMaterialRecordCount > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
+      || params.sourceMaterialReadiness.admittedSourceMaterialRecordCount !== sourceMaterialRecordCount
       || params.sourceMaterialReadiness.rejectedSourceMaterialRecordCount !== 0
+      || !Array.isArray(params.sourceMaterialReadiness.sourceMaterialRecords)
+      || params.sourceMaterialReadiness.sourceMaterialRecords.length !== sourceMaterialRecordCount
     ) {
       return failure(
         params.sourceMaterialReadiness,
         "blocked_pre_evidence_corpus_readiness_not_admissible",
         "source_material_record_count_unsupported",
+      );
+    }
+    if (
+      isRecord(params.sourceMaterialReadiness.sourceMaterialRecord)
+      && isRecord(params.sourceMaterialReadiness.sourceMaterialRecords[0])
+      && params.sourceMaterialReadiness.sourceMaterialRecord.sourceMaterialTextHash !==
+        params.sourceMaterialReadiness.sourceMaterialRecords[0].sourceMaterialTextHash
+    ) {
+      return failure(
+        params.sourceMaterialReadiness,
+        "blocked_pre_evidence_corpus_readiness_not_admissible",
+        "structural_exception",
       );
     }
     if (!downstreamExecutionRemainsClosed(params.sourceMaterialReadiness)) {
@@ -531,16 +556,29 @@ export function buildEvidenceCorpusSourceMaterialAdmission(params: {
       );
     }
 
-    const corpusAdmissionInput = validateRecord(params.sourceMaterialReadiness.sourceMaterialRecord);
-    if (isValidationFailure(corpusAdmissionInput)) {
-      return failure(params.sourceMaterialReadiness, corpusAdmissionInput.status, corpusAdmissionInput.stopReason);
+    const corpusAdmissionInputs: EvidenceCorpusAdmissionInput[] = [];
+    const seenInputIds = new Set<string>();
+    for (const record of params.sourceMaterialReadiness.sourceMaterialRecords) {
+      const corpusAdmissionInput = validateRecord(record, sourceMaterialRecordCount);
+      if (isValidationFailure(corpusAdmissionInput)) {
+        return failure(params.sourceMaterialReadiness, corpusAdmissionInput.status, corpusAdmissionInput.stopReason);
+      }
+      if (seenInputIds.has(corpusAdmissionInput.corpusAdmissionInputId)) {
+        return failure(
+          params.sourceMaterialReadiness,
+          "blocked_pre_evidence_corpus_readiness_not_admissible",
+          "source_material_record_count_unsupported",
+        );
+      }
+      seenInputIds.add(corpusAdmissionInput.corpusAdmissionInputId);
+      corpusAdmissionInputs.push(corpusAdmissionInput);
     }
 
     return decision({
       input: params.sourceMaterialReadiness as EvidenceCorpusSourceMaterialReadinessDecision,
       status: "source_material_admitted_to_corpus_input_gate_closed",
       stopReason: "not_stopped",
-      corpusAdmissionInput,
+      corpusAdmissionInputs,
     });
   } catch {
     return failure(

@@ -24,6 +24,8 @@ export const EVIDENCE_CORPUS_BOUNDED_TEXT_AUTHORIZATION_DECISION_VERSION =
 export const EVIDENCE_CORPUS_BOUNDED_TEXT_SIDECAR_VERSION =
   "v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g";
 export const EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES = SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES;
+export const EVIDENCE_CORPUS_BOUNDED_TEXT_FAN_IN_MAX_RECORDS = 3;
+export const EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES = 4096;
 
 export type EvidenceCorpusBoundedTextRuntimeOwnership =
   | "owned"
@@ -154,6 +156,7 @@ export type EvidenceCorpusBoundedTextAuthorizationDecision = {
   readonly sourceMaterialRecordCount: number;
   readonly boundedTextSidecarCount: number;
   readonly boundedTextSidecar: EvidenceCorpusBoundedTextSidecar | null;
+  readonly boundedTextSidecars: readonly EvidenceCorpusBoundedTextSidecar[];
   readonly evidenceCorpus: null;
   readonly extractionInput: null;
   readonly evidenceItems: readonly [];
@@ -299,8 +302,10 @@ function decision(params: {
   readonly status: EvidenceCorpusBoundedTextAuthorizationStatus;
   readonly stopReason: EvidenceCorpusBoundedTextAuthorizationStopReason;
   readonly boundedTextSidecar?: EvidenceCorpusBoundedTextSidecar | null;
+  readonly boundedTextSidecars?: readonly EvidenceCorpusBoundedTextSidecar[];
 }): EvidenceCorpusBoundedTextAuthorizationDecision {
-  const boundedTextSidecar = params.boundedTextSidecar ?? null;
+  const boundedTextSidecars = params.boundedTextSidecars ?? (params.boundedTextSidecar ? [params.boundedTextSidecar] : []);
+  const boundedTextSidecar = boundedTextSidecars[0] ?? params.boundedTextSidecar ?? null;
   const sourceMaterial = isRecord(params.sourceMaterialPageSummary) ? params.sourceMaterialPageSummary : null;
   const admission = isRecord(params.sourceMaterialAdmission) ? params.sourceMaterialAdmission : null;
   const shell = isRecord(params.evidenceCorpusShell) ? params.evidenceCorpusShell : null;
@@ -314,8 +319,9 @@ function decision(params: {
     stopReason: params.stopReason,
     parent: parentSummary(params),
     sourceMaterialRecordCount: boundedCount(sourceMaterial?.sourceMaterialRecordCount),
-    boundedTextSidecarCount: boundedTextSidecar ? 1 : 0,
+    boundedTextSidecarCount: boundedTextSidecars.length,
     boundedTextSidecar,
+    boundedTextSidecars,
     evidenceCorpus: null,
     extractionInput: null,
     evidenceItems: [],
@@ -456,7 +462,14 @@ function buildSidecar(params: {
   readonly extractionReadinessDenial: EvidenceCorpusExtractionReadinessDenialDecision;
 }): EvidenceCorpusBoundedTextSidecar | ValidationFailure {
   const corpus = params.evidenceCorpusShell.evidenceCorpus;
-  const admissionInput = params.sourceMaterialAdmission.corpusAdmissionInput;
+  const admissionInputs = Array.isArray(params.sourceMaterialAdmission.corpusAdmissionInputs)
+    ? params.sourceMaterialAdmission.corpusAdmissionInputs
+    : params.sourceMaterialAdmission.corpusAdmissionInput
+      ? [params.sourceMaterialAdmission.corpusAdmissionInput]
+      : [];
+  const admissionInput = Array.isArray(admissionInputs)
+    ? admissionInputs.find((input) => input.sourceMaterialRef === params.sourceMaterialRecord.sourceMaterialId)
+    : null;
   if (!corpus || !admissionInput) {
     return {
       status: "blocked_pre_bounded_corpus_text_lineage_mismatch",
@@ -470,10 +483,8 @@ function buildSidecar(params: {
     || admissionInput.providerId !== params.sourceMaterialRecord.providerId
     || admissionInput.sourceMaterialEndpointId !== params.sourceMaterialRecord.sourceMaterialEndpointId
     || admissionInput.sourceMaterialTextHash !== params.sourceMaterialRecord.sourceMaterialTextHash
-    || corpus.sourceMaterialRefs.length !== 1
-    || corpus.sourceMaterialRefs[0] !== params.sourceMaterialRecord.sourceMaterialId
-    || corpus.sourceMaterialTextHashes.length !== 1
-    || corpus.sourceMaterialTextHashes[0] !== params.sourceMaterialRecord.sourceMaterialTextHash
+    || !corpus.sourceMaterialRefs.includes(params.sourceMaterialRecord.sourceMaterialId)
+    || !corpus.sourceMaterialTextHashes.includes(params.sourceMaterialRecord.sourceMaterialTextHash)
     || params.extractionReadinessDenial.parent.evidenceCorpusId !== corpus.evidenceCorpusId
   ) {
     return {
@@ -562,10 +573,12 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
     ) {
       return failure(failureParams, "blocked_pre_bounded_corpus_text_w3b_not_completed", "w3b_not_completed");
     }
+    const sourceMaterialRecordCount = boundedCount(params.sourceMaterialPageSummary.sourceMaterialRecordCount);
     if (
-      params.sourceMaterialPageSummary.sourceMaterialRecordCount !== 1
+      sourceMaterialRecordCount < 1
+      || sourceMaterialRecordCount > EVIDENCE_CORPUS_BOUNDED_TEXT_FAN_IN_MAX_RECORDS
       || !Array.isArray(params.sourceMaterialPageSummary.sourceMaterialRecords)
-      || params.sourceMaterialPageSummary.sourceMaterialRecords.length !== 1
+      || params.sourceMaterialPageSummary.sourceMaterialRecords.length !== sourceMaterialRecordCount
     ) {
       return failure(
         failureParams,
@@ -573,11 +586,22 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
         "source_material_record_count_unsupported",
       );
     }
-    const sourceMaterialRecord = validateSourceMaterialRecord(
-      params.sourceMaterialPageSummary.sourceMaterialRecords[0],
-    );
-    if (isValidationFailure(sourceMaterialRecord)) {
-      return failure(failureParams, sourceMaterialRecord.status, sourceMaterialRecord.stopReason);
+    const sourceMaterialRecords: SourceMaterialPageSummaryRecord[] = [];
+    const seenHashes = new Set<string>();
+    for (const record of params.sourceMaterialPageSummary.sourceMaterialRecords) {
+      const sourceMaterialRecord = validateSourceMaterialRecord(record);
+      if (isValidationFailure(sourceMaterialRecord)) {
+        return failure(failureParams, sourceMaterialRecord.status, sourceMaterialRecord.stopReason);
+      }
+      if (seenHashes.has(sourceMaterialRecord.sourceMaterialTextHash)) {
+        return failure(
+          failureParams,
+          "blocked_pre_bounded_corpus_text_record_count_unsupported",
+          "source_material_record_count_unsupported",
+        );
+      }
+      seenHashes.add(sourceMaterialRecord.sourceMaterialTextHash);
+      sourceMaterialRecords.push(sourceMaterialRecord);
     }
     if (params.admissionRuntimeOwnership !== "owned") {
       return failure(
@@ -632,23 +656,38 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
       return failure(failureParams, closedFailure.status, closedFailure.stopReason);
     }
 
-    const boundedTextSidecar = buildSidecar({
-      sourceMaterialRecord,
-      sourceMaterialAdmission:
-        params.sourceMaterialAdmission as unknown as EvidenceCorpusSourceMaterialAdmissionDecision,
-      evidenceCorpusShell: params.evidenceCorpusShell as unknown as EvidenceCorpusShellDecision,
-      extractionReadinessDenial:
-        params.extractionReadinessDenial as unknown as EvidenceCorpusExtractionReadinessDenialDecision,
-    });
-    if ("status" in boundedTextSidecar) {
-      return failure(failureParams, boundedTextSidecar.status, boundedTextSidecar.stopReason);
+    const boundedTextSidecars: EvidenceCorpusBoundedTextSidecar[] = [];
+    for (const sourceMaterialRecord of sourceMaterialRecords) {
+      const boundedTextSidecar = buildSidecar({
+        sourceMaterialRecord,
+        sourceMaterialAdmission:
+          params.sourceMaterialAdmission as unknown as EvidenceCorpusSourceMaterialAdmissionDecision,
+        evidenceCorpusShell: params.evidenceCorpusShell as unknown as EvidenceCorpusShellDecision,
+        extractionReadinessDenial:
+          params.extractionReadinessDenial as unknown as EvidenceCorpusExtractionReadinessDenialDecision,
+      });
+      if ("status" in boundedTextSidecar) {
+        return failure(failureParams, boundedTextSidecar.status, boundedTextSidecar.stopReason);
+      }
+      boundedTextSidecars.push(boundedTextSidecar);
+    }
+    const aggregateTextByteLength = Buffer.byteLength(
+      boundedTextSidecars.map((sidecar) => sidecar.text).join("\n\n"),
+      "utf8",
+    );
+    if (aggregateTextByteLength > EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES) {
+      return failure(
+        failureParams,
+        "blocked_pre_bounded_corpus_text_oversized",
+        "source_material_text_oversized",
+      );
     }
 
     return decision({
       ...failureParams,
       status: "bounded_corpus_text_sidecar_created_extraction_gate_closed",
       stopReason: "not_stopped",
-      boundedTextSidecar,
+      boundedTextSidecars,
     });
   } catch {
     return decision({

@@ -24,6 +24,7 @@ const DECISION_KEYS = [
   "rejectedSourceMaterialRecordCount",
   "sourceMaterialRecord",
   "sourceMaterialRecordCount",
+  "sourceMaterialRecords",
   "status",
   "stopReason",
   "visibility",

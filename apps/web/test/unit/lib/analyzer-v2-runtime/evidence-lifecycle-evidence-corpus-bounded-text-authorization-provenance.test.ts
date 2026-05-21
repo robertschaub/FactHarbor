@@ -33,6 +33,7 @@ function decision() {
     sourceMaterialRecordCount: 0,
     boundedTextSidecarCount: 0,
     boundedTextSidecar: null,
+    boundedTextSidecars: [],
     evidenceCorpus: null,
     extractionInput: null,
     evidenceItems: [],

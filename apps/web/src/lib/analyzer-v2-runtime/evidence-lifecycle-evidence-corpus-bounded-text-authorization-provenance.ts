@@ -15,6 +15,7 @@ export type EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationRuntimeOwners
 const DECISION_KEYS = [
   "boundedTextSidecar",
   "boundedTextSidecarCount",
+  "boundedTextSidecars",
   "decisionVersion",
   "downstreamGate",
   "evidenceCorpus",

@@ -2,6 +2,7 @@ import {
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_INPUT_VERSION,
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_MAX_TEXT_BYTES,
   EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_VERSION,
+  type EvidenceCorpusAdmissionInput,
   type EvidenceCorpusSourceMaterialAdmissionDecision,
   type EvidenceCorpusSourceMaterialAdmissionStatus,
   type EvidenceCorpusSourceMaterialAdmissionStopReason,
@@ -68,7 +69,7 @@ export type EvidenceCorpusShell = {
   readonly providerIds: readonly string[];
   readonly sourceMaterialEndpointIds: readonly string[];
   readonly languageCodes: readonly string[];
-  readonly sourceMaterialKinds: readonly ["wikimedia_page_summary_extract_text"];
+  readonly sourceMaterialKinds: readonly "wikimedia_page_summary_extract_text"[];
   readonly sourceMaterialTextHashes: readonly string[];
   readonly aggregateSourceMaterialTextByteLength: number;
   readonly aggregateSourceMaterialTextCharLength: number;
@@ -77,6 +78,7 @@ export type EvidenceCorpusShell = {
     readonly admissionStatus: "source_material_admitted_to_corpus_input_gate_closed";
     readonly admissionStopReason: "not_stopped";
     readonly corpusAdmissionInputId: string;
+    readonly corpusAdmissionInputIds: readonly string[];
   };
   readonly readinessLineage: {
     readonly readinessDecisionVersion: string;
@@ -144,6 +146,7 @@ type ValidationFailure = {
 const ADMISSION_DECISION_KEYS = [
   "admittedCorpusAdmissionInputCount",
   "corpusAdmissionInput",
+  "corpusAdmissionInputs",
   "decisionVersion",
   "downstreamGate",
   "evidenceCorpus",
@@ -371,7 +374,7 @@ function downstreamExecutionRemainsClosed(admission: Record<string, unknown>): b
     && productExecution.publicSurfaceWritten === false;
 }
 
-function validateAdmissionInput(value: unknown): EvidenceCorpusShell | ValidationFailure {
+function validateAdmissionInput(value: unknown): EvidenceCorpusAdmissionInput | ValidationFailure {
   if (!isRecord(value) || !hasExactKeys(value, CORPUS_ADMISSION_INPUT_KEYS)) {
     return {
       status: "blocked_pre_evidence_corpus_admission_not_admissible",
@@ -510,27 +513,74 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusShell | Validatio
     };
   }
 
+  return value as EvidenceCorpusAdmissionInput;
+}
+
+function isValidationFailure(value: EvidenceCorpusAdmissionInput | EvidenceCorpusShell | ValidationFailure):
+  value is ValidationFailure {
+  return "status" in value;
+}
+
+function buildCorpusShell(inputs: readonly EvidenceCorpusAdmissionInput[]): EvidenceCorpusShell | ValidationFailure {
+  if (inputs.length < 1 || inputs.length > 3) {
+    return {
+      status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
+      stopReason: "source_material_record_count_unsupported",
+    };
+  }
+  const expectedRecordCount = inputs.length;
+  const validatedInputs: EvidenceCorpusAdmissionInput[] = [];
+  const seenInputIds = new Set<string>();
+  const seenHashes = new Set<string>();
+  for (const input of inputs) {
+    const validated = validateAdmissionInput(input);
+    if (isValidationFailure(validated)) {
+      return validated;
+    }
+    if (
+      validated.sourceMaterialRecordCount !== expectedRecordCount
+      || seenInputIds.has(validated.corpusAdmissionInputId)
+      || seenHashes.has(validated.sourceMaterialTextHash)
+    ) {
+      return {
+        status: "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
+        stopReason: "source_material_record_count_unsupported",
+      };
+    }
+    seenInputIds.add(validated.corpusAdmissionInputId);
+    seenHashes.add(validated.sourceMaterialTextHash);
+    validatedInputs.push(validated);
+  }
+
+  const aggregateHash = validatedInputs.map((input) => input.sourceMaterialTextHash).join(".");
   return {
     shellVersion: EVIDENCE_CORPUS_SHELL_VERSION,
-    evidenceCorpusId: `EVIDENCE_CORPUS_SHELL_${sourceMaterialTextHash.slice(0, 16).toUpperCase()}`,
+    evidenceCorpusId: `EVIDENCE_CORPUS_SHELL_${aggregateHash.slice(0, 16).toUpperCase()}`,
     kind: "shell_only",
     visibility: "internal_admin_only",
     publicPointerExposure: "forbidden",
-    sourceMaterialRefs: [sourceMaterialRef],
-    locatorRefs: [locatorRef],
-    candidatePreviewIds: [candidatePreviewId],
-    providerIds: [providerId],
-    sourceMaterialEndpointIds: [sourceMaterialEndpointId],
-    languageCodes: [languageCode],
-    sourceMaterialKinds: ["wikimedia_page_summary_extract_text"],
-    sourceMaterialTextHashes: [sourceMaterialTextHash],
-    aggregateSourceMaterialTextByteLength: Number(sourceMaterialTextByteLength),
-    aggregateSourceMaterialTextCharLength: Number(sourceMaterialTextCharLength),
+    sourceMaterialRefs: validatedInputs.map((input) => input.sourceMaterialRef),
+    locatorRefs: validatedInputs.map((input) => input.locatorRef),
+    candidatePreviewIds: validatedInputs.map((input) => input.candidatePreviewId),
+    providerIds: validatedInputs.map((input) => input.providerId),
+    sourceMaterialEndpointIds: validatedInputs.map((input) => input.sourceMaterialEndpointId),
+    languageCodes: validatedInputs.map((input) => input.languageCode),
+    sourceMaterialKinds: validatedInputs.map(() => "wikimedia_page_summary_extract_text"),
+    sourceMaterialTextHashes: validatedInputs.map((input) => input.sourceMaterialTextHash),
+    aggregateSourceMaterialTextByteLength: validatedInputs.reduce(
+      (total, input) => total + input.sourceMaterialTextByteLength,
+      0,
+    ),
+    aggregateSourceMaterialTextCharLength: validatedInputs.reduce(
+      (total, input) => total + input.sourceMaterialTextCharLength,
+      0,
+    ),
     admissionLineage: {
       admissionDecisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_VERSION,
       admissionStatus: "source_material_admitted_to_corpus_input_gate_closed",
       admissionStopReason: "not_stopped",
-      corpusAdmissionInputId,
+      corpusAdmissionInputId: validatedInputs[0].corpusAdmissionInputId,
+      corpusAdmissionInputIds: validatedInputs.map((input) => input.corpusAdmissionInputId),
     },
     readinessLineage: {
       readinessDecisionVersion: SOURCE_MATERIAL_READINESS_VERSION,
@@ -542,10 +592,6 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusShell | Validatio
     evidenceItemExtractionAuthorized: false,
     downstreamExecution: closedExecutionFlags(),
   };
-}
-
-function isValidationFailure(value: EvidenceCorpusShell | ValidationFailure): value is ValidationFailure {
-  return "status" in value;
 }
 
 export function buildEvidenceCorpusShell(params: {
@@ -598,15 +644,31 @@ export function buildEvidenceCorpusShell(params: {
         "w4c_admission_not_positive",
       );
     }
+    const sourceMaterialRecordCount = boundedCount(params.sourceMaterialAdmission.sourceMaterialRecordCount);
     if (
-      params.sourceMaterialAdmission.sourceMaterialRecordCount !== 1
-      || params.sourceMaterialAdmission.admittedCorpusAdmissionInputCount !== 1
+      sourceMaterialRecordCount < 1
+      || sourceMaterialRecordCount > 3
+      || params.sourceMaterialAdmission.admittedCorpusAdmissionInputCount !== sourceMaterialRecordCount
       || params.sourceMaterialAdmission.rejectedCorpusAdmissionInputCount !== 0
+      || !Array.isArray(params.sourceMaterialAdmission.corpusAdmissionInputs)
+      || params.sourceMaterialAdmission.corpusAdmissionInputs.length !== sourceMaterialRecordCount
     ) {
       return failure(
         params.sourceMaterialAdmission,
         "blocked_pre_evidence_corpus_source_material_record_count_unsupported",
         "source_material_record_count_unsupported",
+      );
+    }
+    if (
+      isRecord(params.sourceMaterialAdmission.corpusAdmissionInput)
+      && isRecord(params.sourceMaterialAdmission.corpusAdmissionInputs[0])
+      && params.sourceMaterialAdmission.corpusAdmissionInput.sourceMaterialTextHash !==
+        params.sourceMaterialAdmission.corpusAdmissionInputs[0].sourceMaterialTextHash
+    ) {
+      return failure(
+        params.sourceMaterialAdmission,
+        "blocked_pre_evidence_corpus_admission_not_admissible",
+        "structural_exception",
       );
     }
     if (!downstreamExecutionRemainsClosed(params.sourceMaterialAdmission)) {
@@ -624,7 +686,7 @@ export function buildEvidenceCorpusShell(params: {
       );
     }
 
-    const evidenceCorpus = validateAdmissionInput(params.sourceMaterialAdmission.corpusAdmissionInput);
+    const evidenceCorpus = buildCorpusShell(params.sourceMaterialAdmission.corpusAdmissionInputs);
     if (isValidationFailure(evidenceCorpus)) {
       return failure(params.sourceMaterialAdmission, evidenceCorpus.status, evidenceCorpus.stopReason);
     }

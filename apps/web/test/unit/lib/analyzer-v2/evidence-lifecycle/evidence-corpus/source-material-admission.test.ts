@@ -148,12 +148,14 @@ function withReadinessRecord(
   readiness: EvidenceCorpusSourceMaterialReadinessDecision,
   recordOverrides: Record<string, unknown>,
 ) {
+  const sourceMaterialRecord = {
+    ...(readiness.sourceMaterialRecord as Record<string, unknown>),
+    ...recordOverrides,
+  };
   return {
     ...readiness,
-    sourceMaterialRecord: {
-      ...(readiness.sourceMaterialRecord as Record<string, unknown>),
-      ...recordOverrides,
-    },
+    sourceMaterialRecord,
+    sourceMaterialRecords: [sourceMaterialRecord],
   };
 }
 

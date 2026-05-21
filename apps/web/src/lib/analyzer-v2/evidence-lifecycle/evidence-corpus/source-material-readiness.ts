@@ -11,6 +11,7 @@ import {
 
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION =
   "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a";
+export const EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS = 3;
 
 export type EvidenceCorpusSourceMaterialReadinessStatus =
   | "source_material_structurally_admissible_evidence_corpus_gate_closed"
@@ -75,6 +76,7 @@ export type EvidenceCorpusSourceMaterialReadinessDecision = {
   readonly admittedSourceMaterialRecordCount: number;
   readonly rejectedSourceMaterialRecordCount: number;
   readonly sourceMaterialRecord: EvidenceCorpusSourceMaterialReadinessRecordSummary | null;
+  readonly sourceMaterialRecords: readonly EvidenceCorpusSourceMaterialReadinessRecordSummary[];
   readonly extractionInput: null;
   readonly evidenceCorpus: null;
   readonly evidenceCorpusBuildAuthorized: false;
@@ -186,12 +188,14 @@ function decision(
     readonly status: EvidenceCorpusSourceMaterialReadinessStatus;
     readonly stopReason: EvidenceCorpusSourceMaterialReadinessStopReason;
     readonly record?: EvidenceCorpusSourceMaterialReadinessRecordSummary | null;
+    readonly records?: readonly EvidenceCorpusSourceMaterialReadinessRecordSummary[];
   },
 ): EvidenceCorpusSourceMaterialReadinessDecision {
   const input = isRecord(params.input) ? params.input : null;
   const sourceMaterialRecordCount = boundedCount(input?.sourceMaterialRecordCount);
+  const records = params.records ?? (params.record ? [params.record] : []);
   const admittedSourceMaterialRecordCount =
-    params.record && params.status === "source_material_structurally_admissible_evidence_corpus_gate_closed" ? 1 : 0;
+    params.status === "source_material_structurally_admissible_evidence_corpus_gate_closed" ? records.length : 0;
 
   return {
     decisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION,
@@ -203,7 +207,8 @@ function decision(
     sourceMaterialRecordCount,
     admittedSourceMaterialRecordCount,
     rejectedSourceMaterialRecordCount: Math.max(0, sourceMaterialRecordCount - admittedSourceMaterialRecordCount),
-    sourceMaterialRecord: params.record ?? null,
+    sourceMaterialRecord: records[0] ?? params.record ?? null,
+    sourceMaterialRecords: records,
     extractionInput: null,
     evidenceCorpus: null,
     evidenceCorpusBuildAuthorized: false,
@@ -485,7 +490,7 @@ function validateDiagnostic(diagnostic: unknown): ValidationFailure | null {
 }
 
 function validateCompletedW3B(input: Record<string, unknown>):
-  EvidenceCorpusSourceMaterialReadinessRecordSummary | ValidationFailure {
+  readonly EvidenceCorpusSourceMaterialReadinessRecordSummary[] | ValidationFailure {
   if (
     input.sourceMaterialVersion !== SOURCE_MATERIAL_PAGE_SUMMARY_VERSION
     || input.sourceMaterialEndpointId !== SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID
@@ -523,9 +528,13 @@ function validateCompletedW3B(input: Record<string, unknown>):
     };
   }
   if (
-    input.attemptedFetchCount !== 1
-    || input.sourceMaterialRecordCount !== 1
-    || input.fetchDiagnosticCount !== 1
+    !Number.isInteger(input.attemptedFetchCount)
+    || !Number.isInteger(input.sourceMaterialRecordCount)
+    || !Number.isInteger(input.fetchDiagnosticCount)
+    || Number(input.sourceMaterialRecordCount) < 1
+    || Number(input.sourceMaterialRecordCount) > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
+    || input.attemptedFetchCount !== input.sourceMaterialRecordCount
+    || input.fetchDiagnosticCount !== input.sourceMaterialRecordCount
   ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
@@ -541,14 +550,14 @@ function validateCompletedW3B(input: Record<string, unknown>):
       stopReason: "source_material_record_missing",
     };
   }
-  if (records.length !== 1) {
+  if (records.length !== input.sourceMaterialRecordCount) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
       stopReason: "source_material_record_count_unsupported",
     };
   }
   const diagnostics = input.fetchDiagnostics;
-  if (!Array.isArray(diagnostics) || diagnostics.length !== 1) {
+  if (!Array.isArray(diagnostics) || diagnostics.length !== records.length) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
       stopReason: "fetch_diagnostic_not_success",
@@ -566,15 +575,35 @@ function validateCompletedW3B(input: Record<string, unknown>):
       stopReason: "raw_leakage_marker_detected",
     };
   }
-  const diagnosticFailure = validateDiagnostic(diagnostics[0]);
-  if (diagnosticFailure) {
-    return diagnosticFailure;
+  for (const diagnostic of diagnostics) {
+    const diagnosticFailure = validateDiagnostic(diagnostic);
+    if (diagnosticFailure) {
+      return diagnosticFailure;
+    }
   }
-  return validateRecord(records[0]);
+  const validatedRecords: EvidenceCorpusSourceMaterialReadinessRecordSummary[] = [];
+  const seenRecordIds = new Set<string>();
+  const seenTextHashes = new Set<string>();
+  for (const record of records) {
+    const validated = validateRecord(record);
+    if ("status" in validated) {
+      return validated;
+    }
+    if (seenRecordIds.has(validated.sourceMaterialId) || seenTextHashes.has(validated.sourceMaterialTextHash)) {
+      return {
+        status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
+        stopReason: "source_material_record_count_unsupported",
+      };
+    }
+    seenRecordIds.add(validated.sourceMaterialId);
+    seenTextHashes.add(validated.sourceMaterialTextHash);
+    validatedRecords.push(validated);
+  }
+  return validatedRecords;
 }
 
 function isValidationFailure(
-  value: EvidenceCorpusSourceMaterialReadinessRecordSummary | ValidationFailure,
+  value: readonly EvidenceCorpusSourceMaterialReadinessRecordSummary[] | ValidationFailure,
 ): value is ValidationFailure {
   return "status" in value;
 }
@@ -608,7 +637,7 @@ export function buildEvidenceCorpusSourceMaterialReadiness(params: {
       input: params.sourceMaterialPageSummary,
       status: "source_material_structurally_admissible_evidence_corpus_gate_closed",
       stopReason: "not_stopped",
-      record: validated,
+      records: validated,
     });
   } catch {
     return failure(
