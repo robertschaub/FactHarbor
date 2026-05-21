@@ -210,6 +210,11 @@ export type BoundedEvidenceExtractionInputFrame = {
   readonly inputTextHash: string;
   readonly inputTextByteLength: number;
   readonly providerId: string;
+  readonly sourceContentPackets: readonly {
+    readonly sourceRecordId: string;
+    readonly contentPacketId: string;
+    readonly providerId: string;
+  }[];
   readonly targetAtomicClaimIds: readonly string[];
 };
 
@@ -798,9 +803,30 @@ function validateW4h(
   }
   if (
     packet.providerId !== decisionInput.parent.providerId ||
-    packet.providerId.trim().length === 0
+    packet.providerId.trim().length === 0 ||
+    packet.sourceContentPackets.length === 0 ||
+    packet.providerIds.length !== packet.sourceContentPackets.length ||
+    packet.providerIds.some((providerId, index) =>
+      providerId.trim().length === 0 || providerId !== packet.sourceContentPackets[index]?.providerId
+    )
   ) {
     return { status: "blocked", reason: "provider_id_mismatch" };
+  }
+  for (const contentPacket of packet.sourceContentPackets) {
+    if (
+      contentPacket.sourceRecordId.trim().length === 0 ||
+      contentPacket.contentPacketId.trim().length === 0 ||
+      contentPacket.contentText.length === 0 ||
+      contentPacket.contentTextByteLength <= 0 ||
+      contentPacket.contentTextByteLength > BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES ||
+      utf8ByteLength(contentPacket.contentText) !== contentPacket.contentTextByteLength ||
+      Array.from(contentPacket.contentText).length !== contentPacket.contentTextCharLength
+    ) {
+      return { status: "blocked", reason: "packet_length_mismatch" };
+    }
+    if (contentPacket.contentTextHash !== sha256Text(contentPacket.contentText)) {
+      return { status: "blocked", reason: "packet_hash_mismatch" };
+    }
   }
   return { status: "accepted", packet };
 }
@@ -982,23 +1008,23 @@ function buildTaskPolicySnapshot(params: {
 }
 
 function buildSourceContentPacketsJson(packet: BoundedTextExtractionInputPacket): string {
-  return JSON.stringify([{
-    sourceRecordId: packet.sourceMaterialRef,
-    contentPacketId: packet.packetId,
-    providerId: packet.providerId,
-    sourceMaterialKind: packet.sourceMaterialKind,
-    languageCode: packet.languageCode,
-    contentText: packet.inputText,
-    contentTextHash: packet.inputTextHash,
-    contentTextByteLength: packet.inputTextByteLength,
-    contentTextCharLength: packet.inputTextCharLength,
-    maxContentTextBytes: packet.maxInputTextBytes,
+  return JSON.stringify(packet.sourceContentPackets.map((contentPacket) => ({
+    sourceRecordId: contentPacket.sourceRecordId,
+    contentPacketId: contentPacket.contentPacketId,
+    providerId: contentPacket.providerId,
+    sourceMaterialKind: contentPacket.sourceMaterialKind,
+    languageCode: contentPacket.languageCode,
+    contentText: contentPacket.contentText,
+    contentTextHash: contentPacket.contentTextHash,
+    contentTextByteLength: contentPacket.contentTextByteLength,
+    contentTextCharLength: contentPacket.contentTextCharLength,
+    maxContentTextBytes: contentPacket.maxContentTextBytes,
     provenance: {
-      locatorRef: packet.locatorRef,
-      candidatePreviewId: packet.candidatePreviewId,
-      sourceMaterialEndpointId: packet.sourceMaterialEndpointId,
+      locatorRef: contentPacket.provenance.locatorRef,
+      candidatePreviewId: contentPacket.provenance.candidatePreviewId,
+      sourceMaterialEndpointId: contentPacket.sourceMaterialEndpointId,
     },
-  }]);
+  })));
 }
 
 function buildApplicabilityResultJson(
@@ -1009,14 +1035,14 @@ function buildApplicabilityResultJson(
     schemaVersion: "v2.evidence_applicability_result.0",
     taskKey: "evidence_applicability",
     status: "accepted",
-    applicabilityDecisions: [{
-      sourceRecordId: packet.sourceMaterialRef,
-      contentPacketId: packet.packetId,
+    applicabilityDecisions: packet.sourceContentPackets.map((contentPacket) => ({
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
       targetAtomicClaimIds: [...selectedAtomicClaimIds],
       applicability: "uncertain",
       rationale: "W5 uses the existing extraction prompt with structural-only applicability context; semantic extraction remains LLM-owned.",
       missingDimensions: [],
-    }],
+    })),
     integrityEvents: [],
     blockedReason: null,
     damagedReason: null,
@@ -1160,8 +1186,11 @@ function validateAcceptedResultContent(
     return null;
   }
   const selectedIdSet = new Set(frame.targetAtomicClaimIds);
+  const approvedPackets = new Set(
+    frame.sourceContentPackets.map((packet) => `${packet.sourceRecordId}\u0000${packet.contentPacketId}`),
+  );
   for (const item of result.evidenceItems) {
-    if (item.sourceRecordId !== frame.sourceRecordId || item.contentPacketId !== frame.contentPacketId) {
+    if (!approvedPackets.has(`${item.sourceRecordId}\u0000${item.contentPacketId}`)) {
       return "approved_packet_mismatch";
     }
     if (item.statement.trim().length === 0) {
@@ -1527,6 +1556,11 @@ export async function runBoundedEvidenceExtractionRuntime(
     inputTextHash: packet.inputTextHash,
     inputTextByteLength: packet.inputTextByteLength,
     providerId: packet.providerId,
+    sourceContentPackets: packet.sourceContentPackets.map((contentPacket) => ({
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
+      providerId: contentPacket.providerId,
+    })),
     targetAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
   };
   const adapterOutcome = await executeAdapter({

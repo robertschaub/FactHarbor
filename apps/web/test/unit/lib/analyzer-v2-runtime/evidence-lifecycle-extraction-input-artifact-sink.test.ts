@@ -70,12 +70,19 @@ function authorization(text = TEXT): EvidenceLifecycleExtractionInputAuthorizati
       parentSidecarId: "EVIDENCE_CORPUS_BOUNDED_TEXT_0123456789ABCDEF",
       linkedEvidenceCorpusId: "EVIDENCE_CORPUS_SHELL_0123456789ABCDEF",
       sourceMaterialRef: "SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF",
+      sourceMaterialRefs: ["SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF"],
       locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+      locatorRefs: ["OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456"],
       candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+      candidatePreviewIds: ["SOURCE_CANDIDATE_PREVIEW_1_1"],
       providerId: "wikimedia_core",
+      providerIds: ["wikimedia_core"],
       sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+      sourceMaterialEndpointIds: ["ep_wikimedia_project_page_summary"],
       sourceMaterialKind: "wikimedia_page_summary_extract_text",
+      sourceMaterialKinds: ["wikimedia_page_summary_extract_text"],
       languageCode: "en",
+      languageCodes: ["en"],
       inputText: text,
       inputTextHash: "0".repeat(64),
       inputTextByteLength: textByteLength,
@@ -83,8 +90,27 @@ function authorization(text = TEXT): EvidenceLifecycleExtractionInputAuthorizati
       maxInputTextBytes: 4096,
       truncationApplied: false,
       sourceMaterialTextHash: "0".repeat(64),
+      sourceMaterialTextHashes: ["0".repeat(64)],
       sourceMaterialTextByteLength: textByteLength,
+      sourceMaterialTextByteLengths: [textByteLength],
       sourceMaterialTextCharLength: Array.from(text).length,
+      sourceContentPackets: [{
+        sourceRecordId: "SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF",
+        contentPacketId: "BOUNDED_EXTRACTION_CONTENT_0123456789ABCDEF",
+        providerId: "wikimedia_core",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        sourceMaterialKind: "wikimedia_page_summary_extract_text",
+        languageCode: "en",
+        contentText: text,
+        contentTextHash: "0".repeat(64),
+        contentTextByteLength: textByteLength,
+        contentTextCharLength: Array.from(text).length,
+        maxContentTextBytes: 4096,
+        provenance: {
+          locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+          candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+        },
+      }],
       extractionExecutionAuthorized: false,
       llmExtractionCallAuthorized: false,
       parserExecuted: false,
@@ -153,10 +179,19 @@ describe("bounded extraction-input runtime artifact sink", () => {
       },
     });
     expect(full[0].extractionInputAuthorization.extractionInputPacket?.inputText).toBe(TEXT);
+    expect(
+      full[0].extractionInputAuthorization.extractionInputPacket?.sourceContentPackets[0]?.contentText,
+    ).toBe(TEXT);
     expect(redacted[0].extractionInputAuthorization.extractionInputPacket).toMatchObject({
       inputTextHash: "0".repeat(64),
       inputTextByteLength: Buffer.byteLength(TEXT, "utf8"),
       sourceMaterialTextHash: "0".repeat(64),
+      sourceContentPackets: [{
+        contentTextHash: "0".repeat(64),
+        contentTextByteLength: Buffer.byteLength(TEXT, "utf8"),
+        textAccess: "redacted_default_hash_length_provenance_only",
+        contentTextReturned: false,
+      }],
       textAccess: "redacted_default_hash_length_provenance_only",
       inputTextReturned: false,
     });
@@ -164,6 +199,12 @@ describe("bounded extraction-input runtime artifact sink", () => {
       Object.prototype.hasOwnProperty.call(
         redacted[0].extractionInputAuthorization.extractionInputPacket ?? {},
         "inputText",
+      ),
+    ).toBe(false);
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        redacted[0].extractionInputAuthorization.extractionInputPacket?.sourceContentPackets[0] ?? {},
+        "contentText",
       ),
     ).toBe(false);
     expect(JSON.stringify(redacted)).not.toContain(TEXT);

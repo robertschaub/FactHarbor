@@ -98,12 +98,19 @@ function packet(text = SOURCE_TEXT): BoundedTextExtractionInputPacket {
     parentSidecarId: `EVIDENCE_CORPUS_BOUNDED_TEXT_${hash.slice(0, 16).toUpperCase()}`,
     linkedEvidenceCorpusId: `EVIDENCE_CORPUS_SHELL_${hash.slice(0, 16).toUpperCase()}`,
     sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
+    sourceMaterialRefs: [`SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`],
     locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+    locatorRefs: ["OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456"],
     candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+    candidatePreviewIds: ["SOURCE_CANDIDATE_PREVIEW_1_1"],
     providerId: "wikimedia_core",
+    providerIds: ["wikimedia_core"],
     sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+    sourceMaterialEndpointIds: ["ep_wikimedia_project_page_summary"],
     sourceMaterialKind: "wikimedia_page_summary_extract_text",
+    sourceMaterialKinds: ["wikimedia_page_summary_extract_text"],
     languageCode: "en",
+    languageCodes: ["en"],
     inputText: text,
     inputTextHash: hash,
     inputTextByteLength: Buffer.byteLength(text, "utf8"),
@@ -111,8 +118,27 @@ function packet(text = SOURCE_TEXT): BoundedTextExtractionInputPacket {
     maxInputTextBytes: 4096,
     truncationApplied: false,
     sourceMaterialTextHash: hash,
+    sourceMaterialTextHashes: [hash],
     sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
+    sourceMaterialTextByteLengths: [Buffer.byteLength(text, "utf8")],
     sourceMaterialTextCharLength: Array.from(text).length,
+    sourceContentPackets: [{
+      sourceRecordId: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
+      contentPacketId: `BOUNDED_EXTRACTION_CONTENT_${hash.slice(0, 16).toUpperCase()}`,
+      providerId: "wikimedia_core",
+      sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+      sourceMaterialKind: "wikimedia_page_summary_extract_text",
+      languageCode: "en",
+      contentText: text,
+      contentTextHash: hash,
+      contentTextByteLength: Buffer.byteLength(text, "utf8"),
+      contentTextCharLength: Array.from(text).length,
+      maxContentTextBytes: 4096,
+      provenance: {
+        locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+      },
+    }],
     extractionExecutionAuthorized: false,
     llmExtractionCallAuthorized: false,
     parserExecuted: false,
@@ -120,6 +146,87 @@ function packet(text = SOURCE_TEXT): BoundedTextExtractionInputPacket {
     evidenceItemExtractionAuthorized: false,
     evidenceItems: [],
     publicCutoverStatus: "blocked_precutover",
+  };
+}
+
+function mixedProviderPacket(): BoundedTextExtractionInputPacket {
+  const openAlexText = "OpenAlex abstract notes hydrogen conversion losses.";
+  const wikimediaText = "Wikimedia page summary notes battery electric cars use electricity directly.";
+  const aggregateText = [openAlexText, wikimediaText].join("\n\n");
+  const aggregateHash = sha256Text(aggregateText);
+  const openAlexHash = sha256Text(openAlexText);
+  const wikimediaHash = sha256Text(wikimediaText);
+  const base = packet(aggregateText);
+  return {
+    ...base,
+    packetId: `BOUNDED_EXTRACTION_INPUT_${aggregateHash.slice(0, 16).toUpperCase()}`,
+    parentSidecarId: `EVIDENCE_CORPUS_BOUNDED_TEXT_${openAlexHash.slice(0, 16).toUpperCase()}`,
+    sourceMaterialRef: `AGGREGATE_SOURCE_MATERIAL_${aggregateHash.slice(0, 16).toUpperCase()}`,
+    sourceMaterialRefs: [
+      `SOURCE_MATERIAL_OPENALEX_${openAlexHash.slice(0, 16).toUpperCase()}`,
+      `SOURCE_MATERIAL_PAGE_SUMMARY_${wikimediaHash.slice(0, 16).toUpperCase()}`,
+    ],
+    locatorRef: "OPAQUE_OPENALEX_WORK_0123456789ABCDEF",
+    locatorRefs: [
+      "OPAQUE_OPENALEX_WORK_0123456789ABCDEF",
+      "OPAQUE_SOURCE_LOCATOR_2_1_ABCDEF123456",
+    ],
+    candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_5_3",
+    candidatePreviewIds: ["SOURCE_CANDIDATE_PREVIEW_5_3", "SOURCE_CANDIDATE_PREVIEW_2_1"],
+    providerId: "openalex",
+    providerIds: ["openalex", "wikimedia_core"],
+    sourceMaterialEndpointId: "ep_openalex_works_search",
+    sourceMaterialEndpointIds: ["ep_openalex_works_search", "ep_wikimedia_project_page_summary"],
+    sourceMaterialKind: "openalex_work_abstract_text",
+    sourceMaterialKinds: ["openalex_work_abstract_text", "wikimedia_page_summary_extract_text"],
+    inputText: aggregateText,
+    inputTextHash: aggregateHash,
+    inputTextByteLength: Buffer.byteLength(aggregateText, "utf8"),
+    inputTextCharLength: Array.from(aggregateText).length,
+    sourceMaterialTextHash: aggregateHash,
+    sourceMaterialTextHashes: [openAlexHash, wikimediaHash],
+    sourceMaterialTextByteLength: Buffer.byteLength(aggregateText, "utf8"),
+    sourceMaterialTextByteLengths: [
+      Buffer.byteLength(openAlexText, "utf8"),
+      Buffer.byteLength(wikimediaText, "utf8"),
+    ],
+    sourceMaterialTextCharLength: Array.from(aggregateText).length,
+    sourceContentPackets: [
+      {
+        sourceRecordId: `SOURCE_MATERIAL_OPENALEX_${openAlexHash.slice(0, 16).toUpperCase()}`,
+        contentPacketId: `BOUNDED_EXTRACTION_CONTENT_${aggregateHash.slice(0, 12).toUpperCase()}_01`,
+        providerId: "openalex",
+        sourceMaterialEndpointId: "ep_openalex_works_search",
+        sourceMaterialKind: "openalex_work_abstract_text",
+        languageCode: "en",
+        contentText: openAlexText,
+        contentTextHash: openAlexHash,
+        contentTextByteLength: Buffer.byteLength(openAlexText, "utf8"),
+        contentTextCharLength: Array.from(openAlexText).length,
+        maxContentTextBytes: 4096,
+        provenance: {
+          locatorRef: "OPAQUE_OPENALEX_WORK_0123456789ABCDEF",
+          candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_5_3",
+        },
+      },
+      {
+        sourceRecordId: `SOURCE_MATERIAL_PAGE_SUMMARY_${wikimediaHash.slice(0, 16).toUpperCase()}`,
+        contentPacketId: `BOUNDED_EXTRACTION_CONTENT_${aggregateHash.slice(0, 12).toUpperCase()}_02`,
+        providerId: "wikimedia_core",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        sourceMaterialKind: "wikimedia_page_summary_extract_text",
+        languageCode: "en",
+        contentText: wikimediaText,
+        contentTextHash: wikimediaHash,
+        contentTextByteLength: Buffer.byteLength(wikimediaText, "utf8"),
+        contentTextCharLength: Array.from(wikimediaText).length,
+        maxContentTextBytes: 4096,
+        provenance: {
+          locatorRef: "OPAQUE_SOURCE_LOCATOR_2_1_ABCDEF123456",
+          candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_2_1",
+        },
+      },
+    ],
   };
 }
 
@@ -248,6 +355,7 @@ function w4i(inputPacket = packet()): EvidenceLifecycleExecutionReadinessDenialD
 }
 
 function evidenceExtractedResult(inputPacket = packet()): EvidenceExtractionResult {
+  const contentPacket = inputPacket.sourceContentPackets[0]!;
   return {
     schemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
     taskKey: "evidence_extraction",
@@ -256,8 +364,8 @@ function evidenceExtractedResult(inputPacket = packet()): EvidenceExtractionResu
     rationale: "The bounded packet contains an extractable efficiency comparison.",
     evidenceItems: [{
       evidenceItemId: "EI_W5_001",
-      sourceRecordId: inputPacket.sourceMaterialRef,
-      contentPacketId: inputPacket.packetId,
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
       statement: "Hydrogen cars require energy conversion steps, while battery electric cars use electricity more directly.",
       targetAtomicClaimIds: ["AC_001"],
       claimDirection: "opposes",
@@ -332,10 +440,43 @@ describe("bounded evidence extraction runtime", () => {
     expect(result.evidenceItemStatementProjections[0]).toMatchObject({
       evidenceItemId: "EI_W5_001",
       sourceRecordId: inputPacket.sourceMaterialRef,
-      contentPacketId: inputPacket.packetId,
+      contentPacketId: inputPacket.sourceContentPackets[0]?.contentPacketId,
       targetAtomicClaimIds: ["AC_001"],
     });
     expect(JSON.stringify(result.evidenceItemStatementProjections)).not.toContain("Hydrogen cars require");
+  });
+
+  it("accepts EvidenceItems copied from any approved multi-provider source content packet", async () => {
+    const inputPacket = mixedProviderPacket();
+    const secondContentPacket = inputPacket.sourceContentPackets[1]!;
+    const output = evidenceExtractedResult(inputPacket);
+    const result = await runBoundedEvidenceExtractionRuntime({
+      context: context(),
+      claimContract: claimContract(),
+      extractionInputAuthorization: w4h(inputPacket),
+      extractionInputRuntimeOwnership: "owned",
+      executionReadinessDenial: w4i(inputPacket),
+      executionReadinessRuntimeOwnership: "owned",
+      providerCall: providerCall({
+        ...output,
+        evidenceItems: [{
+          ...output.evidenceItems[0]!,
+          sourceRecordId: secondContentPacket.sourceRecordId,
+          contentPacketId: secondContentPacket.contentPacketId,
+        }],
+      }),
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      configSnapshotHash: "config-hash-w5",
+      providerCallbackCreated: true,
+      providerSdkLoaded: true,
+    });
+
+    expect(result.status).toBe("hidden_evidence_item_extraction_completed");
+    expect(result.evidenceItemStatementProjections[0]).toMatchObject({
+      sourceRecordId: secondContentPacket.sourceRecordId,
+      contentPacketId: secondContentPacket.contentPacketId,
+    });
   });
 
   it("keeps an accepted no-extractable outcome honest without fabricating EvidenceItems", async () => {
@@ -442,7 +583,7 @@ describe("bounded evidence extraction runtime", () => {
       evidenceItems: Array.from({ length: 12 }, (_, index) => ({
         evidenceItemId: `EI_W5_BAD_${index}`,
         sourceRecordId: inputPacket.sourceMaterialRef,
-        contentPacketId: inputPacket.packetId,
+        contentPacketId: inputPacket.sourceContentPackets[0]?.contentPacketId,
         statement: rawProviderStatement,
         targetAtomicClaimIds: ["AC_001"],
         claimDirection: "opposes",

@@ -4927,3 +4927,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Repair: OpenAlex Source Material now builds an OpenAlex-specific provider allowlist and candidate-runtime authority instead of reusing the Wikimedia allowlist where OpenAlex is disabled. The product orchestrator OpenAlex sink remains wired, and tests now assert it is passed.
 - Ledger/status/package docs now record the 2026-05-21 Captain job-budget reset to `8`, the W6-F1 canary consumption, and `7` remaining before any repair canary.
 - Verifiers passed: focused W6-F1/orchestrator/boundary suite (6 files / 120 tests), full V2 local suite (140 files / 836 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+
+## 2026-05-21 - Captain Deputy / Lead Developer - W6-F1 Authority Repair Canary And W4-H Lineage Repair
+
+- W6-F1 authority-repair canary job `130bfc4c8be94fffadf780e7a0dd3f3f` ran on runtime `7e3dafe8ce674765e77737e3b3aa007be02a7a06` and is classified `PARTIAL_X7_W6_F1_OPENALEX_SOURCE_MATERIAL_MATERIALIZED_W4H_LINEAGE_BLOCKED`.
+- Public containment held. Hidden Source Material now includes OpenAlex plus Wikimedia; W4-G creates OpenAlex/Wikimedia bounded text sidecars; W4-H still blocked before packet creation because it carried a Wikimedia-only/single-provider lineage assumption.
+- Debt-guard remains `incomplete-existing-mechanism`. Claude Opus 4.6 reviewed the repair direction and recommended a narrowed multi-provider packet amendment rather than dropping non-primary sidecars.
+- Implemented locally: W4-H packet keeps scalar first-sidecar fields but adds aligned provider/source-kind/source-content-packet arrays; W4-H default admin redacts both aggregate `inputText` and per-source `contentText`; W4-I and W5 validate approved source-content packet identities instead of one source/content pair.
+- Verifiers passed: W4-H/W4-I/W5 extraction-input lineage suite plus boundary guard (`5` files / `112` tests), full V2 local suite (`140` files / `838` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn` at `2026-05-21T06:43:46.375Z`), and build. Commit/runtime refresh/canary are still pending.
+-> Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Lineage_Repair.md

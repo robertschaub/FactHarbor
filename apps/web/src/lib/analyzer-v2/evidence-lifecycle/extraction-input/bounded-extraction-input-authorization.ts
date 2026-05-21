@@ -6,13 +6,20 @@ import {
   type EvidenceCorpusBoundedTextAuthorizationDecision,
   type EvidenceCorpusBoundedTextSidecar,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization";
+import {
+  sourceMaterialKindIsSupported,
+  type SourceMaterialKind,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 export const BOUNDED_EXTRACTION_INPUT_AUTHORIZATION_DECISION_VERSION =
   "v2.evidence-lifecycle.extraction-input-authorization.x7w4h";
 export const BOUNDED_EXTRACTION_INPUT_PACKET_VERSION =
   "v2.evidence-lifecycle.extraction-input.bounded-text-packet.x7w4h";
 export const BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES = EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES;
-export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_ID = "wikimedia_core";
+export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS = [
+  "wikimedia_core",
+  "openalex",
+] as const;
 export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 3;
 
 export type BoundedExtractionInputRuntimeOwnership =
@@ -102,9 +109,13 @@ export type BoundedTextExtractionInputPacket = {
   readonly candidatePreviewId: string;
   readonly candidatePreviewIds: readonly string[];
   readonly providerId: string;
+  readonly providerIds: readonly string[];
   readonly sourceMaterialEndpointId: string;
-  readonly sourceMaterialKind: "wikimedia_page_summary_extract_text";
+  readonly sourceMaterialEndpointIds: readonly string[];
+  readonly sourceMaterialKind: SourceMaterialKind;
+  readonly sourceMaterialKinds: readonly SourceMaterialKind[];
   readonly languageCode: string;
+  readonly languageCodes: readonly string[];
   readonly inputText: string;
   readonly inputTextHash: string;
   readonly inputTextByteLength: number;
@@ -116,6 +127,7 @@ export type BoundedTextExtractionInputPacket = {
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextByteLengths: readonly number[];
   readonly sourceMaterialTextCharLength: number;
+  readonly sourceContentPackets: readonly BoundedTextExtractionSourceContentPacket[];
   readonly extractionExecutionAuthorized: false;
   readonly llmExtractionCallAuthorized: false;
   readonly parserExecuted: false;
@@ -123,6 +135,24 @@ export type BoundedTextExtractionInputPacket = {
   readonly evidenceItemExtractionAuthorized: false;
   readonly evidenceItems: readonly [];
   readonly publicCutoverStatus: "blocked_precutover";
+};
+
+export type BoundedTextExtractionSourceContentPacket = {
+  readonly sourceRecordId: string;
+  readonly contentPacketId: string;
+  readonly providerId: string;
+  readonly sourceMaterialEndpointId: string;
+  readonly sourceMaterialKind: SourceMaterialKind;
+  readonly languageCode: string;
+  readonly contentText: string;
+  readonly contentTextHash: string;
+  readonly contentTextByteLength: number;
+  readonly contentTextCharLength: number;
+  readonly maxContentTextBytes: typeof BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES;
+  readonly provenance: {
+    readonly locatorRef: string;
+    readonly candidatePreviewId: string;
+  };
 };
 
 export type BoundedExtractionInputAuthorizationDecision = {
@@ -257,10 +287,20 @@ function decision(params: {
   const boundedTextAuthorization = isRecord(params.boundedTextAuthorization)
     ? params.boundedTextAuthorization
     : null;
+  const sidecars = Array.isArray(boundedTextAuthorization?.boundedTextSidecars)
+    ? boundedTextAuthorization.boundedTextSidecars
+    : isRecord(boundedTextAuthorization?.boundedTextSidecar)
+      ? [boundedTextAuthorization.boundedTextSidecar]
+      : [];
   const providerLineagePreserved =
     extractionInputPacket !== null
-    && isRecord(boundedTextAuthorization?.boundedTextSidecar)
-    && extractionInputPacket.providerId === boundedTextAuthorization.boundedTextSidecar.providerId;
+    && sidecars.length > 0
+    && sidecars.length === extractionInputPacket.providerIds.length
+    && sidecars.every((sidecar, index) =>
+      isRecord(sidecar)
+      && typeof sidecar.providerId === "string"
+      && sidecar.providerId === extractionInputPacket.providerIds[index]
+    );
 
   return {
     decisionVersion: BOUNDED_EXTRACTION_INPUT_AUTHORIZATION_DECISION_VERSION,
@@ -406,13 +446,15 @@ function validateLineage(sidecar: EvidenceCorpusBoundedTextSidecar): ValidationF
       };
     }
   }
-  if (sidecar.sourceMaterialKind !== "wikimedia_page_summary_extract_text") {
+  if (!sourceMaterialKindIsSupported(sidecar.sourceMaterialKind)) {
     return {
       status: "blocked_pre_extraction_input_lineage_missing_or_invalid",
       stopReason: "lineage_missing_or_invalid",
     };
   }
-  if (sidecar.providerId !== BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_ID) {
+  if (!BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS.includes(
+    sidecar.providerId as typeof BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS[number],
+  )) {
     return {
       status: "blocked_pre_extraction_input_provider_id_mismatch",
       stopReason: "provider_id_mismatch",
@@ -494,11 +536,11 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
     };
   }
   const [firstSidecar] = sidecars;
-  const providerIds = new Set(sidecars.map((sidecar) => sidecar.providerId));
-  if (providerIds.size !== 1) {
+  const sourceMaterialKinds = sidecars.map((sidecar) => sidecar.sourceMaterialKind);
+  if (!sourceMaterialKinds.every(sourceMaterialKindIsSupported)) {
     return {
-      status: "blocked_pre_extraction_input_provider_id_mismatch",
-      stopReason: "provider_id_mismatch",
+      status: "blocked_pre_extraction_input_lineage_missing_or_invalid",
+      stopReason: "lineage_missing_or_invalid",
     };
   }
   const aggregateText = sidecars.map((sidecar) => sidecar.text).join("\n\n");
@@ -511,6 +553,25 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
       stopReason: "w4g_sidecar_text_oversized",
     };
   }
+  const sourceContentPackets: BoundedTextExtractionSourceContentPacket[] = sidecars.map((sidecar, index) => ({
+    sourceRecordId: sidecar.sourceMaterialRef,
+    contentPacketId: sidecars.length === 1
+      ? `BOUNDED_EXTRACTION_CONTENT_${sidecar.textHash.slice(0, 16).toUpperCase()}`
+      : `BOUNDED_EXTRACTION_CONTENT_${aggregateTextHash.slice(0, 12).toUpperCase()}_${String(index + 1).padStart(2, "0")}`,
+    providerId: sidecar.providerId,
+    sourceMaterialEndpointId: sidecar.sourceMaterialEndpointId,
+    sourceMaterialKind: sidecar.sourceMaterialKind,
+    languageCode: sidecar.languageCode,
+    contentText: sidecar.text,
+    contentTextHash: sidecar.textHash,
+    contentTextByteLength: sidecar.textByteLength,
+    contentTextCharLength: sidecar.textCharLength,
+    maxContentTextBytes: BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
+    provenance: {
+      locatorRef: sidecar.locatorRef,
+      candidatePreviewId: sidecar.candidatePreviewId,
+    },
+  }));
   const packet: BoundedTextExtractionInputPacket = {
     packetVersion: BOUNDED_EXTRACTION_INPUT_PACKET_VERSION,
     packetId: `BOUNDED_EXTRACTION_INPUT_${aggregateTextHash.slice(0, 16).toUpperCase()}`,
@@ -530,9 +591,13 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
     candidatePreviewId: firstSidecar.candidatePreviewId,
     candidatePreviewIds: sidecars.map((sidecar) => sidecar.candidatePreviewId),
     providerId: firstSidecar.providerId,
+    providerIds: sidecars.map((sidecar) => sidecar.providerId),
     sourceMaterialEndpointId: firstSidecar.sourceMaterialEndpointId,
-    sourceMaterialKind: "wikimedia_page_summary_extract_text",
+    sourceMaterialEndpointIds: sidecars.map((sidecar) => sidecar.sourceMaterialEndpointId),
+    sourceMaterialKind: firstSidecar.sourceMaterialKind,
+    sourceMaterialKinds,
     languageCode: firstSidecar.languageCode,
+    languageCodes: sidecars.map((sidecar) => sidecar.languageCode),
     inputText: aggregateText,
     inputTextHash: aggregateTextHash,
     inputTextByteLength: aggregateByteLength,
@@ -544,6 +609,7 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
     sourceMaterialTextByteLength: aggregateByteLength,
     sourceMaterialTextByteLengths: sidecars.map((sidecar) => sidecar.sourceMaterialTextByteLength),
     sourceMaterialTextCharLength: aggregateCharLength,
+    sourceContentPackets,
     extractionExecutionAuthorized: false,
     llmExtractionCallAuthorized: false,
     parserExecuted: false,

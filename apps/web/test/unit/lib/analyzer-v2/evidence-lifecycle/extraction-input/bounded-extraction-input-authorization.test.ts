@@ -10,12 +10,25 @@ import type {
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization";
 
 const TEXT = "Bounded corpus sidecar text for W4-H extraction input packet authorization.";
+type SidecarOverrides = Partial<
+  Pick<
+    EvidenceCorpusBoundedTextSidecar,
+    | "providerId"
+    | "sourceMaterialEndpointId"
+    | "sourceMaterialKind"
+    | "sourceMaterialRecordVersion"
+    | "sourceMaterialRef"
+    | "locatorRef"
+    | "candidatePreviewId"
+    | "languageCode"
+  >
+>;
 
 function sha256Text(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-function sidecar(text = TEXT): EvidenceCorpusBoundedTextSidecar {
+function sidecar(text = TEXT, overrides: SidecarOverrides = {}): EvidenceCorpusBoundedTextSidecar {
   const hash = sha256Text(text);
   return {
     sidecarVersion: "v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g",
@@ -25,13 +38,13 @@ function sidecar(text = TEXT): EvidenceCorpusBoundedTextSidecar {
     publicPointerExposure: "forbidden",
     linkedEvidenceCorpusId: `EVIDENCE_CORPUS_SHELL_${hash.slice(0, 16).toUpperCase()}`,
     linkedEvidenceCorpusShellVersion: "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d",
-    sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
-    locatorRef: `OPAQUE_SOURCE_LOCATOR_${hash.slice(0, 8).toUpperCase()}`,
-    candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${hash.slice(0, 8).toUpperCase()}`,
-    providerId: "wikimedia_core",
-    sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
-    sourceMaterialKind: "wikimedia_page_summary_extract_text",
-    languageCode: "en",
+    sourceMaterialRef: overrides.sourceMaterialRef ?? `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
+    locatorRef: overrides.locatorRef ?? `OPAQUE_SOURCE_LOCATOR_${hash.slice(0, 8).toUpperCase()}`,
+    candidatePreviewId: overrides.candidatePreviewId ?? `SOURCE_CANDIDATE_PREVIEW_${hash.slice(0, 8).toUpperCase()}`,
+    providerId: overrides.providerId ?? "wikimedia_core",
+    sourceMaterialEndpointId: overrides.sourceMaterialEndpointId ?? "ep_wikimedia_project_page_summary",
+    sourceMaterialKind: overrides.sourceMaterialKind ?? "wikimedia_page_summary_extract_text",
+    languageCode: overrides.languageCode ?? "en",
     textKind: "bounded_page_summary_extract_text",
     text,
     textHash: hash,
@@ -39,7 +52,8 @@ function sidecar(text = TEXT): EvidenceCorpusBoundedTextSidecar {
     textCharLength: Array.from(text).length,
     maxTextBytes: 4096,
     truncationApplied: false,
-    sourceMaterialRecordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
+    sourceMaterialRecordVersion: overrides.sourceMaterialRecordVersion
+      ?? "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
     sourceMaterialTextHash: hash,
     sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
     sourceMaterialTextCharLength: Array.from(text).length,
@@ -167,6 +181,7 @@ describe("bounded extraction-input authorization", () => {
       publicPointerExposure: "forbidden",
       source: "w4g_bounded_text_sidecar",
       providerId: parent.boundedTextSidecar?.providerId,
+      providerIds: [parent.boundedTextSidecar?.providerId],
       inputText: TEXT,
       inputTextHash: parent.boundedTextSidecar?.textHash,
       inputTextByteLength: Buffer.byteLength(TEXT, "utf8"),
@@ -196,12 +211,70 @@ describe("bounded extraction-input authorization", () => {
     expect(decision.extractionInputPacket).toMatchObject({
       sourceMaterialRef: `AGGREGATE_SOURCE_MATERIAL_${sha256Text(expectedAggregateText).slice(0, 16).toUpperCase()}`,
       sourceMaterialRefs: sidecars.map((entry) => entry.sourceMaterialRef),
+      providerIds: sidecars.map((entry) => entry.providerId),
+      sourceMaterialKinds: sidecars.map((entry) => entry.sourceMaterialKind),
       inputText: expectedAggregateText,
       inputTextHash: sha256Text(expectedAggregateText),
       inputTextByteLength: Buffer.byteLength(expectedAggregateText, "utf8"),
       sourceMaterialTextHashes: sidecars.map((entry) => entry.sourceMaterialTextHash),
       sourceMaterialTextByteLengths: sidecars.map((entry) => entry.sourceMaterialTextByteLength),
     });
+    expect(decision.extractionInputPacket?.sourceContentPackets).toHaveLength(2);
+    expect(decision.extractionInputPacket?.sourceContentPackets.map((packet) => packet.contentText)).toEqual([
+      firstText,
+      secondText,
+    ]);
+  });
+
+  it("creates one aggregate extraction-input packet from mixed OpenAlex and Wikimedia sidecars", () => {
+    const openAlexText = "OpenAlex bounded abstract text.";
+    const wikimediaText = "Wikimedia bounded page-summary text.";
+    const sidecars = [
+      sidecar(openAlexText, {
+        providerId: "openalex",
+        sourceMaterialEndpointId: "ep_openalex_works_search",
+        sourceMaterialKind: "openalex_work_abstract_text",
+        sourceMaterialRef: "SOURCE_MATERIAL_OPENALEX_0123456789ABCDEF",
+        locatorRef: "OPAQUE_OPENALEX_WORK_0123456789ABCDEF",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_5_3",
+      }),
+      sidecar(wikimediaText),
+    ];
+    const decision = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: boundedTextAuthorization({
+        boundedTextSidecars: sidecars,
+      }),
+      boundedTextRuntimeOwnership: "owned",
+    });
+
+    expect(decision.status).toBe("bounded_extraction_input_packet_created_extraction_execution_closed");
+    expect(decision.productExecution.providerLineagePreserved).toBe(true);
+    expect(decision.extractionInputPacket).toMatchObject({
+      providerId: "openalex",
+      providerIds: ["openalex", "wikimedia_core"],
+      sourceMaterialKind: "openalex_work_abstract_text",
+      sourceMaterialKinds: ["openalex_work_abstract_text", "wikimedia_page_summary_extract_text"],
+      sourceMaterialRefs: sidecars.map((entry) => entry.sourceMaterialRef),
+    });
+    expect(decision.extractionInputPacket?.sourceContentPackets.map((packet) => ({
+      sourceRecordId: packet.sourceRecordId,
+      providerId: packet.providerId,
+      sourceMaterialKind: packet.sourceMaterialKind,
+      contentText: packet.contentText,
+    }))).toEqual([
+      {
+        sourceRecordId: "SOURCE_MATERIAL_OPENALEX_0123456789ABCDEF",
+        providerId: "openalex",
+        sourceMaterialKind: "openalex_work_abstract_text",
+        contentText: openAlexText,
+      },
+      {
+        sourceRecordId: sidecars[1].sourceMaterialRef,
+        providerId: "wikimedia_core",
+        sourceMaterialKind: "wikimedia_page_summary_extract_text",
+        contentText: wikimediaText,
+      },
+    ]);
   });
 
   it("fails closed when W4-G is not runtime-owned or not positive", () => {

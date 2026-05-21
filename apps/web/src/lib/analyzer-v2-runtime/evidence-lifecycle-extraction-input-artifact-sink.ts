@@ -65,7 +65,13 @@ export type EvidenceLifecycleExtractionInputArtifactRecordResult =
     };
 
 export type BoundedTextExtractionInputPacketDefaultProjection =
-  Omit<BoundedTextExtractionInputPacket, "inputText"> & {
+  Omit<BoundedTextExtractionInputPacket, "inputText" | "sourceContentPackets"> & {
+    readonly sourceContentPackets: ReadonlyArray<
+      Omit<BoundedTextExtractionInputPacket["sourceContentPackets"][number], "contentText"> & {
+        readonly textAccess: "redacted_default_hash_length_provenance_only";
+        readonly contentTextReturned: false;
+      }
+    >;
     readonly textAccess: "redacted_default_hash_length_provenance_only";
     readonly inputTextReturned: false;
   };
@@ -235,9 +241,13 @@ export function redactEvidenceLifecycleExtractionInputRuntimeArtifact(
         candidatePreviewId: packet.candidatePreviewId,
         candidatePreviewIds: packet.candidatePreviewIds,
         providerId: packet.providerId,
+        providerIds: packet.providerIds,
         sourceMaterialEndpointId: packet.sourceMaterialEndpointId,
+        sourceMaterialEndpointIds: packet.sourceMaterialEndpointIds,
         sourceMaterialKind: packet.sourceMaterialKind,
+        sourceMaterialKinds: packet.sourceMaterialKinds,
         languageCode: packet.languageCode,
+        languageCodes: packet.languageCodes,
         inputTextHash: packet.inputTextHash,
         inputTextByteLength: packet.inputTextByteLength,
         inputTextCharLength: packet.inputTextCharLength,
@@ -248,6 +258,21 @@ export function redactEvidenceLifecycleExtractionInputRuntimeArtifact(
         sourceMaterialTextByteLength: packet.sourceMaterialTextByteLength,
         sourceMaterialTextByteLengths: packet.sourceMaterialTextByteLengths,
         sourceMaterialTextCharLength: packet.sourceMaterialTextCharLength,
+        sourceContentPackets: packet.sourceContentPackets.map((contentPacket) => ({
+          sourceRecordId: contentPacket.sourceRecordId,
+          contentPacketId: contentPacket.contentPacketId,
+          providerId: contentPacket.providerId,
+          sourceMaterialEndpointId: contentPacket.sourceMaterialEndpointId,
+          sourceMaterialKind: contentPacket.sourceMaterialKind,
+          languageCode: contentPacket.languageCode,
+          contentTextHash: contentPacket.contentTextHash,
+          contentTextByteLength: contentPacket.contentTextByteLength,
+          contentTextCharLength: contentPacket.contentTextCharLength,
+          maxContentTextBytes: contentPacket.maxContentTextBytes,
+          provenance: contentPacket.provenance,
+          textAccess: "redacted_default_hash_length_provenance_only",
+          contentTextReturned: false,
+        })),
         extractionExecutionAuthorized: packet.extractionExecutionAuthorized,
         llmExtractionCallAuthorized: packet.llmExtractionCallAuthorized,
         parserExecuted: packet.parserExecuted,

@@ -413,6 +413,14 @@ function validatePacketLineage(
   if (packet.providerId !== decision.parent.providerId) {
     return "blocked_pre_execution_readiness_provider_id_mismatch";
   }
+  if (
+    packet.providerIds.length !== packet.sourceContentPackets.length ||
+    packet.providerIds.some((providerId, index) =>
+      !isNonBlankString(providerId) || providerId !== packet.sourceContentPackets[index]?.providerId
+    )
+  ) {
+    return "blocked_pre_execution_readiness_provider_id_mismatch";
+  }
   const fields = [
     packet.packetId,
     packet.parentSidecarId,

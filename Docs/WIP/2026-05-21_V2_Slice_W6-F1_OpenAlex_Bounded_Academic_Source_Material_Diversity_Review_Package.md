@@ -455,3 +455,51 @@ Focused repair closeout after first canary stop:
 
 Verifier state is recorded in
 `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Source_Material_Implementation.md`.
+
+## Repair Canary And Lineage Amendment Addendum - 2026-05-21
+
+The focused OpenAlex authority repair was committed as
+`7e3dafe8ce674765e77737e3b3aa007be02a7a06` and ran exactly one repair canary:
+
+- job: `130bfc4c8be94fffadf780e7a0dd3f3f`;
+- runtime commit: `7e3dafe8ce674765e77737e3b3aa007be02a7a06`;
+- classification:
+  `PARTIAL_X7_W6_F1_OPENALEX_SOURCE_MATERIAL_MATERIALIZED_W4H_LINEAGE_BLOCKED`.
+
+Observed result:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- candidate provider network included OpenAlex and Wikimedia;
+- Source Material included one `openalex_work_abstract_text` record and two
+  `wikimedia_page_summary_extract_text` records;
+- W4-G produced bounded text sidecars for OpenAlex and Wikimedia with default
+  admin projection remaining hash/length/provenance-only;
+- W4-H observed the OpenAlex parent sidecar but blocked with
+  `blocked_pre_extraction_input_lineage_missing_or_invalid`, so no W4-H packet,
+  W4-I eligibility, W5 execution, W6-C reassessment, or W8 internal Alpha result
+  was reached.
+
+Debt-guard classification: `incomplete-existing-mechanism`. The OpenAlex
+source-material path is now working; the remaining blocker is that W4-H/W4-I/W5
+still carry the older single-provider/Wikimedia-only extraction-input packet
+assumption while W4-G already owns multi-source sidecars.
+
+Claude Opus 4.6 reviewed the repair decision and recommended a narrowed
+multi-provider packet amendment rather than dropping non-primary sidecars. The
+accepted direction:
+
+- preserve the existing W4-H packet owner instead of adding a new route or
+  parallel packet type;
+- add explicit provider/source-kind/source-content-packet arrays to the W4-H
+  packet while keeping scalar first-sidecar fields as compatibility projections;
+- keep default admin artifacts text-free by redacting both aggregate `inputText`
+  and per-source `contentText`;
+- update W4-I and W5 lineage checks to validate approved source-content packet
+  identities instead of a single source-record/content-packet pair.
+
+This amendment does not authorize public behavior, report/verdict/warning/
+confidence behavior, parser execution, cache/SR/storage, provider expansion
+beyond OpenAlex, ACS/direct URL, V1 work, or V1 cleanup. One later W6-F1
+lineage-repair canary is worth spending only after commit, runtime refresh,
+route/default-admin preflight, and clean verifiers.
