@@ -105,6 +105,61 @@ function authorization(): EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizatio
         publicSurfaceWritten: false,
       },
     },
+    boundedTextSidecars: [
+      {
+        sidecarVersion: "v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g",
+        boundedTextSidecarId: "EVIDENCE_CORPUS_BOUNDED_TEXT_0123456789ABCDEF",
+        kind: "bounded_text_sidecar",
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        linkedEvidenceCorpusId: "EVIDENCE_CORPUS_SHELL_0123456789ABCDEF",
+        linkedEvidenceCorpusShellVersion: "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d",
+        sourceMaterialRef: "SOURCE_MATERIAL_PAGE_SUMMARY_0123456789ABCDEF",
+        locatorRef: "OPAQUE_SOURCE_LOCATOR_1_1_ABCDEF123456",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_1_1",
+        providerId: "wikimedia_core",
+        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        sourceMaterialKind: "wikimedia_page_summary_extract_text",
+        languageCode: "en",
+        textKind: "bounded_page_summary_extract_text",
+        text: TEXT,
+        textHash: "0".repeat(64),
+        textByteLength,
+        textCharLength: Array.from(TEXT).length,
+        maxTextBytes: 4096,
+        truncationApplied: false,
+        sourceMaterialRecordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
+        sourceMaterialTextHash: "0".repeat(64),
+        sourceMaterialTextByteLength: textByteLength,
+        sourceMaterialTextCharLength: Array.from(TEXT).length,
+        sourceMaterialRuntimeOwned: true,
+        admissionDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
+        shellDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-shell.x7w4d",
+        extractionDenialDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-extraction-readiness-denial.x7w4e",
+        extractionDenialStatus: "extraction_denied_shell_only",
+        corpusTextAccess: "internal_admin_only_bounded_text_sidecar",
+        preservesShellOnlyCorpus: true,
+        mutatesShellCorpus: false,
+        mutatesExtractionDenial: false,
+        semanticExtractionAuthorized: false,
+        evidenceItemExtractionAuthorized: false,
+        extractionInput: null,
+        evidenceItems: [],
+        downstreamExecution: {
+          parserExecuted: false,
+          cacheRead: false,
+          cacheWrite: false,
+          storageWrite: false,
+          sourceReliabilityCalled: false,
+          evidenceItemGenerated: false,
+          warningGenerated: false,
+          reportGenerated: false,
+          verdictGenerated: false,
+          confidenceGenerated: false,
+          publicSurfaceWritten: false,
+        },
+      },
+    ],
     evidenceCorpus: null,
     extractionInput: null,
     evidenceItems: [],
@@ -181,6 +236,7 @@ describe("Analyzer V2 internal EvidenceCorpus bounded-text artifact route", () =
       artifactCount: 1,
     });
     const sidecar = body.artifacts[0].boundedTextAuthorization.boundedTextSidecar;
+    const sidecars = body.artifacts[0].boundedTextAuthorization.boundedTextSidecars;
     expect(sidecar).toMatchObject({
       textHash: "0".repeat(64),
       textByteLength: Buffer.byteLength(TEXT, "utf8"),
@@ -190,7 +246,14 @@ describe("Analyzer V2 internal EvidenceCorpus bounded-text artifact route", () =
       mutatesShellCorpus: false,
       mutatesExtractionDenial: false,
     });
+    expect(sidecars).toHaveLength(1);
+    expect(sidecars[0]).toMatchObject({
+      textHash: "0".repeat(64),
+      textByteLength: Buffer.byteLength(TEXT, "utf8"),
+      textReturned: false,
+    });
     expect(Object.prototype.hasOwnProperty.call(sidecar, "text")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(sidecars[0], "text")).toBe(false);
     expect(serialized).not.toContain(TEXT);
     expect(serialized).not.toContain("reportMarkdown");
     expect(serialized).not.toContain("truthPercentage");

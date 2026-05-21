@@ -74,8 +74,9 @@ export type EvidenceCorpusBoundedTextSidecarDefaultProjection =
   };
 
 export type EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDefaultProjection =
-  Omit<EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision, "boundedTextSidecar"> & {
+  Omit<EvidenceLifecycleEvidenceCorpusBoundedTextAuthorizationDecision, "boundedTextSidecar" | "boundedTextSidecars"> & {
     readonly boundedTextSidecar: EvidenceCorpusBoundedTextSidecarDefaultProjection | null;
+    readonly boundedTextSidecars: readonly EvidenceCorpusBoundedTextSidecarDefaultProjection[];
   };
 
 export type EvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifactDefaultProjection =
@@ -227,57 +228,61 @@ export function redactEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact(
   artifact: EvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact,
 ): EvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifactDefaultProjection {
   const authorization = artifact.boundedTextAuthorization;
-  const sidecar = authorization.boundedTextSidecar;
-  const redactedSidecar: EvidenceCorpusBoundedTextSidecarDefaultProjection | null = sidecar
-    ? {
-        sidecarVersion: sidecar.sidecarVersion,
-        boundedTextSidecarId: sidecar.boundedTextSidecarId,
-        kind: sidecar.kind,
-        visibility: sidecar.visibility,
-        publicPointerExposure: sidecar.publicPointerExposure,
-        linkedEvidenceCorpusId: sidecar.linkedEvidenceCorpusId,
-        linkedEvidenceCorpusShellVersion: sidecar.linkedEvidenceCorpusShellVersion,
-        sourceMaterialRef: sidecar.sourceMaterialRef,
-        locatorRef: sidecar.locatorRef,
-        candidatePreviewId: sidecar.candidatePreviewId,
-        providerId: sidecar.providerId,
-        sourceMaterialEndpointId: sidecar.sourceMaterialEndpointId,
-        sourceMaterialKind: sidecar.sourceMaterialKind,
-        languageCode: sidecar.languageCode,
-        textKind: sidecar.textKind,
-        textHash: sidecar.textHash,
-        textByteLength: sidecar.textByteLength,
-        textCharLength: sidecar.textCharLength,
-        maxTextBytes: sidecar.maxTextBytes,
-        truncationApplied: sidecar.truncationApplied,
-        sourceMaterialRecordVersion: sidecar.sourceMaterialRecordVersion,
-        sourceMaterialTextHash: sidecar.sourceMaterialTextHash,
-        sourceMaterialTextByteLength: sidecar.sourceMaterialTextByteLength,
-        sourceMaterialTextCharLength: sidecar.sourceMaterialTextCharLength,
-        sourceMaterialRuntimeOwned: sidecar.sourceMaterialRuntimeOwned,
-        admissionDecisionVersion: sidecar.admissionDecisionVersion,
-        shellDecisionVersion: sidecar.shellDecisionVersion,
-        extractionDenialDecisionVersion: sidecar.extractionDenialDecisionVersion,
-        extractionDenialStatus: sidecar.extractionDenialStatus,
-        corpusTextAccess: sidecar.corpusTextAccess,
-        preservesShellOnlyCorpus: sidecar.preservesShellOnlyCorpus,
-        mutatesShellCorpus: sidecar.mutatesShellCorpus,
-        mutatesExtractionDenial: sidecar.mutatesExtractionDenial,
-        semanticExtractionAuthorized: sidecar.semanticExtractionAuthorized,
-        evidenceItemExtractionAuthorized: sidecar.evidenceItemExtractionAuthorized,
-        extractionInput: sidecar.extractionInput,
-        evidenceItems: sidecar.evidenceItems,
-        downstreamExecution: sidecar.downstreamExecution,
-        textAccess: "redacted_default_hash_length_provenance_only",
-        textReturned: false,
-      }
+  const redactSidecar = (
+    sidecar: EvidenceCorpusBoundedTextSidecar,
+  ): EvidenceCorpusBoundedTextSidecarDefaultProjection => ({
+    sidecarVersion: sidecar.sidecarVersion,
+    boundedTextSidecarId: sidecar.boundedTextSidecarId,
+    kind: sidecar.kind,
+    visibility: sidecar.visibility,
+    publicPointerExposure: sidecar.publicPointerExposure,
+    linkedEvidenceCorpusId: sidecar.linkedEvidenceCorpusId,
+    linkedEvidenceCorpusShellVersion: sidecar.linkedEvidenceCorpusShellVersion,
+    sourceMaterialRef: sidecar.sourceMaterialRef,
+    locatorRef: sidecar.locatorRef,
+    candidatePreviewId: sidecar.candidatePreviewId,
+    providerId: sidecar.providerId,
+    sourceMaterialEndpointId: sidecar.sourceMaterialEndpointId,
+    sourceMaterialKind: sidecar.sourceMaterialKind,
+    languageCode: sidecar.languageCode,
+    textKind: sidecar.textKind,
+    textHash: sidecar.textHash,
+    textByteLength: sidecar.textByteLength,
+    textCharLength: sidecar.textCharLength,
+    maxTextBytes: sidecar.maxTextBytes,
+    truncationApplied: sidecar.truncationApplied,
+    sourceMaterialRecordVersion: sidecar.sourceMaterialRecordVersion,
+    sourceMaterialTextHash: sidecar.sourceMaterialTextHash,
+    sourceMaterialTextByteLength: sidecar.sourceMaterialTextByteLength,
+    sourceMaterialTextCharLength: sidecar.sourceMaterialTextCharLength,
+    sourceMaterialRuntimeOwned: sidecar.sourceMaterialRuntimeOwned,
+    admissionDecisionVersion: sidecar.admissionDecisionVersion,
+    shellDecisionVersion: sidecar.shellDecisionVersion,
+    extractionDenialDecisionVersion: sidecar.extractionDenialDecisionVersion,
+    extractionDenialStatus: sidecar.extractionDenialStatus,
+    corpusTextAccess: sidecar.corpusTextAccess,
+    preservesShellOnlyCorpus: sidecar.preservesShellOnlyCorpus,
+    mutatesShellCorpus: sidecar.mutatesShellCorpus,
+    mutatesExtractionDenial: sidecar.mutatesExtractionDenial,
+    semanticExtractionAuthorized: sidecar.semanticExtractionAuthorized,
+    evidenceItemExtractionAuthorized: sidecar.evidenceItemExtractionAuthorized,
+    extractionInput: sidecar.extractionInput,
+    evidenceItems: sidecar.evidenceItems,
+    downstreamExecution: sidecar.downstreamExecution,
+    textAccess: "redacted_default_hash_length_provenance_only",
+    textReturned: false,
+  });
+  const redactedSidecar = authorization.boundedTextSidecar
+    ? redactSidecar(authorization.boundedTextSidecar)
     : null;
+  const redactedSidecars = authorization.boundedTextSidecars.map(redactSidecar);
 
   return cloneJson({
     ...artifact,
     boundedTextAuthorization: {
       ...authorization,
       boundedTextSidecar: redactedSidecar,
+      boundedTextSidecars: redactedSidecars,
     },
   });
 }
