@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T08:09:36.920Z",
-  "count": 409,
+  "generatedAt": "2026-05-21T10:23:29.432Z",
+  "count": 410,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9147,6 +9147,22 @@
       ],
       "files_touched": [],
       "summary": "Reduce documentation/handoff startup burden before the next Captain Deputy takes over."
+    },
+    {
+      "file": "2026-05-21_Unassigned_V2_Active_Workstream_Index_Prep.md",
+      "date": "2026-05-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "v2",
+        "active",
+        "workstream",
+        "index",
+        "prep"
+      ],
+      "files_touched": [],
+      "summary": "V2 Active Workstream Index Prep"
     }
   ]
 }

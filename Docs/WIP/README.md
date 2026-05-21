@@ -28,6 +28,10 @@ file during startup. Use this intake order instead:
    `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`.
 3. Read only the package(s) named by the latest handoff or active backlog item.
 
+For the current V2 successor-team intake, use
+[2026-05-21_V2_Active_Workstream_Index.md](2026-05-21_V2_Active_Workstream_Index.md)
+as a compact pointer map before opening older package history.
+
 The May WIP slice packages remain useful provenance, but they are not the active
 queue when the canonical status/backlog/handoff state is newer.
 
@@ -137,6 +141,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-05-21 | V2 active workstream index | 0 files archived; added compact successor-team intake pointer for current W6-F1/W6-C state | 266 |
 | 2026-05-21 | Handoff archive + intake guidance | 382 April handoffs and 418 April Agent_Outputs rows moved to `Docs/ARCHIVE/`; no WIP files archived in this quick pass | 263 |
 | 2026-05-17 | Additional V1 plan retirement | 4 PipelineV1 `claimboundary` / report-quality / snapshot-integration plans archived to `Docs/ARCHIVE/PipelineV1/`; retained-lessons note expanded | 148 |
 | 2026-05-17 | V1 selection/clarification reclassification | 5 pre-V2 selection/clarification plans archived to `Docs/ARCHIVE/PipelineV1/`; 1 V2 disposition note added | 152 |

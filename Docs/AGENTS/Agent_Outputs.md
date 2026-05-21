@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Unassigned | Codex (GPT-5.5) | V2 Active Workstream Index Prep -- [Standard] [open-items: yes]
+**For next agent:** Added `Docs/WIP/2026-05-21_V2_Active_Workstream_Index.md` as a compact successor-team intake pointer. It cites the W6-F1 handoff, canonical status/backlog/guardrails, live-job ledger, retirement ledger, and immediate W6-F1/W6-C package anchors.
+**Warnings:** This is not a WIP archive pass and does not classify May packages. Full `wip-update` should wait until the successor team confirms the current W6-C retrieval-quality/source-diversity direction and reaches a clean implementation checkpoint.
+-> Docs/AGENTS/Handoffs/2026-05-21_Unassigned_V2_Active_Workstream_Index_Prep.md
+
+---
 ### 2026-05-21 | Unassigned | Codex (GPT-5.5) | Docs Handoff Archive And WIP Intake Cleanup -- [Standard] [open-items: yes]
 **For next agent:** Archived April handoffs with `scripts/monthly-prune-handoffs.mjs`, reducing active handoffs from `791` to `409`, and updated `Docs/WIP/README.md` with startup guidance to avoid scanning the full May V2 WIP corpus.
 **Warnings:** WIP count remains above threshold (`264` including README); this pass intentionally did not archive May V2 package history. A later reviewed `wip-update` consolidation should build a compact V2 package index before moving May WIP files.
