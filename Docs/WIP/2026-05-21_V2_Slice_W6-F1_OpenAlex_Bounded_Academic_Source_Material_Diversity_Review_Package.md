@@ -1,15 +1,15 @@
 # V2 Slice W6-F1 OpenAlex Bounded Academic Source Material Diversity Review Package
 
-**Status:** Locally implemented and verifier-clean; no live job run
+**Status:** Implemented; first live canary stopped, focused authority repair verifier-clean
 **Date:** 2026-05-21
 **Author:** Captain Deputy
 **Intended implementer:** Lead Developer
 **Reviewer:** Steer-Co, with Claude Opus 4.6 senior architect/LLM-quality review
 **Canary runner:** Captain Deputy after separate canary authorization only
 **Parent steering package:** `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md`
-**Current stop evidence:** W6-E canary job `6a09d149d5d046cb95d0cdd67e02c095`
-**Live-job budget:** `1` remaining; no live job authorized by this package
-**Latest debt sensor:** `advisory_warn` at 2026-05-21T05:51:24.020Z
+**Current stop evidence:** W6-F1 canary job `3ec1c0c48ff84dd88484580967380320`
+**Live-job budget:** `7` remaining after Captain 2026-05-21 reset and W6-F1 canary consumption
+**Latest debt sensor:** `advisory_warn` at 2026-05-21T06:14:20.200Z
 
 ## Decision
 
@@ -252,9 +252,6 @@ OpenAlex endpoint:
   - `display_name`
   - `publication_year`
   - `language`
-  - `cited_by_count`
-  - `primary_location`
-  - `open_access`
   - `abstract_inverted_index`
 
 No raw URL/title/abstract/provider payload may be returned by default admin
@@ -383,9 +380,22 @@ If implementation starts to become a general provider framework, stop and split.
 ## Approval Boundaries
 
 This package authorized local implementation after Steer-Co review and
-amendment closure. W6-F1 is now locally implemented and verifier-clean as one
-bounded OpenAlex Works search/abstract Source Material path plus the closed
-two-endpoint/two-kind contract widening. No W6-F1 live job has run.
+amendment closure. W6-F1 is now implemented as one bounded OpenAlex Works
+search/abstract Source Material path plus the closed two-endpoint/two-kind
+contract widening.
+
+The first W6-F1 canary job `3ec1c0c48ff84dd88484580967380320` ran on runtime
+`731ef0e595c59f678e4d50f461c1ce6ca8cb9715` and is classified
+`STOP_X7_W6_F1_OPENALEX_NOT_MATERIALIZED_REFINEMENT_REMAINS`: public V2 stayed
+precutover/damaged with no leak, but hidden Source Material stayed
+Wikimedia-only and W6-C still recommended `refine_retrieval`.
+
+Debt-guard repair classification is `incomplete-existing-mechanism`. The
+focused amendment keeps the W6-F1 mechanism and narrows it to a correct
+OpenAlex-owned authority path: the OpenAlex Source Material leg now builds an
+OpenAlex-specific provider allowlist and candidate-runtime authority instead of
+reusing the Wikimedia allowlist where OpenAlex is disabled. The product
+orchestrator remains wired to pass the OpenAlex Source Material sink.
 
 Still separately approval-gated:
 
@@ -399,10 +409,10 @@ Still separately approval-gated:
 
 ## Proposed Later Canary
 
-One later W6-F1 product-route canary is worth spending if and only if:
+One W6-F1 repair product-route canary is worth spending if and only if:
 
-- implementation is committed and verifier-clean;
-- runtime is refreshed from the implementation commit;
+- repair implementation is committed and verifier-clean;
+- runtime is refreshed from the repair commit;
 - route/default-admin leak preflight passes;
 - credential/no-key posture is explicitly settled.
 
@@ -410,7 +420,7 @@ The canary would use the Captain-defined input:
 
 `Using hydrogen for cars is more efficient than using electricity`
 
-It would consume the remaining `1` live-job slot.
+It would consume one of the remaining `7` live-job slots.
 
 ## Implementation Closeout
 
@@ -428,6 +438,20 @@ W6-F1 implementation stayed inside the approved package envelope:
 - No public behavior, parser, cache/SR/storage, report/verdict/warning/confidence
   behavior, prompt/model/config/UCM/gateway change, provider framework, ACS/direct
   URL behavior, V1 work, or V1 cleanup was added.
+
+Focused repair closeout after first canary stop:
+
+- Amended the OpenAlex Source Material leg to use an OpenAlex-specific
+  provider allowlist and candidate-runtime authority instead of the Wikimedia
+  allowlist where OpenAlex is explicitly disabled.
+- Preserved the product orchestrator OpenAlex Source Material sink and added
+  focused tests that fail if the sink is removed before the repair canary.
+- Added focused telemetry assertions proving the OpenAlex network attempt is
+  observed and sanitized in the candidate-provider loop.
+- Verifiers passed after repair: focused W6-F1/orchestrator/boundary suite
+  (`6` files / `120` tests), full V2 local suite (`140` files / `836` tests),
+  `npm run validate:v2-gates`, gate-register self-test, `npm run debt:sensors`
+  (`advisory_warn`), `npm -w apps/web run build`, and `git diff --check`.
 
 Verifier state is recorded in
 `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Source_Material_Implementation.md`.

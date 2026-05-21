@@ -602,6 +602,16 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     expect(openAlexCall?.pathWithQuery).toContain("&per_page=3");
     expect(openAlexCall?.pathWithQuery)
       .toContain("select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year");
+    expect(decision.telemetry.networkAttempts).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        providerId: "openalex",
+        endpointId: "ep_openalex_works_search",
+        structuralStatus: "success",
+        candidateCount: 1,
+        rawPayloadIncluded: false,
+        publicPayloadIncluded: false,
+      }),
+    ]));
     expect(records).toEqual([
       expect.objectContaining({
         providerId: "openalex",

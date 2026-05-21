@@ -622,8 +622,10 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         params: {
           candidatePreviewProjectionSink?: (projection: ReturnType<typeof sourceCandidatePreviewProjection>) => void;
           sourceMaterialPageSummaryFetchLocatorSink?: (locator: unknown) => void;
+          openAlexSourceMaterialRecordSink?: (record: unknown) => void;
         },
       ) => {
+        expect(params.openAlexSourceMaterialRecordSink).toEqual(expect.any(Function));
         params.candidatePreviewProjectionSink?.(sourceCandidatePreviewProjection());
         params.sourceMaterialPageSummaryFetchLocatorSink?.({
           eligibility: "eligible_for_w3b_fetch",
@@ -1036,8 +1038,12 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     }));
     vi.doMock("@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop", () => ({
       runSourceAcquisitionCandidateProviderNetworkLoop: vi.fn(async (
-        params: { candidatePreviewProjectionSink?: (projection: ReturnType<typeof sourceCandidatePreviewProjection>) => void },
+        params: {
+          candidatePreviewProjectionSink?: (projection: ReturnType<typeof sourceCandidatePreviewProjection>) => void;
+          openAlexSourceMaterialRecordSink?: (record: unknown) => void;
+        },
       ) => {
+        expect(params.openAlexSourceMaterialRecordSink).toEqual(expect.any(Function));
         params.candidatePreviewProjectionSink?.(sourceCandidatePreviewProjection());
         return candidateProviderNetworkDecision();
       }),

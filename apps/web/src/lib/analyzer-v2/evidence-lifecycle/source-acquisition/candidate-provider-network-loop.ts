@@ -642,6 +642,52 @@ export function buildSourceAcquisitionCandidateProviderNetworkAllowlistSnapshot(
   };
 }
 
+function buildOpenAlexSourceMaterialProviderAllowlistSnapshot(params: {
+  readonly endpointSnapshotHash: string;
+}): SourceAcquisitionCandidateProviderAllowlistSnapshot {
+  const base = {
+    version: SOURCE_ACQUISITION_CANDIDATE_RUNTIME_VERSION,
+    approval: candidateRuntimeApproval(),
+    configSnapshotHash: sha256Json({
+      sourcePackage: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_LOOP_SOURCE_PACKAGE,
+      packageCommit: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_LOOP_PACKAGE_COMMIT,
+      authorityStatus: "approved_w6f1_openalex_source_material_diversity",
+      providerNetworkImplementationCommit: SOURCE_ACQUISITION_NETWORK_PACKAGE_COMMIT,
+      endpointSnapshotHash: params.endpointSnapshotHash,
+      providerId: OPENALEX_PROVIDER_ID,
+      endpointKind: "candidate_search_api_future",
+      maxQueries: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+      timeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS,
+      credentialsState: "not_required_for_approved_network_provider",
+      noCache: true,
+      noStorage: true,
+      noSourceReliability: true,
+      noProduct: true,
+      noPublic: true,
+    }),
+    allowedProviders: [
+      {
+        providerId: OPENALEX_PROVIDER_ID,
+        endpointKind: "candidate_search_api_future",
+        maxQueries: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_MAX_QUERY_ENTRIES,
+        timeoutMs: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_PROVIDER_TIMEOUT_MS,
+        credentialsState: "not_required_for_approved_network_provider",
+      },
+    ],
+    disabledProviders: [],
+    noCache: true,
+    noStorage: true,
+    noSourceReliability: true,
+    noProduct: true,
+    noPublic: true,
+  } as const;
+
+  return {
+    ...base,
+    providerAllowlistSnapshotHash: sha256Json(base),
+  };
+}
+
 function providerAllowlistSnapshotIsExact(
   snapshot: SourceAcquisitionCandidateProviderAllowlistSnapshot,
   endpointSnapshotHash: string,
@@ -1382,13 +1428,20 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   if (params.openAlexSourceMaterialRecordSink) {
     try {
       const endpoint = buildOpenAlexWorksSourceMaterialEndpointSnapshot();
+      const openAlexProviderAllowlist = buildOpenAlexSourceMaterialProviderAllowlistSnapshot({
+        endpointSnapshotHash: endpoint.endpointSnapshotHash,
+      });
+      const openAlexRuntimeContract = buildRuntimeContractAuthorityHash({
+        providerAllowlist: openAlexProviderAllowlist,
+        budget: candidateBudget,
+      });
       const budget = buildSourceAcquisitionCandidateProviderNetworkBudgetSnapshot({
         endpointSnapshot: endpoint,
-        providerAllowlist,
+        providerAllowlist: openAlexProviderAllowlist,
         candidateBudget,
       });
       const authority = createSourceAcquisitionNetworkAuthority({
-        candidateAuthority: runtimeContract.candidateAuthority,
+        candidateAuthority: openAlexRuntimeContract.candidateAuthority,
         endpointSnapshot: endpoint,
         budgetSnapshot: budget,
       });

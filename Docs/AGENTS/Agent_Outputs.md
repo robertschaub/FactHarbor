@@ -4919,3 +4919,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Preserved boundaries: no live job, public behavior, parser, cache/SR/storage, report/verdict/warning/confidence behavior, prompt/model/config/UCM/gateway edit, provider framework, ACS/direct URL behavior, V1 work, or V1 cleanup.
 - Verifiers passed: focused W6-F1 tests (7 files / 34 tests), focused EvidenceCorpus/runtime chain (10 files / 41 tests), boundary guard (94 tests), full V2 local suite (140 files / 836 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), and build.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Source_Material_Implementation.md`.
+
+## 2026-05-21 - Captain Deputy / Lead Developer - W6-F1 Canary Stop And OpenAlex Authority Repair
+
+- W6-F1 canary job `3ec1c0c48ff84dd88484580967380320` ran on runtime `731ef0e595c59f678e4d50f461c1ce6ca8cb9715` and is classified `STOP_X7_W6_F1_OPENALEX_NOT_MATERIALIZED_REFINEMENT_REMAINS`: public V2 stayed pre-cutover/damaged with no hidden leak, but Source Material stayed Wikimedia-only and W6-C still recommended `refine_retrieval`.
+- Applied debt-guard as `incomplete-existing-mechanism`; chosen fix was to amend the existing W6-F1 OpenAlex leg, not add a provider framework or relax downstream gates.
+- Repair: OpenAlex Source Material now builds an OpenAlex-specific provider allowlist and candidate-runtime authority instead of reusing the Wikimedia allowlist where OpenAlex is disabled. The product orchestrator OpenAlex sink remains wired, and tests now assert it is passed.
+- Ledger/status/package docs now record the 2026-05-21 Captain job-budget reset to `8`, the W6-F1 canary consumption, and `7` remaining before any repair canary.
+- Verifiers passed: focused W6-F1/orchestrator/boundary suite (6 files / 120 tests), full V2 local suite (140 files / 836 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
