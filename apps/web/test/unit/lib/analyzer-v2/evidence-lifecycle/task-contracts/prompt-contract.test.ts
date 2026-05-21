@@ -149,9 +149,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("`detail`");
     expect(section).toContain("`details`");
     expect(section).toContain("Preserve multilingual evidence meaning without translating as a prerequisite");
-    expect(section).toContain("Internal Alpha visibility does not lower the sufficiency bar");
+    expect(section).toContain("Prefer `caveat_report` over `refine_retrieval`");
     expect(section).toContain("fair boundary and verdict-candidate formation");
-    expect(section).toContain("Choose `refine_retrieval` when material missing dimensions mean more retrieval is needed");
+    expect(section).toContain("Choose `refine_retrieval` only when the corpus cannot support any fair boundary candidate");
 
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
