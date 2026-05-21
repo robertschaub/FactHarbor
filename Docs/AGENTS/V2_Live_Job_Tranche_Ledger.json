@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-w8f-captain-reset-2026-05-20",
     "resetTotal": 8,
-    "currentRemaining": 4,
+    "currentRemaining": 3,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after W8-E implementation closeout",
       "date": "2026-05-20",
@@ -251,6 +251,19 @@
         "count": 1,
         "remainingAfter": 4,
         "approvalPointer": "Docs/WIP/2026-05-21_V2_Slice_W6-C5_Sufficiency_Decision_Gate_And_Diagnostic_Retirement_Package.md",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-W6-D-RETRIEVAL-REFINEMENT-CANARY",
+        "jobId": "cc1700dd7ae544d4877482f93d399474",
+        "classification": "STOP_X7_W6_D_DEFAULT_ADMIN_BOUNDED_TEXT_SIDECAR_ARRAY_LEAK",
+        "implementationCommit": "67161341",
+        "runtimeCommit": "0940cae9e4350d392dea405c473835c10597cac8",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "8dcbb982",
+        "count": 1,
+        "remainingAfter": 3,
+        "approvalPointer": "Docs/WIP/2026-05-21_V2_Slice_W6-D_Product_Route_Canary_Package.md",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

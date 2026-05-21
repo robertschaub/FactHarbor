@@ -4857,3 +4857,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Preserved boundaries: no live job, provider expansion, retries, semantic ranking, parser, public behavior, prompt/model/config/schema edit, cache/SR/storage, report/verdict/warning/confidence behavior, ACS/direct URL, V1 work, or V1 cleanup.
 - Verifiers passed: focused W6-D2 tests (2 files / 7 tests), focused runtime owner chain (8 files / 21 tests), analyzer-v2-runtime (73 files / 342 tests), orchestrator slice (2 files / 8 tests), analyzer-v2 evidence-lifecycle (43 files / 214 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-D2_Runtime_Page_Summary_Fan_In_Implementation.md`.
+
+## 2026-05-21 - Captain Deputy / Lead Developer - V2 W6-D Canary Containment Stop
+
+- Ran the one authorized W6-D product-route canary on job `cc1700dd7ae544d4877482f93d399474` against runtime `0940cae9e4350d392dea405c473835c10597cac8`.
+- Classification: `STOP_X7_W6_D_DEFAULT_ADMIN_BOUNDED_TEXT_SIDECAR_ARRAY_LEAK`.
+- Hidden chain reached W3-B fan-in with `3` bounded Source Material records, W5 accepted `3` EvidenceItems, and W6-C accepted with `schemaDiagnostics = null`; W6-C still recommended `refine_retrieval`.
+- Containment stop: the W4-G default-admin bounded-text route redacted the singular sidecar projection but returned text through the plural `boundedTextSidecars[]` projection introduced by fan-in.
+- Repair committed as `8dcbb982 fix: redact v2 bounded text sidecar arrays`; focused W4-G route test passed (1 file / 3 tests), adjacent internal redaction route tests passed (4 files / 15 tests), web build passed after clearing corrupted generated `.next` state, and `git diff --check` passed.
+- Live-job budget after this W6-D canary: `3`.
+- Next action: prepare a narrow W6-D containment-repair rerun package if Steer-Co agrees; do not treat the rerun as a victory lap and do not widen sources, weaken W6, relax W7, expose public output, or start V1 work.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D_Canary_Containment_Stop.md`.
