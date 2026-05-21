@@ -4833,3 +4833,11 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Live-job budget after both W6-C5 submissions: `4`.
 - Next action: prepare a retrieval-refinement review package. Do not rerun W6-C5, continue W6-C prompt retries, or relax W7 gates.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-C5_Canary_Result.md`.
+
+## 2026-05-21 - Captain Deputy / Steer-Co - V2 W6-D Retrieval Refinement Package
+
+- Prepared and amended `Docs/WIP/2026-05-21_V2_Slice_W6-D_Retrieval_Refinement_Source_Material_Fan_In_Review_Package.md`.
+- Steer-Co consented to direction with modifications: split W6-D into W6-D1 contract widening and W6-D2 runtime same-provider page-summary fan-in; keep hard caps at 3 page-summary records and 4096 aggregate extraction-input bytes; keep selection/drop reasons structural only; record W6-C rubric dimension movement in the later canary.
+- W6-D is page fan-in over existing Wikimedia path, not true provider/source diversity. If W6-C still recommends `refine_retrieval` after W6-D, next direction should be query/source diversity rather than W6 prompt weakening.
+- Live-job budget remains `4`; no W6-D canary is authorized until W6-D1 and W6-D2 are separately verifier-clean, runtime is refreshed, routes are preflighted, and the ledger is updated.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-D_Retrieval_Refinement_Review_Package.md`.
