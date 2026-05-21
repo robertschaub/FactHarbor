@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-21 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F1 OpenAlex Lineage Repair -- [Significant] [open-items: yes]
+**For next agent:** Current W6-F1 state supersedes the earlier implementation/package rows below. W4-H/W4-I/W5 multi-provider lineage repair was committed at `778be4b2403de8cfe60b0d21d72239c96180f772`; canary job `0389a60644f749fb86208bb7d8e2c4ce` reached W5 accepted `4` hidden EvidenceItems, then W5E blocked `lineage_mismatch`. Local W5E multi-source admission repair is implemented/verifier-clean, with commit/runtime refresh/canary still pending.
+**Warnings:** Do not act on earlier `currentRemaining = 1`, `7`, or `6` W6-F1 rows as current authority; the live-job ledger is authoritative and records `currentRemaining = 5` after job `0389a60644f749fb86208bb7d8e2c4ce`. Do not weaken W6, relax W7, add providers, expose public output, or touch V1 while closing this W5E repair.
+-> Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-F1_OpenAlex_Lineage_Repair.md
+
+---
 ### 2026-05-21 | Captain Deputy / Steer-Co | Codex (GPT-5.5) + Claude Opus 4.6 | V2 W6-F1 OpenAlex Source Material Diversity Package -- [Significant] [open-items: yes]
 **For next agent:** Prepared `Docs/WIP/2026-05-21_V2_Slice_W6-F1_OpenAlex_Bounded_Academic_Source_Material_Diversity_Review_Package.md`. Claude Opus returned `APPROVE_WITH_AMENDMENTS`; amendments were applied for two-endpoint budget/authority hash widening, OpenAlex selection preference, and explicit no-key authority asymmetry handling.
 **Warnings:** W6-F1 is approved for local implementation only. No live job is authorized. Remaining live-job budget is `1`; canary remains blocked until W6-F1 is committed/verifier-clean and credential/no-key posture is settled. Stop on generic provider framework work, V1 provider reuse, public/source-text leak, W6 prompt weakening, W7 relaxation, or cap above `3`.

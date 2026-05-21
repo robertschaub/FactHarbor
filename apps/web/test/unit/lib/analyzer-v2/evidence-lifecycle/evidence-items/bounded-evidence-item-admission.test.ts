@@ -43,6 +43,11 @@ function decision(
       parentProviderId: "wikimedia_core",
       sourceMaterialRef: "SOURCE_MATERIAL_W5E",
       contentPacketId: "PACKET_W5E",
+      sourceContentPackets: [{
+        sourceRecordId: "SOURCE_MATERIAL_W5E",
+        contentPacketId: "PACKET_W5E",
+        providerId: "wikimedia_core",
+      }],
     },
     extractionResult: {
       schemaVersion: "v2.evidence_extraction_result.0",
@@ -159,6 +164,88 @@ function decision(
   return markBoundedEvidenceExtractionRuntimeOwnedDecision({
     ...base,
     ...overrides,
+  });
+
+  it("admits accepted W5 EvidenceItems from any approved source content packet", () => {
+    const base = decision();
+    const openAlexStatement = "An academic source says battery-electric vehicles are more energy-efficient.";
+    const wikimediaStatement = "A summary source says hydrogen vehicles use energy conversion steps.";
+    const multiProvider = buildBoundedEvidenceItemAdmissionDecision({
+      ledgerId: LEDGER_ID,
+      boundedEvidenceExtraction: decision({
+        parent: {
+          ...base.parent,
+          parentProviderId: "openalex",
+          sourceMaterialRef: "AGGREGATE_SOURCE_MATERIAL_W5E",
+          contentPacketId: "AGGREGATE_PACKET_W5E",
+          sourceContentPackets: [
+            {
+              sourceRecordId: "SOURCE_MATERIAL_OPENALEX_W5E",
+              contentPacketId: "CONTENT_PACKET_OPENALEX_W5E",
+              providerId: "openalex",
+            },
+            {
+              sourceRecordId: "SOURCE_MATERIAL_WIKIMEDIA_W5E",
+              contentPacketId: "CONTENT_PACKET_WIKIMEDIA_W5E",
+              providerId: "wikimedia_core",
+            },
+          ],
+        },
+        extractionResult: {
+          ...base.extractionResult!,
+          evidenceItems: [
+            {
+              ...base.extractionResult!.evidenceItems[0]!,
+              evidenceItemId: "EI_OPENALEX_W5E",
+              sourceRecordId: "SOURCE_MATERIAL_OPENALEX_W5E",
+              contentPacketId: "CONTENT_PACKET_OPENALEX_W5E",
+              statement: openAlexStatement,
+            },
+            {
+              ...base.extractionResult!.evidenceItems[0]!,
+              evidenceItemId: "EI_WIKIMEDIA_W5E",
+              sourceRecordId: "SOURCE_MATERIAL_WIKIMEDIA_W5E",
+              contentPacketId: "CONTENT_PACKET_WIKIMEDIA_W5E",
+              statement: wikimediaStatement,
+            },
+          ],
+        },
+        evidenceItemCount: 2,
+        evidenceItemStatementHashes: ["a".repeat(64), "b".repeat(64)],
+        evidenceItemStatementByteLengths: [
+          Buffer.byteLength(openAlexStatement, "utf8"),
+          Buffer.byteLength(wikimediaStatement, "utf8"),
+        ],
+        evidenceItemStatementProjections: [
+          {
+            ...base.evidenceItemStatementProjections[0]!,
+            evidenceItemId: "EI_OPENALEX_W5E",
+            sourceRecordId: "SOURCE_MATERIAL_OPENALEX_W5E",
+            contentPacketId: "CONTENT_PACKET_OPENALEX_W5E",
+            statementHash: "a".repeat(64),
+            statementByteLength: Buffer.byteLength(openAlexStatement, "utf8"),
+            statementCharLength: Array.from(openAlexStatement).length,
+          },
+          {
+            ...base.evidenceItemStatementProjections[0]!,
+            evidenceItemId: "EI_WIKIMEDIA_W5E",
+            sourceRecordId: "SOURCE_MATERIAL_WIKIMEDIA_W5E",
+            contentPacketId: "CONTENT_PACKET_WIKIMEDIA_W5E",
+            statementHash: "b".repeat(64),
+            statementByteLength: Buffer.byteLength(wikimediaStatement, "utf8"),
+            statementCharLength: Array.from(wikimediaStatement).length,
+          },
+        ],
+      }),
+    });
+
+    expect(multiProvider.admissionStatus).toBe(
+      "bounded_evidence_items_admitted_internal_consumption_pending",
+    );
+    expect(multiProvider.admittedEvidenceItemCount).toBe(2);
+    expect(multiProvider.providerId).toBe("openalex");
+    expect(JSON.stringify(multiProvider)).not.toContain(openAlexStatement);
+    expect(JSON.stringify(multiProvider)).not.toContain(wikimediaStatement);
   });
 }
 

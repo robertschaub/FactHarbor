@@ -1,14 +1,14 @@
 # V2 Slice W6-F1 OpenAlex Bounded Academic Source Material Diversity Review Package
 
-**Status:** Implemented; first live canary stopped, focused authority repair verifier-clean
+**Status:** Implemented; OpenAlex materialized after authority repair; W5E multi-source admission repair verifier-clean
 **Date:** 2026-05-21
 **Author:** Captain Deputy
 **Intended implementer:** Lead Developer
 **Reviewer:** Steer-Co, with Claude Opus 4.6 senior architect/LLM-quality review
 **Canary runner:** Captain Deputy after separate canary authorization only
 **Parent steering package:** `Docs/WIP/2026-05-21_V2_Slice_W6-F_OpenAlex_Provider_Source_Diversity_Steering_Package.md`
-**Current stop evidence:** W6-F1 canary job `3ec1c0c48ff84dd88484580967380320`
-**Live-job budget:** `7` remaining after Captain 2026-05-21 reset and W6-F1 canary consumption
+**Current stop evidence:** W6-F1 lineage-repair canary job `0389a60644f749fb86208bb7d8e2c4ce`
+**Live-job budget:** machine ledger records `5` remaining after job `0389a60644f749fb86208bb7d8e2c4ce`
 **Latest debt sensor:** `advisory_warn` at 2026-05-21T06:14:20.200Z
 
 ## Decision
@@ -503,3 +503,63 @@ confidence behavior, parser execution, cache/SR/storage, provider expansion
 beyond OpenAlex, ACS/direct URL, V1 work, or V1 cleanup. One later W6-F1
 lineage-repair canary is worth spending only after commit, runtime refresh,
 route/default-admin preflight, and clean verifiers.
+
+## Lineage Repair Canary And W5E Admission Amendment Addendum - 2026-05-21
+
+The W4-H/W4-I/W5 multi-provider lineage repair was committed as
+`778be4b2403de8cfe60b0d21d72239c96180f772` and ran exactly one canary:
+
+- job: `0389a60644f749fb86208bb7d8e2c4ce`;
+- runtime commit: `778be4b2403de8cfe60b0d21d72239c96180f772`;
+- classification:
+  `PARTIAL_X7_W6_F1_OPENALEX_LINEAGE_REPAIRED_W5E_ADMISSION_BLOCKED`.
+
+Observed result:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- default public and default-admin checks found no source-text, EvidenceItem
+  text, hidden ledger, or provider-payload leak;
+- Source Material completed with one `openalex_work_abstract_text` record and
+  two `wikimedia_page_summary_extract_text` records;
+- W4-G produced three bounded text sidecars;
+- W4-H produced one bounded extraction-input packet with three source-content
+  packets and `inputTextReturned = false`;
+- W5 extraction completed as `hidden_evidence_item_extraction_completed` with
+  `extractionResultStatus = accepted`, `schemaDiagnostics = null`, and `4`
+  hidden EvidenceItems;
+- W5E blocked with `lineage_mismatch`, and W5-F handoff consequently blocked
+  with `w5e_admission_not_accepted`.
+
+Debt-guard classification: `incomplete-existing-mechanism`. The OpenAlex
+lineage repair is working through W5; the remaining blocker is that W5E still
+validated all accepted EvidenceItems against one scalar parent
+source-record/content-packet pair instead of the approved W4-H/W5
+source-content packet list.
+
+The accepted follow-up amendment:
+
+- keeps W5E as the admission owner;
+- adds the approved `sourceContentPackets` identity list to the W5 parent
+  summary;
+- validates EvidenceItems and statement projections against approved
+  `(sourceRecordId, contentPacketId)` pairs;
+- preserves fail-closed `lineage_mismatch` behavior for missing or mismatched
+  provenance;
+- preserves a legacy singleton derivation for existing synthetic/downstream
+  fixtures and old artifact shapes;
+- adds no public behavior, new route, provider expansion, parser, cache/SR/
+  storage, report/verdict/warning/confidence behavior, ACS/direct URL, V1 work,
+  or V1 cleanup.
+
+Verifier state after the W5E amendment:
+
+- focused W5E/W5/boundary suite: `3` files / `107` tests passed;
+- focused downstream recovery suite: `7` files / `41` tests passed;
+- full V2 local suite: `140` files / `838` tests passed;
+- `npm -w apps/web run build` passed;
+- `git diff --check` passed before docs closeout updates.
+
+One later W6-F1 W5E-repair product-route canary is worth spending only after
+commit, runtime refresh, route/default-admin preflight, and clean final
+verifiers.

@@ -287,6 +287,11 @@ export type BoundedEvidenceExtractionDecision = {
     readonly parentProviderId: string | null;
     readonly sourceMaterialRef: string | null;
     readonly contentPacketId: string | null;
+    readonly sourceContentPackets: readonly {
+      readonly sourceRecordId: string;
+      readonly contentPacketId: string;
+      readonly providerId: string;
+    }[];
   };
   readonly extractionResult: EvidenceExtractionResult | null;
   readonly extractionResultHash: string | null;
@@ -422,6 +427,11 @@ function parentSummary(
     parentProviderId: packet?.providerId ?? request.extractionInputAuthorization?.parent.providerId ?? null,
     sourceMaterialRef: packet?.sourceMaterialRef ?? null,
     contentPacketId: packet?.packetId ?? null,
+    sourceContentPackets: packet?.sourceContentPackets.map((contentPacket) => ({
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
+      providerId: contentPacket.providerId,
+    })) ?? [],
   };
 }
 

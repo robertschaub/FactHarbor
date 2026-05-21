@@ -240,22 +240,59 @@ function blockedReasonFor(
     return "lineage_mismatch";
   }
 
+  const sourceContentPackets = readParentSourceContentPackets(w5);
+  if (sourceContentPackets.length === 0) {
+    return "lineage_mismatch";
+  }
+
+  const approvedSourceContentPackets = new Set(
+    sourceContentPackets.map(
+      (packet) => `${packet.sourceRecordId}\u0000${packet.contentPacketId}`,
+    ),
+  );
   if (
     w5.extractionResult.evidenceItems.some(
       (item) =>
-        item.sourceRecordId !== w5.parent.sourceMaterialRef ||
-        item.contentPacketId !== w5.parent.contentPacketId,
+        !approvedSourceContentPackets.has(`${item.sourceRecordId}\u0000${item.contentPacketId}`),
     ) ||
     w5.evidenceItemStatementProjections.some(
       (projection) =>
-        projection.sourceRecordId !== w5.parent.sourceMaterialRef ||
-        projection.contentPacketId !== w5.parent.contentPacketId,
+        !approvedSourceContentPackets.has(`${projection.sourceRecordId}\u0000${projection.contentPacketId}`),
     )
   ) {
     return "lineage_mismatch";
   }
 
   return null;
+}
+
+function readParentSourceContentPackets(
+  w5: BoundedEvidenceExtractionDecision,
+): readonly {
+  readonly sourceRecordId: string;
+  readonly contentPacketId: string;
+  readonly providerId: string;
+}[] {
+  const sourceContentPackets = (
+    w5.parent as BoundedEvidenceExtractionDecision["parent"] & {
+      readonly sourceContentPackets?: BoundedEvidenceExtractionDecision["parent"]["sourceContentPackets"];
+    }
+  ).sourceContentPackets;
+  if (Array.isArray(sourceContentPackets)) {
+    return sourceContentPackets;
+  }
+  if (
+    w5.parent.sourceMaterialRef &&
+    w5.parent.contentPacketId &&
+    w5.parent.parentProviderId
+  ) {
+    return [{
+      sourceRecordId: w5.parent.sourceMaterialRef,
+      contentPacketId: w5.parent.contentPacketId,
+      providerId: w5.parent.parentProviderId,
+    }];
+  }
+  return [];
 }
 
 function noSideEffects(): BoundedEvidenceItemAdmissionSideEffects {
