@@ -595,6 +595,10 @@ function validateCompletedW3B(input: Record<string, unknown>):
     if ("status" in validated) {
       return validated;
     }
+    if (seenTextHashes.has(validated.sourceMaterialTextHash)) {
+      continue;
+    }
+    seenTextHashes.add(validated.sourceMaterialTextHash);
     if (seenRecordIds.has(validated.sourceMaterialId)) {
       return {
         status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
@@ -602,10 +606,6 @@ function validateCompletedW3B(input: Record<string, unknown>):
       };
     }
     seenRecordIds.add(validated.sourceMaterialId);
-    if (seenTextHashes.has(validated.sourceMaterialTextHash)) {
-      continue;
-    }
-    seenTextHashes.add(validated.sourceMaterialTextHash);
     validatedRecords.push(validated);
   }
   if (validatedRecords.length === 0) {

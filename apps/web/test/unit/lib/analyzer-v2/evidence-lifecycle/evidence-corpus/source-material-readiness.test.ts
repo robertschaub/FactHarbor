@@ -271,7 +271,6 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
     const duplicateRecord = {
       ...firstRecord,
-      sourceMaterialId: "SOURCE_MATERIAL_PAGE_SUMMARY_DUPLICATE_ID",
       locatorRef: "OPAQUE_SOURCE_LOCATOR_DUP_1_ABCDEF123456",
       candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_DUP_1",
     };
@@ -296,6 +295,36 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     expect(result.sourceMaterialRecords[0].sourceMaterialTextHash).toBe(
       (firstRecord as { sourceMaterialTextHash: string }).sourceMaterialTextHash,
     );
+  });
+
+  it("still blocks duplicate source material IDs when the text hash differs", () => {
+    const base = validDecision();
+    const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
+    const secondText = "Different source material text under a reused record id.";
+    const secondRecord = {
+      ...firstRecord,
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_DUP_2_ABCDEF123456",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_DUP_2",
+      sourceMaterialText: secondText,
+      sourceMaterialTextHash: sha256Text(secondText),
+      sourceMaterialTextByteLength: Buffer.byteLength(secondText, "utf8"),
+      sourceMaterialTextCharLength: Array.from(secondText).length,
+    };
+    const decision = validDecision({
+      attemptedFetchCount: 2,
+      sourceMaterialRecordCount: 2,
+      fetchDiagnosticCount: 2,
+      sourceMaterialRecords: [firstRecord, secondRecord],
+      fetchDiagnostics: [
+        validDecision().fetchDiagnostics[0],
+        { ...(validDecision().fetchDiagnostics[0] as Record<string, unknown>), attemptOrdinal: 2 },
+      ],
+    });
+
+    const result = readiness(decision);
+
+    expect(result.status).toBe("blocked_pre_evidence_corpus_source_material_contract_invalid");
+    expect(result.stopReason).toBe("source_material_record_count_unsupported");
   });
 
   it("rejects invalid Source Material text, hash, kind, diagnostics, and downstream execution flags", () => {
