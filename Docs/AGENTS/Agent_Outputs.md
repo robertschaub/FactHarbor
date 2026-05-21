@@ -4822,3 +4822,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Verifiers passed: focused W6-C/W8-B/prompt-contract tests (3 files, 24 tests), boundary guard (94 tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, index, and `git diff --check`.
 - Warnings: no live canary has run yet; W7 remains separately gated; if W6-C5 canary still returns `refine_retrieval`, retrieval refinement is the next package.
 - Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Lead_Developer_V2_W6-C5_Sufficiency_Decision_Gate_Implementation.md`.
+
+## 2026-05-21 - Captain Deputy - V2 W6-C5 Canary Result
+
+- Recorded W6-C5 live result under `Docs/WIP/2026-05-21_V2_Slice_W6-C5_Sufficiency_Decision_Gate_Canary_Result.md`.
+- Corrected canary job: `305176cf9cd34829b08dc826cf850b64`.
+- Classification: `STOP_X7_W6_C5_RETRIEVAL_REFINEMENT_REQUIRED`.
+- W6-C completed and accepted with `schemaDiagnostics = null`, but `reportStopRecommendation = refine_retrieval`; W8-B stayed blocked at `boundary_verdict_candidate_not_ready`.
+- First W6-C5 job `5762f4f74f7c479daca6c6f0290b7ce8` is recorded as `UNEVALUATED_X7_W6_C5_CAPTURE_METHODOLOGY_ERROR`; it consumed one live-job slot but is not gate evidence.
+- Live-job budget after both W6-C5 submissions: `4`.
+- Next action: prepare a retrieval-refinement review package. Do not rerun W6-C5, continue W6-C prompt retries, or relax W7 gates.
+- Handoff: `Docs/AGENTS/Handoffs/2026-05-21_Captain_Deputy_V2_W6-C5_Canary_Result.md`.

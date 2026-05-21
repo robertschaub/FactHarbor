@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T02:43:25.891Z",
-  "count": 776,
+  "generatedAt": "2026-05-21T03:10:22.472Z",
+  "count": 777,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -16866,6 +16866,22 @@
         "Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json"
       ],
       "summary": "Use the W6-C4 canary result as proof that W6-C accepted. The next functional block is `boundary_verdict_candidate_not_ready` / `closed_until_llm_task_approved`. If continuing toward first Alpha report material, focus on W7-A/W7-B readiness and keep public/report/verdict publication closed."
+    },
+    {
+      "file": "2026-05-21_Captain_Deputy_V2_W6-C5_Canary_Result.md",
+      "date": "2026-05-21",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "w6-c5",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 W6-C5 Canary Result"
     },
     {
       "file": "2026-05-21_Lead_Developer_V2_W6-C4_Sufficiency_Prompt_Repair_Implementation.md",
