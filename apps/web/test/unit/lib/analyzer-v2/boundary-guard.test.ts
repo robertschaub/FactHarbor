@@ -9789,6 +9789,7 @@ describe("analyzer-v2 boundary guard", () => {
             new Set([
               "EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION",
               "EVIDENCE_TASK_PROMPT_SECTION_IDS",
+              "EvidenceMissingDimension",
               "EvidenceSufficiencyAssessment",
               "EvidenceLifecycleTaskBlockedReason",
               "EvidenceLifecycleTaskDamagedReason",

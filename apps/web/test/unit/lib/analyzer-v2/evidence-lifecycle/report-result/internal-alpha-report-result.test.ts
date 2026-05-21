@@ -140,6 +140,7 @@ function sufficiencyAssessment(
     parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_TEST",
     sufficiencyResultStatus: "accepted",
     reportStopRecommendation: "continue_to_boundary_formation",
+    missingEvidenceDimensionProjections: [],
     sideEffects: {
       sufficiencyLlmCalled: true,
       promptLoaded: true,

@@ -9,6 +9,7 @@ import { EvidenceSufficiencyResultSchema } from "@/lib/analyzer-v2/evidence-life
 import {
   EVIDENCE_SUFFICIENCY_ASSESSMENT_SCHEMA_VERSION,
   EVIDENCE_TASK_PROMPT_SECTION_IDS,
+  type EvidenceMissingDimension,
   type EvidenceSufficiencyAssessment,
   type EvidenceLifecycleTaskBlockedReason,
   type EvidenceLifecycleTaskDamagedReason,
@@ -214,6 +215,23 @@ export type SufficiencyAssessmentSideEffects = {
   readonly publicSurfaceWritten: false;
 };
 
+/**
+ * Bounded structural projection of a single missing-evidence dimension
+ * from the parsed EvidenceSufficiencyResult. Contains ONLY the dimension
+ * and materiality enum values — no rationale, free-text, sufficiencyStatus,
+ * materialScarcityCandidate, or provider identifiers.
+ *
+ * Internal diagnostic / retrieval-debug use only. Must NOT be exposed in
+ * public behavior, final reports, user-facing outputs, provider scoring,
+ * or downstream claim adjudication.
+ *
+ * Added by W6-C diagnostic projection (V2-RL-020).
+ */
+export type SufficiencyAssessmentMissingDimensionProjection = {
+  readonly dimension: EvidenceMissingDimension;
+  readonly materiality: "none" | "minor" | "material";
+};
+
 export type SufficiencyAssessmentDecision = {
   readonly decisionVersion: typeof SUFFICIENCY_ASSESSMENT_DECISION_VERSION;
   readonly decisionId: string;
@@ -240,6 +258,12 @@ export type SufficiencyAssessmentDecision = {
   readonly sufficiencyResultStatus: EvidenceSufficiencyResult["status"] | null;
   readonly sufficiencyResultPayloadHash: string | null;
   readonly reportStopRecommendation: EvidenceSufficiencyAssessment["recommendedNextAction"] | null;
+  /**
+   * Structural enum projection of missingEvidenceDimensions from the parsed
+   * EvidenceSufficiencyResult. Empty array when the result is blocked, damaged,
+   * or has no missing dimensions. Internal diagnostic use only (V2-RL-020).
+   */
+  readonly missingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
   readonly redaction: {
     readonly evidenceItemTextReturned: false;
     readonly sourceTextReturned: false;
@@ -565,6 +589,37 @@ function inputPacketItem(item: ExtractedEvidenceItemContract): SufficiencyAssess
   };
 }
 
+const ALLOWED_MISSING_DIMENSIONS: ReadonlySet<string> = new Set([
+  "source_diversity",
+  "direct_evidence",
+  "counter_evidence",
+  "temporal_coverage",
+  "method_quality",
+  "source_access",
+  "other",
+]);
+
+const ALLOWED_MATERIALITY_VALUES: ReadonlySet<string> = new Set([
+  "none",
+  "minor",
+  "material",
+]);
+
+function projectMissingEvidenceDimensions(
+  dimensions: readonly { readonly dimension: string; readonly materiality: string; readonly rationale: string }[],
+): readonly SufficiencyAssessmentMissingDimensionProjection[] {
+  return dimensions
+    .filter(
+      (entry) =>
+        ALLOWED_MISSING_DIMENSIONS.has(entry.dimension) &&
+        ALLOWED_MATERIALITY_VALUES.has(entry.materiality),
+    )
+    .map(({ dimension, materiality }) => ({
+      dimension: dimension as EvidenceMissingDimension,
+      materiality: materiality as SufficiencyAssessmentMissingDimensionProjection["materiality"],
+    }));
+}
+
 function blockedDecision(
   request: RunSufficiencyAssessmentRequest,
   reason: SufficiencyAssessmentBlockedReason,
@@ -582,6 +637,7 @@ function blockedDecision(
     sufficiencyResultStatus: null,
     sufficiencyResultPayloadHash: null,
     reportStopRecommendation: null,
+    missingEvidenceDimensionProjections: [],
     sideEffects,
     executionTelemetry: telemetry(telemetryOverrides),
   });
@@ -602,6 +658,7 @@ function damagedDecision(
     sufficiencyResultStatus: sufficiencyResult?.status ?? null,
     sufficiencyResultPayloadHash: sufficiencyResult ? sha256Json(sufficiencyResult) : null,
     reportStopRecommendation: null,
+    missingEvidenceDimensionProjections: [],
     sideEffects,
     executionTelemetry: telemetry(telemetryOverrides),
   });
@@ -615,6 +672,7 @@ function decision(params: {
   readonly sufficiencyResultStatus: EvidenceSufficiencyResult["status"] | null;
   readonly sufficiencyResultPayloadHash: string | null;
   readonly reportStopRecommendation: SufficiencyAssessmentDecision["reportStopRecommendation"];
+  readonly missingEvidenceDimensionProjections: readonly SufficiencyAssessmentMissingDimensionProjection[];
   readonly sideEffects: SufficiencyAssessmentSideEffects;
   readonly executionTelemetry: SufficiencyAssessmentExecutionTelemetry;
 }): SufficiencyAssessmentDecision {
@@ -659,6 +717,7 @@ function decision(params: {
     sufficiencyResultStatus: params.sufficiencyResultStatus,
     sufficiencyResultPayloadHash: params.sufficiencyResultPayloadHash,
     reportStopRecommendation: params.reportStopRecommendation,
+    missingEvidenceDimensionProjections: params.missingEvidenceDimensionProjections,
     redaction: {
       evidenceItemTextReturned: false,
       sourceTextReturned: false,
@@ -989,6 +1048,7 @@ export async function runSufficiencyAssessmentRuntime(
       sufficiencyResultStatus: result.status,
       sufficiencyResultPayloadHash: sha256Json(result),
       reportStopRecommendation: null,
+      missingEvidenceDimensionProjections: [],
       sideEffects: calledSideEffects,
       executionTelemetry: telemetry(completedTelemetry),
     });
@@ -1005,6 +1065,9 @@ export async function runSufficiencyAssessmentRuntime(
     sufficiencyResultStatus: result.status,
     sufficiencyResultPayloadHash: sha256Json(result),
     reportStopRecommendation: result.sufficiencyAssessment.recommendedNextAction,
+    missingEvidenceDimensionProjections: projectMissingEvidenceDimensions(
+      result.sufficiencyAssessment.missingEvidenceDimensions,
+    ),
     sideEffects: calledSideEffects,
     executionTelemetry: telemetry(completedTelemetry),
   });

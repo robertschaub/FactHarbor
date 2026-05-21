@@ -23,6 +23,7 @@ const DECISION_KEYS = [
   "evidenceItemStatementHashes",
   "executionTelemetry",
   "kind",
+  "missingEvidenceDimensionProjections",
   "modelId",
   "parentSufficiencyIntakeDecisionId",
   "parentSufficiencyIntakeDecisionVersion",
@@ -84,6 +85,50 @@ export function isSufficiencyAssessmentRuntimeOwnedDecision(
   return readSufficiencyAssessmentRuntimeOwnedDecision(value) !== null;
 }
 
+const ALLOWED_MISSING_DIMENSION_VALUES: ReadonlySet<string> = new Set([
+  "source_diversity",
+  "direct_evidence",
+  "counter_evidence",
+  "temporal_coverage",
+  "method_quality",
+  "source_access",
+  "other",
+]);
+
+const ALLOWED_MATERIALITY_VALUES: ReadonlySet<string> = new Set([
+  "none",
+  "minor",
+  "material",
+]);
+
+function isValidMissingDimensionProjections(value: unknown): boolean {
+  if (!Array.isArray(value)) {
+    return false;
+  }
+  for (const entry of value) {
+    if (!isRecord(entry)) {
+      return false;
+    }
+    const keys = Object.keys(entry).sort();
+    if (keys.length !== 2 || keys[0] !== "dimension" || keys[1] !== "materiality") {
+      return false;
+    }
+    if (
+      typeof entry.dimension !== "string" ||
+      !ALLOWED_MISSING_DIMENSION_VALUES.has(entry.dimension)
+    ) {
+      return false;
+    }
+    if (
+      typeof entry.materiality !== "string" ||
+      !ALLOWED_MATERIALITY_VALUES.has(entry.materiality)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function isSufficiencyAssessmentContract(value: Record<string, unknown>): boolean {
   if (
     value.decisionVersion !== SUFFICIENCY_ASSESSMENT_DECISION_VERSION ||
@@ -94,6 +139,10 @@ function isSufficiencyAssessmentContract(value: Record<string, unknown>): boolea
     value.taskKey !== "evidence_sufficiency" ||
     value.defaultProjection !== "hash_length_provenance_only"
   ) {
+    return false;
+  }
+
+  if (!isValidMissingDimensionProjections(value.missingEvidenceDimensionProjections)) {
     return false;
   }
 

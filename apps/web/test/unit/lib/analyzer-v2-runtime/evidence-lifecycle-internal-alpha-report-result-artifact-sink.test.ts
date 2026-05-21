@@ -105,6 +105,7 @@ function parentSet() {
       parentW5DecisionId: "BOUNDED_EVIDENCE_EXTRACTION_W8B_SINK",
       sufficiencyResultStatus: "accepted",
       reportStopRecommendation: "continue_to_boundary_formation",
+      missingEvidenceDimensionProjections: [],
     } as SufficiencyAssessmentDecision,
     boundaryVerdictCandidate: {
       decisionVersion: "v2.evidence-lifecycle.boundary-verdict-candidate.w7a",
