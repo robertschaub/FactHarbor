@@ -529,8 +529,9 @@ export async function collectOpenAlexSourceMaterialRecordsFromNetwork(params: {
 }): Promise<readonly SourceMaterialPageSummaryRecord[]> {
   const records: SourceMaterialPageSummaryRecord[] = [];
   let attemptOrdinal = params.startingAttemptOrdinal;
+  const recordLimit = Math.max(0, finiteNonNegativeInteger(params.budget.maxCandidatesPerQuery));
   for (const queryEntry of params.queryEntries) {
-    if (records.length > 0) {
+    if (records.length >= recordLimit) {
       break;
     }
     attemptOrdinal += 1;

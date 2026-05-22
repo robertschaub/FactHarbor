@@ -536,6 +536,15 @@
       "overrunCount": 2,
       "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary and one HJ12 prompt-contract validation canary to avoid an artificial report-creation stop; both are recorded transparently.",
       "nextLiveJobRequirement": "new_reviewed_package_plus_steer_co_or_captain_budget_reconciliation"
+    },
+    "pendingExceptionAuthorization": {
+      "sliceId": "X7-HJ-13-OPENALEX-SOURCE-MATERIAL-BALANCE-REPAIR-CANARY",
+      "status": "authorized_after_clean_implementation_commit_runtime_refresh",
+      "maxJobs": 1,
+      "remaining": 1,
+      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ13_OpenAlex_Source_Material_Balance_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+      "reason": "HJ12 reached an internal Alpha draft but remained UNVERIFIED due source portfolio quality. HJ13 amends existing OpenAlex Source Material breadth without new provider, prompt, schema, or public behavior. One canary is needed to determine whether the report-quality path improves or provider expansion is required.",
+      "mustRecordConsumptionBeforeNextLiveJob": true
     }
   }
 }

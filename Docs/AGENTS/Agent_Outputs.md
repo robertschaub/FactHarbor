@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Steer-Co / Claude Opus 4.6 | V2 HighJump HJ13 OpenAlex Balance Implementation -- [Significant] [open-items: yes]
+**For next agent:** HJ13 amends the existing OpenAlex Source Material collector and W3-B merge so a bounded OpenAlex set can enter the existing nine-record Source Material budget before Wikimedia fill. Focused tests, full `analyzer-v2-runtime`, and full `analyzer-v2` suites passed before closeout verifiers.
+**Warnings:** This is not report-quality evidence until a canary runs. The HighJump tranche is exhausted; the live-job ledger records exactly one pending HJ13 exception authorization after clean implementation commit/runtime refresh.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ13_OpenAlex_Balance_Implementation.md
+
+---
 ### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Steer-Co quick consent | V2 HighJump HJ12 W5 Event Contract Result -- [Significant] [open-items: yes]
 **For next agent:** HJ12 commit `40207da59a521041879617f94c349162eb86a273` repaired W5 evidence-extraction `integrityEvents` prompt-contract drift. Canary `4dfbcd7627414738b0216d200df550c4` ran `claimboundary-v2`, W5 extracted `6` EvidenceItems from the HJ11 nine-record hidden source set, and W8-G created an internal Alpha draft.
 **Warnings:** This is not report-quality pass: the draft remains `UNVERIFIED` because the source portfolio still lacks direct hydrogen-car vs electric-vehicle efficiency comparison evidence. HighJump tranche is now exhausted with two Steer-Co-recorded overrun exceptions from wrong-variant recovery; no further live job before reviewed package plus budget reconciliation.

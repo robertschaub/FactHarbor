@@ -129,11 +129,14 @@ function locator(
   });
 }
 
-function openAlexRecord(): SourceMaterialPageSummaryRecord {
+function openAlexRecord(
+  overrides: Partial<SourceMaterialPageSummaryRecord> = {},
+): SourceMaterialPageSummaryRecord {
+  const suffix = overrides.sourceMaterialTextHash?.slice(0, 16).toUpperCase() ?? "ABCDEF1234567890";
   return {
     recordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
-    sourceMaterialId: "SOURCE_MATERIAL_OPENALEX_ABCDEF1234567890",
-    locatorRef: "OPAQUE_OPENALEX_WORK_ABCDEF1234567890",
+    sourceMaterialId: `SOURCE_MATERIAL_OPENALEX_${suffix}`,
+    locatorRef: `OPAQUE_OPENALEX_WORK_${suffix}`,
     candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_4_1",
     providerId: "openalex",
     sourceMaterialEndpointId: "ep_openalex_works_search",
@@ -163,6 +166,7 @@ function openAlexRecord(): SourceMaterialPageSummaryRecord {
     verdictGenerated: false,
     confidenceGenerated: false,
     publicSurfaceWritten: false,
+    ...overrides,
   };
 }
 
@@ -224,12 +228,21 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
-  it("prefers one eligible OpenAlex Source Material record before Wikimedia fill records", async () => {
+  it("prefers eligible OpenAlex Source Material records before Wikimedia fill records", async () => {
+    const secondOpenAlexRecord = openAlexRecord({
+      sourceMaterialId: "SOURCE_MATERIAL_OPENALEX_BBBBBBBBBBBBBBBB",
+      locatorRef: "OPAQUE_OPENALEX_WORK_BBBBBBBBBBBBBBBB",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_5_1",
+      sourceMaterialText: "A second bounded OpenAlex abstract.",
+      sourceMaterialTextHash: "b".repeat(64),
+      sourceMaterialTextByteLength: 32,
+      sourceMaterialTextCharLength: 32,
+    });
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision(),
       previewDecision: previewDecision(),
       fetchLocators: [locator()],
-      openAlexSourceMaterialRecords: [openAlexRecord()],
+      openAlexSourceMaterialRecords: [openAlexRecord(), secondOpenAlexRecord],
       lowLevelTransport: {
         resolve: async () => [{ address: "93.184.216.34", family: 4 }],
         request: async () => ({
@@ -243,13 +256,14 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision).toMatchObject({
       status: "source_material_page_summary_completed",
-      sourceMaterialRecordCount: 2,
+      sourceMaterialRecordCount: 3,
       attemptedFetchCount: 1,
       fetchDiagnosticCount: 1,
     });
     expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
     expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind).toBe("openalex_work_abstract_text");
-    expect(decision.sourceMaterialRecords[1]?.providerId).toBe("wikimedia_core");
+    expect(decision.sourceMaterialRecords[1]?.providerId).toBe("openalex");
+    expect(decision.sourceMaterialRecords[2]?.providerId).toBe("wikimedia_core");
   });
 
   it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {
@@ -327,12 +341,21 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     ]);
   });
 
-  it("counts the preferred OpenAlex record inside the same nine-record Source Material budget", async () => {
+  it("counts preferred OpenAlex records inside the same nine-record Source Material budget", async () => {
     const entries = Array.from({ length: 9 }, (_, index) => ({
       key: `Wikimedia_page_${index + 1}`,
       title: `Wikimedia page ${index + 1}`,
       candidateOrdinal: index + 1,
       providerAttemptOrdinal: 1,
+    }));
+    const openAlexRecords = Array.from({ length: 3 }, (_, index) => openAlexRecord({
+      sourceMaterialId: `SOURCE_MATERIAL_OPENALEX_${String(index + 1).repeat(16)}`,
+      locatorRef: `OPAQUE_OPENALEX_WORK_${String(index + 1).repeat(16)}`,
+      candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_5_${index + 1}`,
+      sourceMaterialText: `OpenAlex abstract ${index + 1}`,
+      sourceMaterialTextHash: String(index + 1).repeat(64),
+      sourceMaterialTextByteLength: 19,
+      sourceMaterialTextCharLength: 19,
     }));
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision({
@@ -348,7 +371,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       fetchLocators: entries.map((entry) =>
         locator(entry.key, entry.title, entry.candidateOrdinal, entry.providerAttemptOrdinal)
       ),
-      openAlexSourceMaterialRecords: [openAlexRecord()],
+      openAlexSourceMaterialRecords: openAlexRecords,
       lowLevelTransport: {
         resolve: async () => [{ address: "93.184.216.34", family: 4 }],
         request: async (request) => ({
@@ -365,10 +388,12 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision.status).toBe("source_material_page_summary_completed");
     expect(decision.sourceMaterialRecordCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
-    expect(decision.attemptedFetchCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 1);
+    expect(decision.attemptedFetchCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 3);
     expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
-    expect(decision.sourceMaterialRecords.slice(1).map((record) => record.providerId))
-      .toEqual(Array.from({ length: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 1 }, () => "wikimedia_core"));
+    expect(decision.sourceMaterialRecords.slice(0, 3).map((record) => record.providerId))
+      .toEqual(["openalex", "openalex", "openalex"]);
+    expect(decision.sourceMaterialRecords.slice(3).map((record) => record.providerId))
+      .toEqual(Array.from({ length: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 3 }, () => "wikimedia_core"));
   });
 
   it("uses preview order rather than incoming locator order for provider-attempt balancing", async () => {

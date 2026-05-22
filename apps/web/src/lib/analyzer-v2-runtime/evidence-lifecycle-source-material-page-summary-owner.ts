@@ -253,26 +253,40 @@ function statusFromTransportStatus(
   return "source_material_page_summary_failed_structural";
 }
 
-function selectedOpenAlexRecord(records: readonly SourceMaterialPageSummaryRecord[]):
-  SourceMaterialPageSummaryRecord | null {
-  return records.find((record) =>
-    record.providerId === "openalex"
-    && record.sourceMaterialKind === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
-    && record.sourceMaterialTextByteLength > 0
-    && record.sourceMaterialTextByteLength <= 4_096
-  ) ?? null;
+function selectedOpenAlexRecords(
+  records: readonly SourceMaterialPageSummaryRecord[],
+  maxRecords = SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
+): readonly SourceMaterialPageSummaryRecord[] {
+  const selected: SourceMaterialPageSummaryRecord[] = [];
+  const seen = new Set<string>();
+  for (const record of records) {
+    if (
+      record.providerId === "openalex"
+      && record.sourceMaterialKind === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
+      && record.sourceMaterialTextByteLength > 0
+      && record.sourceMaterialTextByteLength <= 4_096
+      && !seen.has(record.sourceMaterialTextHash)
+    ) {
+      selected.push(record);
+      seen.add(record.sourceMaterialTextHash);
+      if (selected.length >= maxRecords) {
+        break;
+      }
+    }
+  }
+  return selected;
 }
 
 function mergedSourceMaterialRecords(params: {
   readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
   readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
 }): readonly SourceMaterialPageSummaryRecord[] {
-  const openAlexRecord = selectedOpenAlexRecord(params.openAlexRecords);
-  if (!openAlexRecord) {
+  const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
+  if (openAlexRecords.length === 0) {
     return params.wikimediaRecords.slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
   }
   return [
-    openAlexRecord,
+    ...openAlexRecords,
     ...params.wikimediaRecords,
   ].slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
 }
@@ -318,10 +332,10 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       });
     }
 
-    const openAlexRecord = selectedOpenAlexRecord(params.openAlexSourceMaterialRecords ?? []);
+    const openAlexRecords = selectedOpenAlexRecords(params.openAlexSourceMaterialRecords ?? []);
     const wikimediaFetchBudget = Math.max(
       0,
-      SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - (openAlexRecord ? 1 : 0),
+      SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - openAlexRecords.length,
     );
     const locators = eligibleLocators(params.previewDecision, params.fetchLocators, wikimediaFetchBudget);
     if (locators.length === 0) {

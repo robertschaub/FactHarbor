@@ -20,6 +20,7 @@ import {
 import {
   SOURCE_ACQUISITION_NETWORK_ATTEMPT_TELEMETRY_VERSION,
   buildSourceAcquisitionCandidateNetworkProviderBoundary,
+  collectOpenAlexSourceMaterialRecordsFromNetwork,
   type SourceAcquisitionNetworkAttemptTelemetryRecord,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
 import type { SourceAcquisitionNetworkLowLevelTransport } from "@/lib/analyzer-v2-runtime/source-acquisition-network-transport";
@@ -167,6 +168,65 @@ function attempt(
     timeoutMs: 250,
     maxCandidateRecords: 2,
     ...overrides,
+  };
+}
+
+function openAlexQueryEntry(index: number) {
+  return {
+    queryId: `EQ_OPENALEX_${index}`,
+    retrievalPolicyKey: "baseline_research" as const,
+    queryText: `comparative source query ${index}`,
+  };
+}
+
+function openAlexEndpoint(
+  overrides: Partial<SourceAcquisitionNetworkEndpointSnapshot> = {},
+): SourceAcquisitionNetworkEndpointSnapshot {
+  return endpoint({
+    endpointSnapshotHash: "openalex-endpoint-hash",
+    providerId: "openalex",
+    endpointId: "ep_openalex_works_search",
+    canonicalAsciiHostname: "api.openalex.org",
+    path: "/works",
+    allowedRequestParameters: [
+      { key: "search", valueSource: "query_text" },
+      { key: "per_page", valueSource: "max_candidate_records" },
+      { key: "select", valueSource: "openalex_minimal_works_select" },
+    ],
+    allowedRequestHeaders: [
+      { key: "accept", valueSource: "application_json" },
+      { key: "user-agent", valueSource: "factharbor_internal_agent" },
+    ],
+    responseCandidatePointer: { kind: "object_array_field", fieldName: "results" },
+    ...overrides,
+  });
+}
+
+function openAlexBudget(
+  currentEndpoint: SourceAcquisitionNetworkEndpointSnapshot,
+  overrides: Partial<SourceAcquisitionNetworkBudgetSnapshot> = {},
+): SourceAcquisitionNetworkBudgetSnapshot {
+  return budget({
+    endpointSnapshotHash: currentEndpoint.endpointSnapshotHash,
+    maxCandidatesPerQuery: 3,
+    maxQueriesPerProvider: 4,
+    totalNetworkTimeoutMs: 1000,
+    ...overrides,
+  });
+}
+
+function openAlexCandidate(id: string, words: readonly string[]) {
+  const abstract_inverted_index: Record<string, number[]> = {};
+  words.forEach((word, index) => {
+    abstract_inverted_index[word] = [index];
+  });
+  return {
+    id,
+    display_name: `OpenAlex work ${id}`,
+    landing_page_url: "https://example.invalid/poison?api_key=sk_test",
+    language: "en",
+    publication_year: 2024,
+    abstract_inverted_index,
   };
 }
 
@@ -394,6 +454,69 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("sk_test");
     expect(JSON.stringify(result)).not.toContain("Hydrogen_vehicle");
+  });
+
+  it("collects a bounded OpenAlex source-material set across query entries without raw provider leakage", async () => {
+    const currentEndpoint = openAlexEndpoint();
+    const currentBudget = openAlexBudget(currentEndpoint, { maxCandidatesPerQuery: 3 });
+    const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const previews: unknown[] = [];
+    const seenPaths: string[] = [];
+    const records = await collectOpenAlexSourceMaterialRecordsFromNetwork({
+      authority: networkAuthority(currentEndpoint, currentBudget),
+      endpoint: currentEndpoint,
+      budget: currentBudget,
+      queryEntries: [
+        openAlexQueryEntry(1),
+        openAlexQueryEntry(2),
+        openAlexQueryEntry(3),
+        openAlexQueryEntry(4),
+      ],
+      startingAttemptOrdinal: 4,
+      attemptTelemetrySink: (record) => telemetry.push(record),
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+      lowLevelTransport: lowLevelTransport({
+        request: async (request) => {
+          seenPaths.push(request.pathWithQuery);
+          const attemptOrdinal = seenPaths.length;
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify({
+              results: [
+                openAlexCandidate(`W${attemptOrdinal}`, [
+                  "Bounded",
+                  "comparative",
+                  "source",
+                  "material",
+                  String(attemptOrdinal),
+                ]),
+              ],
+            }), "utf8"),
+          };
+        },
+      }),
+    });
+    const serialized = JSON.stringify({ records, telemetry, previews });
+
+    expect(records).toHaveLength(3);
+    expect(records.map((record) => record.providerId)).toEqual(["openalex", "openalex", "openalex"]);
+    expect(records.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_5_1",
+      "SOURCE_CANDIDATE_PREVIEW_6_1",
+      "SOURCE_CANDIDATE_PREVIEW_7_1",
+    ]);
+    expect(telemetry).toHaveLength(3);
+    expect(previews).toHaveLength(3);
+    expect(seenPaths).toEqual([
+      "/works?search=comparative+source+query+1&per_page=3&select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year",
+      "/works?search=comparative+source+query+2&per_page=3&select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year",
+      "/works?search=comparative+source+query+3&per_page=3&select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year",
+    ]);
+    expect(serialized).not.toContain("sk_test");
+    expect(serialized).not.toContain("example.invalid");
+    expect(serialized).not.toContain("://");
   });
 
   it("passes abort signals to transport and enforces provider query and total network budgets", async () => {
