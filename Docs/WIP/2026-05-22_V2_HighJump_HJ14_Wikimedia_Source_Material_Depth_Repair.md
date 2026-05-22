@@ -298,3 +298,61 @@ Pending next action after commit:
   `Using hydrogen for cars is more efficient than using electricity`;
 - document the job id, source-material byte lengths, W5/W8 hidden chain, public
   leak check, and remaining/exception budget state.
+
+## Canary Result
+
+Canary job `959c0246501c44558cbf8f484f9b6e3b` ran on API/Web runtime
+`92cbc14fd53665e07a80e239b2e1ec6e190be3df` with explicit
+`claimboundary-v2` and the Captain-defined input
+`Using hydrogen for cars is more efficient than using electricity`.
+
+Classification:
+`STOP_X7_HJ14_WIKIMEDIA_TEXTEXTRACTS_NO_MEASURABLE_DEPTH_GAIN_INTERNAL_ALPHA_DRAFT_CREATED`.
+
+Observed hidden chain:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- W4-A carried `9` hidden Source Material records into corpus readiness:
+  `1` OpenAlex record (`2027` bytes) and `8` Wikimedia records (`148` to
+  `960` bytes, `3577` total Wikimedia bytes);
+- W5 completed with `hidden_evidence_item_extraction_completed`,
+  `extractionResultStatus = accepted`, `evidenceItemCount = 5`,
+  `admittedEvidenceItemCount = 5`, and `schemaDiagnostics = null`;
+- W8-B created an internal Alpha report result with `firstIncompleteStage =
+  none`, `4` boundary candidates, `3` verdict candidates, and `5` cited
+  EvidenceItem refs;
+- W8-G created an internal Alpha draft with `7908` bytes, `4` boundary drafts,
+  `3` verdict drafts, and `5` cited EvidenceItem refs.
+
+Containment:
+
+- W5 default admin projection returned `inputTextReturned = false`,
+  `evidenceItemTextReturned = false`, and `sourceTextReturned = false`;
+- W8-G default admin projection stayed hash/length/provenance-only with
+  `draftMarkdownReturned = false`;
+- explicit authenticated W8-G inspection returned the internal draft for review;
+- public job output remained the damaged pre-cutover envelope and did not expose
+  hidden Source Material, EvidenceItem, or draft text.
+
+Important negative evidence:
+
+- The HJ14 source-depth hypothesis did not pass. Compared with HJ13, the
+  W4-A Source Material byte distribution was unchanged: `1` OpenAlex record and
+  `8` Wikimedia records with the same byte lengths (`2027` OpenAlex bytes and
+  `3577` total Wikimedia bytes).
+- The W8-G draft changed and W5 admitted one more EvidenceItem than HJ13
+  (`5` vs `4`), but this is not reliable evidence that the TextExtracts repair
+  materially deepened Wikimedia Source Material.
+- The standalone W3-B Source Material route returned `404` for this ledger
+  while W4-A/W4-F carried the W3-B state downstream. This was not a text leak,
+  but it is an inspection-coverage caveat to keep visible in the next review.
+
+Decision:
+
+Do not spend another same-provider Wikimedia depth tweak. The hidden chain can
+create internal Alpha drafts, but HJ14 did not produce a measurable source-depth
+gain. The next step should be Steer-Co review of a report-quality path that
+directly addresses comparator evidence quality. Candidate directions include a
+targeted source/provider-quality package, a prompt/report-review package, or a
+source-selection package, but not another unreviewed Wikimedia-only depth tweak.

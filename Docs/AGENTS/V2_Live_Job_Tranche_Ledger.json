@@ -24,9 +24,9 @@
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
       "currentRemaining": 0,
-      "consumptionEntriesInThisTranche": 14,
-      "note": "HighJump tranche is exhausted. Three Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, and evaluate the HJ13 OpenAlex balance repair. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
-      "exceptionOverrunCount": 3
+      "consumptionEntriesInThisTranche": 15,
+      "note": "HighJump tranche is exhausted. Four Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, evaluate the HJ13 OpenAlex balance repair, and evaluate the HJ14 Wikimedia depth repair under the Captain no-artificial-block directive. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
+      "exceptionOverrunCount": 4
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
@@ -542,25 +542,39 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ13_OpenAlex_Source_Material_Balance_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "Hidden V2 chain reached W8-G and created an 8966-byte internal Alpha draft, but Source Material still contained only one OpenAlex record plus eight Wikimedia records, so the HJ13 balance criterion was not met."
+      },
+      {
+        "sliceId": "X7-HJ-14-WIKIMEDIA-SOURCE-MATERIAL-DEPTH-REPAIR-CANARY",
+        "jobId": "959c0246501c44558cbf8f484f9b6e3b",
+        "classification": "STOP_X7_HJ14_WIKIMEDIA_TEXTEXTRACTS_NO_MEASURABLE_DEPTH_GAIN_INTERNAL_ALPHA_DRAFT_CREATED",
+        "implementationCommit": "92cbc14fd53665e07a80e239b2e1ec6e190be3df",
+        "runtimeCommit": "92cbc14fd53665e07a80e239b2e1ec6e190be3df",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_wikimedia_depth_validation_overrun_4",
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "Hidden V2 chain reached W8-G and created a 7908-byte internal Alpha draft with five cited EvidenceItem refs, but W4-A Source Material byte distribution was unchanged from HJ13, so the HJ14 source-depth criterion was not met."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
-      "status": "overrun_recorded_for_wrong_variant_recovery",
-      "overrunCount": 3,
-      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, and one HJ13 OpenAlex balance canary to avoid an artificial report-creation stop; all are recorded transparently.",
-      "nextLiveJobRequirement": "HJ14 reviewed package plus Steer-Co budget reconciliation is pending for one implementation canary"
+      "status": "overrun_recorded_for_wrong_variant_recovery_and_highjump_validation",
+      "overrunCount": 4,
+      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, and one HJ14 Wikimedia depth canary to avoid an artificial report-creation stop; all are recorded transparently.",
+      "nextLiveJobRequirement": "A new reviewed report-quality package plus explicit Steer-Co/Captain budget reconciliation is required before any further live job."
     },
     "pendingExceptionAuthorization": {
       "sliceId": "X7-HJ-14-WIKIMEDIA-SOURCE-MATERIAL-DEPTH-REPAIR-CANARY",
-      "status": "pending",
+      "status": "consumed",
       "maxJobs": 1,
-      "remaining": 1,
+      "remaining": 0,
       "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Repair.md plus Steer-Co consensus in current Codex thread under Captain no-artificial-block directive",
-      "reason": "HJ13 produced an internal Alpha draft but did not improve source balance or direct comparator evidence. HJ14 amends the existing W3-B Wikimedia Source Material transport in place to use bounded project-local TextExtracts source material without provider expansion, prompt/schema edits, parser/full page fetch, retry, cache/SR/storage, or public behavior. One canary is needed to determine whether the report-quality path improves or whether a broader provider/endpoint package is needed.",
-      "mustRecordConsumptionBeforeNextLiveJob": true,
-      "consumedByJobId": null,
-      "classification": null
+      "reason": "HJ14 canary ran once and determined that the same-provider Wikimedia TextExtracts repair did not measurably deepen Source Material versus HJ13.",
+      "mustRecordConsumptionBeforeNextLiveJob": false,
+      "consumedByJobId": "959c0246501c44558cbf8f484f9b6e3b",
+      "classification": "STOP_X7_HJ14_WIKIMEDIA_TEXTEXTRACTS_NO_MEASURABLE_DEPTH_GAIN_INTERNAL_ALPHA_DRAFT_CREATED"
     }
   }
 }

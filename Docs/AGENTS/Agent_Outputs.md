@@ -3456,3 +3456,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Verifiers passed: focused W3-B suite (`3` files / `14` tests), full `analyzer-v2-runtime` (`74` files / `352` tests), full `analyzer-v2` (`142` files / `860` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
 - Pending next action: commit, refresh runtime, verify runtime hashes/clean status, preflight containment, then run exactly one HJ14 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Implementation.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ14 Wikimedia Source Material Depth Canary
+
+- Ran HJ14 canary job `959c0246501c44558cbf8f484f9b6e3b` on API/Web runtime `92cbc14fd53665e07a80e239b2e1ec6e190be3df` with explicit `claimboundary-v2` and the Captain-defined hydrogen input.
+- Classification: `STOP_X7_HJ14_WIKIMEDIA_TEXTEXTRACTS_NO_MEASURABLE_DEPTH_GAIN_INTERNAL_ALPHA_DRAFT_CREATED`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; no public Source Material, EvidenceItem, or draft text exposure was found.
+- Hidden chain reached W5 accepted extraction (`5` EvidenceItems, `schemaDiagnostics = null`) and W8-G created a `7908` byte internal Alpha draft with `4` boundary drafts, `3` verdict drafts, and `5` cited EvidenceItem refs.
+- HJ14 did not meet its central source-depth criterion: W4-A Source Material byte distribution stayed unchanged from HJ13 (`1` OpenAlex record plus `8` Wikimedia records, `3577` total Wikimedia bytes).
+- The standalone W3-B Source Material route returned `404` for this ledger while W4-A/W4-F still carried W3-B state downstream; record as inspection-coverage caveat, not a public leak.
+- HJ14 consumed the single Steer-Co budget-reconciliation exception job; HighJump tranche remains exhausted, exception overrun count is now `4`, and no second HJ14 canary is authorized.
+- Next action: Steer-Co should choose the shortest balanced report-quality path for comparator evidence quality, not another same-provider Wikimedia depth tweak.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Result.md
