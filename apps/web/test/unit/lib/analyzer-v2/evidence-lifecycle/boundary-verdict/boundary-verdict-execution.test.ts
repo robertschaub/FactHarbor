@@ -13,6 +13,7 @@ import { buildEvidenceItemHandoffDecision } from "@/lib/analyzer-v2/evidence-lif
 import { buildBoundaryVerdictCandidateDecision } from "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-candidate";
 import {
   BOUNDARY_VERDICT_EXECUTION_DECISION_VERSION,
+  BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_VERSION,
   BOUNDARY_VERDICT_EXECUTION_MAX_PACKET_BYTES,
   type BoundaryVerdictExecutionInputPacket,
   type BoundaryVerdictExecutionProviderCall,
@@ -393,6 +394,25 @@ describe("boundary/verdict execution runtime", () => {
       verdictCandidateCount: 1,
       citedEvidenceItemRefs: ["EI_W7B_001"],
     });
+    expect(decision.internalReviewPayload).toMatchObject({
+      payloadVersion: BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_VERSION,
+      source: "validated_boundary_verdict_execution_result",
+      defaultProjectionReturned: false,
+      sourceTextReturned: false,
+      evidenceItemTextReturned: false,
+      promptTextReturned: false,
+      providerPayloadReturned: false,
+    });
+    expect(decision.internalReviewPayload?.boundarySetCandidate.boundaries[0]).toMatchObject({
+      boundaryCandidateId: "BVC_001",
+      title: "Internal boundary candidate",
+      rationale: "The cited EvidenceItem addresses the selected AtomicClaim.",
+    });
+    expect(decision.internalReviewPayload?.verdictSetCandidate.verdictCandidates[0]).toMatchObject({
+      verdictCandidateId: "VC_001",
+      internalVerdictLabelCandidate: "MOSTLY-FALSE",
+      rationale: "The available EvidenceItem opposes the claim.",
+    });
     expect(capturedPacket).toMatchObject({
       parentW5DecisionId: w5Decision.decisionId,
       parentW5FDecisionId: lineage.handoff.decisionId,
@@ -433,7 +453,7 @@ describe("boundary/verdict execution runtime", () => {
     });
   });
 
-  it("keeps default decision projection free of EvidenceItem text, prompt text, and provider output text", async () => {
+  it("keeps default decision redaction closed while retaining only W7-B review payload internally", async () => {
     const w5Decision = w5();
     const lineage = await parents(w5Decision);
     const decision = await runBoundaryVerdictExecutionRuntime({
@@ -455,8 +475,9 @@ describe("boundary/verdict execution runtime", () => {
     expect(serialized).not.toContain(SCOPE_TEXT);
     expect(serialized).not.toContain(LOCATOR_TEXT);
     expect(serialized).not.toContain(PROVENANCE_TEXT);
-    expect(serialized).not.toContain("The available EvidenceItem opposes the claim");
     expect(serialized).not.toContain("rendered boundary verdict prompt");
+    expect(decision.internalReviewPayload?.verdictSetCandidate.verdictCandidates[0]?.rationale)
+      .toBe("The available EvidenceItem opposes the claim.");
     expect(decision.redaction).toEqual({
       evidenceItemTextReturned: false,
       sourceTextReturned: false,
@@ -467,6 +488,7 @@ describe("boundary/verdict execution runtime", () => {
       boundaryCandidateTextReturned: false,
       verdictCandidateTextReturned: false,
       warningMaterialityTextReturned: false,
+      internalReviewPayloadReturnedByDefault: false,
       hiddenLedgerReferenceReturned: false,
       internalStateReturned: false,
     });

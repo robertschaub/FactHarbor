@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T00:03:47.965Z",
-  "count": 416,
+  "generatedAt": "2026-05-22T00:34:40.010Z",
+  "count": 417,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9258,6 +9258,26 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 HighJump W7-B Sufficiency Status Projection Repair"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_W8G_Internal_Alpha_Report_Draft_Implementation.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "w8g",
+        "internal",
+        "alpha",
+        "report",
+        "draft",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 HighJump W8-G Internal Alpha Report Draft Implementation"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_W6-C_HighJump_Takeover_Checkpoint.md",

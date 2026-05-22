@@ -3392,3 +3392,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HighJump live-job tranche now has `6` remaining; ledger updated with HJ4-HJ7 consumption.
 - Next action: continue report creation with a narrow internal report prose/review package over the existing W8-B candidate, not more readiness scaffolding.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_Internal_Alpha_Report_Candidate.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump W8-G Internal Alpha Report Draft Implementation
+
+- Implemented W8-G under `Docs/WIP/2026-05-22_V2_HighJump_W8G_Internal_Alpha_Report_Draft_Package.md`.
+- W8-G preserves W7-B's validated LLM-owned boundary/verdict review payload internally and projects it into one hidden/admin-only internal Alpha draft; it does not add a report-prose LLM call, prompt/model/config/schema edit, public behavior, cache/SR/storage, parser, ACS/direct URL, provider expansion, V1 work, or V1 cleanup.
+- Added an authenticated no-store internal W8-G route. Default projection is hash/length/provenance-only with `draftMarkdownReturned = false`; explicit `inspectDraftText=true` returns draft Markdown for admin inspection only.
+- Updated the V2 retirement ledger with `V2-RL-023` to merge W8-G into a stable report writer/report-review surface after internal report review accepts the output shape.
+- Verifiers passed: focused W7/W8/W8-G suite (`9` files / `45` tests), boundary guard (`95` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Failed-verifier recovery was limited to compact debt-guard fixes: one test fixture correction and one TypeScript projection type amendment.
+- Next action: commit the W8-G implementation, refresh runtime, preflight the route, and run exactly one HJ8 canary on the Captain-defined hydrogen input if runtime provenance is clean.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W8G_Internal_Alpha_Report_Draft_Implementation.md

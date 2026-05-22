@@ -137,6 +137,9 @@ import {
 import {
   recordInternalAlphaReportResultRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink";
+import {
+  recordInternalAlphaReportDraftRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-draft-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -415,7 +418,7 @@ export async function runClaimBoundaryPipelineV2(
               internalAlphaReportStop,
             });
           } finally {
-            recordInternalAlphaReportResultRuntimeArtifact({
+            const reportResultArtifact = recordInternalAlphaReportResultRuntimeArtifact({
               context,
               boundedEvidenceExtraction,
               evidenceItemHandoff,
@@ -425,6 +428,13 @@ export async function runClaimBoundaryPipelineV2(
               internalAlphaReportStop,
               boundaryVerdictExecution,
             });
+            if (reportResultArtifact.status === "recorded") {
+              recordInternalAlphaReportDraftRuntimeArtifact({
+                context,
+                internalAlphaReportResult: reportResultArtifact.artifact.internalAlphaReportResult,
+                boundaryVerdictExecution,
+              });
+            }
           }
         }
       }

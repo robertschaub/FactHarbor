@@ -47,6 +47,9 @@ export const BOUNDARY_VERDICT_EXECUTION_MAX_EVIDENCE_ITEMS = 50 as const;
 export const BOUNDARY_VERDICT_EXECUTION_MAX_PACKET_BYTES = 100_000 as const;
 export const BOUNDARY_VERDICT_EXECUTION_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
   "remove_or_fold_into_stable_w7b_telemetry_after_two_successive_highjump_boundary_verdict_canaries_or_end_of_current_highjump_tranche" as const;
+export const BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_VERSION =
+  "v2.evidence-lifecycle.boundary-verdict-execution.internal-review-payload.w8g" as const;
+export const BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_MAX_BYTES = 32_768 as const;
 
 const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_DIAGNOSTIC_ISSUES = 8;
 const BOUNDARY_VERDICT_EXECUTION_MAX_SCHEMA_PATH_SEGMENTS = 8;
@@ -257,6 +260,24 @@ export type BoundaryVerdictExecutionSideEffects = {
   readonly publicSurfaceWritten: false;
 };
 
+type AcceptedBoundaryVerdictExecutionResult = Extract<BoundaryVerdictExecutionResult, { readonly status: "accepted" }>;
+
+export type BoundaryVerdictExecutionInternalReviewPayload = {
+  readonly payloadVersion: typeof BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_VERSION;
+  readonly source: "validated_boundary_verdict_execution_result";
+  readonly boundarySetCandidate: AcceptedBoundaryVerdictExecutionResult["boundarySetCandidate"];
+  readonly verdictSetCandidate: AcceptedBoundaryVerdictExecutionResult["verdictSetCandidate"];
+  readonly warningMaterialityInputs: AcceptedBoundaryVerdictExecutionResult["warningMaterialityInputs"];
+  readonly integrityEventCount: number;
+  readonly payloadByteLength: number;
+  readonly payloadHash: string;
+  readonly defaultProjectionReturned: false;
+  readonly sourceTextReturned: false;
+  readonly evidenceItemTextReturned: false;
+  readonly promptTextReturned: false;
+  readonly providerPayloadReturned: false;
+};
+
 export type BoundaryVerdictExecutionDecision = {
   readonly decisionVersion: typeof BOUNDARY_VERDICT_EXECUTION_DECISION_VERSION;
   readonly decisionId: string;
@@ -278,6 +299,7 @@ export type BoundaryVerdictExecutionDecision = {
   readonly verdictCandidateCount: number;
   readonly citedEvidenceItemRefs: readonly string[];
   readonly resultPayloadHash: string | null;
+  readonly internalReviewPayload: BoundaryVerdictExecutionInternalReviewPayload | null;
   readonly warningMaterialityInputs: {
     readonly warningPublication: "closed";
     readonly userVisibleWarningCount: 0;
@@ -298,6 +320,7 @@ export type BoundaryVerdictExecutionDecision = {
     readonly boundaryCandidateTextReturned: false;
     readonly verdictCandidateTextReturned: false;
     readonly warningMaterialityTextReturned: false;
+    readonly internalReviewPayloadReturnedByDefault: false;
     readonly hiddenLedgerReferenceReturned: false;
     readonly internalStateReturned: false;
   };
@@ -1107,6 +1130,7 @@ function decision(params: {
       0,
     )
     : 0;
+  const internalReviewPayload = buildInternalReviewPayload(accepted);
   const decisionHash = sha256Json({
     status: params.status,
     blockedReason: params.blockedReason,
@@ -1136,6 +1160,7 @@ function decision(params: {
     verdictCandidateCount: accepted?.verdictSetCandidate.verdictCandidates.length ?? 0,
     citedEvidenceItemRefs,
     resultPayloadHash: params.result ? sha256Json(params.result) : null,
+    internalReviewPayload,
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
@@ -1157,6 +1182,7 @@ function decision(params: {
       boundaryCandidateTextReturned: false,
       verdictCandidateTextReturned: false,
       warningMaterialityTextReturned: false,
+      internalReviewPayloadReturnedByDefault: false,
       hiddenLedgerReferenceReturned: false,
       internalStateReturned: false,
     },
@@ -1165,6 +1191,39 @@ function decision(params: {
     combinedCallQualityTrigger:
       "compare_first_successful_benchmark_family_candidate_against_best_available_boundary_comparator",
     approvalPointer: BOUNDARY_VERDICT_EXECUTION_SOURCE_PACKAGE,
+  };
+}
+
+function buildInternalReviewPayload(
+  accepted: AcceptedBoundaryVerdictExecutionResult | null,
+): BoundaryVerdictExecutionInternalReviewPayload | null {
+  if (!accepted) {
+    return null;
+  }
+
+  const candidate = {
+    payloadVersion: BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_VERSION,
+    source: "validated_boundary_verdict_execution_result" as const,
+    boundarySetCandidate: accepted.boundarySetCandidate,
+    verdictSetCandidate: accepted.verdictSetCandidate,
+    warningMaterialityInputs: accepted.warningMaterialityInputs,
+    integrityEventCount: accepted.integrityEvents.length,
+    defaultProjectionReturned: false as const,
+    sourceTextReturned: false as const,
+    evidenceItemTextReturned: false as const,
+    promptTextReturned: false as const,
+    providerPayloadReturned: false as const,
+  };
+  const payloadHash = sha256Json(candidate);
+  const payloadByteLength = utf8ByteLength(JSON.stringify(candidate));
+  if (payloadByteLength > BOUNDARY_VERDICT_EXECUTION_INTERNAL_REVIEW_PAYLOAD_MAX_BYTES) {
+    return null;
+  }
+
+  return {
+    ...candidate,
+    payloadByteLength,
+    payloadHash,
   };
 }
 

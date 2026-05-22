@@ -71,6 +71,10 @@ const analyzerV2EvidenceLifecycleInternalAlphaReportResultArtifactInspectionRout
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-internal-alpha-report-result-artifacts/route.ts",
 );
+const analyzerV2EvidenceLifecycleInternalAlphaReportDraftArtifactInspectionRoutePath = path.resolve(
+  appRoot,
+  "api/internal/analyzer-v2/evidence-lifecycle-internal-alpha-report-draft-artifacts/route.ts",
+);
 const analyzerV2EvidenceLifecycleSourceAcquisitionPreIoFenceArtifactInspectionRoutePath = path.resolve(
   appRoot,
   "api/internal/analyzer-v2/evidence-lifecycle-source-acquisition-pre-io-fence-artifacts/route.ts",
@@ -210,6 +214,10 @@ const evidenceLifecycleReportStopCandidatePath = path.resolve(
 const evidenceLifecycleInternalAlphaReportResultPath = path.resolve(
   evidenceLifecycleReportResultRoot,
   "internal-alpha-report-result.ts",
+);
+const evidenceLifecycleInternalAlphaReportDraftPath = path.resolve(
+  evidenceLifecycleReportResultRoot,
+  "internal-alpha-report-draft.ts",
 );
 const evidenceLifecycleDownstreamDenialRoot = path.resolve(evidenceLifecycleRoot, "downstream-denial");
 const evidenceLifecycleSourceMaterialRoot = path.resolve(evidenceLifecycleRoot, "source-material");
@@ -409,6 +417,10 @@ const analyzerV2RuntimeEvidenceLifecycleBoundedEvidenceExtractionArtifactSinkPat
 const analyzerV2RuntimeEvidenceLifecycleInternalAlphaReportResultArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
   "evidence-lifecycle-internal-alpha-report-result-artifact-sink.ts",
+);
+const analyzerV2RuntimeEvidenceLifecycleInternalAlphaReportDraftArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "evidence-lifecycle-internal-alpha-report-draft-artifact-sink.ts",
 );
 const analyzerV2RuntimeEvidenceLifecycleSourceAcquisitionPreIoFenceArtifactSinkPath = path.resolve(
   analyzerV2RuntimeRoot,
@@ -1227,6 +1239,7 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-sufficiency-assessment-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-boundary-verdict-execution-owner",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink",
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-draft-artifact-sink",
     ]),
   ],
   [
@@ -1239,6 +1252,12 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
     toPosix(analyzerV2EvidenceLifecycleInternalAlphaReportResultArtifactInspectionRoutePath),
     new Set([
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-result-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2EvidenceLifecycleInternalAlphaReportDraftArtifactInspectionRoutePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-draft-artifact-sink",
     ]),
   ],
   [
@@ -1485,6 +1504,16 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2/run-context",
       "@/lib/analyzer-v2/util",
       "@/lib/analyzer-v2-runtime/evidence-lifecycle-boundary-verdict-execution-provenance",
+    ]),
+  ],
+  [
+    toPosix(analyzerV2RuntimeEvidenceLifecycleInternalAlphaReportDraftArtifactSinkPath),
+    new Set([
+      "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-execution",
+      "@/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-draft",
+      "@/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result",
+      "@/lib/analyzer-v2/run-context",
+      "@/lib/analyzer-v2/util",
     ]),
   ],
 ]);
@@ -9535,18 +9564,20 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps W8-A internal Alpha report stop candidate isolated and non-verdict-bearing", () => {
+  it("keeps W8 internal Alpha report owners isolated and non-public", () => {
     const reportResultFiles = collectFiles(evidenceLifecycleReportResultRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     );
     const violations: string[] = [];
 
     expect(reportResultFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-draft.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/report-result/report-stop-candidate.ts",
     ]);
     expect(existsSync(evidenceLifecycleReportStopCandidatePath)).toBe(true);
     expect(existsSync(evidenceLifecycleInternalAlphaReportResultPath)).toBe(true);
+    expect(existsSync(evidenceLifecycleInternalAlphaReportDraftPath)).toBe(true);
 
     const approvedImportsByFile = new Map<string, Map<string, Set<string>>>([
       [
@@ -9608,6 +9639,23 @@ describe("analyzer-v2 boundary guard", () => {
           [
             "@/lib/analyzer-v2/evidence-lifecycle/sufficiency/sufficiency-intake",
             new Set(["SufficiencyIntakeDecision", "SUFFICIENCY_INTAKE_DECISION_VERSION"]),
+          ],
+          [
+            "@/lib/analyzer-v2/util",
+            new Set(["sha256Json"]),
+          ],
+        ]),
+      ],
+      [
+        toPosix(evidenceLifecycleInternalAlphaReportDraftPath),
+        new Map<string, Set<string>>([
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-execution",
+            new Set(["BOUNDARY_VERDICT_EXECUTION_DECISION_VERSION", "BoundaryVerdictExecutionDecision"]),
+          ],
+          [
+            "@/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result",
+            new Set(["INTERNAL_ALPHA_REPORT_RESULT_DECISION_VERSION", "InternalAlphaReportResultCandidate"]),
           ],
           [
             "@/lib/analyzer-v2/util",
@@ -10638,6 +10686,138 @@ describe("analyzer-v2 boundary guard", () => {
     ]) {
       if (candidateContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
         violations.push(`W8-B contains forbidden text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps W8-G internal Alpha report draft hidden, redacted by default, and inspection-only", () => {
+    const violations: string[] = [];
+    const requiredPaths = [
+      evidenceLifecycleInternalAlphaReportDraftPath,
+      analyzerV2RuntimeEvidenceLifecycleInternalAlphaReportDraftArtifactSinkPath,
+      analyzerV2EvidenceLifecycleInternalAlphaReportDraftArtifactInspectionRoutePath,
+    ];
+
+    for (const requiredPath of requiredPaths) {
+      expect(existsSync(requiredPath)).toBe(true);
+    }
+
+    const draftContent = readFileSync(evidenceLifecycleInternalAlphaReportDraftPath, "utf8");
+    const sinkContent = readFileSync(analyzerV2RuntimeEvidenceLifecycleInternalAlphaReportDraftArtifactSinkPath, "utf8");
+    const routeContent = readFileSync(analyzerV2EvidenceLifecycleInternalAlphaReportDraftArtifactInspectionRoutePath, "utf8");
+
+    for (const requiredText of [
+      "v2.evidence-lifecycle.internal-alpha-report-draft.w8g",
+      "internal_alpha_report_draft_created",
+      "boundary_verdict_review_payload_missing",
+      "ready_for_internal_alpha_report_review",
+      "merge_w8g_into_stable_report_writer_after_internal_report_review_accepts_output_shape",
+      "reportProseLlmCalled: false",
+      "publicReportGenerated: false",
+      "publicSurfaceWritten: false",
+    ]) {
+      if (!draftContent.includes(requiredText)) {
+        violations.push(`W8-G draft missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "readInternalAlphaReportDraftRuntimeArtifactDefaultProjections",
+      "readInternalAlphaReportDraftRuntimeArtifactInspectionProjections",
+      "ledgerIdReturned: false",
+      "runIdReturned: false",
+      "decisionIdReturned: false",
+      "draftMarkdownReturned: false",
+      "draftMarkdownReturned: true",
+      "INTERNAL_ALPHA_REPORT_DRAFT_ARTIFACT_MAX_RECORDS_PER_LEDGER",
+      "INTERNAL_ALPHA_REPORT_DRAFT_ARTIFACT_MAX_LEDGER_COUNT",
+      "INTERNAL_ALPHA_REPORT_DRAFT_ARTIFACT_MAX_SERIALIZED_BYTES",
+    ]) {
+      if (!sinkContent.includes(requiredText)) {
+        violations.push(`W8-G sink missing required text ${requiredText}`);
+      }
+    }
+    for (const requiredText of [
+      "checkAdminKey",
+      "Cache-Control",
+      "no-store",
+      "ledgerId",
+      "inspectDraftText",
+      "draftMarkdownReturned: query.inspectDraftText",
+      "Missing or invalid ledgerId",
+    ]) {
+      if (!routeContent.includes(requiredText)) {
+        violations.push(`W8-G route missing required text ${requiredText}`);
+      }
+    }
+
+    for (const sourcePath of requiredPaths) {
+      const sourceFile = parseSource(sourcePath);
+      const relativePath = toPosix(path.relative(webRoot, sourcePath));
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (specifier.includes("execution-readiness") || specifier.includes("w4i")) {
+          violations.push(`${relativePath} imports direct W4-I dependency ${specifier}`);
+        }
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${relativePath} imports prompt loader ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${relativePath} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${relativePath} imports network/parser dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${relativePath} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${relativePath} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${relativePath} imports provider SDK ${specifier}`);
+        }
+        if (isAcsDirectUrlRuntimeImport(specifier)) {
+          violations.push(`${relativePath} imports ACS/direct URL runtime ${specifier}`);
+        }
+        if (
+          sourcePath !== analyzerV2EvidenceLifecycleInternalAlphaReportDraftArtifactInspectionRoutePath &&
+          (specifier.startsWith("@/app") || specifier.startsWith("@/components"))
+        ) {
+          violations.push(`${relativePath} imports public surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`W8-G file makes direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+    }
+
+    for (const forbiddenText of [
+      "sourceText:",
+      "inputText:",
+      "reportMarkdown",
+      "truthPercentage:",
+      "confidenceTier:",
+      "providerPayload:",
+      "renderedPrompt:",
+      "reportProseLlmCalled: true",
+      "modelCalled: true",
+      "cacheRead: true",
+      "cacheWrite: true",
+      "sourceReliabilityRead: true",
+      "sourceReliabilityWrite: true",
+      "storageWrite: true",
+      "parserExecuted: true",
+      "publicSurfaceWritten: true",
+    ]) {
+      if (draftContent.includes(forbiddenText) || sinkContent.includes(forbiddenText) || routeContent.includes(forbiddenText)) {
+        violations.push(`W8-G contains forbidden text ${forbiddenText}`);
       }
     }
 
