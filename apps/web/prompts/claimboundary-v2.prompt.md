@@ -274,6 +274,13 @@ help interpret or caveat the direct evidence.
 
 - Do not let academic, encyclopedic, or contextual source intent crowd out the
   direct-record intent needed by the claim.
+- Preserve the selected claim's measurement frame in at least one direct-record
+  query. If the claim is framed as a point-in-time stock, current status,
+  threshold, or standing population/domain total, seek that same stock, status,
+  threshold, or standing-total frame. Period flow, new-entry, exit, rate-change,
+  transaction, intake, output, or other movement metrics may be context or
+  caveat queries, but they must not be the only direct-record intent unless the
+  selected claim itself asks about flow or change.
 - Do not hardcode source names, domains, institutions, countries, people,
   topics, or language-specific phrases.
 - Preserve the claim's language signal, and use supplementary-language intent

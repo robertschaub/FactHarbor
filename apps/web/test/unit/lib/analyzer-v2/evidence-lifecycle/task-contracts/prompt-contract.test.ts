@@ -177,6 +177,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("current aggregate, legal/procedural event, official status");
     expect(section).toContain("direct public record, primary-source statement");
     expect(section).toContain("Do not let academic, encyclopedic, or contextual source intent crowd out");
+    expect(section).toContain("Preserve the selected claim's measurement frame");
+    expect(section).toContain("point-in-time stock, current status");
+    expect(section).toContain("they must not be the only direct-record intent unless the");
   });
 
   it("renders the evidence-extraction strict output branch contract", () => {
