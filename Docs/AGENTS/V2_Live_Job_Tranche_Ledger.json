@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
       "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ38 produced a complete internal alpha report for the German asylum aggregate input, but the source-usefulness defect remains: the report found annual application-flow material rather than direct current-stock evidence. The next job in this tranche should validate the bounded Serper per-query source-depth repair.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient: the German asylum aggregate run regressed to Source Material records 0, W4-G w3b_not_completed, W4-H w4g_not_positive, and W5 blocked_pre_execution. The next job in this tranche should validate the committed HJ40 generic measurement-frame query-intent repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1118,6 +1118,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ38 reran the German asylum aggregate input after widening the bounded Serper linked-page aggregate cap. The run stayed on claimboundary-v2 and public/default containment held: public/default reportMarkdown stayed null, schema stayed 4.0.0-cb-precutover, cutover stayed blocked_precutover, and issue stayed report_damaged. Authenticated admin reportMarkdown was 3561 characters and produced a complete internal alpha review with UNVERIFIED / truth 0 / confidence 0. The observed report defect is source usefulness: the report relied on annual asylum-application flow evidence rather than direct current stock evidence for the claimed 235000+ asylum-domain population."
+      },
+      {
+        "sliceId": "X7-HJ-39-ASYLUM-235000-DE-SERPER-PER-QUERY-FANIN-RERUN",
+        "jobId": "387c164a9e804d9882d3edcdeee4ebcd",
+        "classification": "STOP_X7_HJ39_ASYLUM_SOURCE_MATERIAL_ZERO_AFTER_PER_QUERY_FANIN",
+        "implementationCommit": "dad006f810a82d887b03b3b62842983e5be679e6",
+        "runtimeCommit": "82c92cf044957c1365fc8a607cdc35e5f55c122a",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "c67d4ae748eb3afdfc937abe53460f12a36c89b1",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "HJ39 reran the German asylum aggregate input after bounded Serper per-query fan-in. Public/default containment held. The admin stop summary regressed before Source Material: records 0, W4-G w3b_not_completed, W4-H w4g_not_positive, W5 blocked_pre_execution, source-content packets 0. This disproves per-query fan-in as sufficient and points back to generic query measurement-frame intent/source-material usefulness."
       }
     ],
     "blockedPending": [],

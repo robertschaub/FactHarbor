@@ -21,25 +21,25 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`dad006f8 fix(v2): broaden serper per-query source material`
+`c67d4ae7 fix(v2): preserve stock measurement frame in queries`
 
-The current committed repair is HJ39: bounded Serper per-query source depth.
-HJ38 produced a complete internal alpha report, but the report relied on annual
-application-flow evidence rather than direct current-stock evidence for the
-claimed 235,000+ asylum-domain population. HJ39 amends the existing Serper
-Source Material collector from one to two materialized records per query while
-keeping the five-record run cap, three-candidate provider request, 12 KB
-aggregate text cap, downstream three-record Serper cap, and hidden/admin-only
-containment. It does not add a provider, parser, retry path, route, public
-behavior, or prompt loosening.
+The current committed repair is HJ40: a narrow, generic measurement-frame
+query-intent repair. HJ38 produced a complete internal alpha report but used
+annual application-flow evidence rather than direct current-stock evidence.
+HJ39 then tried bounded Serper per-query fan-in and regressed to Source
+Material records `0`, proving fan-in alone is not sufficient. HJ40 amends the
+existing V2 query-planning prompt so at least one direct-record query preserves
+the selected claim's stock/status/standing-total/threshold measurement frame
+when that is how the claim is framed. It does not add a provider, parser, retry
+path, route, public behavior, schema change, cache/SR/storage, or V1 work.
 
-Runtime has not yet been refreshed to HJ39 for the next validation job.
+Runtime has not yet been refreshed to HJ40 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN`
+`X7-HJ-39-ASYLUM-235000-DE-SERPER-PER-QUERY-FANIN-RERUN`
 
 Result document:
 
@@ -96,6 +96,13 @@ Important evidence:
   `235,000+` persons. The next lane is report-quality review and targeted
   retrieval/source-material improvement toward direct stock evidence, not more
   reachability plumbing.
+- `387c164a9e804d9882d3edcdeee4ebcd` (German asylum aggregate) ran on HJ39
+  after bounded Serper per-query fan-in. It stayed on `claimboundary-v2` and
+  public/default containment held, but regressed before Source Material:
+  Source Material records `0`, W4-G `w3b_not_completed`, W4-H
+  `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
+  HJ40 therefore amends query-planning measurement-frame intent generically,
+  rather than adding another source-depth mechanism.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -200,25 +207,24 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Review the HJ38 internal alpha report against Captain quality expectations
-   and the expected asylum-family evidence needs.
-2. Choose the single next bar to raise from observed report evidence. Current
-   likely bar: source acquisition/source material must surface direct stock or
-   registration evidence for the claimed current asylum-domain population,
-   rather than only annual application-flow evidence.
-3. Do not add more reachability plumbing unless the report-quality review shows
-   the report path is still structurally blocked.
-4. Treat the plastic CU stop as a separate follow-up unless the same repair
-   naturally covers short broad assertions without lowering Gate 1 quality too
-   far.
+1. Commit this HJ39 result / HJ40 repair lane sync.
+2. Refresh runtime to the latest committed HJ40 source/docs anchor, verify
+   Web/API/proxy commit match, and run one default/manual V2 validation job for
+   `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+3. If HJ40 produces an internal report, review the concrete report defect
+   against Captain quality expectations and raise one single bar from observed
+   evidence.
+4. If HJ40 repeats Source Material `0` or otherwise gives no new useful
+   information, reconvene Steer-Co before spending another live job on this
+   claim family.
 
 ## Stop Conditions
 

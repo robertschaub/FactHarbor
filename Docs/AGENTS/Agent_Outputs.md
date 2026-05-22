@@ -3897,3 +3897,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Observed quality defect:** The report path is now open for this input, but source usefulness is weak. The report relied on annual asylum-application flow evidence (`27,740` new applications in 2024) rather than direct current stock/registration evidence for the claimed `235,000+` asylum-domain population. The next step should review the report against Captain quality expectations and raise one concrete source-acquisition/source-material bar from this observed defect.
 
 **Budget:** Captain reset the live-job tranche to `18` after HJ37C. HJ38 consumed `1`; `17` remain.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ39 Stop And HJ40 Measurement-Frame Query Repair
+
+**Task:** Validate the bounded Serper per-query fan-in repair after HJ38 produced a complete but source-weak internal alpha report for the German asylum aggregate input.
+
+**Result:** HJ39 job `387c164a9e804d9882d3edcdeee4ebcd` ran through the default manual V2 path on runtime `82c92cf044957c1365fc8a607cdc35e5f55c122a`. It stayed on `claimboundary-v2` and public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default report markdown null). The authenticated admin stop summary regressed before Source Material: Source Material records `0`, W4-G `w3b_not_completed`, W4-H `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
+
+**Repair:** HJ40 commits `c67d4ae7` to amend only the existing V2 query-planning prompt contract and prompt-contract tests. The prompt now generically requires at least one direct-record query to preserve the selected claim's measurement frame when the claim is framed as a stock, current status, standing total, or threshold. Flow/change metrics may remain context or caveat queries, but must not be the only direct-record intent unless the selected claim itself asks about flow or change. No provider, parser, retry, route, schema, public behavior, cache/SR/storage, or V1 work was added.
+
+**Debt-guard:** HJ39 is classified as failed-validation recovery. The per-query fan-in change is kept as locally verifier-clean but insufficient; the chosen next step amends the existing query-planning prompt with a topic-neutral measurement-frame requirement instead of adding another source/provider/diagnostic mechanism. Net mechanisms unchanged. If HJ40 repeats Source Material `0`, the next step should be Steer-Co review before stacking another repair.
+
+**Verification:** Focused prompt/query/Serper verifier passed (`5` files / `30` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39 consumed `1`; `17` remain before the HJ40 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ40, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
