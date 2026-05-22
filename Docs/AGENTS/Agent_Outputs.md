@@ -3705,3 +3705,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ24 consumed `7` of `18`; remaining live-job budget is `11`.
 
 **Next:** Continue HighJump on the active non-hydrogen generalization gap. Bolsonaro now reaches W5 after W3-B/W4-A repairs but still returns `hidden_no_extractable_evidence`, so the next focused repair should improve existing source-material usefulness / evidence-extraction generalization rather than adding a new proof layer or rerunning hydrogen.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ26 Serper Source Material And W4-H Lineage Repair
+
+**Task:** Continue the non-hydrogen generalization path after HJ25/HJ24 showed Bolsonaro still lacked extractable evidence.
+
+**Result:** Committed `30d8d011 fix(v2): add bounded serper preview material`, adding a V2-owned, bounded, hidden/admin-only Serper search-preview Source Material feed into the existing W3-B/W4/W5 path. The first validation job `4a5ecd46675041eb9cdc347fc8bc2c94` ran through the default manual V2 path on runtime `7f4ebcd5`, stored `claimboundary-v2`, and improved W3-B to `9` Source Material records across `openalex`, `serper_web_search`, and `wikimedia_core`. It then exposed a downstream W4-H provider-lineage stop: `blocked_pre_extraction_input_provider_id_mismatch`, so W5 stayed `blocked_pre_execution` and no internal report writer artifacts were created. Public/default containment held.
+
+**Repair:** Committed `dbdd2acc fix(v2): admit serper extraction input lineage`, amending the existing W4-H approved provider-lineage allowlist and mixed-provider fan-in test to include `serper_web_search`. No prompt, schema, parser, cache/SR/storage, public behavior, report/verdict/warning/confidence behavior, or V1 work was added.
+
+**Verification:** Serper implementation commit passed focused source-material/runtime tests, boundary guard (`96` tests), runtime slice (`76` files / `362` tests), broad V2 slice with explicit timeout (`145` files / `882` tests), `npm run validate:v2-gates`, `npm run debt:sensors` (`advisory_warn` for known V2/docs/guard footprint), `npm -w apps/web run build`, and `git diff --check`. W4-H lineage repair passed focused W4-H tests (`10` tests), broad V2 slice (`145` files / `882` tests), `npm -w apps/web run build`, debt sensors, and diff check.
+
+**Budget:** Captain reset the current tranche to `18`; HJ26 consumed `1`, leaving `17`.
+
+**Next:** Refresh runtime to `dbdd2acc` plus docs sync, verify API/Web commit match, and rerun one default manual V2 Bolsonaro validation. If W4-H passes but W5 still stops, pivot to W5 extraction/report-quality evidence from the hidden artifacts rather than adding more source acquisition machinery.

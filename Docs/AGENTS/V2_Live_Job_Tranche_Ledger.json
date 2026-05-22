@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj25",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-25-BOLSONARO-SEARCH-PREVIEW-MATERIAL-VALIDATION",
       "startsAfterJobId": "d2e18575dcbe453c9cbae2281438405e",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. No jobs have been consumed from this fresh post-HJ25 tranche yet.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. One job has been consumed from this fresh post-HJ25 tranche.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -806,6 +806,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Hydrogen rerun after aggregation_narrative ID-preservation prompt repair reached W5 with 4 EvidenceItems, W8 result/draft, and internal report writer draft 5906 bytes with Evidence References and no boundary_reference_mismatch. Public/default surfaces stayed blocked/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-26-BOLSONARO-SERPER-SOURCE-MATERIAL-VALIDATION",
+        "jobId": "4a5ecd46675041eb9cdc347fc8bc2c94",
+        "classification": "STOP_X7_HJ26_BOLSONARO_W4H_PROVIDER_LINEAGE_BLOCKED",
+        "implementationCommit": "30d8d011e6112657189abef73d594af90ee01a84",
+        "runtimeCommit": "7f4ebcd5f7d78e47c81ebf59f036360d10e76fba",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "dbdd2acc",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_stage_reached",
+        "note": "Default manual V2 path ran claimboundary-v2. W3-B improved to 9 Source Material records across openalex, serper_web_search, and wikimedia_core, but W4-H failed closed with provider_id_mismatch because the extraction-input provider lineage allowlist had not yet admitted serper_web_search. Public/default surfaces stayed blocked/redacted."
       }
     ],
     "blockedPending": [],
