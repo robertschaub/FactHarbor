@@ -3777,3 +3777,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18` after HJ29; no jobs have been consumed from this fresh tranche yet.
 
 **Next:** Run `npm run index`, `git diff --check`, commit HJ30, refresh runtime, verify API/Web commit match, then run the Bolsonaro validation first. If it produces a hidden report without containment issues, continue with the German asylum and hydrogen controls as a stronger HighJump mini-gauntlet.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ30 Mini-Gauntlet And HJ31 Admin Stop Summary
+
+**Task:** Use the Captain-reset `18` job budget for stronger-than-canary validation after HJ30, then clear the diagnostic blind spot exposed by shell-only runs.
+
+**Result:** HJ30 ran five default/manual V2 jobs on runtime `3f1a1b4c0a43e7b3fd64f30bb9cfa9cf0e814c48`. Bolsonaro job `6ce3a5827b464549b2c524d4f659ae7b` produced a `5825`-character hidden admin report, but direct fair-trial/procedural-compliance evidence remained weak. Hydrogen job `06e637107869409c9611b7c7984f1ff1` produced a `7000`-character hidden admin report with FALSE / truth `15` / confidence `72`, inside the expected band. German asylum aggregate `a0b131e0965e4a56afd485dc37344595`, asylum/WW2 variant `0645495cce3d4c99bbb268bca7b1e3a2`, and plastic recycling `2979fed360504100b689cbab8b265b7c` returned only the damaged shell and lacked a durable stop-stage summary after runtime refresh. Public/default containment held for all five jobs.
+
+**Repair:** Implemented HJ31 in the existing orchestrator/admin report channel. When V2 does not create an internal report draft, admin reportMarkdown now contains a bounded `Internal Alpha Stop Summary` with structural stage/outcome/counts only. If an internal report writer draft exists, it still replaces the stop summary. No new route, durable store, public behavior, prompt/schema/provider/parser/cache/SR/storage/V1 work was added.
+
+**Verification:** Focused fallout tests passed (`17` tests); full V2 unit slice passed (`145` files / `882` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed.
+
+**Budget:** HJ30 consumed `5` jobs from the fresh `18`-job tranche; remaining live-job budget is `13`.
+
+**Next:** Commit HJ31, refresh runtime, verify API/Web commit match, and rerun the shell-only HJ30 inputs to capture durable admin stop summaries before choosing the next repair.

@@ -998,10 +998,18 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
         damagedReport: true,
       },
     });
+    expect(result.reportMarkdown).toContain("Internal Alpha Stop Summary");
+    expect(result.reportMarkdown).toContain("Stop Point");
+    expect(result.reportMarkdown).toContain("Public/default V2 output remains blocked");
+    expect(result.reportMarkdown).not.toContain("Asylbereich Schweiz 235000");
+    expect(result.reportMarkdown).not.toContain("job-v2-x7s-orchestrator:precutover-observability");
+    expect(result.reportMarkdown).not.toContain("Switzerland_asylum_statistics");
+    expect(result.reportMarkdown).not.toContain("https://example.invalid");
     expect(serializedPublic).not.toContain("evidence_query_planning");
     expect(serializedPublic).not.toContain("source_acquisition_intake");
     expect(serializedPublic).not.toContain("Asylbereich Schweiz 235000");
     expect(serializedPublic).not.toContain("job-v2-x7s-orchestrator:precutover-observability");
+    expect(serializedPublic).not.toContain("Internal Alpha Stop Summary");
   }, 15000);
 
   it("records ClaimContract-selected ids in hidden Query Planning artifacts for direct ingress without selected ids", async () => {

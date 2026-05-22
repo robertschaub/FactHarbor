@@ -176,6 +176,44 @@ function boundedEvidenceExtractionAcceptedForProductChain(
     boundedEvidenceExtraction.extractionResult?.status === "accepted";
 }
 
+type AdminStopSummary = {
+  readonly stage: string;
+  readonly outcome: string;
+  readonly observations: readonly string[];
+  readonly nextStep: string;
+};
+
+function boundedObservation(label: string, value: string | number | boolean | null | undefined): string {
+  if (value === null || value === undefined || value === "") {
+    return `- ${label}: not available`;
+  }
+  return `- ${label}: ${String(value).slice(0, 160)}`;
+}
+
+function buildAdminStopReportMarkdown(summary: AdminStopSummary): string {
+  return [
+    "# Internal Alpha Stop Summary",
+    "",
+    "Analyzer V2 reached the hidden/internal path but did not create an internal report draft.",
+    "This admin-only summary records bounded structural progress without source text, prompt text, provider payloads, raw URLs, or hidden ledger IDs.",
+    "",
+    "## Stop Point",
+    "",
+    `- Stage: ${summary.stage}`,
+    `- Outcome: ${summary.outcome}`,
+    "",
+    "## Structural Observations",
+    "",
+    ...summary.observations.slice(0, 10),
+    "",
+    "## Next Step",
+    "",
+    summary.nextStep,
+    "",
+    "Public/default V2 output remains blocked, precutover, and damaged.",
+  ].join("\n");
+}
+
 async function emit(input: ClaimBoundaryV2Ingress, message: string, progress: number): Promise<void> {
   await Promise.resolve(input.emitProgress?.({ message, progress }));
 }
@@ -188,6 +226,9 @@ export async function runClaimBoundaryPipelineV2(
 
   const context = buildClaimBoundaryV2RunContext(input, options);
   let adminReportMarkdown: string | null = null;
+  const setAdminStopSummary = (summary: AdminStopSummary): void => {
+    adminReportMarkdown = buildAdminStopReportMarkdown(summary);
+  };
   const claimUnderstandingActivation = buildClaimUnderstandingRuntimeActivation(
     context,
     {
@@ -201,6 +242,18 @@ export async function runClaimBoundaryPipelineV2(
   );
   const claimUnderstandingHandoff = buildClaimUnderstandingStageHandoff(context, claimUnderstandingState);
   const evidenceLifecycleIntake = buildEvidenceLifecycleIntake(context, claimUnderstandingHandoff);
+  setAdminStopSummary({
+    stage: "Claim Understanding",
+    outcome: claimUnderstandingHandoff.status === "accepted"
+      ? "Claim contract accepted; downstream evidence lifecycle not yet completed."
+      : "Claim contract was not accepted.",
+    observations: [
+      boundedObservation("Claim Understanding status", claimUnderstandingHandoff.status),
+      boundedObservation("Selected AtomicClaims", context.selectedAtomicClaimIds.length),
+      boundedObservation("Input source", context.inputType),
+    ],
+    nextStep: "Inspect Claim Understanding acceptance before changing downstream evidence stages.",
+  });
   try {
     recordEvidenceLifecycleIntakeRuntimeArtifact({
       context,
@@ -212,6 +265,16 @@ export async function runClaimBoundaryPipelineV2(
   }
   const queryPlanningPreexecutionObservation =
     buildEvidenceQueryPlanningPreexecutionObservation(evidenceLifecycleIntake);
+  setAdminStopSummary({
+    stage: "Query Planning readiness",
+    outcome: "Evidence lifecycle intake was created; query planning has not completed.",
+    observations: [
+      boundedObservation("Claim Understanding status", claimUnderstandingHandoff.status),
+      boundedObservation("Query Planning readiness", queryPlanningPreexecutionObservation.status),
+      boundedObservation("Selected AtomicClaims", context.selectedAtomicClaimIds.length),
+    ],
+    nextStep: "Inspect Query Planning activation and input readiness before changing source acquisition.",
+  });
   try {
     recordEvidenceQueryPlanningPreexecutionObservationRuntimeArtifact({
       ledgerId: context.observabilityLedger.ledgerId,
@@ -245,6 +308,16 @@ export async function runClaimBoundaryPipelineV2(
           runtimeResult,
           selectedAtomicClaimIds,
           selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
+        });
+        setAdminStopSummary({
+          stage: "Query Planning",
+          outcome: "Query Planning completed; source acquisition did not yet produce report material.",
+          observations: [
+            boundedObservation("Query Planning result", runtimeResult.status),
+            boundedObservation("Query entries", inspection.summary?.queryEntryCount),
+            boundedObservation("Selected AtomicClaims", selectedAtomicClaimIds.length),
+          ],
+          nextStep: "Inspect candidate/source material counts before changing evidence extraction.",
         });
         const sourceAcquisitionHandoff = buildQueryPlanSourceAcquisitionHandoff({
           runtimeResult,
@@ -305,6 +378,17 @@ export async function runClaimBoundaryPipelineV2(
           context,
           networkDecision: candidateProviderNetwork,
         });
+        setAdminStopSummary({
+          stage: "Source Acquisition",
+          outcome: "Candidate provider network completed; no internal report was created.",
+          observations: [
+            boundedObservation("Provider attempts", candidateProviderNetwork.telemetry?.providerAttemptCount),
+            boundedObservation("Candidates", candidateProviderNetwork.telemetry?.candidateCount),
+            boundedObservation("Total candidates", candidateProviderNetwork.telemetry?.totalCandidateCount),
+            boundedObservation("Bytes read", candidateProviderNetwork.telemetry?.totalBytes),
+          ],
+          nextStep: "Inspect whether source candidates became bounded Source Material before changing prompts.",
+        });
         const sourceCandidatePreview = buildEvidenceLifecycleSourceCandidatePreviewDecision({
           networkDecision: candidateProviderNetwork,
           previewProjections: sourceCandidatePreviewProjections,
@@ -323,6 +407,21 @@ export async function runClaimBoundaryPipelineV2(
         recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
           context,
           decision: sourceMaterialPageSummary,
+        });
+        setAdminStopSummary({
+          stage: "Source Material",
+          outcome: sourceMaterialPageSummary.sourceMaterialRecordCount > 0
+            ? "Bounded Source Material exists; no EvidenceItems/report were created."
+            : "No bounded Source Material records were created.",
+          observations: [
+            boundedObservation("Source Material records", sourceMaterialPageSummary.sourceMaterialRecordCount),
+            boundedObservation("Materialized previews", sourceMaterialPageSummary.materializedPreviewRecordCount),
+            boundedObservation("Attempted fetches", sourceMaterialPageSummary.attemptedFetchCount),
+            boundedObservation("Fetch diagnostics", sourceMaterialPageSummary.fetchDiagnosticCount),
+          ],
+          nextStep: sourceMaterialPageSummary.sourceMaterialRecordCount > 0
+            ? "Inspect extraction-input and W5 eligibility before changing source acquisition."
+            : "Repair source-material creation before changing W5 extraction.",
         });
         const sourceMaterialEvidenceCorpusReadiness =
           buildEvidenceLifecycleSourceMaterialEvidenceCorpusReadinessDecision({
@@ -383,6 +482,22 @@ export async function runClaimBoundaryPipelineV2(
         const boundedEvidenceExtractionArtifact = recordBoundedEvidenceExtractionRuntimeArtifact({
           context,
           boundedEvidenceExtraction,
+        });
+        setAdminStopSummary({
+          stage: "Evidence Extraction",
+          outcome: boundedEvidenceExtraction.evidenceItemCount > 0
+            ? "EvidenceItems were extracted; internal report writer did not create a draft."
+            : "No EvidenceItems were extracted.",
+          observations: [
+            boundedObservation("W5 execution", boundedEvidenceExtraction.status),
+            boundedObservation("Extraction result", boundedEvidenceExtraction.extractionStatus),
+            boundedObservation("EvidenceItems", boundedEvidenceExtraction.evidenceItemCount),
+            boundedObservation("Source content packets", boundedEvidenceExtraction.parent.sourceContentPackets?.length),
+            boundedObservation("Input packet bytes", boundedEvidenceExtraction.parent.parentPacketByteLength),
+          ],
+          nextStep: boundedEvidenceExtraction.evidenceItemCount > 0
+            ? "Inspect sufficiency, boundary/verdict, and report-writer handoff before changing extraction."
+            : "Repair W5 material extraction or upstream source material usefulness before changing report writing.",
         });
         if (
           boundedEvidenceExtractionAcceptedForProductChain(

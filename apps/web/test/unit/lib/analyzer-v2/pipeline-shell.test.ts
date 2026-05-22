@@ -60,7 +60,9 @@ describe("analyzer-v2 shell", () => {
         damagedReportRelation: "report_damaged",
       }),
     ]);
-    expect(result.reportMarkdown).toContain("No claim understanding");
+    expect(result.reportMarkdown).toContain("Internal Alpha Stop Summary");
+    expect(result.reportMarkdown).toContain("Claim Understanding status: blocked");
+    expect(result.reportMarkdown).toContain("Public/default V2 output remains blocked");
     expect(onEvent).toHaveBeenCalledWith("Analyzer V2 orchestrator initialized.", 8);
     expect(onEvent).toHaveBeenCalledWith("Analyzer V2 damaged structural envelope generated.", 90);
   });
@@ -425,7 +427,9 @@ describe("analyzer-v2 shell", () => {
         confidenceTier: "none",
       },
     });
-    expect(result.reportMarkdown).toContain("No claim understanding");
+    expect(result.reportMarkdown).toContain("Internal Alpha Stop Summary");
+    expect(result.reportMarkdown).toContain("Claim Understanding status: blocked");
+    expect(result.reportMarkdown).toContain("Public/default V2 output remains blocked");
     expect(keys).not.toEqual(expect.arrayContaining([
       "claimUnderstanding",
       "claimUnderstandingResult",

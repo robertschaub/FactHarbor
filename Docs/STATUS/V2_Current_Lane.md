@@ -21,40 +21,43 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`0b5a5e73 fix(v2): tighten evidence extraction material alignment`
+`3f1a1b4c fix(v2): rebalance evidence extraction material alignment`
 
-The current working repair rebalances the existing W5 evidence-extraction
-prompt after HJ29: HJ29 removed the HJ28 adjacent/generic extraction defect,
-but overshot into `no_extractable_evidence` despite 9 bounded source-content
-packets. The repair keeps the material-alignment guard while allowing weak but
-materially tied preview/abstract points to become limited/contextual/unclear
-EvidenceItems instead of prematurely stopping the report path.
+The current working repair is HJ31: persist a bounded admin-only stop summary
+through the existing admin reportMarkdown channel when the hidden V2 path does
+not create an internal report draft. This is a diagnostic friction reduction,
+not a new public route or product capability. It is needed because HJ30 showed
+several shell-only runs where process-local hidden artifact routes were not
+durable enough to explain the stop stage after runtime refresh.
 
-Runtime has not yet been refreshed to the working HJ30 repair for the next
+Runtime has not yet been refreshed to the working HJ31 repair for the next
 validation job. Commit before any live job.
 
 ## Latest Result
 
 Latest validation:
 
-`STOP_X7_HJ29_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_MATERIAL_ALIGNMENT`
+`X7-HJ-30-MINI-GAUNTLET`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ29_W5_Material_Alignment_Prompt_Repair.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ31_Admin_Stop_Summary_Diagnostics.md`
 
 Important evidence:
 
-- `323c5fd3540e43aab9c7c6e686ec4de4` ran the default manual V2 path for the
-  Bolsonaro/fair-trial input on runtime commit `0b5a5e73`.
-- Claim Understanding, Query Planning, Source Acquisition, Source Material, and
-  W5 all executed under the hidden path; W5 saw 9 source content packets and
-  4971 parent-packet bytes.
-- W5 returned accepted `no_extractable_evidence`, so no internal report writer
-  artifact was created. This confirms the HJ29 material-alignment repair
-  stopped the adjacent/generic extraction defect but made W5 too strict for
-  bounded preview/abstract material.
-- Public/default containment held: public V2 stayed
+- `6ce3a5827b464549b2c524d4f659ae7b` (Bolsonaro/fair-trial) ran default manual
+  V2 on runtime `3f1a1b4c` and produced a hidden internal admin report
+  (`5825` characters), but direct procedural-compliance/fair-trial evidence was
+  still weak.
+- `06e637107869409c9611b7c7984f1ff1` (hydrogen) produced a hidden internal
+  admin report (`7000` characters) with FALSE / truth `15` / confidence `72`,
+  inside the expected hydrogen-family band.
+- `a0b131e0965e4a56afd485dc37344595` (German asylum aggregate),
+  `0645495cce3d4c99bbb268bca7b1e3a2` (asylum/WW2 variant), and
+  `2979fed360504100b689cbab8b265b7c` (plastic recycling) returned only the
+  242-byte damaged shell. Hidden process-local artifact routes were unavailable
+  after runtime refresh, so the exact stop stage was not durable.
+- Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
 
@@ -80,16 +83,17 @@ through the default manual V2 route:
 - `323c5fd3540e43aab9c7c6e686ec4de4`: HJ29 material-alignment prompt repair
   removed adjacent/generic extraction, but W5 returned `no_extractable_evidence`
   despite 9 bounded source-content packets.
+- `6ce3a5827b464549b2c524d4f659ae7b`: HJ30 material-alignment rebalance restored
+  report creation, but report quality remains weak because direct
+  procedural-compliance/fair-trial evidence is still thin.
 
 The remaining question is no longer reachability for this input; it is report
 quality and cross-input generalization. A compact report-quality review found
-HJ27/HJ28 materially below the Bolsonaro expectation (`LEANING-TRUE` /
+HJ27/HJ28/HJ30 materially below the Bolsonaro expectation (`LEANING-TRUE` /
 `MOSTLY-TRUE`, truth `58..85`, confidence `45..75`, minimum `3` boundaries).
-The active root cause remains W5 extraction selectivity, but the bar is now
-known on both sides: HJ28 was too permissive and HJ29 was too strict. HJ30 must
-keep adjacent/background material out while extracting weak but materially tied
-source-attributed preview/abstract points as limited/contextual/unclear
-EvidenceItems when they help downstream sufficiency and report generation.
+The active root cause is now mixed: W5 selectivity improved enough to create a
+report again, but source-material usefulness and downstream extraction still do
+not consistently surface direct fair-trial/procedural-compliance evidence.
 
 ## Live Budget
 
@@ -98,22 +102,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `5`;
+- remaining: `13`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the W5 material-alignment rebalance repair plus ledger/lane sync.
-2. Refresh runtime to the repair commit and verify API/Web commit match.
-3. Run a stronger HighJump validation sequence from the 18-job tranche rather
-   than a single weak canary: Bolsonaro first, then the German asylum and
-   hydrogen controls if the first run produces a hidden internal report without
-   containment issues.
-4. Record information yield per job: report produced, new stage reached, new
-   failure, repeated stop with new evidence, or repeated stop without useful
-   information.
+1. Commit HJ31 admin-only stop-summary diagnostics plus ledger/lane sync.
+2. Refresh runtime to the HJ31 repair commit and verify API/Web commit match.
+3. Rerun the HJ30 shell-only inputs first (`asylum-235000-de`, `plastic`, and
+   optionally the asylum/WW2 variant) to capture durable stop summaries through
+   admin reportMarkdown.
+4. Use the first durable stop summary to decide the next HighJump repair:
+   Source Material if records are missing, W5/source-material usefulness if
+   material exists but EvidenceItems are zero, or downstream report handling if
+   EvidenceItems exist but report writing stops.
 
 ## Stop Conditions
 
