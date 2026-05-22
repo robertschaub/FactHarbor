@@ -270,6 +270,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("It does not recompute truth percentages, confidence, verdict labels");
     expect(section).toContain("cite only supplied EvidenceItem IDs");
     expect(section).toContain("reportMarkdown");
+    expect(section).toContain("### Compactness Budget");
+    expect(section).toContain("3500-6500 UTF-8 bytes");
+    expect(section).toContain("Avoid duplicating the same evidence explanation");
     expect(section).not.toMatch(/\$\{\w+\}/);
 
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {

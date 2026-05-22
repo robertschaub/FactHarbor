@@ -132,7 +132,7 @@ function decision(overrides: Partial<InternalReportWriterDecision> = {}): Intern
       inputPacketByteLength: 512,
       outputSchemaVersion: AGGREGATION_NARRATIVE_SCHEMA_VERSION,
       schemaDiagnostics: null,
-      modelPolicyId: "v2.model.aggregation_narrative.hj18",
+      modelPolicyId: "v2.model.aggregation_narrative.hj19",
       providerId: "anthropic",
       modelId: "claude-haiku-4-5-20251001",
       attemptCount: 1,
@@ -141,8 +141,8 @@ function decision(overrides: Partial<InternalReportWriterDecision> = {}): Intern
       durationMs: 1200,
       cacheDecision: "no_store_no_read",
       cacheDecisionReason: "no_store_runtime_dispatch_safety",
-      cachePolicyId: "v2.semantic.aggregation-narrative.hj18",
-      approvalPointer: "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md",
+      cachePolicyId: "v2.semantic.aggregation-narrative.hj19",
+      approvalPointer: "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md",
     },
     sideEffects: {
       reportProseLlmCalled: true,
@@ -169,7 +169,7 @@ function decision(overrides: Partial<InternalReportWriterDecision> = {}): Intern
     },
     w8gMergeTrigger:
       "merge_w8g_after_hj18_report_writer_review_accepts_output_shape_and_fail_closed_parity",
-    approvalPointer: "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md",
+    approvalPointer: "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md",
     ...overrides,
   };
 }

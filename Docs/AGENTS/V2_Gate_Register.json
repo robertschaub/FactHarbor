@@ -760,27 +760,27 @@
     },
     {
       "id": "gate.aggregation_narrative",
-      "sliceId": "HJ18",
+      "sliceId": "HJ19",
       "gateType": "gateway_task",
       "taskId": "aggregation_narrative",
       "owner": "aggregation",
       "state": "implemented_hidden_internal_report_writer_execution",
       "status": "implemented_hidden_internal_report_writer_execution",
-      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus Captain-authorized Steer-Co HJ18 direction and canExecuteAnalyzerV2GatewayTask(...)",
+      "executionAuthoritySource": "ANALYZER_V2_GATEWAY_TASKS plus Captain-authorized Steer-Co HJ19 direction and canExecuteAnalyzerV2GatewayTask(...)",
       "registerGrantsExecution": false,
       "promptProfile": "claimboundary-v2",
       "promptSectionId": "V2_AGGREGATION_NARRATIVE",
       "outputSchemaVersion": "v2.aggregation_narrative.0",
       "observedGatewayStatus": "executable",
       "gatewayPolicyStatus": "executable",
-      "observedPromptApprovalSource": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized",
-      "promptApprovalId": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL",
-      "observedModelPolicyId": "v2.model.aggregation_narrative.hj18",
-      "observedModelApprovalSource": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized",
-      "modelApprovalId": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL",
-      "observedCachePolicyId": "v2.semantic.aggregation-narrative.hj18",
-      "observedCacheApprovalSource": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized",
-      "cacheApprovalId": "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL",
+      "observedPromptApprovalSource": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md#steer-co-reduced-quorum-captain-authorized",
+      "promptApprovalId": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL",
+      "observedModelPolicyId": "v2.model.aggregation_narrative.hj19",
+      "observedModelApprovalSource": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md#steer-co-reduced-quorum-captain-authorized",
+      "modelApprovalId": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL",
+      "observedCachePolicyId": "v2.semantic.aggregation-narrative.hj19",
+      "observedCacheApprovalSource": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md#steer-co-reduced-quorum-captain-authorized",
+      "cacheApprovalId": "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL",
       "sourceOfTruthRefs": [
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/aggregation-narrative-contract.ts",
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/internal-report-writer.ts",
@@ -792,10 +792,10 @@
         "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
         "apps/web/src/lib/analyzer-v2/gateway/approval-records.ts",
         "apps/web/prompts/claimboundary-v2.prompt.md",
-        "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md"
+        "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md"
       ],
-      "sourcePackage": "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md",
-      "approvalPointer": "Captain authorized prompt edits, schema changes, live jobs, and naturally needed steps to complete the HighJump report-generation plan; Steer-Co consented to HJ18 as one hidden/internal aggregation_narrative report-writer path over existing W8-B/W7-B state. Scope remains internal/admin-only: no public API/UI/report/export/compatibility exposure, no cache read/write, no SR/storage, no provider expansion, no ACS/direct URL, and no V1 work.",
+      "sourcePackage": "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md",
+      "approvalPointer": "Captain authorized prompt edits, schema changes, live jobs, and naturally needed steps to complete the HighJump report-generation plan; Steer-Co reduced-quorum decision approved HJ19 as an in-place aggregation_narrative output-budget and compactness repair over existing W8-B/W7-B state. Scope remains internal/admin-only: no public API/UI/report/export/compatibility exposure, no cache read/write, no SR/storage, no provider expansion, no ACS/direct URL, and no V1 work.",
       "implementationCommit": null,
       "allowedFiles": [
         "apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/aggregation-narrative-contract.ts",
@@ -857,9 +857,9 @@
         "npm -w apps/web run build"
       ],
       "liveJobEligibility": "blocked",
-      "liveJobBlockReason": "HJ18 implementation may be followed by one separately accounted canary only after clean commit, runtime refresh, route preflight, and live-job ledger accounting. The register remains audit-only and does not authorize live jobs.",
-      "lastVerifiedBy": "pending HJ18 verifier completion",
-      "notes": "HJ18 opens only hidden/internal aggregation_narrative execution to produce an admin-only internal report-writer draft from existing W8-B/W7-B payloads. It preserves W7-B verdict labels, truth percentages, confidence values, boundary ids, and EvidenceItem citations; invented citations or verdict-value drift fail closed. Default admin projection is hash/length/provenance-only, with explicit authenticated inspection for report markdown. Public API/UI/report/export/compatibility behavior, warning/confidence/truth publication, cache read/write, SR/storage, parser execution, provider expansion, ACS/direct URL, V1 work, V1 cleanup, and public cutover remain blocked. W8-G remains fallback/comparison until HJ18 report review accepts output shape and fail-closed parity. Register remains audit-only and grants no execution."
+      "liveJobBlockReason": "HJ19 implementation may be followed by one separately accounted canary only after clean commit, runtime refresh, route preflight, and live-job ledger accounting. The register remains audit-only and does not authorize live jobs.",
+      "lastVerifiedBy": "pending HJ19 verifier completion",
+      "notes": "HJ19 keeps the hidden/internal aggregation_narrative owner opened by HJ18 and repairs only its output budget and compactness guidance to produce an admin-only internal report-writer draft from existing W8-B/W7-B payloads. It preserves W7-B verdict labels, truth percentages, confidence values, boundary ids, and EvidenceItem citations; invented citations or verdict-value drift fail closed. Default admin projection is hash/length/provenance-only, with explicit authenticated inspection for report markdown. Public API/UI/report/export/compatibility behavior, warning/confidence/truth publication, cache read/write, SR/storage, parser execution, provider expansion, ACS/direct URL, V1 work, V1 cleanup, and public cutover remain blocked. W8-G remains fallback/comparison until HJ19 report review accepts output shape and fail-closed parity. Register remains audit-only and grants no execution."
     }
   ]
 }

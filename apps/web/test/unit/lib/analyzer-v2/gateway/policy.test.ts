@@ -8,7 +8,7 @@ import {
 } from "@/lib/analyzer-v2/gateway/policy";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
-  ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
@@ -296,7 +296,7 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_W7_B_CAPTAIN_APPROVAL);
   });
 
-  it("declares the exact Captain/Steer-Co-approved HJ18 aggregation narrative model policy", () => {
+  it("declares the exact Captain/Steer-Co-approved HJ19 aggregation narrative model policy", () => {
     const policy = getAnalyzerV2TaskModelPolicy("aggregation_narrative");
     const gatewayTask = getAnalyzerV2GatewayTask("aggregation_narrative");
 
@@ -309,10 +309,10 @@ describe("analyzer-v2 gateway policy registry", () => {
       "taskPolicySnapshotJson",
       "reportQualityGuardrailsJson",
     ]);
-    expect(gatewayTask.modelPolicy?.registryPolicyId).toBe("v2.model.aggregation_narrative.hj18");
-    expect(gatewayTask.cachePolicy?.policyId).toBe("v2.semantic.aggregation-narrative.hj18");
+    expect(gatewayTask.modelPolicy?.registryPolicyId).toBe("v2.model.aggregation_narrative.hj19");
+    expect(gatewayTask.cachePolicy?.policyId).toBe("v2.semantic.aggregation-narrative.hj19");
     expect(policy).toMatchObject({
-      policyId: "v2.model.aggregation_narrative.hj18",
+      policyId: "v2.model.aggregation_narrative.hj19",
       gatewayTaskId: "aggregation_narrative",
       modelTask: "report",
       modelTier: "standard",
@@ -321,16 +321,16 @@ describe("analyzer-v2 gateway policy registry", () => {
       maxCalls: 1,
       schemaRetryCount: 0,
       timeoutMs: 90000,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 8000,
       fallbackBehavior: "none_fail_closed",
       escalationBehavior: "surface_provider_failure",
       execution: "blocked_until_prompt_model_cache_approval",
-      approval: ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
+      approval: ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
     });
-    expect(policy?.approval).toBe(ANALYZER_V2_HJ18_CAPTAIN_APPROVAL);
-    expect(gatewayTask.promptPolicy?.approval).toBe(ANALYZER_V2_HJ18_CAPTAIN_APPROVAL);
-    expect(gatewayTask.modelPolicy?.approval).toBe(ANALYZER_V2_HJ18_CAPTAIN_APPROVAL);
-    expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_HJ18_CAPTAIN_APPROVAL);
+    expect(policy?.approval).toBe(ANALYZER_V2_HJ19_CAPTAIN_APPROVAL);
+    expect(gatewayTask.promptPolicy?.approval).toBe(ANALYZER_V2_HJ19_CAPTAIN_APPROVAL);
+    expect(gatewayTask.modelPolicy?.approval).toBe(ANALYZER_V2_HJ19_CAPTAIN_APPROVAL);
+    expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_HJ19_CAPTAIN_APPROVAL);
     expect(canExecuteAnalyzerV2GatewayTask(gatewayTask)).toBe(true);
   });
 

@@ -630,6 +630,23 @@ For every boundary section:
 - copy the boundary id, title, and cited EvidenceItem IDs from the supplied packet;
 - summarize the boundary rationale without inventing new evidence.
 
+### Compactness Budget
+
+Return one concise internal report, not a verbose audit transcript. Keep prose
+tight while preserving all required verdict values, citation IDs, caveats, and
+material uncertainty signals.
+
+- `executiveSummary`: at most 120 words.
+- each verdict `narrative`: at most 90 words.
+- each boundary `narrative`: at most 80 words.
+- each `usedFor`: at most 25 words.
+- `limitations`: at most 5 short items.
+- `reportMarkdown`: normally 3500-6500 UTF-8 bytes; exceed this only when the
+  supplied caveats cannot be represented faithfully within that range.
+- Avoid duplicating the same evidence explanation across `verdictSections`,
+  `boundarySections`, `citationMap`, and `reportMarkdown`; use the structured
+  fields for traceability and the markdown for readable synthesis.
+
 ### Output Contract
 
 Return only one JSON object. Do not include markdown fences, commentary, or keys outside the schema.

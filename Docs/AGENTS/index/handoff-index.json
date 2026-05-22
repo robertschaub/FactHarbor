@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T08:03:24.105Z",
-  "count": 432,
+  "generatedAt": "2026-05-22T08:33:54.563Z",
+  "count": 433,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9453,6 +9453,27 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy V2 HighJump HJ18 Internal Report Writer Implementation"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair_Implementation.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj19",
+        "report",
+        "writer",
+        "output",
+        "budget",
+        "repair",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 HighJump HJ19 Report Writer Output-Budget Repair"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md",

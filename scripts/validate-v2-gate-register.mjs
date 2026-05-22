@@ -43,6 +43,8 @@ const W7_B_APPROVAL_ANCHOR =
   "ANALYZER_V2_W7_B_CAPTAIN_APPROVAL@Docs/WIP/2026-05-20_V2_Slice_W7-B_Boundary_Verdict_LLM_Execution_Approval_Package.md@c8cf2ebc#captain-approved-w7-b";
 const HJ18_APPROVAL_ANCHOR =
   "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized";
+const HJ19_APPROVAL_ANCHOR =
+  "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md#steer-co-reduced-quorum-captain-authorized";
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
   ["ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL", X7_W5_A_APPROVAL_ANCHOR],
@@ -50,6 +52,7 @@ const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_W6_C_CAPTAIN_APPROVAL", W6_C_APPROVAL_ANCHOR],
   ["ANALYZER_V2_W7_B_CAPTAIN_APPROVAL", W7_B_APPROVAL_ANCHOR],
   ["ANALYZER_V2_HJ18_CAPTAIN_APPROVAL", HJ18_APPROVAL_ANCHOR],
+  ["ANALYZER_V2_HJ19_CAPTAIN_APPROVAL", HJ19_APPROVAL_ANCHOR],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -76,8 +79,8 @@ const CACHE_POLICY_BY_SELECTOR = {
     approvalSource: W7_B_APPROVAL_ANCHOR,
   },
   aggregationNarrativeCache: {
-    policyId: "v2.semantic.aggregation-narrative.hj18",
-    approvalSource: HJ18_APPROVAL_ANCHOR,
+    policyId: "v2.semantic.aggregation-narrative.hj19",
+    approvalSource: HJ19_APPROVAL_ANCHOR,
   },
   sourceAware: {
     policyId: "v2.semantic.source-aware",
@@ -603,6 +606,9 @@ function approvalIdFromSource(source) {
   }
   if (source.startsWith("ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@")) {
     return "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL";
+  }
+  if (source.startsWith("ANALYZER_V2_HJ19_CAPTAIN_APPROVAL@")) {
+    return "ANALYZER_V2_HJ19_CAPTAIN_APPROVAL";
   }
   return source;
 }

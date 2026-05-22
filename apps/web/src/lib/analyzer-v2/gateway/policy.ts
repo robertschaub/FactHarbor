@@ -14,7 +14,7 @@ import {
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
-  ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
@@ -283,9 +283,9 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "taskPolicySnapshotJson",
       "reportQualityGuardrailsJson",
     ],
-    promptApproval: ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
+    promptApproval: ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
     aggregationNarrativeCache: true,
-    notes: "Owns hidden/internal HJ18 aggregation narrative report-writing over accepted W8-B/W7-B internal review data.",
+    notes: "Owns hidden/internal HJ19 aggregation narrative report-writing over accepted W8-B/W7-B internal review data after output-budget repair.",
   }),
 ] as const satisfies readonly AnalyzerV2GatewayTask[];
 

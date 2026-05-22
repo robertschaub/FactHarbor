@@ -9764,7 +9764,7 @@ describe("analyzer-v2 boundary guard", () => {
           ],
           [
             "@/lib/analyzer-v2/gateway/approval-records",
-            new Set(["ANALYZER_V2_HJ18_CAPTAIN_APPROVAL"]),
+            new Set(["ANALYZER_V2_HJ19_CAPTAIN_APPROVAL"]),
           ],
           [
             "@/lib/analyzer-v2/gateway/policy",

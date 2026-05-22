@@ -3570,3 +3570,13 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Added that process tooling must not artificially block first internal report creation; it should help lower premature blocking bars, then raise quality, safety, and completeness from observed report evidence.
 - Preserved process-only boundaries: Agents Supervisor improvements do not steer the active V2 technical implementation, which remains Captain-Deputy / Steer-Co / Lead Developer responsibility.
 - No V2 implementation code, prompt behavior, live-job authority, or gate-register authority was changed.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ19 Report Writer Output-Budget Repair Implementation
+
+- Implemented HJ19 under `Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md` after HJ18 proved the hidden/internal `aggregation_narrative` report writer was reachable but failed closed at `parse_failure` after exactly `4000` output tokens.
+- Debt-guard classification: `incomplete-existing-mechanism`; chosen path was to amend the existing report-writer mechanism in place, not add retries, schema relaxation, a parallel report stage, source/provider expansion, or another readiness layer.
+- Updated `aggregation_narrative` prompt/model/cache approval provenance to HJ19, raised only `aggregation_narrative` `maxOutputTokens` from `4000` to `8000`, and added topic-neutral compactness guidance to `V2_AGGREGATION_NARRATIVE`.
+- Claude Opus 4.6 review was attempted through `scripts/agents/invoke-claude.cjs` but timed out; this is recorded as degraded reviewer coverage, not approval. Captain Deputy proceeded under reduced quorum because the repair is bounded, reversible, directly addresses the HJ18 stop, and adds no public behavior or new mechanism.
+- Verifiers passed: focused HJ19 suites (`6` files / `128` tests across split focused runs), full `analyzer-v2-runtime` (`75` files / `356` tests), full `analyzer-v2` (`144` files / `871` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Next action after commit: refresh runtime, verify API/Web runtime hashes, preflight the HJ19 internal report-writer artifact route/default redaction posture, and run exactly one HJ19 canary on the Captain-defined hydrogen input. Current HighJump continuation budget before that canary remains `7`; no second HJ19 canary is authorized.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair_Implementation.md

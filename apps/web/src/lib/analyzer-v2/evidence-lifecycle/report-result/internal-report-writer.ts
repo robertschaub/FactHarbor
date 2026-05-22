@@ -16,7 +16,7 @@ import {
   INTERNAL_ALPHA_REPORT_RESULT_DECISION_VERSION,
   type InternalAlphaReportResultCandidate,
 } from "@/lib/analyzer-v2/evidence-lifecycle/report-result/internal-alpha-report-result";
-import { ANALYZER_V2_HJ18_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
+import { ANALYZER_V2_HJ19_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
 import { canExecuteAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2CacheDecision,
@@ -35,9 +35,9 @@ export const INTERNAL_REPORT_WRITER_DECISION_VERSION =
 export const INTERNAL_REPORT_WRITER_INPUT_PACKET_VERSION =
   "v2.evidence-lifecycle.internal-report-writer-input.hj18" as const;
 export const INTERNAL_REPORT_WRITER_SOURCE_PACKAGE =
-  "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md" as const;
+  "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md" as const;
 export const INTERNAL_REPORT_WRITER_CACHE_NAMESPACE =
-  "analyzer-v2:v2.semantic.aggregation-narrative.hj18:aggregation_narrative" as const;
+  "analyzer-v2:v2.semantic.aggregation-narrative.hj19:aggregation_narrative" as const;
 export const INTERNAL_REPORT_WRITER_MAX_INPUT_PACKET_BYTES = 80_000 as const;
 export const INTERNAL_REPORT_WRITER_MAX_REPORT_MARKDOWN_BYTES = 32_768 as const;
 export const INTERNAL_REPORT_WRITER_SCHEMA_DIAGNOSTICS_REMOVAL_TRIGGER =
@@ -709,8 +709,8 @@ function schemaDiagnostics(params: {
   };
 }
 
-function isApprovedHJ18ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
-  return policy.policyId === "v2.model.aggregation_narrative.hj18" &&
+function isApprovedHJ19ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
+  return policy.policyId === "v2.model.aggregation_narrative.hj19" &&
     policy.gatewayTaskId === "aggregation_narrative" &&
     policy.modelTask === "report" &&
     policy.modelTier === "standard" &&
@@ -719,13 +719,13 @@ function isApprovedHJ18ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
     policy.maxCalls === 1 &&
     policy.schemaRetryCount === 0 &&
     policy.timeoutMs === 90000 &&
-    policy.maxOutputTokens === 4000 &&
+    policy.maxOutputTokens === 8000 &&
     policy.fallbackBehavior === "none_fail_closed" &&
     policy.escalationBehavior === "surface_provider_failure" &&
     policy.execution === "blocked_until_prompt_model_cache_approval" &&
-    policy.approval.status === ANALYZER_V2_HJ18_CAPTAIN_APPROVAL.status &&
-    policy.approval.reviewer === ANALYZER_V2_HJ18_CAPTAIN_APPROVAL.reviewer &&
-    policy.approval.approvedAt === ANALYZER_V2_HJ18_CAPTAIN_APPROVAL.approvedAt;
+    policy.approval.status === ANALYZER_V2_HJ19_CAPTAIN_APPROVAL.status &&
+    policy.approval.reviewer === ANALYZER_V2_HJ19_CAPTAIN_APPROVAL.reviewer &&
+    policy.approval.approvedAt === ANALYZER_V2_HJ19_CAPTAIN_APPROVAL.approvedAt;
 }
 
 function buildNoStoreCacheDecision(input: CacheKeyInput): AnalyzerV2CacheDecision {
@@ -931,7 +931,7 @@ export async function runInternalReportWriterRuntime(
     modelPolicyId: modelPolicy?.policyId ?? null,
     cachePolicyId: gatewayTask.cachePolicy?.policyId ?? null,
   };
-  if (!modelPolicy || !isApprovedHJ18ModelPolicy(modelPolicy)) {
+  if (!modelPolicy || !isApprovedHJ19ModelPolicy(modelPolicy)) {
     return decision({
       request,
       status: "internal_report_writer_blocked",
