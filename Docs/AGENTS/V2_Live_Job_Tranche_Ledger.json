@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 8,
+    "currentRemaining": 7,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,8 +23,8 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 8,
-      "consumptionEntriesInThisTranche": 0,
+      "currentRemaining": 7,
+      "consumptionEntriesInThisTranche": 1,
       "note": "New Captain-authorized HighJump continuation budget. HJ18 may spend exactly one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline.",
       "exceptionOverrunCount": 0
     },
@@ -598,6 +598,19 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ17_W5_Output_Budget_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "HJ17 closed the W5 parse/truncation stop: W5 accepted three EvidenceItems with 1588 output tokens under the new 8000-token ceiling, W8-B created an internal Alpha result candidate, and W8-G created a 5413-byte internal Alpha draft. Public V2 remained blocked/precutover/damaged and default admin projections stayed redacted."
+      },
+      {
+        "sliceId": "X7-HJ-18-INTERNAL-REPORT-WRITER-CANARY",
+        "jobId": "c75322fad1e74218b8ee51a54f2307cd",
+        "classification": "STOP_X7_HJ18_INTERNAL_REPORT_WRITER_PARSE_FAILURE_CONTAINED",
+        "implementationCommit": "ceb6a38395f2a36bc3eeeeba8ab2818524222013",
+        "runtimeCommit": "44395adc13a9b28faa7bec862dafda52682805ed",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 7,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md plus Captain-authorized 8-job HighJump continuation budget",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "HJ18 proved hidden/internal aggregation_narrative report-writer reachability and containment, but the provider output hit the 4000 output-token ceiling and failed JSON parse. No report markdown was produced; public V2 remained blocked/precutover/damaged and default admin projection stayed hash/length/provenance-only."
       }
     ],
     "blockedPending": [],

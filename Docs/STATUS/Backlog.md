@@ -8,6 +8,8 @@
 
 **Phase note**: **POC is complete** (tagged `v1.0.0-poc`). FactHarbor is now in **Alpha phase**. Security/cost-control items remain **low urgency** during Alpha but are **high importance**. Reclassify to **high urgency** before any production/public exposure.
 
+**Current V2 latest result:** HJ18 canary job `c75322fad1e74218b8ee51a54f2307cd` is classified `STOP_X7_HJ18_INTERNAL_REPORT_WRITER_PARSE_FAILURE_CONTAINED`: the hidden/internal `aggregation_narrative` report writer was product-route reachable and contained, but it failed closed at JSON parse after `4000` output tokens and produced no report markdown. Public V2 stayed blocked/precutover/damaged; default admin projection stayed hash/length/provenance-only. Current HighJump tranche remaining is `7`; no second HJ18 canary is authorized. Active next step is the smallest HJ19 report-writer output-budget/compactness repair.
+
 **Pipeline direction note:** V2 is intended to replace the V1 ClaimAssessmentBoundary pipeline. This backlog’s V1 analyzer items should be treated as **maintenance-only** (correctness/safety/integrity/observability) until V2 cutover; do not treat them as a plan to “complete” V1.
 
 **Queue boundary note:** V2 6B.* Claim Understanding runtime/provider work is a parallel gated activation track documented in `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` and governed by `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96` in `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`. Do not sequence 6B.* work as part of the April 24 V1 monitor queue below, and do not use V1 monitor items as approval to expose V2 runtime behavior.

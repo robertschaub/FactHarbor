@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) | V2 HighJump HJ18 Canary Result -- [Significant] [open-items: yes]
+**For next agent:** HJ18 canary job `c75322fad1e74218b8ee51a54f2307cd` ran `claimboundary-v2` on runtime `44395adc13a9b28faa7bec862dafda52682805ed`. The hidden/internal `aggregation_narrative` report writer was reachable and containment held, but the artifact is `internal_report_writer_damaged` with `damagedReason = parse_failure`; provider output hit `4000` output tokens and no report markdown was produced.
+**Warnings:** This is not a report-quality pass. Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, default admin projection stayed hash/length/provenance-only, and no second HJ18 canary is authorized. Current HighJump tranche remaining: `7`. Next action is a narrow HJ19 report-writer output-budget/compactness repair, not another readiness layer or source/provider expansion.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ18_Canary_Result.md
+
+---
 ### 2026-05-22 | Agents Supervisor | Codex (GPT-5.5) | V2 Process-Only Boundary And Context Continuity -- [Standard] [open-items: yes]
 **For next agent:** Updated Captain-Deputy, Steer-Co, shared collaboration rules, Captain Deputy role guidance, and the V2 process improvement plan to clarify that Agents Supervisor work improves process/working conditions only. Specific active V2 implementation sequencing stays with the Captain-Deputy workstream: Steer-Co for steering decisions when triggered and Lead Developer for delivery inside approved packages.
 **Warnings:** `/context-extension` is now recommended selectively for phase boundaries, complex delegation packets, material subagent/debate findings, and compaction/resume continuity. It is not a required closeout, approval record, or second handoff system.

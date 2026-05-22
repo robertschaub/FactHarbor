@@ -334,9 +334,89 @@ Verification:
 
 Canary readiness:
 
-- No HJ18 live canary has been run yet.
-- One HJ18 canary is worth spending after the focused implementation commit,
-  clean git status, runtime refresh, API/Web commit verification, route
-  auth/no-store/default-redaction preflight, and live-job ledger accounting.
-- The canary must use a Captain-defined input exactly and must not run a second
-  job without renewed Steer-Co/Captain authority.
+- HJ18 live canary has run once.
+- No second HJ18 canary is authorized.
+- The next action is a narrow HJ19 report-writer output-budget/compactness
+  repair package, because the HJ18 canary reached the report-writer owner but
+  failed closed at JSON parse after the provider output hit the output-token
+  ceiling.
+
+## Canary Result
+
+Classification:
+`STOP_X7_HJ18_INTERNAL_REPORT_WRITER_PARSE_FAILURE_CONTAINED`
+
+Job:
+
+- Job id: `c75322fad1e74218b8ee51a54f2307cd`
+- Input: `Using hydrogen for cars is more efficient than using electricity`
+- Pipeline variant: `claimboundary-v2`
+- API job status: `SUCCEEDED`
+- Runtime commit reported by job: `44395adc13a9b28faa7bec862dafda52682805ed`
+- Implementation commit containing HJ18 source behavior:
+  `ceb6a38395f2a36bc3eeeeba8ab2818524222013`
+
+Public result:
+
+- Public schema remained `4.0.0-cb-precutover`.
+- Public cutover stayed `blocked_precutover`.
+- Public analysis issue stayed `report_damaged`.
+- Public verdict/truth/confidence stayed unavailable.
+- No HJ18 report markdown or hidden report-writer data was exposed through the
+  public result.
+
+Hidden chain evidence:
+
+- HJ18 route returned one hidden/internal artifact for ledger
+  `c75322fad1e74218b8ee51a54f2307cd:precutover-observability`.
+- Default projection stayed `hash_length_provenance_only`.
+- `reportMarkdownReturned = false`.
+- HJ18 decision status was `internal_report_writer_damaged`.
+- `damagedReason = parse_failure`.
+- `aggregationNarrativeResultStatus = damaged`.
+- `reportReviewReadiness = damaged_before_internal_report_review`.
+- `reportMarkdownByteLength = 0`; `reportMarkdownHash = null`.
+- Parent W8-B/W7-B hidden state was present:
+  `internal_alpha_report_result_candidate_created` and
+  `boundary_verdict_candidates_created_internal`.
+
+Telemetry:
+
+- Gateway task: `aggregation_narrative`.
+- Prompt section: `V2_AGGREGATION_NARRATIVE`.
+- Model policy: `v2.model.aggregation_narrative.hj18`.
+- Provider/model: `anthropic` / `claude-haiku-4-5-20251001`.
+- Token usage: `5179` input / `4000` output / `9179` total.
+- Schema diagnostics: `outputParseStatus = parse_failure`,
+  `failureCategory = parse_failure`, issue code `json_parse_error`.
+- Raw provider output, prompt text, source text, EvidenceItem text, stack trace,
+  and schema messages were not returned.
+- Cache remained `no_store_no_read`; cache read/write, parser execution,
+  Source Reliability read/write, storage write, public report generation,
+  public surface write, compatibility projection, verdict publication, warning
+  publication, confidence publication, and truth-percentage publication all
+  remained false.
+
+Budget:
+
+- HJ18 consumed `1` job from the Captain-authorized HighJump continuation
+  tranche of `8`.
+- Remaining live-job budget in the current tranche is `7`.
+
+Interpretation:
+
+- HJ18 is not a report-quality pass.
+- HJ18 did prove the hidden/internal report-writer path is product-route
+  reachable and fail-closed with the expected containment posture.
+- The concrete next blocker is output-budget/compactness for
+  `aggregation_narrative`, analogous to the earlier W5/HJ17 output-budget
+  repair but scoped to the report writer.
+
+Next action:
+
+- Prepare HJ19 as a narrow report-writer output-budget/compactness repair:
+  amend only the existing HJ18 report-writer path, prompt contract, model
+  output budget, and focused tests as needed.
+- Do not change source acquisition, W4/W5/W6/W7 behavior, provider selection,
+  parser/cache/SR/storage, public behavior, ACS/direct URL, V1 work, or V1
+  cleanup for this stop.
