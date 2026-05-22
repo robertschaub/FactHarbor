@@ -21,14 +21,15 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`dbdd2acc fix(v2): admit serper extraction input lineage`
+`311b4b7a docs(v2): record hj26 serper lineage stop`
 
-This commit keeps the bounded Serper search-preview Source Material repair from
-`30d8d011` and amends the existing W4-H extraction-input provider-lineage
-allowlist so the already-created mixed OpenAlex + Serper + Wikimedia W4-G
-sidecars can proceed to W4-H without a false provider mismatch. It does not add
-new routes, prompts, schemas, parser/cache/SR/storage, public behavior,
-report/verdict/confidence behavior, or V1 reuse.
+This docs anchor includes implementation commit `dbdd2acc`, which keeps the
+bounded Serper search-preview Source Material repair from `30d8d011` and
+amends the existing W4-H extraction-input provider-lineage allowlist so mixed
+OpenAlex + Serper + Wikimedia W4-G sidecars can proceed to W4-H without a false
+provider mismatch. It does not add new routes, prompts, schemas,
+parser/cache/SR/storage, public behavior, report/verdict/confidence behavior,
+or V1 reuse.
 
 Runtime has not yet been refreshed to this commit for the next validation job.
 
@@ -36,31 +37,30 @@ Runtime has not yet been refreshed to this commit for the next validation job.
 
 Latest validation:
 
-`STOP_X7_HJ26_BOLSONARO_W4H_PROVIDER_LINEAGE_BLOCKED`
+`PASS_X7_HJ27_BOLSONARO_MIXED_SOURCE_INTERNAL_REPORT_CREATED`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ26_Bolsonaro_Serper_Source_Material_Result.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ27_Bolsonaro_Mixed_Source_Report_Result.md`
 
 Important evidence:
 
-- `4a5ecd46675041eb9cdc347fc8bc2c94` ran the default manual V2 path for the
-  Bolsonaro/fair-trial input on runtime/docs commit `7f4ebcd5`.
-- W3-B Source Material improved: `9` records, `5610` aggregate bytes, providers
-  `openalex`, `serper_web_search`, and `wikimedia_core`.
-- W4-G created `9` bounded text sidecars. W4-H then failed closed with
-  `blocked_pre_extraction_input_provider_id_mismatch`, so W5 recorded
-  `blocked_pre_execution` / `w4h_packet_invalid`.
-- The committed repair `dbdd2acc` amends the existing W4-H provider-lineage
-  allowlist and test coverage to admit `serper_web_search`.
+- `f84d914e9ae74259a9c58505d2da190d` ran the default manual V2 path for the
+  Bolsonaro/fair-trial input on runtime/docs commit `311b4b7a`.
+- W3-B Source Material completed with `9` records, `5623` aggregate bytes, and
+  providers `openalex`, `serper_web_search`, and `wikimedia_core`.
+- W4-H created one mixed-provider extraction input packet of `5639` bytes.
+- W5 accepted `2` EvidenceItems.
+- W8-B/W8-G/internal report writer completed; authenticated admin job response
+  returned report markdown length `7381`.
 - Public/default containment held: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
 
 ## Open Generalization Gap
 
-The Bolsonaro input now reaches W3-B and W4-G with richer source material. HJ26
-showed that the next roadblock was a downstream W4-H single-provider assumption:
+The Bolsonaro input now reaches complete hidden/internal report generation
+through the default manual V2 route:
 
 - `315886278aa34b4a9ba8fd91d9ac3cc0`: W3-B later fetch failure;
 - `d2aaaee251cd40bb9d6dd2291d235a76`: W4-A fetch diagnostic overstrictness;
@@ -71,9 +71,11 @@ showed that the next roadblock was a downstream W4-H single-provider assumption:
   after bounded search-preview material.
 - `4a5ecd46675041eb9cdc347fc8bc2c94`: W3-B had Serper/OpenAlex/Wikimedia
   material, but W4-H blocked on `provider_id_mismatch`.
+- `f84d914e9ae74259a9c58505d2da190d`: W4-H passed, W5 extracted `2`
+  EvidenceItems, and the internal report writer produced `7381` report bytes.
 
-The next committed repair is `dbdd2acc`; validate whether mixed-provider W4-H
-unblocks W5 and the internal report writer.
+The remaining question is no longer reachability for this input; it is report
+quality and cross-input generalization.
 
 ## Live Budget
 
@@ -82,21 +84,21 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after reset: `1`;
-- remaining: `17`;
+- consumed after reset: `2`;
+- remaining: `16`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this current-lane and live-budget sync.
-2. Refresh runtime to `dbdd2acc` plus this docs sync.
-3. Run one Captain-defined Bolsonaro-family validation job through the default
-   manual V2 path and classify its information yield.
-4. If W4-H still blocks on provider lineage, inspect the remaining provider
-   contract. If W4-H passes but W5 no longer extracts evidence, pivot the next
-   repair toward W5 extraction/report quality using the observed hidden evidence
-   rather than adding more source-acquisition machinery.
+1. Commit this current-lane, result, and live-budget sync.
+2. Run a compact report-quality review over the HJ27 hidden/admin report.
+3. Then spend at most a small number of jobs from the remaining budget on a
+   stronger multi-input gauntlet over Captain-defined inputs, unless report
+   review exposes a clear local defect that should be repaired first.
+4. Prefer improvements that directly raise observed report quality or reduce
+   old hidden machinery. Do not add source-acquisition machinery unless a new
+   report or gauntlet result proves the source pool is the blocker again.
 
 ## Stop Conditions
 

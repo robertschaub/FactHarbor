@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj25",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-25-BOLSONARO-SEARCH-PREVIEW-MATERIAL-VALIDATION",
       "startsAfterJobId": "d2e18575dcbe453c9cbae2281438405e",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. One job has been consumed from this fresh post-HJ25 tranche.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. Two jobs have been consumed from this fresh post-HJ25 tranche.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -821,6 +821,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_stage_reached",
         "note": "Default manual V2 path ran claimboundary-v2. W3-B improved to 9 Source Material records across openalex, serper_web_search, and wikimedia_core, but W4-H failed closed with provider_id_mismatch because the extraction-input provider lineage allowlist had not yet admitted serper_web_search. Public/default surfaces stayed blocked/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-27-BOLSONARO-MIXED-SOURCE-REPORT-VALIDATION",
+        "jobId": "f84d914e9ae74259a9c58505d2da190d",
+        "classification": "PASS_X7_HJ27_BOLSONARO_MIXED_SOURCE_INTERNAL_REPORT_CREATED",
+        "implementationCommit": "dbdd2acc",
+        "runtimeCommit": "311b4b7a8ef23d2f638890337e80b3eba82acabd",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Default manual V2 path ran claimboundary-v2. W3-B completed with 9 Source Material records across openalex, serper_web_search, and wikimedia_core; W4-H created one 5639-byte mixed-provider extraction input packet; W5 accepted 2 EvidenceItems; W8-B/W8-G/internal report writer completed; admin reportMarkdown length was 7381 while public/default surfaces stayed blocked/redacted."
       }
     ],
     "blockedPending": [],

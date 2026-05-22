@@ -3719,3 +3719,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the current tranche to `18`; HJ26 consumed `1`, leaving `17`.
 
 **Next:** Refresh runtime to `dbdd2acc` plus docs sync, verify API/Web commit match, and rerun one default manual V2 Bolsonaro validation. If W4-H passes but W5 still stops, pivot to W5 extraction/report-quality evidence from the hidden artifacts rather than adding more source acquisition machinery.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ27 Bolsonaro Internal Report Pass
+
+**Task:** Validate the W4-H Serper lineage repair on the previously blocked Bolsonaro/fair-trial input.
+
+**Result:** Ran job `f84d914e9ae74259a9c58505d2da190d` through the default manual path without explicit `pipelineVariant` on runtime `311b4b7a8ef23d2f638890337e80b3eba82acabd`; it stored and ran `claimboundary-v2`. Hidden chain completed: W3-B had `9` Source Material records across `openalex`, `serper_web_search`, and `wikimedia_core`; W4-H created one `5639` byte mixed-provider extraction input packet; W5 accepted `2` EvidenceItems; W8-B/W8-G/internal report writer completed; authenticated admin job response returned V2 report markdown length `7381`.
+
+**Containment:** Public/default result stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public/default `reportMarkdown` stayed `null`, internal report-writer default artifact projection returned hash/length/provenance only, and unauthenticated internal report-writer access returned `401`.
+
+**Budget:** HJ27 consumed `1`; current tranche remaining is `16`.
+
+**Next:** Pivot from reachability to report-quality review and a compact multi-input gauntlet. Do not add more source-acquisition machinery unless the next observed report/gauntlet evidence shows source coverage is again the blocker.
