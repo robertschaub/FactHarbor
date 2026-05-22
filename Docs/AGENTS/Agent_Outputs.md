@@ -3849,3 +3849,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18`; HJ32 and HJ33 consumed `2`, so `16` remain before the HJ34 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ34, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ34 Result And HJ35 Extraction-Path Recovery
+
+**Task:** Validate HJ34, then apply bounded failed-attempt recovery without adding new source/provider machinery.
+
+**Result:** HJ34 job `7f5b3c3e45e14a3488b7d8df99cabf0a` ran on committed runtime `d57ce6feb0d02f322597317893552fc37162efb3` through the default manual V2 path for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`, but repeated the HJ33 regression: Source Material records `0`, W4-G `blocked_pre_bounded_corpus_text_w3b_not_completed` / `w3b_not_completed`, W4-H `blocked_pre_extraction_input_w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`. Public/default containment held: reportMarkdown stayed `null`, schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and issue stayed `report_damaged`.
+
+**Repair:** HJ35 commits `496129da` to revert the HJ33/HJ34 query-planning prompt hunk and repair the existing W5 evidence-extraction prompt instead. HJ32 already proved W5 received 4 source-content packets / 2304 bytes but returned `no_extractable_evidence`; HJ35 now tells W5 that source-attributed counts, rates, stocks, flows, thresholds, or official status statements may be materially aligned when they address the same population/domain and time posture, with rounding, mismatch, partial scope, and uncertainty expressed through the existing EvidenceItem fields.
+
+**Debt-guard:** HJ33/HJ34 are classified as failed-attempt recovery: the query-planning hypothesis introduced/repeated a source-material regression. Chosen path is `revert query-planning overcorrection + amend existing W5 prompt`, not another diagnostic layer, provider expansion, retry, route, schema relaxation, parser/cache/SR/storage, public behavior, or V1 work. Net mechanisms unchanged.
+
+**Verification:** Focused prompt-contract verifier passed (`2` files / `21` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed.
+
+**Budget:** Captain reset the live-job budget to `18`; HJ32, HJ33, and HJ34 consumed `3`, so `15` remain before the HJ35 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ35, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.

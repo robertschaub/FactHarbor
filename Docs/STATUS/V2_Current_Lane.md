@@ -21,21 +21,24 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`a8354655 fix(v2): balance quantitative query discovery`
+`496129da fix(v2): recover quantitative extraction path`
 
-The current committed repair is HJ34: amend the HJ33 prompt repair in place so
-quantitative/current-aggregate claims keep numeric/direct-record intent
-additive and balanced with an authoritative-statistics discovery query. This is
-a bounded prompt/test repair of an existing mechanism, not provider, schema,
-route, retry, parser, cache/SR/storage, public behavior, or V1 work.
+The current committed repair is HJ35: revert the HJ33/HJ34 query-planning
+overcorrection and repair the existing W5 evidence-extraction prompt where HJ32
+showed the actual stop. Quantitative/current-aggregate source content may now
+be materially aligned when it addresses the same population/domain and time
+posture, while mismatches remain represented through evidence strength,
+limitations, and provenance. This is a bounded prompt/test repair of an
+existing mechanism, not provider, schema, route, retry, parser,
+cache/SR/storage, public behavior, or V1 work.
 
-Runtime has not yet been refreshed to HJ34 for the next validation job.
+Runtime has not yet been refreshed to HJ35 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-33-ASYLUM-235000-DE-QUANTITATIVE-QUERY-INTENT-RERUN`
+`X7-HJ-34-ASYLUM-235000-DE-BALANCED-QUERY-DISCOVERY-RERUN`
 
 Result document:
 
@@ -58,10 +61,14 @@ Important evidence:
   `claimboundary-v2` and containment held, but it regressed earlier: Source
   Material records `0`, W4-G `w3b_not_completed`, W4-H `w4g_not_positive`, W5
   `blocked_pre_execution`, source-content packets `0`.
-- HJ34 therefore amends the same prompt hunk rather than stacking new
-  provider/source machinery: numeric exactness must be balanced with an
-  authoritative-statistics discovery query so exact values do not crowd out
-  source discovery.
+- `7f5b3c3e45e14a3488b7d8df99cabf0a` (German asylum aggregate) reran on HJ34
+  after the balanced query-discovery repair. It repeated the HJ33 regression:
+  Source Material records `0`, W4-G `w3b_not_completed`, W4-H
+  `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
+- HJ35 therefore reverts the HJ33/HJ34 query-planning hunk rather than stacking
+  more source-acquisition machinery. It repairs the W5 extraction prompt where
+  HJ32 proved source-content packets reached the model but yielded
+  `no_extractable_evidence`.
 - Public/default containment held: public/default reportMarkdown stayed `null`,
   schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and
   issue stayed `report_damaged`.
@@ -85,9 +92,10 @@ Important evidence:
 - Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
-- HJ34 now addresses the HJ33 failed-attempt recovery: keep numeric precision
-  as one retrieval need, but also require source-discovery coverage for
-  current aggregate statistics.
+- HJ35 now addresses the HJ33/HJ34 failed-attempt recovery: restore the HJ32
+  source-material path and calibrate W5 so same-population/domain/time
+  quantitative source content is not rejected solely because the exact value is
+  rounded, differently formatted, partial-period, or non-identical.
 
 ## Open Generalization Gap
 
@@ -138,24 +146,27 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `3`;
+- remaining: `15`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ34 lane/ledger sync.
-2. Refresh runtime to the committed HJ34 state and verify Web/API/proxy runtime
+1. Commit the HJ35 lane/ledger sync.
+2. Refresh runtime to the committed HJ35 state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ34 produces a hidden internal report, review report quality before
+4. If HJ35 produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ34 still reaches W5 with `no_extractable_evidence`, decide the next
-   source-material/usefulness repair from the observed source-content packets
-   rather than adding another diagnostic layer.
-6. Treat the plastic CU stop as a separate follow-up unless the same repair
+5. If HJ35 restores Source Material/W5 input but still reaches
+   `no_extractable_evidence`, stop iterating this prompt path and use Steer-Co
+   to choose a source-material/usefulness strategy from the observed packets.
+6. If HJ35 still has Source Material records `0`, inspect the existing source
+   acquisition/materialization path instead of further query-planning prompt
+   edits.
+7. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
 
