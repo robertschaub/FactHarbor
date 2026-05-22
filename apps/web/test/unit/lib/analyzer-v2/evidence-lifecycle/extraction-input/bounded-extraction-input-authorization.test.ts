@@ -23,6 +23,7 @@ type SidecarOverrides = Partial<
     | "locatorRef"
     | "candidatePreviewId"
     | "languageCode"
+    | "truncationApplied"
   >
 >;
 
@@ -53,7 +54,7 @@ function sidecar(text = TEXT, overrides: SidecarOverrides = {}): EvidenceCorpusB
     textByteLength: Buffer.byteLength(text, "utf8"),
     textCharLength: Array.from(text).length,
     maxTextBytes: 4096,
-    truncationApplied: false,
+    truncationApplied: overrides.truncationApplied ?? false,
     sourceMaterialRecordVersion: overrides.sourceMaterialRecordVersion
       ?? "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
     sourceMaterialTextHash: hash,
@@ -226,6 +227,30 @@ describe("bounded extraction-input authorization", () => {
       firstText,
       secondText,
     ]);
+  });
+
+  it("creates an extraction-input packet from bounded truncated W4-G sidecar text", () => {
+    const truncatedSidecar = sidecar("Truncated bounded linked-page material.", {
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      truncationApplied: true,
+    });
+
+    const decision = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: boundedTextAuthorization({
+        boundedTextSidecar: truncatedSidecar,
+      }),
+      boundedTextRuntimeOwnership: "owned",
+    });
+
+    expect(decision.status).toBe("bounded_extraction_input_packet_created_extraction_execution_closed");
+    expect(decision.extractionInputPacket).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      truncationApplied: true,
+    });
   });
 
   it("creates one aggregate extraction-input packet from nine bounded W4-G sidecars", () => {

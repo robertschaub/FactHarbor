@@ -124,7 +124,7 @@ export type BoundedTextExtractionInputPacket = {
   readonly inputTextByteLength: number;
   readonly inputTextCharLength: number;
   readonly maxInputTextBytes: typeof BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES;
-  readonly truncationApplied: false;
+  readonly truncationApplied: boolean;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextHashes: readonly string[];
   readonly sourceMaterialTextByteLength: number;
@@ -393,7 +393,7 @@ function validateSidecarText(sidecar: EvidenceCorpusBoundedTextSidecar): Validat
     || sidecar.textByteLength !== byteLength
     || sidecar.textCharLength !== Array.from(sidecar.text).length
     || sidecar.maxTextBytes !== BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES
-    || sidecar.truncationApplied !== false
+    || typeof sidecar.truncationApplied !== "boolean"
   ) {
     return {
       status: "blocked_pre_extraction_input_text_oversized",
@@ -606,7 +606,7 @@ function buildPacket(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): Bou
     inputTextByteLength: aggregateByteLength,
     inputTextCharLength: aggregateCharLength,
     maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
-    truncationApplied: false,
+    truncationApplied: sidecars.some((sidecar) => sidecar.truncationApplied),
     sourceMaterialTextHash: aggregateTextHash,
     sourceMaterialTextHashes: sidecars.map((sidecar) => sidecar.sourceMaterialTextHash),
     sourceMaterialTextByteLength: aggregateByteLength,

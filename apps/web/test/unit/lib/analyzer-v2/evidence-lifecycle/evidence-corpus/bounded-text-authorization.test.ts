@@ -12,7 +12,10 @@ function sha256Text(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-function sourceMaterialRecord(text = SOURCE_TEXT) {
+function sourceMaterialRecord(
+  text = SOURCE_TEXT,
+  overrides: { readonly truncationApplied?: boolean } = {},
+) {
   const hash = sha256Text(text);
   return {
     recordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
@@ -27,7 +30,7 @@ function sourceMaterialRecord(text = SOURCE_TEXT) {
     sourceMaterialTextHash: hash,
     sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
     sourceMaterialTextCharLength: Array.from(text).length,
-    truncationApplied: false,
+    truncationApplied: overrides.truncationApplied ?? false,
     responseStatusCategory: "success_2xx",
     contentTypeCategory: "accepted_json",
     compressedBytes: 128,
@@ -372,6 +375,33 @@ describe("EvidenceCorpus bounded-text authorization", () => {
     });
     expect(JSON.stringify(shell)).toBe(shellBefore);
     expect(JSON.stringify(denial)).toBe(denialBefore);
+  });
+
+  it("creates a sidecar from already bounded truncated source material", () => {
+    const text = "Truncated linked page text within the bounded source-material cap.";
+    const record = sourceMaterialRecord(text, { truncationApplied: true });
+    const shell = shellDecision(text);
+    const denial = denialDecision(text);
+
+    const decision = buildEvidenceCorpusBoundedTextAuthorization({
+      sourceMaterialPageSummary: {
+        ...sourceMaterialPageSummary(text),
+        sourceMaterialRecords: [record],
+      },
+      sourceMaterialRuntimeOwnership: "owned",
+      sourceMaterialAdmission: admissionDecision(text),
+      admissionRuntimeOwnership: "owned",
+      evidenceCorpusShell: shell,
+      shellRuntimeOwnership: "owned",
+      extractionReadinessDenial: denial,
+    });
+
+    expect(decision.status).toBe("bounded_corpus_text_sidecar_created_extraction_gate_closed");
+    expect(decision.boundedTextSidecar).toMatchObject({
+      text,
+      truncationApplied: true,
+      textByteLength: Buffer.byteLength(text, "utf8"),
+    });
   });
 
   it("creates nine linked mixed-provider bounded-text sidecars for the HJ15 aggregate size", () => {

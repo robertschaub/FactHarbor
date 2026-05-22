@@ -211,6 +211,7 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
       sourceMaterialTextHash: hash,
       sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
       sourceMaterialTextCharLength: Array.from(text).length,
+      truncationApplied: true,
       contentTypeCategory: "accepted_text",
     };
 
@@ -227,6 +228,7 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
       sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
       sourceMaterialKind: "provider_search_result_page_text_bounded",
       sourceMaterialTextHash: hash,
+      truncationApplied: true,
       contentTypeCategory: "accepted_text",
     });
     expect(JSON.stringify(result)).not.toContain(text);

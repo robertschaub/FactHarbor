@@ -247,6 +247,7 @@ describe("Analyzer V2 W4-C Source Material corpus admission core", () => {
       sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
       sourceMaterialKind: "provider_search_result_page_text_bounded",
       contentTypeCategory: "accepted_text",
+      truncationApplied: true,
     };
     const result = admission({
       ...readiness,
@@ -260,6 +261,7 @@ describe("Analyzer V2 W4-C Source Material corpus admission core", () => {
       sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
       sourceMaterialKind: "provider_search_result_page_text_bounded",
       contentTypeCategory: "accepted_text",
+      truncationApplied: true,
     });
     expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
   });

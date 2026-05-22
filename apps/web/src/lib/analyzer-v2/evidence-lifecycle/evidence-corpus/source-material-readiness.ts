@@ -69,6 +69,7 @@ export type EvidenceCorpusSourceMaterialReadinessRecordSummary = {
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextCharLength: number;
+  readonly truncationApplied: boolean;
   readonly responseStatusCategory: "success_2xx";
   readonly contentTypeCategory: EvidenceCorpusAcceptedSourceMaterialContentType;
 };
@@ -385,6 +386,7 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     record.sourceMaterialTextHash !== sha256Text(record.sourceMaterialText)
     || record.sourceMaterialTextByteLength !== byteLength
     || record.sourceMaterialTextCharLength !== charLength(record.sourceMaterialText)
+    || typeof record.truncationApplied !== "boolean"
   ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
@@ -464,6 +466,7 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     sourceMaterialTextHash,
     sourceMaterialTextByteLength: byteLength,
     sourceMaterialTextCharLength: charLength(record.sourceMaterialText),
+    truncationApplied: record.truncationApplied,
     responseStatusCategory: "success_2xx",
     contentTypeCategory: record.contentTypeCategory,
   };

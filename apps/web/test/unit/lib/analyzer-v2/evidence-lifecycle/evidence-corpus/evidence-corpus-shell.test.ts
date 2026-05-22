@@ -239,6 +239,7 @@ describe("Analyzer V2 W4-D EvidenceCorpus shell core", () => {
       sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
       sourceMaterialKind: "provider_search_result_page_text_bounded",
       contentTypeCategory: "accepted_text",
+      truncationApplied: true,
     });
 
     const result = shell(adjustedAdmission);

@@ -112,7 +112,7 @@ export type EvidenceCorpusBoundedTextSidecar = {
   readonly textByteLength: number;
   readonly textCharLength: number;
   readonly maxTextBytes: typeof EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES;
-  readonly truncationApplied: false;
+  readonly truncationApplied: boolean;
   readonly sourceMaterialRecordVersion: typeof SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION;
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
@@ -391,7 +391,7 @@ function validateSourceMaterialRecord(record: unknown): SourceMaterialPageSummar
     textByteLength > EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES
     || record.sourceMaterialTextByteLength !== textByteLength
     || record.sourceMaterialTextCharLength !== Array.from(text).length
-    || record.truncationApplied !== false
+    || typeof record.truncationApplied !== "boolean"
   ) {
     return {
       status: "blocked_pre_bounded_corpus_text_oversized",
@@ -517,7 +517,7 @@ function buildSidecar(params: {
     textByteLength: params.sourceMaterialRecord.sourceMaterialTextByteLength,
     textCharLength: params.sourceMaterialRecord.sourceMaterialTextCharLength,
     maxTextBytes: EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES,
-    truncationApplied: false,
+    truncationApplied: params.sourceMaterialRecord.truncationApplied,
     sourceMaterialRecordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
     sourceMaterialTextHash: params.sourceMaterialRecord.sourceMaterialTextHash,
     sourceMaterialTextByteLength: params.sourceMaterialRecord.sourceMaterialTextByteLength,

@@ -492,7 +492,7 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusAdmissionInput | 
   if (
     value.responseStatusCategory !== "success_2xx"
     || !isAcceptedSourceMaterialContentType(value.contentTypeCategory)
-    || value.truncationApplied !== false
+    || typeof value.truncationApplied !== "boolean"
   ) {
     return {
       status: "blocked_pre_evidence_corpus_admission_not_admissible",

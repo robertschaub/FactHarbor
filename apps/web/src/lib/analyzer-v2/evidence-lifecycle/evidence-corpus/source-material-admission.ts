@@ -72,7 +72,7 @@ export type EvidenceCorpusAdmissionInput = {
   readonly sourceMaterialTextCharLength: number;
   readonly responseStatusCategory: "success_2xx";
   readonly contentTypeCategory: EvidenceCorpusAcceptedSourceMaterialContentType;
-  readonly truncationApplied: false;
+  readonly truncationApplied: boolean;
   readonly sourceMaterialRecordCount: number;
   readonly readinessDecisionVersion: typeof EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION;
   readonly readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed";
@@ -174,6 +174,7 @@ const SOURCE_MATERIAL_RECORD_KEYS = [
   "sourceMaterialTextByteLength",
   "sourceMaterialTextCharLength",
   "sourceMaterialTextHash",
+  "truncationApplied",
 ].sort();
 
 const FORBIDDEN_STRUCTURAL_MARKERS = [
@@ -427,6 +428,7 @@ function validateRecord(
   if (
     record.responseStatusCategory !== "success_2xx"
     || !isAcceptedSourceMaterialContentType(record.contentTypeCategory)
+    || typeof record.truncationApplied !== "boolean"
   ) {
     return {
       status: "blocked_pre_evidence_corpus_readiness_not_admissible",
@@ -465,7 +467,7 @@ function validateRecord(
     sourceMaterialTextCharLength: Number(sourceMaterialTextCharLength),
     responseStatusCategory: "success_2xx",
     contentTypeCategory: record.contentTypeCategory,
-    truncationApplied: false,
+    truncationApplied: record.truncationApplied,
     sourceMaterialRecordCount,
     readinessDecisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION,
     readinessStatus: "source_material_structurally_admissible_evidence_corpus_gate_closed",
