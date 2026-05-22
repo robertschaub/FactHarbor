@@ -3434,3 +3434,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HighJump live-job tranche now has `4` remaining.
 - Next action: assess internal report quality and take the shortest balanced path to a first useful full report; do not add another readiness layer unless it directly improves report value or retires/merges older machinery.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ8_Internal_Alpha_Report_Draft_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ13 OpenAlex Balance Canary
+
+- Ran HJ13 canary job `1d85ff88bf6945cb8f7caefcbabc7d9c` on API/Web runtime `9d1591154060d46f391aed66f9c713b8002fef2c` with explicit `claimboundary-v2` and the Captain-defined input `Using hydrogen for cars is more efficient than using electricity`.
+- Classification: `STOP_X7_HJ13_OPENALEX_BALANCE_NOT_REALIZED_INTERNAL_ALPHA_DRAFT_CREATED`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; default admin projections remained hash/length/provenance-only.
+- Hidden chain reached W8-G and produced an `8966` byte internal Alpha draft with `4` boundary drafts, `3` verdict drafts, and `4` cited EvidenceItem refs.
+- HJ13 did not meet its source-balance pass criterion: Source Material still contained only `1` OpenAlex record and `8` Wikimedia records.
+- The HJ13 Steer-Co exception canary is consumed; HighJump tranche remaining is `0`, recorded exception overrun count is `3`, and no second HJ13 canary is authorized.
+- Closeout debt sensor: `advisory_warn` at `2026-05-22T03:44:12.103Z` with the known V2 footprint, boundary-guard, docs-volume, net-mechanism, and consolidation-marker warnings.
+- Next action: Steer-Co should choose the smallest balanced HJ14 direction for direct comparator evidence acquisition/source-material selection or report-quality review before another retrieval change.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ13_OpenAlex_Balance_Result.md

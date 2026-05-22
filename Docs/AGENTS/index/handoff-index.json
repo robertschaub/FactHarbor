@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T03:33:14.722Z",
-  "count": 421,
+  "generatedAt": "2026-05-22T03:44:07.938Z",
+  "count": 422,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9240,6 +9240,24 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff: V2 HighJump HJ13 OpenAlex Balance Implementation"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ13_OpenAlex_Balance_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj13",
+        "openalex",
+        "balance",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff: V2 HighJump HJ13 OpenAlex Balance Result"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md",

@@ -25,8 +25,8 @@
       "startingRemaining": 12,
       "currentRemaining": 0,
       "consumptionEntriesInThisTranche": 14,
-      "note": "HighJump tranche is exhausted. Two Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses and validate the HJ12 prompt-contract repair. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
-      "exceptionOverrunCount": 2
+      "note": "HighJump tranche is exhausted. Three Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, and evaluate the HJ13 OpenAlex balance repair. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
+      "exceptionOverrunCount": 3
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
@@ -528,23 +528,39 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ12_W5_Integrity_Event_Prompt_Contract_Repair.md plus Steer-Co quick consent in current Codex thread",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "W5 accepted six EvidenceItems and W8-G created a draft; draft remains UNVERIFIED due lack of direct comparative efficiency evidence."
+      },
+      {
+        "sliceId": "X7-HJ-13-OPENALEX-SOURCE-MATERIAL-BALANCE-REPAIR-CANARY",
+        "jobId": "1d85ff88bf6945cb8f7caefcbabc7d9c",
+        "classification": "STOP_X7_HJ13_OPENALEX_BALANCE_NOT_REALIZED_INTERNAL_ALPHA_DRAFT_CREATED",
+        "implementationCommit": "9d1591154060d46f391aed66f9c713b8002fef2c",
+        "runtimeCommit": "9d1591154060d46f391aed66f9c713b8002fef2c",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_openalex_balance_validation_overrun_3",
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ13_OpenAlex_Source_Material_Balance_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "Hidden V2 chain reached W8-G and created an 8966-byte internal Alpha draft, but Source Material still contained only one OpenAlex record plus eight Wikimedia records, so the HJ13 balance criterion was not met."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "overrun_recorded_for_wrong_variant_recovery",
-      "overrunCount": 2,
-      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary and one HJ12 prompt-contract validation canary to avoid an artificial report-creation stop; both are recorded transparently.",
+      "overrunCount": 3,
+      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, and one HJ13 OpenAlex balance canary to avoid an artificial report-creation stop; all are recorded transparently.",
       "nextLiveJobRequirement": "new_reviewed_package_plus_steer_co_or_captain_budget_reconciliation"
     },
     "pendingExceptionAuthorization": {
       "sliceId": "X7-HJ-13-OPENALEX-SOURCE-MATERIAL-BALANCE-REPAIR-CANARY",
-      "status": "authorized_after_clean_implementation_commit_runtime_refresh",
+      "status": "consumed",
       "maxJobs": 1,
-      "remaining": 1,
+      "remaining": 0,
       "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ13_OpenAlex_Source_Material_Balance_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
       "reason": "HJ12 reached an internal Alpha draft but remained UNVERIFIED due source portfolio quality. HJ13 amends existing OpenAlex Source Material breadth without new provider, prompt, schema, or public behavior. One canary is needed to determine whether the report-quality path improves or provider expansion is required.",
-      "mustRecordConsumptionBeforeNextLiveJob": true
+      "mustRecordConsumptionBeforeNextLiveJob": false,
+      "consumedByJobId": "1d85ff88bf6945cb8f7caefcbabc7d9c",
+      "classification": "STOP_X7_HJ13_OPENALEX_BALANCE_NOT_REALIZED_INTERNAL_ALPHA_DRAFT_CREATED"
     }
   }
 }

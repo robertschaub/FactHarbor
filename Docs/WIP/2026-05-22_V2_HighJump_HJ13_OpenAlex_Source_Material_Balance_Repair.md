@@ -2,7 +2,7 @@
 
 Date: 2026-05-22
 Owner: Captain Deputy / Lead Developer lane
-Status: implemented locally; verifier-clean; canary pending commit/runtime refresh
+Status: canary completed; stopped on source-balance criterion
 
 ## Context
 
@@ -210,3 +210,36 @@ DEBT-GUARD RESULT
   ledger parse, and whitespace checks passed locally.
 - Debt accepted: none beyond the already-recorded HighJump canary budget
   exception requirement.
+
+## Canary Result
+
+Canary job `1d85ff88bf6945cb8f7caefcbabc7d9c` ran on API/Web runtime
+`9d1591154060d46f391aed66f9c713b8002fef2c` with explicit
+`pipelineVariant = claimboundary-v2` and the Captain-defined input
+`Using hydrogen for cars is more efficient than using electricity`.
+
+Classification:
+`STOP_X7_HJ13_OPENALEX_BALANCE_NOT_REALIZED_INTERNAL_ALPHA_DRAFT_CREATED`.
+
+Observed hidden-chain result:
+
+- public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- Claim Understanding, Query Planning, candidate networking, Source Material
+  corpus admission, bounded extraction, W8-B, and W8-G all produced hidden
+  internal artifacts;
+- Source Material still contained `9` records, but only `1` OpenAlex record and
+  `8` Wikimedia records;
+- W5 extracted `4` hidden EvidenceItems with `extractionResultStatus =
+  accepted`;
+- W8-G produced an `8966` byte internal Alpha draft with `4` boundary drafts,
+  `3` verdict drafts, and `4` cited EvidenceItem refs;
+- default admin projections remained hash/length/provenance-only, and public V2
+  did not expose the hidden draft or hidden source/evidence text.
+
+The HJ13 implementation remains verifier-clean and structurally useful, but the
+live canary did not prove the intended OpenAlex balance improvement. The next
+quality-directed step should not be another HJ13 rerun. It should use Steer-Co
+to choose the smallest balanced package that gets direct hydrogen-car versus
+electric-vehicle efficiency evidence into the hidden source/evidence portfolio
+without adding unnecessary machinery.
