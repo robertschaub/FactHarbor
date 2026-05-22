@@ -3587,3 +3587,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Added `Docs/STATUS/V2_Current_Lane.md` as a compact advisory current-lane projection for the active HJ19 phase: goal, active package, latest canary result, repair state, live budget, next action, stop conditions, and coordination rules.
 - Kept the projection explicitly non-authoritative so it reduces reconstruction cost without adding an approval layer; package, ledger, gate register, and Captain authority remain the source of truth.
 - Deferred canary-closeout automation, broad WIP/handoff cleanup, and boundary-guard splitting so process work does not block the HJ19 canary path.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ19 Canary Result
+
+- Ran exactly one HJ19 canary job `7522df8a2f1647adb80d230efcfafe40` on runtime `4e2ed0982d0eecfb8cd5e0098bca0c8342611e77` with explicit `claimboundary-v2` and the Captain-defined hydrogen input.
+- Classification: `STOP_X7_HJ19_PRE_REPORT_WRITER_W5_EVIDENCE_ITEMS_TOO_BIG`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; no public verdict/truth/confidence was produced.
+- Hidden chain reached CU accepted, Query Planning accepted with `4` query entries, W2 `candidate_provider_network_completed`, and W5 execution.
+- W5 stopped before W8-B/HJ19 as `damaged_execution` / `schema_validation_failed`; schema diagnostics included path `evidenceItems`, code `too_big`, with `8673` input tokens and `1497` output tokens.
+- HJ19 report-writer route returned bounded authenticated `404` and unauthenticated `401`, both `no-store`; no public/default-admin source text, EvidenceItem text, prompt text, provider payload, hidden ledger id, or report-writer markdown leak was observed.
+- HJ19 consumed `1` job from the active HighJump continuation tranche; remaining budget is `6`. No second HJ19 canary is authorized.
+- Next action: smallest HJ20 W5 output-shaping repair, likely topic-neutral prompt/contract alignment for bounded/consolidated EvidenceItems under richer source packets. Do not rerun HJ19 or change source acquisition/provider behavior for this stop.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ19_Canary_Result.md

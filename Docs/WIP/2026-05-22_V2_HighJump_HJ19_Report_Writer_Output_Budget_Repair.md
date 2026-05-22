@@ -369,3 +369,31 @@ Canary readiness:
   preflight, API/Web runtime commit match, and artifact capture discipline.
 - Current budget before the HJ19 canary remains `7`.
 - No second HJ19 canary is authorized by this implementation result.
+
+## Canary Result
+
+Result document:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ19_Canary_Result.md`
+
+Classification:
+
+`STOP_X7_HJ19_PRE_REPORT_WRITER_W5_EVIDENCE_ITEMS_TOO_BIG`
+
+Job id:
+
+`7522df8a2f1647adb80d230efcfafe40`
+
+The canary ran on runtime
+`4e2ed0982d0eecfb8cd5e0098bca0c8342611e77` with explicit
+`claimboundary-v2` and the Captain-defined hydrogen input. Public V2 stayed
+blocked/precutover/damaged and containment held.
+
+HJ19 was not validated by this canary because the run stopped earlier at W5.
+Hidden artifacts reached Claim Understanding, Query Planning, W2, and W5, but
+W5 stopped as `damaged_execution` / `schema_validation_failed`; schema
+diagnostics included path `evidenceItems`, code `too_big`. W8-B, W8-G, and the
+HJ19 report-writer artifact were not created.
+
+Budget after the canary is `6`. No second HJ19 canary is authorized from this
+result.

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 7,
+    "currentRemaining": 6,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 7,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 may spend exactly one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline.",
+      "currentRemaining": 6,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -611,6 +611,19 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md plus Captain-authorized 8-job HighJump continuation budget",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "HJ18 proved hidden/internal aggregation_narrative report-writer reachability and containment, but the provider output hit the 4000 output-token ceiling and failed JSON parse. No report markdown was produced; public V2 remained blocked/precutover/damaged and default admin projection stayed hash/length/provenance-only."
+      },
+      {
+        "sliceId": "X7-HJ-19-REPORT-WRITER-BUDGET-REPAIR-CANARY",
+        "jobId": "7522df8a2f1647adb80d230efcfafe40",
+        "classification": "STOP_X7_HJ19_PRE_REPORT_WRITER_W5_EVIDENCE_ITEMS_TOO_BIG",
+        "implementationCommit": "2cdc9ce5",
+        "runtimeCommit": "4e2ed0982d0eecfb8cd5e0098bca0c8342611e77",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 6,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md plus Captain-authorized 8-job HighJump continuation budget",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "HJ19 runtime refreshed to source including implementation commit 2cdc9ce5 plus docs projection commit 4e2ed098. The run used explicit claimboundary-v2 and reached CU, Query Planning, W2, and W5, but did not reach W8-B/HJ19 because W5 stopped as damaged_execution / schema_validation_failed with evidenceItems too_big. Public V2 remained blocked/precutover/damaged; default hidden routes remained no-store/redacted."
       }
     ],
     "blockedPending": [],

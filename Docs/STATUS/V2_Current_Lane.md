@@ -17,23 +17,41 @@ by step.
 
 ## Active Package
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ19_Canary_Result.md`
 
-Current implementation commit:
+Latest implementation commit:
 
 `2cdc9ce5 fix(v2): repair highjump report writer output budget`
 
 ## Latest Canary Result
 
-HJ18 canary job `c75322fad1e74218b8ee51a54f2307cd` reached the hidden/internal
-`aggregation_narrative` report writer and held containment, but stopped as
-`STOP_X7_HJ18_INTERNAL_REPORT_WRITER_PARSE_FAILURE_CONTAINED` after exactly
-`4000` output tokens and produced no report markdown.
+HJ19 canary job `7522df8a2f1647adb80d230efcfafe40` ran on runtime
+`4e2ed0982d0eecfb8cd5e0098bca0c8342611e77` with explicit `claimboundary-v2`.
+It is classified:
+
+`STOP_X7_HJ19_PRE_REPORT_WRITER_W5_EVIDENCE_ITEMS_TOO_BIG`
+
+The canary did not reach the report writer. It reached hidden CU, Query
+Planning, W2, and W5; W5 stopped as `damaged_execution` /
+`schema_validation_failed` with schema diagnostics including path
+`evidenceItems`, code `too_big`.
 
 ## Current Repair
 
-HJ19 is implemented and verifier-clean. It amends the existing
-`aggregation_narrative` report-writer path in place:
+HJ19 remains locally implemented and verifier-clean, but its behavior is not
+canary-validated because W5 blocked first. It amends the existing
+`aggregation_narrative` report-writer path in place.
+
+Current active repair target is now HJ20:
+
+- W5 output-shaping under the richer nine-record mixed OpenAlex/Wikimedia source
+  packet;
+- keep the repair inside the existing W5 prompt/contract/output-shaping path if
+  local diagnosis supports it;
+- avoid retries, schema relaxation, new report path, source/provider expansion,
+  public behavior, parser/cache/SR/storage, ACS/direct URL, and V1 work.
+
+HJ19 changes already present:
 
 - HJ19 approval provenance;
 - model policy `v2.model.aggregation_narrative.hj19`;
@@ -49,9 +67,10 @@ added.
 
 Active HighJump continuation tranche:
 
-- remaining before HJ19 canary: `7`;
-- HJ19 may spend exactly one canary after clean provenance and runtime refresh;
-- no second HJ19 canary is authorized without a new Steer-Co/Captain decision.
+- remaining after HJ19 canary: `6`;
+- no second HJ19 canary is authorized;
+- any next canary must follow an HJ20 repair commit, runtime refresh, clean
+  status, and route/runtime preflight.
 
 Ledger:
 
@@ -59,20 +78,18 @@ Ledger:
 
 ## Next Action
 
-1. Confirm clean git status.
-2. Refresh runtime from the latest committed source.
-3. Verify API/Web runtime commit match.
-4. Preflight the internal report-writer artifact route for authentication,
-   no-store, and default hash/length/provenance-only projection.
-5. Submit exactly one `claimboundary-v2` canary using the Captain-defined input:
-
-`Using hydrogen for cars is more efficient than using electricity`
+1. Document and commit the HJ19 canary result.
+2. Use Steer-Co/debt-guard to select the smallest HJ20 W5 output-shaping repair.
+3. Prefer topic-neutral W5 prompt/contract alignment if local diagnosis confirms
+   the model exceeded the intended bounded EvidenceItem set.
+4. Run local verifiers before any next canary.
 
 ## Stop Conditions
 
 Stop and reconvene Steer-Co if:
 
-- HJ19 still fails parse/schema with unclear cause;
+- HJ20 local diagnosis shows the W5 stop requires schema relaxation, source
+  expansion, retries, or a new mechanism rather than prompt/contract alignment;
 - route/default-admin/public/log/error surfaces leak report text, source text,
   prompt text, provider payload, hidden ids, or public verdict/truth/confidence;
 - runtime commit does not match the committed source under test;
