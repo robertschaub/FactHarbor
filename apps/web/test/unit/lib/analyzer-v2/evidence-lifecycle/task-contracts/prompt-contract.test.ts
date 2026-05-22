@@ -177,11 +177,6 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("current aggregate, legal/procedural event, official status");
     expect(section).toContain("direct public record, primary-source statement");
     expect(section).toContain("Do not let academic, encyclopedic, or contextual source intent crowd out");
-    expect(section).toContain("For quantitative or current-aggregate claims");
-    expect(section).toContain("keep a balanced retrieval set");
-    expect(section).toContain("preserves the explicit quantity");
-    expect(section).toContain("authoritative-statistics discovery query");
-    expect(section).toContain("normalize only numeric spacing");
   });
 
   it("renders the evidence-extraction strict output branch contract", () => {
@@ -223,6 +218,10 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("For comparative claims, preserve the compared entities");
     expect(section).toContain("Evidence comparing a claim entity to a third entity is contextual or unclear");
     expect(section).toContain("Do not treat adjacent or substitute comparators as direct support or opposition");
+    expect(section).toContain("For quantitative or current-aggregate claims");
+    expect(section).toContain("source-attributed counts, rates, stocks, flows, thresholds");
+    expect(section).toContain("same population/domain and time posture");
+    expect(section).toContain("Do not return an empty result merely because the quantitative source content");
     expect(section).toContain("Prefer bounded extraction over premature empty output");
     expect(section).toContain("only after checking material alignment");
     expect(section).toContain("partial, indirect, low-confidence, or limited in scope");

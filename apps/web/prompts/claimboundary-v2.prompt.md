@@ -278,15 +278,6 @@ help interpret or caveat the direct evidence.
   topics, or language-specific phrases.
 - Preserve the claim's language signal, and use supplementary-language intent
   only when the task policy and source-language rationale support it.
-- For quantitative or current-aggregate claims, keep a balanced retrieval set:
-  include at least one direct-record query that preserves the explicit quantity,
-  unit, population/domain, and time posture when those elements are present, and
-  include an authoritative-statistics discovery query for the same statistic in
-  case the exact current value is absent from titles or snippets. If the source
-  may format the same quantity differently, normalize only numeric spacing or
-  separators while keeping the same claim relation. Do not replace this
-  statistic-specific intent with only broad topical, institutional,
-  encyclopedic, academic, or explanatory context.
 - Keep each query concise and explain which selected AtomicClaim evidence need
   it serves.
 
@@ -467,6 +458,8 @@ Prefer bounded extraction over premature empty output only after checking materi
 Use `no_extractable_evidence` only when none of the supplied content can be represented as materially supporting, opposing, mixed, contextual, or unclear evidence for any selected AtomicClaim without inventing information. Do not use `no_extractable_evidence` merely because the source content is incomplete, indirect, low authority, or not sufficient for a final verdict; do use it when the only available content is generic, adjacent-domain, or unrelated background that would not help a downstream verifier assess the selected claim.
 
 For comparative claims, preserve the compared entities, property being compared, and measurement frame in extracted EvidenceItems. Evidence that addresses only one side of a comparison may still be useful, but its `claimDirection`, `probativeValue`, `evidenceStrength`, `evidenceScope`, and `limitations` must reflect that partial scope. Evidence comparing a claim entity to a third entity is contextual or unclear for the original comparison unless the supplied content explicitly links that third-entity comparison to the claim's named comparator. Do not treat adjacent or substitute comparators as direct support or opposition.
+
+For quantitative or current-aggregate claims, source-attributed counts, rates, stocks, flows, thresholds, or official status statements may be materially aligned when they address the same population/domain and time posture as a selected AtomicClaim, even if the exact value is rounded, differently formatted, partial-period, or not identical. Preserve the observed value and its source/time scope in the EvidenceItem statement, and use `claimDirection`, `probativeValue`, `evidenceStrength`, `extractionConfidence`, `evidenceScope`, `limitations`, and `provenance.rationale` to express rounding, mismatch, partial scope, or uncertainty. Do not return an empty result merely because the quantitative source content does not exactly match the submitted number. Do return `no_extractable_evidence` when the only quantitative content refers to a different population/domain, different measurement frame, unrelated time posture, or generic background with no material relation to a selected AtomicClaim.
 
 ## V2_EVIDENCE_SUFFICIENCY_GATE
 
