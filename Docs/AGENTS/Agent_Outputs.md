@@ -14,8 +14,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 
 ---
 ### 2026-05-22 | Lead Agents Supervisor | Codex (GPT-5.5) + Claude Opus 4.6 + GPT reviewer | V2 Orchestration Process Improvement Plan -- [Standard] [open-items: yes]
-**For next agent:** Wrote `Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md` after Opus 4.6 and GPT reviewer both returned `MODIFY`. Consolidated plan makes durable package approval blocks the authority, `V2_Active_Slice.json` only a validated projection, and sequences active-slice validation before canary preflight/capture tooling.
-**Warnings:** Do not implement the active-slice JSON as a second approval source. The plan explicitly defers boundary-guard splitting and broad WIP archival until report-value stabilization or verifier-backed blocker evidence.
+**For next agent:** Wrote and then friction-amended `Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md` after Opus 4.6 and GPT reviewers returned `MODIFY`. Final consolidation makes package work-envelope blocks the authority, `V2_Active_Slice.json` only an advisory projection by default, and limits blocker behavior to four transition gates: live/model execution, public exposure, gated package execution, and runtime artifact capture.
+**Warnings:** Do not implement the active-slice JSON as a second approval source or broad barrier. Validator findings should be blocker/warning/info; only missing approval, wrong Captain input, no budget/exception, stale runtime/source at transition, leak/auth/no-store risk, conflicting authority, or out-of-envelope execution should block. Boundary-guard splitting and broad WIP archival remain deferred.
 -> Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md
 
 ---

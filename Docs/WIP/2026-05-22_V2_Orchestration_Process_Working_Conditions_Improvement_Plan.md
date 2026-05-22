@@ -7,8 +7,9 @@
 
 ## Purpose
 
-Improve the operating conditions for the active Pipeline V2 workstream without
-adding another heavy governance layer. The plan responds to Captain-Deputy's
+Improve the operating conditions for the active Pipeline V2 workstream by
+removing avoidable manual reconstruction, not by adding another approval layer.
+The plan responds to Captain-Deputy's
 reported pain points:
 
 - high context volume across WIP docs, handoffs, status files, ledgers, chat
@@ -18,10 +19,10 @@ reported pain points:
 - fragile live artifact capture from process-local hidden artifacts;
 - too many intermediate hidden-chain mechanisms.
 
-This plan does not authorize implementation, live jobs, prompt/model/schema
-changes, public behavior, provider expansion, cache/SR/storage changes, parser
-execution, ACS/direct URL widening, or V1 cleanup. It defines process/tooling
-improvements for later bounded implementation packages.
+This plan defines process/tooling improvements for later bounded implementation
+packages. It does not create new standing gates. Tooling introduced under this
+plan must default to advice unless it is checking one of the explicit transition
+gates in the severity policy below.
 
 ## Review Result
 
@@ -30,6 +31,10 @@ Reviewed by:
 - Claude Opus 4.6 through the FactHarbor Claude wrapper:
   `MODIFY`.
 - GPT reviewer subagent:
+  `MODIFY`.
+- Friction-focused GPT reviewer after Captain concern:
+  `MODIFY`.
+- Friction-focused Claude Opus 4.6 retry:
   `MODIFY`.
 
 Consolidated decision:
@@ -47,11 +52,18 @@ Proceed, but only with the following corrections:
    creating a second quality-review or approval mechanism.
 5. Boundary-guard splitting and broad WIP archival remain deferred until report
    value stabilizes or verifier friction becomes a concrete blocker.
+6. Active-slice validation and canary tooling default to advisory. They block
+   only at the explicit transition gates defined below.
 
 ## Operating Principle
 
+Use hard gates only where a mistake would invalidate a run, leak private state,
+spend unauthorized budget, or bypass Captain approval. Everything else should
+help agents see current state and keep moving inside the approved envelope.
+
 Reduce context reconstruction by converting current authority into a small,
-validated, machine-readable projection. Do not create a second source of truth.
+validated, machine-readable projection. Do not create a second source of truth
+or a second approval workflow.
 
 Every process addition must either:
 
@@ -60,27 +72,94 @@ Every process addition must either:
 - reduce repeated guard maintenance;
 - or retire/merge/quarantine an older process burden.
 
+## Severity Policy
+
+Validators and checklist scripts introduced by this plan default to advisory
+mode. They may block only at these four transition gates:
+
+1. live or model execution;
+2. public API/UI/report/export exposure;
+3. gated package execution;
+4. runtime artifact capture.
+
+They must not block ordinary planning, local implementation inside an approved
+envelope, documentation updates, local tests, or evidence review.
+
+### Blocker
+
+Block only when one of the four transition gates is being crossed and the tool
+detects one of these conditions:
+
+- missing Captain or package approval for gated V2 execution;
+- wrong, paraphrased, or non-Captain-defined input for live/canary/validation;
+- no approved live-job budget or no recorded exception authority;
+- stale runtime or source mismatch before live/model execution;
+- public leak risk, missing route auth, or missing no-store behavior for
+  runtime/capture routes;
+- conflicting approval authority for the same package or gate;
+- attempted execution outside the approved package envelope.
+
+Projection freshness rule:
+
+- Block when the canonical authority source conflicts with the persisted
+  projection at a transition gate.
+- Warn when the projection is stale but the canonical authority source is
+  identified, trusted, and mechanically recomputable.
+
+Override path:
+
+- Captain explicit override for live/model execution and public exposure.
+- Steer-Co exception for gated-package execution when authority is ambiguous but
+  contained.
+- Lead Developer may proceed with evidence capture only after Captain-Deputy
+  confirms the canonical authority source and no leak/auth/no-store blocker is
+  present.
+
+### Warning
+
+Warn but do not stop for:
+
+- missing scorecard or retirement metadata on non-executing docs/planning work;
+- uncommitted relevant files before local-only checks;
+- stale active-slice projection when the authoritative source is clear;
+- missing capture target when no capture is being run;
+- budget near limit;
+- advisory debt-sensor findings;
+- non-material package metadata drift.
+
+Warnings must still be recorded in packets, handoffs, or closeouts when the
+work is non-trivial. Advisory does not mean silent.
+
+### Info
+
+Informational only:
+
+- derived package/hash/authority values;
+- evidence-only capture completed;
+- deferred boundary-guard split;
+- deferred WIP archival;
+- reminders that a plan does not authorize implementation when no
+  implementation is being attempted.
+
 ## Phase P1: Durable Approval Block First
 
 Priority: P0
 
-Add a standard approval block to new V2 packages that touch any approval-gated
-surface.
+Add a compact positive work-envelope block to new V2 packages that touch any
+approval-gated surface. This is not meant to expand package size; it replaces
+long "do not" lists with a short statement of what the team may do and where it
+must stop.
 
 ```text
-APPROVAL AUTHORITY
-Authority source:
+WORK ENVELOPE / APPROVAL AUTHORITY
 Approval pointer:
-Approved actions:
-Approved files:
-Approved live jobs:
-Approved Captain-defined input:
-Approved prompt/model/schema/config surfaces:
-Still blocked:
-Expiry / stop condition:
-Budget impact:
-Scorecard rows:
-Retirement ledger rows:
+Lead Developer may:
+Files / surfaces:
+Live/model execution:
+Captain-defined input:
+Must stop on:
+Budget / exception:
+Scorecard / retirement rows:
 ```
 
 Rules:
@@ -90,6 +169,8 @@ Rules:
 - The block is the durable authority anchor.
 - Chat approvals must be converted into this block before implementation or
   canary execution when they affect gated work.
+- Keep the block short. Detailed prohibitions belong only where they prevent a
+  plausible mistake in the current package.
 
 Owner: Captain-Deputy.
 
@@ -108,7 +189,7 @@ Docs/AGENTS/V2_Active_Slice.json
 Purpose:
 
 Machine-readable projection of current V2 authority and live-job readiness. It
-does not authorize work by itself.
+does not authorize work by itself and is advisory by default.
 
 Minimum shape:
 
@@ -160,7 +241,7 @@ Authoritative-file split:
 | Package approval | Current package approval block | Mirror approval pointer and allowed envelope |
 | Scorecard and retirement rows | `V2_Excellence_Scorecard.md`, `V2_Retirement_Ledger.md` | Mirror touched row IDs |
 
-Required validator:
+Validator:
 
 Add a future command such as:
 
@@ -168,7 +249,17 @@ Add a future command such as:
 npm run v2:active-slice:check
 ```
 
-It should fail when:
+Default mode is advisory. It should support a future gate mode:
+
+```text
+npm run v2:active-slice:check -- --gate
+```
+
+The gate mode may block only at the four transition gates in the severity
+policy. It should use blocker/warning/info output, not a single undifferentiated
+failure channel.
+
+It should report:
 
 - the source package is missing;
 - the source package hash no longer matches;
@@ -177,6 +268,10 @@ It should fail when:
 - a live job is marked authorized without budget or exception authority;
 - required scorecard or retirement rows are absent;
 - mirrored gate or ledger state conflicts with the authoritative file.
+
+Where values can be safely derived from the source package, git, gate register,
+or live-job ledger, the tool should derive and report them rather than forcing
+manual duplication.
 
 ## Phase P3: Canary Preflight
 
@@ -194,7 +289,8 @@ Preflight only. It must not submit jobs.
 
 Checks:
 
-- active slice exists and validates;
+- active slice exists and validates, or the canonical authority source is
+  identified and mechanically usable;
 - intended slice is `canary_ready`;
 - relevant source/prompt/config/approval files are committed;
 - runtime commit matches intended implementation commit;
@@ -215,6 +311,10 @@ Important nuance:
 "Clean tree" should mean no uncommitted runtime-relevant source, prompt,
 configuration, package, approval, or ledger files. Unrelated docs noise should
 not block unless it affects provenance or active authority.
+
+Default mode should be useful before a canary without being punitive. It may
+block only when the canary is actually being submitted or runtime artifacts are
+being captured.
 
 ## Phase P4: Canary Capture
 
@@ -245,6 +345,10 @@ Capture:
 
 Do not create a second quality-review mechanism. Report quality remains owned by
 `/report-review` and Captain comparator expectations.
+
+This is the most friction-reducing tool in the plan because it replaces manual
+route probing and copy/paste capture. It should use existing routes and avoid
+adding new hidden runtime surfaces for convenience.
 
 ## Phase P5: Boundary Guard Split Plan
 
@@ -302,6 +406,12 @@ current approval.
 | Boundary-guard split | Lead Developer | Deferred until safe trigger |
 | Monitor usage | Monitor agent | Reads active slice first, reports drift |
 
+Steer-Co re-entry is limited to material changes: authority ambiguity, blocker
+failure, scope expansion, public leak risk, budget/approval mismatch, net-new
+mechanism increase, or unresolved reviewer dissent. Clean passes, local
+implementation inside an approved envelope, and evidence-only capture do not
+require Steer-Co.
+
 ## V2 Scorecard Impact
 
 V2 SCORECARD IMPACT
@@ -341,6 +451,9 @@ Scorecard risk:
 - If `V2_Active_Slice.json` becomes a second authority source, it will worsen
   governance drift. The validator and authority-file split are mandatory to
   avoid that.
+- If validators drift from advisory helpers into broad blockers, they will
+  recreate the current barrier problem. The four transition gates are therefore
+  exhaustive.
 
 ## V2 Retirement Ledger Impact
 
@@ -382,26 +495,31 @@ Debt accepted:
   temporary process/tooling debt because they replace repeated manual
   reconstruction and live-job mistakes. They must remain validators/projections,
   not approval authorities.
+- If the projection causes more manual work than it removes after two cycles,
+  simplify it or drop it.
 
 ## Recommended Implementation Sequence
 
-1. Add the approval block template to Captain-Deputy and package guidance.
-2. Add `Docs/AGENTS/V2_Active_Slice.schema.json` and one minimal
+1. Add the compact work-envelope / approval block to Captain-Deputy and package
+   guidance for new gated packages only.
+2. Add `Docs/AGENTS/V2_Active_Slice.schema.json` and one minimal advisory
    `Docs/AGENTS/V2_Active_Slice.json` projection for the current slice.
-3. Add `npm run v2:active-slice:check`.
-4. Add `npm run v2:preflight-canary`.
-5. Add `npm run v2:capture-canary -- <jobId>`.
+3. Add `npm run v2:active-slice:check` in advisory mode first.
+4. Add `npm run v2:capture-canary -- <jobId>` as evidence-only automation over
+   existing routes.
+5. Add `npm run v2:preflight-canary` with blocker/warning/info output and gate
+   mode limited to the four transition gates.
 6. After one or two report-review/tranche cycles, revisit WIP/handoff pruning.
 7. Split boundary guard only through a focused coverage-preserving package.
 
-## Do Not Do
+## Non-Goals
 
-- Do not treat the active-slice file as approval authority.
-- Do not retrofit every historical WIP package.
-- Do not block canaries on unrelated docs dirt unless it affects provenance.
-- Do not make capture tooling classify report quality.
-- Do not create new hidden runtime routes only for process convenience.
-- Do not split the boundary guard during the active value path without a safe
+- No new approval authority.
+- No retroactive rewrite of historical WIP packages.
+- No blocker for unrelated docs dirt.
+- No second report-quality classifier.
+- No new hidden runtime route only for process convenience.
+- No boundary-guard split during the active value path without a safe
   coverage-preserving package.
 
 ## Captain Decision Needed Before Implementation
