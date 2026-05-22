@@ -19,27 +19,31 @@ from observed report defects.
 
 ## Current Implementation Anchor
 
-Latest committed implementation anchor:
+Latest committed source/docs anchor:
+
+`c262d83e docs(v2): record hj40 result and hj41 repair`
+
+Latest implementation repair:
 
 `fbfbdad5 fix(v2): balance source material provider order`
 
-The current committed repair is HJ41: a narrow, structural Source Material
-provider-order balance. HJ40 restored internal alpha report generation for the
-German asylum aggregate input, but the report still relied on one weak OpenAlex
-gender-composition item instead of direct current-stock evidence. HJ41 amends
-the existing W3-B Source Material merge order so OpenAlex abstracts cannot
-prefix-dominate the shared Source Material budget when Serper or Wikimedia
-material is also available. It does not add a provider, parser, retry path,
-route, public behavior, prompt/schema change, cache/SR/storage, semantic
-deterministic ranking, or V1 work.
+HJ41 validated the structural Source Material provider-order balance. The
+default manual V2 path still creates a complete internal alpha report for the
+German asylum aggregate input, and public/default containment still holds. The
+remaining observed defect is source usefulness: the report now cites monthly
+inflow evidence instead of weak OpenAlex composition evidence, but still lacks
+direct current-stock/population evidence for the claimed `235,000+`
+asylum-domain population.
 
-Runtime has not yet been refreshed to HJ41 for the next validation job.
+The next repair should stay focused on acquisition/source-selection quality for
+direct stock material. Do not add another reachability layer unless the next
+evidence shows the report path is blocked again.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-40-ASYLUM-235000-DE-MEASUREMENT-FRAME-QUERY-RERUN`
+`X7-HJ-41-ASYLUM-235000-DE-SOURCE-MATERIAL-PROVIDER-BALANCE-RERUN`
 
 Result document:
 
@@ -111,6 +115,16 @@ Important evidence:
   not surface direct current-stock/population evidence. HJ41 therefore amends
   W3-B Source Material ordering so OpenAlex abstracts cannot structurally
   dominate the first source records when Serper/Wikimedia material exists.
+- `347dc6acb71841f0b43a1fc1653d61e4` (German asylum aggregate) ran on HJ41
+  after structural Source Material provider-order balancing. It stayed on
+  `claimboundary-v2`, public/default containment held, and authenticated admin
+  reportMarkdown was `3838` characters. The report quality improved only
+  partially: it now cited June 2025 asylum inflow evidence (`2,213` new
+  applications) and correctly identified the measurement-frame mismatch, but it
+  still did not find direct current-stock/population evidence for the
+  `235,000+` asylum-domain population claim. The next lane is therefore a
+  focused acquisition/source-selection quality repair, not another report-path
+  reachability repair.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -215,27 +229,24 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `3`;
+- remaining: `15`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this HJ40 result / HJ41 repair lane sync.
-2. Refresh runtime to the latest committed HJ41 source/docs anchor, verify
-   Web/API/proxy commit match, and run one default/manual V2 validation job for
+1. Commit this HJ41 result lane sync.
+2. Apply one focused HJ42 acquisition/source-selection quality repair aimed at
+   direct stock/current-count material for the German asylum aggregate input.
+3. Keep the next repair inside existing Source Material/query/source-selection
+   seams if possible. If the repair requires document/spreadsheet/PDF parser
+   execution, source/provider expansion, or another hidden mechanism, reconvene
+   Steer-Co first and keep the package bounded.
+4. After the committed repair, refresh runtime, verify Web/API/proxy commit
+   match, and run one default/manual V2 validation job for
    `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
-   After the job completes, use `node scripts/capture-canary-evidence.mjs --job-id <id>`
-   for automated containment verification and ledger-consumption stub generation.
-3. If HJ41 produces an internal report, review the concrete report defect
-   against Captain quality expectations and raise one single bar from observed
-   evidence.
-4. If HJ41 still relies on weak OpenAlex-only or otherwise non-material source
-   evidence, shift from reachability/source-order repairs to a focused
-   acquisition/source-selection quality review before spending another live job
-   on this claim family.
 
 ## Stop Conditions
 

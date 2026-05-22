@@ -3929,3 +3929,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39 and HJ40 consumed `2`; `16` remain before the HJ41 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ41, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ41 Report-Quality Result
+
+**Task:** Validate HJ41 after structural Source Material provider-order balancing so OpenAlex abstracts could not prefix-dominate Serper/Wikimedia material.
+
+**Result:** HJ41 job `347dc6acb71841f0b43a1fc1653d61e4` ran through the default manual V2 path on runtime `c262d83e7962d46a4b6376e5294653c8d83f060f`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown null). The authenticated admin reportMarkdown was `3838` characters and produced a complete internal alpha report.
+
+**Observed report defect:** The provider-order repair improved the failure mode but did not solve source usefulness. The report cited June 2025 monthly asylum inflow (`2,213` new applications) and correctly stated that this cannot verify the claimed current stock/population of `235,000+` persons. The next single bar should be acquisition/source-selection quality for direct current-stock material, not another report-path reachability layer.
+
+**Canary evidence:** `Docs/WIP/canary-evidence-347dc6acb71841f0b43a1fc1653d61e4.json` records the job id, implementation commit, and containment checks. The helper's optional artifact-route capture still has a PowerShell compatibility issue with `-SkipHttpErrorCheck`; that did not affect the job result or public/default containment verification.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, and HJ41 consumed `3`; `15` remain before the next validation job.
+
+**Next:** Commit this HJ41 lane/ledger sync, then implement one focused HJ42 repair in existing acquisition/source-selection seams. If the next repair requires document/spreadsheet/PDF parser execution, source/provider expansion, public behavior, cache/SR/storage, ACS/direct URL support, or V1 work, reconvene Steer-Co before editing.

@@ -1,0 +1,34 @@
+{
+  "jobId": "347dc6acb71841f0b43a1fc1653d61e4",
+  "implementationCommit": "c262d83e7962d46a4b6376e5294653c8d83f060f",
+  "createdAt": "2026-05-22T21:09:38.3078037",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    }
+  ],
+  "capturedAt": "2026-05-22T21:11:58.486Z",
+  "sliceId": "X7-HJ-41-ASYLUM-235000-DE-SOURCE-MATERIAL-PROVIDER-BALANCE-RERUN",
+  "classification": "PASS_X7_HJ41_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_FLOW_EVIDENCE_DEFECT_PERSISTS",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 15,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer"
+}
