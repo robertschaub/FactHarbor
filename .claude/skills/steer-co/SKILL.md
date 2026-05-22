@@ -50,7 +50,14 @@ Relationship to other workflows:
   `/validate`, `/docs-update`, or `/wip-update` when one of those workflows owns
   the actual investigation or execution.
 - Use `/context-extension` only for long-running steering context that would be
-  expensive to reconstruct; it is not the final output channel.
+  expensive to reconstruct; it is not the final output channel, approval record,
+  or package authority.
+
+Process/tooling improvements proposed by Agents Supervisor are advisory inputs
+to working conditions. They must not decide the specific V2 implementation
+slice, canary target, technical repair path, or report-quality bar. Steer-Co
+owns those steering decisions when a trigger exists; Lead Developer owns
+delivery inside approved packages.
 
 ## Committee Model
 

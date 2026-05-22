@@ -9,6 +9,8 @@
 - Coordinating Steer-Co for steering, dissent resolution, and model-diverse review
 - Coordinating the Lead Developer delivery lane and implementation team
 - Applying dynamic reasoning effort through `/reasoning-budget`
+- Using `/context-extension` selectively for expensive-to-reconstruct working
+  context, not as a second handoff or approval system
 - Running mechanical debt-sensor checkpoints for V2/debt-sensitive workstreams
 - Enforcing V2 scorecard and retirement-ledger impact reporting for substantial V2 packages
 - Monitoring progress, validation, reviewer findings, handoffs, and escalation triggers
@@ -22,6 +24,9 @@
 - Can pause or redirect a delivery lane when verifier failure, scope drift, or material dissent appears
 - Must run or require `npm run debt:sensors` for V2/debt-sensitive intake, debt-sensitive Steer-Co packets, V2 Consolidation Gate packages, and closeout; treat `advisory_warn` as steering context unless Captain requires `--fail-on-warn`
 - Must require `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` for substantial V2 packages
+- May adopt Agents Supervisor process improvements only when they improve
+  working conditions without steering the specific active V2 implementation
+  direction
 - **Cannot** overrule the Captain, bypass standing approval gates, approve prompt/model/config/live-job changes that require human approval, or make hard-to-reverse strategic decisions
 - **Cannot** implement application code directly; delegate implementation to Lead Developer or implementing roles
 - Must escalate to the Captain when high risk occurs, consent fails on an essential decision, authority is unclear, or the decision materially changes product direction, architecture, public behavior, security/data handling, cost posture, or quality bar
@@ -45,6 +50,17 @@ reviewer quorum and timebox. Default timeboxes are 30 minutes for narrow review,
 steering. Timeout or silence is never approval; proceed with reduced quorum only
 when the decision remains low-risk and reversible, otherwise replace the reviewer
 or escalate.
+
+## Context Continuity
+
+Use `/context-extension` for phase-boundary working state, delegation packets,
+material subagent/debate findings, or compaction/resume handoffs when the state
+would be expensive to reconstruct. Do not use it for routine status, ordinary
+package closeout, approval authority, or final completion records. Completion
+still goes through the Exchange Protocol, `Agent_Outputs.md`, handoff files, or
+formal WIP docs. Captain Deputy normally owns shared context artifacts;
+subagents return compact findings unless explicitly assigned a disjoint
+artifact.
 
 ## Required Reading
 

@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Agents Supervisor | Codex (GPT-5.5) | V2 Process-Only Boundary And Context Continuity -- [Standard] [open-items: yes]
+**For next agent:** Updated Captain-Deputy, Steer-Co, shared collaboration rules, Captain Deputy role guidance, and the V2 process improvement plan to clarify that Agents Supervisor work improves process/working conditions only. Specific active V2 implementation sequencing stays with the Captain-Deputy workstream: Steer-Co for steering decisions when triggered and Lead Developer for delivery inside approved packages.
+**Warnings:** `/context-extension` is now recommended selectively for phase boundaries, complex delegation packets, material subagent/debate findings, and compaction/resume continuity. It is not a required closeout, approval record, or second handoff system.
+-> Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md
+
+---
 ### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Steer-Co / Claude Opus 4.6 | V2 HighJump HJ18 Internal Report Writer -- [Significant] [open-items: yes]
 **For next agent:** HJ18 implements the first hidden/internal LLM report-writer path via `aggregation_narrative`, preserving W7-B verdict values and EvidenceItem citations while exposing only hash/length/provenance by default. Focused HJ18 tests, full `analyzer-v2-runtime`, full `analyzer-v2`, V2 gates, debt sensors, build, index, and diff checks passed.
 **Warnings:** No HJ18 canary has run yet. Public V2 remains blocked/precutover/damaged; HJ18 still needs one committed-runtime canary and report review before W8-G can be merged or quarantined.

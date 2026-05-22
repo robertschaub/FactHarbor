@@ -65,6 +65,11 @@ Reduce context reconstruction by converting current authority into a small,
 validated, machine-readable projection. Do not create a second source of truth
 or a second approval workflow.
 
+This plan is process-only. It must not decide the active V2 implementation
+slice, canary target, technical repair path, or report-quality bar. Those remain
+inside the Captain-Deputy workstream: Steer-Co owns steering decisions when a
+trigger exists, and Lead Developer owns delivery inside approved packages.
+
 Every process addition must either:
 
 - replace manual reconstruction;
@@ -411,6 +416,11 @@ failure, scope expansion, public leak risk, budget/approval mismatch, net-new
 mechanism increase, or unresolved reviewer dissent. Clean passes, local
 implementation inside an approved envelope, and evidence-only capture do not
 require Steer-Co.
+
+Captain Deputy may use `/context-extension` as a selective working-memory aid
+for phase-boundary checkpoints, complex delegation packets, verified subagent
+findings, and compaction/resume continuity. It is not required for ordinary
+packages and must not become a closeout, approval, or handoff substitute.
 
 ## V2 Scorecard Impact
 

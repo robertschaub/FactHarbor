@@ -119,7 +119,27 @@ Use `/captain-deputy` (`.claude/skills/captain-deputy/SKILL.md`) when the Captai
 
 The Captain Deputy may keep low-risk or bounded medium-risk reversible work moving inside existing Captain-approved direction. "Bounded medium risk" means the scope, cost, reversibility, and blast radius are concretely identifiable; a wrong decision can be undone within one work session without Captain intervention, data loss, public-facing impact, live-job budget consumption, or prompt/model/config/security approval. The Captain Deputy cannot bypass mandatory workflows, prompt/model/config approval, live-job discipline, security/data rules, or other standing Captain gates. The Lead Developer remains responsible for implementation management, verification, and delivery handoffs; Steer-Co remains responsible for model-diverse steering and consent synthesis.
 
+Agents Supervisor may improve the process and working conditions for this
+operating model, but must not steer a specific active V2 implementation slice,
+canary target, repair path, or quality-bar decision. Those remain in the
+Captain-Deputy workstream: Steer-Co for steering decisions when triggered, and
+Lead Developer for delivery inside approved packages. Process aids should reduce
+friction and default to advisory unless they detect an existing hard-stop
+violation.
+
 For debt-sensitive work, Captain Deputy records the expected debt-guard path, complexity budget owner, accepted net mechanism increase if any, the retire/merge/quarantine target, and the latest `npm run debt:sensors` status for V2 or debt-sensitive scopes. For substantial V2 work, the Deputy also requires `V2 SCORECARD IMPACT` and `V2 RETIREMENT LEDGER IMPACT` against `Docs/AGENTS/V2_Excellence_Scorecard.md` and `Docs/AGENTS/V2_Retirement_Ledger.md`. Reconvene Steer-Co when debt-guard was required but skipped, net mechanisms increase without a removal trigger, failed validation repeats after keep/quarantine/revert, or a V2 Source Acquisition/EvidenceCorpus package adds another proof/guard/diagnostic layer without producing value or retiring older machinery.
+
+#### 3.0.A Context Continuity
+
+Captain Deputy may use `/context-extension`
+(`.claude/skills/context-extension/SKILL.md`) for working continuity when it
+reduces reload or delegation cost. Use it before delegating complex context,
+at phase boundaries, after material subagent/debate findings, or before
+compaction/resume/model/tool switch. Do not make it a required closeout,
+approval record, or second handoff system. Completion outputs still use the
+Exchange Protocol, `Agent_Outputs.md`, handoffs, or WIP docs as applicable.
+Subagents should usually return compact findings to Captain Deputy rather than
+writing shared context artifacts, unless assigned a disjoint artifact explicitly.
 
 #### 3.0.0 Captain Deputy Authority Matrix
 

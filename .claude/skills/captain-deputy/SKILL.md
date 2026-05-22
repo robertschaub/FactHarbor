@@ -25,6 +25,13 @@ This skill is not a generic skill router. Mandatory gates, explicit skill
 assignments, role activation, `fhAgentKnowledge.preflight_task`, and path rules
 still apply before the deputy chooses how to coordinate work.
 
+Process improvement work is separate from V2 implementation steering. When an
+Agents Supervisor or tooling lane proposes better working conditions, the
+Deputy may adopt the process aid only if it reduces friction and does not steer
+the specific V2 technical direction. Specific implementation sequencing remains
+owned by Steer-Co for steering decisions and by the Lead Developer for delivery
+inside approved packages.
+
 Captain Deputy is model-agnostic unless the Captain pins a model. For active
 autonomous coordination, prefer the Captain-assigned Leader model from
 `Docs/AGENTS/Active_Team_Composition.md` and raise reasoning through
@@ -117,6 +124,26 @@ authority, safety, cost, or quality. Timeout or silence is never approval.
    for the Captain stop conditions above.
 8. **Close:** Consolidate the result into the required Exchange Protocol output
    and state remaining risks, validation, and next autonomous trigger.
+
+## Context Continuity
+
+Use `/context-extension` selectively when it lowers handoff or reload cost. It
+is a working-memory aid, not a new approval record, final handoff, or required
+closeout artifact.
+
+Use it for:
+
+- phase-boundary checkpoints where state would be expensive to reconstruct;
+- compact exchange packets before delegating complex V2 context to subagents;
+- verified subagent/debate findings that affect the next decision;
+- compaction, pause, resume, model switch, or tool switch in an active
+  workstream.
+
+Do not use it for routine status updates, small packages, completion reporting,
+or decisions already preserved in `Agent_Outputs.md`, handoff files, WIP plans,
+or authoritative ledgers. Captain Deputy should normally own writes to shared
+context-extension artifacts; subagents return compact findings unless
+explicitly assigned to write a disjoint artifact.
 
 ## Debt-Guard Control
 
