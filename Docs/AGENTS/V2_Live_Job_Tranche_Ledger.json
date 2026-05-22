@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 12,
+    "currentRemaining": 11,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
       "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 12,
-      "consumptionEntriesInThisTranche": 6,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 produced Source Material records through bounded linked-page materialization, then exposed a downstream accepted-text corpus-gate bug. Commit 13bd3c39 repairs that existing downstream gate before the HJ37B rerun.",
+      "currentRemaining": 11,
+      "consumptionEntriesInThisTranche": 7,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 produced Source Material records through bounded linked-page materialization, then exposed a downstream accepted-text corpus-gate bug. HJ37B passed accepted_text through W4-C but exposed a truncation-flag gate at W4-G. Commit f479df9f repairs that existing downstream gate before the HJ37C rerun.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1074,6 +1074,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_stage_reached",
         "note": "HJ37 reran the German asylum aggregate input after bounded Serper linked-page Source Material. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 2, then W4-G blocked before sidecars with w4c_not_completed; W4-H/W4-I/W5 were consequently blocked and source-content packets were 0. The observed failure is a downstream corpus gate still accepting only accepted_json, so 13bd3c39 amends the existing W4C/W4D content-type guards to admit accepted_text without changing extraction semantics."
+      },
+      {
+        "sliceId": "X7-HJ-37B-ASYLUM-235000-DE-ACCEPTED-TEXT-DOWNSTREAM-RERUN",
+        "jobId": "d06d475e9e6e455dac8de6d3066924d7",
+        "classification": "STOP_X7_HJ37B_TRUNCATED_BOUNDED_SOURCE_MATERIAL_BLOCKED_AT_W4G",
+        "implementationCommit": "0ec22c69a7e02080b2936e0f56d53bdcd41ef230",
+        "runtimeCommit": "0ec22c69a7e02080b2936e0f56d53bdcd41ef230",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "f479df9f_bounded_truncation_downstream_preservation_pending_validation",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_stage_reached",
+        "note": "HJ37B reran the German asylum aggregate input after accepted_text downstream admission. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 1, then W4-G blocked with source_material_text_oversized because the bounded linked-page Source Material carried truncationApplied=true at the 4096-byte cap. The observed failure is a downstream cap/provenance mismatch, so f479df9f preserves the truncation flag through W4-A/W4-C/W4-D/W4-G/W4-H while keeping the same byte caps and hash checks."
       }
     ],
     "blockedPending": [],

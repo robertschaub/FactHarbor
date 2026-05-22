@@ -21,24 +21,23 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`13bd3c39 fix(v2): admit accepted text source material downstream`
+`f479df9f fix(v2): preserve bounded source truncation downstream`
 
-The current committed repair is HJ37B: accepted-text downstream corpus
-admission. HJ37's bounded Serper linked-page materialization produced Source
-Material records, but W4-C/W4-D still treated `accepted_json` as the only
-admissible content type and blocked the newly supported `accepted_text` records
-before W4-G sidecars. HJ37B amends the existing W4C/W4D content-type guards to
-accept `accepted_text` while preserving all existing hidden/admin-only
-containment, text-free corpus-admission/shell projections, extraction closure,
-and public/default blocked-precutover behavior.
+The current committed repair is HJ37C: bounded source truncation preservation.
+HJ37B passed `accepted_text` material through W4-C, then W4-G blocked because
+the bounded linked-page record truthfully carried `truncationApplied=true` after
+being capped to 4096 bytes. HJ37C preserves that truncation flag through W4-A,
+W4-C, W4-D, W4-G, and W4-H while keeping the same byte caps, hash checks,
+hidden/admin-only containment, extraction closure, and public/default
+blocked-precutover behavior.
 
-Runtime has not yet been refreshed to HJ37B for the next validation job.
+Runtime has not yet been refreshed to HJ37C for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-37-ASYLUM-235000-DE-SERPER-LINKED-PAGE-SOURCE-MATERIAL-RERUN`
+`X7-HJ-37B-ASYLUM-235000-DE-ACCEPTED-TEXT-DOWNSTREAM-RERUN`
 
 Result document:
 
@@ -68,6 +67,15 @@ Important evidence:
 - HJ37B is therefore an in-place downstream compatibility repair for the new
   Source Material content type, not another source/provider or W5 prompt
   lowering.
+- `d06d475e9e6e455dac8de6d3066924d7` (German asylum aggregate) ran on HJ37B
+  and stayed on `claimboundary-v2`; public/default containment held. It
+  produced Source Material records `1`, then W4-G blocked with
+  `source_material_text_oversized` because the bounded linked-page Source
+  Material carried `truncationApplied=true` at the 4096-byte cap. W4-H/W4-I/W5
+  remained blocked and source-content packets stayed `0`.
+- HJ37C is therefore an in-place cap/provenance repair: allow already-bounded
+  truncated source text through downstream handoff while preserving the same
+  byte limits and hash checks.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -172,24 +180,24 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `6`;
-- remaining: `12`;
+- consumed after latest reset: `7`;
+- remaining: `11`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ37B lane/ledger sync.
-2. Refresh runtime to the committed HJ37B state and verify Web/API/proxy runtime
+1. Commit the HJ37C lane/ledger sync.
+2. Refresh runtime to the committed HJ37C state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ37B produces a hidden internal report, review report quality before
+4. If HJ37C produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ37B materially increases Source Material bytes but still reaches
+5. If HJ37C materially increases Source Material bytes but still reaches
    `no_extractable_evidence`, inspect the bounded linked-page material and W5
    extraction decision before another prompt or source-depth repair.
-6. If HJ37B still blocks at W4-C/W4-D/W4-G, treat it as a downstream lineage
+6. If HJ37C still blocks at W4-C/W4-D/W4-G, treat it as a downstream lineage
    compatibility bug and repair the existing gate rather than changing W5.
 7. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
