@@ -8,12 +8,18 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   sourceMaterialKindIsSupported,
+  type SourceMaterialPageSummaryContentTypeCategory,
   type SourceMaterialKind,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION =
   "v2.evidence-lifecycle.source-material-to-evidence-corpus-readiness.x7w4a";
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS = 9;
+
+type EvidenceCorpusAcceptedSourceMaterialContentType = Extract<
+  SourceMaterialPageSummaryContentTypeCategory,
+  "accepted_json" | "accepted_text"
+>;
 
 export type EvidenceCorpusSourceMaterialReadinessStatus =
   | "source_material_structurally_admissible_evidence_corpus_gate_closed"
@@ -64,7 +70,7 @@ export type EvidenceCorpusSourceMaterialReadinessRecordSummary = {
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextCharLength: number;
   readonly responseStatusCategory: "success_2xx";
-  readonly contentTypeCategory: "accepted_json";
+  readonly contentTypeCategory: EvidenceCorpusAcceptedSourceMaterialContentType;
 };
 
 export type EvidenceCorpusSourceMaterialReadinessDecision = {
@@ -160,6 +166,12 @@ function boundedCount(value: unknown): number {
 
 function safeStatus(value: unknown): string | null {
   return typeof value === "string" && /^[a-z0-9_.-]+$/.test(value) ? value : null;
+}
+
+function isAcceptedSourceMaterialContentType(
+  value: unknown,
+): value is EvidenceCorpusAcceptedSourceMaterialContentType {
+  return value === "accepted_json" || value === "accepted_text";
 }
 
 function parentSummary(input: unknown): EvidenceCorpusSourceMaterialReadinessParentSummary {
@@ -379,7 +391,10 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
       stopReason: "structural_exception",
     };
   }
-  if (record.responseStatusCategory !== "success_2xx" || record.contentTypeCategory !== "accepted_json") {
+  if (
+    record.responseStatusCategory !== "success_2xx"
+    || !isAcceptedSourceMaterialContentType(record.contentTypeCategory)
+  ) {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
       stopReason: "fetch_diagnostic_not_success",
@@ -450,7 +465,7 @@ function validateRecord(record: unknown): EvidenceCorpusSourceMaterialReadinessR
     sourceMaterialTextByteLength: byteLength,
     sourceMaterialTextCharLength: charLength(record.sourceMaterialText),
     responseStatusCategory: "success_2xx",
-    contentTypeCategory: "accepted_json",
+    contentTypeCategory: record.contentTypeCategory,
   };
 }
 

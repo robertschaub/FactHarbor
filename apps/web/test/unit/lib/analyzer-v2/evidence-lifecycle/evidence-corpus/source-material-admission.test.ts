@@ -239,6 +239,31 @@ describe("Analyzer V2 W4-C Source Material corpus admission core", () => {
     expect(serialized).not.toContain("reportMarkdown");
   });
 
+  it("preserves accepted-text provider-linked page material through corpus admission", () => {
+    const readiness = validReadiness();
+    const record = {
+      ...(readiness.sourceMaterialRecord as Record<string, unknown>),
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      contentTypeCategory: "accepted_text",
+    };
+    const result = admission({
+      ...readiness,
+      sourceMaterialRecord: record,
+      sourceMaterialRecords: [record],
+    });
+
+    expect(result.status).toBe("source_material_admitted_to_corpus_input_gate_closed");
+    expect(result.corpusAdmissionInput).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      contentTypeCategory: "accepted_text",
+    });
+    expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
+  });
+
   it("admits nine text-free W4-A readiness records while keeping corpus construction closed", () => {
     const base = validSourceMaterialPageSummary();
     const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;

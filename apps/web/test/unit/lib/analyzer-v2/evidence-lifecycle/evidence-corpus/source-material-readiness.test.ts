@@ -196,6 +196,42 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
+  it("admits bounded provider-linked page text records with accepted text content type", () => {
+    const text = "Bounded fetched page text is source material for corpus readiness.";
+    const hash = sha256Text(text);
+    const base = validDecision();
+    const record = {
+      ...(base.sourceMaterialRecords[0] as Record<string, unknown>),
+      sourceMaterialId: `SOURCE_MATERIAL_LINKED_PAGE_${hash.slice(0, 16).toUpperCase()}`,
+      locatorRef: "OPAQUE_SERPER_LINKED_PAGE_1_1_ABCDEF123456",
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      sourceMaterialText: text,
+      sourceMaterialTextHash: hash,
+      sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
+      sourceMaterialTextCharLength: Array.from(text).length,
+      contentTypeCategory: "accepted_text",
+    };
+
+    const result = readiness(validDecision({
+      attemptedFetchCount: 0,
+      fetchDiagnosticCount: 0,
+      sourceMaterialRecords: [record],
+      fetchDiagnostics: [],
+    }));
+
+    expect(result.status).toBe("source_material_structurally_admissible_evidence_corpus_gate_closed");
+    expect(result.sourceMaterialRecords[0]).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      sourceMaterialTextHash: hash,
+      contentTypeCategory: "accepted_text",
+    });
+    expect(JSON.stringify(result)).not.toContain(text);
+  });
+
   it("admits bounded nine-record W3-B fan-in while keeping corpus build closed", () => {
     const base = validDecision();
     const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;

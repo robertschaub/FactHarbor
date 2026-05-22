@@ -232,6 +232,29 @@ describe("Analyzer V2 W4-D EvidenceCorpus shell core", () => {
     expect(serialized).not.toContain("reportMarkdown");
   });
 
+  it("creates a text-free shell from accepted-text provider-linked page admission", () => {
+    const admission = validAdmission();
+    const adjustedAdmission = withAdmissionInput(admission, {
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      contentTypeCategory: "accepted_text",
+    });
+
+    const result = shell(adjustedAdmission);
+
+    expect(result.status).toBe("evidence_corpus_shell_created_extraction_gate_closed");
+    expect(result.evidenceCorpus).toMatchObject({
+      providerIds: ["serper_web_search"],
+      sourceMaterialEndpointIds: ["ep_serper_linked_page_fetch"],
+      sourceMaterialKinds: ["provider_search_result_page_text_bounded"],
+      corpusTextAccess: "closed",
+      semanticExtractionAuthorized: false,
+      evidenceItemExtractionAuthorized: false,
+    });
+    expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
+  });
+
   it("creates a text-free shell from deduplicated W4-C admission fan-in", () => {
     const base = validSourceMaterialPageSummary();
     const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;

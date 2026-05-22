@@ -7,6 +7,7 @@ import {
 } from "./source-material-readiness";
 import {
   sourceMaterialKindIsSupported,
+  type SourceMaterialPageSummaryContentTypeCategory,
   type SourceMaterialKind,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
@@ -19,6 +20,11 @@ export const EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_INPUT_VERSION =
   "v2.evidence-lifecycle.evidence-corpus-admission-input.x7w4c";
 
 export const EVIDENCE_CORPUS_SOURCE_MATERIAL_ADMISSION_MAX_TEXT_BYTES = 4096;
+
+type EvidenceCorpusAcceptedSourceMaterialContentType = Extract<
+  SourceMaterialPageSummaryContentTypeCategory,
+  "accepted_json" | "accepted_text"
+>;
 
 export type EvidenceCorpusSourceMaterialAdmissionStatus =
   | "source_material_admitted_to_corpus_input_gate_closed"
@@ -65,7 +71,7 @@ export type EvidenceCorpusAdmissionInput = {
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextCharLength: number;
   readonly responseStatusCategory: "success_2xx";
-  readonly contentTypeCategory: "accepted_json";
+  readonly contentTypeCategory: EvidenceCorpusAcceptedSourceMaterialContentType;
   readonly truncationApplied: false;
   readonly sourceMaterialRecordCount: number;
   readonly readinessDecisionVersion: typeof EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION;
@@ -215,6 +221,12 @@ function boundedCount(value: unknown): number {
 
 function safeStatus(value: unknown): string | null {
   return typeof value === "string" && /^[a-z0-9_.-]+$/.test(value) ? value : null;
+}
+
+function isAcceptedSourceMaterialContentType(
+  value: unknown,
+): value is EvidenceCorpusAcceptedSourceMaterialContentType {
+  return value === "accepted_json" || value === "accepted_text";
 }
 
 function parentSummary(input: unknown): EvidenceCorpusSourceMaterialAdmissionParentSummary {
@@ -412,7 +424,10 @@ function validateRecord(
       stopReason: "source_material_length_invalid",
     };
   }
-  if (record.responseStatusCategory !== "success_2xx" || record.contentTypeCategory !== "accepted_json") {
+  if (
+    record.responseStatusCategory !== "success_2xx"
+    || !isAcceptedSourceMaterialContentType(record.contentTypeCategory)
+  ) {
     return {
       status: "blocked_pre_evidence_corpus_readiness_not_admissible",
       stopReason: "w4a_not_completed",
@@ -449,7 +464,7 @@ function validateRecord(
     sourceMaterialTextByteLength: Number(sourceMaterialTextByteLength),
     sourceMaterialTextCharLength: Number(sourceMaterialTextCharLength),
     responseStatusCategory: "success_2xx",
-    contentTypeCategory: "accepted_json",
+    contentTypeCategory: record.contentTypeCategory,
     truncationApplied: false,
     sourceMaterialRecordCount,
     readinessDecisionVersion: EVIDENCE_CORPUS_SOURCE_MATERIAL_READINESS_VERSION,

@@ -10,6 +10,7 @@ import {
 } from "./source-material-admission";
 import {
   sourceMaterialKindIsSupported,
+  type SourceMaterialPageSummaryContentTypeCategory,
   type SourceMaterialKind,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
@@ -18,6 +19,11 @@ export const EVIDENCE_CORPUS_SHELL_DECISION_VERSION =
 
 export const EVIDENCE_CORPUS_SHELL_VERSION =
   "v2.evidence-lifecycle.evidence-corpus.shell.x7w4d";
+
+type EvidenceCorpusAcceptedSourceMaterialContentType = Extract<
+  SourceMaterialPageSummaryContentTypeCategory,
+  "accepted_json" | "accepted_text"
+>;
 
 export type EvidenceCorpusShellRuntimeOwnership =
   | "owned"
@@ -244,6 +250,12 @@ function uniqueStrings(values: readonly string[]): readonly string[] {
 
 function safeStatus(value: unknown): string | null {
   return typeof value === "string" && /^[a-z0-9_.-]+$/.test(value) ? value : null;
+}
+
+function isAcceptedSourceMaterialContentType(
+  value: unknown,
+): value is EvidenceCorpusAcceptedSourceMaterialContentType {
+  return value === "accepted_json" || value === "accepted_text";
 }
 
 function parentSummary(input: unknown): EvidenceCorpusShellParentSummary {
@@ -479,7 +491,7 @@ function validateAdmissionInput(value: unknown): EvidenceCorpusAdmissionInput | 
   }
   if (
     value.responseStatusCategory !== "success_2xx"
-    || value.contentTypeCategory !== "accepted_json"
+    || !isAcceptedSourceMaterialContentType(value.contentTypeCategory)
     || value.truncationApplied !== false
   ) {
     return {
