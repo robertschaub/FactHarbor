@@ -1,0 +1,54 @@
+{
+  "jobId": "0ef18bfa476048cfa63aa2a147a7341e",
+  "implementationCommit": "ccfc78d5204b7b8b30a5451647696a6eb9223a53",
+  "createdAt": "2026-05-22T21:48:29.7784207",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    }
+  ],
+  "capturedAt": "2026-05-22T21:50:42.463Z",
+  "sliceId": "X7-HJ-43-ASYLUM-235000-DE-SERPER-CARRY-RERUN",
+  "classification": "PASS_X7_HJ43_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_INDIRECT_EVIDENCE_DEFECT_PERSISTS",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 13,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer",
+  "informationYield": "report_produced",
+  "adminReportMarkdownLength": 4748,
+  "artifactSummary": {
+    "candidateProviderNetworkStatus": "candidate_provider_network_completed",
+    "candidateProviderNetworkCandidateCount": 0,
+    "sourceMaterialStatus": "source_material_page_summary_completed",
+    "sourceMaterialRecordCount": 8,
+    "sourceMaterialProviders": [
+      "serper_web_search",
+      "openalex"
+    ],
+    "evidenceExtractionStatus": "hidden_evidence_item_extraction_completed",
+    "evidenceItemCount": 2,
+    "evidenceItemIds": [
+      "EVI_ASYLUM_POPULATION_FLOW_2011_2024",
+      "EVI_TOTAL_POPULATION_CH_END_2024"
+    ],
+    "publicLeakCheck": "public/default reportMarkdown null; public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged",
+    "observedReportDefect": "Complete internal alpha report still lacks direct current-stock/population evidence; cited historical cumulative inflow and total population context only."
+  }
+}

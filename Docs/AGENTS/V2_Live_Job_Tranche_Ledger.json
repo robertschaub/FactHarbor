@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 14,
+    "currentRemaining": 13,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
       "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 14,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient. HJ40 and HJ41 produced internal alpha reports but still lacked direct current-stock evidence. HJ42 consumed one job and regressed to zero Source Material because the candidate provider network returned zero candidates and was marked damaged before Serper-provided Source Material could carry the run. The next repair should narrow the existing W3-B gate to allow bounded provided Serper Source Material to proceed when the Wikimedia candidate network has zero candidates, while keeping W5 semantic selection and public containment closed.",
+      "currentRemaining": 13,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39-HJ43 consumed five jobs. HJ43 restored complete internal alpha report generation with 8 Source Material records and 2 EvidenceItems, but the report still lacks direct current-stock/population evidence and cites only historical inflow plus total population context. The next step should raise the source-acquisition quality bar toward direct current-stock material, likely via a bounded official document/spreadsheet/PDF or source-material strategy rather than another recall/cap tweak.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1178,6 +1178,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "HJ42 reran the German asylum aggregate input after stronger bounded Serper recall. Public/default containment held. The run produced only a 1170-character admin stop summary: Candidate Provider Network status candidate_provider_network_damaged_structural, damagedReason candidate_runtime_query_coverage_invalid, query outcomes 0/0 candidates and one timeout, Source Material records 0, W4-G w3b_not_completed, W5 blocked_pre_execution. This shows W3-B still gates provided Serper Source Material behind Wikimedia candidate-provider-network completion."
+      },
+      {
+        "sliceId": "X7-HJ-43-ASYLUM-235000-DE-SERPER-CARRY-RERUN",
+        "jobId": "0ef18bfa476048cfa63aa2a147a7341e",
+        "classification": "PASS_X7_HJ43_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_INDIRECT_EVIDENCE_DEFECT_PERSISTS",
+        "implementationCommit": "1797d0ecae2e6d74cf1b2a0fbad535cdce0b4528",
+        "runtimeCommit": "ccfc78d5204b7b8b30a5451647696a6eb9223a53",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj44_direct_current_stock_source_material_strategy",
+        "count": 1,
+        "remainingAfter": 13,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ43 reran the German asylum aggregate input after the Serper carry repair. Public/default containment held. Authenticated admin reportMarkdown was 4748 characters and produced a complete internal alpha report. Hidden artifacts showed Source Material completed with 8 records, W5 extracted 2 EvidenceItems, and the report cited historical cumulative asylum-domain inflow plus total Swiss population context. The report still lacks direct current-stock/population evidence for the 235000+ asylum-domain population claim."
       }
     ],
     "blockedPending": [],

@@ -3981,3 +3981,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, HJ41, and HJ42 consumed `4`; `14` remain before the HJ43 validation run.
 
 **Next:** Commit this lane sync, refresh runtime to HJ43, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ43 Internal Report Result
+
+**Task:** Validate HJ43 after allowing bounded Serper Source Material to carry the hidden chain when Wikimedia candidate search returns zero candidates.
+
+**Result:** HJ43 job `0ef18bfa476048cfa63aa2a147a7341e` ran through the default manual V2 path on runtime `ccfc78d5204b7b8b30a5451647696a6eb9223a53`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown null). The authenticated admin reportMarkdown was `4748` characters and produced a complete internal alpha report.
+
+**Hidden-chain evidence:** Candidate Provider Network completed despite zero Wikimedia candidates; Source Material completed with `8` records from Serper/OpenAlex; W5 completed with `2` EvidenceItems; the internal report result candidate was created. W5 token usage was `9620` input / `1152` output / `10772` total tokens.
+
+**Observed report defect:** The report still lacks direct current-stock/population evidence for the `235,000+` asylum-domain population claim. It cites historical cumulative asylum-domain inflow over 2011-2024 and total Swiss population context. This is a better internal report than HJ41/HJ42, but not yet a high-quality answer to the claim.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39-HJ43 consumed `5`; `13` remain before the next validation job.
+
+**Next:** Use a compact Steer-Co/expert review before HJ44. The report path is open; the next bar should target direct current-stock source acquisition. Another cap/fan-in tweak is likely low yield. Parser/document/spreadsheet/PDF work may be needed, so keep it bounded and explicitly justified before editing.

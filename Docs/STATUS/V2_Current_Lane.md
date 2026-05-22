@@ -42,7 +42,7 @@ provider fallback policy are consolidated.
 
 Latest validation:
 
-`X7-HJ-42-ASYLUM-235000-DE-SERPER-RECALL-RERUN`
+`X7-HJ-43-ASYLUM-235000-DE-SERPER-CARRY-RERUN`
 
 Result document:
 
@@ -135,6 +135,15 @@ Important evidence:
   Material records `0` and W5 `blocked_pre_execution`. The next repair should
   address the existing W3-B dependency on Wikimedia candidate-network
   completion when bounded Serper-provided Source Material is available.
+- `0ef18bfa476048cfa63aa2a147a7341e` (German asylum aggregate) ran on HJ43
+  after the Serper carry repair. It stayed on `claimboundary-v2`,
+  public/default containment held, and authenticated admin reportMarkdown was
+  `4748` characters. Hidden artifacts showed Source Material records `8`,
+  W5 `hidden_evidence_item_extraction_completed`, and EvidenceItems `2`. The
+  report remains `UNVERIFIED` because the extracted material is still indirect:
+  historical cumulative asylum-domain inflow over 2011-2024 and total Swiss
+  population context, not direct current-stock/population evidence for the
+  `235,000+` asylum-domain claim.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -239,22 +248,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `4`;
-- remaining: `14`;
+- consumed after latest reset: `5`;
+- remaining: `13`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this HJ43 repair lane sync.
-2. Refresh runtime to the latest committed HJ43 source/docs anchor, verify
-   Web/API/proxy commit match, and run one default/manual V2 validation job for
-   the German asylum aggregate input.
-3. If HJ43 reaches a complete internal report again, review the concrete report
-   defect and raise one quality bar. If it repeats Source Material zero or W5
-   no-extractable-evidence without useful new information, reconvene Steer-Co
-   before another live job on this claim family.
+1. Commit this HJ43 result lane sync.
+2. Decide HJ44 with a compact Steer-Co/expert review before editing: the
+   current report path is open, but source acquisition still lacks direct
+   current-stock material. The likely next move is a bounded official
+   document/spreadsheet/PDF or source-material strategy, not another recall/cap
+   tweak.
+3. Keep HJ44 HighJump-scoped: one quality bar, no public exposure, no cache/SR
+   storage, no V1 work, and no broad provider expansion.
 
 ## Stop Conditions
 
