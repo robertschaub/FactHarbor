@@ -3611,3 +3611,18 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Process update: advanced `Docs/STATUS/V2_Current_Lane.md` and the pipeline process-improvements note to reflect how the current-lane projection was used during HJ20 without adding a new approval gate.
 - Next action after commit: refresh runtime, verify API/Web runtime hashes, preflight route/default redaction posture, and run exactly one HJ20 canary on the Captain-defined hydrogen input if provenance is clean. Current HighJump budget before that canary remains `6`; no second HJ20 canary is authorized.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ20_W5_Output_Shaping_Repair_Implementation.md
+
+## 2026-05-22 - Agents Supervisor - V2 HighJump Process Review After HJ18-HJ20 Monitor Summary
+
+- Reviewed the monitoring-agent state summary as process evidence, not as V2 technical steering.
+- Updated `Docs/WIP/2026-05-22 Pipeline Dev Process Improvements.md` with a lightweight Agents Supervisor monitoring review.
+- Added process guidance to avoid blocking HJ20 for cleanup, keep `Docs/STATUS/V2_Current_Lane.md` fresh before live execution, record canary information yield, track repeated reduced-quorum review, and pivot to report-quality bar raising after successful report generation.
+- No application code, prompt behavior, gate register, live-job ledger, package authority, or active technical direction was changed.
+
+## 2026-05-22 - Captain Deputy - V2 HighJump HJ20 Canary Provenance Sync
+
+- Classified HJ20 canary job `8fe16cdeef7842058a8a36337a41b82e` as `UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS`.
+- The job ran explicit `claimboundary-v2` on runtime `561f65d865f037f1a81b75dd9a2514a5cd988561+082c771c` and completed with the expected public precutover/damaged envelope, but hidden artifact probes returned app-level HTML `404` responses and the local services stopped before process-local hidden artifacts could be captured.
+- Canary information yield: `new failure` in operational provenance / hidden-route readiness. This is not W5 pass/fail evidence.
+- Updated current-lane, status/backlog, HJ20 WIP, and the live-job ledger. Remaining HighJump budget is now `5`.
+- Steer-Co plus Claude Opus consented to exactly one HJ20 evaluability rerun only after clean git status, runtime refresh, API/Web runtime hash verification, service stability, and hidden-route handler-level JSON preflight.

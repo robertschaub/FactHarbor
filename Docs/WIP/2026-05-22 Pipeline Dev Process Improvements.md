@@ -152,6 +152,54 @@ Next process posture:
 - Do not add another process artifact unless it removes concrete manual work
   from canary provenance, route checks, or result documentation.
 
+HJ20 canary-provenance update:
+
+- The current-lane projection was synced again after HJ20 canary
+  `8fe16cdeef7842058a8a36337a41b82e` became unevaluable due hidden-route
+  readiness / artifact-capture failure.
+- Canary information yield was recorded as `new failure`, specifically an
+  operational provenance failure, not HJ20 W5 pass/fail evidence.
+- The next process aid remains advisory and concrete: require handler-level JSON
+  hidden-route preflight before spending the single authorized HJ20
+  evaluability rerun. This is not a new approval gate; it is stale-runtime and
+  artifact-capture hygiene before live execution.
+
+## Agents Supervisor Monitoring Review - HJ18 To HJ20
+
+**Source:** monitoring-agent state summary from 2026-05-22.
+
+Process read:
+
+- The HighJump direction is working better than the earlier stop-heavy mode:
+  internal Alpha drafts have been produced, containment has held, and the active
+  tranche has improved budget discipline.
+- The active bottleneck is no longer missing governance. It is manual execution
+  friction: current-lane freshness, canary closeout bookkeeping, reduced
+  reviewer availability, and repeated fix/canary loops.
+- The current-lane projection is useful, but it can drift because it is manual.
+  Treat freshness as a small live-execution hygiene step, not a new review gate.
+- Reduced-quorum Steer-Co is acceptable for narrow, reversible, verifier-clean
+  HighJump repairs, but repeated degraded review should be visible.
+- After the next successful report draft, the process should pivot from
+  "reach the report path" to "inspect the actual report and raise the one bar
+  whose looseness caused a concrete report defect."
+
+Immediate Agents Supervisor process stance:
+
+- Do not block the HJ20 canary for process cleanup.
+- Ask Captain-Deputy to sync `Docs/STATUS/V2_Current_Lane.md` before live
+  execution if it does not name the committed implementation anchor, latest
+  canary result, remaining budget, and next action.
+- Ask Captain-Deputy to record canary information yield after each canary:
+  `report produced`, `new stage reached`, `new failure`, `same stop repeated
+  with new evidence`, or `same stop repeated without useful new information`.
+- If two consecutive packages proceed with degraded external review, ask
+  Captain-Deputy to record the pattern and use an internal challenge/Steer-Co
+  consent check before the next broader or harder-to-reverse change.
+- Defer canary-closeout automation until after the next manual HJ20/HJ21
+  closeout supplies a stable example, unless manual capture itself becomes a
+  blocker.
+
 ## Agents Supervisor Action Plan
 
 ### 1. Friction-Reduction Test
@@ -230,6 +278,11 @@ Review questions:
 - Did this create a new permission ritual?
 - Did this help the team get closer to report quality?
 - Should any process aid be removed, simplified, or kept advisory-only?
+- What was the last canary's information yield: report produced, new stage
+  reached, new failure, same stop repeated with new evidence, or same stop
+  repeated without useful new information?
+- If external reviewer coverage was degraded, is this an isolated timeout or a
+  repeated reduced-quorum pattern?
 
 The output should be a short process note, not a new steering packet, unless a
 real hard-stop condition appears.

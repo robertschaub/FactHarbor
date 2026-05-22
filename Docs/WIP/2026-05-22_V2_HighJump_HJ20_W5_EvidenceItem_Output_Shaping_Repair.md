@@ -261,9 +261,13 @@ Stop and reconvene Steer-Co if:
 Status:
 
 - locally implemented and verifier-clean;
-- no live HJ20 canary has run yet;
-- canary is ready after commit, clean status, runtime refresh, API/Web runtime
-  hash check, and route/runtime preflight.
+- implementation committed at
+  `561f65d865f037f1a81b75dd9a2514a5cd988561`;
+- one live HJ20 canary has run and is unevaluable because hidden artifact
+  capture failed at route readiness;
+- exactly one HJ20 evaluability rerun is authorized only after clean status,
+  runtime refresh, API/Web runtime hash check, service stability, and
+  hidden-route handler-level JSON preflight.
 
 Implemented delta:
 
@@ -357,3 +361,46 @@ Residual debt:
 
 - the broad analyzer suite showed one non-reproduced W7C timeout/order symptom
   before passing in isolation and on rerun; no source change was justified.
+
+## First Canary Result
+
+Job:
+
+- `8fe16cdeef7842058a8a36337a41b82e`
+
+Runtime:
+
+- `561f65d865f037f1a81b75dd9a2514a5cd988561+082c771c`
+
+Classification:
+
+- `UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS`
+
+What happened:
+
+- job used explicit `claimboundary-v2`;
+- job completed `SUCCEEDED` and persisted the expected public
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged` envelope;
+- hidden artifact probes returned app-level HTML `404` responses immediately
+  after completion;
+- the local services then stopped, erasing the process-local hidden ledgers;
+- after restart, the job's hidden artifacts could not be recovered.
+
+Interpretation:
+
+- this canary consumes one live-job slot;
+- it is not evidence that the HJ20 W5 output-shaping repair passed or failed;
+- the information yield is `new failure`: operational hidden-route readiness /
+  artifact-capture provenance.
+
+Rerun rule:
+
+- Steer-Co and Claude Opus consented to exactly one HJ20 evaluability rerun;
+- do not run it unless git status is clean, runtime is refreshed from
+  the latest clean HEAD containing HJ20 source commit `561f65d8`, API/Web
+  runtime hash checks pass, hidden artifact routes preflight to handler-level
+  JSON with `no-store`, and the same web process remains alive through
+  immediate post-job artifact capture;
+- if route readiness fails before rerun, or if the rerun is also unevaluable,
+  stop and prepare a small runtime/provenance repair package instead of spending
+  another canary.

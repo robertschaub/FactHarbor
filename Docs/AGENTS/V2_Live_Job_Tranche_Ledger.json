@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 6,
+    "currentRemaining": 5,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 6,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big.",
+      "currentRemaining": 5,
+      "consumptionEntriesInThisTranche": 3,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -624,6 +624,20 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md plus Captain-authorized 8-job HighJump continuation budget",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "HJ19 runtime refreshed to source including implementation commit 2cdc9ce5 plus docs projection commit 4e2ed098. The run used explicit claimboundary-v2 and reached CU, Query Planning, W2, and W5, but did not reach W8-B/HJ19 because W5 stopped as damaged_execution / schema_validation_failed with evidenceItems too_big. Public V2 remained blocked/precutover/damaged; default hidden routes remained no-store/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-20-W5-EVIDENCE-ITEM-OUTPUT-SHAPING-CANARY",
+        "jobId": "8fe16cdeef7842058a8a36337a41b82e",
+        "classification": "UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS",
+        "implementationCommit": "561f65d865f037f1a81b75dd9a2514a5cd988561",
+        "runtimeCommit": "561f65d865f037f1a81b75dd9a2514a5cd988561+082c771c",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 5,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ20_W5_EvidenceItem_Output_Shaping_Repair.md plus Captain-authorized HighJump continuation budget",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "The job used explicit claimboundary-v2 and completed with the expected public precutover/damaged envelope, but hidden artifact probes returned app-level HTML 404 responses and the local services then stopped before process-local hidden artifacts could be captured. This consumes one live job but is not analytical pass/fail evidence for HJ20. Exactly one HJ20 evaluability rerun is allowed only after handler-level JSON hidden-route preflight and stable runtime provenance."
       }
     ],
     "blockedPending": [],
