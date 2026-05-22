@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj37c",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ37C reached W5 with one bounded linked-page packet but still produced no EvidenceItems."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ38 produced a complete internal alpha report with a concrete source-usefulness defect."
     },
     "latestReset": {
       "date": "2026-05-22",
-      "previousRemaining": 10,
+      "previousRemaining": 17,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ37C so the team can continue using stronger HighJump validation toward complete V2 reports without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget after HJ38 so the team can continue using stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN",
-      "startsAfterJobId": "75a8aaf414d94d3ea8f32555ed9712a6",
+      "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
+      "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ37C. HJ38 consumed the first job in the fresh tranche and produced a complete internal alpha report for the German asylum aggregate input. The next step is report-quality review and targeted source-material improvement from observed report defects, not more reachability plumbing.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ38 produced a complete internal alpha report for the German asylum aggregate input, but the source-usefulness defect remains: the report found annual application-flow material rather than direct current-stock evidence. The next job in this tranche should validate the bounded Serper per-query source-depth repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

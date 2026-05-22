@@ -21,16 +21,19 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`fb8b50f3 fix(v2): widen bounded serper source material cap`
+`dad006f8 fix(v2): broaden serper per-query source material`
 
-The current committed repair is HJ38: bounded Serper linked-page source depth.
-HJ37C restored the chain through W5 with one 4096-byte bounded linked-page
-packet, but W5 still extracted no EvidenceItems. HJ38 amends the existing
-Serper Source Material collector cap from one full-size page to the
-already-owned downstream three-record aggregate cap. It does not add a provider,
-parser, retry path, route, public behavior, or prompt loosening.
+The current committed repair is HJ39: bounded Serper per-query source depth.
+HJ38 produced a complete internal alpha report, but the report relied on annual
+application-flow evidence rather than direct current-stock evidence for the
+claimed 235,000+ asylum-domain population. HJ39 amends the existing Serper
+Source Material collector from one to two materialized records per query while
+keeping the five-record run cap, three-candidate provider request, 12 KB
+aggregate text cap, downstream three-record Serper cap, and hidden/admin-only
+containment. It does not add a provider, parser, retry path, route, public
+behavior, or prompt loosening.
 
-Runtime has not yet been refreshed to HJ38 for the next validation job.
+Runtime has not yet been refreshed to HJ39 for the next validation job.
 
 ## Latest Result
 
@@ -197,8 +200,9 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
