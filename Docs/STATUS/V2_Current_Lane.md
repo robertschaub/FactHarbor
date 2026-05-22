@@ -219,6 +219,8 @@ Current active tranche:
 2. Refresh runtime to the latest committed HJ40 source/docs anchor, verify
    Web/API/proxy commit match, and run one default/manual V2 validation job for
    `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+   After the job completes, use `node scripts/capture-canary-evidence.mjs --job-id <id>`
+   for automated containment verification and ledger-consumption stub generation.
 3. If HJ40 produces an internal report, review the concrete report defect
    against Captain quality expectations and raise one single bar from observed
    evidence.
