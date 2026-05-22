@@ -271,6 +271,53 @@ describe("Analyzer V2 W4-D EvidenceCorpus shell core", () => {
     expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
   });
 
+  it("creates a text-free shell from nine W4-C admission inputs", () => {
+    const base = validSourceMaterialPageSummary();
+    const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
+    const records = Array.from({ length: 9 }, (_, index) => {
+      const ordinal = index + 1;
+      const text = `Neutral source material text ${ordinal} for shell testing.`;
+      const hash = sha256Text(text);
+      return {
+        ...firstRecord,
+        sourceMaterialId: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
+        locatorRef: `OPAQUE_SOURCE_LOCATOR_${ordinal}_1_ABCDEF123456`,
+        candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${ordinal}_1`,
+        sourceMaterialText: text,
+        sourceMaterialTextHash: hash,
+        sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
+        sourceMaterialTextCharLength: Array.from(text).length,
+      };
+    });
+    const readiness = buildEvidenceCorpusSourceMaterialReadiness({
+      sourceMaterialPageSummary: validSourceMaterialPageSummary({
+        attemptedFetchCount: 9,
+        sourceMaterialRecordCount: 9,
+        fetchDiagnosticCount: 9,
+        sourceMaterialRecords: records,
+        fetchDiagnostics: records.map((_, index) => ({
+          ...(base.fetchDiagnostics[0] as Record<string, unknown>),
+          attemptOrdinal: index + 1,
+        })),
+      }),
+      runtimeOwned: true,
+    });
+    const admission = buildEvidenceCorpusSourceMaterialAdmission({
+      sourceMaterialReadiness: readiness,
+      runtimeOwned: true,
+    });
+
+    const result = shell(admission);
+
+    expect(result.status).toBe("evidence_corpus_shell_created_extraction_gate_closed");
+    expect(result.sourceMaterialRecordCount).toBe(9);
+    expect(result.evidenceCorpus?.sourceMaterialRefs).toHaveLength(9);
+    expect(result.evidenceCorpus?.sourceMaterialTextHashes).toEqual(
+      records.map((record) => record.sourceMaterialTextHash),
+    );
+    expect(JSON.stringify(result)).not.toContain("Neutral source material text 9");
+  });
+
   it("blocks absent, non-W4-C, non-owned, and post-mark-mutated admissions", () => {
     const admission = validAdmission();
     const cases = [

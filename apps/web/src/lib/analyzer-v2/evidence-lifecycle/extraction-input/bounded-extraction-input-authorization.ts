@@ -22,7 +22,7 @@ export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS = [
   "wikimedia_core",
   "openalex",
 ] as const;
-export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 6;
+export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 9;
 
 export type BoundedExtractionInputRuntimeOwnership =
   | "owned"

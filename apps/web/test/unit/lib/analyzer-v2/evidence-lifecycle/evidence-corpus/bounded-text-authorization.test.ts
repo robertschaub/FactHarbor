@@ -373,6 +373,94 @@ describe("EvidenceCorpus bounded-text authorization", () => {
     expect(JSON.stringify(denial)).toBe(denialBefore);
   });
 
+  it("creates nine linked bounded-text sidecars while preserving the shell-only extraction denial", () => {
+    const texts = Array.from({ length: 9 }, (_, index) =>
+      `Bounded source summary text ${index + 1} for W4-G fan-in.`
+    );
+    const records = texts.map((text, index) => ({
+      ...sourceMaterialRecord(text),
+      locatorRef: `OPAQUE_SOURCE_LOCATOR_${index + 1}_1_ABCDEF123456`,
+      candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${index + 1}_1`,
+    }));
+    const corpusAdmissionInputs = records.map((record) => ({
+      ...admissionDecision(record.sourceMaterialText).corpusAdmissionInput,
+      corpusAdmissionInputId: `CORPUS_ADMISSION_INPUT_${record.sourceMaterialTextHash.slice(0, 16).toUpperCase()}`,
+      sourceMaterialRef: record.sourceMaterialId,
+      locatorRef: record.locatorRef,
+      candidatePreviewId: record.candidatePreviewId,
+      sourceMaterialTextHash: record.sourceMaterialTextHash,
+      sourceMaterialTextByteLength: record.sourceMaterialTextByteLength,
+      sourceMaterialTextCharLength: record.sourceMaterialTextCharLength,
+      sourceMaterialRecordCount: records.length,
+    }));
+    const sourceMaterialAdmission = {
+      ...admissionDecision(texts[0]),
+      sourceMaterialRecordCount: records.length,
+      admittedCorpusAdmissionInputCount: records.length,
+      rejectedCorpusAdmissionInputCount: 0,
+      corpusAdmissionInput: corpusAdmissionInputs[0],
+      corpusAdmissionInputs,
+    };
+    const shell = shellDecision(texts[0]);
+    const evidenceCorpusShell = {
+      ...shell,
+      sourceMaterialRecordCount: records.length,
+      evidenceCorpus: {
+        ...shell.evidenceCorpus,
+        sourceMaterialRefs: corpusAdmissionInputs.map((input) => input.sourceMaterialRef),
+        locatorRefs: corpusAdmissionInputs.map((input) => input.locatorRef),
+        candidatePreviewIds: corpusAdmissionInputs.map((input) => input.candidatePreviewId),
+        providerIds: corpusAdmissionInputs.map((input) => input.providerId),
+        sourceMaterialEndpointIds: corpusAdmissionInputs.map((input) => input.sourceMaterialEndpointId),
+        languageCodes: corpusAdmissionInputs.map((input) => input.languageCode),
+        sourceMaterialKinds: corpusAdmissionInputs.map((input) => input.sourceMaterialKind),
+        sourceMaterialTextHashes: corpusAdmissionInputs.map((input) => input.sourceMaterialTextHash),
+        aggregateSourceMaterialTextByteLength: corpusAdmissionInputs.reduce(
+          (total, input) => total + input.sourceMaterialTextByteLength,
+          0,
+        ),
+        aggregateSourceMaterialTextCharLength: corpusAdmissionInputs.reduce(
+          (total, input) => total + input.sourceMaterialTextCharLength,
+          0,
+        ),
+        admissionLineage: {
+          ...shell.evidenceCorpus.admissionLineage,
+          corpusAdmissionInputId: corpusAdmissionInputs[0].corpusAdmissionInputId,
+          corpusAdmissionInputIds: corpusAdmissionInputs.map((input) => input.corpusAdmissionInputId),
+        },
+      },
+    };
+    const extractionReadinessDenial = {
+      ...denialDecision(texts[0]),
+      parent: {
+        ...denialDecision(texts[0]).parent,
+        evidenceCorpusId: evidenceCorpusShell.evidenceCorpus.evidenceCorpusId,
+      },
+    };
+
+    const decision = buildEvidenceCorpusBoundedTextAuthorization({
+      sourceMaterialPageSummary: {
+        ...sourceMaterialPageSummary(texts[0]),
+        sourceMaterialRecordCount: records.length,
+        sourceMaterialRecords: records,
+      },
+      sourceMaterialRuntimeOwnership: "owned",
+      sourceMaterialAdmission,
+      admissionRuntimeOwnership: "owned",
+      evidenceCorpusShell,
+      shellRuntimeOwnership: "owned",
+      extractionReadinessDenial,
+    });
+
+    expect(decision.status).toBe("bounded_corpus_text_sidecar_created_extraction_gate_closed");
+    expect(decision.boundedTextSidecarCount).toBe(9);
+    expect(decision.boundedTextSidecars.map((sidecar) => sidecar.textHash)).toEqual(
+      records.map((record) => record.sourceMaterialTextHash),
+    );
+    expect(decision.extractionInput).toBeNull();
+    expect(decision.evidenceItems).toEqual([]);
+  });
+
   it("fails closed unless the W3-B source material decision is runtime-owned", () => {
     const decision = buildEvidenceCorpusBoundedTextAuthorization({
       sourceMaterialPageSummary: sourceMaterialPageSummary(),

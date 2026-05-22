@@ -167,15 +167,16 @@ function matchingMaterializedPreviewRecords(
 }
 
 function locatorDedupeKey(locator: SourceMaterialPageSummaryFetchLocator): string | null {
-  if (!locator.locatorRef || !locator.pageKeyHash) {
+  if (!locator.pageKeyHash) {
     return null;
   }
-  return `${locator.providerId}:${locator.locatorRef}:${locator.pageKeyHash}`;
+  return `${locator.providerId}:${locator.pageKeyHash}`;
 }
 
 function eligibleLocators(
   previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision,
   locators: readonly SourceMaterialPageSummaryFetchLocator[],
+  maxFetches = SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
 ): readonly SourceMaterialPageSummaryFetchLocator[] {
   const acceptedPreviewRecords = matchingMaterializedPreviewRecords(previewDecision);
   const eligible: {
@@ -223,12 +224,12 @@ function eligibleLocators(
   for (const item of firstByProviderAttempt.values()) {
     selected.push(item);
     selectedKeys.add(item.locator.candidatePreviewId);
-    if (selected.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+    if (selected.length >= maxFetches) {
       break;
     }
   }
   for (const item of ordered) {
-    if (selected.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+    if (selected.length >= maxFetches) {
       break;
     }
     if (selectedKeys.has(item.locator.candidatePreviewId)) {
@@ -252,16 +253,21 @@ function statusFromTransportStatus(
   return "source_material_page_summary_failed_structural";
 }
 
-function mergedSourceMaterialRecords(params: {
-  readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
-  readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
-}): readonly SourceMaterialPageSummaryRecord[] {
-  const openAlexRecord = params.openAlexRecords.find((record) =>
+function selectedOpenAlexRecord(records: readonly SourceMaterialPageSummaryRecord[]):
+  SourceMaterialPageSummaryRecord | null {
+  return records.find((record) =>
     record.providerId === "openalex"
     && record.sourceMaterialKind === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
     && record.sourceMaterialTextByteLength > 0
     && record.sourceMaterialTextByteLength <= 4_096
-  );
+  ) ?? null;
+}
+
+function mergedSourceMaterialRecords(params: {
+  readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
+  readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
+}): readonly SourceMaterialPageSummaryRecord[] {
+  const openAlexRecord = selectedOpenAlexRecord(params.openAlexRecords);
   if (!openAlexRecord) {
     return params.wikimediaRecords.slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
   }
@@ -312,7 +318,12 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       });
     }
 
-    const locators = eligibleLocators(params.previewDecision, params.fetchLocators);
+    const openAlexRecord = selectedOpenAlexRecord(params.openAlexSourceMaterialRecords ?? []);
+    const wikimediaFetchBudget = Math.max(
+      0,
+      SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - (openAlexRecord ? 1 : 0),
+    );
+    const locators = eligibleLocators(params.previewDecision, params.fetchLocators, wikimediaFetchBudget);
     if (locators.length === 0) {
       const openAlexOnlyRecords = mergedSourceMaterialRecords({
         openAlexRecords: params.openAlexSourceMaterialRecords ?? [],

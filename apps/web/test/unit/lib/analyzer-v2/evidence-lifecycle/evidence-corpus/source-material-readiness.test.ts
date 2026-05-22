@@ -196,43 +196,46 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
-  it("admits bounded multi-record W3-B fan-in while keeping corpus build closed", () => {
+  it("admits bounded nine-record W3-B fan-in while keeping corpus build closed", () => {
     const base = validDecision();
     const firstRecord = base.sourceMaterialRecords[0] as Record<string, unknown>;
-    const secondText = "Second bounded page summary text for fan-in.";
-    const secondHash = sha256Text(secondText);
-    const secondRecord = {
-      ...firstRecord,
-      sourceMaterialId: `SOURCE_MATERIAL_PAGE_SUMMARY_${secondHash.slice(0, 16).toUpperCase()}`,
-      locatorRef: "OPAQUE_SOURCE_LOCATOR_2_1_ABCDEF123456",
-      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_2_1",
-      sourceMaterialText: secondText,
-      sourceMaterialTextHash: secondHash,
-      sourceMaterialTextByteLength: Buffer.byteLength(secondText, "utf8"),
-      sourceMaterialTextCharLength: Array.from(secondText).length,
-    };
+    const additionalRecords = Array.from({ length: 8 }, (_, index) => {
+      const ordinal = index + 2;
+      const text = `Bounded page summary text ${ordinal} for fan-in.`;
+      const hash = sha256Text(text);
+      return {
+        ...firstRecord,
+        sourceMaterialId: `SOURCE_MATERIAL_PAGE_SUMMARY_${hash.slice(0, 16).toUpperCase()}`,
+        locatorRef: `OPAQUE_SOURCE_LOCATOR_${ordinal}_1_ABCDEF123456`,
+        candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${ordinal}_1`,
+        sourceMaterialText: text,
+        sourceMaterialTextHash: hash,
+        sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
+        sourceMaterialTextCharLength: Array.from(text).length,
+      };
+    });
+    const records = [firstRecord, ...additionalRecords];
     const decision = validDecision({
-      attemptedFetchCount: 2,
-      sourceMaterialRecordCount: 2,
-      fetchDiagnosticCount: 2,
-      sourceMaterialRecords: [firstRecord, secondRecord],
-      fetchDiagnostics: [
-        validDecision().fetchDiagnostics[0],
-        { ...(validDecision().fetchDiagnostics[0] as Record<string, unknown>), attemptOrdinal: 2 },
-      ],
+      attemptedFetchCount: 9,
+      sourceMaterialRecordCount: 9,
+      fetchDiagnosticCount: 9,
+      sourceMaterialRecords: records,
+      fetchDiagnostics: records.map((_, index) => ({
+        ...(validDecision().fetchDiagnostics[0] as Record<string, unknown>),
+        attemptOrdinal: index + 1,
+      })),
     });
 
     const result = readiness(decision);
 
     expect(result.status).toBe("source_material_structurally_admissible_evidence_corpus_gate_closed");
-    expect(result.sourceMaterialRecordCount).toBe(2);
-    expect(result.admittedSourceMaterialRecordCount).toBe(2);
+    expect(result.sourceMaterialRecordCount).toBe(9);
+    expect(result.admittedSourceMaterialRecordCount).toBe(9);
     expect(result.rejectedSourceMaterialRecordCount).toBe(0);
-    expect(result.sourceMaterialRecords.map((record) => record.sourceMaterialTextHash)).toEqual([
-      firstRecord.sourceMaterialTextHash,
-      secondHash,
-    ]);
-    expect(JSON.stringify(result)).not.toContain(secondText);
+    expect(result.sourceMaterialRecords.map((record) => record.sourceMaterialTextHash)).toEqual(
+      records.map((record) => record.sourceMaterialTextHash),
+    );
+    expect(JSON.stringify(result)).not.toContain("Bounded page summary text 9 for fan-in.");
   });
 
   it("blocks non-runtime-owned, absent, incomplete, and count-unsupported inputs without fabricating corpus data", () => {

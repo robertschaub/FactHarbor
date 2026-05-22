@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
+  BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS,
   BOUNDED_EXTRACTION_INPUT_MAX_TEXT_BYTES,
   buildBoundedExtractionInputAuthorization,
 } from "@/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization";
@@ -227,6 +228,32 @@ describe("bounded extraction-input authorization", () => {
     ]);
   });
 
+  it("creates one aggregate extraction-input packet from nine bounded W4-G sidecars", () => {
+    const texts = Array.from({ length: BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS }, (_, index) =>
+      `Bounded page-summary text ${index + 1} for extraction fan-in.`
+    );
+    const sidecars = texts.map((text, index) => sidecar(text, {
+      sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_${index + 1}_ABCDEF123456`,
+      locatorRef: `OPAQUE_SOURCE_LOCATOR_${index + 1}_1_ABCDEF123456`,
+      candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${index + 1}_1`,
+    }));
+    const decision = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: boundedTextAuthorization({
+        boundedTextSidecars: sidecars,
+      }),
+      boundedTextRuntimeOwnership: "owned",
+    });
+    const expectedAggregateText = texts.join("\n\n");
+
+    expect(decision.status).toBe("bounded_extraction_input_packet_created_extraction_execution_closed");
+    expect(decision.boundedTextSidecarCount).toBe(BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS);
+    expect(decision.extractionInputPacket?.sourceContentPackets).toHaveLength(BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS);
+    expect(decision.extractionInputPacket?.inputTextHash).toBe(sha256Text(expectedAggregateText));
+    expect(decision.extractionInputPacket?.inputTextByteLength).toBe(Buffer.byteLength(expectedAggregateText, "utf8"));
+    expect(decision.extractionExecutionAuthorized).toBe(false);
+    expect(decision.evidenceItems).toEqual([]);
+  });
+
   it("creates one aggregate extraction-input packet from mixed OpenAlex and Wikimedia sidecars", () => {
     const openAlexText = "OpenAlex bounded abstract text.";
     const wikimediaText = "Wikimedia bounded page-summary text.";
@@ -347,5 +374,27 @@ describe("bounded extraction-input authorization", () => {
       boundedTextRuntimeOwnership: "owned",
     });
     expect(executionOpen.status).toBe("blocked_pre_extraction_input_w4g_downstream_flags_open");
+  });
+
+  it("fails closed when aggregate extraction input text exceeds the unchanged aggregate cap", () => {
+    const chunkSize = Math.floor(BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES / BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS) + 1;
+    const sidecars = Array.from({ length: BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS }, (_, index) =>
+      sidecar(`${index + 1}:${"x".repeat(chunkSize)}`, {
+        sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_OVERSIZE_${index + 1}`,
+        locatorRef: `OPAQUE_SOURCE_LOCATOR_OVERSIZE_${index + 1}`,
+        candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_OVERSIZE_${index + 1}`,
+      })
+    );
+
+    const decision = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: boundedTextAuthorization({
+        boundedTextSidecars: sidecars,
+      }),
+      boundedTextRuntimeOwnership: "owned",
+    });
+
+    expect(decision.status).toBe("blocked_pre_extraction_input_text_oversized");
+    expect(decision.stopReason).toBe("w4g_sidecar_text_oversized");
+    expect(decision.extractionInputPacket).toBeNull();
   });
 });

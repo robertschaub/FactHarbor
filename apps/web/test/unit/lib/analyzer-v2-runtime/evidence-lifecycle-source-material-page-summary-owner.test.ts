@@ -7,6 +7,7 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import {
   buildSourceMaterialPageSummaryFetchLocator,
+  SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
   buildEvidenceLifecycleSourceCandidatePreviewDecision,
@@ -251,31 +252,35 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.sourceMaterialRecords[1]?.providerId).toBe("wikimedia_core");
   });
 
-  it("fetches up to six structurally distinct page summaries in provider-attempt balanced order", async () => {
-    const previewRecords = [
-      projection("Hydrogen_vehicle", "Hydrogen vehicle", 1),
-      projection("Electric_vehicle", "Electric vehicle", 2),
-      projection("Battery_electric_vehicle", "Battery electric vehicle", 3),
-      projection("Vehicle_efficiency", "Vehicle efficiency", 1, 2),
-      projection("Fuel_cell_vehicle", "Fuel cell vehicle", 1, 3),
-    ];
+  it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {
+    const entries = [
+      { key: "Hydrogen_vehicle", title: "Hydrogen vehicle", candidateOrdinal: 1, providerAttemptOrdinal: 1 },
+      { key: "Electric_vehicle", title: "Electric vehicle", candidateOrdinal: 2, providerAttemptOrdinal: 1 },
+      { key: "Battery_electric_vehicle", title: "Battery electric vehicle", candidateOrdinal: 3, providerAttemptOrdinal: 1 },
+      { key: "Energy_conversion", title: "Energy conversion", candidateOrdinal: 4, providerAttemptOrdinal: 1 },
+      { key: "Electric_motor", title: "Electric motor", candidateOrdinal: 5, providerAttemptOrdinal: 1 },
+      { key: "Fuel_economy", title: "Fuel economy", candidateOrdinal: 6, providerAttemptOrdinal: 1 },
+      { key: "Hydrogen_storage", title: "Hydrogen storage", candidateOrdinal: 7, providerAttemptOrdinal: 1 },
+      { key: "Vehicle_efficiency", title: "Vehicle efficiency", candidateOrdinal: 1, providerAttemptOrdinal: 2 },
+      { key: "Fuel_cell_vehicle", title: "Fuel cell vehicle", candidateOrdinal: 1, providerAttemptOrdinal: 3 },
+      { key: "Battery", title: "Battery", candidateOrdinal: 8, providerAttemptOrdinal: 1 },
+    ] as const;
+    const previewRecords = entries.map((entry) =>
+      projection(entry.key, entry.title, entry.candidateOrdinal, entry.providerAttemptOrdinal)
+    );
     const requestedPaths: string[] = [];
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision({
         telemetry: {
           ...networkDecision().telemetry,
-          candidateCount: 5,
-          totalCandidateCount: 5,
+          candidateCount: entries.length,
+          totalCandidateCount: entries.length,
         },
       }),
       previewDecision: previewDecision(previewRecords),
-      fetchLocators: [
-        locator("Hydrogen_vehicle", "Hydrogen vehicle", 1),
-        locator("Electric_vehicle", "Electric vehicle", 2),
-        locator("Battery_electric_vehicle", "Battery electric vehicle", 3),
-        locator("Vehicle_efficiency", "Vehicle efficiency", 1, 2),
-        locator("Fuel_cell_vehicle", "Fuel cell vehicle", 1, 3),
-      ],
+      fetchLocators: entries.map((entry) =>
+        locator(entry.key, entry.title, entry.candidateOrdinal, entry.providerAttemptOrdinal)
+      ),
       lowLevelTransport: {
         resolve: async () => [{ address: "93.184.216.34", family: 4 }],
         request: async (request) => {
@@ -294,24 +299,76 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     });
 
     expect(decision.status).toBe("source_material_page_summary_completed");
-    expect(decision.attemptedFetchCount).toBe(5);
-    expect(decision.sourceMaterialRecordCount).toBe(5);
-    expect(decision.fetchDiagnosticCount).toBe(5);
+    expect(decision.attemptedFetchCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+    expect(decision.sourceMaterialRecordCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+    expect(decision.fetchDiagnosticCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
+      "SOURCE_CANDIDATE_PREVIEW_1_4",
+      "SOURCE_CANDIDATE_PREVIEW_1_5",
+      "SOURCE_CANDIDATE_PREVIEW_1_6",
+      "SOURCE_CANDIDATE_PREVIEW_1_7",
     ]);
-    expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3, 4, 5]);
+    expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(requestedPaths).toEqual([
       "/api/rest_v1/page/summary/Hydrogen_vehicle",
       "/api/rest_v1/page/summary/Vehicle_efficiency",
       "/api/rest_v1/page/summary/Fuel_cell_vehicle",
       "/api/rest_v1/page/summary/Electric_vehicle",
       "/api/rest_v1/page/summary/Battery_electric_vehicle",
+      "/api/rest_v1/page/summary/Energy_conversion",
+      "/api/rest_v1/page/summary/Electric_motor",
+      "/api/rest_v1/page/summary/Fuel_economy",
+      "/api/rest_v1/page/summary/Hydrogen_storage",
     ]);
+  });
+
+  it("counts the preferred OpenAlex record inside the same nine-record Source Material budget", async () => {
+    const entries = Array.from({ length: 9 }, (_, index) => ({
+      key: `Wikimedia_page_${index + 1}`,
+      title: `Wikimedia page ${index + 1}`,
+      candidateOrdinal: index + 1,
+      providerAttemptOrdinal: 1,
+    }));
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: entries.length,
+          totalCandidateCount: entries.length,
+        },
+      }),
+      previewDecision: previewDecision(entries.map((entry) =>
+        projection(entry.key, entry.title, entry.candidateOrdinal, entry.providerAttemptOrdinal)
+      )),
+      fetchLocators: entries.map((entry) =>
+        locator(entry.key, entry.title, entry.candidateOrdinal, entry.providerAttemptOrdinal)
+      ),
+      openAlexSourceMaterialRecords: [openAlexRecord()],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from(
+            JSON.stringify({ extract: `Bounded summary text for ${request.pathWithQuery}.` }),
+            "utf8",
+          ),
+        }),
+      },
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecordCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+    expect(decision.attemptedFetchCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 1);
+    expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
+    expect(decision.sourceMaterialRecords.slice(1).map((record) => record.providerId))
+      .toEqual(Array.from({ length: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 1 }, () => "wikimedia_core"));
   });
 
   it("uses preview order rather than incoming locator order for provider-attempt balancing", async () => {
@@ -409,6 +466,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     const duplicatedSharedLocator = {
       ...firstSharedLocator,
       candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_2_1",
+      locatorRef: "OPAQUE_SOURCE_LOCATOR_DIFFERENT_REF",
     };
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision({
