@@ -21,13 +21,14 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`ff01764e docs(v2): record hj27 bolsonaro report pass`
+`aa931443 fix(v2): distribute serper preview across queries`
 
-The current working repair amends the existing bounded Serper search-preview
-Source Material collector so it distributes material across the query plan
-instead of spending all Serper records on the first query. The repair keeps the
-same provider, hidden/admin-only record shape, no parser, no cache/SR/storage,
-no public behavior, no prompt/schema edit, and no V1 reuse.
+The current working repair amends the existing W5 evidence-extraction prompt so
+it keeps the HighJump extraction bar lowered for useful evidence, but rejects
+generic, adjacent-domain, or actor-adjacent background when direct
+claim-specific material is available. This is a prompt-only repair to the
+existing task contract, not a new hidden mechanism, parser path, provider, or
+public behavior.
 
 Runtime has not yet been refreshed to the working repair for the next
 validation job. Commit before any live job.
@@ -36,22 +37,22 @@ validation job. Commit before any live job.
 
 Latest validation:
 
-`PASS_X7_HJ27_BOLSONARO_MIXED_SOURCE_INTERNAL_REPORT_CREATED`
+`STOP_X7_HJ28_BOLSONARO_W5_EXTRACTION_SELECTIVITY_IRRELEVANT_CONTEXT`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ27_Bolsonaro_Mixed_Source_Report_Result.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ28_Serper_Query_Distribution_Repair.md`
 
 Important evidence:
 
-- `f84d914e9ae74259a9c58505d2da190d` ran the default manual V2 path for the
-  Bolsonaro/fair-trial input on runtime/docs commit `311b4b7a`.
-- W3-B Source Material completed with `9` records, `5623` aggregate bytes, and
-  providers `openalex`, `serper_web_search`, and `wikimedia_core`.
-- W4-H created one mixed-provider extraction input packet of `5639` bytes.
-- W5 accepted `2` EvidenceItems.
-- W8-B/W8-G/internal report writer completed; authenticated admin job response
-  returned report markdown length `7381`.
+- `327edd966a904108b8bc51f05ec64b42` ran the default manual V2 path for the
+  Bolsonaro/fair-trial input on runtime commit `aa931443`.
+- W3-B/W4-H/W5/W8/internal report writer completed and authenticated admin job
+  response returned report markdown length `10172`.
+- The Serper distribution repair improved query-lane breadth, but W5 accepted
+  generic/adjacent material: one environmental-governance item and one generic
+  democratic-institutions framework item crowded out direct case-specific
+  fair-trial/procedural material.
 - Public/default containment held: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
@@ -72,15 +73,18 @@ through the default manual V2 route:
   material, but W4-H blocked on `provider_id_mismatch`.
 - `f84d914e9ae74259a9c58505d2da190d`: W4-H passed, W5 extracted `2`
   EvidenceItems, and the internal report writer produced `7381` report bytes.
+- `327edd966a904108b8bc51f05ec64b42`: Serper distribution improved breadth and
+  the internal report writer produced `10172` report bytes, but W5 admitted
+  adjacent/generic material and the report remained `UNVERIFIED`.
 
 The remaining question is no longer reachability for this input; it is report
 quality and cross-input generalization. A compact report-quality review found
-HJ27 materially below the Bolsonaro expectation (`LEANING-TRUE` /
-`MOSTLY-TRUE`, truth `58..85`, confidence `45..75`, minimum `3` boundaries):
-the report was `UNVERIFIED`/`MIXED` over only `2` EvidenceItems and did not
-cover the planned fair-trial and observer/human-rights query lanes. The query
-plan itself was adequate; the Serper preview materializer exhausted its
-`3`-record run cap on the first query, starving later query lanes.
+HJ27/HJ28 materially below the Bolsonaro expectation (`LEANING-TRUE` /
+`MOSTLY-TRUE`, truth `58..85`, confidence `45..75`, minimum `3` boundaries).
+The active root cause has moved from source-material breadth to W5 extraction
+selectivity: the prompt needs to keep useful partial evidence, but avoid filling
+the 2-to-5 item budget with generic or adjacent-domain context when direct
+case-specific material exists.
 
 ## Live Budget
 
@@ -89,19 +93,18 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the Serper cross-query distribution repair plus this budget/lane sync.
+1. Commit the W5 material-alignment prompt repair plus ledger/lane sync.
 2. Refresh runtime to the repair commit and verify API/Web commit match.
-3. Run a stronger post-repair validation set from Captain-defined inputs rather
-   than another weak one-job canary. Start with `bolsonaro-en`, then spend
-   additional jobs on `asylum-235000-de`, `hydrogen-en`, and one language or
-   domain control only if the first repair result does not expose a hard stop.
+3. Run one Bolsonaro validation first. If it produces target-specific evidence
+   and no containment issue, spend additional jobs on `asylum-235000-de` and
+   `hydrogen-en` as stronger report-quality controls.
 4. Record information yield per job: report produced, new stage reached, new
    failure, repeated stop with new evidence, or repeated stop without useful
    information.

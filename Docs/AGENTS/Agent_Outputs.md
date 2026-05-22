@@ -3745,3 +3745,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the current live-job budget to `18` after HJ27. No jobs have been consumed from this fresh post-HJ27 tranche yet.
 
 **Next:** Commit, refresh runtime, verify API/Web commit match, then run a stronger post-repair validation set from Captain-defined inputs starting with `bolsonaro-en`, followed by `asylum-235000-de` and `hydrogen-en` if no hard stop appears.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ29 W5 Material-Alignment Prompt Repair
+
+**Task:** Continue the HighJump report-quality path after HJ28 showed that source-material breadth improved but W5 still admitted adjacent/generic evidence into the Bolsonaro/fair-trial report.
+
+**Result:** Amended the existing `V2_EVIDENCE_EXTRACTION` prompt contract, not code or schema, so W5 keeps extracting useful partial evidence but checks material alignment before filling the 2-to-5 item budget. The new generic wording prevents evidence extraction merely because supplied content names the claim actor, appears in the same broad domain, states a generic standard, describes unrelated conduct, or supplies background context. It also clarifies that source-material kind/fetch depth must not override direct claim alignment.
+
+**Debt-guard:** Classified as `incomplete-existing-mechanism`; chosen path was to amend the existing prompt task contract. Rejected provider/fetch/parser expansion, deterministic semantic filtering, schema relaxation, and retry machinery because HJ28 output was structurally valid but analytically weak.
+
+**Verification:** Focused prompt-contract test passed (`10` tests); full evidence-lifecycle unit slice passed (`46` files / `243` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed.
+
+**Budget:** HJ28 consumed one job from the post-HJ27 tranche. Active budget is now `17` of `18` before the HJ29 validation run.
+
+**Next:** Commit the prompt repair, refresh runtime, verify API/Web commit match, then run one default manual V2 Bolsonaro validation. If it produces target-specific evidence and containment holds, continue with asylum and hydrogen controls from the Captain-defined input list.

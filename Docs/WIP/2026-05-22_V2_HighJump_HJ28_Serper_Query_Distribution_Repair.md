@@ -1,6 +1,6 @@
 # V2 HighJump HJ28 - Serper Query Distribution Repair
 
-**Status:** locally implemented, verifier-clean except one unrelated broad-suite timing flake that passed in isolation
+**Status:** implemented, committed, live validation completed; follow-up W5 material-alignment repair opened as HJ29
 **Date:** 2026-05-22
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, prompt/schema/code/live-job continuation authorization, and fresh `18` job budget after HJ27
@@ -60,13 +60,32 @@ Broad V2 suite note:
 - `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime test/unit/lib/analyzer-v2` passed `144` files / `881` tests and hit one timeout in `source-acquisition-content-parser-runner-protocol.test.ts`.
 - The failed parser-runner test is outside the touched surface and passed immediately in isolation (`6` tests, including the timed-out case in `311ms`), so this is classified as an unrelated timing flake, not a Serper repair regression.
 
+## Live Validation Result
+
+Job `327edd966a904108b8bc51f05ec64b42` ran the Captain-defined Bolsonaro/fair-trial input through the default manual V2 path on runtime `aa931443bad0d80072ef2f35475b0b41e715faa6`.
+
+Classification:
+
+`STOP_X7_HJ28_BOLSONARO_W5_EXTRACTION_SELECTIVITY_IRRELEVANT_CONTEXT`
+
+Outcome:
+
+- The job reached W3-B/W4-H/W5/W8/internal report writer and authenticated admin job response returned report markdown length `10172`.
+- Public/default containment held: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, with no public/default report markdown.
+- The report remained materially below the Captain expectation. W5 accepted one direct conviction item, but also admitted adjacent/generic material including environmental-governance context and generic democratic-institutions framework material.
+- The information yield is `same_stop_repeated_with_new_evidence`: report reachability and query breadth are better, but the next blocker is W5 material-alignment selectivity.
+
+## Follow-Up Repair
+
+HJ29 amends the existing `V2_EVIDENCE_EXTRACTION` prompt contract so source-material kind or fetch depth does not override material alignment and generic/adjacent-domain background does not crowd out direct claim-specific evidence.
+
 ## Next Validation
 
-Fresh live-job budget is `18` after the Captain reset. No jobs have been consumed from this post-HJ27 tranche yet.
+Fresh live-job budget is `18` after the Captain reset. HJ28 consumed `1`, leaving `17`.
 
-After commit and runtime refresh, run a stronger validation set rather than another one-job canary:
+After the HJ29 prompt repair commit and runtime refresh, run one Bolsonaro validation first:
 
-1. `bolsonaro-en` to test whether fair-trial/legal-standard query lanes now reach Source Material and W5.
+1. `bolsonaro-en` to test whether W5 now selects materially target-specific legal/procedural/fair-trial evidence.
 2. If no hard stop appears, run `asylum-235000-de` and `hydrogen-en` as non-Bolsonaro controls.
 3. Add one further Captain-defined language/domain control only if the first three jobs produce useful report evidence and containment remains clean.
 

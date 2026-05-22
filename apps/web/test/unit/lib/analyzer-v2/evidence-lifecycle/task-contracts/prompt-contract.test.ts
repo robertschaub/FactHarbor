@@ -219,8 +219,13 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Evidence comparing a claim entity to a third entity is contextual or unclear");
     expect(section).toContain("Do not treat adjacent or substitute comparators as direct support or opposition");
     expect(section).toContain("Prefer bounded extraction over premature empty output");
-    expect(section).toContain("partial, contextual, indirect, low-confidence, or limited in scope");
+    expect(section).toContain("only after checking material alignment");
+    expect(section).toContain("partial, indirect, low-confidence, or limited in scope");
+    expect(section).toContain("Do not extract a point merely because it names the claim actor");
+    expect(section).toContain("Generic framework evidence may be extracted only when");
+    expect(section).toContain("omit lower-value background or adjacent-domain context");
     expect(section).toContain("Use `no_extractable_evidence` only when none of the supplied content");
+    expect(section).toContain("generic, adjacent-domain, or unrelated background");
     expect(section).toContain("not sufficient for a final verdict");
     expect(section).toContain("Keep the JSON compact and complete");
     expect(section).toContain("avoid duplicative items from the same source content");
@@ -236,6 +241,7 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("### Source Material Strength");
     expect(section).toContain("`provider_search_result_preview_text`");
     expect(section).toContain("provider-truncated, query-shaped preview material");
+    expect(section).toContain("Do not let source-material kind or fetch depth override material alignment");
     expect(section).toContain("Give fetched summaries or abstracts more weight");
     expect(section).toContain("preserve uncertainty in `provenance.rationale`");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {

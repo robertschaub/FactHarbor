@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj27",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-27-BOLSONARO-MIXED-SOURCE-REPORT-VALIDATION",
       "startsAfterJobId": "f84d914e9ae74259a9c58505d2da190d",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ27. No jobs have been consumed from this fresh post-HJ27 tranche yet.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ27. HJ28 consumed one job and exposed W5 extraction-selectivity drift after the Serper distribution repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -835,6 +835,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Default manual V2 path ran claimboundary-v2. W3-B completed with 9 Source Material records across openalex, serper_web_search, and wikimedia_core; W4-H created one 5639-byte mixed-provider extraction input packet; W5 accepted 2 EvidenceItems; W8-B/W8-G/internal report writer completed; admin reportMarkdown length was 7381 while public/default surfaces stayed blocked/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-28-BOLSONARO-SERPER-DISTRIBUTION-VALIDATION",
+        "jobId": "327edd966a904108b8bc51f05ec64b42",
+        "classification": "STOP_X7_HJ28_BOLSONARO_W5_EXTRACTION_SELECTIVITY_IRRELEVANT_CONTEXT",
+        "implementationCommit": "aa931443bad0d80072ef2f35475b0b41e715faa6",
+        "runtimeCommit": "aa931443bad0d80072ef2f35475b0b41e715faa6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj29_w5_material_alignment_prompt_repair",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18 and authorizing prompt edits/live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "Default manual V2 path ran claimboundary-v2. The Serper distribution repair improved breadth and the internal report writer produced 10172 report bytes, but W5 admitted adjacent/generic evidence, including environmental-governance context and generic democratic-institutions framework material, so the Bolsonaro report remained UNVERIFIED and below Captain expectation. Public/default surfaces stayed blocked/redacted."
       }
     ],
     "blockedPending": [],
