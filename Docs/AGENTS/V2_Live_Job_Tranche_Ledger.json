@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 4,
+    "currentRemaining": 3,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 4,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft.",
+      "currentRemaining": 3,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 then validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -652,6 +652,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Rerun used explicit claimboundary-v2 after clean status, runtime refresh, API/Web hash match, and handler-level JSON hidden-route preflight. W5 completed accepted with 4 EvidenceItems, W8-B created an internal Alpha report result candidate, W8-G created a 7843-byte internal Alpha draft, and the internal report writer created an 8759-byte hidden draft. Public V2 remained 4.0.0-cb-precutover / blocked_precutover / report_damaged with reportMarkdown length 0; default admin projections stayed hash/length/provenance-only."
+      },
+      {
+        "sliceId": "X7-HJ-21-DEFAULT-V2-MANUAL-UI-REPORT-CANARY",
+        "jobId": "15d19b57f0fb488ea820bac0e2fb6dac",
+        "classification": "PASS_X7_HJ21_DEFAULT_V2_MANUAL_UI_REPORT_CANARY",
+        "implementationCommit": "79a5c31f8a709c391064c44ee4ff88f81822b017",
+        "runtimeCommit": "7b900247c8bf5a488923c23516f160cd51753396",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 3,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ21_W7B_Comparator_Alignment_Repair.md plus Captain instruction to clear roadblockers and continue HighJump without artificial stops",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "The job was submitted through the default manual web path without an explicit pipelineVariant and ran claimboundary-v2. Admin job API returned a 7605-character V2 reportMarkdown suitable for the job page V2 Report section; public/default job API returned no reportMarkdown. The primary report verdict for the hydrogen-family input was FALSE, truth 18, confidence 72, inside the expected FALSE/MOSTLY-FALSE, truth 5-25, confidence 65-85 band. Public result JSON remained 4.0.0-cb-precutover / blocked_precutover / report_damaged."
       }
     ],
     "blockedPending": [],

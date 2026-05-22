@@ -186,13 +186,39 @@ Stop and reconvene Steer-Co if:
   prompt text, provider payloads, hidden ledger ids, verdict/truth/confidence,
   or warnings.
 
+## Canary Result
+
+Result:
+
+`PASS_X7_HJ21_DEFAULT_V2_MANUAL_UI_REPORT_CANARY`
+
+Result document:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ21_Default_V2_Report_UI_Canary_Result.md`
+
+Job `15d19b57f0fb488ea820bac0e2fb6dac` ran on runtime
+`7b900247c8bf5a488923c23516f160cd51753396` through the default manual web
+submission path without an explicit `pipelineVariant`. The stored job
+`pipelineVariant` is `claimboundary-v2`.
+
+The authenticated admin job API returned `reportMarkdown` length `7605`; the
+public/default job API returned no report markdown and the public result JSON
+remained `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`.
+
+The primary report verdict for the hydrogen-family input was `FALSE`, truth
+`18`, confidence `72`, which is inside the expected hydrogen-family band and
+closes the HJ20 lead-verdict comparator defect for this canary.
+
+No second HJ21 canary is authorized by this package. Remaining HighJump
+live-job budget after HJ21 is `3`.
+
 ## Local Implementation Status
 
 Status:
 
-- locally implemented;
+- implemented;
 - verifier-clean;
-- no live canary has been run from this package yet.
+- live canary passed as recorded above.
 
 Implemented files:
 

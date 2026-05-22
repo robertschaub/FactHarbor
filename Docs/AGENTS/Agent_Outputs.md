@@ -3645,3 +3645,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Debt-guard classification: amend existing mechanisms in place; net mechanism impact is limited to one UCM field/default and a minimal V2 report rendering section.
 - Verifiers passed: focused web suite (`6` files / `128` tests), `dotnet test apps/api.Tests` (`44` tests), `npm -w apps/web run build`, `npm run validate:v2-gates`, `npm run debt:sensors` (`advisory_warn`, known V2/docs footprint warnings), and `git diff --check`.
 - Build-lock note: first API test attempts were blocked by a running local `FactHarbor.Api` process holding `bin/Debug/net8.0`; stopping that process released the lock and the API suite passed.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ21 Default V2 Report Canary
+
+- Synced the stale V2 current-lane/status/backlog projection to commit `79a5c31f` and then committed the docs cleanup at `7b900247`.
+- Ran exactly one HJ21/post-default canary job `15d19b57f0fb488ea820bac0e2fb6dac` through the default manual web path with no explicit `pipelineVariant`.
+- Classification: `PASS_X7_HJ21_DEFAULT_V2_MANUAL_UI_REPORT_CANARY`.
+- Runtime and stored execution hash: `7b900247c8bf5a488923c23516f160cd51753396`.
+- The job stored `pipelineVariant = claimboundary-v2`, returned authenticated-admin `reportMarkdown` length `7605`, and public/default job API returned no report markdown.
+- Public result JSON stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; no public verdict/truth/confidence exposure was opened.
+- Hydrogen-family primary report verdict is now `FALSE`, truth `18`, confidence `72`, inside the expected `FALSE`/`MOSTLY-FALSE`, truth `5..25`, confidence `65..85` band.
+- Remaining HighJump live-job budget is `3`; no second HJ21 canary is authorized.
+- Next action: report-quality review over the admin-visible V2 report and the smallest balanced improvement to the next observed report-quality bar, currently citation/readability polish rather than another readiness layer.

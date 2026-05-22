@@ -59,6 +59,41 @@ but not yet live-validated.
 
 ## Latest Canary Result
 
+Latest default-manual-path report canary:
+
+`PASS_X7_HJ21_DEFAULT_V2_MANUAL_UI_REPORT_CANARY`
+
+Job:
+
+`15d19b57f0fb488ea820bac0e2fb6dac`
+
+Runtime:
+
+`7b900247c8bf5a488923c23516f160cd51753396`
+
+Information yield:
+
+`report produced`
+
+Important evidence:
+
+- submitted through `/api/fh/analyze` without an explicit `pipelineVariant`;
+- stored job `pipelineVariant` is `claimboundary-v2`;
+- authenticated admin job API returned `reportMarkdown` length `7605`;
+- public/default job API returned no report markdown;
+- public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- primary report verdict for the hydrogen-family input was `FALSE`, truth `18`,
+  confidence `72`, inside the expected band.
+
+Result document:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ21_Default_V2_Report_UI_Canary_Result.md`
+
+No second HJ21 canary is authorized.
+
+## Previous Report-Producing Canary
+
 Latest committed and ledgered report-producing canary:
 
 `PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`
@@ -94,26 +129,20 @@ state. The next canary should run from the latest committed source
 Active HighJump continuation tranche:
 
 - ledger: `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`;
-- current remaining before the next HighJump canary: `4`;
+- current remaining after HJ21: `3`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Keep this projection, `Docs/STATUS/Current_Status.md`, and
-   `Docs/STATUS/Backlog.md` aligned to `79a5c31f`.
-2. Confirm clean git status and runtime freshness at `79a5c31f`.
-3. Run one HJ21/post-default canary using the Captain-defined hydrogen input
-   through the default manual submission path, without forcing legacy V1.
-4. Verify that the resulting job is V2, the authenticated admin job UI can show
-   the V2 report, and public/default surfaces stay contained.
-5. Judge the next step from observed report evidence:
-   - if a complete internal V2 report is produced, review report quality and
-     raise the single highest-value report-quality bar next;
-   - if the same HJ20/HJ21 comparator defect remains, repair that existing W7-B
-     prompt mechanism;
-   - if a new stop appears, fix the smallest existing mechanism that blocks full
-     report generation.
+1. Commit the HJ21 result documentation and ledger update.
+2. Review the admin-visible V2 report quality against the hydrogen-family
+   expectations and best comparator intent.
+3. Raise the single highest-value report-quality bar next. The current observed
+   candidate is report readability/citation polish: the draft refers to
+   EvidenceItem IDs but does not render user-friendly numbered citation markers.
+4. Keep the next fix inside existing report-writer/report-surface mechanisms
+   unless review evidence proves a different existing mechanism is the blocker.
 
 ## Stop Conditions
 
