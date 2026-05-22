@@ -3626,3 +3626,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Canary information yield: `new failure` in operational provenance / hidden-route readiness. This is not W5 pass/fail evidence.
 - Updated current-lane, status/backlog, HJ20 WIP, and the live-job ledger. Remaining HighJump budget is now `5`.
 - Steer-Co plus Claude Opus consented to exactly one HJ20 evaluability rerun only after clean git status, runtime refresh, API/Web runtime hash verification, service stability, and hidden-route handler-level JSON preflight.
+
+## 2026-05-22 - Captain Deputy - V2 HighJump HJ20 Evaluability Rerun Result
+
+- Ran exactly one HJ20 evaluability rerun after clean status, runtime refresh, API/Web runtime hash match at `a7a73479d62779ad7b22868898fb50d0d09634c6`, and hidden-route handler-level JSON preflight across `18` internal analyzer-v2 artifact routes.
+- Job `53f22512b9aa41b5ab23b774e2ddf10f` is classified `PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`.
+- Hidden chain: W2 completed candidate-provider network; W4-A admitted `9` Source Material records (`3` OpenAlex, `6` Wikimedia); W5 accepted `4` EvidenceItems with schema diagnostics `null`; W8-B created an internal Alpha result candidate with `3` boundary candidates, `2` verdict candidates, and `4` cited EvidenceItem refs; W8-G created a `7843` byte draft; HJ19 internal report writer created an `8759` byte hidden draft.
+- Containment: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; public `reportMarkdown` stayed empty; default admin projections stayed hash/length/provenance-only; explicit report/draft inspection remained authenticated admin-only and no-store.
+- Canary information yield: `report produced`.
+- Remaining HighJump live-job budget is `4`; no second HJ20 canary is authorized. Next action is internal report-quality review over the produced hidden draft.

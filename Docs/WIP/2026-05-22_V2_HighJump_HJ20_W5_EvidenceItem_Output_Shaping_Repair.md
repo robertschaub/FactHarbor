@@ -404,3 +404,78 @@ Rerun rule:
 - if route readiness fails before rerun, or if the rerun is also unevaluable,
   stop and prepare a small runtime/provenance repair package instead of spending
   another canary.
+
+## Evaluability Rerun Result
+
+Job:
+
+- `53f22512b9aa41b5ab23b774e2ddf10f`
+
+Runtime:
+
+- `a7a73479d62779ad7b22868898fb50d0d09634c6`
+
+Classification:
+
+- `PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`
+
+Preflight:
+
+- git status clean;
+- API/Web runtime hashes matched clean HEAD `a7a73479`;
+- all `18` internal analyzer-v2 artifact routes returned handler-level JSON
+  with `no-store` under an authenticated sentinel ledger preflight;
+- unauthenticated route probes returned JSON `401`;
+- no app-level HTML `404` appeared before submission.
+
+Hidden-chain evidence:
+
+- W2: `candidate_provider_network_completed`, `4` query entries, `3` candidates
+  per query.
+- W4-A/source material readiness: `9` admitted Source Material records
+  (`3` OpenAlex, `6` Wikimedia).
+- W5: `hidden_evidence_item_extraction_completed`,
+  `extractionResultStatus = accepted`, `evidenceItemCount = 4`, schema
+  diagnostics `null`, `8847` input tokens / `2022` output tokens.
+- W5E/W5F: `4` EvidenceItems admitted and ready for downstream handoff.
+- W6-C: sufficiency completed, accepted, schema diagnostics `null`,
+  report stop recommendation `caveat_report`.
+- W7-B/W8-B: `3` boundary candidates, `2` verdict candidates, `4` cited
+  EvidenceItem references, `firstIncompleteStage = none`.
+- W8-G: internal Alpha draft created, `7843` bytes, default projection
+  hash/length/provenance-only.
+- HJ19 report writer: `internal_report_writer_draft_created`,
+  `aggregationNarrativeResultStatus = accepted`, `8759` report bytes,
+  `2` verdict sections, `3` boundary sections, `4` cited EvidenceItem refs.
+
+Containment:
+
+- public job result stayed `4.0.0-cb-precutover` /
+  `blocked_precutover` / `report_damaged`;
+- public `reportMarkdown` length stayed `0`;
+- default admin projections returned hashes, lengths, and provenance only for
+  report text and draft text;
+- explicit report/draft text inspection remained authenticated admin-only and
+  no-store;
+- no public/default-admin report text, source text, prompt text, provider
+  payload, hidden ledger id, verdict, truth percentage, confidence, or warning
+  was returned.
+
+Canary information yield:
+
+- `report produced`
+
+Budget:
+
+- first unevaluable HJ20 canary consumed one slot, reducing the HighJump tranche
+  from `6` to `5`;
+- this evaluability rerun consumed one slot, reducing the tranche from `5` to
+  `4`;
+- no second HJ20 rerun is authorized.
+
+Next action:
+
+- pivot to internal report-quality review using the produced hidden report
+  evidence;
+- do not add another readiness/proof/plumbing layer before identifying the
+  concrete report defect or quality bar to raise next.

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 5,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 5,
-      "consumptionEntriesInThisTranche": 3,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured.",
+      "currentRemaining": 4,
+      "consumptionEntriesInThisTranche": 4,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -638,6 +638,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "The job used explicit claimboundary-v2 and completed with the expected public precutover/damaged envelope, but hidden artifact probes returned app-level HTML 404 responses and the local services then stopped before process-local hidden artifacts could be captured. This consumes one live job but is not analytical pass/fail evidence for HJ20. Exactly one HJ20 evaluability rerun is allowed only after handler-level JSON hidden-route preflight and stable runtime provenance."
+      },
+      {
+        "sliceId": "X7-HJ-20-W5-EVIDENCE-ITEM-OUTPUT-SHAPING-EVALUABILITY-RERUN",
+        "jobId": "53f22512b9aa41b5ab23b774e2ddf10f",
+        "classification": "PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED",
+        "implementationCommit": "561f65d865f037f1a81b75dd9a2514a5cd988561",
+        "runtimeCommit": "a7a73479d62779ad7b22868898fb50d0d09634c6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
+        "approvalPointer": "Steer-Co plus Claude Opus consent after unevaluable HJ20 capture miss; Docs/WIP/2026-05-22_V2_HighJump_HJ20_W5_EvidenceItem_Output_Shaping_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Rerun used explicit claimboundary-v2 after clean status, runtime refresh, API/Web hash match, and handler-level JSON hidden-route preflight. W5 completed accepted with 4 EvidenceItems, W8-B created an internal Alpha report result candidate, W8-G created a 7843-byte internal Alpha draft, and the internal report writer created an 8759-byte hidden draft. Public V2 remained 4.0.0-cb-precutover / blocked_precutover / report_damaged with reportMarkdown length 0; default admin projections stayed hash/length/provenance-only."
       }
     ],
     "blockedPending": [],

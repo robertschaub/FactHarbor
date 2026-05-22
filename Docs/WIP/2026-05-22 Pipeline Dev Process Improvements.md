@@ -163,6 +163,12 @@ HJ20 canary-provenance update:
   hidden-route preflight before spending the single authorized HJ20
   evaluability rerun. This is not a new approval gate; it is stale-runtime and
   artifact-capture hygiene before live execution.
+- The preflight then worked: all `18` analyzer-v2 hidden artifact routes
+  returned handler-level JSON with `no-store`, and HJ20 rerun
+  `53f22512b9aa41b5ab23b774e2ddf10f` produced a hidden report-writer draft.
+- The canary information yield for the rerun is `report produced`, so the next
+  process posture is the HighJump quality pivot: inspect the concrete report
+  defect and raise one bar, not add another readiness/proof layer.
 
 ## Agents Supervisor Monitoring Review - HJ18 To HJ20
 

@@ -11,9 +11,9 @@ authoritative source wins.
 
 ## Active Goal
 
-Produce one usable hidden/internal V2 report-writer draft from the product route,
-then use report-review evidence to raise quality, safety, and completeness step
-by step.
+Use the first HJ20 hidden/internal report-writer draft as report-quality
+evidence, then raise the single most important report-quality bar shown by that
+evidence before adding more plumbing.
 
 ## Active Package
 
@@ -23,30 +23,40 @@ Latest committed implementation anchor:
 
 `561f65d8 fix(v2): shape highjump w5 evidence output`
 
-Latest provenance/status commit after the unevaluable canary:
+Latest provenance/status commit used for the successful HJ20 rerun:
 
-`9b61453c docs(v2): record hj20 canary provenance miss`
+`a7a73479 docs(v2): record hj20 canary provenance miss`
 
 ## Latest Canary Result
 
-HJ20 first canary job `8fe16cdeef7842058a8a36337a41b82e` ran on runtime
-`561f65d865f037f1a81b75dd9a2514a5cd988561+082c771c` with explicit
-`claimboundary-v2`. It is classified:
+HJ20 evaluability rerun job `53f22512b9aa41b5ab23b774e2ddf10f` ran on runtime
+`a7a73479d62779ad7b22868898fb50d0d09634c6` with explicit `claimboundary-v2`.
+It is classified:
 
-`UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS`
+`PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`
 
-The job succeeded at the public runner level and produced the expected public
-precutover/damaged envelope, but hidden artifact capture failed: immediate
-hidden-route probes returned app-level HTML `404` responses, then the local
-services stopped and the in-memory ledgers were erased. The run therefore
-consumes one live job but is not analytical evidence that HJ20 passed or failed.
+This rerun followed clean runtime/provenance preflight after the first
+unevaluable HJ20 canary. It produced a hidden/internal report-writer draft while
+public V2 remained precutover/damaged.
 
 Canary information yield:
 
-`new failure`
+`report produced`
 
-Specifically: the failure is operational provenance / route-readiness, not W5
-schema evidence.
+Important hidden evidence:
+
+- W5 accepted `4` EvidenceItems under the HJ20 item-budget prompt repair.
+- W8-B created an internal Alpha result candidate with `3` boundary candidates,
+  `2` verdict candidates, and `4` cited EvidenceItem refs.
+- W8-G created a `7843` byte internal Alpha draft.
+- HJ19 internal report writer created an `8759` byte hidden report draft with
+  `2` verdict sections and `3` boundary sections.
+- Public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`, with public `reportMarkdown` length `0`.
+
+Previous HJ20 canary `8fe16cdeef7842058a8a36337a41b82e` is recorded as
+`UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS` and consumed
+one budget slot, but is not W5 pass/fail evidence.
 
 ## Current Repair
 
@@ -64,12 +74,7 @@ committed:
 - avoid retries, schema relaxation, new report path, source/provider expansion,
   public behavior, parser/cache/SR/storage, ACS/direct URL, and V1 work.
 
-Steer-Co plus Claude Opus review consented to exactly one HJ20 evaluability
-rerun only if runtime provenance is clean and hidden routes preflight to
-handler-level JSON before submission. The runtime may report the latest clean
-docs/status HEAD after `561f65d8`; no app source may change after the HJ20
-source commit unless separately reviewed. If route readiness remains unstable,
-do not spend the rerun; prepare a runtime/provenance repair package instead.
+HJ20 is closed. No second HJ20 rerun is authorized.
 
 HJ19 changes already present:
 
@@ -90,10 +95,9 @@ Active HighJump continuation tranche:
 - remaining after HJ19 canary: `6`;
 - remaining after HJ20 unevaluable canary `8fe16cdeef7842058a8a36337a41b82e`:
   `5`;
-- no second HJ19 canary is authorized;
-- exactly one HJ20 evaluability rerun is authorized only after clean status,
-  runtime refresh, API/Web runtime hash verification, service stability, and
-  hidden-route handler-level JSON preflight.
+- remaining after HJ20 evaluability rerun
+  `53f22512b9aa41b5ab23b774e2ddf10f`: `4`;
+- no second HJ19 or HJ20 canary is authorized.
 
 Ledger:
 
@@ -101,28 +105,22 @@ Ledger:
 
 ## Next Action
 
-1. Commit this provenance/current-lane sync so live execution starts clean.
-2. Refresh runtime from the latest clean HEAD that contains `561f65d8`.
-3. Verify API/Web runtime hash matches that clean HEAD; record that the app
-   source behavior anchor remains `561f65d8`.
-4. Preflight hidden routes with sentinel ledger IDs and require handler-level
-   JSON plus `no-store`, not app-level HTML `404`.
-5. Run exactly one HJ20 evaluability rerun only if provenance is clean and the
-   same web process remains alive through artifact capture.
+1. Commit HJ20 rerun result documentation.
+2. Start internal report-quality review over the HJ20 hidden report-writer draft.
+3. Identify the concrete report defect or loosened bar to raise next.
+4. Use Steer-Co only if the next fix crosses prompt/model/config/schema,
+   public behavior, source/provider, or architecture boundaries, or if the
+   quality defect has contested causality.
 
 ## Stop Conditions
 
 Stop and reconvene Steer-Co if:
 
-- HJ20 canary or local evidence shows the W5 stop requires schema relaxation, source
-  expansion, retries, or a new mechanism rather than prompt/contract alignment;
+- report-quality review shows the next correction requires a standing Captain
+  approval gate not already covered by the current HighJump authority;
 - route/default-admin/public/log/error surfaces leak report text, source text,
   prompt text, provider payload, hidden ids, or public verdict/truth/confidence;
 - runtime commit does not match the committed source under test;
-- hidden artifact routes return app-level HTML `404`, services are not stable,
-  or the web/API listeners disappear before submission;
-- the HJ20 evaluability rerun is also unevaluable or repeats the same route
-  readiness stop without useful new information;
 - the next repair would require retries, schema relaxation, a parallel report
   path, source/provider expansion, public behavior, or another hidden mechanism;
 - a standing Captain approval gate is reached.
