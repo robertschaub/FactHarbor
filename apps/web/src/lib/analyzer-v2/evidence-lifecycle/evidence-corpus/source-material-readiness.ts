@@ -462,12 +462,29 @@ function validateDiagnostic(diagnostic: unknown): ValidationFailure | null {
     };
   }
   if (
-    diagnostic.status !== "success"
-    || diagnostic.stopReason !== "not_stopped"
-    || diagnostic.endpointId !== SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID
-    || diagnostic.responseStatusCategory !== "success_2xx"
-    || diagnostic.contentTypeCategory !== "accepted_json"
+    diagnostic.endpointId !== SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID
+    || !["success", "blocked", "failed", "timed_out", "cancelled"].includes(String(diagnostic.status))
+    || !isNonBlankString(diagnostic.stopReason)
   ) {
+    return {
+      status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
+      stopReason: "fetch_diagnostic_not_success",
+    };
+  }
+  if (
+    diagnostic.status === "success"
+    && (
+      diagnostic.stopReason !== "not_stopped"
+      || diagnostic.responseStatusCategory !== "success_2xx"
+      || diagnostic.contentTypeCategory !== "accepted_json"
+    )
+  ) {
+    return {
+      status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
+      stopReason: "fetch_diagnostic_not_success",
+    };
+  }
+  if (diagnostic.status !== "success" && diagnostic.stopReason === "not_stopped") {
     return {
       status: "blocked_pre_evidence_corpus_source_material_contract_invalid",
       stopReason: "fetch_diagnostic_not_success",
@@ -539,7 +556,7 @@ function validateCompletedW3B(input: Record<string, unknown>):
     || !Number.isInteger(input.fetchDiagnosticCount)
     || Number(input.attemptedFetchCount) < 0
     || Number(input.fetchDiagnosticCount) < 0
-    || Number(input.attemptedFetchCount) > Number(input.sourceMaterialRecordCount)
+    || Number(input.attemptedFetchCount) > EVIDENCE_CORPUS_SOURCE_MATERIAL_FAN_IN_MAX_RECORDS
     || input.fetchDiagnosticCount !== input.attemptedFetchCount
   ) {
     return {

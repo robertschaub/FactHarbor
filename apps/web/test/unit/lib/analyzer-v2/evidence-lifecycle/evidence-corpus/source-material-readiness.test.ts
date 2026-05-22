@@ -238,6 +238,40 @@ describe("Analyzer V2 W4-A Source Material to EvidenceCorpus readiness", () => {
     expect(JSON.stringify(result)).not.toContain("Bounded page summary text 9 for fan-in.");
   });
 
+  it("admits completed records when later bounded fetch diagnostics failed without leakage", () => {
+    const base = validDecision();
+    const firstDiagnostic = base.fetchDiagnostics[0] as Record<string, unknown>;
+    const decision = validDecision({
+      attemptedFetchCount: 2,
+      sourceMaterialRecordCount: 1,
+      fetchDiagnosticCount: 2,
+      fetchDiagnostics: [
+        firstDiagnostic,
+        {
+          ...firstDiagnostic,
+          attemptOrdinal: 2,
+          status: "failed",
+          stopReason: "http_status_rejected",
+          responseStatusCategory: "rejected",
+          contentTypeCategory: "not_reached",
+          compressedBytes: 0,
+          decompressedBytes: 0,
+          byteCapState: "not_reached",
+        },
+      ],
+    });
+
+    const result = readiness(decision);
+
+    expect(result.status).toBe("source_material_structurally_admissible_evidence_corpus_gate_closed");
+    expect(result.stopReason).toBe("not_stopped");
+    expect(result.sourceMaterialRecordCount).toBe(1);
+    expect(result.admittedSourceMaterialRecordCount).toBe(1);
+    expect(result.rejectedSourceMaterialRecordCount).toBe(0);
+    expect(result.sourceMaterialRecords[0].sourceMaterialTextHash).toBe(sha256Text(validSourceMaterialText()));
+    expect(JSON.stringify(result)).not.toContain(validSourceMaterialText());
+  });
+
   it("blocks non-runtime-owned, absent, incomplete, and count-unsupported inputs without fabricating corpus data", () => {
     const cases = [
       [
