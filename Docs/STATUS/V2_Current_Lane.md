@@ -21,15 +21,15 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`beb23bca fix(v2): preserve report writer boundary ids`
+`526fac85 fix(v2): materialize bounded search previews`
 
-This commit amends only `V2_AGGREGATION_NARRATIVE` plus its focused prompt
-contract test. It requires exact verdict/boundary section cardinality and exact
-supplied ID preservation so the internal report writer does not damage otherwise
-valid W8 drafts with `boundary_reference_mismatch`.
+This commit admits bounded provider-owned search-preview text as weak hidden
+Source Material when at least one stronger Source Material record already
+exists. It keeps the repair inside the existing W3-B/W4/W5 path: no new
+provider, no extra HTTP call, no parser, no cache/SR/storage, no public
+behavior, and no topic-specific logic.
 
-Runtime was verified through Web/API version endpoints at
-`beb23bcafc44e156b10406833c47cd09a142686e` before the latest canary.
+Runtime has not yet been refreshed to this commit for the next validation job.
 
 ## Latest Result
 
@@ -43,8 +43,8 @@ Result document:
 
 Important evidence:
 
-- HJ24 consumed `7` jobs from the Captain-reset `18` job tranche; remaining
-  budget is `11`.
+- HJ24 consumed `7` jobs from the previous Captain-reset `18` job tranche.
+  Captain has since reset the active budget to `18` again before HJ25.
 - `b943c31f416941c9b46887e5b996c901` produced a complete hidden/internal
   German asylum report draft on runtime `366dce54`: W5 extracted `1`
   EvidenceItem; report writer produced `2891` bytes with `Evidence References`
@@ -79,21 +79,20 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after reset: `7`;
-- remaining: `11`;
+- consumed after reset: `0`;
+- remaining: `18`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ24 result documentation and ledger/status updates.
-2. Continue HighJump on the open non-hydrogen generalization gap.
-3. Before spending another job, make a focused repair or improvement to the
-   existing source-material/evidence-extraction path that plausibly improves
-   source usefulness for the Bolsonaro-family stop without topic-specific
-   hardcoding.
-4. Then run one Captain-defined non-hydrogen validation job and classify its
-   information yield.
+1. Commit this current-lane and live-budget sync.
+2. Refresh runtime to `526fac85` plus this docs sync.
+3. Run one Captain-defined Bolsonaro-family validation job through the default
+   manual V2 path and classify its information yield.
+4. If the run still reaches W5 with no extractable evidence, stop adding source
+   material and pivot the next repair toward the W5 extraction contract/prompt
+   using the observed hidden evidence.
 
 ## Stop Conditions
 
