@@ -3833,3 +3833,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18`. HJ32 consumed `1`, so `17` remain before the HJ33 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ33, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ33 Failed-Attempt Recovery And HJ34 Query Discovery Balance
+
+**Task:** Validate HJ33, then apply bounded failed-attempt recovery if the quantitative query-intent repair did not improve the German asylum aggregate path.
+
+**Result:** HJ33 job `dca39ebca3174fd58a93160f105dfac0` ran on committed/runtime `83f1ce3de8826a459ffedc41407cab7b80dca254` through the default manual V2 path. It stayed on `claimboundary-v2`, but the hidden chain regressed from the HJ32 state: Source Material records `0`, W4-G `blocked_pre_bounded_corpus_text_w3b_not_completed` / `w3b_not_completed`, W4-H `blocked_pre_extraction_input_w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`. Public/default containment held: reportMarkdown stayed `null`, schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and issue stayed `report_damaged`.
+
+**Repair:** HJ34 commits `a8354655` to amend the same query-planning prompt hunk. Numeric/direct-record intent is now explicitly additive and balanced with an authoritative-statistics discovery query for the same statistic, so exact current values do not crowd out source discovery. No provider, schema, route, retry, parser, cache/SR/storage, public behavior, or V1 work was added.
+
+**Debt-guard:** HJ33 was classified as failed-attempt recovery: `introduced-regression` / `incomplete-existing-mechanism`. Chosen option was amend-in-place rather than revert to HJ32 or add source-acquisition machinery. Net mechanisms unchanged.
+
+**Verification:** Focused prompt-contract verifier initially failed only on a brittle wording assertion (`preserves` vs `preserve`), classified keep/amend; after amendment it passed (`2` files / `21` tests). `npm run validate:v2-gates` passed; `npm run debt:sensors` remains `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed.
+
+**Budget:** Captain reset the live-job budget to `18`; HJ32 and HJ33 consumed `2`, so `16` remain before the HJ34 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ34, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.

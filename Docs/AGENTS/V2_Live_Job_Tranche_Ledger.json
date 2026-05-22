@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
       "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 consumed the first job from this reset budget and narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33 then regressed to zero Source Material records, so HJ34 amends the same query-planning prompt to keep numeric intent additive and balanced with authoritative-statistics discovery.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -999,6 +999,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ32 reran the German asylum aggregate input on enriched stop-summary diagnostics. Source Material produced 4 records, W4-G produced 4 bounded text sidecars, W4-H produced 1 extraction input packet, W4-I was structurally eligible but execution denied by gate, W5 received 4 source-content packets and 2304 input-packet bytes, then returned no_extractable_evidence. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
+      },
+      {
+        "sliceId": "X7-HJ-33-ASYLUM-235000-DE-QUANTITATIVE-QUERY-INTENT-RERUN",
+        "jobId": "dca39ebca3174fd58a93160f105dfac0",
+        "classification": "STOP_X7_HJ33_ASYLUM_SOURCE_MATERIAL_ZERO_AFTER_NUMERIC_INTENT_REPAIR",
+        "implementationCommit": "83f1ce3de8826a459ffedc41407cab7b80dca254",
+        "runtimeCommit": "83f1ce3de8826a459ffedc41407cab7b80dca254",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "a8354655_balance_quantitative_query_discovery_pending_validation",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "HJ33 reran the German asylum aggregate input after the first quantitative query-intent prompt repair. The run stayed on claimboundary-v2 and public/default containment held, but the hidden chain regressed to Source Material records 0, W4-G w3b_not_completed, W4-H w4g_not_positive, W5 blocked_pre_execution, source-content packets 0. The repair is being amended in place rather than adding provider or diagnostic machinery."
       }
     ],
     "blockedPending": [],

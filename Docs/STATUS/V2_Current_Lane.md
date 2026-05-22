@@ -21,27 +21,26 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`d0e078aa fix(v2): preserve quantitative query intent`
+`a8354655 fix(v2): balance quantitative query discovery`
 
-The current committed repair is HJ33: amend the existing V2 Evidence Query
-Planning prompt contract so quantitative/current-aggregate claims preserve the
-explicit quantity, unit, population/domain, and time posture in at least one
-direct-record query, with a concise numeric-format variant where useful. This
-is a bounded prompt/test repair of an existing mechanism, not provider, schema,
+The current committed repair is HJ34: amend the HJ33 prompt repair in place so
+quantitative/current-aggregate claims keep numeric/direct-record intent
+additive and balanced with an authoritative-statistics discovery query. This is
+a bounded prompt/test repair of an existing mechanism, not provider, schema,
 route, retry, parser, cache/SR/storage, public behavior, or V1 work.
 
-Runtime has not yet been refreshed to HJ33 for the next validation job.
+Runtime has not yet been refreshed to HJ34 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-32-ASYLUM-235000-DE-ENRICHED-STOP-SUMMARY-RERUN`
+`X7-HJ-33-ASYLUM-235000-DE-QUANTITATIVE-QUERY-INTENT-RERUN`
 
 Result document:
 
 Current lane and ledger entries in this repository; no separate WIP result
-document was created for HJ32.
+document was created for HJ33.
 
 Important evidence:
 
@@ -54,6 +53,15 @@ Important evidence:
 - The durable summary narrowed the asylum-family stop: W3-B/W4-G/W4-H/W4-I
   are no longer the blocking handoff for this run. W5 receives bounded source
   content but returns no extractable evidence.
+- `dca39ebca3174fd58a93160f105dfac0` (German asylum aggregate) reran on HJ33
+  after the first quantitative query-intent prompt repair. It stayed on
+  `claimboundary-v2` and containment held, but it regressed earlier: Source
+  Material records `0`, W4-G `w3b_not_completed`, W4-H `w4g_not_positive`, W5
+  `blocked_pre_execution`, source-content packets `0`.
+- HJ34 therefore amends the same prompt hunk rather than stacking new
+  provider/source machinery: numeric exactness must be balanced with an
+  authoritative-statistics discovery query so exact values do not crowd out
+  source discovery.
 - Public/default containment held: public/default reportMarkdown stayed `null`,
   schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and
   issue stayed `report_damaged`.
@@ -77,9 +85,9 @@ Important evidence:
 - Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
-- HJ33 now addresses the next evidence-backed defect: the retrieval planner did
-  not explicitly preserve quantitative direct-record intent for the German
-  asylum aggregate, which likely starved W5 of directly material source text.
+- HJ34 now addresses the HJ33 failed-attempt recovery: keep numeric precision
+  as one retrieval need, but also require source-discovery coverage for
+  current aggregate statistics.
 
 ## Open Generalization Gap
 
@@ -130,21 +138,21 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ33 lane/ledger sync.
-2. Refresh runtime to the committed HJ33 state and verify Web/API/proxy runtime
+1. Commit the HJ34 lane/ledger sync.
+2. Refresh runtime to the committed HJ34 state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ33 produces a hidden internal report, review report quality before
+4. If HJ34 produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ33 still reaches W5 with `no_extractable_evidence`, decide the next
+5. If HJ34 still reaches W5 with `no_extractable_evidence`, decide the next
    source-material/usefulness repair from the observed source-content packets
    rather than adding another diagnostic layer.
 6. Treat the plastic CU stop as a separate follow-up unless the same repair
