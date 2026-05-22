@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Lead Agents Supervisor | Codex (GPT-5.5) + Claude Opus 4.6 + GPT reviewer | V2 Orchestration Process Improvement Plan -- [Standard] [open-items: yes]
+**For next agent:** Wrote `Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md` after Opus 4.6 and GPT reviewer both returned `MODIFY`. Consolidated plan makes durable package approval blocks the authority, `V2_Active_Slice.json` only a validated projection, and sequences active-slice validation before canary preflight/capture tooling.
+**Warnings:** Do not implement the active-slice JSON as a second approval source. The plan explicitly defers boundary-guard splitting and broad WIP archival until report-value stabilization or verifier-backed blocker evidence.
+-> Docs/WIP/2026-05-22_V2_Orchestration_Process_Working_Conditions_Improvement_Plan.md
+
+---
 ### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Steer-Co / Claude Opus 4.6 | V2 HighJump HJ13 OpenAlex Balance Implementation -- [Significant] [open-items: yes]
 **For next agent:** HJ13 amends the existing OpenAlex Source Material collector and W3-B merge so a bounded OpenAlex set can enter the existing nine-record Source Material budget before Wikimedia fill. Focused tests, full `analyzer-v2-runtime`, and full `analyzer-v2` suites passed before closeout verifiers.
 **Warnings:** This is not report-quality evidence until a canary runs. The HighJump tranche is exhausted; the live-job ledger records exactly one pending HJ13 exception authorization after clean implementation commit/runtime refresh.
