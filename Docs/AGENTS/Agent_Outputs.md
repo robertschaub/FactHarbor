@@ -4011,3 +4011,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39-HJ44 consumed `6`; `12` remain.
 
 **Next:** Commit this HJ44 result sync, then convene a compact Steer-Co/expert review for HJ45. The proposal should be stronger than a canary-only tweak but still bounded: target source-native official records needed for this family, while keeping public/default containment, cache/SR/storage, V1 work, and broad provider expansion closed.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ45 Bounded XLSX Source Material Result
+
+**Task:** Validate HJ45 after adding bounded XLSX attachment Source Material support for XLSX links discovered from already fetched safe linked pages.
+
+**Repair:** HJ45 commit `3f5d8733` adds a V2-owned bounded XLSX materializer and wires it into the existing Serper linked-page Source Material seam. It can discover same-host `.xlsx` attachments from already fetched safe linked pages, fetch them under a 1 MiB response cap, extract bounded structural cell-coordinate text, and produce hidden/admin-only Source Material records. It does not import V1 retrieval code, add public behavior, add a provider, add direct URL/ACS support, add cache/SR/storage behavior, run broad parser execution, or make deterministic semantic row selections.
+
+**Verification before live job:** Focused XLSX/Serper/source-material tests passed (`3` files / `16` tests); downstream handoff tests passed (`4` files / `29` tests); boundary guard passed (`96` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2 source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed after clearing a corrupted generated `.next` cache; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `0b2ab5f87a342e37c579114ab946aeccc262a780` before submission.
+
+**Live result:** HJ45 job `5f739284a34646b18664cef0f28a65a2` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown empty) and unauthenticated internal Source Material artifact access returned `401`. Authenticated admin reportMarkdown was `7848` characters and W5 completed with `4` EvidenceItems.
+
+**Observed report defect:** The intended XLSX path was not exercised in the live job: Source Material contained `6` records, but `0` were `provider_search_result_xlsx_text_bounded` and `0` used `ep_serper_linked_xlsx_fetch`. The report still states that direct population figures were not disclosed in supplied evidence items. HJ45 therefore proves the report path still works after the bounded XLSX implementation, but it does not yet prove source-native spreadsheet evidence is reachable for this claim.
+
+**Information yield:** `report_produced_same_defect_with_new_evidence`. The next HighJump repair should make the existing query/source-material path reach source-native official spreadsheet/downloadable-record material, rather than adding another downstream report layer or broad parser/provider machinery.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ44. HJ45 consumed `1`; `17` remain.
+
+**Next:** Commit this HJ45 result sync, then proceed to HJ46 as a focused source-native query/locator-materialization repair. Keep public/default containment, cache/SR/storage, V1 work, broad provider expansion, and downstream report-layer changes closed unless the next live evidence shows XLSX material is present but not used.

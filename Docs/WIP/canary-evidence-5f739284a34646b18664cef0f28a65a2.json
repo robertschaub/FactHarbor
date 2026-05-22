@@ -1,0 +1,79 @@
+{
+  "jobId": "5f739284a34646b18664cef0f28a65a2",
+  "sliceId": "X7-HJ-45-ASYLUM-235000-DE-BOUNDED-XLSX-SOURCE-MATERIAL-RERUN",
+  "implementationCommit": "3f5d8733b87a467e3a42433235f4f34438cabbaa",
+  "runtimeCommit": "0b2ab5f87a342e37c579114ab946aeccc262a780",
+  "createdAt": "2026-05-22T22:53:28.2720515Z",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "classification": "PARTIAL_X7_HJ45_INTERNAL_ALPHA_REPORT_CREATED_XLSX_MATERIAL_ABSENT",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 17,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer",
+  "informationYield": "report_produced_same_defect_with_new_evidence",
+  "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    },
+    {
+      "marker": "publicReportMarkdown_null_or_empty",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "marker": "internalSourceMaterialRoute_unauth_denied",
+      "expected": 401,
+      "actual": 401,
+      "pass": true
+    }
+  ],
+  "artifactSummary": {
+    "adminReportMarkdownLength": 7848,
+    "sourceMaterialStatus": "source_material_page_summary_completed",
+    "sourceMaterialRecordCount": 6,
+    "sourceMaterialKinds": {
+      "provider_search_result_preview_text": 5,
+      "provider_search_result_page_text_bounded": 1,
+      "provider_search_result_xlsx_text_bounded": 0
+    },
+    "sourceMaterialEndpoints": {
+      "ep_serper_google_search": 5,
+      "ep_serper_linked_page_fetch": 1,
+      "ep_serper_linked_xlsx_fetch": 0
+    },
+    "w5Status": "hidden_evidence_item_extraction_completed",
+    "w5EvidenceItemCount": 4,
+    "w5SourceContentPacketCount": 6,
+    "internalArtifactRoutesCaptured": [
+      "evidence-lifecycle-query-planning-runtime-artifacts",
+      "evidence-lifecycle-source-acquisition-candidate-provider-network-artifacts",
+      "evidence-lifecycle-source-candidate-preview-artifacts",
+      "evidence-lifecycle-source-material-page-summary-artifacts",
+      "evidence-lifecycle-evidence-corpus-bounded-text-artifacts",
+      "evidence-lifecycle-extraction-input-artifacts",
+      "evidence-lifecycle-bounded-evidence-extraction-artifacts",
+      "evidence-lifecycle-internal-alpha-report-result-artifacts"
+    ],
+    "publicLeakCheck": "public/default reportMarkdown empty; public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged; unauthenticated internal Source Material artifact route returned 401",
+    "observedReportDefect": "The internal Alpha report is complete but still states that direct population figures were not disclosed in the supplied evidence items. It cites current SEM statistics existence, annual application flow, and protection-outcome context, but no XLSX-derived current-stock figure.",
+    "qualityImplication": "HJ45 proves the report path still works after the bounded XLSX implementation, but the live source-acquisition path did not materialize an XLSX attachment. The next repair should make the existing query/source-material path reach source-native official spreadsheet/downloadable records, rather than adding another downstream report or parser layer."
+  }
+}

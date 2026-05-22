@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj44",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN",
       "startsAfterJobId": "cb3b78c16fef4a43bc88e330695c906a",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ44. HJ44 preserved source-native preview context and produced another complete internal alpha report, but the report still lacks direct current-stock/population evidence and cites only contextual population, annual asylum application, and EU/EFTA resident material. HJ45 is the next stronger source-quality validation: bounded XLSX source material discovered from already fetched linked pages, with public/default containment unchanged.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ44. HJ45 produced another complete internal Alpha report with public/default containment intact and W5 extracting four EvidenceItems, but no XLSX Source Material record was materialized. The next repair should make the existing query/source-material path reach source-native official spreadsheet/downloadable records, rather than adding another downstream report or parser layer.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1208,6 +1208,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ44 reran the German asylum aggregate input after preserving safe source-native preview context alongside bounded linked-page text and adding generic source-native data/table query guidance. Public/default containment held: public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public/default reportMarkdown stayed empty. Authenticated admin reportMarkdown was 4256 characters and produced another complete internal alpha report with UNVERIFIED / truth 0 / confidence 15. The report still lacks direct current-stock/population evidence and cites contextual Swiss population, annual asylum application, and EU/EFTA resident material only. This indicates another search-preview/cap tweak is low yield; the next repair should target bounded official record/document/spreadsheet source material."
+      },
+      {
+        "sliceId": "X7-HJ-45-ASYLUM-235000-DE-BOUNDED-XLSX-SOURCE-MATERIAL-RERUN",
+        "jobId": "5f739284a34646b18664cef0f28a65a2",
+        "classification": "PARTIAL_X7_HJ45_INTERNAL_ALPHA_REPORT_CREATED_XLSX_MATERIAL_ABSENT",
+        "implementationCommit": "3f5d8733b87a467e3a42433235f4f34438cabbaa",
+        "runtimeCommit": "0b2ab5f87a342e37c579114ab946aeccc262a780",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj46_source_native_query_or_locator_materialization_repair",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_same_defect_with_new_evidence",
+        "note": "HJ45 reran the German asylum aggregate input after bounded XLSX attachment Source Material support. Public/default containment held: public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public/default reportMarkdown stayed empty; unauthenticated internal Source Material route returned 401. Authenticated admin reportMarkdown was 7848 characters and W5 extracted four EvidenceItems, but Source Material contained zero provider_search_result_xlsx_text_bounded records and zero ep_serper_linked_xlsx_fetch records. The report still states direct population figures were not disclosed. The next repair should focus on making query/source-material selection reach source-native official spreadsheet/downloadable records, not on another downstream report layer."
       }
     ],
     "blockedPending": [],

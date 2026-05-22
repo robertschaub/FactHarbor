@@ -38,14 +38,28 @@ framework. W5 still owns semantic EvidenceItem extraction.
 
 Latest validation:
 
-`X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN`
+`X7-HJ-45-ASYLUM-235000-DE-BOUNDED-XLSX-SOURCE-MATERIAL-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-cb3b78c16fef4a43bc88e330695c906a.json`
+`Docs/WIP/canary-evidence-5f739284a34646b18664cef0f28a65a2.json`
 
 Important evidence:
 
+- `5f739284a34646b18664cef0f28a65a2` (German asylum aggregate) ran on HJ45
+  after bounded XLSX attachment Source Material support. It stayed on
+  `claimboundary-v2`, public/default containment held, and authenticated admin
+  reportMarkdown was `7848` characters. W5 completed and extracted `4`
+  EvidenceItems, but Source Material had `0`
+  `provider_search_result_xlsx_text_bounded` records and `0`
+  `ep_serper_linked_xlsx_fetch` records. The report still says direct
+  population figures were not disclosed in supplied evidence items.
+- HJ45's information yield is
+  `report_produced_same_defect_with_new_evidence`: the XLSX materializer is
+  implemented and verifier-clean, but the live query/source-material path did
+  not reach a spreadsheet attachment. The next useful bar is query/source
+  selection or locator materialization for source-native official downloadable
+  records, not another downstream report layer.
 - `cb3b78c16fef4a43bc88e330695c906a` (German asylum aggregate) ran on HJ44
   after the source-native preview/context repair. It stayed on
   `claimboundary-v2`, public/default containment held, and authenticated admin
@@ -255,20 +269,21 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after HJ44 job `cb3b78c16fef4a43bc88e330695c906a`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Refresh runtime to current HEAD, which includes implementation repair
-   `3f5d8733`, and run one HJ45 HighJump live validation on the
-   Captain-defined German asylum aggregate input.
-2. Classify the information yield: report produced with direct-stock evidence,
-   report produced but still source-usefulness-defective, XLSX material present
-   but not used downstream, or XLSX material absent.
+1. Prepare HJ46 as a focused source-native query/locator-materialization repair:
+   the next run should give the existing HJ45 XLSX materializer a realistic
+   chance to see official spreadsheet/downloadable-record material.
+2. Keep HJ46 HighJump-scoped: no public exposure, no provider expansion, no
+   cache/SR/storage, no direct URL/ACS, no V1 work, and no downstream report
+   layer unless the next live evidence shows the XLSX material is present but
+   not used.
 
 ## Stop Conditions
 
