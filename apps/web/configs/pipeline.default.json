@@ -125,6 +125,7 @@
   "centralityThreshold": "medium",
   "claimSpecificityMinimum": 0.6,
   "claimSelectionDefaultMode": "interactive",
+  "defaultPipelineVariant": "claimboundary-v2",
   "claimSelectionCap": 5,
   "claimSelectionIdleAutoProceedMs": 3600000,
   "claimSelectionBudgetAwarenessEnabled": true,

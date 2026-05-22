@@ -66,6 +66,7 @@ public sealed class ClaimSelectionDraftServiceTests
         var usage = await db.InviteCodeUsage.FindAsync("INVITE", today);
 
         Assert.NotNull(draft);
+        Assert.Equal("claimboundary-v2", draft!.PipelineVariant);
         Assert.NotEqual(result.DraftAccessToken, draft!.DraftAccessTokenHash);
         Assert.Matches("^[a-f0-9]{64}$", draft.DraftAccessTokenHash!);
         Assert.True(service.ValidateAccessToken(draft, result.DraftAccessToken));
@@ -73,6 +74,50 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.False(service.ValidateAccessToken(draft, null));
         Assert.Equal(1, invite?.UsedJobs);
         Assert.Equal(1, usage?.UsageCount);
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_PreservesExplicitLegacyPipelineVariant()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CreateDraftAsync(
+            "text",
+            "A verifiable claim",
+            "interactive",
+            inviteCode: null,
+            isAdmin: true,
+            pipelineVariant: "claimboundary");
+
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+        Assert.NotNull(result);
+
+        var draft = await db.ClaimSelectionDrafts.FindAsync(result.DraftId);
+        Assert.Equal("claimboundary", draft?.PipelineVariant);
+        Assert.Equal("claimboundary", result.PipelineVariant);
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_RejectsUnsupportedPipelineVariant()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CreateDraftAsync(
+            "text",
+            "A verifiable claim",
+            "interactive",
+            inviteCode: null,
+            isAdmin: true,
+            pipelineVariant: "claimboundary-v3");
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Invalid pipelineVariant: must be one of 'claimboundary', 'claimboundary-v2'", error);
     }
 
     [Fact]

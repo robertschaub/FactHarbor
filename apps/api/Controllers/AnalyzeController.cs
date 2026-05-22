@@ -9,7 +9,7 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateJobRequest(
     string inputType,
     string inputValue,
-    string? pipelineVariant = "claimboundary",
+    string? pipelineVariant = "claimboundary-v2",
     string? inviteCode = null
 );
 public sealed record CreateJobResponse(string jobId, string status);
@@ -76,7 +76,7 @@ public sealed class AnalyzeController : ControllerBase
         var job = await _jobs.CreateJobAsync(
             req.inputType,
             req.inputValue,
-            req.pipelineVariant ?? "claimboundary",
+            req.pipelineVariant ?? "claimboundary-v2",
             req.inviteCode,
             submissionPath: "direct-api");
 

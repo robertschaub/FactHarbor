@@ -22,7 +22,21 @@ public sealed class JobServiceTests
         var job = await service.CreateJobAsync("text", "A verifiable claim");
 
         Assert.Equal("direct-api", job.SubmissionPath);
+        Assert.Equal("claimboundary-v2", job.PipelineVariant);
         Assert.Equal("direct-api", (await db.Jobs.SingleAsync(j => j.JobId == job.JobId)).SubmissionPath);
+    }
+
+    [Fact]
+    public async Task CreateJobAsync_PreservesExplicitLegacyPipelineVariant()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var service = CreateJobService(db);
+
+        var job = await service.CreateJobAsync("text", "A verifiable claim", pipelineVariant: "claimboundary");
+
+        Assert.Equal("claimboundary", job.PipelineVariant);
+        Assert.Equal("claimboundary", (await db.Jobs.SingleAsync(j => j.JobId == job.JobId)).PipelineVariant);
     }
 
     [Fact]

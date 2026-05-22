@@ -1,7 +1,7 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { prepareStage1Snapshot } from "@/lib/analyzer/claimboundary-pipeline";
 import {
-  CLAIMBOUNDARY_V1_VARIANT,
+  CLAIMBOUNDARY_V2_VARIANT,
   resolveAnalyzerExecutionSelection,
 } from "@/lib/analyzer-v2/execution-selection";
 import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
@@ -370,7 +370,7 @@ async function runJobBackground(jobId: string) {
     const job = await apiGet(apiBase, adminKey, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
-    const requestedVariant = (job.pipelineVariant || "claimboundary") as string;
+    const requestedVariant = (job.pipelineVariant || "claimboundary-v2") as string;
     const hasPreparedStage1Json =
       typeof job.preparedStage1Json === "string" && job.preparedStage1Json.trim().length > 0;
     const hasClaimSelectionJson =
@@ -630,7 +630,7 @@ export async function drainRunnerQueue() {
               jobId: String(job.jobId),
               updatedUtc: String(job.updatedUtc),
               progress: typeof job.progress === "number" ? job.progress : 0,
-              pipelineVariant: String(job.pipelineVariant || "claimboundary"),
+              pipelineVariant: String(job.pipelineVariant || "claimboundary-v2"),
             });
           } else if (status === "QUEUED") {
             queuedJobsFromDb.push({
@@ -793,10 +793,10 @@ export async function drainRunnerQueue() {
         if (st !== "QUEUED") {
           continue;
         }
-        jobVariant = (j.pipelineVariant || "claimboundary") as PipelineVariant;
+        jobVariant = (j.pipelineVariant || "claimboundary-v2") as PipelineVariant;
       } catch {}
-      // Queue partitioning is still unnecessary; missing/unknown variants fall back to V1.
-      if (!jobVariant) jobVariant = CLAIMBOUNDARY_V1_VARIANT;
+      // Queue partitioning is still unnecessary; missing variants follow the current default.
+      if (!jobVariant) jobVariant = CLAIMBOUNDARY_V2_VARIANT;
 
       let claim: RunnerSlotClaimResult;
       try {

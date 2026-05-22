@@ -301,7 +301,10 @@ function buildEmptyCompatibilityView(): ResultCompatibilityView {
   };
 }
 
-function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompatibilityView {
+function buildV2CompatibilityView(
+  result: Record<string, unknown>,
+  reportMarkdown?: string | null,
+): ResultCompatibilityView {
   const meta = asRecord(result.meta) ?? {};
   const schemaVersion = readSchemaVersion(result);
   const publicCutoverApproved = isV2PublicCutoverApproved(schemaVersion, meta);
@@ -342,7 +345,7 @@ function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompat
       warnings,
       primaryIssue: blockedV2PrimaryIssue(warnings),
       narrative: {
-        markdown: null,
+        markdown: asString(reportMarkdown),
         headline: null,
         keyFinding: null,
         evidenceBaseSummary: null,
@@ -434,7 +437,7 @@ export function toResultCompatibilityView(
   if (!result) return buildEmptyCompatibilityView();
 
   const schemaKind = getResultSchemaKind(result);
-  if (schemaKind === "v2") return buildV2CompatibilityView(result);
+  if (schemaKind === "v2") return buildV2CompatibilityView(result, options.reportMarkdown);
   if (schemaKind === "legacy-v1") return buildLegacyCompatibilityView(result, options.reportMarkdown);
 
   return buildEmptyCompatibilityView();

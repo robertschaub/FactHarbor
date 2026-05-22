@@ -11,6 +11,7 @@ namespace FactHarbor.Api.Controllers;
 public sealed record CreateDraftRequest(
     string inputType,
     string inputValue,
+    string? pipelineVariant = "claimboundary-v2",
     string? selectionMode = "interactive",
     string? inviteCode = null);
 
@@ -56,7 +57,8 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             req.inputValue,
             req.selectionMode ?? "interactive",
             req.inviteCode,
-            isAdmin);
+            isAdmin,
+            req.pipelineVariant);
 
         if (result is null)
             return StatusCode(statusCode, new { error });
@@ -68,6 +70,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             draftId = result.DraftId,
             draftAccessToken = result.DraftAccessToken,
             status = result.Status,
+            pipelineVariant = result.PipelineVariant,
             createdUtc = result.CreatedUtc,
             expiresUtc = result.ExpiresUtc,
         });
@@ -88,6 +91,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             isHidden = draft.IsHidden,
             lastEventMessage = draft.LastEventMessage,
             selectionMode = draft.SelectionMode,
+            pipelineVariant = draft.PipelineVariant,
             originalInputType = draft.OriginalInputType,
             originalInputValue = draft.OriginalInputValue,
             activeInputType = draft.ActiveInputType,

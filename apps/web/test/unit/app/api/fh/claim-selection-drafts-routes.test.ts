@@ -67,7 +67,7 @@ describe("claim-selection draft proxy routes", () => {
     mockResolveDraftId.mockResolvedValue("draft-1");
     mockDrainDraftQueue.mockReset();
     mockLoadPipelineConfig.mockResolvedValue({
-      config: { claimSelectionDefaultMode: "interactive" },
+      config: { claimSelectionDefaultMode: "interactive", defaultPipelineVariant: "claimboundary-v2" },
     });
     mockFetch.mockResolvedValue(createJsonResponse({ ok: true }));
   });
@@ -135,7 +135,7 @@ describe("claim-selection draft proxy routes", () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
 
     mockLoadPipelineConfig.mockResolvedValueOnce({
-      config: { claimSelectionDefaultMode: "interactive" },
+      config: { claimSelectionDefaultMode: "interactive", defaultPipelineVariant: "claimboundary-v2" },
     });
     mockFetch.mockResolvedValueOnce(
       createJsonResponse({
@@ -163,6 +163,7 @@ describe("claim-selection draft proxy routes", () => {
         body: JSON.stringify({
           inputType: "text",
           inputValue: "hello world",
+          pipelineVariant: "claimboundary-v2",
           selectionMode: "interactive",
           inviteCode: undefined,
         }),
@@ -170,6 +171,7 @@ describe("claim-selection draft proxy routes", () => {
     );
     await expect(response.json()).resolves.toMatchObject({
       draftId: "draft-1",
+      pipelineVariant: "claimboundary-v2",
       selectionMode: "interactive",
     });
   });
@@ -178,7 +180,7 @@ describe("claim-selection draft proxy routes", () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
 
     mockLoadPipelineConfig.mockResolvedValueOnce({
-      config: { claimSelectionDefaultMode: "interactive" },
+      config: { claimSelectionDefaultMode: "interactive", defaultPipelineVariant: "claimboundary-v2" },
     });
     mockFetch.mockResolvedValueOnce(
       createJsonResponse({
@@ -206,6 +208,7 @@ describe("claim-selection draft proxy routes", () => {
         body: JSON.stringify({
           inputType: "text",
           inputValue: "hello world",
+          pipelineVariant: "claimboundary-v2",
           selectionMode: "automatic",
           inviteCode: undefined,
         }),

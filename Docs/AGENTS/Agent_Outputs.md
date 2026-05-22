@@ -3635,3 +3635,13 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Containment: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; public `reportMarkdown` stayed empty; default admin projections stayed hash/length/provenance-only; explicit report/draft inspection remained authenticated admin-only and no-store.
 - Canary information yield: `report produced`.
 - Remaining HighJump live-job budget is `4`; no second HJ20 canary is authorized. Next action is internal report-quality review over the produced hidden draft.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 Default Submission and Admin UI Report Exposure
+
+- Implemented the Captain-approved phase transition to make `claimboundary-v2` the default manual submission pipeline through UCM defaults, web proxy routes, API job/draft creation defaults, and runner missing-variant fallback.
+- Preserved explicit legacy `claimboundary` requests; no V1 cleanup/removal was performed.
+- Reused existing containment mechanisms: blocked V2 result JSON remains `4.0.0-cb-precutover` / `blocked_precutover`, while stored report markdown from the internal V2 report writer is available to authenticated admin job responses and rendered on the job page as a `V2 Report` section.
+- Non-admin blocked V2 report markdown remains hidden by `ResultCompatibility.BuildPublicReportMarkdown`; public result JSON, compatibility verdict metrics, UI/export public exposure, cache/SR/storage behavior, provider expansion, and V1 work were not opened.
+- Debt-guard classification: amend existing mechanisms in place; net mechanism impact is limited to one UCM field/default and a minimal V2 report rendering section.
+- Verifiers passed: focused web suite (`6` files / `128` tests), `dotnet test apps/api.Tests` (`44` tests), `npm -w apps/web run build`, `npm run validate:v2-gates`, `npm run debt:sensors` (`advisory_warn`, known V2/docs footprint warnings), and `git diff --check`.
+- Build-lock note: first API test attempts were blocked by a running local `FactHarbor.Api` process holding `bin/Debug/net8.0`; stopping that process released the lock and the API suite passed.

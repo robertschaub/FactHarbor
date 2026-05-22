@@ -38,6 +38,7 @@ public sealed class ClaimSelectionDraftService
         string DraftId,
         string DraftAccessToken,
         string Status,
+        string PipelineVariant,
         DateTime CreatedUtc,
         DateTime ExpiresUtc);
 
@@ -51,9 +52,13 @@ public sealed class ClaimSelectionDraftService
         string inputValue,
         string selectionMode,
         string? inviteCode,
-        bool isAdmin)
+        bool isAdmin,
+        string? pipelineVariant = "claimboundary-v2")
     {
-        var (valid, validationError) = AnalyzeInputValidator.Validate(inputType, inputValue);
+        var effectivePipelineVariant = string.IsNullOrWhiteSpace(pipelineVariant)
+            ? "claimboundary-v2"
+            : pipelineVariant.Trim();
+        var (valid, validationError) = AnalyzeInputValidator.Validate(inputType, inputValue, effectivePipelineVariant);
         if (!valid) return (null, validationError, 400);
 
         if (selectionMode != "interactive" && selectionMode != "automatic")
@@ -77,7 +82,7 @@ public sealed class ClaimSelectionDraftService
             ActiveInputType = inputType,
             OriginalInputValue = inputValue,
             ActiveInputValue = inputValue,
-            PipelineVariant = "claimboundary",
+            PipelineVariant = effectivePipelineVariant,
             InviteCode = inviteCode,
             SelectionMode = selectionMode,
             DraftAccessTokenHash = tokenHash,
@@ -89,7 +94,13 @@ public sealed class ClaimSelectionDraftService
         _db.ClaimSelectionDrafts.Add(draft);
         await _db.SaveChangesAsync();
 
-        return (new CreateDraftResult(draft.DraftId, accessToken, draft.Status, draft.CreatedUtc, draft.ExpiresUtc), null, 0);
+        return (new CreateDraftResult(
+            draft.DraftId,
+            accessToken,
+            draft.Status,
+            draft.PipelineVariant,
+            draft.CreatedUtc,
+            draft.ExpiresUtc), null, 0);
     }
 
     public async Task<ClaimSelectionDraftEntity?> GetDraftAsync(string draftId)

@@ -187,6 +187,7 @@ export async function runClaimBoundaryPipelineV2(
   await emit(input, "Analyzer V2 orchestrator initialized.", 8);
 
   const context = buildClaimBoundaryV2RunContext(input, options);
+  let adminReportMarkdown: string | null = null;
   const claimUnderstandingActivation = buildClaimUnderstandingRuntimeActivation(
     context,
     {
@@ -450,6 +451,12 @@ export async function runClaimBoundaryPipelineV2(
                 context,
                 decision: internalReportWriter,
               });
+              if (
+                internalReportWriter.status === "internal_report_writer_draft_created" &&
+                internalReportWriter.reportMarkdown
+              ) {
+                adminReportMarkdown = internalReportWriter.reportMarkdown;
+              }
             }
           }
         }
@@ -461,6 +468,7 @@ export async function runClaimBoundaryPipelineV2(
   const envelope = buildDamagedClaimBoundaryV2Envelope(
     context,
     claimPreparationEnvelopeDiagnosticsFromHandoff(claimUnderstandingHandoff),
+    { adminReportMarkdown },
   );
 
   await emit(input, "Analyzer V2 damaged structural envelope generated.", 90);

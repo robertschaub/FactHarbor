@@ -13,6 +13,10 @@ export type ClaimBoundaryV2Envelope = {
   reportMarkdown: string;
 };
 
+type DamagedClaimBoundaryV2EnvelopeOptions = {
+  adminReportMarkdown?: string | null;
+};
+
 export type ClaimPreparationEnvelopeDiagnostic = {
   inputSource: "acs_prepared_snapshot" | "direct_input";
   preparationStatus: string;
@@ -141,21 +145,26 @@ function buildCompatibilityQualityGates(context: ClaimBoundaryV2RunContext) {
 export function buildDamagedClaimBoundaryV2Envelope(
   context: ClaimBoundaryV2RunContext,
   preparationDiagnostics: readonly ClaimPreparationEnvelopeDiagnostic[] = [],
+  options: DamagedClaimBoundaryV2EnvelopeOptions = {},
 ): ClaimBoundaryV2Envelope {
   const placeholderClaims = buildPlaceholderClaims(context);
   const warning = buildDamagedWarning(context);
   const diagnostics = claimPreparationDiagnostics(context, preparationDiagnostics);
   const compatibilityQualityGates = buildCompatibilityQualityGates(context);
   const shellClaimIds = shellOnlyClaimIds(context);
-  const reportMarkdown = [
+  const publicDamagedReportMarkdown = [
     "# V2 Pre-Cutover Pipeline Not Implemented",
     "",
     "This is a damaged structural envelope for the gated Analyzer V2 pre-cutover path.",
     "No claim understanding, research, evidence extraction, ClaimAssessmentBoundary clustering, or verdict generation ran.",
   ].join("\n");
+  const adminReportMarkdown = typeof options.adminReportMarkdown === "string" &&
+    options.adminReportMarkdown.trim().length > 0
+    ? options.adminReportMarkdown
+    : null;
 
   return {
-    reportMarkdown,
+    reportMarkdown: adminReportMarkdown ?? publicDamagedReportMarkdown,
     resultJson: {
       _schemaVersion: CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION,
       meta: {
@@ -215,7 +224,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
       },
       warnings: [warning, ...diagnostics],
       narrative: {
-        markdown: reportMarkdown,
+        markdown: publicDamagedReportMarkdown,
         sections: {
           headline: "V2 pre-cutover pipeline not implemented.",
           keyFinding: "No analytical conclusion was produced.",

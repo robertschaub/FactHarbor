@@ -8,6 +8,11 @@ import {
 import { normalizeClaimSelectionMode } from "@/lib/claim-selection-flow";
 import { loadPipelineConfig } from "@/lib/config-loader";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
+import {
+  DEFAULT_PIPELINE_VARIANT,
+  isPipelineVariant,
+  normalizePipelineVariant,
+} from "@/lib/pipeline-variant";
 
 export const runtime = "nodejs";
 
@@ -27,6 +32,7 @@ export async function POST(request: Request) {
   let parsedBody: {
     inputType?: unknown;
     inputValue?: unknown;
+    pipelineVariant?: unknown;
     selectionMode?: unknown;
     inviteCode?: unknown;
   } = {};
@@ -59,16 +65,37 @@ export async function POST(request: Request) {
     parsedBody.selectionMode === "interactive" || parsedBody.selectionMode === "automatic"
       ? parsedBody.selectionMode
       : null;
+  const explicitPipelineVariant =
+    typeof parsedBody.pipelineVariant === "string" && parsedBody.pipelineVariant.trim().length > 0
+      ? parsedBody.pipelineVariant.trim()
+      : null;
+
+  if (explicitPipelineVariant && !isPipelineVariant(explicitPipelineVariant)) {
+    return NextResponse.json(
+      { error: "Invalid pipelineVariant: must be one of 'claimboundary', 'claimboundary-v2'" },
+      { status: 400 },
+    );
+  }
+
+  let configuredSelectionMode: string | undefined = undefined;
+  let configuredPipelineVariant: unknown = undefined;
+  try {
+    const { config } = await loadPipelineConfig("default");
+    configuredSelectionMode = typeof config.claimSelectionDefaultMode === "string"
+      ? config.claimSelectionDefaultMode
+      : undefined;
+    configuredPipelineVariant = config.defaultPipelineVariant;
+  } catch {
+    configuredSelectionMode = undefined;
+    configuredPipelineVariant = DEFAULT_PIPELINE_VARIANT;
+  }
 
   let effectiveSelectionMode = normalizeClaimSelectionMode(explicitSelectionMode);
   if (!explicitSelectionMode) {
-    try {
-      const { config } = await loadPipelineConfig("default");
-      effectiveSelectionMode = normalizeClaimSelectionMode(config.claimSelectionDefaultMode);
-    } catch {
-      effectiveSelectionMode = normalizeClaimSelectionMode(undefined);
-    }
+    effectiveSelectionMode = normalizeClaimSelectionMode(configuredSelectionMode);
   }
+  const effectivePipelineVariant =
+    explicitPipelineVariant ?? normalizePipelineVariant(configuredPipelineVariant);
 
   const upstreamResponse = await fetch(`${base.replace(/\/$/, "")}/v1/claim-selection-drafts`, {
     method: "POST",
@@ -76,6 +103,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       inputType,
       inputValue,
+      pipelineVariant: effectivePipelineVariant,
       selectionMode: effectiveSelectionMode,
       inviteCode: parsedBody.inviteCode,
     }),
@@ -98,6 +126,7 @@ export async function POST(request: Request) {
   const responsePayload = payload
     ? {
       ...payload,
+      pipelineVariant: effectivePipelineVariant,
       selectionMode: effectiveSelectionMode,
     }
     : payload;

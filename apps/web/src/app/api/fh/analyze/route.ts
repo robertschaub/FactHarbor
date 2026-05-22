@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
 import { getClientIp } from "@/lib/auth";
+import { loadPipelineConfig } from "@/lib/config-loader";
+import {
+  DEFAULT_PIPELINE_VARIANT,
+  isPipelineVariant,
+  normalizePipelineVariant,
+} from "@/lib/pipeline-variant";
 
 export const runtime = "nodejs";
 
@@ -16,7 +22,12 @@ export async function POST(req: Request) {
   }
 
   // Parse body to extract input for policy gate evaluation
-  let parsedBody: { inputValue?: unknown; inputType?: unknown } = {};
+  let parsedBody: {
+    inputValue?: unknown;
+    inputType?: unknown;
+    pipelineVariant?: unknown;
+    inviteCode?: unknown;
+  } = {};
   try {
     parsedBody = JSON.parse(body);
   } catch {
@@ -39,12 +50,33 @@ export async function POST(req: Request) {
   }
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/analyze`;
+  const explicitPipelineVariant =
+    typeof parsedBody.pipelineVariant === "string" && parsedBody.pipelineVariant.trim().length > 0
+      ? parsedBody.pipelineVariant.trim()
+      : null;
+
+  if (explicitPipelineVariant && !isPipelineVariant(explicitPipelineVariant)) {
+    return NextResponse.json(
+      { error: "Invalid pipelineVariant: must be one of 'claimboundary', 'claimboundary-v2'" },
+      { status: 400 },
+    );
+  }
+
+  let configuredPipelineVariant: unknown = DEFAULT_PIPELINE_VARIANT;
+  try {
+    const { config } = await loadPipelineConfig("default");
+    configuredPipelineVariant = config.defaultPipelineVariant;
+  } catch {
+    configuredPipelineVariant = DEFAULT_PIPELINE_VARIANT;
+  }
+  const effectivePipelineVariant =
+    explicitPipelineVariant ?? normalizePipelineVariant(configuredPipelineVariant);
 
   const forwardedBody = JSON.stringify({
     inputType: parsedBody.inputType,
     inputValue: parsedBody.inputValue,
-    pipelineVariant: (parsedBody as any).pipelineVariant,
-    inviteCode: (parsedBody as any).inviteCode,
+    pipelineVariant: effectivePipelineVariant,
+    inviteCode: parsedBody.inviteCode,
   });
 
   const upstreamHeaders: Record<string, string> = { "Content-Type": "application/json" };

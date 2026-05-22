@@ -176,6 +176,20 @@ describe("internal runner V2 shell routing", () => {
     expect(resultBodies[0].resultJson.meta.pipelineVariantRequested).toBeUndefined();
   });
 
+  it("defaults missing stored variants to V2 when the V2 shell flag is enabled", async () => {
+    process.env.FH_ANALYZER_V2_SHELL = "enabled";
+
+    const { resultBodies } = await runQueuedJobHarness({
+      jobId: "job-missing-variant-defaults-v2",
+    });
+
+    expect(runClaimBoundaryAnalysis).not.toHaveBeenCalled();
+    expect(runClaimBoundaryV2Shell).toHaveBeenCalledTimes(1);
+    expect(resultBodies[0].resultJson.meta).toMatchObject({
+      pipeline: "claimboundary-v2",
+    });
+  });
+
   it("fails closed when V2 is requested but disabled", async () => {
     const { statusBodies, resultBodies } = await runQueuedJobHarness({
       jobId: "job-v2-disabled",

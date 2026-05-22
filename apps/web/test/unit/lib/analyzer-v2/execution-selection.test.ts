@@ -13,17 +13,28 @@ import {
 } from "@/lib/analyzer-v2/execution-selection";
 
 describe("analyzer-v2 execution selection", () => {
-  it("routes normal jobs to V1 when no V2 flag is set", () => {
+  it("defaults missing requested variants to V2 and fails closed when the V2 shell flag is disabled", () => {
     expect(resolveAnalyzerExecutionSelection(undefined, {})).toEqual({
-      path: "claimboundary-v1",
-      requestedVariant: CLAIMBOUNDARY_V1_VARIANT,
-      executedVariant: CLAIMBOUNDARY_V1_VARIANT,
-      fallbackReason: null,
+      path: "blocked",
+      requestedVariant: CLAIMBOUNDARY_V2_VARIANT,
+      executedVariant: null,
+      fallbackReason: "v2-shell-disabled",
       v2ShellEnabled: false,
       runtimeActivationStatus: "kill_switch_closed",
       runtimeActivationEnabled: false,
       queryPlanningRuntimeActivationStatus: "kill_switch_closed",
       queryPlanningRuntimeActivationEnabled: false,
+    });
+  });
+
+  it("routes missing requested variants to V2 when the V2 shell flag is enabled", () => {
+    expect(resolveAnalyzerExecutionSelection(undefined, {
+      FH_ANALYZER_V2_SHELL: "enabled",
+    })).toMatchObject({
+      path: "claimboundary-v2-shell",
+      requestedVariant: CLAIMBOUNDARY_V2_VARIANT,
+      executedVariant: CLAIMBOUNDARY_V2_VARIANT,
+      fallbackReason: null,
     });
   });
 

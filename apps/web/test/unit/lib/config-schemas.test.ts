@@ -302,10 +302,11 @@ describe("PipelineConfigSchema", () => {
     expect(PipelineConfigSchema.safeParse(config).success).toBe(true);
   });
 
-  it("accepts configs that still contain defaultPipelineVariant (legacy field stripped by Zod)", () => {
-    // Field was removed from schema — Zod strips unknown keys, so these should still parse
+  it("validates defaultPipelineVariant as the UCM-backed manual submission default", () => {
+    expect(DEFAULT_PIPELINE_CONFIG.defaultPipelineVariant).toBe("claimboundary-v2");
     expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary" }).success).toBe(true);
-    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "anything" }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "claimboundary-v2" }).success).toBe(true);
+    expect(PipelineConfigSchema.safeParse({ ...DEFAULT_PIPELINE_CONFIG, defaultPipelineVariant: "anything" }).success).toBe(false);
   });
 
   it("rejects empty model names", () => {

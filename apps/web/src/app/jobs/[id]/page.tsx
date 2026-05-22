@@ -996,6 +996,8 @@ export default function JobPage() {
       : rawResult,
     [rawResult, resultCompatibilityView.schemaKind, job?.reportMarkdown],
   );
+  const v2ReportMarkdown =
+    resultCompatibilityView.schemaKind === "v2" ? reportSections.publicReport.trim() : "";
   const schemaVersion = result?.meta?.schemaVersion || "";
   const hasV22Data = resultCompatibilityView.schemaKind === "v2" || schemaVersion.startsWith("2.") || schemaVersion.startsWith("3.");
   const displayCommitHash = job?.gitCommitHash || null;
@@ -1747,6 +1749,16 @@ export default function JobPage() {
                       <BackgroundBanner backgroundDetails={backgroundDetails} />
                     )}
                   </>
+                </ReportSection>
+              )}
+
+              {v2ReportMarkdown && (
+                <ReportSection title="V2 Report" className={styles.reportSurfaceCard}>
+                  <div className={styles.markdownReport}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {v2ReportMarkdown}
+                    </ReactMarkdown>
+                  </div>
                 </ReportSection>
               )}
 

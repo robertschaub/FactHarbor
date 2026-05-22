@@ -123,6 +123,17 @@ describe("analyzer-v2 result compatibility view", () => {
     });
   });
 
+  it("allows API-supplied blocked V2 report markdown into the admin UI surface without exposing verdict metrics", () => {
+    const surface = toLegacyReportSurfaceModel(v2Fixture, {
+      reportMarkdown: "# Internal V2 Draft\n\nAdmin-only draft report.",
+    });
+
+    expect(surface.truthPercentage).toBeNull();
+    expect(surface.verdict).toBeNull();
+    expect(surface.confidence).toBeNull();
+    expect(surface.verdictNarrative.markdown).toContain("Internal V2 Draft");
+  });
+
   it("projects approved V2 fixtures into a legacy report surface model for UI/export parity tests", () => {
     const surface = toLegacyReportSurfaceModel(approvedV2Fixture(v2Fixture));
 

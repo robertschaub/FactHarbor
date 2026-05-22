@@ -44,7 +44,7 @@ export type AnalyzerExecutionSelection =
 function normalizeRequestedVariant(value: unknown): string {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
-    : CLAIMBOUNDARY_V1_VARIANT;
+    : CLAIMBOUNDARY_V2_VARIANT;
 }
 
 export function isAnalyzerV2ShellEnabled(env: NodeJS.ProcessEnv = process.env): boolean {

@@ -22,9 +22,9 @@ public sealed class JobEntity
     public string? InviteCode { get; set; }
 
     /// <summary>
-    /// Pipeline variant: "claimboundary" (default)
+    /// Pipeline variant: "claimboundary-v2" (default) or "claimboundary" for explicit legacy runs.
     /// </summary>
-    public string PipelineVariant { get; set; } = "claimboundary";
+    public string PipelineVariant { get; set; } = "claimboundary-v2";
 
     // Retry tracking
     /// <summary>
@@ -123,7 +123,7 @@ public sealed class ClaimSelectionDraftEntity
     public string OriginalInputValue { get; set; } = "";
     public string ActiveInputValue { get; set; } = "";
 
-    public string PipelineVariant { get; set; } = "claimboundary";
+    public string PipelineVariant { get; set; } = "claimboundary-v2";
     public string? InviteCode { get; set; }
 
     public string SelectionMode { get; set; } = "interactive";

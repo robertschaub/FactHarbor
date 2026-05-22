@@ -42,7 +42,7 @@ public sealed class JobService
     public async Task<JobEntity> CreateJobAsync(
         string inputType,
         string inputValue,
-        string pipelineVariant = "claimboundary",
+        string pipelineVariant = "claimboundary-v2",
         string? inviteCode = null,
         string submissionPath = "direct-api")
     {
