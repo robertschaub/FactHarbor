@@ -245,7 +245,7 @@ describe("analyzer-v2 gateway policy registry", () => {
       maxCalls: 1,
       schemaRetryCount: 0,
       timeoutMs: 90000,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 8000,
       fallbackBehavior: "none_fail_closed",
       escalationBehavior: "surface_provider_failure",
       execution: "blocked_until_prompt_model_cache_approval",

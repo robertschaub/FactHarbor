@@ -355,6 +355,8 @@ A future non-executable loader package must provide these JSON packets:
 
 Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
 
+Keep the JSON compact and complete: extract the strongest bounded set of distinct EvidenceItems needed for downstream sufficiency and verdict work, avoid duplicative items from the same source content when they do not add distinct probative value, and keep rationale/provenance strings concise while preserving required evidence meaning.
+
 Top-level object:
 
 - `schemaVersion`: exactly `v2.evidence_extraction_result.0`

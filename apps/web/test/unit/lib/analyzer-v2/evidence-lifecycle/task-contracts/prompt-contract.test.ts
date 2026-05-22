@@ -209,6 +209,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("For comparative claims, preserve the compared entities");
     expect(section).toContain("Evidence comparing a claim entity to a third entity is contextual or unclear");
     expect(section).toContain("Do not treat adjacent or substitute comparators as direct support or opposition");
+    expect(section).toContain("Keep the JSON compact and complete");
+    expect(section).toContain("avoid duplicative items from the same source content");
+    expect(section).toContain("while preserving required evidence meaning");
   });
 
   it("renders the boundary/verdict execution prompt contract with citation and internal-label constraints", () => {

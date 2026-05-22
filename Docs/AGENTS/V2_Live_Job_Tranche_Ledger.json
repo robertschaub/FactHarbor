@@ -594,15 +594,15 @@
       "nextLiveJobRequirement": "Any further HighJump live job requires a committed repair, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and explicit Steer-Co/Captain budget reconciliation."
     },
     "pendingExceptionAuthorization": {
-      "sliceId": "X7-HJ-16-W4G-W4H-AGGREGATE-CAP-RECALIBRATION-CANARY",
-      "status": "consumed",
+      "sliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
+      "status": "pending",
       "maxJobs": 1,
-      "remaining": 0,
-      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
-      "reason": "HJ15 proved OpenAlex fan-in improved Source Material to three OpenAlex plus six Wikimedia records, but the resulting 12736-byte bounded material set exceeded the existing 12288-byte W4-G/W4-H aggregate cap. HJ16 amends only the existing shared aggregate cap to 16384 with no new provider, selector, route, prompt, schema, or public behavior. One canary is needed to determine whether the richer source set now reaches W4-H/W5/W8 or stops on a new non-cap issue.",
+      "remaining": 1,
+      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ17_W5_Output_Budget_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+      "reason": "HJ16 closed the W4-G/W4-H aggregate cap stop and exposed W5 parse_failure / json_parse_error at exactly 4000 output tokens. HJ17 amends only the existing W5 evidence_extraction output budget to 8000 plus one compactness prompt instruction, with no chunking, retry, schema relaxation, source/provider change, aggregate-cap change, parser, cache/SR/storage, public behavior, ACS/direct URL, V1 work, or V1 cleanup. One canary is needed to determine whether W5 now emits valid strict JSON below the 8000 ceiling and whether W5-E/W5-F/W8 proceed.",
       "mustRecordConsumptionBeforeNextLiveJob": true,
-      "consumedByJobId": "801450beed9b4de184f1a5ae532f00dd",
-      "classification": "PARTIAL_X7_HJ16_AGGREGATE_CAP_RECALIBRATED_W5_PARSE_FAILURE"
+      "consumedByJobId": null,
+      "classification": null
     }
   }
 }

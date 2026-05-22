@@ -920,7 +920,7 @@ function isApprovedX7W5ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
     && policy.maxCalls === 1
     && policy.schemaRetryCount === 0
     && policy.timeoutMs === 90000
-    && policy.maxOutputTokens === 4000
+    && policy.maxOutputTokens === 8000
     && policy.fallbackBehavior === "none_fail_closed"
     && policy.escalationBehavior === "surface_provider_failure"
     && policy.execution === "blocked_until_prompt_model_cache_approval"

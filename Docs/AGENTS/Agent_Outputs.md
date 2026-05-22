@@ -3514,3 +3514,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HJ16 consumed Steer-Co exception overrun `6`; no second HJ16 canary is authorized.
 - Next action: Steer-Co should choose the narrowest balanced HJ17 repair for the W5 parse/truncation stop, likely inside the existing W5 prompt/model/output-token contract path, not source acquisition or cap handling.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ16_Canary_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ17 W5 Output Budget Repair Implementation
+
+- Steer-Co consented to HJ17 as a narrow W5 output truncation repair after HJ16 W5 stopped at `damaged_execution` / `parse_failure` with `json_parse_error` and exactly `4000` output tokens.
+- Implemented only the existing W5 `evidence_extraction` output-budget amendment: `maxOutputTokens` is now `8000`, and W5 exact model-policy validation requires the same cap.
+- Added one topic-neutral `V2_EVIDENCE_EXTRACTION` compactness instruction for complete strict JSON, distinct EvidenceItems, no duplicative same-source items without distinct probative value, and concise rationale/provenance strings.
+- No chunking, retries, schema relaxation, source/provider change, aggregate-cap change, model swap, cache/SR/storage behavior, parser, public behavior, ACS/direct URL, V1 work, or V1 cleanup was added.
+- First focused verifier caught a local hunk mistake that changed Query Planning instead of W5; classified as an `introduced-regression`, amended before commit, and rerun successfully.
+- Verifiers passed: focused W5/policy/prompt suite (`4` files / `28` tests), evidence-items slice (`2` files / `13` tests), full `analyzer-v2-runtime` (`74` files / `353` tests), full `analyzer-v2` (`142` files / `861` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Independent reviewer found no blocking issues and accepted exactly one canary after runtime refresh, with output-token/cost/ceiling checks.
+- Next action: commit, refresh runtime, verify API/Web runtime hashes, preflight containment, and run exactly one HJ17 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ17_W5_Output_Budget_Repair_Implementation.md
