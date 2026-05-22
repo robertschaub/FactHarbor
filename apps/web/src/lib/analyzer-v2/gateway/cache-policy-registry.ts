@@ -5,6 +5,7 @@ import type {
 } from "@/lib/analyzer-v2/gateway/types";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
@@ -167,4 +168,27 @@ export const ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY: AnalyzerV2Cach
     "adapterVersion",
   ],
   approval: ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
+};
+
+export const ANALYZER_V2_AGGREGATION_NARRATIVE_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.aggregation-narrative.hj18",
+  requiredDimensions: [
+    "promptProfile",
+    "promptSectionId",
+    "promptContentHash",
+    "modelTask",
+    "provider",
+    "modelName",
+    "temperature",
+    "outputSchemaVersion",
+    "configSnapshotHash",
+    "resultSchemaVersion",
+    "inputIdentityHash",
+    "sourceIdentityHash",
+    "currentDateBucket",
+  ],
+  optionalDimensions: [
+    "adapterVersion",
+  ],
+  approval: ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
 };

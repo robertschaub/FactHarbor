@@ -17,6 +17,10 @@ import {
   EvidenceSufficiencyMissingDimensionMaterialitySchema,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas";
 import { buildStaticEvidenceTaskPolicySnapshot } from "@/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy";
+import {
+  AGGREGATION_NARRATIVE_PROMPT_SECTION_ID,
+  AGGREGATION_NARRATIVE_SCHEMA_VERSION,
+} from "@/lib/analyzer-v2/evidence-lifecycle/report-result/aggregation-narrative-contract";
 
 const webRoot = process.cwd();
 const repoRoot = path.resolve(webRoot, "../..");
@@ -246,6 +250,31 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("same compared entities, property, direction, and measurement frame as the selected AtomicClaim");
     expect(section).toContain("keep the internal report path open with a caveated or `UNVERIFIED` candidate");
     expect(section).not.toMatch(/\$\{\w+\}/);
+  });
+
+  it("renders the aggregation narrative prompt contract without Captain canary terms", () => {
+    const content = readPrompt();
+    const section = readSection(content, AGGREGATION_NARRATIVE_PROMPT_SECTION_ID);
+
+    expect(section).toContain(AGGREGATION_NARRATIVE_SCHEMA_VERSION);
+    expect(section).toContain("aggregation_narrative");
+    expect(section).toContain("hidden/internal report-writer review");
+    expect(section).toContain("Return only one JSON object");
+    expect(section).toContain("Branch rules");
+    expect(section).toContain("accepted");
+    expect(section).toContain("blocked");
+    expect(section).toContain("damaged");
+    expect(section).toContain("aggregationNarrativeInputPacketJson");
+    expect(section).toContain("taskPolicySnapshotJson");
+    expect(section).toContain("reportQualityGuardrailsJson");
+    expect(section).toContain("It does not recompute truth percentages, confidence, verdict labels");
+    expect(section).toContain("cite only supplied EvidenceItem IDs");
+    expect(section).toContain("reportMarkdown");
+    expect(section).not.toMatch(/\$\{\w+\}/);
+
+    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
+      expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
+    }
   });
 
   it("keeps Evidence Lifecycle prompt sections generic and free of Captain canary terms", () => {

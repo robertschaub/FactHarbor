@@ -4,6 +4,7 @@ import type {
 } from "@/lib/analyzer-v2/gateway/types";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
@@ -96,6 +97,22 @@ export const ANALYZER_V2_TASK_MODEL_POLICIES = [
     escalationBehavior: "surface_provider_failure",
     execution: "blocked_until_prompt_model_cache_approval",
     approval: ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
+  },
+  {
+    policyId: "v2.model.aggregation_narrative.hj18",
+    gatewayTaskId: "aggregation_narrative",
+    modelTask: "report",
+    modelTier: "standard",
+    providerPolicy: "from_config_snapshot",
+    temperature: 0.1,
+    maxCalls: 1,
+    schemaRetryCount: 0,
+    timeoutMs: 90000,
+    maxOutputTokens: 4000,
+    fallbackBehavior: "none_fail_closed",
+    escalationBehavior: "surface_provider_failure",
+    execution: "blocked_until_prompt_model_cache_approval",
+    approval: ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
   },
 ] as const satisfies readonly AnalyzerV2TaskModelPolicy[];
 

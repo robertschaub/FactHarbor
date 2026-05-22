@@ -12,6 +12,9 @@ export const ANALYZER_V2_W6_C_APPROVAL_ANCHOR =
 export const ANALYZER_V2_W7_B_APPROVAL_ANCHOR =
   "Docs/WIP/2026-05-20_V2_Slice_W7-B_Boundary_Verdict_LLM_Execution_Approval_Package.md@c8cf2ebc#captain-approved-w7-b" as const;
 
+export const ANALYZER_V2_HJ18_APPROVAL_ANCHOR =
+  "Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized" as const;
+
 export const ANALYZER_V2_7L1_CAPTAIN_APPROVAL = {
   status: "approved",
   reviewer: "Captain",
@@ -48,4 +51,12 @@ export const ANALYZER_V2_W7_B_CAPTAIN_APPROVAL = {
   // Durable approval anchor:
   // Docs/WIP/2026-05-20_V2_Slice_W7-B_Boundary_Verdict_LLM_Execution_Approval_Package.md at c8cf2ebc
   approvedAt: ANALYZER_V2_W7_B_APPROVAL_ANCHOR,
+} as const satisfies AnalyzerV2PolicyApproval;
+
+export const ANALYZER_V2_HJ18_CAPTAIN_APPROVAL = {
+  status: "approved",
+  reviewer: "Captain",
+  // Durable approval anchor:
+  // Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md
+  approvedAt: ANALYZER_V2_HJ18_APPROVAL_ANCHOR,
 } as const satisfies AnalyzerV2PolicyApproval;

@@ -22,6 +22,8 @@ const GATEWAY_TYPES_PATH = "apps/web/src/lib/analyzer-v2/gateway/types.ts";
 const MODEL_POLICY_PATH = "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts";
 const TASK_CONTRACT_TYPES_PATH = "apps/web/src/lib/analyzer-v2/evidence-lifecycle/task-contracts/types.ts";
 const CLAIM_UNDERSTANDING_TYPES_PATH = "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts";
+const AGGREGATION_NARRATIVE_CONTRACT_PATH =
+  "apps/web/src/lib/analyzer-v2/evidence-lifecycle/report-result/aggregation-narrative-contract.ts";
 
 const REGISTER_SCHEMA_VERSION = "v2-gate-register.v0";
 const REGISTER_AUTHORITY = "audit_only";
@@ -39,12 +41,15 @@ const W6_C_APPROVAL_ANCHOR =
   "ANALYZER_V2_W6_C_CAPTAIN_APPROVAL@Docs/WIP/2026-05-20_V2_Slice_W6-C_Sufficiency_Assessment_Implementation_Approval_Package.md@fdbe42dc#captain-approved-w6-c";
 const W7_B_APPROVAL_ANCHOR =
   "ANALYZER_V2_W7_B_CAPTAIN_APPROVAL@Docs/WIP/2026-05-20_V2_Slice_W7-B_Boundary_Verdict_LLM_Execution_Approval_Package.md@c8cf2ebc#captain-approved-w7-b";
+const HJ18_APPROVAL_ANCHOR =
+  "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@Docs/WIP/2026-05-22_V2_HighJump_HJ18_Internal_Report_Writer.md#steer-co-consensus-captain-authorized";
 const APPROVAL_SOURCE_BY_TOKEN = new Map([
   ["ANALYZER_V2_7L1_CAPTAIN_APPROVAL", "ANALYZER_V2_7L1_CAPTAIN_APPROVAL@2026-05-15T20:43:42.6482362Z"],
   ["ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL", X7_W5_A_APPROVAL_ANCHOR],
   ["ANALYZER_V2_X7_W5_B_CAPTAIN_APPROVAL", X7_W5_B_APPROVAL_ANCHOR],
   ["ANALYZER_V2_W6_C_CAPTAIN_APPROVAL", W6_C_APPROVAL_ANCHOR],
   ["ANALYZER_V2_W7_B_CAPTAIN_APPROVAL", W7_B_APPROVAL_ANCHOR],
+  ["ANALYZER_V2_HJ18_CAPTAIN_APPROVAL", HJ18_APPROVAL_ANCHOR],
   ["MISSING_APPROVAL", "missing"],
   ["PENDING_APPROVAL", "pending"],
   ["null", "not_applicable"],
@@ -69,6 +74,10 @@ const CACHE_POLICY_BY_SELECTOR = {
   boundaryVerdictExecutionCache: {
     policyId: "v2.semantic.boundary-verdict-execution.w7b",
     approvalSource: W7_B_APPROVAL_ANCHOR,
+  },
+  aggregationNarrativeCache: {
+    policyId: "v2.semantic.aggregation-narrative.hj18",
+    approvalSource: HJ18_APPROVAL_ANCHOR,
   },
   sourceAware: {
     policyId: "v2.semantic.source-aware",
@@ -559,6 +568,9 @@ function cachePolicyForTask(objectLiteral) {
   if (booleanProperty(objectLiteral, "boundaryVerdictExecutionCache")) {
     return CACHE_POLICY_BY_SELECTOR.boundaryVerdictExecutionCache;
   }
+  if (booleanProperty(objectLiteral, "aggregationNarrativeCache")) {
+    return CACHE_POLICY_BY_SELECTOR.aggregationNarrativeCache;
+  }
   if (booleanProperty(objectLiteral, "sourceAware")) {
     return CACHE_POLICY_BY_SELECTOR.sourceAware;
   }
@@ -588,6 +600,9 @@ function approvalIdFromSource(source) {
   }
   if (source.startsWith("ANALYZER_V2_W7_B_CAPTAIN_APPROVAL@")) {
     return "ANALYZER_V2_W7_B_CAPTAIN_APPROVAL";
+  }
+  if (source.startsWith("ANALYZER_V2_HJ18_CAPTAIN_APPROVAL@")) {
+    return "ANALYZER_V2_HJ18_CAPTAIN_APPROVAL";
   }
   return source;
 }
@@ -1040,6 +1055,7 @@ async function loadValidationContext() {
     modelPolicySource,
     taskContractTypesSource,
     claimUnderstandingTypesSource,
+    aggregationNarrativeContractSource,
   ] = await Promise.all([
     readRepoFile(REGISTER_PATH),
     readRepoFile(GATEWAY_POLICY_PATH),
@@ -1047,10 +1063,12 @@ async function loadValidationContext() {
     readRepoFile(MODEL_POLICY_PATH),
     readRepoFile(TASK_CONTRACT_TYPES_PATH),
     readRepoFile(CLAIM_UNDERSTANDING_TYPES_PATH),
+    readRepoFile(AGGREGATION_NARRATIVE_CONTRACT_PATH),
   ]);
   const constants = new Map([
     ...extractStringConstants(taskContractTypesSource, TASK_CONTRACT_TYPES_PATH),
     ...extractStringConstants(claimUnderstandingTypesSource, CLAIM_UNDERSTANDING_TYPES_PATH),
+    ...extractStringConstants(aggregationNarrativeContractSource, AGGREGATION_NARRATIVE_CONTRACT_PATH),
   ]);
   const gatewayTaskIds = extractGatewayTaskIds(gatewayTypesSource);
   const modelPolicies = parseModelPolicies(modelPolicySource);

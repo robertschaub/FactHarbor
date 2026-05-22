@@ -140,6 +140,12 @@ import {
 import {
   recordInternalAlphaReportDraftRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-alpha-report-draft-artifact-sink";
+import {
+  runInternalReportWriterDecision,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-report-writer-owner";
+import {
+  recordInternalReportWriterRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/evidence-lifecycle-internal-report-writer-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -434,6 +440,15 @@ export async function runClaimBoundaryPipelineV2(
                 context,
                 internalAlphaReportResult: reportResultArtifact.artifact.internalAlphaReportResult,
                 boundaryVerdictExecution,
+              });
+              const internalReportWriter = await runInternalReportWriterDecision({
+                context,
+                internalAlphaReportResult: reportResultArtifact.artifact.internalAlphaReportResult,
+                boundaryVerdictExecution,
+              });
+              recordInternalReportWriterRuntimeArtifact({
+                context,
+                decision: internalReportWriter,
               });
             }
           }

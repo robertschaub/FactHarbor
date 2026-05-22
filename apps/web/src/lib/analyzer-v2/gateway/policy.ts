@@ -3,6 +3,7 @@ import {
   CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION,
 } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
+  ANALYZER_V2_AGGREGATION_NARRATIVE_CACHE_POLICY,
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
   ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
@@ -24,6 +26,10 @@ import {
   EVIDENCE_TASK_PROMPT_SECTION_IDS,
   BOUNDARY_VERDICT_EXECUTION_SCHEMA_VERSION,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
+import {
+  AGGREGATION_NARRATIVE_PROMPT_SECTION_ID,
+  AGGREGATION_NARRATIVE_SCHEMA_VERSION,
+} from "@/lib/analyzer-v2/evidence-lifecycle/report-result/aggregation-narrative-contract";
 import type {
   AnalyzerV2GatewayTask,
   AnalyzerV2GatewayTaskId,
@@ -46,6 +52,7 @@ export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "evidence_extraction",
   "evidence_sufficiency",
   "boundary_verdict_execution",
+  "aggregation_narrative",
 ] as const satisfies readonly AnalyzerV2GatewayTaskId[];
 
 function blockedPrompt(
@@ -95,6 +102,7 @@ function task(params: {
   evidenceExtractionCache?: boolean;
   evidenceSufficiencyCache?: boolean;
   boundaryVerdictExecutionCache?: boolean;
+  aggregationNarrativeCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
@@ -119,6 +127,8 @@ function task(params: {
       ? ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY
       : params.boundaryVerdictExecutionCache
       ? ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY
+      : params.aggregationNarrativeCache
+      ? ANALYZER_V2_AGGREGATION_NARRATIVE_CACHE_POLICY
       : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
@@ -264,11 +274,18 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "aggregation_narrative",
     owner: "aggregation",
+    status: "executable",
     modelTask: "report",
-    promptSectionId: "V2_AGGREGATION_NARRATIVE",
-    outputSchemaVersion: "v2.aggregation_narrative.0",
-    sourceAware: true,
-    notes: "Owns verdict aggregation, narrative, and article adjudication report contracts.",
+    promptSectionId: AGGREGATION_NARRATIVE_PROMPT_SECTION_ID,
+    outputSchemaVersion: AGGREGATION_NARRATIVE_SCHEMA_VERSION,
+    requiredVariables: [
+      "aggregationNarrativeInputPacketJson",
+      "taskPolicySnapshotJson",
+      "reportQualityGuardrailsJson",
+    ],
+    promptApproval: ANALYZER_V2_HJ18_CAPTAIN_APPROVAL,
+    aggregationNarrativeCache: true,
+    notes: "Owns hidden/internal HJ18 aggregation narrative report-writing over accepted W8-B/W7-B internal review data.",
   }),
 ] as const satisfies readonly AnalyzerV2GatewayTask[];
 
