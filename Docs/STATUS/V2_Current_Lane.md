@@ -11,127 +11,132 @@ authoritative source wins.
 
 ## Active Goal
 
-Use the first HJ20 hidden/internal report-writer draft as report-quality
-evidence, then raise the single most important report-quality bar shown by that
-evidence before adding more plumbing.
+Use the HighJump approach to get complete internal Pipeline V2 reports through
+the normal manual submission path, now that V2 is the default pipeline and the
+admin job UI can display V2 report markdown. Lower only report-blocking bars
+that are shown by live evidence, then raise quality, safety, and completeness
+from the observed report defects.
 
-## Active Package
-
-`Docs/WIP/2026-05-22_V2_HighJump_HJ20_W5_EvidenceItem_Output_Shaping_Repair.md`
+## Current Implementation Anchor
 
 Latest committed implementation anchor:
 
-`561f65d8 fix(v2): shape highjump w5 evidence output`
+`79a5c31f feat(v2): default manual jobs to pipeline v2`
 
-Latest provenance/status commit used for the successful HJ20 rerun:
+This commit:
 
-`a7a73479 docs(v2): record hj20 canary provenance miss`
+- makes `claimboundary-v2` the default manual submission pipeline through UCM
+  defaults, web proxy routes, API job/draft creation defaults, and runner
+  missing-variant fallback;
+- keeps explicit legacy `claimboundary` requests available;
+- surfaces authenticated-admin V2 report markdown on the job page as a `V2
+  Report` section;
+- preserves public V2 as `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged` with no public verdict/truth/confidence exposure.
+
+Runtime was verified after this commit through `/api/version`, and UCM active
+`pipeline/default` was verified with `defaultPipelineVariant:
+"claimboundary-v2"`.
+
+## Active Quality Repair
+
+Latest HighJump quality repair:
+
+`298ad76f fix(v2): align highjump boundary verdict comparisons`
+
+Package:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ21_W7B_Comparator_Alignment_Repair.md`
+
+HJ21 amends only `V2_BOUNDARY_VERDICT_EXECUTION` with topic-neutral comparator
+alignment guidance. It targets the HJ20 quality defect where the hydrogen-family
+internal report led with `MIXED` despite the report containing a stronger
+false-side alternative.
+
+Repo search on 2026-05-22 found no committed HJ21 canary result and no ledgered
+HJ21 job id. Treat HJ21 as locally implemented, committed, and verifier-clean,
+but not yet live-validated.
 
 ## Latest Canary Result
 
-HJ20 evaluability rerun job `53f22512b9aa41b5ab23b774e2ddf10f` ran on runtime
-`a7a73479d62779ad7b22868898fb50d0d09634c6` with explicit `claimboundary-v2`.
-It is classified:
+Latest committed and ledgered report-producing canary:
 
 `PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`
 
-This rerun followed clean runtime/provenance preflight after the first
-unevaluable HJ20 canary. It produced a hidden/internal report-writer draft while
-public V2 remained precutover/damaged.
+Job:
 
-Canary information yield:
+`53f22512b9aa41b5ab23b774e2ddf10f`
+
+Runtime:
+
+`a7a73479d62779ad7b22868898fb50d0d09634c6`
+
+Information yield:
 
 `report produced`
 
 Important hidden evidence:
 
-- W5 accepted `4` EvidenceItems under the HJ20 item-budget prompt repair.
+- W5 accepted `4` EvidenceItems.
 - W8-B created an internal Alpha result candidate with `3` boundary candidates,
   `2` verdict candidates, and `4` cited EvidenceItem refs.
 - W8-G created a `7843` byte internal Alpha draft.
-- HJ19 internal report writer created an `8759` byte hidden report draft with
-  `2` verdict sections and `3` boundary sections.
-- Public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
-  `report_damaged`, with public `reportMarkdown` length `0`.
+- HJ19 internal report writer created an `8759` byte hidden report draft.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`.
 
-Previous HJ20 canary `8fe16cdeef7842058a8a36337a41b82e` is recorded as
-`UNEVALUATED_X7_HJ20_HIDDEN_ARTIFACT_CAPTURE_ROUTE_READINESS_MISS` and consumed
-one budget slot, but is not W5 pass/fail evidence.
-
-## Current Repair
-
-HJ19 remains locally implemented, but its canary did not reach the report
-writer because W5 blocked first. HJ20 is the active repair and is now
-committed:
-
-- W5 output-shaping under the richer nine-record mixed OpenAlex/Wikimedia source
-  packet;
-- implemented locally as an existing `V2_EVIDENCE_EXTRACTION` prompt-contract
-  amendment only;
-- focused prompt-contract/runtime/gate/build verifiers passed;
-- a first broad `analyzer-v2` run exposed a W7C timeout/order symptom that
-  passed in isolation and on full rerun, so no W7C patch was made;
-- avoid retries, schema relaxation, new report path, source/provider expansion,
-  public behavior, parser/cache/SR/storage, ACS/direct URL, and V1 work.
-
-HJ20 is closed. No second HJ20 rerun is authorized.
-
-HJ19 changes already present:
-
-- HJ19 approval provenance;
-- model policy `v2.model.aggregation_narrative.hj19`;
-- cache policy `v2.semantic.aggregation-narrative.hj19`;
-- `maxOutputTokens = 8000`;
-- topic-neutral compactness guidance in `V2_AGGREGATION_NARRATIVE`.
-
-No new mechanism, retry path, schema relaxation, public projection, provider
-expansion, parser, cache/SR/storage, ACS/direct URL, V1 work, or V1 cleanup was
-added.
+The HJ20 draft is useful quality evidence, but it is not the current runtime
+state. The next canary should run from the latest committed source
+`79a5c31f`.
 
 ## Live Budget
 
 Active HighJump continuation tranche:
 
-- remaining after HJ19 canary: `6`;
-- remaining after HJ20 unevaluable canary `8fe16cdeef7842058a8a36337a41b82e`:
-  `5`;
-- remaining after HJ20 evaluability rerun
-  `53f22512b9aa41b5ab23b774e2ddf10f`: `4`;
-- no second HJ19 or HJ20 canary is authorized.
-
-Ledger:
-
-`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`
+- ledger: `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`;
+- current remaining before the next HighJump canary: `4`;
+- every live job still requires clean git status, committed source, runtime
+  refresh when needed, runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit HJ20 rerun result documentation.
-2. Start internal report-quality review over the HJ20 hidden report-writer draft.
-3. Identify the concrete report defect or loosened bar to raise next.
-4. Use Steer-Co only if the next fix crosses prompt/model/config/schema,
-   public behavior, source/provider, or architecture boundaries, or if the
-   quality defect has contested causality.
+1. Keep this projection, `Docs/STATUS/Current_Status.md`, and
+   `Docs/STATUS/Backlog.md` aligned to `79a5c31f`.
+2. Confirm clean git status and runtime freshness at `79a5c31f`.
+3. Run one HJ21/post-default canary using the Captain-defined hydrogen input
+   through the default manual submission path, without forcing legacy V1.
+4. Verify that the resulting job is V2, the authenticated admin job UI can show
+   the V2 report, and public/default surfaces stay contained.
+5. Judge the next step from observed report evidence:
+   - if a complete internal V2 report is produced, review report quality and
+     raise the single highest-value report-quality bar next;
+   - if the same HJ20/HJ21 comparator defect remains, repair that existing W7-B
+     prompt mechanism;
+   - if a new stop appears, fix the smallest existing mechanism that blocks full
+     report generation.
 
 ## Stop Conditions
 
-Stop and reconvene Steer-Co if:
+Stop and reconvene Steer-Co, or escalate to Captain only if needed, when:
 
-- report-quality review shows the next correction requires a standing Captain
-  approval gate not already covered by the current HighJump authority;
+- runtime commit does not match the committed source under test;
+- the default manual submission path unexpectedly runs V1;
 - route/default-admin/public/log/error surfaces leak report text, source text,
   prompt text, provider payload, hidden ids, or public verdict/truth/confidence;
-- runtime commit does not match the committed source under test;
 - the next repair would require retries, schema relaxation, a parallel report
-  path, source/provider expansion, public behavior, or another hidden mechanism;
-- a standing Captain approval gate is reached.
+  path, source/provider expansion, public behavior, V1 cleanup, parser/cache/SR
+  storage, ACS/direct URL, or another hidden mechanism;
+- a standing Captain approval gate is reached or team consent fails on a
+  material decision.
 
-Do not stop for routine implementation mechanics inside the current approved
-repair/canary path.
+Do not stop for routine implementation mechanics inside the current
+HighJump/report-quality path.
 
 ## Coordination Rules For This Lane
 
-- Keep HighJump operational: make the next report capability safe enough; do not
-  avoid it by adding another readiness layer.
+- Keep HighJump operational: make the next report capability safe enough; do
+  not avoid it by adding another readiness layer.
+- Prefer amending existing prompt/report mechanisms over adding plumbing.
 - Use Steer-Co for direction changes, material dissent, or unclear failed
   validation, not routine runtime refresh or canary mechanics.
 - Use `context-extension` only if delegating complex state, crossing a phase
