@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T01:53:09.396Z",
-  "count": 419,
+  "generatedAt": "2026-05-22T03:15:22.957Z",
+  "count": 420,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9203,6 +9203,25 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff: V2 HighJump HJ10 Claim-Context Repair Result"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ12_W5_Event_Contract_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj12",
+        "w5",
+        "event",
+        "contract",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff: V2 HighJump HJ12 W5 Event Contract Result"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md",

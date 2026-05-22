@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Steer-Co quick consent | V2 HighJump HJ12 W5 Event Contract Result -- [Significant] [open-items: yes]
+**For next agent:** HJ12 commit `40207da59a521041879617f94c349162eb86a273` repaired W5 evidence-extraction `integrityEvents` prompt-contract drift. Canary `4dfbcd7627414738b0216d200df550c4` ran `claimboundary-v2`, W5 extracted `6` EvidenceItems from the HJ11 nine-record hidden source set, and W8-G created an internal Alpha draft.
+**Warnings:** This is not report-quality pass: the draft remains `UNVERIFIED` because the source portfolio still lacks direct hydrogen-car vs electric-vehicle efficiency comparison evidence. HighJump tranche is now exhausted with two Steer-Co-recorded overrun exceptions from wrong-variant recovery; no further live job before reviewed package plus budget reconciliation.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ12_W5_Event_Contract_Result.md
+
+---
 ### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Claude Opus 4.6 | V2 HighJump HJ10 Claim-Context Repair Result -- [Significant] [open-items: yes]
 **For next agent:** HJ9 is recorded as a partial comparator-prompt repair (`8def207fd600486189ec24237065a8cd`), while HJ10 (`c255f82d7f994dc1a0a4ce195b9d1cbf`) passed the W7-B selected AtomicClaim context repair on runtime `b9fe317485fbd155abcdde9247b6ea6a247ca4a9`. The internal Alpha draft now returns `UNVERIFIED` instead of an off-comparator positive verdict.
 **Warnings:** This is not a full report-quality pass. The next gap is Source Material/evidence coverage: W2/W3-A found electric-side candidates that W3-B did not carry into W5. HighJump live-job budget is now `2`; no new canary before committed repair/runtime refresh.

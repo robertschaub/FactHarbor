@@ -2,7 +2,7 @@
 
 Date: 2026-05-22  
 Owner: Captain Deputy / Lead Developer lane  
-Status: implemented locally, verifier-clean, canary pending source commit/runtime refresh
+Status: implemented, verifier-clean, canary completed with W5 schema stop
 
 ## Context
 
@@ -90,3 +90,21 @@ Stop/pivot criteria:
 - any public/default-admin/log/error text leak
 - canary produces a new failing verifier or stale-runtime provenance gap
 
+## Canary Result
+
+Corrective V2 canary:
+
+- job id: `751c0cb864924ec1a2cbe697730a7b70`
+- runtime commit: `bf1f0011898956bb2efabd2044cfce9be30defb5`
+- submitted variant: `claimboundary-v2`
+- classification:
+  `PASS_X7_HJ11_SOURCE_MATERIAL_COVERAGE_REPAIR_W5_SCHEMA_STOP`
+
+HJ11 passed its structural coverage goal: W3-A/W4/W5 carried nine hidden Source
+Material records, including one OpenAlex record plus Wikimedia records. It then
+stopped at W5 `damaged_execution` / `schema_validation_failed` on
+`integrityEvents`, which HJ12 repaired.
+
+Operational note: two earlier HJ11 submissions used the V1 `claimboundary`
+variant and are not V2 evidence. They are recorded in the live-job ledger as
+budget-consuming wrong-variant misses.

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-bar-ladder-2026-05-22",
     "resetTotal": 12,
-    "currentRemaining": 2,
+    "currentRemaining": 0,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
       "date": "2026-05-22",
@@ -23,9 +23,10 @@
       "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
-      "currentRemaining": 2,
-      "consumptionEntriesInThisTranche": 10,
-      "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
+      "currentRemaining": 0,
+      "consumptionEntriesInThisTranche": 14,
+      "note": "HighJump tranche is exhausted. Two Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses and validate the HJ12 prompt-contract repair. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
+      "exceptionOverrunCount": 2
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
@@ -473,8 +474,68 @@
         "remainingAfter": 2,
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md, Claude Opus 4.6 claim-context repair review, and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
         "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-11-SOURCE-MATERIAL-COVERAGE-STALE-RUNTIME-WRONG-VARIANT",
+        "jobId": "1a5e8f236a164c598429ea6ed3334a69",
+        "classification": "INVALID_X7_HJ11_STALE_RUNTIME_WRONG_VARIANT_NO_V2_ARTIFACTS",
+        "implementationCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "runtimeCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 1,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ11_Source_Material_Coverage_Repair.md and Captain/Steer-Co HighJump continuation authority",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "Operational miss: submitted through V1 claimboundary path during runtime refresh confusion; not V2 evidence."
+      },
+      {
+        "sliceId": "X7-HJ-11-SOURCE-MATERIAL-COVERAGE-WRONG-VARIANT",
+        "jobId": "897c97cd4180493b93da09bf2cf2d9db",
+        "classification": "STOP_X7_HJ11_WRONG_VARIANT_V1_NO_V2_ARTIFACTS",
+        "implementationCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "runtimeCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ11_Source_Material_Coverage_Repair.md and Captain/Steer-Co HighJump continuation authority",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "Operational miss: runtime was refreshed, but submitted variant was claimboundary, so hidden V2 artifacts were absent."
+      },
+      {
+        "sliceId": "X7-HJ-11-SOURCE-MATERIAL-COVERAGE-CORRECTIVE-CANARY",
+        "jobId": "751c0cb864924ec1a2cbe697730a7b70",
+        "classification": "PASS_X7_HJ11_SOURCE_MATERIAL_COVERAGE_REPAIR_W5_SCHEMA_STOP",
+        "implementationCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "runtimeCommit": "bf1f0011898956bb2efabd2044cfce9be30defb5",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_wrong_variant_recovery_overrun_1",
+        "approvalPointer": "Steer-Co quick consent in current Codex thread after two wrong-variant HJ11 submissions",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "Correct V2 canary proved nine-record W3/W4/W5 fan-in but stopped at W5 schema_validation_failed on integrityEvents."
+      },
+      {
+        "sliceId": "X7-HJ-12-W5-INTEGRITY-EVENT-PROMPT-CONTRACT-CANARY",
+        "jobId": "4dfbcd7627414738b0216d200df550c4",
+        "classification": "PASS_X7_HJ12_W5_EVENT_CONTRACT_REPAIR_INTERNAL_ALPHA_UNVERIFIED",
+        "implementationCommit": "40207da59a521041879617f94c349162eb86a273",
+        "runtimeCommit": "40207da59a521041879617f94c349162eb86a273",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_prompt_contract_validation_overrun_2",
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ12_W5_Integrity_Event_Prompt_Contract_Repair.md plus Steer-Co quick consent in current Codex thread",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "W5 accepted six EvidenceItems and W8-G created a draft; draft remains UNVERIFIED due lack of direct comparative efficiency evidence."
       }
     ],
-    "blockedPending": []
+    "blockedPending": [],
+    "exceptionAccounting": {
+      "status": "overrun_recorded_for_wrong_variant_recovery",
+      "overrunCount": 2,
+      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary and one HJ12 prompt-contract validation canary to avoid an artificial report-creation stop; both are recorded transparently.",
+      "nextLiveJobRequirement": "new_reviewed_package_plus_steer_co_or_captain_budget_reconciliation"
+    }
   }
 }

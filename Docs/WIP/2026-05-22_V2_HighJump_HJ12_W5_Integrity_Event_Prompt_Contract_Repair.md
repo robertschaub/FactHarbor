@@ -2,7 +2,7 @@
 
 Date: 2026-05-22  
 Owner: Captain Deputy / Lead Developer lane  
-Status: implemented locally, verifier-clean, canary pending source commit/runtime refresh
+Status: implemented, verifier-clean, canary completed
 
 ## Context
 
@@ -136,3 +136,19 @@ Stop/pivot criteria:
 - W5 succeeds but downstream W6/W7/W8 stops on a new contract issue;
 - any public/default-admin/log/error text leak;
 - stale runtime, wrong variant, or missing hidden ledger provenance.
+
+## Canary Result
+
+Completed canary:
+
+- job id: `4dfbcd7627414738b0216d200df550c4`
+- runtime commit: `40207da59a521041879617f94c349162eb86a273`
+- classification:
+  `PASS_X7_HJ12_W5_EVENT_CONTRACT_REPAIR_INTERNAL_ALPHA_UNVERIFIED`
+
+The canary passed the W5 event-contract repair gate: W5 produced `6`
+EvidenceItems with `schemaDiagnostics = null`, and W8-G created an internal
+Alpha draft. It did not pass report quality: the draft remains `UNVERIFIED`
+because the source portfolio still lacks direct hydrogen-car versus
+electric-vehicle efficiency comparison evidence. See
+`Docs/WIP/2026-05-22_V2_HighJump_HJ12_W5_Event_Contract_Canary_Result.md`.
