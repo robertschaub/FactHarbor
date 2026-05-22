@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY,
+  SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+  SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
   SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
   SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP,
   collectSerperSearchPreviewSourceMaterialRecords,
+  type SerperLinkedPageFetchHttpClient,
+  type SerperLinkedPageFetchRequest,
   type SerperSearchPreviewHttpClient,
   type SerperSearchPreviewHttpRequest,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview";
@@ -28,6 +32,22 @@ function response(body: unknown, overrides: {
     remoteAddress: "93.184.216.34",
     body: Buffer.from(typeof body === "string" ? body : JSON.stringify(body), "utf8"),
     durationMs: overrides.durationMs ?? 42,
+  };
+}
+
+function linkedPageResponse(body: string, overrides: {
+  readonly statusCode?: number;
+  readonly headers?: Readonly<Record<string, string | readonly string[] | undefined>>;
+  readonly durationMs?: number;
+  readonly truncated?: boolean;
+} = {}) {
+  return {
+    statusCode: overrides.statusCode ?? 200,
+    headers: overrides.headers ?? { "content-type": "text/html; charset=utf-8" },
+    remoteAddress: "93.184.216.34",
+    body: Buffer.from(body, "utf8"),
+    durationMs: overrides.durationMs ?? 84,
+    truncated: overrides.truncated ?? false,
   };
 }
 
@@ -79,6 +99,7 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
       ],
       apiKey: "test-serper-key",
       httpClient: client,
+      linkedPageHttpClient: null,
       startingAttemptOrdinal: 10,
       languageCode: "en",
       candidatePreviewProjectionSink: (projection) => previews.push(projection),
@@ -150,6 +171,7 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
       queryEntries: [queryEntry(1)],
       apiKey: null,
       httpClient: client,
+      linkedPageHttpClient: null,
     })).resolves.toEqual([]);
     expect(client).not.toHaveBeenCalled();
 
@@ -160,18 +182,21 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
         { organic: [{ title: "raw", snippet: "raw", link: "https://example.test" }] },
         { statusCode: 302, headers: { "content-type": "application/json", location: "https://redirect.test" } },
       ),
+      linkedPageHttpClient: null,
     })).resolves.toEqual([]);
 
     await expect(collectSerperSearchPreviewSourceMaterialRecords({
       queryEntries: [queryEntry(1)],
       apiKey: "test-serper-key",
       httpClient: async () => response("x".repeat(SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP + 1)),
+      linkedPageHttpClient: null,
     })).resolves.toEqual([]);
 
     await expect(collectSerperSearchPreviewSourceMaterialRecords({
       queryEntries: [queryEntry(1)],
       apiKey: "test-serper-key",
       httpClient: async () => response("{not json"),
+      linkedPageHttpClient: null,
     })).resolves.toEqual([]);
   });
 
@@ -180,6 +205,7 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     const records = await collectSerperSearchPreviewSourceMaterialRecords({
       queryEntries: [queryEntry(1), queryEntry(2)],
       apiKey: "test-serper-key",
+      linkedPageHttpClient: null,
       httpClient: async (request) => {
         requests.push(request);
         if (requests.length === 1) {
@@ -220,6 +246,93 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     expect(records.map((record) => record.sourceMaterialText)).toEqual([
       "Duplicate evidence title Duplicate snippet",
       "Second query material Additional bounded preview text.",
+    ]);
+  });
+
+  it("prefers bounded linked page text when a Serper result can be fetched safely", async () => {
+    const searchRequests: SerperSearchPreviewHttpRequest[] = [];
+    const linkedRequests: SerperLinkedPageFetchRequest[] = [];
+    const linkedPageHttpClient: SerperLinkedPageFetchHttpClient = async (request) => {
+      linkedRequests.push(request);
+      return linkedPageResponse(`
+        <html>
+          <head><script>secret()</script><style>.hidden{}</style></head>
+          <body>
+            <main>
+              Official source page text states a bounded current aggregate and qualifying date.
+              The content is plain source material for extraction.
+            </main>
+          </body>
+        </html>
+      `);
+    };
+
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1)],
+      apiKey: "test-serper-key",
+      httpClient: async (request) => {
+        searchRequests.push(request);
+        return response({
+          organic: [{
+            title: "Official statistics",
+            snippet: "A short provider preview.",
+            link: "https://official.example.test/statistics",
+          }],
+        });
+      },
+      linkedPageHttpClient,
+      languageCode: "de",
+    });
+    const serialized = JSON.stringify(records);
+
+    expect(searchRequests).toHaveLength(1);
+    expect(linkedRequests).toEqual([{
+      url: "https://official.example.test/statistics",
+      timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+      maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+    }]);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+      sourceMaterialKind: "provider_search_result_page_text_bounded",
+      languageCode: "de",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      publicSurfaceWritten: false,
+    });
+    expect(records[0]?.sourceMaterialText).toContain("Official source page text");
+    expect(records[0]?.sourceMaterialText).not.toContain("secret()");
+    expect(serialized).not.toContain("https://official.example.test");
+  });
+
+  it("falls back to bounded preview text when linked page fetch is unavailable or unsafe", async () => {
+    const linkedPageHttpClient = vi.fn<SerperLinkedPageFetchHttpClient>(async () => {
+      throw new Error("transport_failure");
+    });
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1), queryEntry(2)],
+      apiKey: "test-serper-key",
+      httpClient: async (request) => response({
+        organic: [{
+          title: `Preview ${request.body.q}`,
+          snippet: "Fallback preview remains bounded.",
+          link: request.body.q.endsWith("1")
+            ? "http://official.example.test/blocked"
+            : "https://official.example.test/unavailable",
+        }],
+      }),
+      linkedPageHttpClient,
+    });
+
+    expect(linkedPageHttpClient).toHaveBeenCalledTimes(1);
+    expect(records).toHaveLength(2);
+    expect(records.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
     ]);
   });
 });

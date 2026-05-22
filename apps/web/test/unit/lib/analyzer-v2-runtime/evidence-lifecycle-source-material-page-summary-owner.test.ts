@@ -198,6 +198,24 @@ function webSearchPreviewRecord(): SourceMaterialPageSummaryRecord {
   return recordDecision.record;
 }
 
+function webSearchLinkedPageRecord(
+  overrides: Partial<SourceMaterialPageSummaryRecord> = {},
+): SourceMaterialPageSummaryRecord {
+  const preview = webSearchPreviewRecord();
+  return {
+    ...preview,
+    sourceMaterialId: "SOURCE_MATERIAL_LINKED_PAGE_BBBBBBBBBBBBBBBB",
+    sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+    sourceMaterialKind: "provider_search_result_page_text_bounded",
+    sourceMaterialText: "Fetched provider-linked page text contains source-attributed material.",
+    sourceMaterialTextHash: "b".repeat(64),
+    sourceMaterialTextByteLength: 68,
+    sourceMaterialTextCharLength: 68,
+    contentTypeCategory: "accepted_text",
+    ...overrides,
+  };
+}
+
 function serperProjection(): ReturnType<typeof buildSourceCandidatePreviewProjection> {
   return buildSourceCandidatePreviewProjection({
     providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
@@ -396,6 +414,89 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       .toEqual(["provider_search_result_preview_text"]);
     expect(serialized).toContain("Web search court-process result");
     expect(serialized).not.toContain("https://example.test");
+  });
+
+  it("admits bounded web-search linked page text records when no OpenAlex or Wikimedia records are available", async () => {
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 1,
+          totalCandidateCount: 1,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: 1,
+            totalCandidateCount: 1,
+          },
+        }),
+        previewProjections: [serperProjection()],
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: [webSearchLinkedPageRecord()],
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      stopReason: "not_stopped",
+      sourceMaterialRecordCount: 1,
+      attemptedFetchCount: 0,
+      productExecution: expect.objectContaining({
+        extraHttpCallMade: false,
+        contentDereferenceCalled: false,
+        sourceMaterialCreated: true,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(decision.sourceMaterialRecords.map((record) => record.providerId)).toEqual(["serper_web_search"]);
+    expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind))
+      .toEqual(["provider_search_result_page_text_bounded"]);
+    expect(serialized).toContain("Fetched provider-linked page text");
+    expect(serialized).not.toContain("https://example.test");
+  });
+
+  it("admits a full-size bounded web-search linked page text record above preview aggregate size", async () => {
+    const fullSizeText = "A".repeat(4_096);
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 1,
+          totalCandidateCount: 1,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: 1,
+            totalCandidateCount: 1,
+          },
+        }),
+        previewProjections: [serperProjection()],
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: [webSearchLinkedPageRecord({
+        sourceMaterialText: fullSizeText,
+        sourceMaterialTextHash: "c".repeat(64),
+        sourceMaterialTextByteLength: 4_096,
+        sourceMaterialTextCharLength: 4_096,
+      })],
+    });
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      stopReason: "not_stopped",
+      sourceMaterialRecordCount: 1,
+      attemptedFetchCount: 0,
+    });
+    expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind)
+      .toBe("provider_search_result_page_text_bounded");
+    expect(decision.sourceMaterialRecords[0]?.sourceMaterialTextByteLength).toBe(4_096);
   });
 
   it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {

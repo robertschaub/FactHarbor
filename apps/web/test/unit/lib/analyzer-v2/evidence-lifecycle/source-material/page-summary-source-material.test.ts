@@ -11,6 +11,7 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES,
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   buildSourceMaterialPageSummaryRecord,
+  buildSourceMaterialSerperLinkedPageTextRecord,
   buildSourceMaterialSearchPreviewRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type {
@@ -165,6 +166,78 @@ describe("Analyzer V2 W3-B page-summary Source Material record builder", () => {
     expect(serialized).not.toContain("content_urls");
     expect(serialized).not.toContain("thumbnail");
     expect(serialized).not.toContain("https://example.invalid");
+  });
+
+  it("creates one bounded hidden Source Material record from Serper linked page text", () => {
+    const previewRecord = buildSourceCandidatePreviewProjection({
+      providerId: "serper_web_search",
+      endpointId: "ep_serper_google_search",
+      providerAttemptOrdinal: 2,
+      providerRank: 1,
+      candidateOrdinal: 1,
+      sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_2_1",
+      candidate: {
+        title: "Official statistics page",
+        snippet: "Current bounded source material.",
+        link: "https://official.example.test/statistics",
+      },
+    });
+    const record = buildSourceMaterialSerperLinkedPageTextRecord({
+      previewRecord,
+      languageCode: "de",
+      sourceText: "Official page text states a bounded source-attributed aggregate. https://example.invalid/raw",
+      diagnostic: {
+        compressedBytes: 900,
+        decompressedBytes: 900,
+        durationMs: 80,
+        timeoutMs: 5000,
+        truncationApplied: false,
+      },
+    });
+    const safeRecord = buildSourceMaterialSerperLinkedPageTextRecord({
+      previewRecord,
+      languageCode: "de",
+      sourceText: "Official page text states a bounded source-attributed aggregate without raw locator text.",
+      diagnostic: {
+        compressedBytes: 900,
+        decompressedBytes: 900,
+        durationMs: 80,
+        timeoutMs: 5000,
+        truncationApplied: false,
+      },
+    });
+
+    expect(record).toMatchObject({
+      status: "failed_structural",
+      bodyStatus: "source_material_extract_structural_rejected",
+      record: null,
+    });
+    expect(safeRecord).toMatchObject({
+      status: "record_created",
+      bodyStatus: "source_material_record_created",
+      record: {
+        recordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
+        providerId: "serper_web_search",
+        sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+        sourceMaterialKind: "provider_search_result_page_text_bounded",
+        responseStatusCategory: "success_2xx",
+        contentTypeCategory: "accepted_text",
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    });
+    expect(safeRecord.record?.sourceMaterialText).toContain("source-attributed aggregate");
+    expect(JSON.stringify(safeRecord)).not.toContain("https://official.example.test");
   });
 
   it("fails closed for missing, blank, unsafe, oversized, or non-object extract payloads", () => {

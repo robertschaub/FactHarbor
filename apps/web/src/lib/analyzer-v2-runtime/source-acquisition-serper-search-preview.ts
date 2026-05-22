@@ -8,6 +8,7 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import {
   buildSourceMaterialSearchPreviewRecord,
+  buildSourceMaterialSerperLinkedPageTextRecord,
   type SourceMaterialPageSummaryRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type {
@@ -23,6 +24,8 @@ export const SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY = 1;
 export const SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 4_096;
 export const SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP = 32_768;
 export const SERPER_SEARCH_PREVIEW_TIMEOUT_MS = 3_000;
+export const SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS = 5_000;
+export const SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP = 131_072;
 
 const SERPER_HOSTNAME = "google.serper.dev";
 const SERPER_PATH = "/search";
@@ -62,6 +65,25 @@ export type SerperSearchPreviewHttpClient = (
   request: SerperSearchPreviewHttpRequest,
 ) => Promise<SerperSearchPreviewHttpResponse>;
 
+export type SerperLinkedPageFetchRequest = {
+  readonly url: string;
+  readonly timeoutMs: typeof SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS;
+  readonly maxResponseBytes: typeof SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP;
+};
+
+export type SerperLinkedPageFetchResponse = {
+  readonly statusCode: number;
+  readonly headers: Readonly<Record<string, string | readonly string[] | undefined>>;
+  readonly remoteAddress: string;
+  readonly body: Uint8Array;
+  readonly durationMs: number;
+  readonly truncated: boolean;
+};
+
+export type SerperLinkedPageFetchHttpClient = (
+  request: SerperLinkedPageFetchRequest,
+) => Promise<SerperLinkedPageFetchResponse>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -97,6 +119,16 @@ function responseHasJsonContentType(response: SerperSearchPreviewHttpResponse): 
   return contentType === "application/json" || contentType.startsWith("application/json;");
 }
 
+function responseHasLinkedPageTextContentType(response: SerperLinkedPageFetchResponse): boolean {
+  const contentType = headerValue(response.headers, "content-type")?.toLowerCase() ?? "";
+  return contentType === "text/html"
+    || contentType.startsWith("text/html;")
+    || contentType === "text/plain"
+    || contentType.startsWith("text/plain;")
+    || contentType === "application/xhtml+xml"
+    || contentType.startsWith("application/xhtml+xml;");
+}
+
 function resolvedPublicAddressesAreValid(resolved: readonly { readonly address: string; readonly family: number }[]):
   resolved is readonly { readonly address: string; readonly family: 4 | 6 }[] {
   return resolved.length > 0
@@ -112,6 +144,28 @@ function responseRemoteAddressIsValid(
 ): boolean {
   return resolved.some((address) => address.address === remoteAddress)
     && classifySourceAcquisitionNetworkIpAddress(remoteAddress) === "public";
+}
+
+function safeLinkedPageUrl(value: unknown): URL | null {
+  if (typeof value !== "string" || value.trim() !== value || value.length === 0 || value.length > 2_048) {
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (
+    url.protocol !== "https:"
+    || url.username.length > 0
+    || url.password.length > 0
+    || url.hostname.length === 0
+    || url.hash.length > 0
+  ) {
+    return null;
+  }
+  return url;
 }
 
 async function defaultSerperSearchPreviewHttpClient(
@@ -187,6 +241,89 @@ async function defaultSerperSearchPreviewHttpClient(
   });
 }
 
+async function defaultSerperLinkedPageFetchHttpClient(
+  request: SerperLinkedPageFetchRequest,
+): Promise<SerperLinkedPageFetchResponse> {
+  const url = safeLinkedPageUrl(request.url);
+  if (!url) {
+    throw new Error("linked_page_url_rejected");
+  }
+  const startedAt = Date.now();
+  const resolved = await lookup(url.hostname, { all: true });
+  if (!resolvedPublicAddressesAreValid(resolved)) {
+    throw new Error("dns_address_blocked");
+  }
+
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let receivedBytes = 0;
+    let truncated = false;
+    let settled = false;
+    const req = httpsRequest({
+      protocol: "https:",
+      hostname: url.hostname,
+      servername: url.hostname,
+      port: 443,
+      method: "GET",
+      path: `${url.pathname}${url.search}`,
+      agent: false,
+      timeout: request.timeoutMs,
+      headers: {
+        "accept": "text/html,text/plain;q=0.9,*/*;q=0.1",
+        "user-agent": SERPER_USER_AGENT,
+      },
+    }, (response) => {
+      response.on("data", (chunk: Buffer | string) => {
+        if (settled) {
+          return;
+        }
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        receivedBytes += buffer.byteLength;
+        if (receivedBytes > request.maxResponseBytes) {
+          const allowedBytes = Math.max(0, buffer.byteLength - (receivedBytes - request.maxResponseBytes));
+          if (allowedBytes > 0) {
+            chunks.push(buffer.subarray(0, allowedBytes));
+          }
+          truncated = true;
+          return;
+        }
+        if (!truncated) {
+          chunks.push(buffer);
+        }
+      });
+      response.on("end", () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        const remoteAddress = response.socket.remoteAddress ?? "";
+        if (!responseRemoteAddressIsValid(remoteAddress, resolved)) {
+          reject(new Error("final_address_mismatch"));
+          return;
+        }
+        resolve({
+          statusCode: response.statusCode ?? 0,
+          headers: response.headers,
+          remoteAddress,
+          body: Buffer.concat(chunks),
+          durationMs: Math.max(0, Date.now() - startedAt),
+          truncated,
+        });
+      });
+    });
+
+    req.on("timeout", () => req.destroy(new Error("timed_out")));
+    req.on("error", (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(error);
+    });
+    req.end();
+  });
+}
+
 function readOrganicResults(json: unknown): readonly SerperSearchPreviewResult[] {
   if (!isRecord(json)) {
     return [];
@@ -217,6 +354,50 @@ function parseJsonResponse(response: SerperSearchPreviewHttpResponse): SerperSea
   }
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, " ")
+    .replace(/&gt;/gi, " ")
+    .replace(/&#(\d{1,6});/g, (_match, code: string) => {
+      const parsed = Number(code);
+      return Number.isInteger(parsed) && parsed > 0 ? String.fromCodePoint(parsed) : " ";
+    })
+    .replace(/&#x([0-9a-f]{1,6});/gi, (_match, code: string) => {
+      const parsed = Number.parseInt(code, 16);
+      return Number.isInteger(parsed) && parsed > 0 ? String.fromCodePoint(parsed) : " ";
+    });
+}
+
+function linkedPageVisibleText(response: SerperLinkedPageFetchResponse): string | null {
+  if (
+    response.statusCode < 200
+    || response.statusCode > 299
+    || headerValue(response.headers, "location") !== null
+    || !responseHasLinkedPageTextContentType(response)
+    || response.body.byteLength === 0
+  ) {
+    return null;
+  }
+  const bodyText = Buffer.from(response.body).toString("utf8");
+  const withoutHiddenBlocks = bodyText
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, " ");
+  const withoutTags = withoutHiddenBlocks.replace(/<[^>]+>/g, " ");
+  return decodeHtmlEntities(withoutTags)
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/\bwww\.\S+/gi, " ")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function languageCode(value: unknown): string {
   return typeof value === "string" && /^[a-z]{2,8}$/i.test(value.trim())
     ? value.trim().toLowerCase()
@@ -241,6 +422,7 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
   readonly queryEntries: readonly QueryPlanSourceAcquisitionHandoffQueryEntry[];
   readonly apiKey?: string | null;
   readonly httpClient?: SerperSearchPreviewHttpClient;
+  readonly linkedPageHttpClient?: SerperLinkedPageFetchHttpClient | null;
   readonly startingAttemptOrdinal?: number;
   readonly languageCode?: string;
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
@@ -251,6 +433,9 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
   }
 
   const httpClient = params.httpClient ?? defaultSerperSearchPreviewHttpClient;
+  const linkedPageHttpClient = params.linkedPageHttpClient === null
+    ? null
+    : params.linkedPageHttpClient ?? defaultSerperLinkedPageFetchHttpClient;
   const records: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
   let aggregateTextBytes = 0;
@@ -321,7 +506,39 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
       if (recordDecision.status !== "record_created") {
         continue;
       }
-      const record = recordDecision.record;
+      let record = recordDecision.record;
+      if (linkedPageHttpClient) {
+        const url = safeLinkedPageUrl(candidate.link);
+        if (url) {
+          try {
+            const linkedPage = await linkedPageHttpClient({
+              url: url.toString(),
+              timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+              maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+            });
+            const visibleText = linkedPageVisibleText(linkedPage);
+            if (visibleText !== null) {
+              const linkedPageRecord = buildSourceMaterialSerperLinkedPageTextRecord({
+                previewRecord: projection,
+                languageCode: languageCode(params.languageCode),
+                sourceText: visibleText,
+                diagnostic: {
+                  compressedBytes: linkedPage.body.byteLength,
+                  decompressedBytes: linkedPage.body.byteLength,
+                  durationMs: linkedPage.durationMs,
+                  timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+                  truncationApplied: linkedPage.truncated,
+                },
+              });
+              if (linkedPageRecord.status === "record_created") {
+                record = linkedPageRecord.record;
+              }
+            }
+          } catch {
+            // Fall back to the bounded search-result preview record.
+          }
+        }
+      }
       if (
         seen.has(record.sourceMaterialTextHash)
         || aggregateTextBytes + record.sourceMaterialTextByteLength > SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES

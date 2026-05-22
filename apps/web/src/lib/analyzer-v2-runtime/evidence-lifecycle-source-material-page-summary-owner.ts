@@ -16,6 +16,7 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
   SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT,
+  SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT,
   SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   buildSourceMaterialPageSummaryRecord,
@@ -35,6 +36,7 @@ import {
 
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 3;
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 2_048;
+const SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES = 12_288;
 
 export type EvidenceLifecycleSourceMaterialPageSummaryStatus =
   | "source_material_page_summary_completed"
@@ -329,7 +331,7 @@ function selectedSearchPreviewRecords(
   return selected;
 }
 
-function selectedProvidedSearchPreviewRecords(
+function selectedProvidedSerperRecords(
   records: readonly SourceMaterialPageSummaryRecord[],
   maxRecords = SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
 ): readonly SourceMaterialPageSummaryRecord[] {
@@ -339,12 +341,15 @@ function selectedProvidedSearchPreviewRecords(
   for (const record of records) {
     if (
       record.providerId !== SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID
-      || record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
+      || (
+        record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
+        && record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT
+      )
       || record.sourceMaterialTextByteLength <= 0
       || record.sourceMaterialTextByteLength > 4_096
       || seen.has(record.sourceMaterialTextHash)
       || aggregateTextBytes + record.sourceMaterialTextByteLength >
-        SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES
+        SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES
     ) {
       continue;
     }
@@ -366,7 +371,7 @@ function mergedSourceMaterialRecords(params: {
 }): readonly SourceMaterialPageSummaryRecord[] {
   const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
   const strongRecordCount = openAlexRecords.length + params.wikimediaRecords.length;
-  const webSearchPreviewRecords = selectedProvidedSearchPreviewRecords(params.webSearchPreviewRecords ?? []);
+  const webSearchPreviewRecords = selectedProvidedSerperRecords(params.webSearchPreviewRecords ?? []);
   const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
   const merged: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();

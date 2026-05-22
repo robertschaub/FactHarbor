@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import {
+  SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
   SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
   type SourceCandidatePreviewProjection,
 } from "./source-candidate-preview";
@@ -19,16 +21,22 @@ export const SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT =
   "openalex_work_abstract_text";
 export const SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW =
   "provider_search_result_preview_text";
+export const SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT =
+  "provider_search_result_page_text_bounded";
+export const SOURCE_MATERIAL_SERPER_LINKED_PAGE_ENDPOINT_ID =
+  "ep_serper_linked_page_fetch";
 
 export type SourceMaterialKind =
   | typeof SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
   | typeof SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
-  | typeof SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW;
+  | typeof SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
+  | typeof SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT;
 
 export function sourceMaterialKindIsSupported(value: unknown): value is SourceMaterialKind {
   return value === SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
     || value === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
-    || value === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW;
+    || value === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
+    || value === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT;
 }
 
 export type SourceMaterialPageSummaryResponseStatusCategory =
@@ -40,6 +48,7 @@ export type SourceMaterialPageSummaryResponseStatusCategory =
 export type SourceMaterialPageSummaryContentTypeCategory =
   | "not_reached"
   | "accepted_json"
+  | "accepted_text"
   | "rejected";
 
 export type SourceMaterialPageSummaryBodyStatus =
@@ -63,7 +72,7 @@ export type SourceMaterialPageSummaryRecord = {
   readonly sourceMaterialTextHash: string;
   readonly sourceMaterialTextByteLength: number;
   readonly sourceMaterialTextCharLength: number;
-  readonly truncationApplied: false;
+  readonly truncationApplied: boolean;
   readonly responseStatusCategory: SourceMaterialPageSummaryResponseStatusCategory;
   readonly contentTypeCategory: SourceMaterialPageSummaryContentTypeCategory;
   readonly compressedBytes: number;
@@ -124,6 +133,21 @@ function utf8ByteLength(value: string): number {
 
 function normalizedSourceText(value: string): string {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function truncateUtf8(value: string, maxBytes: number): { readonly value: string; readonly truncated: boolean } {
+  if (utf8ByteLength(value) <= maxBytes) {
+    return { value, truncated: false };
+  }
+  let selected = "";
+  for (const char of value) {
+    const next = selected + char;
+    if (utf8ByteLength(next) > maxBytes) {
+      break;
+    }
+    selected = next;
+  }
+  return { value: selected.trim(), truncated: true };
 }
 
 function containsForbiddenSourceTextFragment(value: string): boolean {
@@ -285,6 +309,84 @@ export function buildSourceMaterialSearchPreviewRecord(params: {
       decompressedBytes: params.diagnostic?.decompressedBytes ?? byteLength,
       durationMs: params.diagnostic?.durationMs ?? 0,
       timeoutMs: params.diagnostic?.timeoutMs ?? 0,
+      publicPointerExposure: "forbidden",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      evidenceCorpusCreated: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
+  };
+}
+
+export function buildSourceMaterialSerperLinkedPageTextRecord(params: {
+  readonly previewRecord: SourceCandidatePreviewProjection;
+  readonly languageCode: string;
+  readonly sourceText: string;
+  readonly diagnostic: {
+    readonly compressedBytes: number;
+    readonly decompressedBytes: number;
+    readonly durationMs: number;
+    readonly timeoutMs: number;
+    readonly truncationApplied: boolean;
+  };
+}): SourceMaterialPageSummaryBodyDecision {
+  if (
+    params.previewRecord.providerId !== SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID
+    || params.previewRecord.endpointId !== SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID
+  ) {
+    return failed("source_material_extract_structural_rejected");
+  }
+  const bounded = truncateUtf8(
+    normalizedSourceText(params.sourceText),
+    SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES,
+  );
+  const sourceMaterialText = bounded.value;
+  if (sourceMaterialText.length === 0) {
+    return failed("source_material_extract_blank");
+  }
+  const byteLength = utf8ByteLength(sourceMaterialText);
+  if (byteLength > SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES) {
+    return failed("source_material_extract_oversize");
+  }
+  if (containsForbiddenSourceTextFragment(sourceMaterialText)) {
+    return failed("source_material_extract_structural_rejected");
+  }
+  if (!params.previewRecord.locatorRef) {
+    return failed("source_material_extract_structural_rejected");
+  }
+
+  const sourceMaterialTextHash = sha256Text(sourceMaterialText);
+  return {
+    status: "record_created",
+    bodyStatus: "source_material_record_created",
+    record: {
+      recordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
+      sourceMaterialId: `SOURCE_MATERIAL_LINKED_PAGE_${sourceMaterialTextHash.slice(0, 16).toUpperCase()}`,
+      locatorRef: params.previewRecord.locatorRef,
+      candidatePreviewId: params.previewRecord.candidatePreviewId,
+      providerId: params.previewRecord.providerId,
+      sourceMaterialEndpointId: SOURCE_MATERIAL_SERPER_LINKED_PAGE_ENDPOINT_ID,
+      languageCode: params.languageCode,
+      sourceMaterialKind: SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT,
+      sourceMaterialText,
+      sourceMaterialTextHash,
+      sourceMaterialTextByteLength: byteLength,
+      sourceMaterialTextCharLength: Array.from(sourceMaterialText).length,
+      truncationApplied: params.diagnostic.truncationApplied || bounded.truncated,
+      responseStatusCategory: "success_2xx",
+      contentTypeCategory: "accepted_text",
+      compressedBytes: params.diagnostic.compressedBytes,
+      decompressedBytes: params.diagnostic.decompressedBytes,
+      durationMs: params.diagnostic.durationMs,
+      timeoutMs: params.diagnostic.timeoutMs,
       publicPointerExposure: "forbidden",
       parserExecuted: false,
       cacheRead: false,

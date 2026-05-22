@@ -247,11 +247,13 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("strict `provenance` object with both `locator` and `rationale`");
     expect(section).toContain("### Source Material Strength");
     expect(section).toContain("`provider_search_result_preview_text`");
-    expect(section).toContain("provider-truncated, query-shaped preview material");
+    expect(section).toContain("`provider_search_result_page_text_bounded`");
+    expect(section).toContain("provider-truncated, query-shaped text");
+    expect(section).toContain("fetched page content that may carry stronger source material");
     expect(section).toContain("source-attributed point that materially supports, opposes, qualifies, or frames");
     expect(section).toContain("do not require article-level certainty or complete procedural history");
     expect(section).toContain("Do not let source-material kind or fetch depth override material alignment");
-    expect(section).toContain("Give fetched summaries or abstracts more weight");
+    expect(section).toContain("Give fetched summaries, abstracts, or bounded page text more weight");
     expect(section).toContain("preserve uncertainty in `provenance.rationale`");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
