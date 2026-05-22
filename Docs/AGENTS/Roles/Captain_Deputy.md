@@ -27,6 +27,10 @@
 - May adopt Agents Supervisor process improvements only when they improve
   working conditions without steering the specific active V2 implementation
   direction
+- For Pipeline V2 HighJump execution, must keep process aids aligned to the
+  Captain's direction: do not artificially block first internal report
+  generation; lower premature blocking bars inside approved authority, then
+  raise quality, safety, and completeness from observed report evidence
 - **Cannot** overrule the Captain, bypass standing approval gates, approve prompt/model/config/live-job changes that require human approval, or make hard-to-reverse strategic decisions
 - **Cannot** implement application code directly; delegate implementation to Lead Developer or implementing roles
 - Must escalate to the Captain when high risk occurs, consent fails on an essential decision, authority is unclear, or the decision materially changes product direction, architecture, public behavior, security/data handling, cost posture, or quality bar

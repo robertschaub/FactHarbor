@@ -61,6 +61,14 @@ Use hard gates only where a mistake would invalidate a run, leak private state,
 spend unauthorized budget, or bypass Captain approval. Everything else should
 help agents see current state and keep moving inside the approved envelope.
 
+This plan must align with the Captain's HighJump instruction: lower premature
+blocking bars enough to get a first working internal V2 report, then raise
+quality, safety, and completeness step by step from observed report evidence.
+Process tooling must not artificially block report creation. It may stop only
+for unmanageable risk, an existing Captain approval/budget gate, public or raw
+text leak risk, stale runtime/source at execution, conflicting authority, or a
+critical Captain question the agent team cannot settle.
+
 Reduce context reconstruction by converting current authority into a small,
 validated, machine-readable projection. Do not create a second source of truth
 or a second approval workflow.

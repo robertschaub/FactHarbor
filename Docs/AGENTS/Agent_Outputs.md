@@ -3557,3 +3557,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HJ17 consumed Steer-Co exception overrun `7`; no second HJ17 canary is authorized.
 - Next action: Steer-Co should steer the shortest balanced report-quality package over the internal Alpha draft, not another W5 output-budget repair.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ17_W5_Output_Budget_Repair_Canary_Result.md
+
+## 2026-05-22 - Agents Supervisor - V2 HighJump Process Alignment Clarification
+
+- Clarified the V2 orchestration process-improvement plan and Captain Deputy workflow so process aids explicitly align with the Captain's HighJump direction.
+- Added that process tooling must not artificially block first internal report creation; it should help lower premature blocking bars, then raise quality, safety, and completeness from observed report evidence.
+- Preserved process-only boundaries: Agents Supervisor improvements do not steer the active V2 technical implementation, which remains Captain-Deputy / Steer-Co / Lead Developer responsibility.
+- No V2 implementation code, prompt behavior, live-job authority, or gate-register authority was changed.

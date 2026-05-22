@@ -32,6 +32,14 @@ the specific V2 technical direction. Specific implementation sequencing remains
 owned by Steer-Co for steering decisions and by the Lead Developer for delivery
 inside approved packages.
 
+For Pipeline V2 HighJump work, process aids must support the Captain's
+instruction to get to a first working internal report with consciously lowered
+blocking bars, then raise quality, safety, and completeness from actual report
+evidence. Do not let process tooling artificially block report creation; stop
+only for unmanageable risk, a standing Captain approval/budget gate, public or
+raw text leak risk, stale runtime/source at execution, conflicting authority, or
+a critical Captain question the team cannot settle.
+
 Captain Deputy is model-agnostic unless the Captain pins a model. For active
 autonomous coordination, prefer the Captain-assigned Leader model from
 `Docs/AGENTS/Active_Team_Composition.md` and raise reasoning through
