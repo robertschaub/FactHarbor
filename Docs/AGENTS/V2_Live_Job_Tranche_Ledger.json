@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj27",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj29",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ27 reached internal report generation and exposed the next report-quality/source-material breadth gap."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ29 showed the W5 material-alignment repair had become too strict and stopped at no extractable evidence."
     },
     "latestReset": {
       "date": "2026-05-22",
       "previousRemaining": 16,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after the HJ27 internal report pass so the team can run stronger report-quality validation rather than weak single canaries."
+      "reason": "Captain provided a fresh 18-job budget after HJ29 so the team can keep using stronger report-quality validation under HighJump without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-27-BOLSONARO-MIXED-SOURCE-REPORT-VALIDATION",
-      "startsAfterJobId": "f84d914e9ae74259a9c58505d2da190d",
+      "startsAfterSliceId": "X7-HJ-29-BOLSONARO-W5-MATERIAL-ALIGNMENT-VALIDATION",
+      "startsAfterJobId": "323c5fd3540e43aab9c7c6e686ec4de4",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ27. HJ28 consumed one job and exposed W5 extraction-selectivity drift after the Serper distribution repair.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ29. HJ29 is recorded below as the final result before this fresh tranche; future jobs consume from the new 18-slot budget.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -850,6 +850,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "Default manual V2 path ran claimboundary-v2. The Serper distribution repair improved breadth and the internal report writer produced 10172 report bytes, but W5 admitted adjacent/generic evidence, including environmental-governance context and generic democratic-institutions framework material, so the Bolsonaro report remained UNVERIFIED and below Captain expectation. Public/default surfaces stayed blocked/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-29-BOLSONARO-W5-MATERIAL-ALIGNMENT-VALIDATION",
+        "jobId": "323c5fd3540e43aab9c7c6e686ec4de4",
+        "classification": "STOP_X7_HJ29_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_MATERIAL_ALIGNMENT",
+        "implementationCommit": "0b5a5e73b062f1d6aa6aa958bd16c468a56d1a65",
+        "runtimeCommit": "0b5a5e73b062f1d6aa6aa958bd16c468a56d1a65",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj30_w5_material_alignment_rebalance",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18 and authorizing prompt edits/live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "Default manual V2 path ran claimboundary-v2 on the HJ29 prompt hash. Hidden chain reached W5 with 9 source content packets and 4971 parent-packet bytes, but W5 returned accepted no_extractable_evidence and no internal report writer artifact. This proves the HJ29 material-alignment repair removed adjacent/generic extraction but overshot into an empty W5 result. Public/default surfaces stayed blocked/redacted."
       }
     ],
     "blockedPending": [],

@@ -3758,4 +3758,22 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 
 **Budget:** HJ28 consumed one job from the post-HJ27 tranche. Active budget is now `17` of `18` before the HJ29 validation run.
 
-**Next:** Commit the prompt repair, refresh runtime, verify API/Web commit match, then run one default manual V2 Bolsonaro validation. If it produces target-specific evidence and containment holds, continue with asylum and hydrogen controls from the Captain-defined input list.
+**Validation update:** HJ29 validation job `323c5fd3540e43aab9c7c6e686ec4de4` ran on commit `0b5a5e73b062f1d6aa6aa958bd16c468a56d1a65` through the default manual V2 path. Hidden chain reached W5 with `9` source content packets and `4971` parent-packet bytes, but W5 returned accepted `no_extractable_evidence`; no internal report writer artifact was created. Classification: `STOP_X7_HJ29_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_MATERIAL_ALIGNMENT`. Public/default containment held.
+
+**Next:** Rebalance the same W5 prompt contract so weak but materially tied source-attributed preview/abstract points can become limited/contextual/unclear EvidenceItems without restoring HJ28-style adjacent/generic crowd-out. Captain reset the live-job budget to `18` after HJ29.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ30 W5 Material-Alignment Rebalance
+
+**Task:** Repair the HJ29 overcorrection while preserving the HJ28 adjacent/generic-material guard.
+
+**Result:** Amended only the existing `V2_EVIDENCE_EXTRACTION` prompt contract and its prompt-contract test. W5 now allows weak but materially tied source-attributed preview/abstract points to become limited/contextual/mixed/unclear EvidenceItems, allows `1` EvidenceItem when exactly one materially aligned point exists, and still forbids actor-only, broad-domain, adjacent-domain, unrelated conduct, or generic framework background from padding the EvidenceItem budget.
+
+**Debt-guard:** Classified as `incomplete-existing-mechanism`; chosen path was prompt/test amendment. Rejected adding provider/fetch/parser/source-material machinery because HJ29 already supplied W5 content; rejected deterministic filtering by AGENTS.md; rejected schema/retry changes because the W5 result was structurally accepted.
+
+**Review:** Claude Opus review was attempted through `scripts/agents/invoke-claude.cjs` but timed out. This is degraded reviewer coverage, not approval. Proceeding is justified because the repair is bounded, reversible, prompt-only, adds no new mechanism, and local verifiers are clean.
+
+**Verification:** Focused prompt-contract test passed (`10` tests); full evidence-lifecycle unit slice passed (`46` files / `243` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed.
+
+**Budget:** Captain reset the live-job budget to `18` after HJ29; no jobs have been consumed from this fresh tranche yet.
+
+**Next:** Run `npm run index`, `git diff --check`, commit HJ30, refresh runtime, verify API/Web commit match, then run the Bolsonaro validation first. If it produces a hidden report without containment issues, continue with the German asylum and hydrogen controls as a stronger HighJump mini-gauntlet.

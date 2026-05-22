@@ -224,6 +224,8 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Do not extract a point merely because it names the claim actor");
     expect(section).toContain("Generic framework evidence may be extracted only when");
     expect(section).toContain("omit lower-value background or adjacent-domain context");
+    expect(section).toContain("When all materially aligned candidate points are weak");
+    expect(section).toContain("do not pad the output with actor-only, broad-domain, or adjacent-domain background");
     expect(section).toContain("Use `no_extractable_evidence` only when none of the supplied content");
     expect(section).toContain("generic, adjacent-domain, or unrelated background");
     expect(section).toContain("not sufficient for a final verdict");
@@ -232,6 +234,7 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("while preserving required evidence meaning");
     expect(section).toContain("### EvidenceItem Selection Budget");
     expect(section).toContain("Normally return 2 to 5 EvidenceItems");
+    expect(section).toContain("Return 1 EvidenceItem only when exactly one materially aligned point exists");
     expect(section).toContain("Do not return more than 5 EvidenceItems");
     expect(section).toContain("Do not output one item per source");
     expect(section).toContain("omit lower-value or duplicative items");
@@ -241,6 +244,8 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("### Source Material Strength");
     expect(section).toContain("`provider_search_result_preview_text`");
     expect(section).toContain("provider-truncated, query-shaped preview material");
+    expect(section).toContain("source-attributed point that materially supports, opposes, qualifies, or frames");
+    expect(section).toContain("do not require article-level certainty or complete procedural history");
     expect(section).toContain("Do not let source-material kind or fetch depth override material alignment");
     expect(section).toContain("Give fetched summaries or abstracts more weight");
     expect(section).toContain("preserve uncertainty in `provenance.rationale`");

@@ -21,38 +21,39 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`aa931443 fix(v2): distribute serper preview across queries`
+`0b5a5e73 fix(v2): tighten evidence extraction material alignment`
 
-The current working repair amends the existing W5 evidence-extraction prompt so
-it keeps the HighJump extraction bar lowered for useful evidence, but rejects
-generic, adjacent-domain, or actor-adjacent background when direct
-claim-specific material is available. This is a prompt-only repair to the
-existing task contract, not a new hidden mechanism, parser path, provider, or
-public behavior.
+The current working repair rebalances the existing W5 evidence-extraction
+prompt after HJ29: HJ29 removed the HJ28 adjacent/generic extraction defect,
+but overshot into `no_extractable_evidence` despite 9 bounded source-content
+packets. The repair keeps the material-alignment guard while allowing weak but
+materially tied preview/abstract points to become limited/contextual/unclear
+EvidenceItems instead of prematurely stopping the report path.
 
-Runtime has not yet been refreshed to the working repair for the next
+Runtime has not yet been refreshed to the working HJ30 repair for the next
 validation job. Commit before any live job.
 
 ## Latest Result
 
 Latest validation:
 
-`STOP_X7_HJ28_BOLSONARO_W5_EXTRACTION_SELECTIVITY_IRRELEVANT_CONTEXT`
+`STOP_X7_HJ29_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_MATERIAL_ALIGNMENT`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ28_Serper_Query_Distribution_Repair.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ29_W5_Material_Alignment_Prompt_Repair.md`
 
 Important evidence:
 
-- `327edd966a904108b8bc51f05ec64b42` ran the default manual V2 path for the
-  Bolsonaro/fair-trial input on runtime commit `aa931443`.
-- W3-B/W4-H/W5/W8/internal report writer completed and authenticated admin job
-  response returned report markdown length `10172`.
-- The Serper distribution repair improved query-lane breadth, but W5 accepted
-  generic/adjacent material: one environmental-governance item and one generic
-  democratic-institutions framework item crowded out direct case-specific
-  fair-trial/procedural material.
+- `323c5fd3540e43aab9c7c6e686ec4de4` ran the default manual V2 path for the
+  Bolsonaro/fair-trial input on runtime commit `0b5a5e73`.
+- Claim Understanding, Query Planning, Source Acquisition, Source Material, and
+  W5 all executed under the hidden path; W5 saw 9 source content packets and
+  4971 parent-packet bytes.
+- W5 returned accepted `no_extractable_evidence`, so no internal report writer
+  artifact was created. This confirms the HJ29 material-alignment repair
+  stopped the adjacent/generic extraction defect but made W5 too strict for
+  bounded preview/abstract material.
 - Public/default containment held: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
@@ -76,15 +77,19 @@ through the default manual V2 route:
 - `327edd966a904108b8bc51f05ec64b42`: Serper distribution improved breadth and
   the internal report writer produced `10172` report bytes, but W5 admitted
   adjacent/generic material and the report remained `UNVERIFIED`.
+- `323c5fd3540e43aab9c7c6e686ec4de4`: HJ29 material-alignment prompt repair
+  removed adjacent/generic extraction, but W5 returned `no_extractable_evidence`
+  despite 9 bounded source-content packets.
 
 The remaining question is no longer reachability for this input; it is report
 quality and cross-input generalization. A compact report-quality review found
 HJ27/HJ28 materially below the Bolsonaro expectation (`LEANING-TRUE` /
 `MOSTLY-TRUE`, truth `58..85`, confidence `45..75`, minimum `3` boundaries).
-The active root cause has moved from source-material breadth to W5 extraction
-selectivity: the prompt needs to keep useful partial evidence, but avoid filling
-the 2-to-5 item budget with generic or adjacent-domain context when direct
-case-specific material exists.
+The active root cause remains W5 extraction selectivity, but the bar is now
+known on both sides: HJ28 was too permissive and HJ29 was too strict. HJ30 must
+keep adjacent/background material out while extracting weak but materially tied
+source-attributed preview/abstract points as limited/contextual/unclear
+EvidenceItems when they help downstream sufficiency and report generation.
 
 ## Live Budget
 
@@ -93,18 +98,19 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the W5 material-alignment prompt repair plus ledger/lane sync.
+1. Commit the W5 material-alignment rebalance repair plus ledger/lane sync.
 2. Refresh runtime to the repair commit and verify API/Web commit match.
-3. Run one Bolsonaro validation first. If it produces target-specific evidence
-   and no containment issue, spend additional jobs on `asylum-235000-de` and
-   `hydrogen-en` as stronger report-quality controls.
+3. Run a stronger HighJump validation sequence from the 18-job tranche rather
+   than a single weak canary: Bolsonaro first, then the German asylum and
+   hydrogen controls if the first run produces a hidden internal report without
+   containment issues.
 4. Record information yield per job: report produced, new stage reached, new
    failure, repeated stop with new evidence, or repeated stop without useful
    information.

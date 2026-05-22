@@ -1,6 +1,6 @@
 # V2 HighJump HJ29 - W5 Material-Alignment Prompt Repair
 
-**Status:** locally implemented, verifier-clean, pending commit/runtime refresh/live validation
+**Status:** validated by live job; stopped at W5 no-extractable evidence; follow-up HJ30 rebalance in progress
 **Date:** 2026-05-22
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, explicit prompt-edit/live-job authorization, and fresh `18` job tranche after HJ27
@@ -59,18 +59,38 @@ Failed-attempt recovery:
 - First focused prompt-contract run failed because the test still asserted the old exact wording containing `partial, contextual, indirect...`.
 - Classification: `keep`; the prompt repair stayed justified by HJ28 evidence and the test was amended to assert the new material-alignment contract instead of restoring weaker wording.
 
-## Next Validation
+## Live Validation Result
 
-After commit and runtime refresh, run one default manual V2 validation on the Captain-defined Bolsonaro/fair-trial input.
+Live validation was run after commit `0b5a5e73b062f1d6aa6aa958bd16c468a56d1a65`
+and runtime refresh.
 
-Pass signal:
+Result:
 
-- W5 extracts materially target-specific legal/procedural/fair-trial evidence rather than adjacent/generic context.
-- Internal report writer produces an admin-visible V2 report.
-- Public/default containment remains `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged` with no hidden text/status leak.
+- Job: `323c5fd3540e43aab9c7c6e686ec4de4`
+- Pipeline: default manual V2 path stored and ran `claimboundary-v2`
+- Runtime commit: `0b5a5e73b062f1d6aa6aa958bd16c468a56d1a65`
+- Classification:
+  `STOP_X7_HJ29_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_MATERIAL_ALIGNMENT`
+- Hidden chain: Claim Understanding, Query Planning, Source Acquisition, Source
+  Material, and W5 all executed. W5 saw 9 source content packets and 4971
+  parent-packet bytes.
+- W5 result: accepted `no_extractable_evidence`, `evidenceItemCount: 0`; no
+  internal report writer artifact was created.
+- Public/default containment: held. Public V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`.
 
-Stop signal:
+Interpretation:
 
-- The same adjacent/generic evidence crowd-out repeats without useful new information.
-- The run requires provider/fetch/parser expansion, schema relaxation, retries, public behavior, cache/SR/storage, ACS/direct URL, V1 work, or another hidden mechanism to proceed.
-- Runtime/source provenance is stale or public/default surfaces leak hidden text or hidden statuses.
+HJ29 successfully removed the HJ28 adjacent/generic extraction defect, but the
+material-alignment rule overshot and made W5 too strict for bounded
+preview/abstract material. The next repair should amend the same W5 prompt
+contract so weak but materially tied source-attributed points can become
+limited/contextual/unclear EvidenceItems instead of stopping the report path.
+Do not add provider/fetch/parser/retry/schema/public/V1 machinery for this
+symptom.
+
+Follow-up validation belongs to HJ30. The HJ30 pass signal is not "any
+evidence"; it is evidence that stays materially tied to the selected claim
+target while preserving the report path. The HJ30 stop signal is either a repeat
+of HJ28-style adjacent/generic crowd-out or a repeat of HJ29-style empty W5
+output without useful new information.
