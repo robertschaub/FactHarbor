@@ -3526,3 +3526,16 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Independent reviewer found no blocking issues and accepted exactly one canary after runtime refresh, with output-token/cost/ceiling checks.
 - Next action: commit, refresh runtime, verify API/Web runtime hashes, preflight containment, and run exactly one HJ17 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ17_W5_Output_Budget_Repair_Implementation.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ17 W5 Output Budget Repair Canary
+
+- Ran HJ17 canary job `ec943a2eeedf41a5890c7a0222286f50` on API/Web runtime `c63f8a90ce38f419c458c5f4e6cc1d05ec150edc` with explicit `claimboundary-v2` and the Captain-defined hydrogen input.
+- Classification: `PASS_X7_HJ17_W5_OUTPUT_BUDGET_REPAIR_INTERNAL_ALPHA_DRAFT_CREATED`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; default admin routes remained no-store and redacted by default.
+- Hidden chain reached W5 accepted extraction: `hidden_evidence_item_extraction_completed`, `extractionResultStatus = accepted`, `extractionStatus = evidence_extracted`, and `3` EvidenceItems.
+- W5 token usage was `8313` input, `1588` output, `9901` total, so the new `8000` output-token ceiling was not approached.
+- W8-B created an internal Alpha report result candidate with `firstIncompleteStage = none`, `3` boundary candidates, `2` verdict candidates, and `3` cited EvidenceItem refs.
+- W8-G created a `5413` byte internal Alpha draft; default projection returned hash/length/provenance only, and explicit authenticated admin inspection returned draft Markdown for review.
+- HJ17 consumed Steer-Co exception overrun `7`; no second HJ17 canary is authorized.
+- Next action: Steer-Co should steer the shortest balanced report-quality package over the internal Alpha draft, not another W5 output-budget repair.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ17_W5_Output_Budget_Repair_Canary_Result.md

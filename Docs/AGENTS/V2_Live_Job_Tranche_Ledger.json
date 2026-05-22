@@ -24,9 +24,9 @@
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
       "currentRemaining": 0,
-      "consumptionEntriesInThisTranche": 17,
-      "note": "HighJump tranche is exhausted. Six Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, evaluate the HJ13 OpenAlex balance repair, evaluate the HJ14 Wikimedia depth repair, evaluate the HJ15 OpenAlex fan-in repair, and evaluate the HJ16 W4-G/W4-H aggregate cap recalibration under the Captain no-artificial-block directive. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
-      "exceptionOverrunCount": 6
+      "consumptionEntriesInThisTranche": 18,
+      "note": "HighJump tranche is exhausted. Seven Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, evaluate the HJ13 OpenAlex balance repair, evaluate the HJ14 Wikimedia depth repair, evaluate the HJ15 OpenAlex fan-in repair, evaluate the HJ16 W4-G/W4-H aggregate cap recalibration, and evaluate the HJ17 W5 output-budget repair under the Captain no-artificial-block directive. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
+      "exceptionOverrunCount": 7
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
@@ -584,25 +584,39 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "HJ16 closed the prior W4-G aggregate cap stop: W4-A admitted nine records and W4-H created one 11111-byte aggregate packet under the new 16384-byte cap. W5 executed and stopped at damaged_execution / parse_failure with json_parse_error, so W8-B/W8-G were not created."
+      },
+      {
+        "sliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
+        "jobId": "ec943a2eeedf41a5890c7a0222286f50",
+        "classification": "PASS_X7_HJ17_W5_OUTPUT_BUDGET_REPAIR_INTERNAL_ALPHA_DRAFT_CREATED",
+        "implementationCommit": "c63f8a90ce38f419c458c5f4e6cc1d05ec150edc",
+        "runtimeCommit": "c63f8a90ce38f419c458c5f4e6cc1d05ec150edc",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_w5_output_budget_validation_overrun_7",
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ17_W5_Output_Budget_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "HJ17 closed the W5 parse/truncation stop: W5 accepted three EvidenceItems with 1588 output tokens under the new 8000-token ceiling, W8-B created an internal Alpha result candidate, and W8-G created a 5413-byte internal Alpha draft. Public V2 remained blocked/precutover/damaged and default admin projections stayed redacted."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "overrun_recorded_for_wrong_variant_recovery_and_highjump_validation",
-      "overrunCount": 6,
-      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, one HJ14 Wikimedia depth canary, one HJ15 OpenAlex fan-in canary, and one HJ16 aggregate-cap recalibration canary to avoid an artificial report-creation stop; all are recorded transparently.",
+      "overrunCount": 7,
+      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, one HJ14 Wikimedia depth canary, one HJ15 OpenAlex fan-in canary, one HJ16 aggregate-cap recalibration canary, and one HJ17 W5 output-budget validation canary to avoid an artificial report-creation stop; all are recorded transparently.",
       "nextLiveJobRequirement": "Any further HighJump live job requires a committed repair, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and explicit Steer-Co/Captain budget reconciliation."
     },
     "pendingExceptionAuthorization": {
       "sliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
-      "status": "pending",
+      "status": "consumed",
       "maxJobs": 1,
-      "remaining": 1,
+      "remaining": 0,
       "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ17_W5_Output_Budget_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
       "reason": "HJ16 closed the W4-G/W4-H aggregate cap stop and exposed W5 parse_failure / json_parse_error at exactly 4000 output tokens. HJ17 amends only the existing W5 evidence_extraction output budget to 8000 plus one compactness prompt instruction, with no chunking, retry, schema relaxation, source/provider change, aggregate-cap change, parser, cache/SR/storage, public behavior, ACS/direct URL, V1 work, or V1 cleanup. One canary is needed to determine whether W5 now emits valid strict JSON below the 8000 ceiling and whether W5-E/W5-F/W8 proceed.",
       "mustRecordConsumptionBeforeNextLiveJob": true,
-      "consumedByJobId": null,
-      "classification": null
+      "consumedByJobId": "ec943a2eeedf41a5890c7a0222286f50",
+      "classification": "PASS_X7_HJ17_W5_OUTPUT_BUDGET_REPAIR_INTERNAL_ALPHA_DRAFT_CREATED"
     }
   }
 }

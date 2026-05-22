@@ -153,7 +153,7 @@ Stop and reconvene Steer-Co if:
 
 ## Implementation Result
 
-Status: locally implemented and verifier-clean, no live job run yet.
+Status: implemented, verifier-clean, and canary-verified.
 
 Implementation delta:
 
@@ -220,3 +220,38 @@ reconciliation. The canary uses the Captain-defined input:
 The canary should determine whether W5 now emits valid strict JSON below the
 `8000` output-token ceiling, whether W5-E/W5-F and W8-B/W8-G proceed if W5 is
 accepted, and whether public/default-admin containment remains intact.
+
+## Canary Result
+
+Status: `PASS_X7_HJ17_W5_OUTPUT_BUDGET_REPAIR_INTERNAL_ALPHA_DRAFT_CREATED`.
+
+Canary job `ec943a2eeedf41a5890c7a0222286f50` ran on API/Web runtime
+`c63f8a90ce38f419c458c5f4e6cc1d05ec150edc` with explicit
+`claimboundary-v2` and the Captain-defined input:
+
+`Using hydrogen for cars is more efficient than using electricity`
+
+Result:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- hidden Claim Understanding, Query Planning, W2, W4, W5, W8-B, and W8-G
+  artifacts were present on the same ledger;
+- W4-A admitted `9` Source Material records;
+- W5 completed as `hidden_evidence_item_extraction_completed` with
+  `extractionResultStatus = accepted`, `extractionStatus = evidence_extracted`,
+  and `3` EvidenceItems;
+- W5 token usage was `8313` input, `1588` output, `9901` total, so it did not
+  approach the new `8000` output-token ceiling;
+- W8-B created an internal Alpha report result candidate with
+  `firstIncompleteStage = none`, `3` boundary candidates, `2` verdict
+  candidates, and `3` cited EvidenceItem refs;
+- W8-G created a `5413` byte internal Alpha report draft; default admin
+  projection remained hash/length/provenance-only, and explicit authenticated
+  admin inspection returned the draft;
+- no public/default-admin/log/error source text, EvidenceItem text, prompt text,
+  hidden ledger id, or draft text leak was observed in the captured public and
+  default-admin artifacts.
+
+The HJ17 repair objective is closed. Next work should be report-quality steering
+over the internal Alpha draft, not another W5 output-budget change.
