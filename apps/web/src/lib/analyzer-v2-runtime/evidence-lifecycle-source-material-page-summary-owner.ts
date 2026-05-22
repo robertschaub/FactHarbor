@@ -5,6 +5,9 @@ import type {
   EvidenceLifecycleSourceCandidatePreviewDecision,
 } from "./evidence-lifecycle-source-candidate-preview-owner";
 import {
+  SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import {
   SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
   SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
   SOURCE_MATERIAL_PAGE_SUMMARY_FETCH_LOCATOR_VERSION,
@@ -14,6 +17,7 @@ import {
   SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   buildSourceMaterialPageSummaryRecord,
+  buildSourceMaterialSearchPreviewRecord,
   type SourceMaterialPageSummaryBodyStatus,
   type SourceMaterialPageSummaryRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
@@ -26,6 +30,9 @@ import {
 import {
   markEvidenceLifecycleSourceMaterialPageSummaryRuntimeOwnedDecision,
 } from "./evidence-lifecycle-source-material-page-summary-provenance";
+
+const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 3;
+const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 2_048;
 
 export type EvidenceLifecycleSourceMaterialPageSummaryStatus =
   | "source_material_page_summary_completed"
@@ -277,18 +284,74 @@ function selectedOpenAlexRecords(
   return selected;
 }
 
+function selectedSearchPreviewRecords(
+  previewDecision: EvidenceLifecycleSourceCandidatePreviewDecision,
+  locators: readonly SourceMaterialPageSummaryFetchLocator[],
+  maxRecords = SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
+): readonly SourceMaterialPageSummaryRecord[] {
+  const acceptedPreviewRecords = matchingMaterializedPreviewRecords(previewDecision);
+  const selected: SourceMaterialPageSummaryRecord[] = [];
+  const seen = new Set<string>();
+  let aggregateTextBytes = 0;
+  for (const locator of locators) {
+    const previewRecord = acceptedPreviewRecords.get(locator.candidatePreviewId);
+    if (
+      previewRecord === undefined
+      || previewRecord.providerId !== SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID
+      || previewRecord.locatorRef !== locator.locatorRef
+    ) {
+      continue;
+    }
+    const recordDecision = buildSourceMaterialSearchPreviewRecord({
+      previewRecord,
+      languageCode: locator.languageCode,
+    });
+    if (recordDecision.status !== "record_created") {
+      continue;
+    }
+    const record = recordDecision.record;
+    if (
+      seen.has(record.sourceMaterialTextHash)
+      || aggregateTextBytes + record.sourceMaterialTextByteLength >
+        SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES
+    ) {
+      continue;
+    }
+    selected.push(record);
+    seen.add(record.sourceMaterialTextHash);
+    aggregateTextBytes += record.sourceMaterialTextByteLength;
+    if (selected.length >= maxRecords) {
+      break;
+    }
+  }
+  return selected;
+}
+
 function mergedSourceMaterialRecords(params: {
   readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
+  readonly searchPreviewRecords?: readonly SourceMaterialPageSummaryRecord[];
   readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
 }): readonly SourceMaterialPageSummaryRecord[] {
   const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
-  if (openAlexRecords.length === 0) {
-    return params.wikimediaRecords.slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
-  }
-  return [
+  const strongRecordCount = openAlexRecords.length + params.wikimediaRecords.length;
+  const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
+  const merged: SourceMaterialPageSummaryRecord[] = [];
+  const seen = new Set<string>();
+  for (const record of [
     ...openAlexRecords,
+    ...searchPreviewRecords,
     ...params.wikimediaRecords,
-  ].slice(0, SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
+  ]) {
+    if (seen.has(record.sourceMaterialTextHash)) {
+      continue;
+    }
+    seen.add(record.sourceMaterialTextHash);
+    merged.push(record);
+    if (merged.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+      break;
+    }
+  }
+  return merged;
 }
 
 export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(params: {
@@ -338,9 +401,11 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - openAlexRecords.length,
     );
     const locators = eligibleLocators(params.previewDecision, params.fetchLocators, wikimediaFetchBudget);
+    const searchPreviewRecords = selectedSearchPreviewRecords(params.previewDecision, locators);
     if (locators.length === 0) {
       const openAlexOnlyRecords = mergedSourceMaterialRecords({
         openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+        searchPreviewRecords: [],
         wikimediaRecords: [],
       });
       if (openAlexOnlyRecords.length > 0) {
@@ -376,6 +441,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       if (transportOutcome.status !== "success") {
         const mergedRecords = mergedSourceMaterialRecords({
           openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+          searchPreviewRecords,
           wikimediaRecords: records,
         });
         if (mergedRecords.length > 0) {
@@ -416,6 +482,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
 
     const mergedRecords = mergedSourceMaterialRecords({
       openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+      searchPreviewRecords,
       wikimediaRecords: records,
     });
     if (mergedRecords.length === 0) {

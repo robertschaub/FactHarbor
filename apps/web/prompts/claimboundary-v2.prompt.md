@@ -383,6 +383,10 @@ Normally return 2 to 5 EvidenceItems. Do not return more than 5 EvidenceItems fo
 
 Every included EvidenceItem must be complete under the strict schema. Include all required top-level fields, the full `evidenceScope` object with all six keys, and the strict `provenance` object with both `locator` and `rationale`. If an otherwise useful point cannot be represented with complete required fields, omit that item and keep the accepted output valid.
 
+### Source Material Strength
+
+Source content may include `provider_search_result_preview_text`. Treat that source-material kind as provider-truncated, query-shaped preview material. It may support extraction only when its bounded text directly supports, opposes, or qualifies the selected AtomicClaim without invention. Give fetched summaries or abstracts more weight when they conflict with preview material, and preserve uncertainty in `provenance.rationale` when an extracted item relies on preview material.
+
 Top-level object:
 
 - `schemaVersion`: exactly `v2.evidence_extraction_result.0`

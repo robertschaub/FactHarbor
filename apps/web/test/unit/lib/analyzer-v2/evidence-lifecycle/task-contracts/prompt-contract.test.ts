@@ -233,6 +233,11 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Every included EvidenceItem must be complete under the strict schema");
     expect(section).toContain("the full `evidenceScope` object with all six keys");
     expect(section).toContain("strict `provenance` object with both `locator` and `rationale`");
+    expect(section).toContain("### Source Material Strength");
+    expect(section).toContain("`provider_search_result_preview_text`");
+    expect(section).toContain("provider-truncated, query-shaped preview material");
+    expect(section).toContain("Give fetched summaries or abstracts more weight");
+    expect(section).toContain("preserve uncertainty in `provenance.rationale`");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
     }

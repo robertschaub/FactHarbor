@@ -4775,6 +4775,7 @@ describe("analyzer-v2 boundary guard", () => {
       "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop",
       "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator",
       "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material",
+      "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview",
     ]);
 
     const transportSourceFile = parseSource(analyzerV2RuntimeEvidenceLifecycleSourceMaterialPageSummaryTransportPath);
@@ -10703,7 +10704,6 @@ describe("analyzer-v2 boundary guard", () => {
       "readBoundedEvidenceExtractionRuntimeArtifactDefaultProjections",
       "readSufficiencyAssessmentRuntime",
       "readBoundaryVerdictExecutionRuntime",
-      "reportMarkdown",
       "truthPercentage",
       "confidenceGenerated: true",
       "warningGenerated: true",

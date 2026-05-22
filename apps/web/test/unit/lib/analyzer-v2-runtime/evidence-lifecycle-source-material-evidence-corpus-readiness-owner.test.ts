@@ -125,11 +125,11 @@ describe("Analyzer V2 W4-A runtime Source Material to EvidenceCorpus readiness o
     expect(readiness).toMatchObject({
       status: "source_material_structurally_admissible_evidence_corpus_gate_closed",
       stopReason: "not_stopped",
-      sourceMaterialRecordCount: 1,
-      admittedSourceMaterialRecordCount: 1,
+      sourceMaterialRecordCount: 2,
+      admittedSourceMaterialRecordCount: 2,
       sourceMaterialRecord: {
         providerId: "wikimedia_core",
-        sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+        sourceMaterialEndpointId: "ep_wikimedia_core_page_search",
         languageCode: "en",
       },
       extractionInput: null,
@@ -138,6 +138,10 @@ describe("Analyzer V2 W4-A runtime Source Material to EvidenceCorpus readiness o
       evidenceItems: [],
       downstreamGate: "evidence_corpus_build_gate_closed",
     });
+    expect(readiness.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_preview_text",
+      "wikimedia_page_summary_extract_text",
+    ]);
     expect(serialized).not.toContain("Hydrogen vehicles store hydrogen");
     expect(serialized).not.toContain("Hydrogen_vehicle");
     expect(serialized).not.toContain("truthPercentage");

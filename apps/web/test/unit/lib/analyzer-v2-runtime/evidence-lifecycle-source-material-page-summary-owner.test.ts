@@ -199,7 +199,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       status: "source_material_page_summary_completed",
       stopReason: "not_stopped",
       attemptedFetchCount: 1,
-      sourceMaterialRecordCount: 1,
+      sourceMaterialRecordCount: 2,
       fetchDiagnosticCount: 1,
       extractionInput: null,
       evidenceCorpus: null,
@@ -226,6 +226,10 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       downstreamGate: "source_material_to_evidence_corpus_gate_closed",
       publicCutoverStatus: "blocked_precutover",
     });
+    expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_preview_text",
+      "wikimedia_page_summary_extract_text",
+    ]);
     expect(serialized).toContain("Hydrogen vehicles store hydrogen");
     expect(serialized).not.toContain("Hydrogen_vehicle");
     expect(serialized).not.toContain("https://example.invalid");
@@ -261,14 +265,15 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision).toMatchObject({
       status: "source_material_page_summary_completed",
-      sourceMaterialRecordCount: 3,
+      sourceMaterialRecordCount: 4,
       attemptedFetchCount: 1,
       fetchDiagnosticCount: 1,
     });
     expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
     expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind).toBe("openalex_work_abstract_text");
     expect(decision.sourceMaterialRecords[1]?.providerId).toBe("openalex");
-    expect(decision.sourceMaterialRecords[2]?.providerId).toBe("wikimedia_core");
+    expect(decision.sourceMaterialRecords[2]?.sourceMaterialKind).toBe("provider_search_result_preview_text");
+    expect(decision.sourceMaterialRecords[3]?.sourceMaterialKind).toBe("wikimedia_page_summary_extract_text");
   });
 
   it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {
@@ -325,12 +330,12 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_1_4",
-      "SOURCE_CANDIDATE_PREVIEW_1_5",
-      "SOURCE_CANDIDATE_PREVIEW_1_6",
-      "SOURCE_CANDIDATE_PREVIEW_1_7",
     ]);
     expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(requestedPaths).toEqual([
@@ -439,6 +444,9 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
     ]);
   });
 
@@ -479,6 +487,9 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     });
 
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
@@ -527,6 +538,8 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     });
 
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
     ]);
@@ -662,9 +675,12 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       stopReason: "not_stopped",
       attemptedFetchCount: 2,
       fetchDiagnosticCount: 2,
-      sourceMaterialRecordCount: 1,
+      sourceMaterialRecordCount: 3,
     });
-    expect(decision.sourceMaterialRecords[0]?.candidatePreviewId).toBe("SOURCE_CANDIDATE_PREVIEW_1_2");
+    expect(decision.sourceMaterialRecords.some((record) =>
+      record.candidatePreviewId === "SOURCE_CANDIDATE_PREVIEW_1_2"
+      && record.sourceMaterialKind === "wikimedia_page_summary_extract_text"
+    )).toBe(true);
     expect(requestedPaths).toEqual([
       actionApiTextExtractPath("Disambiguation_page"),
       actionApiTextExtractPath("Material_page"),
@@ -720,9 +736,12 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       stopReason: "not_stopped",
       attemptedFetchCount: 2,
       fetchDiagnosticCount: 2,
-      sourceMaterialRecordCount: 1,
+      sourceMaterialRecordCount: 3,
     });
-    expect(decision.sourceMaterialRecords[0]?.candidatePreviewId).toBe("SOURCE_CANDIDATE_PREVIEW_1_1");
+    expect(decision.sourceMaterialRecords.some((record) =>
+      record.candidatePreviewId === "SOURCE_CANDIDATE_PREVIEW_1_1"
+      && record.sourceMaterialKind === "wikimedia_page_summary_extract_text"
+    )).toBe(true);
     expect(requestedPaths).toEqual([
       actionApiTextExtractPath("Material_page"),
       actionApiTextExtractPath("Later_missing_page"),

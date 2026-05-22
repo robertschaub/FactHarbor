@@ -164,7 +164,7 @@ describe("Analyzer V2 W3-B page-summary Source Material artifact sink", () => {
         source: "product_v2_orchestrator_after_source_material_page_summary",
         sourceMaterialPageSummary: expect.objectContaining({
           status: "source_material_page_summary_completed",
-          sourceMaterialRecordCount: 1,
+          sourceMaterialRecordCount: 2,
           extractionInput: null,
           evidenceCorpus: null,
           downstreamGate: "source_material_to_evidence_corpus_gate_closed",

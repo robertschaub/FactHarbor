@@ -238,6 +238,10 @@ function boundedCount(value: unknown): number {
   return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : 0;
 }
 
+function uniqueStrings(values: readonly string[]): readonly string[] {
+  return [...new Set(values)];
+}
+
 function safeStatus(value: unknown): string | null {
   return typeof value === "string" && /^[a-z0-9_.-]+$/.test(value) ? value : null;
 }
@@ -587,9 +591,9 @@ function buildCorpusShell(
     sourceMaterialRefs: validatedInputs.map((input) => input.sourceMaterialRef),
     locatorRefs: validatedInputs.map((input) => input.locatorRef),
     candidatePreviewIds: validatedInputs.map((input) => input.candidatePreviewId),
-    providerIds: validatedInputs.map((input) => input.providerId),
+    providerIds: uniqueStrings(validatedInputs.map((input) => input.providerId)),
     sourceMaterialEndpointIds: validatedInputs.map((input) => input.sourceMaterialEndpointId),
-    languageCodes: validatedInputs.map((input) => input.languageCode),
+    languageCodes: uniqueStrings(validatedInputs.map((input) => input.languageCode)),
     sourceMaterialKinds: validatedInputs.map((input) => input.sourceMaterialKind),
     sourceMaterialTextHashes: validatedInputs.map((input) => input.sourceMaterialTextHash),
     aggregateSourceMaterialTextByteLength: validatedInputs.reduce(

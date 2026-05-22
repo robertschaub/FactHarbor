@@ -134,8 +134,8 @@ describe("Analyzer V2 W4-C runtime Source Material corpus admission owner", () =
     expect(admission).toMatchObject({
       status: "source_material_admitted_to_corpus_input_gate_closed",
       stopReason: "not_stopped",
-      sourceMaterialRecordCount: 1,
-      admittedCorpusAdmissionInputCount: 1,
+      sourceMaterialRecordCount: 2,
+      admittedCorpusAdmissionInputCount: 2,
       rejectedCorpusAdmissionInputCount: 0,
       evidenceCorpus: null,
       evidenceCorpusBuildAuthorized: false,
@@ -146,11 +146,15 @@ describe("Analyzer V2 W4-C runtime Source Material corpus admission owner", () =
     });
     expect(admission.corpusAdmissionInput).toMatchObject({
       providerId: "wikimedia_core",
-      sourceMaterialEndpointId: "ep_wikimedia_project_page_summary",
+      sourceMaterialEndpointId: "ep_wikimedia_core_page_search",
       languageCode: "en",
-      sourceMaterialKind: "wikimedia_page_summary_extract_text",
-      sourceMaterialRecordCount: 1,
+      sourceMaterialKind: "provider_search_result_preview_text",
+      sourceMaterialRecordCount: 2,
     });
+    expect(admission.corpusAdmissionInputs.map((input) => input.sourceMaterialKind)).toEqual([
+      "provider_search_result_preview_text",
+      "wikimedia_page_summary_extract_text",
+    ]);
     expect(readEvidenceLifecycleEvidenceCorpusSourceMaterialAdmissionRuntimeOwnedDecision(admission)).toBe(admission);
     expect(serialized).not.toContain("Neutral source material text");
     expect(serialized).not.toContain("Neutral_page_key");

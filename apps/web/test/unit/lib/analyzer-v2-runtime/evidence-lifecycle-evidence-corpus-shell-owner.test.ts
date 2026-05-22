@@ -145,7 +145,7 @@ describe("Analyzer V2 W4-D runtime EvidenceCorpus shell owner", () => {
     expect(shell).toMatchObject({
       status: "evidence_corpus_shell_created_extraction_gate_closed",
       stopReason: "not_stopped",
-      sourceMaterialRecordCount: 1,
+      sourceMaterialRecordCount: 2,
       evidenceItems: [],
       extractionInput: null,
       evidenceItemExtractionAuthorized: false,

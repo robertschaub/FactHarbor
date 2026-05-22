@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
+  type SourceCandidatePreviewProjection,
 } from "./source-candidate-preview";
 import {
   SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
@@ -16,14 +17,18 @@ export const SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT =
   "wikimedia_page_summary_extract_text";
 export const SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT =
   "openalex_work_abstract_text";
+export const SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW =
+  "provider_search_result_preview_text";
 
 export type SourceMaterialKind =
   | typeof SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
-  | typeof SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT;
+  | typeof SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
+  | typeof SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW;
 
 export function sourceMaterialKindIsSupported(value: unknown): value is SourceMaterialKind {
   return value === SOURCE_MATERIAL_KIND_WIKIMEDIA_PAGE_SUMMARY_EXTRACT
-    || value === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT;
+    || value === SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT
+    || value === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW;
 }
 
 export type SourceMaterialPageSummaryResponseStatusCategory =
@@ -126,6 +131,27 @@ function containsForbiddenSourceTextFragment(value: string): boolean {
   return FORBIDDEN_SOURCE_TEXT_FRAGMENTS.some((fragment) => lower.includes(fragment));
 }
 
+function distinctPreviewTextParts(
+  previewRecord: SourceCandidatePreviewProjection,
+): readonly string[] {
+  const parts = [
+    previewRecord.titlePreviewText,
+    previewRecord.descriptionPreviewText,
+    previewRecord.excerptPreviewText,
+  ];
+  const seen = new Set<string>();
+  const selected: string[] = [];
+  for (const part of parts) {
+    const text = typeof part === "string" ? normalizedSourceText(part) : "";
+    if (text.length === 0 || seen.has(text)) {
+      continue;
+    }
+    seen.add(text);
+    selected.push(text);
+  }
+  return selected;
+}
+
 function failed(bodyStatus: Exclude<SourceMaterialPageSummaryBodyStatus, "source_material_record_created">):
   SourceMaterialPageSummaryBodyDecision {
   return {
@@ -193,6 +219,66 @@ export function buildSourceMaterialPageSummaryRecord(params: {
       decompressedBytes: params.diagnostic.decompressedBytes,
       durationMs: params.diagnostic.durationMs,
       timeoutMs: params.diagnostic.timeoutMs,
+      publicPointerExposure: "forbidden",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      evidenceCorpusCreated: false,
+      evidenceItemGenerated: false,
+      warningGenerated: false,
+      reportGenerated: false,
+      verdictGenerated: false,
+      confidenceGenerated: false,
+      publicSurfaceWritten: false,
+    },
+  };
+}
+
+export function buildSourceMaterialSearchPreviewRecord(params: {
+  readonly previewRecord: SourceCandidatePreviewProjection;
+  readonly languageCode: string;
+}): SourceMaterialPageSummaryBodyDecision {
+  const sourceMaterialText = normalizedSourceText(distinctPreviewTextParts(params.previewRecord).join("\n\n"));
+  if (sourceMaterialText.length === 0) {
+    return failed("source_material_extract_blank");
+  }
+  const byteLength = utf8ByteLength(sourceMaterialText);
+  if (byteLength > SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES) {
+    return failed("source_material_extract_oversize");
+  }
+  if (containsForbiddenSourceTextFragment(sourceMaterialText)) {
+    return failed("source_material_extract_structural_rejected");
+  }
+  if (!params.previewRecord.locatorRef) {
+    return failed("source_material_extract_structural_rejected");
+  }
+
+  const sourceMaterialTextHash = sha256Text(sourceMaterialText);
+  return {
+    status: "record_created",
+    bodyStatus: "source_material_record_created",
+    record: {
+      recordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
+      sourceMaterialId: `SOURCE_MATERIAL_SEARCH_PREVIEW_${sourceMaterialTextHash.slice(0, 16).toUpperCase()}`,
+      locatorRef: params.previewRecord.locatorRef,
+      candidatePreviewId: params.previewRecord.candidatePreviewId,
+      providerId: params.previewRecord.providerId,
+      sourceMaterialEndpointId: params.previewRecord.endpointId,
+      languageCode: params.languageCode,
+      sourceMaterialKind: SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW,
+      sourceMaterialText,
+      sourceMaterialTextHash,
+      sourceMaterialTextByteLength: byteLength,
+      sourceMaterialTextCharLength: Array.from(sourceMaterialText).length,
+      truncationApplied: false,
+      responseStatusCategory: "success_2xx",
+      contentTypeCategory: "accepted_json",
+      compressedBytes: byteLength,
+      decompressedBytes: byteLength,
+      durationMs: 0,
+      timeoutMs: 0,
       publicPointerExposure: "forbidden",
       parserExecuted: false,
       cacheRead: false,

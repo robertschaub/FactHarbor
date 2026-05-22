@@ -11,6 +11,7 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES,
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   buildSourceMaterialPageSummaryRecord,
+  buildSourceMaterialSearchPreviewRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type {
   EvidenceLifecycleSourceMaterialPageSummaryFetchDiagnostic,
@@ -71,6 +72,57 @@ function diagnostic(): EvidenceLifecycleSourceMaterialPageSummaryFetchDiagnostic
 }
 
 describe("Analyzer V2 W3-B page-summary Source Material record builder", () => {
+  it("creates one bounded weak Source Material record from provider-owned search preview text", () => {
+    const candidate = {
+      key: "Hydrogen_vehicle",
+      title: "Hydrogen vehicle",
+      excerpt: "Fuel cell vehicles use hydrogen.",
+      description: "Public encyclopedia page",
+    };
+    const previewRecord = buildSourceCandidatePreviewProjection({
+      providerId: SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
+      endpointId: SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID,
+      providerAttemptOrdinal: 1,
+      providerRank: 1,
+      candidateOrdinal: 1,
+      sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_ATT_1_1",
+      candidate,
+    });
+    const record = buildSourceMaterialSearchPreviewRecord({
+      previewRecord,
+      languageCode: "en",
+    });
+    const serialized = JSON.stringify(record);
+
+    expect(record).toMatchObject({
+      status: "record_created",
+      bodyStatus: "source_material_record_created",
+      record: {
+        recordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
+        sourceMaterialKind: "provider_search_result_preview_text",
+        providerId: "wikimedia_core",
+        sourceMaterialEndpointId: "ep_wikimedia_core_page_search",
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    });
+    expect(record.record?.sourceMaterialText).toContain("Hydrogen vehicle");
+    expect(record.record?.sourceMaterialText).toContain("Fuel cell vehicles use hydrogen.");
+    expect(record.record?.sourceMaterialTextByteLength).toBeGreaterThan(0);
+    expect(serialized).not.toContain("Hydrogen_vehicle");
+    expect(serialized).not.toContain("https://example.invalid");
+  });
+
   it("creates one bounded hidden Source Material record from extract only", () => {
     const record = buildSourceMaterialPageSummaryRecord({
       locator: locator(),
