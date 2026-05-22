@@ -288,6 +288,7 @@ export async function runClaimBoundaryPipelineV2(
         const sourceCandidatePreviewProjections: SourceCandidatePreviewProjection[] = [];
         const sourceMaterialPageSummaryFetchLocators: SourceMaterialPageSummaryFetchLocator[] = [];
         const openAlexSourceMaterialRecords: SourceMaterialPageSummaryRecord[] = [];
+        const webSearchPreviewSourceMaterialRecords: SourceMaterialPageSummaryRecord[] = [];
         const candidateProviderNetwork = await runSourceAcquisitionCandidateProviderNetworkLoop({
           handoffDecision: sourceAcquisitionHandoff,
           sourceAcquisitionStartDecision,
@@ -297,6 +298,8 @@ export async function runClaimBoundaryPipelineV2(
           sourceMaterialPageSummaryFetchLocatorSink: (locator) =>
             sourceMaterialPageSummaryFetchLocators.push(locator),
           openAlexSourceMaterialRecordSink: (record) => openAlexSourceMaterialRecords.push(record),
+          webSearchPreviewSourceMaterialRecordSink: (record) =>
+            webSearchPreviewSourceMaterialRecords.push(record),
         });
         recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
           context,
@@ -315,6 +318,7 @@ export async function runClaimBoundaryPipelineV2(
           previewDecision: sourceCandidatePreview,
           fetchLocators: sourceMaterialPageSummaryFetchLocators,
           openAlexSourceMaterialRecords,
+          webSearchPreviewSourceMaterialRecords,
         });
         recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
           context,

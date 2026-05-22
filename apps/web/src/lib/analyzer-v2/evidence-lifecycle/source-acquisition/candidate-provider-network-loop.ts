@@ -37,6 +37,9 @@ import {
   type SourceAcquisitionNetworkAttemptTelemetryRecord,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-factory";
 import {
+  collectSerperSearchPreviewSourceMaterialRecords,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview";
+import {
   type SourceCandidatePreviewProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import type {
@@ -1057,6 +1060,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
   readonly sourceMaterialPageSummaryFetchLocatorSink?: (locator: SourceMaterialPageSummaryFetchLocator) => void;
   readonly openAlexSourceMaterialRecordSink?: (record: SourceMaterialPageSummaryRecord) => void;
+  readonly webSearchPreviewSourceMaterialRecordSink?: (record: SourceMaterialPageSummaryRecord) => void;
 }): Promise<SourceAcquisitionCandidateProviderNetworkLoopDecision> {
   const closedLoopStatus = params.candidateRuntimeClosedLoop.status;
   const handoffStatus = params.handoffDecision.status;
@@ -1460,6 +1464,22 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
       }
     } catch {
       // OpenAlex source-material diversity is additive for W6-F1 and must not corrupt the completed Wikimedia path.
+    }
+  }
+
+  if (params.webSearchPreviewSourceMaterialRecordSink) {
+    try {
+      const records = await collectSerperSearchPreviewSourceMaterialRecords({
+        queryEntries: handoff.queryEntries,
+        startingAttemptOrdinal: networkAttempts.length,
+        languageCode: handoff.sourceLanguagePolicy.primaryLanguage,
+        candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
+      });
+      for (const record of records) {
+        params.webSearchPreviewSourceMaterialRecordSink(record);
+      }
+    } catch {
+      // Serper preview material is additive HighJump source coverage and must not corrupt the completed core path.
     }
   }
 

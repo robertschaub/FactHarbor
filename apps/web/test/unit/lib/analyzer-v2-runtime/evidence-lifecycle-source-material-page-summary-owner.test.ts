@@ -4,6 +4,8 @@ import type {
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/candidate-provider-network-loop";
 import {
   buildSourceCandidatePreviewProjection,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import {
   buildSourceMaterialPageSummaryFetchLocator,
@@ -18,6 +20,9 @@ import {
 } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
 import type {
   SourceMaterialPageSummaryRecord,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
+import {
+  buildSourceMaterialSearchPreviewRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 function actionApiTextExtractPath(title: string): string {
@@ -175,6 +180,36 @@ function openAlexRecord(
   };
 }
 
+function webSearchPreviewRecord(): SourceMaterialPageSummaryRecord {
+  const projection = buildSourceCandidatePreviewProjection({
+    providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+    endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+    providerAttemptOrdinal: 9,
+    providerRank: 1,
+    candidateOrdinal: 1,
+    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_9_1",
+    candidate: {
+      title: "Web search court-process result",
+      snippet: "The public search result describes procedural objections and court votes.",
+      link: "https://example.test/web-search-court-process",
+    },
+  });
+  const recordDecision = buildSourceMaterialSearchPreviewRecord({
+    previewRecord: projection,
+    languageCode: "en",
+    diagnostic: {
+      compressedBytes: 1000,
+      decompressedBytes: 1000,
+      durationMs: 41,
+      timeoutMs: 3000,
+    },
+  });
+  if (recordDecision.status !== "record_created") {
+    throw new Error("test web search preview record should materialize");
+  }
+  return recordDecision.record;
+}
+
 describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
   it("creates one hidden Source Material record from a completed W2 and materialized W3-A locator", async () => {
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
@@ -274,6 +309,45 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.sourceMaterialRecords[1]?.providerId).toBe("openalex");
     expect(decision.sourceMaterialRecords[2]?.sourceMaterialKind).toBe("provider_search_result_preview_text");
     expect(decision.sourceMaterialRecords[3]?.sourceMaterialKind).toBe("wikimedia_page_summary_extract_text");
+  });
+
+  it("admits bounded web-search preview records after strong records and before Wikimedia preview fill", async () => {
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision(),
+      previewDecision: previewDecision(),
+      fetchLocators: [locator()],
+      openAlexSourceMaterialRecords: [openAlexRecord()],
+      webSearchPreviewSourceMaterialRecords: [webSearchPreviewRecord()],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async () => ({
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          remoteAddress: "93.184.216.34",
+          body: Buffer.from("{\"extract\":\"Hydrogen vehicles store hydrogen and power an electric motor.\"}", "utf8"),
+        }),
+      },
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      sourceMaterialRecordCount: 4,
+    });
+    expect(decision.sourceMaterialRecords.map((record) => record.providerId)).toEqual([
+      "openalex",
+      "serper_web_search",
+      "wikimedia_core",
+      "wikimedia_core",
+    ]);
+    expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
+      "openalex_work_abstract_text",
+      "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
+      "wikimedia_page_summary_extract_text",
+    ]);
+    expect(serialized).toContain("Web search court-process result");
+    expect(serialized).not.toContain("https://example.test");
   });
 
   it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {

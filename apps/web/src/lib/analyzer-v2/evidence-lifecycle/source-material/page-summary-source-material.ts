@@ -239,6 +239,12 @@ export function buildSourceMaterialPageSummaryRecord(params: {
 export function buildSourceMaterialSearchPreviewRecord(params: {
   readonly previewRecord: SourceCandidatePreviewProjection;
   readonly languageCode: string;
+  readonly diagnostic?: {
+    readonly compressedBytes: number;
+    readonly decompressedBytes: number;
+    readonly durationMs: number;
+    readonly timeoutMs: number;
+  };
 }): SourceMaterialPageSummaryBodyDecision {
   const sourceMaterialText = normalizedSourceText(distinctPreviewTextParts(params.previewRecord).join("\n\n"));
   if (sourceMaterialText.length === 0) {
@@ -275,10 +281,10 @@ export function buildSourceMaterialSearchPreviewRecord(params: {
       truncationApplied: false,
       responseStatusCategory: "success_2xx",
       contentTypeCategory: "accepted_json",
-      compressedBytes: byteLength,
-      decompressedBytes: byteLength,
-      durationMs: 0,
-      timeoutMs: 0,
+      compressedBytes: params.diagnostic?.compressedBytes ?? byteLength,
+      decompressedBytes: params.diagnostic?.decompressedBytes ?? byteLength,
+      durationMs: params.diagnostic?.durationMs ?? 0,
+      timeoutMs: params.diagnostic?.timeoutMs ?? 0,
       publicPointerExposure: "forbidden",
       parserExecuted: false,
       cacheRead: false,

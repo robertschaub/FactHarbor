@@ -14,16 +14,20 @@ export const SOURCE_CANDIDATE_PREVIEW_VERSION =
   "v2.evidence-lifecycle.source-candidate-preview.x7w3a";
 export const SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID = "wikimedia_core";
 export const SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID = "ep_wikimedia_core_page_search";
+export const SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID = "serper_web_search";
+export const SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID = "ep_serper_google_search";
 export const SOURCE_CANDIDATE_PREVIEW_MAX_RECORDS_PER_RUN = 9;
 export const SOURCE_CANDIDATE_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 8_192;
 
 export type SourceCandidatePreviewProviderId =
   | typeof SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID
-  | typeof OPENALEX_PROVIDER_ID;
+  | typeof OPENALEX_PROVIDER_ID
+  | typeof SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID;
 
 export type SourceCandidatePreviewEndpointId =
   | typeof SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID
-  | typeof OPENALEX_WORKS_ENDPOINT_ID;
+  | typeof OPENALEX_WORKS_ENDPOINT_ID
+  | typeof SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID;
 
 export type SourceCandidatePreviewMaterializationStatus =
   | "source_candidate_preview_materialized"
@@ -123,18 +127,30 @@ function sourceCandidateRef(input: BuildSourceCandidatePreviewProjectionInput): 
 }
 
 function supportedProviderId(value: string): SourceCandidatePreviewProviderId {
-  return value === OPENALEX_PROVIDER_ID ? OPENALEX_PROVIDER_ID : SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID;
+  if (value === OPENALEX_PROVIDER_ID) {
+    return OPENALEX_PROVIDER_ID;
+  }
+  if (value === SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID) {
+    return SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID;
+  }
+  return SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID;
 }
 
 function supportedEndpointId(value: string): SourceCandidatePreviewEndpointId {
-  return value === OPENALEX_WORKS_ENDPOINT_ID ? OPENALEX_WORKS_ENDPOINT_ID : SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
+  if (value === OPENALEX_WORKS_ENDPOINT_ID) {
+    return OPENALEX_WORKS_ENDPOINT_ID;
+  }
+  if (value === SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID) {
+    return SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID;
+  }
+  return SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
 }
 
 function sha256Text(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-function materializeOpenAlexWorkHash(value: unknown): string | null {
+function materializeOpaqueLocatorHash(value: unknown): string | null {
   if (typeof value !== "string" || value.trim() !== value || value.length === 0 || value.length > 512) {
     return null;
   }
@@ -250,7 +266,7 @@ function buildOpenAlexPreviewProjection(
   input: BuildSourceCandidatePreviewProjectionInput,
   candidate: Record<string, unknown>,
 ): SourceCandidatePreviewProjection {
-  const pageKeyHash = materializeOpenAlexWorkHash(candidate.id ?? candidate.display_name);
+  const pageKeyHash = materializeOpaqueLocatorHash(candidate.id ?? candidate.display_name);
   if (pageKeyHash === null) {
     return blockedProjection({
       input,
@@ -331,6 +347,91 @@ function buildOpenAlexPreviewProjection(
   };
 }
 
+function buildSerperPreviewProjection(
+  input: BuildSourceCandidatePreviewProjectionInput,
+  candidate: Record<string, unknown>,
+): SourceCandidatePreviewProjection {
+  const pageKeyHash = materializeOpaqueLocatorHash(candidate.link);
+  if (pageKeyHash === null) {
+    return blockedProjection({
+      input,
+      materializationStatus: "blocked_invalid_locator",
+      stopReason: "locator_invalid",
+      pageKeyState: "missing",
+    });
+  }
+  const title = materializeSourceCandidatePreviewText(candidate.title, {
+    maxChars: 160,
+    maxBytes: 320,
+  });
+  const excerpt = materializeSourceCandidatePreviewText(candidate.snippet, {
+    maxChars: 512,
+    maxBytes: 1_024,
+  });
+  const description = materializeSourceCandidatePreviewText(null, {
+    maxChars: 80,
+    maxBytes: 160,
+  });
+  const status = previewStatus({
+    locatorAccepted: true,
+    titleState: title.state,
+    excerptState: excerpt.state,
+    descriptionState: description.state,
+  });
+  const providerAttemptOrdinal = boundedOrdinal(input.providerAttemptOrdinal);
+  const candidateOrdinal = boundedOrdinal(input.candidateOrdinal);
+
+  return {
+    previewVersion: SOURCE_CANDIDATE_PREVIEW_VERSION,
+    candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${providerAttemptOrdinal}_${candidateOrdinal}`,
+    sourceCandidateRef: sourceCandidateRef(input),
+    locatorRef: `OPAQUE_SERPER_RESULT_${providerAttemptOrdinal}_${candidateOrdinal}_${pageKeyHash.slice(0, 12).toUpperCase()}`,
+    providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+    endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+    providerAttemptOrdinal,
+    providerRank: boundedOrdinal(input.providerRank),
+    candidateOrdinal,
+    pageKeyHash,
+    pageIdHash: pageKeyHash,
+    titlePreviewText: title.value,
+    excerptPreviewText: excerpt.value,
+    descriptionPreviewText: description.value,
+    fieldStates: {
+      pageKey: "accepted_bounded",
+      pageId: "accepted_bounded",
+      titlePreviewText: title.state,
+      excerptPreviewText: excerpt.state,
+      descriptionPreviewText: description.state,
+    },
+    fieldHashes: {
+      titlePreviewText: title.hash,
+      excerptPreviewText: excerpt.hash,
+      descriptionPreviewText: description.hash,
+    },
+    fieldByteLengths: {
+      titlePreviewText: title.byteLength,
+      excerptPreviewText: excerpt.byteLength,
+      descriptionPreviewText: description.byteLength,
+    },
+    fieldCharLengths: {
+      titlePreviewText: title.charLength,
+      excerptPreviewText: excerpt.charLength,
+      descriptionPreviewText: description.charLength,
+    },
+    truncation: {
+      titlePreviewText: title.truncated,
+      excerptPreviewText: excerpt.truncated,
+      descriptionPreviewText: description.truncated,
+    },
+    markupStripped: {
+      titlePreviewText: title.markupStripped,
+      excerptPreviewText: excerpt.markupStripped,
+      descriptionPreviewText: description.markupStripped,
+    },
+    ...status,
+  };
+}
+
 export function buildSourceCandidatePreviewProjection(
   input: BuildSourceCandidatePreviewProjectionInput,
 ): SourceCandidatePreviewProjection {
@@ -339,7 +440,9 @@ export function buildSourceCandidatePreviewProjection(
       && input.endpointId === SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID;
     const isOpenAlex = input.providerId === OPENALEX_PROVIDER_ID
       && input.endpointId === OPENALEX_WORKS_ENDPOINT_ID;
-    if (!isWikimedia && !isOpenAlex) {
+    const isSerper = input.providerId === SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID
+      && input.endpointId === SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID;
+    if (!isWikimedia && !isOpenAlex && !isSerper) {
       return blockedProjection({
         input,
         materializationStatus: "blocked_provider_mismatch",
@@ -357,6 +460,9 @@ export function buildSourceCandidatePreviewProjection(
 
     if (isOpenAlex) {
       return buildOpenAlexPreviewProjection(input, input.candidate);
+    }
+    if (isSerper) {
+      return buildSerperPreviewProjection(input, input.candidate);
     }
 
     const locator = materializeSourceCandidatePageKey(input.candidate.key);

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   SOURCE_CANDIDATE_PREVIEW_ENDPOINT_ID,
   SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
   SOURCE_CANDIDATE_PREVIEW_VERSION,
   buildSourceCandidatePreviewProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
@@ -82,6 +84,37 @@ describe("Analyzer V2 W3-A source-candidate preview projection", () => {
     expect(preview.pageKeyHash).toMatch(/^[a-f0-9]{64}$/);
     expect(serialized).not.toContain("https://openalex.org/W123");
     expect(serialized).not.toContain("abstract_inverted_index");
+  });
+
+  it("materializes bounded Serper previews without exposing raw result URLs", () => {
+    const preview = buildSourceCandidatePreviewProjection({
+      providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+      endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+      providerAttemptOrdinal: 8,
+      providerRank: 2,
+      candidateOrdinal: 2,
+      sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_8_2",
+      candidate: {
+        title: "Brazil court process overview",
+        snippet: "The proceedings included hearings, appeals, and Supreme Court decisions.",
+        link: "https://news.example.test/legal-process",
+      },
+    });
+    const serialized = JSON.stringify(preview);
+
+    expect(preview).toMatchObject({
+      providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+      endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_8_2",
+      titlePreviewText: "Brazil court process overview",
+      excerptPreviewText: "The proceedings included hearings, appeals, and Supreme Court decisions.",
+      materializationStatus: "source_candidate_preview_materialized",
+      stopReason: "not_stopped",
+    });
+    expect(preview.locatorRef).toMatch(/^OPAQUE_SERPER_RESULT_8_2_[A-F0-9]{12}$/);
+    expect(preview.pageKeyHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(serialized).not.toContain("https://news.example.test");
+    expect(serialized).not.toContain("link");
   });
 
   it("blocks provider mismatches, non-record inputs, and invalid locators", () => {

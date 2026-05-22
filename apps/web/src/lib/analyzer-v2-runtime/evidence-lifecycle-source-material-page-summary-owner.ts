@@ -6,6 +6,7 @@ import type {
 } from "./evidence-lifecycle-source-candidate-preview-owner";
 import {
   SOURCE_CANDIDATE_PREVIEW_PROVIDER_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
 import {
   SOURCE_MATERIAL_PAGE_SUMMARY_ENDPOINT_ID,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-fetch-locator";
 import {
   SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT,
+  SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   buildSourceMaterialPageSummaryRecord,
   buildSourceMaterialSearchPreviewRecord,
@@ -327,18 +329,52 @@ function selectedSearchPreviewRecords(
   return selected;
 }
 
+function selectedProvidedSearchPreviewRecords(
+  records: readonly SourceMaterialPageSummaryRecord[],
+  maxRecords = SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
+): readonly SourceMaterialPageSummaryRecord[] {
+  const selected: SourceMaterialPageSummaryRecord[] = [];
+  const seen = new Set<string>();
+  let aggregateTextBytes = 0;
+  for (const record of records) {
+    if (
+      record.providerId !== SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID
+      || record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
+      || record.sourceMaterialTextByteLength <= 0
+      || record.sourceMaterialTextByteLength > 4_096
+      || seen.has(record.sourceMaterialTextHash)
+      || aggregateTextBytes + record.sourceMaterialTextByteLength >
+        SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES
+    ) {
+      continue;
+    }
+    selected.push(record);
+    seen.add(record.sourceMaterialTextHash);
+    aggregateTextBytes += record.sourceMaterialTextByteLength;
+    if (selected.length >= maxRecords) {
+      break;
+    }
+  }
+  return selected;
+}
+
 function mergedSourceMaterialRecords(params: {
   readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
+  readonly webSearchPreviewRecords?: readonly SourceMaterialPageSummaryRecord[];
   readonly searchPreviewRecords?: readonly SourceMaterialPageSummaryRecord[];
   readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
 }): readonly SourceMaterialPageSummaryRecord[] {
   const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
   const strongRecordCount = openAlexRecords.length + params.wikimediaRecords.length;
+  const webSearchPreviewRecords = strongRecordCount > 0
+    ? selectedProvidedSearchPreviewRecords(params.webSearchPreviewRecords ?? [])
+    : [];
   const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
   const merged: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
   for (const record of [
     ...openAlexRecords,
+    ...webSearchPreviewRecords,
     ...searchPreviewRecords,
     ...params.wikimediaRecords,
   ]) {
@@ -360,6 +396,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
   readonly fetchLocators: readonly SourceMaterialPageSummaryFetchLocator[];
   readonly lowLevelTransport?: SourceAcquisitionNetworkLowLevelTransport;
   readonly openAlexSourceMaterialRecords?: readonly SourceMaterialPageSummaryRecord[];
+  readonly webSearchPreviewSourceMaterialRecords?: readonly SourceMaterialPageSummaryRecord[];
 }): Promise<EvidenceLifecycleSourceMaterialPageSummaryDecision> {
   try {
     if (params.networkDecision.status !== "candidate_provider_network_completed") {
@@ -405,6 +442,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
     if (locators.length === 0) {
       const openAlexOnlyRecords = mergedSourceMaterialRecords({
         openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+        webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
         searchPreviewRecords: [],
         wikimediaRecords: [],
       });
@@ -441,6 +479,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       if (transportOutcome.status !== "success") {
         const mergedRecords = mergedSourceMaterialRecords({
           openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+          webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
           searchPreviewRecords,
           wikimediaRecords: records,
         });
@@ -482,6 +521,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
 
     const mergedRecords = mergedSourceMaterialRecords({
       openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+      webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
       searchPreviewRecords,
       wikimediaRecords: records,
     });

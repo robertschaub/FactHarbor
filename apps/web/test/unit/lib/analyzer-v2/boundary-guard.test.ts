@@ -518,6 +518,10 @@ const analyzerV2RuntimeSourceAcquisitionNetworkFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-network-factory.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionSerperSearchPreviewPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-serper-search-preview.ts",
+);
 const analyzerV2RuntimeSourceAcquisitionProviderNetworkReadinessPath = path.resolve(
   analyzerV2RuntimeRoot,
   "source-acquisition-provider-network-readiness.ts",
@@ -1311,6 +1315,7 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
       "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
       "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+      "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview",
     ]),
   ],
   [
@@ -1555,6 +1560,7 @@ const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
   "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
   "@/lib/analyzer-v2-runtime/source-acquisition-network-transport",
   "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+  "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview",
   "@/lib/analyzer-v2-runtime/source-acquisition-provider-network-readiness",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-authority",
   "@/lib/analyzer-v2-runtime/source-acquisition-content-envelope",
@@ -4288,6 +4294,12 @@ describe("analyzer-v2 boundary guard", () => {
           "collectOpenAlexSourceMaterialRecordsFromNetwork",
         ]),
       ],
+      [
+        "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview",
+        new Set([
+          "collectSerperSearchPreviewSourceMaterialRecords",
+        ]),
+      ],
     ]);
     for (const importBinding of collectImportBindings(ownerSourceFile)) {
       const specifier = importBinding.specifier;
@@ -6862,6 +6874,12 @@ describe("analyzer-v2 boundary guard", () => {
       }
 
       for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+        if (
+          toPosix(sourcePath) === toPosix(analyzerV2RuntimeSourceAcquisitionSerperSearchPreviewPath)
+          && specifier === "./source-acquisition-network-transport"
+        ) {
+          continue;
+        }
         if (
           specifier === "@/lib/analyzer-v2-runtime/source-acquisition-network-authority"
           || specifier === "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope"
@@ -11234,6 +11252,7 @@ describe("analyzer-v2 boundary guard", () => {
               "@/lib/analyzer-v2-runtime/source-acquisition-network-authority",
               "@/lib/analyzer-v2-runtime/source-acquisition-network-envelope",
               "@/lib/analyzer-v2-runtime/source-acquisition-network-factory",
+              "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview",
             ].includes(specifier)
           )
         ) {
