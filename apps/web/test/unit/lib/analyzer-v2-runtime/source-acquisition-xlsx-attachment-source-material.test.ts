@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE,
+  discoverSameHostHtmlExpansionUrls,
   discoverSameHostXlsxAttachmentUrls,
   extractBoundedTextFromXlsxAttachmentBuffer,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-xlsx-attachment-source-material";
@@ -130,6 +132,29 @@ describe("source acquisition XLSX attachment source material", () => {
     expect(urls.map((url) => url.toString())).toEqual([
       "https://example.admin.test/data/report.xlsx",
       "https://example.admin.test/data/report.xlsx.download.xlsx/file.xlsx",
+    ]);
+  });
+
+  it("discovers same-section same-host HTML expansion links in document order", () => {
+    const urls = discoverSameHostHtmlExpansionUrls({
+      pageUrl: new URL("https://example.admin.test/path/statistics.html"),
+      htmlText: [
+        "<a href=\"/home.html\">shallower navigation</a>",
+        "<a href=\"/path/archive/2026/04.html\">first same section</a>",
+        "<a href=\"https://example.admin.test/path/archive/2026/03.html#frag\">hash rejected</a>",
+        "<a href=\"http://example.admin.test/path/archive/2026/02.html\">http rejected</a>",
+        "<a href=\"https://other.admin.test/path/archive/2026/01.html\">cross host rejected</a>",
+        "<a href=\"https://example.admin.test/path/archive/2025/12.xlsx\">xlsx handled elsewhere</a>",
+        "<a href=\"https://example.admin.test/path/archive/2025/11.pdf\">non-html file rejected</a>",
+        "<a href=\"/path/archive/2025/10.html\">second same section</a>",
+        "<a href=\"/path/archive/2025/09.html\">cap rejected</a>",
+      ].join(""),
+    });
+
+    expect(urls).toHaveLength(SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE);
+    expect(urls.map((url) => url.toString())).toEqual([
+      "https://example.admin.test/path/archive/2026/04.html",
+      "https://example.admin.test/path/archive/2025/10.html",
     ]);
   });
 });

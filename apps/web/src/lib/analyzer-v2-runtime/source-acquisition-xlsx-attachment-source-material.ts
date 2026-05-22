@@ -1,6 +1,7 @@
 import { inflateRawSync } from "node:zlib";
 
 export const SERPER_XLSX_ATTACHMENT_MAX_LINKS_PER_PAGE = 3;
+export const SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE = 2;
 export const SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP = 1_048_576;
 export const SERPER_XLSX_ATTACHMENT_MAX_SHEETS = 3;
 export const SERPER_XLSX_ATTACHMENT_MAX_ROWS_PER_SHEET = 120;
@@ -380,6 +381,38 @@ function xlsxPathIsSupported(url: URL): boolean {
   return path.endsWith(".xlsx") || path.includes(".xlsx/");
 }
 
+function pathSegments(pathname: string): readonly string[] {
+  return pathname.split("/").filter((part) => part.length > 0);
+}
+
+function baseSectionSegments(url: URL): readonly string[] {
+  const segments = pathSegments(url.pathname);
+  const last = segments.at(-1) ?? "";
+  if (/\.[a-z0-9]{1,8}$/i.test(last)) {
+    return segments.slice(0, -1);
+  }
+  return segments;
+}
+
+function startsWithSegments(candidate: readonly string[], prefix: readonly string[]): boolean {
+  return prefix.every((part, index) => candidate[index] === part);
+}
+
+function htmlExpansionPathIsSupported(url: URL): boolean {
+  const pathname = url.pathname.toLowerCase();
+  if (pathname.endsWith(".xlsx") || pathname.includes(".xlsx/")) {
+    return false;
+  }
+  const last = pathname.split("/").filter(Boolean).at(-1) ?? "";
+  if (last.length === 0) {
+    return true;
+  }
+  if (!last.includes(".")) {
+    return true;
+  }
+  return [".html", ".htm"].some((extension) => last.endsWith(extension));
+}
+
 function safeSameHostXlsxUrl(rawHref: string, baseUrl: URL): URL | null {
   const decoded = decodeHref(rawHref);
   if (decoded.length === 0 || decoded.length > 2_048) {
@@ -404,6 +437,42 @@ function safeSameHostXlsxUrl(rawHref: string, baseUrl: URL): URL | null {
   return url;
 }
 
+function safeSameHostHtmlExpansionUrl(rawHref: string, baseUrl: URL): URL | null {
+  const decoded = decodeHref(rawHref);
+  if (decoded.length === 0 || decoded.length > 2_048) {
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(decoded, baseUrl);
+  } catch {
+    return null;
+  }
+  if (
+    url.protocol !== "https:"
+    || url.username.length > 0
+    || url.password.length > 0
+    || url.hash.length > 0
+    || url.hostname.toLowerCase() !== baseUrl.hostname.toLowerCase()
+    || !htmlExpansionPathIsSupported(url)
+    || url.toString() === baseUrl.toString()
+  ) {
+    return null;
+  }
+  const baseSegments = baseSectionSegments(baseUrl);
+  const candidateSegments = pathSegments(url.pathname);
+  if (
+    baseSegments.length > 0
+    && (
+      candidateSegments.length < baseSegments.length
+      || !startsWithSegments(candidateSegments, baseSegments)
+    )
+  ) {
+    return null;
+  }
+  return url;
+}
+
 export function discoverSameHostXlsxAttachmentUrls(params: {
   readonly htmlText: string;
   readonly pageUrl: URL;
@@ -418,6 +487,33 @@ export function discoverSameHostXlsxAttachmentUrls(params: {
     }
     const rawHref = match[1] ?? match[2] ?? match[3] ?? "";
     const url = safeSameHostXlsxUrl(rawHref, params.pageUrl);
+    if (!url) {
+      continue;
+    }
+    const key = url.toString();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    links.push(url);
+  }
+  return links;
+}
+
+export function discoverSameHostHtmlExpansionUrls(params: {
+  readonly htmlText: string;
+  readonly pageUrl: URL;
+  readonly maxLinks?: number;
+}): readonly URL[] {
+  const maxLinks = params.maxLinks ?? SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE;
+  const links: URL[] = [];
+  const seen = new Set<string>();
+  for (const match of params.htmlText.matchAll(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
+    if (links.length >= maxLinks) {
+      break;
+    }
+    const rawHref = match[1] ?? match[2] ?? match[3] ?? "";
+    const url = safeSameHostHtmlExpansionUrl(rawHref, params.pageUrl);
     if (!url) {
       continue;
     }

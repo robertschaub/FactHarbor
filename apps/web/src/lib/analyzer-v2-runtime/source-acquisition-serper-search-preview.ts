@@ -20,7 +20,9 @@ import {
 } from "./source-acquisition-network-transport";
 import {
   SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+  SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE,
   SERPER_XLSX_ATTACHMENT_MAX_LINKS_PER_PAGE,
+  discoverSameHostHtmlExpansionUrls,
   discoverSameHostXlsxAttachmentUrls,
   extractBoundedTextFromXlsxAttachmentBuffer,
   responseLooksLikeXlsxAttachment,
@@ -34,6 +36,7 @@ export const SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP = 32_768;
 export const SERPER_SEARCH_PREVIEW_TIMEOUT_MS = 3_000;
 export const SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS = 5_000;
 export const SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP = 131_072;
+export const SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_PAGE_FETCHES_PER_RUN = 4;
 
 const SERPER_HOSTNAME = "google.serper.dev";
 const SERPER_PATH = "/search";
@@ -47,6 +50,10 @@ type SerperSearchPreviewResult = {
 
 type SerperSearchPreviewResponseJson = {
   readonly organic?: unknown;
+};
+
+type XlsxExpansionBudget = {
+  remainingPageFetches: number;
 };
 
 export type SerperSearchPreviewHttpRequest = {
@@ -463,6 +470,7 @@ async function collectLinkedPageXlsxRecords(params: {
   readonly linkedPageHttpClient: SerperLinkedPageFetchHttpClient;
   readonly previewRecord: SourceCandidatePreviewProjection;
   readonly languageCode: string;
+  readonly expansionBudget: XlsxExpansionBudget;
 }): Promise<readonly SourceMaterialPageSummaryRecord[]> {
   const contentType = responseContentType(params.linkedPage);
   if (!responseIsSuccessfulWithoutRedirect(params.linkedPage)) {
@@ -479,8 +487,67 @@ async function collectLinkedPageXlsxRecords(params: {
     return [];
   }
   const htmlText = Buffer.from(params.linkedPage.body).toString("utf8");
-  const attachmentUrls = discoverSameHostXlsxAttachmentUrls({
+  const records = await collectSameHostXlsxAttachmentRecordsFromHtml({
     htmlText,
+    pageUrl: params.pageUrl,
+    linkedPageHttpClient: params.linkedPageHttpClient,
+    previewRecord: params.previewRecord,
+    languageCode: params.languageCode,
+  });
+  if (records.length > 0 || params.expansionBudget.remainingPageFetches <= 0) {
+    return records;
+  }
+
+  const expansionUrls = discoverSameHostHtmlExpansionUrls({
+    htmlText,
+    pageUrl: params.pageUrl,
+    maxLinks: Math.min(
+      SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_HTML_LINKS_PER_PAGE,
+      params.expansionBudget.remainingPageFetches,
+    ),
+  });
+  const expandedRecords: SourceMaterialPageSummaryRecord[] = [];
+  for (const expansionUrl of expansionUrls) {
+    if (params.expansionBudget.remainingPageFetches <= 0) {
+      break;
+    }
+    params.expansionBudget.remainingPageFetches -= 1;
+    try {
+      const expandedPage = await params.linkedPageHttpClient({
+        url: expansionUrl.toString(),
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+      });
+      if (
+        !responseIsSuccessfulWithoutRedirect(expandedPage)
+        || expandedPage.truncated
+        || !responseHasLinkedPageTextContentType(expandedPage)
+      ) {
+        continue;
+      }
+      expandedRecords.push(...await collectSameHostXlsxAttachmentRecordsFromHtml({
+        htmlText: Buffer.from(expandedPage.body).toString("utf8"),
+        pageUrl: expansionUrl,
+        linkedPageHttpClient: params.linkedPageHttpClient,
+        previewRecord: params.previewRecord,
+        languageCode: params.languageCode,
+      }));
+    } catch {
+      // One-hop expansion is optional; keep the linked-page/preview record.
+    }
+  }
+  return expandedRecords;
+}
+
+async function collectSameHostXlsxAttachmentRecordsFromHtml(params: {
+  readonly htmlText: string;
+  readonly pageUrl: URL;
+  readonly linkedPageHttpClient: SerperLinkedPageFetchHttpClient;
+  readonly previewRecord: SourceCandidatePreviewProjection;
+  readonly languageCode: string;
+}): Promise<readonly SourceMaterialPageSummaryRecord[]> {
+  const attachmentUrls = discoverSameHostXlsxAttachmentUrls({
+    htmlText: params.htmlText,
     pageUrl: params.pageUrl,
     maxLinks: SERPER_XLSX_ATTACHMENT_MAX_LINKS_PER_PAGE,
   });
@@ -552,6 +619,9 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
   const seen = new Set<string>();
   let aggregateTextBytes = 0;
   let attemptOrdinal = params.startingAttemptOrdinal ?? 0;
+  const expansionBudget: XlsxExpansionBudget = {
+    remainingPageFetches: SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_PAGE_FETCHES_PER_RUN,
+  };
 
   for (const queryEntry of params.queryEntries) {
     if (records.length >= SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN) {
@@ -657,6 +727,7 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
               linkedPageHttpClient,
               previewRecord: projection,
               languageCode: languageCode(params.languageCode),
+              expansionBudget,
             });
             preferredRecords = xlsxRecords.length > 0 ? xlsxRecords : [record];
           } catch {

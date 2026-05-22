@@ -7,6 +7,7 @@ import {
   SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY,
   SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
   SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP,
+  SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_PAGE_FETCHES_PER_RUN,
   collectSerperSearchPreviewSourceMaterialRecords,
   type SerperLinkedPageFetchHttpClient,
   type SerperLinkedPageFetchRequest,
@@ -451,6 +452,7 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
         return linkedPageResponse([
           "<html><body>",
           "<a href=\"/downloads/monthly-stock.xlsx\">Monthly stock</a>",
+          "<a href=\"/downloads/archive.html\">Expansion should not be fetched</a>",
           "<a href=\"https://other.example.test/downloads/cross-host.xlsx\">Cross host</a>",
           "</body></html>",
         ].join(""));
@@ -502,6 +504,118 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     expect(records[0]?.sourceMaterialText).toContain("B7=135078");
     expect(records[0]?.sourceMaterialText).not.toContain("https://official.example.test");
     expect(serialized).not.toContain("https://official.example.test");
+  });
+
+  it("discovers bounded same-host XLSX text through one same-host HTML expansion hop", async () => {
+    const linkedRequests: SerperLinkedPageFetchRequest[] = [];
+    const linkedPageHttpClient: SerperLinkedPageFetchHttpClient = async (request) => {
+      linkedRequests.push(request);
+      if (request.url.endsWith("/statistics")) {
+        return linkedPageResponse([
+          "<html><body>",
+          "<a href=\"/outside.html\">shallower navigation rejected</a>",
+          "<a href=\"/statistics/archive/2026/04.html\">Monthly archive page</a>",
+          "<a href=\"https://other.example.test/statistics/archive/2026/03.html\">Cross host</a>",
+          "</body></html>",
+        ].join(""));
+      }
+      if (request.url.endsWith("/statistics/archive/2026/04.html")) {
+        return linkedPageResponse([
+          "<html><body>",
+          "<a href=\"/statistics/archive/2026/monthly-stock.xlsx\">Monthly stock</a>",
+          "</body></html>",
+        ].join(""));
+      }
+      return linkedBinaryResponse(minimalXlsx());
+    };
+
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1)],
+      apiKey: "test-serper-key",
+      httpClient: async () => response({
+        organic: [{
+          title: "Official statistics",
+          snippet: "A short provider preview.",
+          link: "https://official.example.test/statistics",
+        }],
+      }),
+      linkedPageHttpClient,
+      languageCode: "de",
+    });
+    const serialized = JSON.stringify(records);
+
+    expect(linkedRequests).toEqual([
+      {
+        url: "https://official.example.test/statistics",
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+      },
+      {
+        url: "https://official.example.test/statistics/archive/2026/04.html",
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+      },
+      {
+        url: "https://official.example.test/statistics/archive/2026/monthly-stock.xlsx",
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+      },
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_xlsx_fetch",
+      sourceMaterialKind: "provider_search_result_xlsx_text_bounded",
+      languageCode: "de",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      publicSurfaceWritten: false,
+    });
+    expect(records[0]?.sourceMaterialText).toContain("A7=Total persons in process");
+    expect(records[0]?.sourceMaterialText).toContain("B7=135078");
+    expect(serialized).not.toContain("https://official.example.test");
+    expect(serialized).not.toContain("/statistics/archive/2026/04.html");
+  });
+
+  it("caps one-hop expansion page fetches across the run while preserving preview fallback", async () => {
+    const linkedRequests: SerperLinkedPageFetchRequest[] = [];
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1), queryEntry(2), queryEntry(3)],
+      apiKey: "test-serper-key",
+      httpClient: async (request) => response({
+        organic: [{
+          title: `Official statistics ${request.body.q}`,
+          snippet: "A short provider preview.",
+          link: `https://official.example.test/statistics-${request.body.q}`,
+        }],
+      }),
+      linkedPageHttpClient: async (request) => {
+        linkedRequests.push(request);
+        const url = new URL(request.url);
+        const slug = url.pathname.slice(1);
+        return linkedPageResponse([
+          "<html><body>",
+          `<p>Bounded page ${slug}</p>`,
+          `<a href=\"/${slug}/expand-a.html\">Expand A</a>`,
+          `<a href=\"/${slug}/expand-b.html\">Expand B</a>`,
+          "</body></html>",
+        ].join(""));
+      },
+      languageCode: "de",
+    });
+    const expansionRequests = linkedRequests.filter((request) => request.url.includes("/expand-"));
+
+    expect(expansionRequests).toHaveLength(SERPER_XLSX_ATTACHMENT_MAX_EXPANSION_PAGE_FETCHES_PER_RUN);
+    expect(records).toHaveLength(3);
+    expect(records.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_page_text_bounded",
+    ]);
+    expect(JSON.stringify(records)).not.toContain("https://official.example.test");
   });
 
   it("admits multiple bounded linked page records across queries within the aggregate cap", async () => {
