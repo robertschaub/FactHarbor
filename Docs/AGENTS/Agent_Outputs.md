@@ -3817,3 +3817,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18` after HJ31. The ledger now starts a fresh tranche after job `95d5e671ecd64e4a8edbd9aef3f45b36`; `18` jobs remain before the HJ32 diagnostic rerun.
 
 **Next:** Commit the HJ32 lane/ledger sync, refresh runtime to the committed HJ32 state, verify API/Web/proxy version endpoints, then run one default/manual V2 diagnostic job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ32 Result And HJ33 Quantitative Query-Intent Repair
+
+**Task:** Continue the German asylum aggregate HighJump path after HJ31 showed durable Evidence Extraction stops but did not yet identify the rejecting handoff.
+
+**Result:** HJ32 job `83734c0d433849eba1a493307e25de76` ran on committed runtime `03b89058f0e31446502b8376f5d893d96be55291` through the default manual V2 path. It produced a durable admin stop summary with Source Material records `4`, W4-G bounded text sidecars `4`, W4-H extraction-input packets `1`, W4-I structurally eligible / execution denied, W5 source-content packets `4`, input packet bytes `2304`, and W5 result `hidden_no_extractable_evidence`. Public/default containment held: public/default reportMarkdown stayed `null`, schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and issue stayed `report_damaged`.
+
+**Repair:** HJ33 commits `d0e078aa` to amend only the existing V2 Evidence Query Planning prompt contract and its prompt-contract test. The prompt now tells query planning to preserve explicit quantity, unit, population/domain, and time posture for quantitative/current-aggregate claims in at least one direct-record query, with a concise numeric-format variant where useful. This targets source-material usefulness without adding provider, schema, route, retry, parser, cache/SR/storage, public behavior, or V1 work.
+
+**Debt-guard:** Classified as an `incomplete-existing-mechanism` repair. Chosen path was to amend the existing query-planning prompt rather than loosen W5 again or add new source/provider machinery. HJ32 proved W5 receives source-content packets; the next cheapest quality move is to make those packets more directly material.
+
+**Verification:** Focused prompt-contract verifier passed (`2` files / `21` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remains `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed.
+
+**Budget:** Captain reset the live-job budget to `18`. HJ32 consumed `1`, so `17` remain before the HJ33 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ33, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.

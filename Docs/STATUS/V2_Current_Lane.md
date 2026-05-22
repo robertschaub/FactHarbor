@@ -21,34 +21,42 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`ecf753fd fix(v2): enrich admin stop summaries`
+`d0e078aa fix(v2): preserve quantitative query intent`
 
-The current committed repair is HJ32: enrich the existing admin-only stop summary
-for Evidence Extraction stops with bounded W4-G/W4-H/W4-I/W5 structural status
-fields. This is a diagnostic friction reduction inside the existing admin
-reportMarkdown channel, not a new public route or product capability. It is
-needed because HJ31 showed asylum-family runs reaching Evidence Extraction with
-W5 `blocked_pre_execution`, but the durable stop summary did not yet expose
-whether Source Material, W4-G, W4-H, or W4-I was the rejecting handoff.
+The current committed repair is HJ33: amend the existing V2 Evidence Query
+Planning prompt contract so quantitative/current-aggregate claims preserve the
+explicit quantity, unit, population/domain, and time posture in at least one
+direct-record query, with a concise numeric-format variant where useful. This
+is a bounded prompt/test repair of an existing mechanism, not provider, schema,
+route, retry, parser, cache/SR/storage, public behavior, or V1 work.
 
-Runtime has not yet been refreshed to HJ32 for the next validation job.
+Runtime has not yet been refreshed to HJ33 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-31-ADMIN-STOP-SUMMARY-DIAGNOSTIC-RERUNS`
+`X7-HJ-32-ASYLUM-235000-DE-ENRICHED-STOP-SUMMARY-RERUN`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ31_Admin_Stop_Summary_Diagnostics.md`
+Current lane and ledger entries in this repository; no separate WIP result
+document was created for HJ32.
 
 Important evidence:
 
-- `8e198dcd90ea4eceb590af62b2ccff14` (German asylum aggregate) reran on HJ31
-  and produced a durable admin stop summary: Stage `Evidence Extraction`, W5
-  execution `blocked_pre_execution`, EvidenceItems `0`, source-content packets
-  `0`, input packet bytes unavailable.
+- `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
+  and produced a durable admin stop summary: Stage `Evidence Extraction`,
+  Source Material records `4`, W4-G sidecars `4`, W4-H packets `1`, W4-I
+  readiness `extraction_input_structurally_eligible_execution_denied`, W5
+  execution `hidden_no_extractable_evidence`, EvidenceItems `0`,
+  source-content packets `4`, input packet bytes `2304`.
+- The durable summary narrowed the asylum-family stop: W3-B/W4-G/W4-H/W4-I
+  are no longer the blocking handoff for this run. W5 receives bounded source
+  content but returns no extractable evidence.
+- Public/default containment held: public/default reportMarkdown stayed `null`,
+  schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and
+  issue stayed `report_damaged`.
 - `95d5e671ecd64e4a8edbd9aef3f45b36` (asylum/WW2 variant) produced the same
   durable stop summary: W5 `blocked_pre_execution`, source-content packets `0`.
 - `53ef9d309f7147a3b47f7f64802ee59d` (plastic recycling) stopped earlier:
@@ -69,9 +77,9 @@ Important evidence:
 - Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
-- Public/default containment also held for all three HJ31 diagnostic reruns:
-  public/default reportMarkdown length `0`, schema `4.0.0-cb-precutover`,
-  cutover `blocked_precutover`, issue `report_damaged`.
+- HJ33 now addresses the next evidence-backed defect: the retrieval planner did
+  not explicitly preserve quantitative direct-record intent for the German
+  asylum aggregate, which likely starved W5 of directly material source text.
 
 ## Open Generalization Gap
 
@@ -122,23 +130,24 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ32 lane/ledger sync.
-2. Refresh runtime to the committed HJ32 state and verify Web/API/proxy runtime
+1. Commit the HJ33 lane/ledger sync.
+2. Refresh runtime to the committed HJ33 state and verify Web/API/proxy runtime
    commit match.
-3. Run one default/manual V2 diagnostic job for the Captain-defined German
-   asylum aggregate input to capture the exact W4-G/W4-H/W4-I/W5 stop field.
-4. If the exact upstream blocker is clear and low risk, repair the existing
-   Source Material / extraction-input handoff. Prefer amending an existing
-   handoff over adding a new provider, route, retry layer, or diagnostic
-   mechanism.
-5. Treat the plastic CU stop as a separate follow-up unless the same repair
+3. Run one default/manual V2 validation job for the Captain-defined German
+   asylum aggregate input.
+4. If HJ33 produces a hidden internal report, review report quality before
+   adding more plumbing.
+5. If HJ33 still reaches W5 with `no_extractable_evidence`, decide the next
+   source-material/usefulness repair from the observed source-content packets
+   rather than adding another diagnostic layer.
+6. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
 

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
       "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ31 is recorded below as the final result before this fresh tranche; the next HJ32 diagnostic rerun will consume the first job from this reset budget.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 consumed the first job from this reset budget and narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -984,6 +984,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ31 reran the asylum/WW2-comparison variant. The admin-only reportMarkdown now persisted a stop summary: Stage Evidence Extraction, W5 execution blocked_pre_execution, EvidenceItems 0, Source content packets 0, input packet bytes not available. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
+      },
+      {
+        "sliceId": "X7-HJ-32-ASYLUM-235000-DE-ENRICHED-STOP-SUMMARY-RERUN",
+        "jobId": "83734c0d433849eba1a493307e25de76",
+        "classification": "STOP_X7_HJ32_ASYLUM_W5_NO_EXTRACTABLE_EVIDENCE_WITH_SOURCE_CONTENT_PACKETS",
+        "implementationCommit": "03b89058f0e31446502b8376f5d893d96be55291",
+        "runtimeCommit": "03b89058f0e31446502b8376f5d893d96be55291",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "d0e078aa_prompt_repair_pending_validation",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ32 reran the German asylum aggregate input on enriched stop-summary diagnostics. Source Material produced 4 records, W4-G produced 4 bounded text sidecars, W4-H produced 1 extraction input packet, W4-I was structurally eligible but execution denied by gate, W5 received 4 source-content packets and 2304 input-packet bytes, then returned no_extractable_evidence. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
       }
     ],
     "blockedPending": [],
