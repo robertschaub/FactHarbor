@@ -288,6 +288,14 @@ help interpret or caveat the direct evidence.
   from the selected claim, source language, and expected evidence profile; do
   not name a specific source, domain, institution, country, person, topic, file
   title, or language-specific phrase unless it is present in the claim contract.
+  When that direct record is likely carried in a downloadable file rather than
+  inline page prose, shape the same direct-record query to locate the
+  downloadable public record, such as a spreadsheet, data table, statistical
+  file, register extract, attachment, archive entry, or comparable
+  source-native artifact. Do not invent an exact file title, date, edition,
+  source, domain, institution, geographic label, or provider-specific search
+  operator beyond what the claim contract and supplied retrieval policy already
+  support.
 - Do not hardcode source names, domains, institutions, countries, people,
   topics, or language-specific phrases.
 - Preserve the claim's language signal, and use supplementary-language intent

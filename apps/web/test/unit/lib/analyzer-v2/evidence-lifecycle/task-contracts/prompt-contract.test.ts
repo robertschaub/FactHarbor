@@ -180,6 +180,13 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Preserve the selected claim's measurement frame");
     expect(section).toContain("point-in-time stock, current status");
     expect(section).toContain("they must not be the only direct-record intent unless the");
+    expect(section).toContain("When that direct record is likely carried in a downloadable file");
+    expect(section).toContain("downloadable public record");
+    expect(section).toContain("spreadsheet, data table");
+    expect(section).toContain("statistical");
+    expect(section).toContain("file, register extract");
+    expect(section).toContain("provider-specific search");
+    expect(section).toContain("operator beyond what the claim contract");
   });
 
   it("renders the evidence-extraction strict output branch contract", () => {
