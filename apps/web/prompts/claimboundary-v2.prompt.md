@@ -449,6 +449,10 @@ Accepted `evidenceItems` payload:
 
 Extract only from supplied content. Preserve original-language evidence wording unless the schema field explicitly asks for normalized metadata. Do not map provider rank, source type, fetch success, or Source Reliability to probative value. If probative value or evidence strength is later split out, it must move to an LLM-owned `evidence_quality` task, not deterministic code.
 
+Prefer bounded extraction over premature empty output. If supplied content states a verifiable factual, procedural, quantitative, or source-attributed point that is relevant to any selected AtomicClaim, extract it even when it is only partial, contextual, indirect, low-confidence, or limited in scope. Use `claimDirection`, `probativeValue`, `evidenceStrength`, `extractionConfidence`, `evidenceScope`, and `limitations` to express that weakness clearly instead of discarding the point.
+
+Use `no_extractable_evidence` only when none of the supplied content can be represented as supporting, opposing, mixed, contextual, or unclear evidence for any selected AtomicClaim without inventing information. Do not use `no_extractable_evidence` merely because the source content is incomplete, indirect, background-oriented, low authority, or not sufficient for a final verdict.
+
 For comparative claims, preserve the compared entities, property being compared, and measurement frame in extracted EvidenceItems. Evidence that addresses only one side of a comparison may still be useful, but its `claimDirection`, `probativeValue`, `evidenceStrength`, `evidenceScope`, and `limitations` must reflect that partial scope. Evidence comparing a claim entity to a third entity is contextual or unclear for the original comparison unless the supplied content explicitly links that third-entity comparison to the claim's named comparator. Do not treat adjacent or substitute comparators as direct support or opposition.
 
 ## V2_EVIDENCE_SUFFICIENCY_GATE
