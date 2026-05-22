@@ -3,6 +3,7 @@ import {
   SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY,
   SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
   SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+  SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES,
   SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
   SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP,
   collectSerperSearchPreviewSourceMaterialRecords,
@@ -307,6 +308,45 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     expect(records[0]?.sourceMaterialText).toContain("Official source page text");
     expect(records[0]?.sourceMaterialText).not.toContain("secret()");
     expect(serialized).not.toContain("https://official.example.test");
+  });
+
+  it("admits multiple bounded linked page records across queries within the aggregate cap", async () => {
+    const linkedRequests: SerperLinkedPageFetchRequest[] = [];
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1), queryEntry(2), queryEntry(3), queryEntry(4)],
+      apiKey: "test-serper-key",
+      httpClient: async (request) => response({
+        organic: [{
+          title: `Official statistics ${request.body.q}`,
+          snippet: "A short provider preview.",
+          link: `https://official.example.test/${encodeURIComponent(request.body.q)}`,
+        }],
+      }),
+      linkedPageHttpClient: async (request) => {
+        linkedRequests.push(request);
+        const uniqueText = `Source text ordinal ${linkedRequests.length}. `;
+        return linkedPageResponse(`${uniqueText}${"A".repeat(4_096)}`, {
+          truncated: true,
+        });
+      },
+      languageCode: "de",
+    });
+    const serialized = JSON.stringify(records);
+
+    expect(linkedRequests).toHaveLength(4);
+    expect(records).toHaveLength(3);
+    expect(records.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_page_text_bounded",
+    ]);
+    expect(records.map((record) => record.sourceMaterialTextByteLength))
+      .toEqual([4_096, 4_096, 4_096]);
+    expect(records.every((record) => record.truncationApplied)).toBe(true);
+    expect(records.reduce((sum, record) => sum + record.sourceMaterialTextByteLength, 0))
+      .toBe(SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES);
+    expect(serialized).not.toContain("https://official.example.test");
+    expect(serialized).not.toContain("bounded provider query");
   });
 
   it("falls back to bounded preview text when linked page fetch is unavailable or unsafe", async () => {
