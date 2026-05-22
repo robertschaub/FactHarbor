@@ -194,6 +194,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("use an empty array when no limitation is extractable");
     expect(section).toContain("`provenance`: strict object with exactly `locator` and `rationale`");
     expect(section).toContain("both are non-empty strings");
+    expect(section).toContain("For comparative claims, preserve the compared entities");
+    expect(section).toContain("Evidence comparing a claim entity to a third entity is contextual or unclear");
+    expect(section).toContain("Do not treat adjacent or substitute comparators as direct support or opposition");
   });
 
   it("renders the boundary/verdict execution prompt contract with citation and internal-label constraints", () => {
@@ -223,6 +226,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("`truthPercentage`");
     expect(section).toContain("`confidence`");
     expect(section).toContain("`evidenceIds`");
+    expect(section).toContain("Preserve comparison structure and measurement boundaries visible in the cited EvidenceItem statements");
+    expect(section).toContain("same compared entities, property, direction, and measurement frame");
+    expect(section).toContain("keep the internal report path open with a caveated or `UNVERIFIED` candidate");
     expect(section).not.toMatch(/\$\{\w+\}/);
   });
 
