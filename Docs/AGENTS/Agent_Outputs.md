@@ -3403,3 +3403,16 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Failed-verifier recovery was limited to compact debt-guard fixes: one test fixture correction and one TypeScript projection type amendment.
 - Next action: commit the W8-G implementation, refresh runtime, preflight the route, and run exactly one HJ8 canary on the Captain-defined hydrogen input if runtime provenance is clean.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W8G_Internal_Alpha_Report_Draft_Implementation.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ8 Internal Alpha Report Draft Canary
+
+- Initial HJ8 W8-G canary job `17e3f40dda2f42749e5528742a497731` ran on runtime `1fe6d3f63d7bec5856df896c1167ef0a693105c5` and is classified `STOP_X7_HJ8_W8G_BLOCKED_BY_W7B_RUNTIME_OWNERSHIP_ALLOWLIST_DRIFT`: W7-B created internal boundary/verdict candidates, but W8-B rejected the decision as not runtime-owned.
+- Debt-guard classification: failed-validation recovery / incomplete existing mechanism. Chosen fix: amend the existing W7-B runtime ownership exact-key guard for the new `internalReviewPayload` field and require `internalReviewPayloadReturnedByDefault === false`; rejected bypasses or weaker ownership inspection.
+- Repair commit `955c65917fe55f300762004473f72e1996307daf` passed focused W7/W8/W8-G tests (`10` files / `55` tests), boundary guard (`95` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Claude Opus 4.6 reviewed the patch as `approve`, no blockers. Gemini review was degraded because `GOOGLE_GENERATIVE_AI_API_KEY` was not set.
+- Repaired HJ8 canary job `80e156a93d8442169166ec8b1a951231` ran on runtime `955c65917fe55f300762004473f72e1996307daf` and is classified `PASS_X7_HJ8_INTERNAL_ALPHA_REPORT_DRAFT_CREATED`.
+- Hidden result: W8-B `internal_alpha_report_result_candidate_created`, W7-B runtime ownership `owned`, `firstIncompleteStage = none`, `3` boundary candidates, `2` verdict candidates, `3` cited EvidenceItem refs; W8-G `internal_alpha_report_draft_created`, `5420` byte draft.
+- Containment: public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; default W8-G admin projection returned no draft text; explicit authenticated inspection returned the draft; unauthenticated access returned `401`; no public/default-admin draft leak markers were found.
+- HighJump live-job tranche now has `4` remaining.
+- Next action: assess internal report quality and take the shortest balanced path to a first useful full report; do not add another readiness layer unless it directly improves report value or retires/merges older machinery.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ8_Internal_Alpha_Report_Draft_Result.md

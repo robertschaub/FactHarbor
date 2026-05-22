@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T00:34:40.010Z",
-  "count": 417,
+  "generatedAt": "2026-05-22T00:59:18.014Z",
+  "count": 418,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9201,6 +9201,28 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 HighJump HJ-2 Canary Result"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ8_Internal_Alpha_Report_Draft_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "highjump",
+        "hj8",
+        "internal",
+        "alpha",
+        "report",
+        "draft",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Close W8-G canary provenance, repair the failed ownership stop, rerun"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_Internal_Alpha_Report_Candidate.md",
