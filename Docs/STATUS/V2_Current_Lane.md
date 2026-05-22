@@ -43,7 +43,7 @@ deterministic ranking, or V1 work.
 
 Latest validation:
 
-`X7-HJ-41-ASYLUM-235000-DE-SOURCE-MATERIAL-PROVIDER-BALANCE-RERUN`
+`X7-HJ-42-ASYLUM-235000-DE-SERPER-RECALL-RERUN`
 
 Result document:
 
@@ -125,6 +125,17 @@ Important evidence:
   `235,000+` asylum-domain population claim. The next lane is therefore a
   focused acquisition/source-selection quality repair, not another report-path
   reachability repair.
+- `abeb207970b2415fbbe0a385bf47e58e` (German asylum aggregate) ran on HJ42
+  after stronger bounded Serper recall. It stayed on `claimboundary-v2` and
+  public/default containment held, but regressed to a stop summary instead of a
+  report. The candidate provider network returned zero candidates for two
+  attempted queries and timed out on the third, so it was marked
+  `candidate_provider_network_damaged_structural` with
+  `candidate_runtime_query_coverage_invalid`. W3-B then blocked before Source
+  Material (`candidate_provider_network_not_completed`), leaving Source
+  Material records `0` and W5 `blocked_pre_execution`. The next repair should
+  address the existing W3-B dependency on Wikimedia candidate-network
+  completion when bounded Serper-provided Source Material is available.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -229,22 +240,25 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `3`;
-- remaining: `15`;
+- consumed after latest reset: `4`;
+- remaining: `14`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this HJ42 repair lane sync.
-2. Refresh runtime to the latest committed HJ42 source/docs anchor, verify
-   Web/API/proxy commit match, and run one default/manual V2 validation job for
-   `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
-3. If HJ42 still produces only flow/inflow evidence, reconvene Steer-Co before
-   spending another live job on this claim family. The likely next decision is
-   whether to open a bounded document/spreadsheet/PDF source-material path or a
-   narrower source-selection strategy.
+1. Commit this HJ42 result lane sync.
+2. Apply one focused HJ43 repair to the existing W3-B Source Material gate so
+   bounded Serper-provided Source Material can proceed when the Wikimedia
+   candidate provider network has zero candidates or partial structural damage,
+   without weakening W5 semantic EvidenceItem selection.
+3. Do not add parser execution, source/provider expansion, public behavior,
+   cache/SR/storage, ACS/direct URL support, or V1 work. If the repair requires
+   those capabilities, reconvene Steer-Co first.
+4. After the committed repair, refresh runtime, verify Web/API/proxy commit
+   match, and run one default/manual V2 validation job for the German asylum
+   aggregate input.
 
 ## Stop Conditions
 

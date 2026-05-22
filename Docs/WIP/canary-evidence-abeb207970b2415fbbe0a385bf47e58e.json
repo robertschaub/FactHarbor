@@ -1,0 +1,66 @@
+{
+  "jobId": "abeb207970b2415fbbe0a385bf47e58e",
+  "implementationCommit": "b8d3257ca2331516ce11768bc360f0f0a37a9724",
+  "createdAt": "2026-05-22T21:34:41.1515282",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    }
+  ],
+  "capturedAt": "2026-05-22T21:36:09.873Z",
+  "sliceId": "X7-HJ-42-ASYLUM-235000-DE-SERPER-RECALL-RERUN",
+  "classification": "STOP_X7_HJ42_ASYLUM_CANDIDATE_PROVIDER_NETWORK_ZERO_CANDIDATES_SOURCE_MATERIAL_ZERO",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 14,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer",
+  "informationYield": "new_failure",
+  "adminReportMarkdownLength": 1170,
+  "artifactSummary": {
+    "candidateProviderNetworkStatus": "candidate_provider_network_damaged_structural",
+    "candidateProviderNetworkDamagedReason": "candidate_runtime_query_coverage_invalid",
+    "candidateProviderNetworkCandidateCount": 0,
+    "queryOutcomeSummaries": [
+      {
+        "ordinal": 1,
+        "status": "attempted",
+        "structuralReason": "not_stopped",
+        "candidateCount": 0
+      },
+      {
+        "ordinal": 2,
+        "status": "attempted",
+        "structuralReason": "not_stopped",
+        "candidateCount": 0
+      },
+      {
+        "ordinal": 3,
+        "status": "timed_out",
+        "structuralReason": "provider_timeout",
+        "candidateCount": 0
+      }
+    ],
+    "sourceMaterialStatus": "blocked_pre_source_material_page_summary",
+    "sourceMaterialStopReason": "candidate_provider_network_not_completed",
+    "sourceMaterialRecordCount": 0,
+    "w5Status": "blocked_pre_execution",
+    "w5BlockedReason": "w4h_packet_invalid"
+  }
+}

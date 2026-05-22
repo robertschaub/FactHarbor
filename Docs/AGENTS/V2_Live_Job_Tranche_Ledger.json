@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 15,
+    "currentRemaining": 14,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
       "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 15,
-      "consumptionEntriesInThisTranche": 3,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient. HJ40 consumed one job and restored internal alpha report generation with a weak OpenAlex composition source. HJ41 consumed one job and restored a more relevant official-ish inflow source, but the report still lacked direct current stock/population evidence. The next job in this tranche should validate one focused acquisition/source-selection quality repair, not another reachability layer.",
+      "currentRemaining": 14,
+      "consumptionEntriesInThisTranche": 4,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient. HJ40 and HJ41 produced internal alpha reports but still lacked direct current-stock evidence. HJ42 consumed one job and regressed to zero Source Material because the candidate provider network returned zero candidates and was marked damaged before Serper-provided Source Material could carry the run. The next repair should narrow the existing W3-B gate to allow bounded provided Serper Source Material to proceed when the Wikimedia candidate network has zero candidates, while keeping W5 semantic selection and public containment closed.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1163,6 +1163,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ41 reran the German asylum aggregate input after structural Source Material provider-order balancing. Public/default containment held: claimboundary-v2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged with default reportMarkdown null. Authenticated admin reportMarkdown was 3838 characters and produced a complete internal alpha report, but it cited June 2025 monthly inflow evidence (2213 new applications) rather than direct current-stock/population evidence for the claimed 235000+ asylum-domain population. The next step should improve acquisition/source selection toward direct stock material before spending another validation job."
+      },
+      {
+        "sliceId": "X7-HJ-42-ASYLUM-235000-DE-SERPER-RECALL-RERUN",
+        "jobId": "abeb207970b2415fbbe0a385bf47e58e",
+        "classification": "STOP_X7_HJ42_ASYLUM_CANDIDATE_PROVIDER_NETWORK_ZERO_CANDIDATES_SOURCE_MATERIAL_ZERO",
+        "implementationCommit": "983484f0c9d18873d783702a88acf380fe7a5103",
+        "runtimeCommit": "b8d3257ca2331516ce11768bc360f0f0a37a9724",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj43_serper_provided_source_material_gate_repair",
+        "count": 1,
+        "remainingAfter": 14,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "HJ42 reran the German asylum aggregate input after stronger bounded Serper recall. Public/default containment held. The run produced only a 1170-character admin stop summary: Candidate Provider Network status candidate_provider_network_damaged_structural, damagedReason candidate_runtime_query_coverage_invalid, query outcomes 0/0 candidates and one timeout, Source Material records 0, W4-G w3b_not_completed, W5 blocked_pre_execution. This shows W3-B still gates provided Serper Source Material behind Wikimedia candidate-provider-network completion."
       }
     ],
     "blockedPending": [],

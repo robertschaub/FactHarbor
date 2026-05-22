@@ -3955,3 +3955,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, and HJ41 consumed `3`; `15` remain before the HJ42 validation run.
 
 **Next:** Commit this lane sync, refresh runtime to HJ42, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. If HJ42 still produces only flow/inflow evidence, use Steer-Co before another live job on this claim family.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ42 Stop Result
+
+**Task:** Validate HJ42 after strengthening bounded Serper Source Material recall.
+
+**Result:** HJ42 job `abeb207970b2415fbbe0a385bf47e58e` ran through the default manual V2 path on runtime `b8d3257ca2331516ce11768bc360f0f0a37a9724`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown null). The authenticated admin reportMarkdown was a `1170` character stop summary rather than a complete internal alpha report.
+
+**Observed stop:** Candidate Provider Network returned zero candidates for two attempted Wikimedia queries and timed out on the third. The network decision was `candidate_provider_network_damaged_structural` with damaged reason `candidate_runtime_query_coverage_invalid`. W3-B then blocked with `candidate_provider_network_not_completed`, Source Material records stayed `0`, W4-G stayed `w3b_not_completed`, and W5 stayed `blocked_pre_execution`.
+
+**Information yield:** `new_failure`. The stronger Serper caps did not get a chance to help because the existing W3-B gate still depends on candidate-provider-network completion before it can use bounded Serper-provided Source Material.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, HJ41, and HJ42 consumed `4`; `14` remain before the next validation job.
+
+**Next:** Commit this HJ42 result sync, then apply one focused HJ43 repair at the existing W3-B Source Material gate. The target is not a new provider or parser: allow bounded Serper-provided Source Material to proceed when Wikimedia candidate-network completion fails with zero candidates/partial structural damage, while W5 remains responsible for semantic EvidenceItem extraction and all public/default containment remains closed.
