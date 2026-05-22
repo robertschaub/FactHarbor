@@ -179,6 +179,18 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Accepted with no extractable evidence");
     expect(section).toContain("Blocked");
     expect(section).toContain("Damaged");
+    expect(section).toContain("Integrity event object");
+    expect(section).toContain("`type`");
+    expect(section).toContain("`severity`");
+    expect(section).toContain("`message`");
+    expect(section).toContain("`references`");
+    expect(section).toContain("Never omit this field");
+    expect(section).toContain("`eventType`");
+    expect(section).toContain("`refs`");
+    expect(section).toContain("`reference`");
+    expect(section).toContain("`detail`");
+    expect(section).toContain("`details`");
+    expect(section).toContain("For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event");
     expect(section).toContain("`evidenceScope`: strict object with exactly these keys");
     for (const field of [
       "`scopeId`",

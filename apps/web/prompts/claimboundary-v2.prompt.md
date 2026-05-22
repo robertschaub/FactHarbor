@@ -374,6 +374,29 @@ Branch rules:
 - Blocked: `status` is `blocked`; `extractionStatus`, `rationale`, `evidenceItems`, and `damagedReason` are `null`; `blockedReason` is populated from the allowed blocked-reason values.
 - Damaged: `status` is `damaged`; `extractionStatus`, `rationale`, `evidenceItems`, and `blockedReason` are `null`; `damagedReason` is populated from the allowed damaged-reason values.
 
+Integrity event object:
+
+- `type`: one of `task_policy_blocked`, `prompt_not_approved`, `input_contract_invalid`, `source_acquisition_not_executable`, `source_content_missing`, `schema_validation_failed`, `provider_unavailable`, or `task_contract_validation_failed`.
+- `severity`: `info`, `warning`, or `error`.
+- `message`: non-empty concise structural explanation.
+- `references`: string array of relevant structural references. Use `[]` when no specific reference applies. Never omit this field.
+
+Do not emit alternate event field names such as `eventType`, `refs`, `reference`, `detail`, or `details`. For `blocked` and `damaged`, `integrityEvents` must contain at least one valid task event. For `accepted`, use `[]` when no event applies.
+
+Blocked reasons:
+
+- `task_policy_not_executable`
+- `prompt_not_approved`
+- `input_contract_invalid`
+- `source_acquisition_not_executable`
+- `source_content_missing`
+
+Damaged reasons:
+
+- `schema_validation_failed`
+- `provider_unavailable`
+- `task_contract_validation_failed`
+
 Accepted `evidenceItems` payload:
 
 - `evidenceItems` may be empty only when `extractionStatus` is `no_extractable_evidence`.
