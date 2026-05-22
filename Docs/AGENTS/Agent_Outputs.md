@@ -7,6 +7,12 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-22 | Captain Deputy / Lead Developer | Codex (GPT-5.5) + Claude Opus 4.6 | V2 HighJump HJ10 Claim-Context Repair Result -- [Significant] [open-items: yes]
+**For next agent:** HJ9 is recorded as a partial comparator-prompt repair (`8def207fd600486189ec24237065a8cd`), while HJ10 (`c255f82d7f994dc1a0a4ce195b9d1cbf`) passed the W7-B selected AtomicClaim context repair on runtime `b9fe317485fbd155abcdde9247b6ea6a247ca4a9`. The internal Alpha draft now returns `UNVERIFIED` instead of an off-comparator positive verdict.
+**Warnings:** This is not a full report-quality pass. The next gap is Source Material/evidence coverage: W2/W3-A found electric-side candidates that W3-B did not carry into W5. HighJump live-job budget is now `2`; no new canary before committed repair/runtime refresh.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ10_Claim_Context_Repair_Result.md
+
+---
 ### 2026-05-22 | Captain Deputy | Codex (GPT-5.5) | V2 HighJump Bar Ladder Plan Update -- [Standard] [open-items: yes]
 **For next agent:** `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md` is now the active core-plan addendum. It amends the old stop-line, records Captain authority for topic-neutral prompt edits and a 12-job live tranche, and requires raising bars again after the first internal report-review cycle.
 **Warnings:** Do not treat the validated HighJump canary as report-quality evidence. Public V2 remains blocked/precutover/report_damaged; model/config/schema/UCM/gateway changes beyond prompt edits remain separately gated.

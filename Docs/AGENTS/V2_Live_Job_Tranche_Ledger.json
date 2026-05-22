@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-bar-ladder-2026-05-22",
     "resetTotal": 12,
-    "currentRemaining": 4,
+    "currentRemaining": 2,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
       "date": "2026-05-22",
@@ -23,8 +23,8 @@
       "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
-      "currentRemaining": 4,
-      "consumptionEntriesInThisTranche": 8,
+      "currentRemaining": 2,
+      "consumptionEntriesInThisTranche": 10,
       "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
     },
     "unreconciledHistoricalNote": {
@@ -448,6 +448,30 @@
         "count": 1,
         "remainingAfter": 4,
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_W8G_Internal_Alpha_Report_Draft_Package.md, Claude Opus 4.6 repair review, and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-9-COMPARATOR-PROMPT-REPAIR-CANARY",
+        "jobId": "8def207fd600486189ec24237065a8cd",
+        "classification": "PARTIAL_X7_HJ9_COMPARATOR_PROMPT_REPAIR_OFF_COMPARATOR_TOP_VERDICT_REMAINS",
+        "implementationCommit": "ff059f7bd8edd4000eb18cadba606adab6d82f9c",
+        "runtimeCommit": "ff059f7bd8edd4000eb18cadba606adab6d82f9c",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 3,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md, Claude Opus 4.6 prompt repair review, and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-10-CLAIM-CONTEXT-REPAIR-CANARY",
+        "jobId": "c255f82d7f994dc1a0a4ce195b9d1cbf",
+        "classification": "PASS_X7_HJ10_CLAIM_CONTEXT_REPAIR_NO_OFF_COMPARATOR_TRUE_VERDICT_INTERNAL_ALPHA_UNVERIFIED",
+        "implementationCommit": "b9fe317485fbd155abcdde9247b6ea6a247ca4a9",
+        "runtimeCommit": "b9fe317485fbd155abcdde9247b6ea6a247ca4a9",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 2,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md, Claude Opus 4.6 claim-context repair review, and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

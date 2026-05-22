@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T00:59:18.014Z",
-  "count": 418,
+  "generatedAt": "2026-05-22T01:53:09.396Z",
+  "count": 419,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9184,6 +9184,25 @@
         "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md"
       ],
       "summary": "Start with `Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md`. The first implementation package should target the current active blocker after `fc5e7f8e`, prefer prompt-only or existing-gate repair over new mechanisms, keep public V2 blocked, and spend at most one canary after commit/runtime refre"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ10_Claim_Context_Repair_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj10",
+        "claim",
+        "context",
+        "repair",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff: V2 HighJump HJ10 Claim-Context Repair Result"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md",

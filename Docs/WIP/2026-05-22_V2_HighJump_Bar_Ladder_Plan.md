@@ -37,6 +37,12 @@ Recent HighJump evidence:
   `ed3a7a7c2e8d405bba30b3ac475f265a`.
 - HJ-7 internal Alpha report-result candidate job:
   `3716afb37a504dd880cbf313f0fd7c5c`.
+- HJ-8 internal Alpha report draft repair-rerun job:
+  `80e156a93d8442169166ec8b1a951231`.
+- HJ-9 comparator prompt repair job:
+  `8def207fd600486189ec24237065a8cd`.
+- HJ-10 selected AtomicClaim context repair job:
+  `c255f82d7f994dc1a0a4ce195b9d1cbf`.
 
 The validated canary proves that a lowered W6-C path can move from
 `refine_retrieval` to `caveat_report` and reach W7-A
@@ -68,6 +74,28 @@ blocked/damaged reason and `firstIncompleteStage = none`. It proves an
 internal structured report-result candidate, not public report readiness and
 not report prose. The next work should continue report creation and review over
 that candidate rather than reopening broad readiness scaffolding.
+
+Current HJ-8 classification:
+`PASS_X7_HJ8_INTERNAL_ALPHA_REPORT_DRAFT_CREATED`.
+
+HJ-8 reached W8-G `internal_alpha_report_draft_created` with default admin
+hash/length/provenance-only projection and explicit authenticated inspection for
+the draft text. It proves hidden internal draft creation, not report quality.
+
+Current HJ-9 classification:
+`PARTIAL_X7_HJ9_COMPARATOR_PROMPT_REPAIR_OFF_COMPARATOR_TOP_VERDICT_REMAINS`.
+
+HJ-9 showed that prompt-only comparator guidance was insufficient: W7-B still
+produced a top positive verdict from off-comparator fuel-cell versus
+gasoline/hybrid evidence.
+
+Current HJ-10 classification:
+`PASS_X7_HJ10_CLAIM_CONTEXT_REPAIR_NO_OFF_COMPARATOR_TRUE_VERDICT_INTERNAL_ALPHA_UNVERIFIED`.
+
+HJ-10 proves the W7-B selected AtomicClaim context repair. The internal draft now
+marks the result `UNVERIFIED` instead of producing an off-comparator positive
+verdict. The next gap is Source Material/evidence coverage because W2/W3-A found
+electric-side candidates that W3-B did not carry into W5.
 
 ## New Authority
 
@@ -254,7 +282,7 @@ Each bar-raise change needs:
 
 New tranche: `12`.
 
-Current remaining after HJ-7 canary `3716afb37a504dd880cbf313f0fd7c5c`: `6`.
+Current remaining after HJ-10 canary `c255f82d7f994dc1a0a4ce195b9d1cbf`: `2`.
 
 Planned allocation:
 
