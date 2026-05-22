@@ -21,23 +21,22 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`aed576b5 docs(v2): record hj41 report-quality result`
+`4c67c362 docs(v2): record hj42 source material stop`
 
 Latest implementation repair:
 
-`983484f0 fix(v2): strengthen serper source material recall`
+`1797d0ec fix(v2): allow serper material after zero candidate search`
 
-HJ42 strengthens the existing Serper Source Material recall path after HJ41
-showed the report still lacked direct current-stock/population material. It
-raises bounded Serper collection from five records / two per query / `12,288`
-aggregate bytes to nine records / three per query / `24,576` aggregate bytes,
-and lets W3-B admit up to six provided Serper records inside the existing
-nine-record Source Material budget. Generic Wikimedia preview fallback stays at
-its previous cap.
+HJ43 repairs the stop observed in HJ42. When the Wikimedia candidate provider
+network returns zero candidates or partial structural damage, bounded
+Serper-provided Source Material may now carry the run through the existing W3-B
+handoff. W5 remains responsible for semantic EvidenceItem extraction; the
+repair does not add a provider, parser, route, retry path, prompt/schema change,
+cache/SR/storage, public behavior, semantic deterministic ranking, or V1 work.
 
-This remains an existing-mechanism repair: no new provider, parser, route,
-retry path, prompt/schema change, cache/SR/storage, public behavior, semantic
-deterministic ranking, or V1 work.
+This is still a HighJump lowering of a report-blocking structural bar. It
+should be revisited before public cutover when source-material selection and
+provider fallback policy are consolidated.
 
 ## Latest Result
 
@@ -248,17 +247,14 @@ Current active tranche:
 
 ## Next Action
 
-1. Commit this HJ42 result lane sync.
-2. Apply one focused HJ43 repair to the existing W3-B Source Material gate so
-   bounded Serper-provided Source Material can proceed when the Wikimedia
-   candidate provider network has zero candidates or partial structural damage,
-   without weakening W5 semantic EvidenceItem selection.
-3. Do not add parser execution, source/provider expansion, public behavior,
-   cache/SR/storage, ACS/direct URL support, or V1 work. If the repair requires
-   those capabilities, reconvene Steer-Co first.
-4. After the committed repair, refresh runtime, verify Web/API/proxy commit
-   match, and run one default/manual V2 validation job for the German asylum
-   aggregate input.
+1. Commit this HJ43 repair lane sync.
+2. Refresh runtime to the latest committed HJ43 source/docs anchor, verify
+   Web/API/proxy commit match, and run one default/manual V2 validation job for
+   the German asylum aggregate input.
+3. If HJ43 reaches a complete internal report again, review the concrete report
+   defect and raise one quality bar. If it repeats Source Material zero or W5
+   no-extractable-evidence without useful new information, reconvene Steer-Co
+   before another live job on this claim family.
 
 ## Stop Conditions
 
