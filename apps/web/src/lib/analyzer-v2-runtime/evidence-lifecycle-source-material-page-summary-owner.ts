@@ -35,9 +35,10 @@ import {
 } from "./evidence-lifecycle-source-material-page-summary-provenance";
 
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 3;
+const SOURCE_MATERIAL_SERPER_PROVIDED_MAX_RECORDS_PER_RUN = 6;
 const SOURCE_MATERIAL_OPENALEX_MAX_RECORDS_PER_RUN = 3;
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 2_048;
-const SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES = 12_288;
+const SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES = 24_576;
 
 export type EvidenceLifecycleSourceMaterialPageSummaryStatus =
   | "source_material_page_summary_completed"
@@ -334,7 +335,7 @@ function selectedSearchPreviewRecords(
 
 function selectedProvidedSerperRecords(
   records: readonly SourceMaterialPageSummaryRecord[],
-  maxRecords = SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
+  maxRecords = SOURCE_MATERIAL_SERPER_PROVIDED_MAX_RECORDS_PER_RUN,
 ): readonly SourceMaterialPageSummaryRecord[] {
   const selected: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
