@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj29",
     "resetTotal": 18,
-    "currentRemaining": 13,
+    "currentRemaining": 10,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-29-BOLSONARO-W5-MATERIAL-ALIGNMENT-VALIDATION",
       "startsAfterJobId": "323c5fd3540e43aab9c7c6e686ec4de4",
       "startingRemaining": 18,
-      "currentRemaining": 13,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ29. HJ29 is recorded below as the final result before this fresh tranche; HJ30 consumed five jobs and left 13.",
+      "currentRemaining": 10,
+      "consumptionEntriesInThisTranche": 8,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ29. HJ29 is recorded below as the final result before this fresh tranche; HJ30 consumed five jobs and HJ31 consumed three diagnostic jobs, leaving 10.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -939,6 +939,51 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "Default manual V2 path ran claimboundary-v2 for the plastic recycling input, but the admin reportMarkdown was the 242-byte damaged shell and no durable stop-stage summary was available. Public/default surfaces stayed blocked/redacted."
+      },
+      {
+        "sliceId": "X7-HJ-31-ASYLUM-235000-DE-STOP-SUMMARY-RERUN",
+        "jobId": "8e198dcd90ea4eceb590af62b2ccff14",
+        "classification": "STOP_X7_HJ31_ASYLUM_W5_BLOCKED_PRE_EXECUTION_ZERO_SOURCE_CONTENT_PACKETS",
+        "implementationCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "runtimeCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj32_source_material_or_extraction_input_repair",
+        "count": 1,
+        "remainingAfter": 12,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18 and requesting stronger validation",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ31 reran the German asylum aggregate input on the committed stop-summary diagnostic repair. The admin-only reportMarkdown now persisted a stop summary: Stage Evidence Extraction, W5 execution blocked_pre_execution, EvidenceItems 0, Source content packets 0, input packet bytes not available. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
+      },
+      {
+        "sliceId": "X7-HJ-31-PLASTIC-STOP-SUMMARY-RERUN",
+        "jobId": "53ef9d309f7147a3b47f7f64802ee59d",
+        "classification": "STOP_X7_HJ31_PLASTIC_CLAIM_UNDERSTANDING_NO_VALID_CLAIM",
+        "implementationCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "runtimeCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj32_claim_understanding_bar_review",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18 and requesting stronger validation",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "HJ31 reran the plastic recycling input. The admin-only reportMarkdown persisted a stop summary at Query Planning readiness because Claim Understanding was blocked with no_valid_claim; selected AtomicClaims 0. This is a CU/preparation-bar issue, not Source Material or W5. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
+      },
+      {
+        "sliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
+        "jobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
+        "classification": "STOP_X7_HJ31_ASYLUM_VARIANT_W5_BLOCKED_PRE_EXECUTION_ZERO_SOURCE_CONTENT_PACKETS",
+        "implementationCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "runtimeCommit": "735d83537340ea095b76e1711ea775612473dea3",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj32_source_material_or_extraction_input_repair",
+        "count": 1,
+        "remainingAfter": 10,
+        "approvalPointer": "Captain message in current Codex thread resetting V2 HighJump live-job budget to 18 and requesting stronger validation",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ31 reran the asylum/WW2-comparison variant. The admin-only reportMarkdown now persisted a stop summary: Stage Evidence Extraction, W5 execution blocked_pre_execution, EvidenceItems 0, Source content packets 0, input packet bytes not available. Public/default reportMarkdown stayed null and public V2 stayed blocked/precutover/damaged."
       }
     ],
     "blockedPending": [],

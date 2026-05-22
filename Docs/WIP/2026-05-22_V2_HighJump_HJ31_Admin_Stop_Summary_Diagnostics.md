@@ -1,6 +1,6 @@
 # V2 HighJump HJ31 Admin Stop Summary Diagnostics
 
-**Status:** locally implemented, verifier-clean, not yet live-validated
+**Status:** live-validated; next repair identified
 **Date:** 2026-05-22
 **Implementation anchor before HJ31:** `3f1a1b4c fix(v2): rebalance evidence extraction material alignment`
 
@@ -92,14 +92,72 @@ Passed locally:
 
 ## Next Live Validation
 
-After commit and runtime refresh, rerun the HJ30 shell-only inputs first:
+After commit and runtime refresh, HJ31 reran the HJ30 shell-only inputs:
 
-1. `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
-2. `Plastic recycling is pointless`
-3. optionally `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
+1. `8e198dcd90ea4eceb590af62b2ccff14`:
+   `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+2. `53ef9d309f7147a3b47f7f64802ee59d`:
+   `Plastic recycling is pointless`
+3. `95d5e671ecd64e4a8edbd9aef3f45b36`:
+   `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
 
-Expected information yield: durable admin stop summaries that identify whether
-the blocker is Source Material, W5 extraction/source-material usefulness, or
-downstream report handling.
+## Live Results
 
-Current live-job budget after HJ30: `13` of the Captain-reset `18`.
+All three jobs ran `claimboundary-v2` on runtime
+`735d83537340ea095b76e1711ea775612473dea3` and succeeded with public/default
+V2 still `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`.
+Default job reads returned `reportMarkdown` length `0`.
+
+### Asylum Aggregate
+
+Job `8e198dcd90ea4eceb590af62b2ccff14` produced a durable admin stop summary:
+
+- Stage: `Evidence Extraction`
+- W5 execution: `blocked_pre_execution`
+- EvidenceItems: `0`
+- Source content packets: `0`
+- Input packet bytes: not available
+
+Classification:
+`STOP_X7_HJ31_ASYLUM_W5_BLOCKED_PRE_EXECUTION_ZERO_SOURCE_CONTENT_PACKETS`.
+
+### Plastic Recycling
+
+Job `53ef9d309f7147a3b47f7f64802ee59d` stopped earlier:
+
+- Stage: `Query Planning readiness`
+- Claim Understanding status: `blocked`
+- Query Planning readiness: `blocked_pre_query_planning`
+- Selected AtomicClaims: `0`
+- Claim Understanding integrity event: `no_valid_claim`
+
+Classification: `STOP_X7_HJ31_PLASTIC_CLAIM_UNDERSTANDING_NO_VALID_CLAIM`.
+
+### Asylum / World War II Variant
+
+Job `95d5e671ecd64e4a8edbd9aef3f45b36` produced the same durable admin stop
+shape as the asylum aggregate:
+
+- Stage: `Evidence Extraction`
+- W5 execution: `blocked_pre_execution`
+- EvidenceItems: `0`
+- Source content packets: `0`
+- Input packet bytes: not available
+
+Classification:
+`STOP_X7_HJ31_ASYLUM_VARIANT_W5_BLOCKED_PRE_EXECUTION_ZERO_SOURCE_CONTENT_PACKETS`.
+
+## Next Repair Direction
+
+The asylum-family failures are not report-writer failures. They reach the W5
+call site with no source-content packets, so the next repair should inspect the
+Source Material / W4-G / W4-H / W5 input construction path and amend an existing
+handoff if bounded Source Material is present but not becoming W5 source-content
+packets.
+
+The plastic failure is separate: Claim Understanding rejects a short but
+verifiable broad assertion as `no_valid_claim`. That should be handled as a
+Claim Understanding bar-calibration follow-up unless the source-content packet
+repair naturally covers it, which is unlikely.
+
+Current live-job budget after HJ31: `10` of the Captain-reset `18`.

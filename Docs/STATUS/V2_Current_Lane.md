@@ -37,7 +37,7 @@ validation job. Commit before any live job.
 
 Latest validation:
 
-`X7-HJ-30-MINI-GAUNTLET`
+`X7-HJ-31-ADMIN-STOP-SUMMARY-DIAGNOSTIC-RERUNS`
 
 Result document:
 
@@ -45,6 +45,15 @@ Result document:
 
 Important evidence:
 
+- `8e198dcd90ea4eceb590af62b2ccff14` (German asylum aggregate) reran on HJ31
+  and produced a durable admin stop summary: Stage `Evidence Extraction`, W5
+  execution `blocked_pre_execution`, EvidenceItems `0`, source-content packets
+  `0`, input packet bytes unavailable.
+- `95d5e671ecd64e4a8edbd9aef3f45b36` (asylum/WW2 variant) produced the same
+  durable stop summary: W5 `blocked_pre_execution`, source-content packets `0`.
+- `53ef9d309f7147a3b47f7f64802ee59d` (plastic recycling) stopped earlier:
+  Claim Understanding blocked with `no_valid_claim`, selected AtomicClaims `0`,
+  so Query Planning never ran.
 - `6ce3a5827b464549b2c524d4f659ae7b` (Bolsonaro/fair-trial) ran default manual
   V2 on runtime `3f1a1b4c` and produced a hidden internal admin report
   (`5825` characters), but direct procedural-compliance/fair-trial evidence was
@@ -60,6 +69,9 @@ Important evidence:
 - Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
+- Public/default containment also held for all three HJ31 diagnostic reruns:
+  public/default reportMarkdown length `0`, schema `4.0.0-cb-precutover`,
+  cutover `blocked_precutover`, issue `report_damaged`.
 
 ## Open Generalization Gap
 
@@ -86,6 +98,14 @@ through the default manual V2 route:
 - `6ce3a5827b464549b2c524d4f659ae7b`: HJ30 material-alignment rebalance restored
   report creation, but report quality remains weak because direct
   procedural-compliance/fair-trial evidence is still thin.
+- `8e198dcd90ea4eceb590af62b2ccff14` and
+  `95d5e671ecd64e4a8edbd9aef3f45b36`: HJ31 shows the asylum-family inputs are
+  not blocked by report writing. They reach the W5 call site but have no source
+  content packets, so the next repair belongs upstream in Source Material /
+  extraction-input packet construction for these inputs.
+- `53ef9d309f7147a3b47f7f64802ee59d`: HJ31 shows the plastic input is blocked by
+  Claim Understanding rejecting a short but verifiable broad assertion. That is
+  a separate CU bar-calibration issue.
 
 The remaining question is no longer reachability for this input; it is report
 quality and cross-input generalization. A compact report-quality review found
@@ -102,22 +122,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `5`;
-- remaining: `13`;
+- consumed after latest reset: `8`;
+- remaining: `10`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit HJ31 admin-only stop-summary diagnostics plus ledger/lane sync.
-2. Refresh runtime to the HJ31 repair commit and verify API/Web commit match.
-3. Rerun the HJ30 shell-only inputs first (`asylum-235000-de`, `plastic`, and
-   optionally the asylum/WW2 variant) to capture durable stop summaries through
-   admin reportMarkdown.
-4. Use the first durable stop summary to decide the next HighJump repair:
-   Source Material if records are missing, W5/source-material usefulness if
-   material exists but EvidenceItems are zero, or downstream report handling if
-   EvidenceItems exist but report writing stops.
+1. Commit the HJ31 diagnostic result docs/ledger sync.
+2. Apply `/debt-guard` and inspect the Source Material -> W4-G/W4-H -> W5
+   construction for why asylum-family runs can reach Evidence Extraction with
+   zero source content packets.
+3. Prefer amending an existing source-material/extraction-input handoff over
+   adding a new provider, route, retry layer, or diagnostic mechanism.
+4. Treat the plastic CU stop as a separate follow-up unless the same repair
+   naturally covers short broad assertions without lowering Gate 1 quality too
+   far.
 
 ## Stop Conditions
 

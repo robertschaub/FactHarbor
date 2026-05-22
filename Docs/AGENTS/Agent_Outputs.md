@@ -3791,3 +3791,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ30 consumed `5` jobs from the fresh `18`-job tranche; remaining live-job budget is `13`.
 
 **Next:** Commit HJ31, refresh runtime, verify API/Web commit match, and rerun the shell-only HJ30 inputs to capture durable admin stop summaries before choosing the next repair.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ31 Diagnostic Reruns
+
+**Task:** Validate the HJ31 persisted admin stop-summary repair on the HJ30 shell-only inputs.
+
+**Result:** Runtime was refreshed to `735d83537340ea095b76e1711ea775612473dea3`; Web/API/proxy version endpoints matched; git status was clean before submission. Three default/manual V2 jobs ran. Asylum aggregate job `8e198dcd90ea4eceb590af62b2ccff14` and asylum/WW2 variant job `95d5e671ecd64e4a8edbd9aef3f45b36` both persisted admin stop summaries at Evidence Extraction with W5 `blocked_pre_execution`, `0` EvidenceItems, `0` source-content packets, and no input packet bytes. Plastic recycling job `53ef9d309f7147a3b47f7f64802ee59d` stopped earlier at Claim Understanding with `no_valid_claim` and `0` selected AtomicClaims.
+
+**Containment:** Public/default job reads for all three returned reportMarkdown length `0`, `claimboundary-v2`, schema `4.0.0-cb-precutover`, `blocked_precutover`, and `report_damaged`.
+
+**Budget:** HJ31 consumed `3` more jobs from the fresh `18`-job tranche; remaining live-job budget is `10`.
+
+**Next:** Commit the HJ31 result docs/ledger sync, then inspect the Source Material / W4-G / W4-H / W5 input construction path for the asylum-family zero-source-content-packet stop. Treat the plastic CU `no_valid_claim` as a separate bar-calibration follow-up unless the same source-content fix naturally covers it.
