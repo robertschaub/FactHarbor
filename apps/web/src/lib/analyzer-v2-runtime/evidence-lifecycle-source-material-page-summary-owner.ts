@@ -366,9 +366,7 @@ function mergedSourceMaterialRecords(params: {
 }): readonly SourceMaterialPageSummaryRecord[] {
   const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
   const strongRecordCount = openAlexRecords.length + params.wikimediaRecords.length;
-  const webSearchPreviewRecords = strongRecordCount > 0
-    ? selectedProvidedSearchPreviewRecords(params.webSearchPreviewRecords ?? [])
-    : [];
+  const webSearchPreviewRecords = selectedProvidedSearchPreviewRecords(params.webSearchPreviewRecords ?? []);
   const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
   const merged: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();

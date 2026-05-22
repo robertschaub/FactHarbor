@@ -181,19 +181,7 @@ function openAlexRecord(
 }
 
 function webSearchPreviewRecord(): SourceMaterialPageSummaryRecord {
-  const projection = buildSourceCandidatePreviewProjection({
-    providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
-    endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
-    providerAttemptOrdinal: 9,
-    providerRank: 1,
-    candidateOrdinal: 1,
-    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_9_1",
-    candidate: {
-      title: "Web search court-process result",
-      snippet: "The public search result describes procedural objections and court votes.",
-      link: "https://example.test/web-search-court-process",
-    },
-  });
+  const projection = serperProjection();
   const recordDecision = buildSourceMaterialSearchPreviewRecord({
     previewRecord: projection,
     languageCode: "en",
@@ -208,6 +196,22 @@ function webSearchPreviewRecord(): SourceMaterialPageSummaryRecord {
     throw new Error("test web search preview record should materialize");
   }
   return recordDecision.record;
+}
+
+function serperProjection(): ReturnType<typeof buildSourceCandidatePreviewProjection> {
+  return buildSourceCandidatePreviewProjection({
+    providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+    endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+    providerAttemptOrdinal: 9,
+    providerRank: 1,
+    candidateOrdinal: 1,
+    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_9_1",
+    candidate: {
+      title: "Web search court-process result",
+      snippet: "The public search result describes procedural objections and court votes.",
+      link: "https://example.test/web-search-court-process",
+    },
+  });
 }
 
 describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
@@ -346,6 +350,50 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       "provider_search_result_preview_text",
       "wikimedia_page_summary_extract_text",
     ]);
+    expect(serialized).toContain("Web search court-process result");
+    expect(serialized).not.toContain("https://example.test");
+  });
+
+  it("admits bounded web-search preview records when no OpenAlex or Wikimedia records are available", async () => {
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 1,
+          totalCandidateCount: 1,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: 1,
+            totalCandidateCount: 1,
+          },
+        }),
+        previewProjections: [serperProjection()],
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: [webSearchPreviewRecord()],
+    });
+    const serialized = JSON.stringify(decision);
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      stopReason: "not_stopped",
+      sourceMaterialRecordCount: 1,
+      attemptedFetchCount: 0,
+      fetchDiagnosticCount: 0,
+      productExecution: expect.objectContaining({
+        extraHttpCallMade: false,
+        contentDereferenceCalled: false,
+        sourceMaterialCreated: true,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(decision.sourceMaterialRecords.map((record) => record.providerId)).toEqual(["serper_web_search"]);
+    expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind))
+      .toEqual(["provider_search_result_preview_text"]);
     expect(serialized).toContain("Web search court-process result");
     expect(serialized).not.toContain("https://example.test");
   });
