@@ -21,6 +21,7 @@ export const BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES = EVIDENCE_CORPUS
 export const BOUNDED_EXTRACTION_INPUT_APPROVED_PROVIDER_IDS = [
   "wikimedia_core",
   "openalex",
+  "serper_web_search",
 ] as const;
 export const BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS = 9;
 

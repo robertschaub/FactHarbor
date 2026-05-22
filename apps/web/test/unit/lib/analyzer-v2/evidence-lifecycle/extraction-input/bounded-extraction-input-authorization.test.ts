@@ -258,8 +258,9 @@ describe("bounded extraction-input authorization", () => {
     expect(decision.evidenceItems).toEqual([]);
   });
 
-  it("creates one aggregate extraction-input packet from mixed OpenAlex and Wikimedia sidecars", () => {
+  it("creates one aggregate extraction-input packet from mixed OpenAlex, Serper, and Wikimedia sidecars", () => {
     const openAlexText = "OpenAlex bounded abstract text.";
+    const serperText = "Serper bounded search-preview snippet text.";
     const wikimediaText = "Wikimedia bounded page-summary text.";
     const sidecars = [
       sidecar(openAlexText, {
@@ -269,6 +270,14 @@ describe("bounded extraction-input authorization", () => {
         sourceMaterialRef: "SOURCE_MATERIAL_OPENALEX_0123456789ABCDEF",
         locatorRef: "OPAQUE_OPENALEX_WORK_0123456789ABCDEF",
         candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_5_3",
+      }),
+      sidecar(serperText, {
+        providerId: "serper_web_search",
+        sourceMaterialEndpointId: "ep_serper_google_search",
+        sourceMaterialKind: "provider_search_result_preview_text",
+        sourceMaterialRef: "SOURCE_MATERIAL_SEARCH_PREVIEW_0123456789ABCDEF",
+        locatorRef: "OPAQUE_SERPER_RESULT_7_1_0123456789AB",
+        candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_7_1",
       }),
       sidecar(wikimediaText),
     ];
@@ -283,9 +292,13 @@ describe("bounded extraction-input authorization", () => {
     expect(decision.productExecution.providerLineagePreserved).toBe(true);
     expect(decision.extractionInputPacket).toMatchObject({
       providerId: "openalex",
-      providerIds: ["openalex", "wikimedia_core"],
+      providerIds: ["openalex", "serper_web_search", "wikimedia_core"],
       sourceMaterialKind: "openalex_work_abstract_text",
-      sourceMaterialKinds: ["openalex_work_abstract_text", "wikimedia_page_summary_extract_text"],
+      sourceMaterialKinds: [
+        "openalex_work_abstract_text",
+        "provider_search_result_preview_text",
+        "wikimedia_page_summary_extract_text",
+      ],
       sourceMaterialRefs: sidecars.map((entry) => entry.sourceMaterialRef),
     });
     expect(decision.extractionInputPacket?.sourceContentPackets.map((packet) => ({
@@ -301,7 +314,13 @@ describe("bounded extraction-input authorization", () => {
         contentText: openAlexText,
       },
       {
-        sourceRecordId: sidecars[1].sourceMaterialRef,
+        sourceRecordId: "SOURCE_MATERIAL_SEARCH_PREVIEW_0123456789ABCDEF",
+        providerId: "serper_web_search",
+        sourceMaterialKind: "provider_search_result_preview_text",
+        contentText: serperText,
+      },
+      {
+        sourceRecordId: sidecars[2].sourceMaterialRef,
         providerId: "wikimedia_core",
         sourceMaterialKind: "wikimedia_page_summary_extract_text",
         contentText: wikimediaText,
