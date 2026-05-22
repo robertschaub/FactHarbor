@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-writer-2026-05-22",
-    "resetTotal": 8,
-    "currentRemaining": 0,
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18",
+    "resetTotal": 18,
+    "currentRemaining": 18,
     "approvalPointer": {
-      "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
+      "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain authorized job submission with budget 8, prompt edits, more job submissions, schema changes, and naturally needed work to complete the plan."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ23 exposed source-material and W5 generalization gaps."
     },
     "latestReset": {
       "date": "2026-05-22",
       "previousRemaining": 0,
-      "resetRemaining": 8,
-      "reason": "Captain authorized a new HighJump continuation budget of 8 after the HJ17 output-budget repair and before HJ18 canary execution."
+      "resetRemaining": 18,
+      "reason": "Captain provided a new 18-job budget to continue HighJump validation and repair toward complete V2 reports."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
-      "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
-      "startingRemaining": 8,
-      "currentRemaining": 0,
-      "consumptionEntriesInThisTranche": 8,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247. HJ22 validated citation/readability repair on runtime 2e12b254. HJ23 spent the final two slots on a mini-gauntlet across asylum-235000-de and bolsonaro-en; both preserved containment but stopped before completed internal report generation because of source-material/W5 generalization gaps.",
+      "startsAfterSliceId": "X7-HJ-23-MINI-GAUNTLET-BOLSONARO-EN",
+      "startsAfterJobId": "d3a622a352ba4b27b18d10250e21fbac",
+      "startingRemaining": 18,
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "New Captain-authorized continuation budget after HJ23. First planned validations: bolsonaro-en against W3-B continuation repair 70644fcb and asylum-235000-de against direct-record query-planning repair 02b35ebb. Each live job still requires clean git status, committed source, runtime refresh, API/Web commit match, and result documentation.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

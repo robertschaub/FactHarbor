@@ -3686,3 +3686,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Verification:** Focused prompt-contract test passed (`10` tests). `npm run validate:v2-gates` passed. `npm -w apps/web run build` passed. `git diff --check` passed. Debt sensors remain `advisory_warn` for known V2 footprint/docs/guard-size/consolidation pressure.
 
 **Budget:** No live job was run; active HighJump tranche remains at `0`.
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump Budget Reset To 18
+
+**Task:** Record Captain's new live-job budget and prepare continued HighJump validation.
+
+**Result:** Updated `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json` to reset/extend the active HighJump budget to `18` after HJ23. Updated `Docs/STATUS/V2_Current_Lane.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md` with the first validation targets: `bolsonaro-en` against W3-B continuation repair `70644fcb`, then `asylum-235000-de` against direct-record query-planning repair `02b35ebb`.
+
+**Next:** Commit this budget projection, refresh runtime to the latest commit, verify API/Web commit match, then run the first two validations unless a hard stop appears.

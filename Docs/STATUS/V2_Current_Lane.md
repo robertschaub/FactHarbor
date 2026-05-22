@@ -126,9 +126,9 @@ Follow-up local repair:
 
 `70644fcb fix(v2): continue w3b after invalid summaries`
 
-This repairs the Bolsonaro-exposed W3-B fail-fast behavior locally. No live
-budget remains to validate it until Captain/Steer-Co resets or extends the
-tranche.
+This repairs the Bolsonaro-exposed W3-B fail-fast behavior locally. Captain
+has reset/extended the HighJump live-job budget to `18`; the first validation
+target is `bolsonaro-en` against this repair.
 
 Additional local query-planning repair:
 
@@ -140,6 +140,20 @@ and other time-sensitive factual claims include direct-record/primary-source
 intent instead of letting academic, encyclopedic, or contextual intent crowd out
 the evidence needed by the claim. It has focused prompt-contract, V2 gate,
 debt-sensor, diff-check, and build verification, but no live validation yet.
+The second validation target is `asylum-235000-de` against this repair.
+
+## Live Budget
+
+Captain reset/extended the live-job budget to `18` on 2026-05-22 after HJ23.
+The ledger authority is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+Planned first spend:
+
+1. `bolsonaro-en` to validate W3-B continuation after invalid summaries.
+2. `asylum-235000-de` to validate direct-record query-planning intent.
+
+If either job exposes a new stop, classify and repair locally before expanding
+the gauntlet.
 
 Result document:
 
