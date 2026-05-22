@@ -15,236 +15,85 @@ Use the HighJump approach to get complete internal Pipeline V2 reports through
 the normal manual submission path, now that V2 is the default pipeline and the
 admin job UI can display V2 report markdown. Lower only report-blocking bars
 that are shown by live evidence, then raise quality, safety, and completeness
-from the observed report defects.
+from observed report defects.
 
 ## Current Implementation Anchor
 
 Latest committed implementation anchor:
 
-`2e12b254 fix(v2): clarify manual v2 flow and report citations`
+`beb23bca fix(v2): preserve report writer boundary ids`
 
-This commit:
+This commit amends only `V2_AGGREGATION_NARRATIVE` plus its focused prompt
+contract test. It requires exact verdict/boundary section cardinality and exact
+supplied ID preservation so the internal report writer does not damage otherwise
+valid W8 drafts with `boundary_reference_mismatch`.
 
-- keeps the default manual V2 submission path from `79a5c31f`;
-- makes `claimboundary-v2` the default manual submission pipeline through UCM
-  defaults, web proxy routes, API job/draft creation defaults, and runner
-  missing-variant fallback;
-- shows the draft pipeline on the preparation page as `Pipeline V2` / `Pipeline
-  V1` / default before a final job exists;
-- improves `V2_AGGREGATION_NARRATIVE` so internal report markdown carries exact
-  supplied EvidenceItem IDs inline and includes an `Evidence References`
-  subsection;
-- keeps explicit legacy `claimboundary` requests available;
-- surfaces authenticated-admin V2 report markdown on the job page as a `V2
-  Report` section;
-- preserves public V2 as `4.0.0-cb-precutover` / `blocked_precutover` /
-  `report_damaged` with no public verdict/truth/confidence exposure.
+Runtime was verified through Web/API version endpoints at
+`beb23bcafc44e156b10406833c47cd09a142686e` before the latest canary.
 
-Runtime was verified after this commit through `/api/version`, and UCM active
-`pipeline/default` was verified with `defaultPipelineVariant:
-"claimboundary-v2"`.
-
-## Active Quality Repair
-
-Latest HighJump quality repair:
-
-`298ad76f fix(v2): align highjump boundary verdict comparisons`
-
-Package:
-
-`Docs/WIP/2026-05-22_V2_HighJump_HJ21_W7B_Comparator_Alignment_Repair.md`
-
-HJ21 amends only `V2_BOUNDARY_VERDICT_EXECUTION` with topic-neutral comparator
-alignment guidance. It targets the HJ20 quality defect where the hydrogen-family
-internal report led with `MIXED` despite the report containing a stronger
-false-side alternative.
-
-Repo search on 2026-05-22 found no committed HJ21 canary result and no ledgered
-HJ21 job id. Treat HJ21 as locally implemented, committed, and verifier-clean,
-but not yet live-validated.
-
-## Latest Canary Result
-
-Latest report-quality canary:
-
-`PASS_X7_HJ22_REPORT_CITATION_READABILITY_CANARY`
-
-Job:
-
-`4e81f840f6e04e2793e9ec162ee7bef2`
-
-Runtime:
-
-`2e12b25493cd8a6002ce93b2f597d217491d95ed`
-
-Information yield:
-
-`report produced`
-
-Important evidence:
-
-- submitted through `/api/fh/analyze` without an explicit `pipelineVariant`;
-- stored job `pipelineVariant` is `claimboundary-v2`;
-- authenticated admin job API returned `reportMarkdown` length `8190`;
-- public/default job API returned no report markdown;
-- public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
-  `report_damaged`;
-- primary report verdict for the hydrogen-family input was `FALSE`, truth `25`,
-  confidence `72`, inside the expected band;
-- report markdown contains inline exact EvidenceItem citations such as
-  `[EVI_001_BEV_HYDROGEN_EFFICIENCY_COMPARISON]` and a compact
-  `Evidence References` section.
-
-Result document:
-
-`Docs/WIP/2026-05-22_V2_HighJump_HJ22_Report_Citation_Readability_Canary_Result.md`
-
-The HJ23 two-job mini-gauntlet consumed the remaining two live-job slots and
-found source-material generalization gaps outside the hydrogen path. The active
-HighJump continuation tranche now has `0` remaining.
+## Latest Result
 
 Latest gauntlet:
 
-`STOP_X7_HJ23_MINI_GAUNTLET_SOURCE_MATERIAL_AND_W5_GENERALIZATION_GAPS`
-
-Jobs:
-
-- `0194c58b3e9245e6b63eda6cdf2bf4d6` (`asylum-235000-de`)
-- `d3a622a352ba4b27b18d10250e21fbac` (`bolsonaro-en`)
-
-Result summary:
-
-- both jobs stored `pipelineVariant = claimboundary-v2`;
-- both jobs preserved public/precutover containment;
-- neither produced a completed admin internal report;
-- asylum reached W5 but W5 returned `hidden_no_extractable_evidence` over one
-  OpenAlex Source Material record;
-- Bolsonaro stopped earlier because W3-B failed the whole Source Material stage
-  on one structurally rejected Wikimedia page-summary body.
-
-Follow-up local repair:
-
-`70644fcb fix(v2): continue w3b after invalid summaries`
-
-This repairs the Bolsonaro-exposed W3-B fail-fast behavior locally. Captain
-has reset/extended the HighJump live-job budget to `18`; the first validation
-target is `bolsonaro-en` against this repair.
-
-Additional local query-planning repair:
-
-`02b35ebb fix(v2): steer queries toward direct records`
-
-This adds topic-neutral retrieval-intent guidance to `V2_EVIDENCE_QUERY_PLANNING`
-so current aggregate, legal/procedural, official-status, measured-comparison,
-and other time-sensitive factual claims include direct-record/primary-source
-intent instead of letting academic, encyclopedic, or contextual intent crowd out
-the evidence needed by the claim. It has focused prompt-contract, V2 gate,
-debt-sensor, diff-check, and build verification, but no live validation yet.
-The second validation target is `asylum-235000-de` against this repair.
-
-## Live Budget
-
-Captain reset/extended the live-job budget to `18` on 2026-05-22 after HJ23.
-The ledger authority is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
-
-Planned first spend:
-
-1. `bolsonaro-en` to validate W3-B continuation after invalid summaries.
-2. `asylum-235000-de` to validate direct-record query-planning intent.
-
-If either job exposes a new stop, classify and repair locally before expanding
-the gauntlet.
+`PASS_WITH_OPEN_GENERALIZATION_GAP_X7_HJ24_STRONGER_REPORT_GAUNTLET`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ23_Report_Quality_Mini_Gauntlet_Result.md`
-
-## Previous Canary Result
-
-Latest default-manual-path report canary:
-
-`PASS_X7_HJ21_DEFAULT_V2_MANUAL_UI_REPORT_CANARY`
-
-Job:
-
-`15d19b57f0fb488ea820bac0e2fb6dac`
-
-Runtime:
-
-`7b900247c8bf5a488923c23516f160cd51753396`
-
-Information yield:
-
-`report produced`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ24_Stronger_Report_Gauntlet_Result.md`
 
 Important evidence:
 
-- submitted through `/api/fh/analyze` without an explicit `pipelineVariant`;
-- stored job `pipelineVariant` is `claimboundary-v2`;
-- authenticated admin job API returned `reportMarkdown` length `7605`;
-- public/default job API returned no report markdown;
-- public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
-  `report_damaged`;
-- primary report verdict for the hydrogen-family input was `FALSE`, truth `18`,
-  confidence `72`, inside the expected band.
+- HJ24 consumed `7` jobs from the Captain-reset `18` job tranche; remaining
+  budget is `11`.
+- `b943c31f416941c9b46887e5b996c901` produced a complete hidden/internal
+  German asylum report draft on runtime `366dce54`: W5 extracted `1`
+  EvidenceItem; report writer produced `2891` bytes with `Evidence References`
+  and `2` citations.
+- `0a769c00825e48e5933cb1b1286b85c1` produced a complete hidden/internal
+  hydrogen report draft on runtime `beb23bca`: W5 extracted `4` EvidenceItems;
+  W8 result/draft were created; report writer produced `5906` bytes with
+  `Evidence References`; `boundary_reference_mismatch` was absent.
+- Public/default containment held: public V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
+  default job/page surfaces did not expose hidden report text or hidden statuses,
+  and unauthenticated internal report-writer access returned `401`.
 
-Result document:
+## Open Generalization Gap
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ21_Default_V2_Report_UI_Canary_Result.md`
+The Bolsonaro input now reaches W5 after W3-B and W4-A repairs, but W5 still
+returns `hidden_no_extractable_evidence`:
 
-No second HJ21 canary is authorized.
+- `315886278aa34b4a9ba8fd91d9ac3cc0`: W3-B later fetch failure;
+- `d2aaaee251cd40bb9d6dd2291d235a76`: W4-A fetch diagnostic overstrictness;
+- `34e0057f557a4e3f859702dbb1a45874`: W5 no extractable evidence;
+- `4d9ff1dd1292405e8796937472774e51`: W5 no extractable evidence persisted
+  after topic-neutral prompt lowering.
 
-## Previous Report-Producing Canary
-
-Latest committed and ledgered report-producing canary:
-
-`PASS_X7_HJ20_W5_OUTPUT_SHAPING_INTERNAL_REPORT_WRITER_DRAFT_CREATED`
-
-Job:
-
-`53f22512b9aa41b5ab23b774e2ddf10f`
-
-Runtime:
-
-`a7a73479d62779ad7b22868898fb50d0d09634c6`
-
-Information yield:
-
-`report produced`
-
-Important hidden evidence:
-
-- W5 accepted `4` EvidenceItems.
-- W8-B created an internal Alpha result candidate with `3` boundary candidates,
-  `2` verdict candidates, and `4` cited EvidenceItem refs.
-- W8-G created a `7843` byte internal Alpha draft.
-- HJ19 internal report writer created an `8759` byte hidden report draft.
-- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
-  `report_damaged`.
-
-The HJ20 draft is useful quality evidence, but it is not the current runtime
-state. The next canary should run from the latest committed source
-`79a5c31f`.
+Treat this as a source-content/usefulness and evidence-extraction
+generalization problem, not as another report-writer problem.
 
 ## Live Budget
 
-Active HighJump continuation tranche:
+The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 
-- ledger: `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`;
-- current remaining after HJ21: `3`;
+Current active tranche:
+
+- reset total: `18`;
+- consumed after reset: `7`;
+- remaining: `11`;
 - every live job still requires clean git status, committed source, runtime
-  refresh when needed, runtime commit match, and result documentation.
+  refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ21 result documentation and ledger update.
-2. Review the admin-visible V2 report quality against the hydrogen-family
-   expectations and best comparator intent.
-3. Raise the single highest-value report-quality bar next. The current observed
-   candidate is report readability/citation polish: the draft refers to
-   EvidenceItem IDs but does not render user-friendly numbered citation markers.
-4. Keep the next fix inside existing report-writer/report-surface mechanisms
-   unless review evidence proves a different existing mechanism is the blocker.
+1. Commit the HJ24 result documentation and ledger/status updates.
+2. Continue HighJump on the open non-hydrogen generalization gap.
+3. Before spending another job, make a focused repair or improvement to the
+   existing source-material/evidence-extraction path that plausibly improves
+   source usefulness for the Bolsonaro-family stop without topic-specific
+   hardcoding.
+4. Then run one Captain-defined non-hydrogen validation job and classify its
+   information yield.
 
 ## Stop Conditions
 
@@ -262,15 +111,3 @@ Stop and reconvene Steer-Co, or escalate to Captain only if needed, when:
 
 Do not stop for routine implementation mechanics inside the current
 HighJump/report-quality path.
-
-## Coordination Rules For This Lane
-
-- Keep HighJump operational: make the next report capability safe enough; do
-  not avoid it by adding another readiness layer.
-- Prefer amending existing prompt/report mechanisms over adding plumbing.
-- Use Steer-Co for direction changes, material dissent, or unclear failed
-  validation, not routine runtime refresh or canary mechanics.
-- Use `context-extension` only if delegating complex state, crossing a phase
-  boundary, or preserving expensive-to-reconstruct findings.
-- Keep process improvements separate from technical steering unless they remove
-  concrete friction in this active lane.

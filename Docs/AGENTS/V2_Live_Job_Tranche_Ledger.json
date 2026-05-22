@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 11,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,14 +23,14 @@
       "startsAfterSliceId": "X7-HJ-23-MINI-GAUNTLET-BOLSONARO-EN",
       "startsAfterJobId": "d3a622a352ba4b27b18d10250e21fbac",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "New Captain-authorized continuation budget after HJ23. First planned validations: bolsonaro-en against W3-B continuation repair 70644fcb and asylum-235000-de against direct-record query-planning repair 02b35ebb. Each live job still requires clean git status, committed source, runtime refresh, API/Web commit match, and result documentation.",
+      "currentRemaining": 11,
+      "consumptionEntriesInThisTranche": 7,
+      "note": "Captain reset the HighJump continuation budget to 18. Seven jobs have been consumed in the post-reset HJ24 report-gauntlet sequence: two Bolsonaro source-material repairs, two Bolsonaro W5 no-evidence checks, one asylum full-report pass, one hydrogen report-writer boundary-reference stop, and one hydrogen report-writer boundary-id repair pass. Remaining budget is 11.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
-      "summary": "The supplied 2026-05-21 HighJump handover claimed a separate 20-slot budget that was not reflected in this ledger. This 12-job tranche supersedes prior remaining balance for future accounting only; it does not validate or reclassify any unledgered historical job."
+      "summary": "The supplied 2026-05-21 HighJump handover claimed a separate 20-slot budget that was not reflected in this ledger. The 2026-05-22 Captain reset to 18 supersedes prior remaining balance for future accounting only; it does not validate or reclassify any unledgered historical job."
     },
     "perCanaryConsumptionRule": {
       "defaultConsumption": 1,
@@ -708,6 +708,104 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "Default manual web path submitted without explicit pipelineVariant and stored claimboundary-v2. Hidden chain reached W3-B; transport succeeded but Source Material creation failed as source_material_extract_structural_rejected, so W4-G/H/W5 blocked. Follow-up local repair 70644fcb amends W3-B to continue through the bounded locator set after one invalid summary. Public V2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public reportMarkdown stayed null."
+      },
+      {
+        "sliceId": "X7-HJ-24-BOLSONARO-W3B-CONTINUATION-VALIDATION",
+        "jobId": "315886278aa34b4a9ba8fd91d9ac3cc0",
+        "classification": "STOP_X7_HJ24_BOLSONARO_W3B_LATER_FETCH_FAILURE",
+        "implementationCommit": "1748a40b",
+        "runtimeCommit": "1748a40b",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "Bolsonaro validation reached W3-B and produced records, then failed structural continuation after a later fetch failure. This led to c6c55913."
+      },
+      {
+        "sliceId": "X7-HJ-24-BOLSONARO-W4A-DIAGNOSTIC-ADMISSION-VALIDATION",
+        "jobId": "d2aaaee251cd40bb9d6dd2291d235a76",
+        "classification": "STOP_X7_HJ24_BOLSONARO_W4A_FETCH_DIAGNOSTIC_OVERSTRICT",
+        "implementationCommit": "c6c55913",
+        "runtimeCommit": "c6c55913",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "W3-B completed with 7 Source Material records, but W4-A blocked on fetch_diagnostic_not_success. This led to ea8246ff."
+      },
+      {
+        "sliceId": "X7-HJ-24-BOLSONARO-W5-EVIDENCE-EXTRACTION-VALIDATION",
+        "jobId": "34e0057f557a4e3f859702dbb1a45874",
+        "classification": "STOP_X7_HJ24_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE",
+        "implementationCommit": "ea8246ff",
+        "runtimeCommit": "ea8246ff",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 15,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_stage_reached",
+        "note": "W3-B/W4-A/W4-G/W4-H passed, but W5 returned hidden_no_extractable_evidence."
+      },
+      {
+        "sliceId": "X7-HJ-24-BOLSONARO-W5-PROMPT-LOWERING-VALIDATION",
+        "jobId": "4d9ff1dd1292405e8796937472774e51",
+        "classification": "STOP_X7_HJ24_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_PROMPT_LOWERING",
+        "implementationCommit": "366dce54",
+        "runtimeCommit": "366dce54",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 14,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18 and approving prompt edits",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "After lowering premature W5 no-evidence guidance, Bolsonaro still returned hidden_no_extractable_evidence. Treat as a source-content/usefulness problem, not solved by this prompt wording alone."
+      },
+      {
+        "sliceId": "X7-HJ-24-ASYLUM-FULL-INTERNAL-REPORT-VALIDATION",
+        "jobId": "b943c31f416941c9b46887e5b996c901",
+        "classification": "PASS_X7_HJ24_ASYLUM_FULL_INTERNAL_REPORT_DRAFT_CREATED",
+        "implementationCommit": "366dce54",
+        "runtimeCommit": "366dce54",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 13,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "German asylum input reached W5 with 1 EvidenceItem and produced a hidden internal report writer draft of 2891 bytes with Evidence References and 2 citations. Public V2 stayed blocked/precutover."
+      },
+      {
+        "sliceId": "X7-HJ-24-HYDROGEN-REPORT-WRITER-BOUNDARY-ID-VALIDATION",
+        "jobId": "069c89a05dac466ba0af15d072ae6939",
+        "classification": "STOP_X7_HJ24_HYDROGEN_REPORT_WRITER_BOUNDARY_REFERENCE_MISMATCH",
+        "implementationCommit": "366dce54",
+        "runtimeCommit": "366dce54",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 12,
+        "approvalPointer": "Captain message in current Codex thread asking for stronger validation than single canaries",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "Hydrogen reached W5 with 4 EvidenceItems plus W8 result/draft, but internal report writer failed task-contract validation with boundary_reference_mismatch. This led to beb23bca."
+      },
+      {
+        "sliceId": "X7-HJ-24-HYDROGEN-REPORT-WRITER-BOUNDARY-ID-REPAIR-RERUN",
+        "jobId": "0a769c00825e48e5933cb1b1286b85c1",
+        "classification": "PASS_X7_HJ24_HYDROGEN_REPORT_WRITER_BOUNDARY_ID_REPAIR_VERIFIED",
+        "implementationCommit": "beb23bcafc44e156b10406833c47cd09a142686e",
+        "runtimeCommit": "beb23bcafc44e156b10406833c47cd09a142686e",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Captain message in current Codex thread resetting HighJump live-job budget to 18 and approving prompt edits/live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Hydrogen rerun after aggregation_narrative ID-preservation prompt repair reached W5 with 4 EvidenceItems, W8 result/draft, and internal report writer draft 5906 bytes with Evidence References and no boundary_reference_mismatch. Public/default surfaces stayed blocked/redacted."
       }
     ],
     "blockedPending": [],

@@ -3693,3 +3693,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Result:** Updated `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json` to reset/extend the active HighJump budget to `18` after HJ23. Updated `Docs/STATUS/V2_Current_Lane.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md` with the first validation targets: `bolsonaro-en` against W3-B continuation repair `70644fcb`, then `asylum-235000-de` against direct-record query-planning repair `02b35ebb`.
 
 **Next:** Commit this budget projection, refresh runtime to the latest commit, verify API/Web commit match, then run the first two validations unless a hard stop appears.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ24 Stronger Report Gauntlet
+
+**Task:** Use the Captain-reset `18` job budget for stronger-than-canary V2 validation while keeping HighJump moving toward complete internal reports.
+
+**Result:** Ran and repaired through a seven-job HJ24 gauntlet. Completed repairs were `c6c55913` (keep W3-B material after later fetch failure), `ea8246ff` (admit valid Source Material despite later fetch diagnostics), `366dce54` (lower premature W5 no-evidence stop), and `beb23bca` (preserve report-writer boundary/verdict IDs). Two complete hidden/internal reports were produced: German asylum job `b943c31f416941c9b46887e5b996c901` (`1` EvidenceItem, `2891` report-writer bytes, `Evidence References`, `2` citations) and hydrogen job `0a769c00825e48e5933cb1b1286b85c1` (`4` EvidenceItems, W8 result/draft created, `5906` report-writer bytes, `Evidence References`, no `boundary_reference_mismatch`). Public/default containment held throughout.
+
+**Verification:** Latest repair `beb23bca` passed the focused V2 prompt-contract test (`10` tests), `npm run validate:v2-gates`, `npm run debt:sensors` (`advisory_warn` for known V2/docs/guard footprint), `git diff --check`, and `npm -w apps/web run build`. The HJ24 result is documented in `Docs/WIP/2026-05-22_V2_HighJump_HJ24_Stronger_Report_Gauntlet_Result.md`.
+
+**Budget:** HJ24 consumed `7` of `18`; remaining live-job budget is `11`.
+
+**Next:** Continue HighJump on the active non-hydrogen generalization gap. Bolsonaro now reaches W5 after W3-B/W4-A repairs but still returns `hidden_no_extractable_evidence`, so the next focused repair should improve existing source-material usefulness / evidence-extraction generalization rather than adding a new proof layer or rerunning hydrogen.
