@@ -3913,3 +3913,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39 consumed `1`; `17` remain before the HJ40 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ40, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ40 Result And HJ41 Source Material Balance
+
+**Task:** Validate HJ40 after the generic measurement-frame query-intent repair and keep moving toward a useful internal V2 report for the German asylum aggregate input.
+
+**Result:** HJ40 job `d611f81371c74a25b2c415a124336594` ran through the default manual V2 path on runtime `2b606cefdf298bf0961379b5cfd102b4dd221a2a`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default report markdown null). The authenticated admin reportMarkdown was `3591` characters and produced a complete internal alpha report, but report quality remained poor: it cited one OpenAlex gender-composition item (`40% female`) rather than direct current-stock/population evidence for the claimed `235,000+` asylum-domain population.
+
+**Steer-Co / expert review:** GPT sidecar review and Claude Opus 4.6 both agreed this is a structural Source Material ordering defect, not a reason to add semantic deterministic ranking or another provider. The existing W3-B merge order let OpenAlex abstracts prefix-dominate the shared Source Material budget.
+
+**Repair:** HJ41 commits `fbfbdad5` to amend only `mergedSourceMaterialRecords` and the focused W3-B owner tests. Source Material now balances structural provider/source-kind buckets so Serper/Wikimedia material is not crowded out by OpenAlex abstracts, while preserving the nine-record run cap, hash dedupe, per-record caps, redaction, hidden/admin-only scope, and the existing strong-record gate for synthesized search-preview records. No provider, parser, retry, route, prompt/schema, public behavior, cache/SR/storage, semantic deterministic ranking, or V1 work was added.
+
+**DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism` after HJ40 live validation. Chosen option: amend existing W3-B merge ordering. Rejected path: add semantic scoring, provider expansion, retries, or another diagnostic route because provider/source-kind metadata already identifies the structural crowd-out risk. What was removed/simplified: OpenAlex-prefix dominance in the merge order. What was added: one small structural round-robin merge and an OpenAlex cap aligned with existing source-kind budgets. Net mechanism count: unchanged. Verification: focused W3-B owner test passed (`15` tests); broader Serper/source-material verifier passed (`3` files / `26` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed. Debt accepted and removal trigger: provider-order balancing is a temporary Source Material policy until unified source-material ranking/selection is designed before public cutover.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39 and HJ40 consumed `2`; `16` remain before the HJ41 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ41, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.

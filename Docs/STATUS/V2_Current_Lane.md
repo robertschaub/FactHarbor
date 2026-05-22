@@ -21,25 +21,25 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`c67d4ae7 fix(v2): preserve stock measurement frame in queries`
+`fbfbdad5 fix(v2): balance source material provider order`
 
-The current committed repair is HJ40: a narrow, generic measurement-frame
-query-intent repair. HJ38 produced a complete internal alpha report but used
-annual application-flow evidence rather than direct current-stock evidence.
-HJ39 then tried bounded Serper per-query fan-in and regressed to Source
-Material records `0`, proving fan-in alone is not sufficient. HJ40 amends the
-existing V2 query-planning prompt so at least one direct-record query preserves
-the selected claim's stock/status/standing-total/threshold measurement frame
-when that is how the claim is framed. It does not add a provider, parser, retry
-path, route, public behavior, schema change, cache/SR/storage, or V1 work.
+The current committed repair is HJ41: a narrow, structural Source Material
+provider-order balance. HJ40 restored internal alpha report generation for the
+German asylum aggregate input, but the report still relied on one weak OpenAlex
+gender-composition item instead of direct current-stock evidence. HJ41 amends
+the existing W3-B Source Material merge order so OpenAlex abstracts cannot
+prefix-dominate the shared Source Material budget when Serper or Wikimedia
+material is also available. It does not add a provider, parser, retry path,
+route, public behavior, prompt/schema change, cache/SR/storage, semantic
+deterministic ranking, or V1 work.
 
-Runtime has not yet been refreshed to HJ40 for the next validation job.
+Runtime has not yet been refreshed to HJ41 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-39-ASYLUM-235000-DE-SERPER-PER-QUERY-FANIN-RERUN`
+`X7-HJ-40-ASYLUM-235000-DE-MEASUREMENT-FRAME-QUERY-RERUN`
 
 Result document:
 
@@ -103,6 +103,14 @@ Important evidence:
   `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
   HJ40 therefore amends query-planning measurement-frame intent generically,
   rather than adding another source-depth mechanism.
+- `d611f81371c74a25b2c415a124336594` (German asylum aggregate) ran on HJ40
+  after the measurement-frame query-intent repair. It stayed on
+  `claimboundary-v2`, public/default containment held, and authenticated admin
+  reportMarkdown was `3591` characters. The report still remained poor for the
+  claim: it cited one OpenAlex gender-composition item (`40% female`) and did
+  not surface direct current-stock/population evidence. HJ41 therefore amends
+  W3-B Source Material ordering so OpenAlex abstracts cannot structurally
+  dominate the first source records when Serper/Wikimedia material exists.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -207,26 +215,27 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this HJ39 result / HJ40 repair lane sync.
-2. Refresh runtime to the latest committed HJ40 source/docs anchor, verify
+1. Commit this HJ40 result / HJ41 repair lane sync.
+2. Refresh runtime to the latest committed HJ41 source/docs anchor, verify
    Web/API/proxy commit match, and run one default/manual V2 validation job for
    `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
    After the job completes, use `node scripts/capture-canary-evidence.mjs --job-id <id>`
    for automated containment verification and ledger-consumption stub generation.
-3. If HJ40 produces an internal report, review the concrete report defect
+3. If HJ41 produces an internal report, review the concrete report defect
    against Captain quality expectations and raise one single bar from observed
    evidence.
-4. If HJ40 repeats Source Material `0` or otherwise gives no new useful
-   information, reconvene Steer-Co before spending another live job on this
-   claim family.
+4. If HJ41 still relies on weak OpenAlex-only or otherwise non-material source
+   evidence, shift from reachability/source-order repairs to a focused
+   acquisition/source-selection quality review before spending another live job
+   on this claim family.
 
 ## Stop Conditions
 

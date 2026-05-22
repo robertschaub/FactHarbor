@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
       "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient: the German asylum aggregate run regressed to Source Material records 0, W4-G w3b_not_completed, W4-H w4g_not_positive, and W5 blocked_pre_execution. The next job in this tranche should validate the committed HJ40 generic measurement-frame query-intent repair.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39 consumed one job and disproved bounded Serper per-query fan-in as sufficient. HJ40 consumed one job and restored internal alpha report generation, but the report still used weak OpenAlex demographic-composition material rather than direct current-stock evidence. The next job in this tranche should validate the committed HJ41 structural Source Material provider-order balance repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1133,6 +1133,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "HJ39 reran the German asylum aggregate input after bounded Serper per-query fan-in. Public/default containment held. The admin stop summary regressed before Source Material: records 0, W4-G w3b_not_completed, W4-H w4g_not_positive, W5 blocked_pre_execution, source-content packets 0. This disproves per-query fan-in as sufficient and points back to generic query measurement-frame intent/source-material usefulness."
+      },
+      {
+        "sliceId": "X7-HJ-40-ASYLUM-235000-DE-MEASUREMENT-FRAME-QUERY-RERUN",
+        "jobId": "d611f81371c74a25b2c415a124336594",
+        "classification": "PASS_X7_HJ40_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_OPENALEX_COMPOSITION_DEFECT",
+        "implementationCommit": "c67d4ae748eb3afdfc937abe53460f12a36c89b1",
+        "runtimeCommit": "2b606cefdf298bf0961379b5cfd102b4dd221a2a",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "fbfbdad5116738a3c41786498502f905632ebb07",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ40 reran the German asylum aggregate input after the generic measurement-frame query-intent repair. Public/default containment held: public/default result remained 4.0.0-cb-precutover / blocked_precutover / report_damaged with reportMarkdown null. Authenticated admin reportMarkdown was 3591 characters and produced a complete internal alpha report, but quality remained poor: it relied on one OpenAlex gender-composition item and did not surface direct current-stock evidence for the claimed 235000+ asylum-domain population. HJ41 therefore amends only the structural Source Material merge order so OpenAlex abstracts cannot prefix-dominate Serper/Wikimedia material."
       }
     ],
     "blockedPending": [],
