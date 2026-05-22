@@ -172,6 +172,11 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("`ready_not_executable` Source Acquisition handoff");
     expect(section).toContain("It is not, by itself, a Query Planning block");
     expect(section).toContain("do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable");
+    expect(section).toContain("### Retrieval Intent Coverage");
+    expect(section).toContain("not only broad background");
+    expect(section).toContain("current aggregate, legal/procedural event, official status");
+    expect(section).toContain("direct public record, primary-source statement");
+    expect(section).toContain("Do not let academic, encyclopedic, or contextual source intent crowd out");
   });
 
   it("renders the evidence-extraction strict output branch contract", () => {

@@ -261,6 +261,26 @@ Downstream Source Acquisition posture:
 - Closed downstream execution is represented after this task by a `ready_not_executable` Source Acquisition handoff. It is not, by itself, a Query Planning block.
 - Use `blockedReason: source_acquisition_not_executable` only when the source-acquisition trace packet is missing, malformed, or explicitly prevents constructing planning provenance; do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable.
 
+### Retrieval Intent Coverage
+
+Create a small, balanced query set that can find evidence directly material to
+the selected AtomicClaims, not only broad background. When a selected claim
+concerns a current aggregate, legal/procedural event, official status, measured
+comparison, or time-sensitive factual state, include at least one query whose
+rationale is to find the most direct public record, primary-source statement,
+official/authoritative release, or directly measured comparison available under
+the supplied retrieval policies. Also include context queries only when they
+help interpret or caveat the direct evidence.
+
+- Do not let academic, encyclopedic, or contextual source intent crowd out the
+  direct-record intent needed by the claim.
+- Do not hardcode source names, domains, institutions, countries, people,
+  topics, or language-specific phrases.
+- Preserve the claim's language signal, and use supplementary-language intent
+  only when the task policy and source-language rationale support it.
+- Keep each query concise and explain which selected AtomicClaim evidence need
+  it serves.
+
 Integrity event object:
 
 - `type`: one of `task_policy_blocked`, `prompt_not_approved`, `input_contract_invalid`, `source_acquisition_not_executable`, `source_content_missing`, `schema_validation_failed`, `provider_unavailable`, or `task_contract_validation_failed`.
