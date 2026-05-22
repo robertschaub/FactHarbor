@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY,
+  SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
   SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP,
   collectSerperSearchPreviewSourceMaterialRecords,
   type SerperSearchPreviewHttpClient,
@@ -36,7 +37,7 @@ afterEach(() => {
 });
 
 describe("Analyzer V2 Serper search-preview Source Material collector", () => {
-  it("collects bounded hidden Source Material records without exposing raw result URLs", async () => {
+  it("collects bounded hidden Source Material records across the query plan without exposing raw result URLs", async () => {
     const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -45,21 +46,22 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     const previews: unknown[] = [];
     const client: SerperSearchPreviewHttpClient = async (request) => {
       requests.push(request);
+      const ordinal = requests.length;
       return response({
         organic: [
           {
-            title: "Brazil Supreme Court proceedings",
-            snippet: "The court heard procedural objections and issued decisions.",
+            title: `Search lane ${ordinal} first result`,
+            snippet: `Distinct bounded preview text ${ordinal}.`,
             link: "https://news.example.test/brazil-court",
           },
           {
-            title: "Fair trial standards overview",
-            snippet: "International standards focus on impartiality, defense rights, and appeal.",
+            title: `Search lane ${ordinal} second result`,
+            snippet: "This fallback should stay unused while the first result is materializable.",
             link: "https://law.example.test/fair-trial",
           },
           {
-            title: "Decision chronology",
-            snippet: "The trial record included motions, votes, and sentencing stages.",
+            title: `Search lane ${ordinal} third result`,
+            snippet: "This fallback should also stay unused.",
             link: "https://analysis.example.test/chronology",
           },
         ],
@@ -67,7 +69,14 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     };
 
     const records = await collectSerperSearchPreviewSourceMaterialRecords({
-      queryEntries: [queryEntry(1), queryEntry(2)],
+      queryEntries: [
+        queryEntry(1),
+        queryEntry(2),
+        queryEntry(3),
+        queryEntry(4),
+        queryEntry(5),
+        queryEntry(6),
+      ],
       apiKey: "test-serper-key",
       httpClient: client,
       startingAttemptOrdinal: 10,
@@ -76,15 +85,32 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     });
     const serialized = JSON.stringify({ records, previews });
 
-    expect(requests).toHaveLength(1);
-    expect(requests[0]?.hostname).toBe("google.serper.dev");
-    expect(requests[0]?.path).toBe("/search");
-    expect(requests[0]?.body).toEqual({
-      q: "bounded provider query 1",
-      num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY,
-    });
-    expect(records).toHaveLength(3);
+    expect(requests).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN);
+    expect(requests.map((request) => request.hostname)).toEqual([
+      "google.serper.dev",
+      "google.serper.dev",
+      "google.serper.dev",
+      "google.serper.dev",
+      "google.serper.dev",
+    ]);
+    expect(requests.map((request) => request.path)).toEqual([
+      "/search",
+      "/search",
+      "/search",
+      "/search",
+      "/search",
+    ]);
+    expect(requests.map((request) => request.body)).toEqual([
+      { q: "bounded provider query 1", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
+      { q: "bounded provider query 2", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
+      { q: "bounded provider query 3", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
+      { q: "bounded provider query 4", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
+      { q: "bounded provider query 5", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
+    ]);
+    expect(records).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN);
     expect(records.map((record) => record.providerId)).toEqual([
+      "serper_web_search",
+      "serper_web_search",
       "serper_web_search",
       "serper_web_search",
       "serper_web_search",
@@ -93,9 +119,20 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
       "provider_search_result_preview_text",
       "provider_search_result_preview_text",
       "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
     ]);
-    expect(previews).toHaveLength(3);
-    expect(serialized).toContain("Brazil Supreme Court proceedings");
+    expect(records.map((record) => record.sourceMaterialText)).toEqual([
+      "Search lane 1 first result Distinct bounded preview text 1.",
+      "Search lane 2 first result Distinct bounded preview text 2.",
+      "Search lane 3 first result Distinct bounded preview text 3.",
+      "Search lane 4 first result Distinct bounded preview text 4.",
+      "Search lane 5 first result Distinct bounded preview text 5.",
+    ]);
+    expect(previews).toHaveLength(5);
+    expect(serialized).toContain("Search lane 5 first result");
+    expect(serialized).not.toContain("Search lane 6 first result");
+    expect(serialized).not.toContain("fallback should stay unused");
     expect(serialized).not.toContain("https://news.example.test");
     expect(serialized).not.toContain("https://law.example.test");
     expect(serialized).not.toContain("bounded provider query");

@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj25",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj27",
     "resetTotal": 18,
-    "currentRemaining": 16,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ25 confirmed the remaining source-usefulness generalization gap."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ27 reached internal report generation and exposed the next report-quality/source-material breadth gap."
     },
     "latestReset": {
       "date": "2026-05-22",
-      "previousRemaining": 11,
+      "previousRemaining": 16,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after the HJ25 no-extractable-evidence result."
+      "reason": "Captain provided a fresh 18-job budget after the HJ27 internal report pass so the team can run stronger report-quality validation rather than weak single canaries."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-25-BOLSONARO-SEARCH-PREVIEW-MATERIAL-VALIDATION",
-      "startsAfterJobId": "d2e18575dcbe453c9cbae2281438405e",
+      "startsAfterSliceId": "X7-HJ-27-BOLSONARO-MIXED-SOURCE-REPORT-VALIDATION",
+      "startsAfterJobId": "f84d914e9ae74259a9c58505d2da190d",
       "startingRemaining": 18,
-      "currentRemaining": 16,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. Two jobs have been consumed from this fresh post-HJ25 tranche.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ27. No jobs have been consumed from this fresh post-HJ27 tranche yet.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

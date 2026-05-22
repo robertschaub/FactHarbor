@@ -21,17 +21,16 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`311b4b7a docs(v2): record hj26 serper lineage stop`
+`ff01764e docs(v2): record hj27 bolsonaro report pass`
 
-This docs anchor includes implementation commit `dbdd2acc`, which keeps the
-bounded Serper search-preview Source Material repair from `30d8d011` and
-amends the existing W4-H extraction-input provider-lineage allowlist so mixed
-OpenAlex + Serper + Wikimedia W4-G sidecars can proceed to W4-H without a false
-provider mismatch. It does not add new routes, prompts, schemas,
-parser/cache/SR/storage, public behavior, report/verdict/confidence behavior,
-or V1 reuse.
+The current working repair amends the existing bounded Serper search-preview
+Source Material collector so it distributes material across the query plan
+instead of spending all Serper records on the first query. The repair keeps the
+same provider, hidden/admin-only record shape, no parser, no cache/SR/storage,
+no public behavior, no prompt/schema edit, and no V1 reuse.
 
-Runtime has not yet been refreshed to this commit for the next validation job.
+Runtime has not yet been refreshed to the working repair for the next
+validation job. Commit before any live job.
 
 ## Latest Result
 
@@ -75,7 +74,13 @@ through the default manual V2 route:
   EvidenceItems, and the internal report writer produced `7381` report bytes.
 
 The remaining question is no longer reachability for this input; it is report
-quality and cross-input generalization.
+quality and cross-input generalization. A compact report-quality review found
+HJ27 materially below the Bolsonaro expectation (`LEANING-TRUE` /
+`MOSTLY-TRUE`, truth `58..85`, confidence `45..75`, minimum `3` boundaries):
+the report was `UNVERIFIED`/`MIXED` over only `2` EvidenceItems and did not
+cover the planned fair-trial and observer/human-rights query lanes. The query
+plan itself was adequate; the Serper preview materializer exhausted its
+`3`-record run cap on the first query, starving later query lanes.
 
 ## Live Budget
 
@@ -84,21 +89,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit this current-lane, result, and live-budget sync.
-2. Run a compact report-quality review over the HJ27 hidden/admin report.
-3. Then spend at most a small number of jobs from the remaining budget on a
-   stronger multi-input gauntlet over Captain-defined inputs, unless report
-   review exposes a clear local defect that should be repaired first.
-4. Prefer improvements that directly raise observed report quality or reduce
-   old hidden machinery. Do not add source-acquisition machinery unless a new
-   report or gauntlet result proves the source pool is the blocker again.
+1. Commit the Serper cross-query distribution repair plus this budget/lane sync.
+2. Refresh runtime to the repair commit and verify API/Web commit match.
+3. Run a stronger post-repair validation set from Captain-defined inputs rather
+   than another weak one-job canary. Start with `bolsonaro-en`, then spend
+   additional jobs on `asylum-235000-de`, `hydrogen-en`, and one language or
+   domain control only if the first repair result does not expose a hard stop.
+4. Record information yield per job: report produced, new stage reached, new
+   failure, repeated stop with new evidence, or repeated stop without useful
+   information.
 
 ## Stop Conditions
 

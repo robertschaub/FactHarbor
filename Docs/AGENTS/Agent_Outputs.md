@@ -3731,3 +3731,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ27 consumed `1`; current tranche remaining is `16`.
 
 **Next:** Pivot from reachability to report-quality review and a compact multi-input gauntlet. Do not add more source-acquisition machinery unless the next observed report/gauntlet evidence shows source coverage is again the blocker.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ28 Serper Query Distribution Repair
+
+**Task:** Use the HJ27 report-quality evidence to clear the next blocker without adding a new fetch/parser path.
+
+**Result:** HJ27 reached the internal report writer but produced a weak Bolsonaro/fair-trial report (`UNVERIFIED` / `MIXED`, `2` EvidenceItems) despite an adequate query plan. Root cause was the existing Serper preview collector exhausting its `3`-record run cap on the first query, so later fair-trial/observer query lanes never reached Source Material. Amended the existing collector to materialize at most `1` record per query and up to `5` records per run, while still requesting up to `3` candidates per query for unsafe/duplicate fallback. Aggregate preview text remains bounded (`4096` bytes), and raw URLs, query text, API keys, provider payloads, public surfaces, parser, cache/SR/storage, retries, and V1 remain closed.
+
+**Review:** Claude Opus Steer-Co sidecar approved the direction as the lowest-net-complexity repair versus prompt edits or full content dereference.
+
+**Verification:** Focused Serper test passed; source-material + boundary-guard verifier passed (`4` files / `106` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remains `advisory_warn` for known V2/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed. The broad V2 suite passed `144` files / `881` tests and hit one unrelated parser-runner timeout; that timed-out test passed in isolation immediately.
+
+**Budget:** Captain reset the current live-job budget to `18` after HJ27. No jobs have been consumed from this fresh post-HJ27 tranche yet.
+
+**Next:** Commit, refresh runtime, verify API/Web commit match, then run a stronger post-repair validation set from Captain-defined inputs starting with `bolsonaro-en`, followed by `asylum-235000-de` and `hydrogen-en` if no hard stop appears.

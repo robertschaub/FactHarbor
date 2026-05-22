@@ -17,9 +17,10 @@ import {
   classifySourceAcquisitionNetworkIpAddress,
 } from "./source-acquisition-network-transport";
 
-export const SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 3;
+export const SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 5;
 export const SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY = 3;
-export const SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 2_048;
+export const SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY = 1;
+export const SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 4_096;
 export const SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP = 32_768;
 export const SERPER_SEARCH_PREVIEW_TIMEOUT_MS = 3_000;
 
@@ -285,8 +286,12 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
       continue;
     }
 
+    let recordsForQuery = 0;
     for (const [index, candidate] of readOrganicResults(parsed).entries()) {
       if (records.length >= SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN) {
+        break;
+      }
+      if (recordsForQuery >= SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY) {
         break;
       }
       const candidateOrdinal = index + 1;
@@ -326,6 +331,7 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
       records.push(record);
       seen.add(record.sourceMaterialTextHash);
       aggregateTextBytes += record.sourceMaterialTextByteLength;
+      recordsForQuery += 1;
     }
   }
 
