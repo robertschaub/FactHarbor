@@ -260,6 +260,14 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Preserve comparison structure and measurement boundaries visible in the selected AtomicClaim statements");
     expect(section).toContain("same compared entities, property, direction, and measurement frame as the selected AtomicClaim");
     expect(section).toContain("keep the internal report path open with a caveated or `UNVERIFIED` candidate");
+    expect(section).toContain("separate direct comparison evidence from one-sided context");
+    expect(section).toContain("Evidence about one compared entity alone");
+    expect(section).toContain("outside baseline or adjacent comparator");
+    expect(section).toContain("make the first verdict candidate the most claim-aligned top-line candidate");
+    expect(section).toContain("Do not choose `MIXED` merely because indirect context points in another direction");
+    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
+      expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
+    }
     expect(section).not.toMatch(/\$\{\w+\}/);
   });
 
