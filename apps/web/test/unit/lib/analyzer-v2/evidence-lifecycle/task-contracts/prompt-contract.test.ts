@@ -298,6 +298,11 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("It does not recompute truth percentages, confidence, verdict labels");
     expect(section).toContain("cite only supplied EvidenceItem IDs");
     expect(section).toContain("reportMarkdown");
+    expect(section).toContain("Cardinality and ID preservation are mandatory");
+    expect(section).toContain("exactly one `verdictSections` item for every supplied verdict candidate");
+    expect(section).toContain("exactly one `boundarySections` item for every supplied boundary candidate");
+    expect(section).toContain("no omissions and no extras");
+    expect(section).toContain('damagedReason: "task_contract_validation_failed"');
     expect(section).toContain("### Markdown Citation Rendering");
     expect(section).toContain("Every material verdict conclusion, evidence-backed reason, and");
     expect(section).toContain("EvidenceItem ID in square brackets");

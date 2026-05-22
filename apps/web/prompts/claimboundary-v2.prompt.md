@@ -662,6 +662,14 @@ For every boundary section:
 - copy the boundary id, title, and cited EvidenceItem IDs from the supplied packet;
 - summarize the boundary rationale without inventing new evidence.
 
+Cardinality and ID preservation are mandatory:
+
+- return exactly one `verdictSections` item for every supplied verdict candidate, no omissions and no extras;
+- return exactly one `boundarySections` item for every supplied boundary candidate, no omissions and no extras;
+- each returned `boundaryCandidateId`, `verdictCandidateId`, `boundaryCandidateIds`, and `evidenceItemIds` value must be copied exactly from the supplied packet;
+- do not merge boundary candidates, split boundary candidates, rename IDs, translate IDs, shorten IDs, or invent replacement IDs;
+- if exact cardinality and ID preservation cannot be satisfied, return a valid `damaged` envelope with `damagedReason: "task_contract_validation_failed"`.
+
 ### Markdown Citation Rendering
 
 The `reportMarkdown` field must be readable without inspecting the structured
