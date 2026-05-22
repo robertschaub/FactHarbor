@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj29",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 10,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ29 showed the W5 material-alignment repair had become too strict and stopped at no extractable evidence."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ31 identified remaining cross-input stops and requested continued stronger HighJump validation."
     },
     "latestReset": {
       "date": "2026-05-22",
-      "previousRemaining": 16,
+      "previousRemaining": 10,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ29 so the team can keep using stronger report-quality validation under HighJump without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget after HJ31 so the team can continue using stronger report-quality validation and targeted diagnostic reruns under HighJump without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-29-BOLSONARO-W5-MATERIAL-ALIGNMENT-VALIDATION",
-      "startsAfterJobId": "323c5fd3540e43aab9c7c6e686ec4de4",
+      "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
+      "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 10,
-      "consumptionEntriesInThisTranche": 8,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ29. HJ29 is recorded below as the final result before this fresh tranche; HJ30 consumed five jobs and HJ31 consumed three diagnostic jobs, leaving 10.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ31 is recorded below as the final result before this fresh tranche; the next HJ32 diagnostic rerun will consume the first job from this reset budget.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

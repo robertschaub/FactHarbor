@@ -21,17 +21,17 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`3f1a1b4c fix(v2): rebalance evidence extraction material alignment`
+`ecf753fd fix(v2): enrich admin stop summaries`
 
-The current working repair is HJ31: persist a bounded admin-only stop summary
-through the existing admin reportMarkdown channel when the hidden V2 path does
-not create an internal report draft. This is a diagnostic friction reduction,
-not a new public route or product capability. It is needed because HJ30 showed
-several shell-only runs where process-local hidden artifact routes were not
-durable enough to explain the stop stage after runtime refresh.
+The current committed repair is HJ32: enrich the existing admin-only stop summary
+for Evidence Extraction stops with bounded W4-G/W4-H/W4-I/W5 structural status
+fields. This is a diagnostic friction reduction inside the existing admin
+reportMarkdown channel, not a new public route or product capability. It is
+needed because HJ31 showed asylum-family runs reaching Evidence Extraction with
+W5 `blocked_pre_execution`, but the durable stop summary did not yet expose
+whether Source Material, W4-G, W4-H, or W4-I was the rejecting handoff.
 
-Runtime has not yet been refreshed to the working HJ31 repair for the next
-validation job. Commit before any live job.
+Runtime has not yet been refreshed to HJ32 for the next validation job.
 
 ## Latest Result
 
@@ -122,20 +122,23 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `8`;
-- remaining: `10`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ31 diagnostic result docs/ledger sync.
-2. Apply `/debt-guard` and inspect the Source Material -> W4-G/W4-H -> W5
-   construction for why asylum-family runs can reach Evidence Extraction with
-   zero source content packets.
-3. Prefer amending an existing source-material/extraction-input handoff over
-   adding a new provider, route, retry layer, or diagnostic mechanism.
-4. Treat the plastic CU stop as a separate follow-up unless the same repair
+1. Commit the HJ32 lane/ledger sync.
+2. Refresh runtime to the committed HJ32 state and verify Web/API/proxy runtime
+   commit match.
+3. Run one default/manual V2 diagnostic job for the Captain-defined German
+   asylum aggregate input to capture the exact W4-G/W4-H/W4-I/W5 stop field.
+4. If the exact upstream blocker is clear and low risk, repair the existing
+   Source Material / extraction-input handoff. Prefer amending an existing
+   handoff over adding a new provider, route, retry layer, or diagnostic
+   mechanism.
+5. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
 

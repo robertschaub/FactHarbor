@@ -3803,3 +3803,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ31 consumed `3` more jobs from the fresh `18`-job tranche; remaining live-job budget is `10`.
 
 **Next:** Commit the HJ31 result docs/ledger sync, then inspect the Source Material / W4-G / W4-H / W5 input construction path for the asylum-family zero-source-content-packet stop. Treat the plastic CU `no_valid_claim` as a separate bar-calibration follow-up unless the same source-content fix naturally covers it.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ32 Enriched Stop Summary Diagnostic
+
+**Task:** Remove the HJ31 diagnostic caveat before spending another live job: asylum-family runs reached Evidence Extraction with W5 `blocked_pre_execution`, but the durable admin stop summary did not identify whether Source Material, W4-G, W4-H, W4-I, or W5 was the rejecting handoff.
+
+**Result:** Committed `ecf753fdcaab38202f1ac36336e7fd59c7ddd856` to enrich the existing admin-only stop summary with bounded structural observations for Source Material record count, W4-G bounded text status/stop/sidecar count, W4-H extraction-input status/stop/packet count, W4-I readiness status/stop, and W5 blocked/damaged reasons. This amends the existing admin reportMarkdown diagnostic channel only. It adds no new route, store, provider, retry, parser, cache/SR/storage, public behavior, prompt/schema change, or V1 work.
+
+**Debt-guard:** Classified as an `incomplete-existing-diagnostic` repair. Chosen path was to amend the existing stop summary rather than add another hidden route or durable artifact layer. The net mechanism count is unchanged; the next live job should identify a concrete existing handoff to repair.
+
+**Verification:** Focused orchestrator verifier passed (`3` files / `17` tests); W7-C recovery verifier passed (`5` tests); full V2 unit slice passed (`145` files / `882` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remains `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed before commit. The W7-C product-chain test received a local `15000ms` timeout because it exceeded Vitest's default 5s by about 98ms under the full V2 suite and then polluted the following test; it passes in isolation and in the full V2 slice.
+
+**Budget:** Captain reset the live-job budget to `18` after HJ31. The ledger now starts a fresh tranche after job `95d5e671ecd64e4a8edbd9aef3f45b36`; `18` jobs remain before the HJ32 diagnostic rerun.
+
+**Next:** Commit the HJ32 lane/ledger sync, refresh runtime to the committed HJ32 state, verify API/Web/proxy version endpoints, then run one default/manual V2 diagnostic job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
