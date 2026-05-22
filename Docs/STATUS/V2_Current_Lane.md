@@ -21,7 +21,7 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`4c67c362 docs(v2): record hj42 source material stop`
+`4c7d394b docs(v2): record hj43 internal report result`
 
 Latest implementation repair:
 
@@ -256,13 +256,12 @@ Current active tranche:
 
 ## Next Action
 
-1. Commit this HJ43 result lane sync.
-2. Decide HJ44 with a compact Steer-Co/expert review before editing: the
+1. Decide HJ44 with a compact Steer-Co/expert review before editing: the
    current report path is open, but source acquisition still lacks direct
    current-stock material. The likely next move is a bounded official
    document/spreadsheet/PDF or source-material strategy, not another recall/cap
    tweak.
-3. Keep HJ44 HighJump-scoped: one quality bar, no public exposure, no cache/SR
+2. Keep HJ44 HighJump-scoped: one quality bar, no public exposure, no cache/SR
    storage, no V1 work, and no broad provider expansion.
 
 ## Stop Conditions
