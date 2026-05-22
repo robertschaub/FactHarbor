@@ -35,6 +35,7 @@ import {
 } from "./evidence-lifecycle-source-material-page-summary-provenance";
 
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 3;
+const SOURCE_MATERIAL_OPENALEX_MAX_RECORDS_PER_RUN = 3;
 const SOURCE_MATERIAL_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES = 2_048;
 const SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES = 12_288;
 
@@ -266,7 +267,7 @@ function statusFromTransportStatus(
 
 function selectedOpenAlexRecords(
   records: readonly SourceMaterialPageSummaryRecord[],
-  maxRecords = SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN,
+  maxRecords = SOURCE_MATERIAL_OPENALEX_MAX_RECORDS_PER_RUN,
 ): readonly SourceMaterialPageSummaryRecord[] {
   const selected: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
@@ -375,19 +376,32 @@ function mergedSourceMaterialRecords(params: {
   const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
   const merged: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
-  for (const record of [
-    ...openAlexRecords,
-    ...webSearchPreviewRecords,
-    ...searchPreviewRecords,
-    ...params.wikimediaRecords,
-  ]) {
-    if (seen.has(record.sourceMaterialTextHash)) {
-      continue;
-    }
-    seen.add(record.sourceMaterialTextHash);
-    merged.push(record);
-    if (merged.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
-      break;
+  const buckets = [
+    webSearchPreviewRecords,
+    params.wikimediaRecords,
+    openAlexRecords,
+    searchPreviewRecords,
+  ];
+  const cursors = buckets.map(() => 0);
+  let progressed = true;
+
+  while (merged.length < SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN && progressed) {
+    progressed = false;
+    for (const [bucketIndex, bucket] of buckets.entries()) {
+      while (cursors[bucketIndex] < bucket.length) {
+        const record = bucket[cursors[bucketIndex]];
+        cursors[bucketIndex] += 1;
+        progressed = true;
+        if (seen.has(record.sourceMaterialTextHash)) {
+          continue;
+        }
+        seen.add(record.sourceMaterialTextHash);
+        merged.push(record);
+        break;
+      }
+      if (merged.length >= SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN) {
+        break;
+      }
     }
   }
   return merged;

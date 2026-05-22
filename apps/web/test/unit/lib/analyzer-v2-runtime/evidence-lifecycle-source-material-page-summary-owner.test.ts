@@ -284,8 +284,8 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       publicCutoverStatus: "blocked_precutover",
     });
     expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
-      "provider_search_result_preview_text",
       "wikimedia_page_summary_extract_text",
+      "provider_search_result_preview_text",
     ]);
     expect(serialized).toContain("Hydrogen vehicles store hydrogen");
     expect(serialized).not.toContain("Hydrogen_vehicle");
@@ -294,7 +294,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(serialized).not.toContain("truthPercentage");
   });
 
-  it("prefers eligible OpenAlex Source Material records before Wikimedia fill records", async () => {
+  it("balances eligible OpenAlex Source Material records with Wikimedia fill records", async () => {
     const secondOpenAlexRecord = openAlexRecord({
       sourceMaterialId: "SOURCE_MATERIAL_OPENALEX_BBBBBBBBBBBBBBBB",
       locatorRef: "OPAQUE_OPENALEX_WORK_BBBBBBBBBBBBBBBB",
@@ -326,14 +326,14 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       attemptedFetchCount: 1,
       fetchDiagnosticCount: 1,
     });
-    expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
-    expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind).toBe("openalex_work_abstract_text");
+    expect(decision.sourceMaterialRecords[0]?.providerId).toBe("wikimedia_core");
+    expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind).toBe("wikimedia_page_summary_extract_text");
     expect(decision.sourceMaterialRecords[1]?.providerId).toBe("openalex");
     expect(decision.sourceMaterialRecords[2]?.sourceMaterialKind).toBe("provider_search_result_preview_text");
-    expect(decision.sourceMaterialRecords[3]?.sourceMaterialKind).toBe("wikimedia_page_summary_extract_text");
+    expect(decision.sourceMaterialRecords[3]?.providerId).toBe("openalex");
   });
 
-  it("admits bounded web-search preview records after strong records and before Wikimedia preview fill", async () => {
+  it("admits bounded web-search preview records in balanced provider order", async () => {
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
       networkDecision: networkDecision(),
       previewDecision: previewDecision(),
@@ -357,16 +357,16 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       sourceMaterialRecordCount: 4,
     });
     expect(decision.sourceMaterialRecords.map((record) => record.providerId)).toEqual([
-      "openalex",
       "serper_web_search",
       "wikimedia_core",
+      "openalex",
       "wikimedia_core",
     ]);
     expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
-      "openalex_work_abstract_text",
-      "provider_search_result_preview_text",
       "provider_search_result_preview_text",
       "wikimedia_page_summary_extract_text",
+      "openalex_work_abstract_text",
+      "provider_search_result_preview_text",
     ]);
     expect(serialized).toContain("Web search court-process result");
     expect(serialized).not.toContain("https://example.test");
@@ -551,10 +551,10 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.fetchDiagnosticCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
-      "SOURCE_CANDIDATE_PREVIEW_2_1",
-      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
@@ -574,7 +574,7 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     ]);
   });
 
-  it("counts preferred OpenAlex records inside the same nine-record Source Material budget", async () => {
+  it("counts OpenAlex records inside the same balanced nine-record Source Material budget", async () => {
     const entries = Array.from({ length: 9 }, (_, index) => ({
       key: `Wikimedia_page_${index + 1}`,
       title: `Wikimedia page ${index + 1}`,
@@ -622,11 +622,10 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.status).toBe("source_material_page_summary_completed");
     expect(decision.sourceMaterialRecordCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN);
     expect(decision.attemptedFetchCount).toBe(SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 3);
-    expect(decision.sourceMaterialRecords[0]?.providerId).toBe("openalex");
     expect(decision.sourceMaterialRecords.slice(0, 3).map((record) => record.providerId))
-      .toEqual(["openalex", "openalex", "openalex"]);
-    expect(decision.sourceMaterialRecords.slice(3).map((record) => record.providerId))
-      .toEqual(Array.from({ length: SOURCE_MATERIAL_PAGE_SUMMARY_MAX_FETCHES_PER_RUN - 3 }, () => "wikimedia_core"));
+      .toEqual(["wikimedia_core", "openalex", "wikimedia_core"]);
+    expect(decision.sourceMaterialRecords.filter((record) => record.providerId === "openalex")).toHaveLength(3);
+    expect(decision.sourceMaterialRecords[0]?.providerId).not.toBe("openalex");
   });
 
   it("uses preview order rather than incoming locator order for provider-attempt balancing", async () => {
@@ -665,10 +664,10 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
-      "SOURCE_CANDIDATE_PREVIEW_2_1",
-      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
     ]);
   });
@@ -711,10 +710,10 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
-      "SOURCE_CANDIDATE_PREVIEW_1_2",
-      "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
       "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_1_4",
     ]);
@@ -762,8 +761,8 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
 
     expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
       "SOURCE_CANDIDATE_PREVIEW_1_1",
-      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
       "SOURCE_CANDIDATE_PREVIEW_3_1",
     ]);
     expect(decision.attemptedFetchCount).toBe(2);
