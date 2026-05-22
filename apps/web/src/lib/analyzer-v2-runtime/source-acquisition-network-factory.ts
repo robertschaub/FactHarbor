@@ -528,6 +528,7 @@ export async function collectOpenAlexSourceMaterialRecordsFromNetwork(params: {
   readonly candidatePreviewProjectionSink?: (projection: SourceCandidatePreviewProjection) => void;
 }): Promise<readonly SourceMaterialPageSummaryRecord[]> {
   const records: SourceMaterialPageSummaryRecord[] = [];
+  const seenRecordKeys = new Set<string>();
   let attemptOrdinal = params.startingAttemptOrdinal;
   const recordLimit = Math.max(0, finiteNonNegativeInteger(params.budget.maxCandidatesPerQuery));
   for (const queryEntry of params.queryEntries) {
@@ -572,6 +573,9 @@ export async function collectOpenAlexSourceMaterialRecordsFromNetwork(params: {
       continue;
     }
     for (const candidateProjection of projectedCandidates) {
+      if (records.length >= recordLimit) {
+        break;
+      }
       const projection = buildSourceCandidatePreviewProjection({
         providerId: OPENALEX_PROVIDER_ID,
         endpointId: OPENALEX_WORKS_ENDPOINT_ID,
@@ -601,8 +605,18 @@ export async function collectOpenAlexSourceMaterialRecordsFromNetwork(params: {
         },
       });
       if (recordDecision.status === "record_created") {
+        const recordKeys = [
+          recordDecision.record.sourceMaterialTextHash,
+          recordDecision.record.locatorRef,
+          recordDecision.record.sourceMaterialId,
+        ];
+        if (recordKeys.some((key) => seenRecordKeys.has(key))) {
+          continue;
+        }
         records.push(recordDecision.record);
-        break;
+        for (const key of recordKeys) {
+          seenRecordKeys.add(key);
+        }
       }
     }
   }

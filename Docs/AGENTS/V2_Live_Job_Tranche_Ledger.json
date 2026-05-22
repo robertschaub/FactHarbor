@@ -563,18 +563,18 @@
       "status": "overrun_recorded_for_wrong_variant_recovery_and_highjump_validation",
       "overrunCount": 4,
       "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, and one HJ14 Wikimedia depth canary to avoid an artificial report-creation stop; all are recorded transparently.",
-      "nextLiveJobRequirement": "A new reviewed report-quality package plus explicit Steer-Co/Captain budget reconciliation is required before any further live job."
+      "nextLiveJobRequirement": "HJ15 implementation commit plus runtime refresh and explicit Steer-Co budget reconciliation is pending for one OpenAlex fan-in repair canary."
     },
     "pendingExceptionAuthorization": {
-      "sliceId": "X7-HJ-14-WIKIMEDIA-SOURCE-MATERIAL-DEPTH-REPAIR-CANARY",
-      "status": "consumed",
+      "sliceId": "X7-HJ-15-OPENALEX-SOURCE-MATERIAL-FAN-IN-REPAIR-CANARY",
+      "status": "pending",
       "maxJobs": 1,
-      "remaining": 0,
-      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Repair.md plus Steer-Co consensus in current Codex thread under Captain no-artificial-block directive",
-      "reason": "HJ14 canary ran once and determined that the same-provider Wikimedia TextExtracts repair did not measurably deepen Source Material versus HJ13.",
-      "mustRecordConsumptionBeforeNextLiveJob": false,
-      "consumedByJobId": "959c0246501c44558cbf8f484f9b6e3b",
-      "classification": "STOP_X7_HJ14_WIKIMEDIA_TEXTEXTRACTS_NO_MEASURABLE_DEPTH_GAIN_INTERNAL_ALPHA_DRAFT_CREATED"
+      "remaining": 1,
+      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ15_OpenAlex_Source_Material_Fan_In_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+      "reason": "HJ14 proved the hidden report path but did not improve source depth. HJ15 repairs the existing OpenAlex collector to fan in unique valid OpenAlex abstract Source Material records up to the existing cap without provider expansion or public behavior. One canary is needed to determine whether the source portfolio improves and whether report quality advances.",
+      "mustRecordConsumptionBeforeNextLiveJob": true,
+      "consumedByJobId": null,
+      "classification": null
     }
   }
 }

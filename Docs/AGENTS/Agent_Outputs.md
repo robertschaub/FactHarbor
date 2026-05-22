@@ -3468,3 +3468,13 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HJ14 consumed the single Steer-Co budget-reconciliation exception job; HighJump tranche remains exhausted, exception overrun count is now `4`, and no second HJ14 canary is authorized.
 - Next action: Steer-Co should choose the shortest balanced report-quality path for comparator evidence quality, not another same-provider Wikimedia depth tweak.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ15 OpenAlex Source Material Fan-In Implementation
+
+- Steer-Co consented to HJ15 as an `incomplete-existing-mechanism` repair after HJ14 artifact triage showed the report path works but comparator evidence remains over-dependent on one OpenAlex abstract plus Wikimedia definitions.
+- Claude Opus review was attempted twice through `scripts/agents/invoke-claude.cjs`; both attempts returned Anthropic `529 Overloaded`, so reviewer coverage is degraded but internal Steer-Co consent was clear.
+- Implemented inside the existing OpenAlex collector only: collect unique valid OpenAlex abstract Source Material records up to the existing cap across projected candidates/queries, structurally de-duplicate, and skip invalid/no-abstract candidates without consuming slots.
+- No new provider/endpoint, cap increase, prompt/model/config/schema edit, parser/full source/html fetch, retry, cache/SR/storage, public behavior, ACS/direct URL, V1 work, or V1 cleanup was added.
+- Verifiers passed: focused collector (`1` file / `8` tests), focused Source Material lineage (`3` files / `19` tests), full `analyzer-v2-runtime` (`74` files / `353` tests), full `analyzer-v2` (`142` files / `861` tests), V2 gate validation, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Next action: commit, refresh runtime, verify API/Web runtime hashes, and run exactly one HJ15 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation. HighJump tranche is exhausted; no second HJ15 canary is authorized.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Source_Material_Fan_In_Implementation.md

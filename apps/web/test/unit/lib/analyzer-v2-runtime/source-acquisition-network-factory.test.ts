@@ -519,6 +519,82 @@ describe("Analyzer V2 source-acquisition provider-network factory", () => {
     expect(serialized).not.toContain("://");
   });
 
+  it("collects unique valid OpenAlex abstracts across projected candidates without consuming slots for duplicates or invalid candidates", async () => {
+    const currentEndpoint = openAlexEndpoint();
+    const currentBudget = openAlexBudget(currentEndpoint, { maxCandidatesPerQuery: 3 });
+    const telemetry: SourceAcquisitionNetworkAttemptTelemetryRecord[] = [];
+    const previews: unknown[] = [];
+    const seenPaths: string[] = [];
+    const records = await collectOpenAlexSourceMaterialRecordsFromNetwork({
+      authority: networkAuthority(currentEndpoint, currentBudget),
+      endpoint: currentEndpoint,
+      budget: currentBudget,
+      queryEntries: [
+        openAlexQueryEntry(1),
+        openAlexQueryEntry(2),
+      ],
+      startingAttemptOrdinal: 4,
+      attemptTelemetrySink: (record) => telemetry.push(record),
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+      lowLevelTransport: lowLevelTransport({
+        request: async (request) => {
+          seenPaths.push(request.pathWithQuery);
+          if (seenPaths.length === 1) {
+            const duplicateWords = ["Duplicate", "OpenAlex", "abstract"];
+            return {
+              statusCode: 200,
+              headers: { "content-type": "application/json" },
+              remoteAddress: "93.184.216.34",
+              body: Buffer.from(JSON.stringify({
+                results: [
+                  openAlexCandidate("W_DUPLICATE_A", duplicateWords),
+                  openAlexCandidate("W_DUPLICATE_B", duplicateWords),
+                  openAlexCandidate("W_UNIQUE_B", ["Second", "OpenAlex", "abstract"]),
+                ],
+              }), "utf8"),
+            };
+          }
+
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify({
+              results: [
+                {
+                  id: "W_NO_ABSTRACT",
+                  display_name: "No abstract candidate",
+                  landing_page_url: "https://example.invalid/poison?api_key=sk_test",
+                  language: "en",
+                  publication_year: 2024,
+                },
+                openAlexCandidate("W_UNIQUE_C", ["Third", "OpenAlex", "abstract"]),
+              ],
+            }), "utf8"),
+          };
+        },
+      }),
+    });
+    const serialized = JSON.stringify({ records, telemetry, previews });
+
+    expect(records).toHaveLength(3);
+    expect(records.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_5_1",
+      "SOURCE_CANDIDATE_PREVIEW_5_3",
+      "SOURCE_CANDIDATE_PREVIEW_6_2",
+    ]);
+    expect(new Set(records.map((record) => record.sourceMaterialTextHash)).size).toBe(3);
+    expect(telemetry).toHaveLength(2);
+    expect(previews).toHaveLength(5);
+    expect(seenPaths).toEqual([
+      "/works?search=comparative+source+query+1&per_page=3&select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year",
+      "/works?search=comparative+source+query+2&per_page=3&select=id%2Cdisplay_name%2Cabstract_inverted_index%2Clanguage%2Cpublication_year",
+    ]);
+    expect(serialized).not.toContain("sk_test");
+    expect(serialized).not.toContain("example.invalid");
+    expect(serialized).not.toContain("://");
+  });
+
   it("passes abort signals to transport and enforces provider query and total network budgets", async () => {
     const limitedBudget = budget({
       maxQueriesPerProvider: 1,
