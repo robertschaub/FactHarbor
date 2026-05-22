@@ -3657,3 +3657,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Hydrogen-family primary report verdict is now `FALSE`, truth `18`, confidence `72`, inside the expected `FALSE`/`MOSTLY-FALSE`, truth `5..25`, confidence `65..85` band.
 - Remaining HighJump live-job budget is `3`; no second HJ21 canary is authorized.
 - Next action: report-quality review over the admin-visible V2 report and the smallest balanced improvement to the next observed report-quality bar, currently citation/readability polish rather than another readiness layer.
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ22 Report Citation Readability Canary
+
+**Task:** Clear the manual V2 ambiguity and continue HighJump toward complete V2 reports without artificial stops.
+
+**Result:** Implemented and committed `2e12b254 fix(v2): clarify manual v2 flow and report citations`. The preparation page now shows the active draft pipeline label, and `V2_AGGREGATION_NARRATIVE` now requires inline exact EvidenceItem citations plus an `Evidence References` section. Canary job `4e81f840f6e04e2793e9ec162ee7bef2` ran through the default manual path without explicit `pipelineVariant`, stored `claimboundary-v2`, succeeded on runtime `2e12b25493cd8a6002ce93b2f597d217491d95ed`, produced admin report markdown length `8190`, kept public/default report markdown `null`, and kept public V2 `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`. Primary hydrogen-family verdict: `FALSE`, truth `25`, confidence `72`; inline citations include `[EVI_001_BEV_HYDROGEN_EFFICIENCY_COMPARISON]`, `[EVI_002_HYDROGEN_PRODUCTION_EMISSIONS]`, and `[EVI_003_ELECTRIC_VEHICLE_EFFICIENCY_ADVANTAGE]`.
+
+**Verification:** Focused prompt/draft route tests passed (`26` tests). `npm run validate:v2-gates` passed. `npm -w apps/web run build` passed. `git diff --check` passed. Debt sensors remain `advisory_warn` for known V2 footprint/docs/guard-size/consolidation pressure.
+
+**Next:** Move from single-job canaries to a compact report-quality gauntlet over Captain-defined inputs. Active HighJump continuation tranche has `2` jobs remaining after HJ22.

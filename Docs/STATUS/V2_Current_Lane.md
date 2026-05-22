@@ -21,13 +21,19 @@ from the observed report defects.
 
 Latest committed implementation anchor:
 
-`79a5c31f feat(v2): default manual jobs to pipeline v2`
+`2e12b254 fix(v2): clarify manual v2 flow and report citations`
 
 This commit:
 
+- keeps the default manual V2 submission path from `79a5c31f`;
 - makes `claimboundary-v2` the default manual submission pipeline through UCM
   defaults, web proxy routes, API job/draft creation defaults, and runner
   missing-variant fallback;
+- shows the draft pipeline on the preparation page as `Pipeline V2` / `Pipeline
+  V1` / default before a final job exists;
+- improves `V2_AGGREGATION_NARRATIVE` so internal report markdown carries exact
+  supplied EvidenceItem IDs inline and includes an `Evidence References`
+  subsection;
 - keeps explicit legacy `claimboundary` requests available;
 - surfaces authenticated-admin V2 report markdown on the job page as a `V2
   Report` section;
@@ -58,6 +64,47 @@ HJ21 job id. Treat HJ21 as locally implemented, committed, and verifier-clean,
 but not yet live-validated.
 
 ## Latest Canary Result
+
+Latest report-quality canary:
+
+`PASS_X7_HJ22_REPORT_CITATION_READABILITY_CANARY`
+
+Job:
+
+`4e81f840f6e04e2793e9ec162ee7bef2`
+
+Runtime:
+
+`2e12b25493cd8a6002ce93b2f597d217491d95ed`
+
+Information yield:
+
+`report produced`
+
+Important evidence:
+
+- submitted through `/api/fh/analyze` without an explicit `pipelineVariant`;
+- stored job `pipelineVariant` is `claimboundary-v2`;
+- authenticated admin job API returned `reportMarkdown` length `8190`;
+- public/default job API returned no report markdown;
+- public result stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- primary report verdict for the hydrogen-family input was `FALSE`, truth `25`,
+  confidence `72`, inside the expected band;
+- report markdown contains inline exact EvidenceItem citations such as
+  `[EVI_001_BEV_HYDROGEN_EFFICIENCY_COMPARISON]` and a compact
+  `Evidence References` section.
+
+Result document:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ22_Report_Citation_Readability_Canary_Result.md`
+
+The active HighJump continuation tranche has `2` live jobs remaining. The next
+step should be a compact report-quality gauntlet over multiple Captain-defined
+inputs, not another single path canary, unless a gauntlet run exposes a specific
+repair stop.
+
+## Previous Canary Result
 
 Latest default-manual-path report canary:
 

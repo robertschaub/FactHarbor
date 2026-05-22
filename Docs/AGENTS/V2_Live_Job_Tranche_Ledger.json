@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 3,
+    "currentRemaining": 2,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 3,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 then validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247.",
+      "currentRemaining": 2,
+      "consumptionEntriesInThisTranche": 6,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247. HJ22 validated citation/readability repair on runtime 2e12b254; the next validation should be a compact report-quality gauntlet rather than another single-path canary.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -666,6 +666,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "The job was submitted through the default manual web path without an explicit pipelineVariant and ran claimboundary-v2. Admin job API returned a 7605-character V2 reportMarkdown suitable for the job page V2 Report section; public/default job API returned no reportMarkdown. The primary report verdict for the hydrogen-family input was FALSE, truth 18, confidence 72, inside the expected FALSE/MOSTLY-FALSE, truth 5-25, confidence 65-85 band. Public result JSON remained 4.0.0-cb-precutover / blocked_precutover / report_damaged."
+      },
+      {
+        "sliceId": "X7-HJ-22-REPORT-CITATION-READABILITY-CANARY",
+        "jobId": "4e81f840f6e04e2793e9ec162ee7bef2",
+        "classification": "PASS_X7_HJ22_REPORT_CITATION_READABILITY_CANARY",
+        "implementationCommit": "2e12b25493cd8a6002ce93b2f597d217491d95ed",
+        "runtimeCommit": "2e12b25493cd8a6002ce93b2f597d217491d95ed",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 2,
+        "approvalPointer": "Captain instruction to clear roadblockers and use HighJump without artificial stops; prompt edits/live jobs authorized in current HighJump lane",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Default manual web path submitted without explicit pipelineVariant and stored claimboundary-v2. Admin reportMarkdown length was 8190; public/default reportMarkdown stayed null and public V2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged. Primary hydrogen-family verdict was FALSE, truth 25, confidence 72, inside expected band. Report markdown included inline exact EvidenceItem citations and an Evidence References section."
       }
     ],
     "blockedPending": [],
