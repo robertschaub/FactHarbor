@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T04:37:00.787Z",
-  "count": 425,
+  "generatedAt": "2026-05-22T04:44:17.496Z",
+  "count": 426,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9298,6 +9298,25 @@
       ],
       "files_touched": [],
       "summary": "2026-05-22 - Captain Deputy - V2 HighJump HJ14 Wikimedia Source Material Depth Result"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Fan_In_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj15",
+        "openalex",
+        "fan",
+        "in",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 HighJump HJ15 OpenAlex Fan-In Result"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Source_Material_Fan_In_Implementation.md",

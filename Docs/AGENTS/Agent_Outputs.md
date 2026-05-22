@@ -3478,3 +3478,16 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Verifiers passed: focused collector (`1` file / `8` tests), focused Source Material lineage (`3` files / `19` tests), full `analyzer-v2-runtime` (`74` files / `353` tests), full `analyzer-v2` (`142` files / `861` tests), V2 gate validation, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
 - Next action: commit, refresh runtime, verify API/Web runtime hashes, and run exactly one HJ15 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation. HighJump tranche is exhausted; no second HJ15 canary is authorized.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Source_Material_Fan_In_Implementation.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ15 OpenAlex Fan-In Canary
+
+- Ran HJ15 canary job `42e9c2a6ce2a4bb5bd551900db230249` on API/Web runtime `c1bfba1d57dc36b15a1200288246a45faea31fdc` with explicit `claimboundary-v2` and the Captain-defined hydrogen input.
+- Classification: `PARTIAL_X7_HJ15_OPENALEX_FAN_IN_IMPROVED_W4G_AGGREGATE_CAP_STOP`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; default hidden/admin projections stayed `no-store` and no public Source Material, EvidenceItem, source text, or draft text leak was found.
+- HJ15 met its immediate source-fan-in objective: W4-A Source Material improved to `3` OpenAlex records (`5512` bytes total) plus `6` Wikimedia records (`7224` bytes total).
+- Downstream stop: W4-G blocked as `blocked_pre_bounded_corpus_text_oversized` because the richer `12736` byte material set exceeded the existing `12288` byte aggregate bounded-text cap; W4-H blocked as `blocked_pre_extraction_input_w4g_not_positive`, W5 blocked pre-execution with `w4h_packet_invalid`, and W8-B/W8-G were not created.
+- Caveat: the standalone W3-B route returned `404` for this ledger while W4-A/W4-F carried W3-B state downstream; record as inspection coverage debt, not source-material failure evidence.
+- Debt sensor after canary: `advisory_warn` at `2026-05-22T04:41:53.024Z` with known V2 footprint, boundary-guard size, docs-volume, net-mechanism, and consolidation-marker warnings.
+- HJ15 consumed Steer-Co exception overrun `5`; no second HJ15 canary is authorized.
+- Next action: Steer-Co should decide a narrow W4-G/W4-H aggregate handling repair. Do not add provider expansion, another source route, another readiness layer, report-prose patch, public behavior, cache/SR/storage, parser, ACS/direct URL, or V1 work for this stop.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Fan_In_Result.md

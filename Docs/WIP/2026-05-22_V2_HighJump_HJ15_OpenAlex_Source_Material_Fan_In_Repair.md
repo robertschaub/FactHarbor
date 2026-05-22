@@ -221,3 +221,54 @@ Use the Captain-defined input:
 `Using hydrogen for cars is more efficient than using electricity`.
 
 Do not run a second HJ15 canary without a new reviewed package.
+
+## Canary Result
+
+Canary job: `42e9c2a6ce2a4bb5bd551900db230249`.
+
+Runtime commit: `c1bfba1d57dc36b15a1200288246a45faea31fdc`.
+
+Classification:
+`PARTIAL_X7_HJ15_OPENALEX_FAN_IN_IMPROVED_W4G_AGGREGATE_CAP_STOP`.
+
+Result:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- W4-A Source Material improved from the HJ14 `1` OpenAlex record to `3`
+  OpenAlex records, plus `6` Wikimedia records;
+- W4-A total bounded Source Material bytes were `12736`:
+  - OpenAlex: `3` records / `5512` bytes total;
+  - Wikimedia: `6` records / `7224` bytes total;
+- W4-G blocked with `blocked_pre_bounded_corpus_text_oversized` /
+  `source_material_text_oversized` because the existing aggregate bounded-text
+  cap is `12288` bytes and the richer HJ15 material set was `12736` bytes;
+- W4-H therefore recorded `blocked_pre_extraction_input_w4g_not_positive`;
+- W5 recorded `blocked_pre_execution` / `w4h_packet_invalid`;
+- W8-B and W8-G artifacts were not created for this run;
+- default hidden/admin routes stayed `no-store`;
+- no public Source Material, EvidenceItem, source text, or draft text leak was
+  found. Search hits were limited to expected public user-input fields,
+  internal/admin query/preview artifacts, and hash/length/provenance fields.
+
+The standalone W3-B Source Material route again returned `404` for this ledger
+while W4-A/W4-F carried W3-B state downstream. Keep this as an
+inspection-coverage caveat, not as source-material failure evidence.
+
+Debt-guard result after canary:
+
+- Classification: `incomplete-existing-mechanism`.
+- HJ15 implementation itself worked: OpenAlex fan-in now materializes multiple
+  unique valid OpenAlex abstract records.
+- The next blocking mechanism is downstream bounded-text aggregate handling,
+  not OpenAlex collection.
+- Lowest-complexity next direction should amend the existing aggregate cap or
+  aggregate selection path in W4-G/W4-H, with Steer-Co consent, rather than
+  adding another provider, source route, readiness layer, or report-prose patch.
+
+Budget:
+
+- HJ15 consumed the single Steer-Co budget-reconciliation exception job.
+- HighJump tranche remains exhausted.
+- Exception overrun count is now `5`.
+- No second HJ15 canary is authorized.
