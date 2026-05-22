@@ -262,6 +262,8 @@ export type SourceAcquisitionCandidateProviderNetworkLoopDecision = {
 type LowLevelTransportOption = Parameters<
   typeof buildSourceAcquisitionCandidateNetworkProviderBoundary
 >[0]["lowLevelTransport"];
+type WebSearchPreviewSourceMaterialCollector =
+  typeof collectSerperSearchPreviewSourceMaterialRecords;
 
 function noExecutionTelemetry(
   networkAttempts: readonly SourceAcquisitionCandidateProviderNetworkAttemptTelemetryRecord[] = [],
@@ -1061,6 +1063,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
   readonly sourceMaterialPageSummaryFetchLocatorSink?: (locator: SourceMaterialPageSummaryFetchLocator) => void;
   readonly openAlexSourceMaterialRecordSink?: (record: SourceMaterialPageSummaryRecord) => void;
   readonly webSearchPreviewSourceMaterialRecordSink?: (record: SourceMaterialPageSummaryRecord) => void;
+  readonly webSearchPreviewSourceMaterialCollector?: WebSearchPreviewSourceMaterialCollector;
 }): Promise<SourceAcquisitionCandidateProviderNetworkLoopDecision> {
   const closedLoopStatus = params.candidateRuntimeClosedLoop.status;
   const handoffStatus = params.handoffDecision.status;
@@ -1406,27 +1409,58 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
     });
   }
 
+  let webSearchPreviewSourceMaterialCollected = false;
+  let webSearchPreviewSourceMaterialRecordCount = 0;
+  const collectWebSearchPreviewSourceMaterial = async (): Promise<number> => {
+    if (
+      webSearchPreviewSourceMaterialCollected
+      || !params.webSearchPreviewSourceMaterialRecordSink
+    ) {
+      return webSearchPreviewSourceMaterialRecordCount;
+    }
+    webSearchPreviewSourceMaterialCollected = true;
+    try {
+      const records = await (params.webSearchPreviewSourceMaterialCollector
+        ?? collectSerperSearchPreviewSourceMaterialRecords)({
+        queryEntries: handoff.queryEntries,
+        startingAttemptOrdinal: networkAttempts.length,
+        languageCode: handoff.sourceLanguagePolicy.primaryLanguage,
+        candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
+      });
+      for (const record of records) {
+        params.webSearchPreviewSourceMaterialRecordSink(record);
+        webSearchPreviewSourceMaterialRecordCount += 1;
+      }
+    } catch {
+      // Serper preview material is additive HighJump source coverage and must not corrupt the core path.
+    }
+    return webSearchPreviewSourceMaterialRecordCount;
+  };
+
   if (!runtimeDecisionHasCompletedCoverage(runtimeDecision, handoff)) {
-    return damaged({
-      reason: "candidate_runtime_query_coverage_invalid",
-      closedLoopStatus,
-      handoffStatus,
-      requestStatus,
-      intakeStatus,
-      selectedAtomicClaimCount: handoff.selectedAtomicClaimIds.length,
-      queryEntryCount: handoff.queryEntries.length,
-      retrievalPolicyCount: request.retrievalPolicyCatalog.length,
-      sourceLanguageSignal: params.sourceAcquisitionIntakeBoundary.sourceLanguageSignal,
-      productNetworkAuthorityHash,
-      runtimeContractAuthorityHash: runtimeContract.hash,
-      endpointSnapshotHash: endpointSnapshot.endpointSnapshotHash,
-      networkBudgetSnapshotHash: networkBudget.networkBudgetSnapshotHash,
-      providerAllowlistSnapshotHash: providerAllowlist.providerAllowlistSnapshotHash,
-      candidateBudgetSnapshotHash: candidateBudget.budgetSnapshotHash,
-      runtimeStatus: runtimeDecision.status,
-      queryOutcomeSummaries,
-      networkAttempts,
-    });
+    const providedWebSearchRecordCount = await collectWebSearchPreviewSourceMaterial();
+    if (providedWebSearchRecordCount === 0) {
+      return damaged({
+        reason: "candidate_runtime_query_coverage_invalid",
+        closedLoopStatus,
+        handoffStatus,
+        requestStatus,
+        intakeStatus,
+        selectedAtomicClaimCount: handoff.selectedAtomicClaimIds.length,
+        queryEntryCount: handoff.queryEntries.length,
+        retrievalPolicyCount: request.retrievalPolicyCatalog.length,
+        sourceLanguageSignal: params.sourceAcquisitionIntakeBoundary.sourceLanguageSignal,
+        productNetworkAuthorityHash,
+        runtimeContractAuthorityHash: runtimeContract.hash,
+        endpointSnapshotHash: endpointSnapshot.endpointSnapshotHash,
+        networkBudgetSnapshotHash: networkBudget.networkBudgetSnapshotHash,
+        providerAllowlistSnapshotHash: providerAllowlist.providerAllowlistSnapshotHash,
+        candidateBudgetSnapshotHash: candidateBudget.budgetSnapshotHash,
+        runtimeStatus: runtimeDecision.status,
+        queryOutcomeSummaries,
+        networkAttempts,
+      });
+    }
   }
 
   if (params.openAlexSourceMaterialRecordSink) {
@@ -1467,21 +1501,7 @@ export async function runSourceAcquisitionCandidateProviderNetworkLoop(params: {
     }
   }
 
-  if (params.webSearchPreviewSourceMaterialRecordSink) {
-    try {
-      const records = await collectSerperSearchPreviewSourceMaterialRecords({
-        queryEntries: handoff.queryEntries,
-        startingAttemptOrdinal: networkAttempts.length,
-        languageCode: handoff.sourceLanguagePolicy.primaryLanguage,
-        candidatePreviewProjectionSink: params.candidatePreviewProjectionSink,
-      });
-      for (const record of records) {
-        params.webSearchPreviewSourceMaterialRecordSink(record);
-      }
-    } catch {
-      // Serper preview material is additive HighJump source coverage and must not corrupt the completed core path.
-    }
-  }
+  await collectWebSearchPreviewSourceMaterial();
 
   return {
     networkLoopVersion: SOURCE_ACQUISITION_CANDIDATE_PROVIDER_NETWORK_LOOP_VERSION,

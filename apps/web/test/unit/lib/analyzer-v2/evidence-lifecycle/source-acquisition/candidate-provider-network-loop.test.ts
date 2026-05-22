@@ -32,6 +32,15 @@ import type {
   SourceAcquisitionNetworkLowLevelRequest,
   SourceAcquisitionNetworkLowLevelTransport,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-network-transport";
+import {
+  buildSourceCandidatePreviewProjection,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+  SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/source-candidate-preview";
+import {
+  buildSourceMaterialSearchPreviewRecord,
+  type SourceMaterialPageSummaryRecord,
+} from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
 const POISON_QUERY_TEXT = "https://example.invalid/source?secret=sk_test_query_text";
 const POISON_QUERY_ID = "EQ_001";
@@ -347,6 +356,39 @@ function fakeTransport(calls: SourceAcquisitionNetworkLowLevelRequest[]): Source
     },
     now: () => 100,
   };
+}
+
+function serperPreviewProjection() {
+  return buildSourceCandidatePreviewProjection({
+    providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
+    endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
+    providerAttemptOrdinal: 7,
+    providerRank: 1,
+    candidateOrdinal: 1,
+    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_7_1",
+    candidate: {
+      title: "Official statistical source",
+      snippet: "Bounded search preview text for a public statistical source.",
+      link: "https://example.test/statistics",
+    },
+  });
+}
+
+function serperSourceMaterialRecord(): SourceMaterialPageSummaryRecord {
+  const recordDecision = buildSourceMaterialSearchPreviewRecord({
+    previewRecord: serperPreviewProjection(),
+    languageCode: "de",
+    diagnostic: {
+      compressedBytes: 512,
+      decompressedBytes: 512,
+      durationMs: 40,
+      timeoutMs: 3000,
+    },
+  });
+  if (recordDecision.status !== "record_created") {
+    throw new Error("test Serper source material record should materialize");
+  }
+  return recordDecision.record;
 }
 
 describe("Analyzer V2 Source Acquisition candidate-provider network loop", () => {
@@ -815,6 +857,74 @@ describe("Analyzer V2 Source Acquisition candidate-provider network loop", () =>
     ]) {
       expect(serialized).not.toContain(forbidden);
     }
+  });
+
+  it("allows bounded provided web-search Source Material to carry a zero-candidate Wikimedia run", async () => {
+    const calls: SourceAcquisitionNetworkLowLevelRequest[] = [];
+    const records: SourceMaterialPageSummaryRecord[] = [];
+    const previews: unknown[] = [];
+    const decision = await runSourceAcquisitionCandidateProviderNetworkLoop({
+      handoffDecision: readyHandoffDecision(),
+      sourceAcquisitionStartDecision: readyStartDecision(),
+      sourceAcquisitionIntakeBoundary: intakeDecision(),
+      candidateRuntimeClosedLoop: closedLoopDecision(),
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          calls.push(request);
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify({ pages: [] }), "utf8"),
+          };
+        },
+      },
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+      webSearchPreviewSourceMaterialRecordSink: (record) => records.push(record),
+      webSearchPreviewSourceMaterialCollector: async (params) => {
+        params.candidatePreviewProjectionSink?.(serperPreviewProjection());
+        return [serperSourceMaterialRecord()];
+      },
+    });
+    const serialized = JSON.stringify({ decision, records, previews });
+
+    expect(calls).toHaveLength(1);
+    expect(decision).toMatchObject({
+      status: "candidate_provider_network_completed",
+      damagedReason: null,
+      telemetry: expect.objectContaining({
+        candidateCount: 0,
+        totalCandidateCount: 0,
+        sourceMaterialCreated: false,
+        providerNetworkExecuted: true,
+        searchFetchCalled: true,
+        publicSurfaceWritten: false,
+      }),
+    });
+    expect(decision.queryOutcomeSummaries).toEqual([
+      expect.objectContaining({
+        status: "attempted",
+        structuralReason: "not_stopped",
+        candidateCount: 0,
+      }),
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialKind: "provider_search_result_preview_text",
+      publicPointerExposure: "forbidden",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      publicSurfaceWritten: false,
+    });
+    expect(previews).toHaveLength(1);
+    expect(serialized).not.toContain("https://example.test");
+    expect(serialized).not.toContain(POISON_QUERY_TEXT);
+    expect(serialized).not.toContain(POISON_LANGUAGE_RATIONALE);
   });
 
   it("blocks before network execution when prerequisites or exact W2 snapshots are invalid", async () => {
