@@ -180,6 +180,7 @@ function boundaryVerdictExecution(): BoundaryVerdictExecutionDecision {
     verdictCandidateCount: 1,
     citedEvidenceItemRefs: ["EI_W8B_ROUTE"],
     resultPayloadHash: "4".repeat(64),
+    internalReviewPayload: null,
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
@@ -218,6 +219,7 @@ function boundaryVerdictExecution(): BoundaryVerdictExecutionDecision {
       boundaryCandidateTextReturned: false,
       verdictCandidateTextReturned: false,
       warningMaterialityTextReturned: false,
+      internalReviewPayloadReturnedByDefault: false,
       hiddenLedgerReferenceReturned: false,
       internalStateReturned: false,
     },

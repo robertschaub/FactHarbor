@@ -546,7 +546,7 @@ describe("boundary/verdict execution runtime owner", () => {
     expect(isBoundaryVerdictExecutionRuntimeOwnedDecision(decision)).toBe(true);
   });
 
-  it("keeps default projections free of source text, provider output, hidden ledger ids, prompt text, and raw errors", async () => {
+  it("keeps runtime decisions free of source text, hidden ledger ids, prompt text, and raw errors", async () => {
     vi.mocked(generateText).mockResolvedValueOnce(generateTextResult(acceptedBoundaryVerdictResult()));
     const lineage = await parents();
     const decision = await runBoundaryVerdictExecutionDecision({
@@ -564,11 +564,12 @@ describe("boundary/verdict execution runtime owner", () => {
     expect(serialized).not.toContain(SCOPE_TEXT);
     expect(serialized).not.toContain(LOCATOR_TEXT);
     expect(serialized).not.toContain(PROVENANCE_TEXT);
-    expect(serialized).not.toContain("The available EvidenceItem opposes the claim");
     expect(serialized).not.toContain("Produce a `v2.boundary_verdict_execution.0` object");
     expect(serialized).not.toContain(LEDGER_ID);
     expect(serialized).not.toContain(PROVIDER_SECRET);
     expect(decision.defaultProjection).toBe("hash_length_provenance_only");
+    expect(decision.internalReviewPayload).not.toBeNull();
+    expect(decision.redaction.internalReviewPayloadReturnedByDefault).toBe(false);
     expect(decision.redaction).toMatchObject({
       evidenceItemTextReturned: false,
       sourceTextReturned: false,

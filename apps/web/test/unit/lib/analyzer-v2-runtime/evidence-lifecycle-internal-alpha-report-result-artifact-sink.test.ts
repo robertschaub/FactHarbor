@@ -166,6 +166,7 @@ function boundaryVerdictExecution(
     verdictCandidateCount: 1,
     citedEvidenceItemRefs: ["EI_W8B_001"],
     resultPayloadHash: "4".repeat(64),
+    internalReviewPayload: null,
     warningMaterialityInputs: {
       warningPublication: "closed",
       userVisibleWarningCount: 0,
@@ -208,6 +209,7 @@ function boundaryVerdictExecution(
       boundaryCandidateTextReturned: false,
       verdictCandidateTextReturned: false,
       warningMaterialityTextReturned: false,
+      internalReviewPayloadReturnedByDefault: false,
       hiddenLedgerReferenceReturned: false,
       internalStateReturned: false,
     },

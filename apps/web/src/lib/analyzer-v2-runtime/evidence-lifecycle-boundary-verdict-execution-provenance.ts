@@ -25,6 +25,7 @@ const DECISION_KEYS = [
   "executionTelemetry",
   "inputPacketByteLength",
   "inputPacketHash",
+  "internalReviewPayload",
   "kind",
   "outputSchemaVersion",
   "promptSectionId",
@@ -112,6 +113,7 @@ function isBoundaryVerdictExecutionContract(value: Record<string, unknown>): boo
     redaction.boundaryCandidateTextReturned === false &&
     redaction.verdictCandidateTextReturned === false &&
     redaction.warningMaterialityTextReturned === false &&
+    redaction.internalReviewPayloadReturnedByDefault === false &&
     redaction.hiddenLedgerReferenceReturned === false &&
     redaction.internalStateReturned === false &&
     sideEffects.cacheRead === false &&
