@@ -398,6 +398,19 @@ function linkedPageVisibleText(response: SerperLinkedPageFetchResponse): string 
     .trim();
 }
 
+function combinePreviewAndLinkedPageText(params: {
+  readonly previewText: string;
+  readonly linkedPageText: string;
+  readonly queryText: string;
+}): string {
+  const queryText = params.queryText.trim().toLowerCase();
+  const previewText = params.previewText.toLowerCase().includes(queryText) ? "" : params.previewText;
+  return [previewText, params.linkedPageText]
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join("\n\n");
+}
+
 function languageCode(value: unknown): string {
   return typeof value === "string" && /^[a-z]{2,8}$/i.test(value.trim())
     ? value.trim().toLowerCase()
@@ -521,7 +534,11 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
               const linkedPageRecord = buildSourceMaterialSerperLinkedPageTextRecord({
                 previewRecord: projection,
                 languageCode: languageCode(params.languageCode),
-                sourceText: visibleText,
+                sourceText: combinePreviewAndLinkedPageText({
+                  previewText: record.sourceMaterialText,
+                  linkedPageText: visibleText,
+                  queryText: queryEntry.queryText,
+                }),
                 diagnostic: {
                   compressedBytes: linkedPage.body.byteLength,
                   decompressedBytes: linkedPage.body.byteLength,

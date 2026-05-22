@@ -341,6 +341,7 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
       sourceReliabilityCalled: false,
       publicSurfaceWritten: false,
     });
+    expect(records[0]?.sourceMaterialText).toContain("Official statistics A short provider preview.");
     expect(records[0]?.sourceMaterialText).toContain("Official source page text");
     expect(records[0]?.sourceMaterialText).not.toContain("secret()");
     expect(serialized).not.toContain("https://official.example.test");

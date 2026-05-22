@@ -281,6 +281,13 @@ help interpret or caveat the direct evidence.
   transaction, intake, output, or other movement metrics may be context or
   caveat queries, but they must not be the only direct-record intent unless the
   selected claim itself asks about flow or change.
+- When the decisive direct record is likely source-native data rather than
+  article prose, shape at least one direct-record query to find public data
+  tables, statistical releases, downloadable records, registers, or comparable
+  source-native measurement artifacts. Use only terms that follow generically
+  from the selected claim, source language, and expected evidence profile; do
+  not name a specific source, domain, institution, country, person, topic, file
+  title, or language-specific phrase unless it is present in the claim contract.
 - Do not hardcode source names, domains, institutions, countries, people,
   topics, or language-specific phrases.
 - Preserve the claim's language signal, and use supplementary-language intent
