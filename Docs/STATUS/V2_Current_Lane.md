@@ -38,14 +38,29 @@ framework. W5 still owns semantic EvidenceItem extraction.
 
 Latest validation:
 
-`X7-HJ-45-ASYLUM-235000-DE-BOUNDED-XLSX-SOURCE-MATERIAL-RERUN`
+`X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-5f739284a34646b18664cef0f28a65a2.json`
+`Docs/WIP/canary-evidence-4208458670644489a07db2536d7c7332.json`
 
 Important evidence:
 
+- `4208458670644489a07db2536d7c7332` (German asylum aggregate) ran on HJ46
+  after the source-native downloadable-record query prompt repair. It stayed on
+  `claimboundary-v2`, public/default containment held, and authenticated admin
+  reportMarkdown was a `1210` character internal Alpha stop summary. Query
+  Planning returned two queries and neither had clear downloadable/file-format
+  intent. Source Material had `6` records: four Serper previews and two bounded
+  linked pages, with `0` `provider_search_result_xlsx_text_bounded` records.
+  W5 received six source-content packets and returned
+  `hidden_no_extractable_evidence`.
+- HJ46's information yield is `new_failure`. It disproves another prompt-only
+  nudge as the next best move for this claim family. The next step should be
+  Steer-Co-guided and stronger: likely bounded source-material locator
+  expansion from already fetched official/statistics landing pages to same-host
+  downloadable/archive/detail pages, unless Steer-Co finds a lower-complexity
+  route.
 - `5f739284a34646b18664cef0f28a65a2` (German asylum aggregate) ran on HJ45
   after bounded XLSX attachment Source Material support. It stayed on
   `claimboundary-v2`, public/default containment held, and authenticated admin
@@ -269,21 +284,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after HJ44 job `cb3b78c16fef4a43bc88e330695c906a`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Prepare HJ46 as a focused source-native query/locator-materialization repair:
-   the next run should give the existing HJ45 XLSX materializer a realistic
-   chance to see official spreadsheet/downloadable-record material.
-2. Keep HJ46 HighJump-scoped: no public exposure, no provider expansion, no
+1. Convene a compact Steer-Co decision for HJ47. Default candidate: bounded
+   source-material locator expansion from already fetched landing pages to
+   same-host downloadable/archive/detail pages, because HJ46 reached the SEM
+   statistics landing page but did not reach its downloadable material.
+2. Keep HJ47 HighJump-scoped: no public exposure, no provider expansion, no
    cache/SR/storage, no direct URL/ACS, no V1 work, and no downstream report
-   layer unless the next live evidence shows the XLSX material is present but
-   not used.
+   layer unless the next live evidence shows source-native material is present
+   but not used.
 
 ## Stop Conditions
 

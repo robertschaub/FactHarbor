@@ -4029,3 +4029,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ44. HJ45 consumed `1`; `17` remain.
 
 **Next:** Commit this HJ45 result sync, then proceed to HJ46 as a focused source-native query/locator-materialization repair. Keep public/default containment, cache/SR/storage, V1 work, broad provider expansion, and downstream report-layer changes closed unless the next live evidence shows XLSX material is present but not used.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ46 Downloadable Query Intent Result
+
+**Task:** Validate HJ46 after sharpening V2 Query Planning guidance for source-native downloadable/file-format public records.
+
+**Repair:** HJ46 commit `33e27c24` amends only `V2_EVIDENCE_QUERY_PLANNING` in `apps/web/prompts/claimboundary-v2.prompt.md`. Steer-Co and Claude Opus both returned `MODIFY`; the final wording merges downloadable-file guidance into the existing source-native-data bullet so the query budget is not spent on duplicate near-equivalent file/data queries. The clause remains generic: no source, domain, institution, country, topic, file title, language-specific phrase, provider-specific operator, public behavior, provider expansion, cache/SR/storage, direct URL/ACS, or V1 work.
+
+**Verification before live job:** Prompt/config/query-planning verifier passed (`6` files / `131` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2 source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `33e27c24a902408b58a9cedfd8ba28ca06115820` before submission.
+
+**Live result:** HJ46 job `4208458670644489a07db2536d7c7332` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown empty) and unauthenticated internal Source Material artifact access returned `401`. Authenticated admin reportMarkdown was a `1210` character internal Alpha stop summary.
+
+**Observed stop:** Query Planning returned only two queries: `Asylbereich Schweiz aktuelle Personenzahl Statistik 235000` and `Schweiz Asylbereich Bevölkerung Bestand gegenwärtig`; neither had downloadable/file-format intent. Source Material completed with `6` records: four Serper previews and two bounded linked pages, but `0` `provider_search_result_xlsx_text_bounded` records. W5 received six source-content packets and returned `hidden_no_extractable_evidence` / `no_extractable_evidence`.
+
+**Information yield:** `new_failure`. HJ46 shows another prompt-only nudge is low-yield for this claim family. The next move should be Steer-Co-guided and stronger, likely a bounded source-material locator expansion from already fetched official/statistics landing pages to same-host downloadable/archive/detail pages. If Steer-Co finds a lower-complexity route, use that instead.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ44. HJ45-HJ46 consumed `2`; `16` remain.
+
+**Next:** Commit this HJ46 result sync, then run compact Steer-Co for HJ47. Do not spend another live job until HJ47 has a committed repair and clean runtime preflight.

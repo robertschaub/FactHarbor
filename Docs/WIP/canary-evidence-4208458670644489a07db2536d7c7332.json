@@ -1,0 +1,83 @@
+{
+  "jobId": "4208458670644489a07db2536d7c7332",
+  "sliceId": "X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN",
+  "implementationCommit": "33e27c24a902408b58a9cedfd8ba28ca06115820",
+  "runtimeCommit": "33e27c24a902408b58a9cedfd8ba28ca06115820",
+  "createdAt": "2026-05-22T23:12:52.5385618Z",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "classification": "STOP_X7_HJ46_W5_NO_EXTRACTABLE_EVIDENCE_DOWNLOADABLE_INTENT_NOT_EMITTED",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 16,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer",
+  "informationYield": "new_failure",
+  "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    },
+    {
+      "marker": "publicReportMarkdown_null_or_empty",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    },
+    {
+      "marker": "internalSourceMaterialRoute_unauth_denied",
+      "expected": 401,
+      "actual": 401,
+      "pass": true
+    }
+  ],
+  "artifactSummary": {
+    "adminReportMarkdownLength": 1210,
+    "queryTexts": [
+      "Asylbereich Schweiz aktuelle Personenzahl Statistik 235000",
+      "Schweiz Asylbereich Bevölkerung Bestand gegenwärtig"
+    ],
+    "downloadableQueryIntentObserved": false,
+    "sourceCandidatePreviewTitles": [
+      "Asylstatistik - SEM",
+      "[PDF] Asylstatistik - Humanrights.ch",
+      "[PDF] 10 Asyl",
+      "Ausländerstatistik März 2026 - SEM - Der Bundesrat",
+      "[PDF] Migration und die Schweiz | IOM Switzerland",
+      "Bevölkerung nach Migrationsstatus | Bundesamt für Statistik - BFS"
+    ],
+    "sourceMaterialStatus": "source_material_page_summary_completed",
+    "sourceMaterialRecordCount": 6,
+    "sourceMaterialKinds": {
+      "provider_search_result_preview_text": 4,
+      "provider_search_result_page_text_bounded": 2,
+      "provider_search_result_xlsx_text_bounded": 0
+    },
+    "sourceMaterialEndpoints": {
+      "ep_serper_google_search": 4,
+      "ep_serper_linked_page_fetch": 2,
+      "ep_serper_linked_xlsx_fetch": 0
+    },
+    "w5Status": "hidden_no_extractable_evidence",
+    "w5ExtractionResultStatus": "no_extractable_evidence",
+    "w5EvidenceItemCount": 0,
+    "w5SourceContentPacketCount": 6,
+    "publicLeakCheck": "public/default reportMarkdown empty; public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged; unauthenticated internal Source Material artifact route returned 401",
+    "observedStop": "HJ46 prompt repair did not cause the model to emit a downloadable/file-format query. The run reached the official SEM asylum statistics landing page and two bounded linked-page records, but still produced zero XLSX Source Material records. W5 received 6 source-content packets and returned no_extractable_evidence.",
+    "qualityImplication": "Another prompt-only nudge is low-yield. The next repair should be a bounded source-material locator expansion from already fetched official/statistics landing pages to same-host downloadable/archive/detail pages, or a deliberate Steer-Co-approved alternative."
+  }
+}
