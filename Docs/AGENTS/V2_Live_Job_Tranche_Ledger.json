@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 14,
+    "currentRemaining": 13,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
       "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 14,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 removes the W3-B strong-anchor coverage cliff for already-bounded Serper search-preview records while preserving caps, redaction, and public containment.",
+      "currentRemaining": 13,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 adds bounded Serper linked-page Source Material as the next HighJump source-depth repair while preserving public containment.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1044,6 +1044,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ35 reran the German asylum aggregate input after reverting the query-planning overcorrection and repairing W5 quantitative extraction. The run stayed on claimboundary-v2 and public/default containment held, but Source Material records remained 0, W4-G w3b_not_completed, W4-H w4g_not_positive, W5 blocked_pre_execution, source-content packets 0. This points to the W3-B source-material strong-anchor gate or provider materialization, not W5 extraction."
+      },
+      {
+        "sliceId": "X7-HJ-36-ASYLUM-235000-DE-SERPER-PREVIEW-SOURCE-MATERIAL-RERUN",
+        "jobId": "e0907032ccaf4dab8b5001d6fb3db502",
+        "classification": "STOP_X7_HJ36_ASYLUM_W5_NO_EXTRACTABLE_EVIDENCE_WITH_THIN_SERPER_PREVIEW_MATERIAL",
+        "implementationCommit": "6aa7e6f94d1c29a3b5e5b4204a5a128f6bff41b4",
+        "runtimeCommit": "6aa7e6f94d1c29a3b5e5b4204a5a128f6bff41b4",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "8d966605_bounded_serper_link_source_material_pending_validation",
+        "count": 1,
+        "remainingAfter": 13,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ36 reran the German asylum aggregate input after bounded Serper search-preview Source Material admission. The run stayed on claimboundary-v2 and public/default containment held. Source Material records rose to 2, W4-G sidecars 2, W4-H packets 1, W4-I structurally eligible/execution denied, and W5 executed with 2 source-content packets / 390 input-packet bytes but returned no_extractable_evidence. Hidden artifacts showed two Serper preview records only, so HJ37 repairs source depth by bounded linked-page materialization rather than loosening W5."
       }
     ],
     "blockedPending": [],

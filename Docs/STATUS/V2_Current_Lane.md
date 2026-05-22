@@ -21,23 +21,26 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`2736cdd2 fix(v2): admit bounded search-preview source material`
+`8d966605 fix(v2): fetch bounded serper source material`
 
-The current committed repair is HJ36: remove the W3-B strong-anchor coverage
-cliff for already-bounded Serper search-preview Source Material records.
-Serper preview text was already capped, redacted from public/default surfaces,
-and accepted downstream by lineage; HJ36 lets it become Source Material even
-when OpenAlex/Wikimedia did not also produce a strong anchor. This is a bounded
-amendment of an existing Source Material owner, not a new provider, schema,
-route, retry, parser, cache/SR/storage, public behavior, or V1 work.
+The current committed repair is HJ37: bounded Serper linked-page Source
+Material. HJ36 restored Source Material/W5 input for the German asylum
+aggregate input, but the material was only two search-result previews / 390
+input-packet bytes and W5 returned `no_extractable_evidence`. HJ37 amends the
+existing Serper Source Material seam to fetch bounded visible text from
+provider-owned HTTPS result links, then records it as hidden/admin-only Source
+Material with caps, DNS/final-address validation, redirect denial,
+no-credentials/no-proxy behavior, raw-payload redaction, and public/default
+containment. This is a source-depth repair, not a new provider, parser, retry,
+cache/SR/storage path, public behavior, or V1 work.
 
-Runtime has not yet been refreshed to HJ36 for the next validation job.
+Runtime has not yet been refreshed to HJ37 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-35-ASYLUM-235000-DE-QUANTITATIVE-EXTRACTION-PATH-RERUN`
+`X7-HJ-36-ASYLUM-235000-DE-SERPER-PREVIEW-SOURCE-MATERIAL-RERUN`
 
 Result document:
 
@@ -45,6 +48,19 @@ Current lane and ledger entries in this repository; no separate WIP result
 document was created for HJ33.
 
 Important evidence:
+
+- `e0907032ccaf4dab8b5001d6fb3db502` (German asylum aggregate) ran on HJ36
+  and restored the hidden chain beyond W3-B: Source Material records `2`,
+  W4-G sidecars `2`, W4-H packets `1`, W4-I readiness
+  `extraction_input_structurally_eligible_execution_denied`, and W5 execution
+  `hidden_no_extractable_evidence`.
+- HJ36's Source Material was too thin: hidden artifacts showed two Serper
+  search-preview records and only `390` input-packet bytes. W5 received source
+  content and made a successful model call, but no EvidenceItems were extracted.
+- HJ37 therefore repairs source depth at the existing Serper Source Material
+  seam by adding bounded linked-page text materialization under the existing
+  hidden/admin-only chain. It does not loosen W5, add another provider, run a
+  parser, expose public text, or create report/verdict/confidence behavior.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -149,26 +165,25 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `4`;
-- remaining: `14`;
+- consumed after latest reset: `5`;
+- remaining: `13`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ36 lane/ledger sync.
-2. Refresh runtime to the committed HJ36 state and verify Web/API/proxy runtime
+1. Commit the HJ37 lane/ledger sync.
+2. Refresh runtime to the committed HJ37 state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ36 produces a hidden internal report, review report quality before
+4. If HJ37 produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ36 restores Source Material/W5 input but still reaches
-   `no_extractable_evidence`, stop iterating this prompt path and use Steer-Co
-   to choose a source-material/usefulness strategy from the observed packets.
-6. If HJ36 still has Source Material records `0`, inspect Serper availability,
-   candidate/provider telemetry, and W3-B record materialization before further
-   query-planning or W5 prompt edits.
+5. If HJ37 materially increases Source Material bytes but still reaches
+   `no_extractable_evidence`, inspect the bounded linked-page material and W5
+   extraction decision before another prompt or source-depth repair.
+6. If HJ37 falls back to preview-only material, inspect linked-page transport
+   diagnostics before any redirect, endpoint, provider, or parser decision.
 7. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
