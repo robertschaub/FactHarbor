@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
     "resetTotal": 18,
-    "currentRemaining": 13,
+    "currentRemaining": 12,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
       "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
       "startingRemaining": 18,
-      "currentRemaining": 13,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 adds bounded Serper linked-page Source Material as the next HighJump source-depth repair while preserving public containment.",
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 6,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 produced Source Material records through bounded linked-page materialization, then exposed a downstream accepted-text corpus-gate bug. Commit 13bd3c39 repairs that existing downstream gate before the HJ37B rerun.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1059,6 +1059,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ36 reran the German asylum aggregate input after bounded Serper search-preview Source Material admission. The run stayed on claimboundary-v2 and public/default containment held. Source Material records rose to 2, W4-G sidecars 2, W4-H packets 1, W4-I structurally eligible/execution denied, and W5 executed with 2 source-content packets / 390 input-packet bytes but returned no_extractable_evidence. Hidden artifacts showed two Serper preview records only, so HJ37 repairs source depth by bounded linked-page materialization rather than loosening W5."
+      },
+      {
+        "sliceId": "X7-HJ-37-ASYLUM-235000-DE-SERPER-LINKED-PAGE-SOURCE-MATERIAL-RERUN",
+        "jobId": "ecaab696d18b4f5b8de78f664147543d",
+        "classification": "STOP_X7_HJ37_ACCEPTED_TEXT_SOURCE_MATERIAL_BLOCKED_BY_DOWNSTREAM_CORPUS_GATE",
+        "implementationCommit": "7ef0063de9eaf0f410e8fba1b1fb1a212d71b45e",
+        "runtimeCommit": "7ef0063de9eaf0f410e8fba1b1fb1a212d71b45e",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "13bd3c39_accepted_text_downstream_admission_pending_validation",
+        "count": 1,
+        "remainingAfter": 12,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_stage_reached",
+        "note": "HJ37 reran the German asylum aggregate input after bounded Serper linked-page Source Material. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 2, then W4-G blocked before sidecars with w4c_not_completed; W4-H/W4-I/W5 were consequently blocked and source-content packets were 0. The observed failure is a downstream corpus gate still accepting only accepted_json, so 13bd3c39 amends the existing W4C/W4D content-type guards to admit accepted_text without changing extraction semantics."
       }
     ],
     "blockedPending": [],

@@ -21,26 +21,24 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`8d966605 fix(v2): fetch bounded serper source material`
+`13bd3c39 fix(v2): admit accepted text source material downstream`
 
-The current committed repair is HJ37: bounded Serper linked-page Source
-Material. HJ36 restored Source Material/W5 input for the German asylum
-aggregate input, but the material was only two search-result previews / 390
-input-packet bytes and W5 returned `no_extractable_evidence`. HJ37 amends the
-existing Serper Source Material seam to fetch bounded visible text from
-provider-owned HTTPS result links, then records it as hidden/admin-only Source
-Material with caps, DNS/final-address validation, redirect denial,
-no-credentials/no-proxy behavior, raw-payload redaction, and public/default
-containment. This is a source-depth repair, not a new provider, parser, retry,
-cache/SR/storage path, public behavior, or V1 work.
+The current committed repair is HJ37B: accepted-text downstream corpus
+admission. HJ37's bounded Serper linked-page materialization produced Source
+Material records, but W4-C/W4-D still treated `accepted_json` as the only
+admissible content type and blocked the newly supported `accepted_text` records
+before W4-G sidecars. HJ37B amends the existing W4C/W4D content-type guards to
+accept `accepted_text` while preserving all existing hidden/admin-only
+containment, text-free corpus-admission/shell projections, extraction closure,
+and public/default blocked-precutover behavior.
 
-Runtime has not yet been refreshed to HJ37 for the next validation job.
+Runtime has not yet been refreshed to HJ37B for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-36-ASYLUM-235000-DE-SERPER-PREVIEW-SOURCE-MATERIAL-RERUN`
+`X7-HJ-37-ASYLUM-235000-DE-SERPER-LINKED-PAGE-SOURCE-MATERIAL-RERUN`
 
 Result document:
 
@@ -61,6 +59,15 @@ Important evidence:
   seam by adding bounded linked-page text materialization under the existing
   hidden/admin-only chain. It does not loosen W5, add another provider, run a
   parser, expose public text, or create report/verdict/confidence behavior.
+- `ecaab696d18b4f5b8de78f664147543d` (German asylum aggregate) ran on HJ37 and
+  stayed on `claimboundary-v2`; public/default containment held. It produced
+  Source Material records `2`, then blocked before W4-G sidecars because W4-C
+  still rejected `accepted_text` material. Durable admin summary: W4-G
+  `blocked_pre_bounded_corpus_text_w4c_not_positive`, W4-G stop
+  `w4c_not_completed`, W4-H/W4-I/W5 blocked, source-content packets `0`.
+- HJ37B is therefore an in-place downstream compatibility repair for the new
+  Source Material content type, not another source/provider or W5 prompt
+  lowering.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -165,25 +172,25 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `5`;
-- remaining: `13`;
+- consumed after latest reset: `6`;
+- remaining: `12`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ37 lane/ledger sync.
-2. Refresh runtime to the committed HJ37 state and verify Web/API/proxy runtime
+1. Commit the HJ37B lane/ledger sync.
+2. Refresh runtime to the committed HJ37B state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ37 produces a hidden internal report, review report quality before
+4. If HJ37B produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ37 materially increases Source Material bytes but still reaches
+5. If HJ37B materially increases Source Material bytes but still reaches
    `no_extractable_evidence`, inspect the bounded linked-page material and W5
    extraction decision before another prompt or source-depth repair.
-6. If HJ37 falls back to preview-only material, inspect linked-page transport
-   diagnostics before any redirect, endpoint, provider, or parser decision.
+6. If HJ37B still blocks at W4-C/W4-D/W4-G, treat it as a downstream lineage
+   compatibility bug and repair the existing gate rather than changing W5.
 7. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
