@@ -670,4 +670,62 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       actionApiTextExtractPath("Material_page"),
     ]);
   });
+
+  it("keeps completed Source Material records when a later bounded fetch fails structurally", async () => {
+    const previewRecords = [
+      projection("Material_page", "Material page", 1, 1),
+      projection("Later_missing_page", "Later missing page", 2, 1),
+    ];
+    const requestedPaths: string[] = [];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 2,
+          totalCandidateCount: 2,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        locator("Material_page", "Material page", 1, 1),
+        locator("Later_missing_page", "Later missing page", 2, 1),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          requestedPaths.push(request.pathWithQuery);
+          if (requestedPaths.length === 1) {
+            return {
+              statusCode: 200,
+              headers: { "content-type": "application/json" },
+              remoteAddress: "93.184.216.34",
+              body: Buffer.from(
+                JSON.stringify({ extract: "Bounded source material text from the first eligible page." }),
+                "utf8",
+              ),
+            };
+          }
+          return {
+            statusCode: 404,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from("{\"error\":\"not found\"}", "utf8"),
+          };
+        },
+      },
+    });
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      stopReason: "not_stopped",
+      attemptedFetchCount: 2,
+      fetchDiagnosticCount: 2,
+      sourceMaterialRecordCount: 1,
+    });
+    expect(decision.sourceMaterialRecords[0]?.candidatePreviewId).toBe("SOURCE_CANDIDATE_PREVIEW_1_1");
+    expect(requestedPaths).toEqual([
+      actionApiTextExtractPath("Material_page"),
+      actionApiTextExtractPath("Later_missing_page"),
+    ]);
+  });
 });

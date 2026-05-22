@@ -374,6 +374,22 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       });
       diagnostics.push(transportOutcome.diagnostic);
       if (transportOutcome.status !== "success") {
+        const mergedRecords = mergedSourceMaterialRecords({
+          openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+          wikimediaRecords: records,
+        });
+        if (mergedRecords.length > 0) {
+          return baseDecision({
+            status: "source_material_page_summary_completed",
+            stopReason: "not_stopped",
+            networkDecision: params.networkDecision,
+            previewDecision: params.previewDecision,
+            attemptedFetchCount: diagnostics.length,
+            records: mergedRecords,
+            diagnostics,
+            extraHttpCallMade: true,
+          });
+        }
         return baseDecision({
           status: statusFromTransportStatus(transportOutcome.diagnostic.status),
           stopReason: transportOutcome.diagnostic.stopReason,
