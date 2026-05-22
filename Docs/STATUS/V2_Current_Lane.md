@@ -21,7 +21,7 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`3f5d8733 fix(v2): add bounded xlsx source material`
+`fcb8a0b7 docs(v2): sync hj45 lane budget`
 
 Latest implementation repair:
 
@@ -263,8 +263,9 @@ Current active tranche:
 
 ## Next Action
 
-1. Refresh runtime to `3f5d8733` and run one HJ45 HighJump live validation on
-   the Captain-defined German asylum aggregate input.
+1. Refresh runtime to current HEAD, which includes implementation repair
+   `3f5d8733`, and run one HJ45 HighJump live validation on the
+   Captain-defined German asylum aggregate input.
 2. Classify the information yield: report produced with direct-stock evidence,
    report produced but still source-usefulness-defective, XLSX material present
    but not used downstream, or XLSX material absent.
