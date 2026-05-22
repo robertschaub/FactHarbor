@@ -21,36 +21,49 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`4c7d394b docs(v2): record hj43 internal report result`
+`8ecb0324 fix(v2): preserve source-native preview context`
 
 Latest implementation repair:
 
-`1797d0ec fix(v2): allow serper material after zero candidate search`
+`8ecb0324 fix(v2): preserve source-native preview context`
 
-HJ43 repairs the stop observed in HJ42. When the Wikimedia candidate provider
-network returns zero candidates or partial structural damage, bounded
-Serper-provided Source Material may now carry the run through the existing W3-B
-handoff. W5 remains responsible for semantic EvidenceItem extraction; the
-repair does not add a provider, parser, route, retry path, prompt/schema change,
-cache/SR/storage, public behavior, semantic deterministic ranking, or V1 work.
+HJ44 repairs one low-complexity source-material loss: safe provider preview
+context is preserved alongside bounded linked-page text, and the V2 query prompt
+now generically asks for source-native table/data/downloadable-record queries
+when the claim itself needs such records. W5 still owns semantic EvidenceItem
+extraction; the repair does not add a provider, parser, route, retry path,
+schema change, cache/SR/storage, public behavior, semantic deterministic
+ranking, or V1 work.
 
-This is still a HighJump lowering of a report-blocking structural bar. It
-should be revisited before public cutover when source-material selection and
-provider fallback policy are consolidated.
+The HJ44 live result shows this was not enough for the Swiss asylum-stock
+claim. The next source-quality move should be stronger than another
+search-preview/cap tweak and should target bounded official
+record/document/spreadsheet source material.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-43-ASYLUM-235000-DE-SERPER-CARRY-RERUN`
+`X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN`
 
 Result document:
 
-Current lane and ledger entries in this repository; no separate WIP result
-document was created for HJ33.
+`Docs/WIP/canary-evidence-cb3b78c16fef4a43bc88e330695c906a.json`
 
 Important evidence:
 
+- `cb3b78c16fef4a43bc88e330695c906a` (German asylum aggregate) ran on HJ44
+  after the source-native preview/context repair. It stayed on
+  `claimboundary-v2`, public/default containment held, and authenticated admin
+  reportMarkdown was `4256` characters. The report was complete but still
+  `UNVERIFIED` because it cited contextual Swiss population, annual asylum
+  applications, and EU/EFTA resident material only. It still did not surface
+  direct current-stock/population evidence for the claimed `235,000+`
+  asylum-domain population.
+- HJ44's information yield is therefore `report_produced`, with the same
+  direct-stock source-quality defect repeated. Another search-preview/cap tweak
+  is now low-yield; the next repair should target a bounded official
+  record/document/spreadsheet source-material strategy.
 - `e0907032ccaf4dab8b5001d6fb3db502` (German asylum aggregate) ran on HJ36
   and restored the hidden chain beyond W3-B: Source Material records `2`,
   W4-G sidecars `2`, W4-H packets `1`, W4-I readiness
@@ -248,20 +261,20 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `5`;
-- remaining: `13`;
+- consumed after latest reset: `6`;
+- remaining: `12`;
 - latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Decide HJ44 with a compact Steer-Co/expert review before editing: the
+1. Decide HJ45 with a compact Steer-Co/expert review before editing: the
    current report path is open, but source acquisition still lacks direct
-   current-stock material. The likely next move is a bounded official
-   document/spreadsheet/PDF or source-material strategy, not another recall/cap
-   tweak.
-2. Keep HJ44 HighJump-scoped: one quality bar, no public exposure, no cache/SR
+   current-stock material after HJ44. The likely next move is a bounded official
+   record/document/spreadsheet source-material strategy, not another
+   search-preview/recall/cap tweak.
+2. Keep HJ45 HighJump-scoped: one quality bar, no public exposure, no cache/SR
    storage, no V1 work, and no broad provider expansion.
 
 ## Stop Conditions

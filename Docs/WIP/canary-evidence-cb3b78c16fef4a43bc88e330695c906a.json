@@ -1,0 +1,57 @@
+{
+  "jobId": "cb3b78c16fef4a43bc88e330695c906a",
+  "implementationCommit": "8ecb032447eff744753921c76d04e847e8c79af1",
+  "createdAt": "2026-05-22T22:19:10.000Z",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "containmentVerification": [
+    {
+      "marker": "schemaVersion_precutover",
+      "expected": "4.0.0-cb-precutover",
+      "actual": "4.0.0-cb-precutover",
+      "pass": true
+    },
+    {
+      "marker": "publicCutoverStatus_blocked",
+      "expected": "blocked_precutover",
+      "actual": "blocked_precutover",
+      "pass": true
+    },
+    {
+      "marker": "analysisIssueCode_damaged",
+      "expected": "report_damaged",
+      "actual": "report_damaged",
+      "pass": true
+    },
+    {
+      "marker": "publicReportMarkdown_null_or_empty",
+      "expected": 0,
+      "actual": 0,
+      "pass": true
+    }
+  ],
+  "capturedAt": "2026-05-22T22:19:10.000Z",
+  "sliceId": "X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN",
+  "classification": "PASS_X7_HJ44_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_CONTEXT_ONLY_EVIDENCE_DEFECT_PERSISTS",
+  "docsCommit": "same_commit_as_this_ledger_update",
+  "remainingAfter": 12,
+  "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+  "canaryRunner": "Captain Deputy / Lead Developer",
+  "informationYield": "report_produced",
+  "adminReportMarkdownLength": 4256,
+  "artifactSummary": {
+    "adminReportHeading": "Internal Alpha Narrative Report",
+    "adminVerdict": "UNVERIFIED",
+    "adminTruthPercentage": 0,
+    "adminConfidence": 15,
+    "evidenceItemIdsReferencedInReport": [
+      "EVI_ASYLUM_POP_2024_AMNESTY",
+      "EVI_ASYLUM_APPLICATIONS_2024",
+      "EVI_FOREIGN_POPULATION_EU_2024"
+    ],
+    "publicLeakCheck": "public/default reportMarkdown empty; public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged",
+    "hiddenArtifactRouteCapture": "not_captured_via_route_in_this_run; admin job result and report markdown captured from authenticated job endpoint",
+    "observedReportDefect": "Complete internal alpha report still lacks direct current-stock/population evidence for the claimed 235000+ asylum-domain population. The report cites contextual total population, annual asylum applications, and EU/EFTA foreign resident count only.",
+    "qualityImplication": "The no-parser source-native preview/query repair did not materially improve the Swiss asylum-stock report. Next source-quality work should move beyond search preview/cap tweaks toward a bounded source-native official record/document/spreadsheet strategy."
+  }
+}

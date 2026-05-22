@@ -3995,3 +3995,19 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39-HJ43 consumed `5`; `13` remain before the next validation job.
 
 **Next:** Use a compact Steer-Co/expert review before HJ44. The report path is open; the next bar should target direct current-stock source acquisition. Another cap/fan-in tweak is likely low yield. Parser/document/spreadsheet/PDF work may be needed, so keep it bounded and explicitly justified before editing.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ44 Source-Native Preview Result
+
+**Task:** Validate HJ44 after preserving safe source-native preview context alongside bounded linked-page text and adding generic source-native data/table/downloadable-record query guidance.
+
+**Repair:** HJ44 commit `8ecb0324` amends the existing Serper Source Material owner so safe provider preview text is retained when linked-page text is also available. It also adds topic-neutral V2 prompt guidance that claims needing source-native data should receive at least one direct-record query for public data tables, statistical releases, downloadable records, registers, or comparable measurement artifacts. The repair keeps W5 responsible for semantic EvidenceItem extraction and does not add a provider, parser, route, retry path, schema change, cache/SR/storage, public behavior, deterministic semantic ranking, or V1 work.
+
+**Verification before live job:** Focused Serper preview test passed (`7` tests); focused V2 source-material verifier passed (`3` files / `20` tests); boundary guard passed (`96` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed after clearing a corrupted generated `.next` cache; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `8ecb032447eff744753921c76d04e847e8c79af1` before submission.
+
+**Live result:** HJ44 job `cb3b78c16fef4a43bc88e330695c906a` ran through the default manual V2 path for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default report markdown empty). The authenticated admin reportMarkdown was `4256` characters and produced a complete internal alpha report with `UNVERIFIED`, truth `0`, confidence `15`.
+
+**Observed report defect:** The report still lacks direct current-stock/population evidence for the claimed `235,000+` asylum-domain population. It cites contextual Swiss population, annual asylum applications, and EU/EFTA foreign resident material only. HJ44 confirms that another search-preview/cap tweak is low yield; the next useful HighJump bar is bounded official record/document/spreadsheet source material.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39-HJ44 consumed `6`; `12` remain.
+
+**Next:** Commit this HJ44 result sync, then convene a compact Steer-Co/expert review for HJ45. The proposal should be stronger than a canary-only tweak but still bounded: target source-native official records needed for this family, while keeping public/default containment, cache/SR/storage, V1 work, and broad provider expansion closed.

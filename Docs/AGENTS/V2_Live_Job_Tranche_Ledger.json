@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
     "resetTotal": 18,
-    "currentRemaining": 13,
+    "currentRemaining": 12,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
       "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
       "startingRemaining": 18,
-      "currentRemaining": 13,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39-HJ43 consumed five jobs. HJ43 restored complete internal alpha report generation with 8 Source Material records and 2 EvidenceItems, but the report still lacks direct current-stock/population evidence and cites only historical inflow plus total population context. The next step should raise the source-acquisition quality bar toward direct current-stock material, likely via a bounded official document/spreadsheet/PDF or source-material strategy rather than another recall/cap tweak.",
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 6,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39-HJ44 consumed six jobs. HJ44 preserved source-native preview context and produced another complete internal alpha report, but the report still lacks direct current-stock/population evidence and cites only contextual population, annual asylum application, and EU/EFTA resident material. The next step should raise the source-acquisition quality bar toward direct current-stock material, likely via a bounded official document/spreadsheet/PDF or source-material strategy rather than another recall/cap tweak.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1193,6 +1193,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ43 reran the German asylum aggregate input after the Serper carry repair. Public/default containment held. Authenticated admin reportMarkdown was 4748 characters and produced a complete internal alpha report. Hidden artifacts showed Source Material completed with 8 records, W5 extracted 2 EvidenceItems, and the report cited historical cumulative asylum-domain inflow plus total Swiss population context. The report still lacks direct current-stock/population evidence for the 235000+ asylum-domain population claim."
+      },
+      {
+        "sliceId": "X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN",
+        "jobId": "cb3b78c16fef4a43bc88e330695c906a",
+        "classification": "PASS_X7_HJ44_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_CONTEXT_ONLY_EVIDENCE_DEFECT_PERSISTS",
+        "implementationCommit": "8ecb032447eff744753921c76d04e847e8c79af1",
+        "runtimeCommit": "8ecb032447eff744753921c76d04e847e8c79af1",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "pending_hj45_source_native_official_record_strategy",
+        "count": 1,
+        "remainingAfter": 12,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ44 reran the German asylum aggregate input after preserving safe source-native preview context alongside bounded linked-page text and adding generic source-native data/table query guidance. Public/default containment held: public/default result stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public/default reportMarkdown stayed empty. Authenticated admin reportMarkdown was 4256 characters and produced another complete internal alpha report with UNVERIFIED / truth 0 / confidence 15. The report still lacks direct current-stock/population evidence and cites contextual Swiss population, annual asylum application, and EU/EFTA resident material only. This indicates another search-preview/cap tweak is low yield; the next repair should target bounded official record/document/spreadsheet source material."
       }
     ],
     "blockedPending": [],
