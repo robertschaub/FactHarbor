@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-bar-ladder-2026-05-22",
     "resetTotal": 12,
-    "currentRemaining": 10,
+    "currentRemaining": 6,
     "approvalPointer": {
       "source": "Captain message in current Codex thread after HighJump takeover checkpoint",
       "date": "2026-05-22",
@@ -23,8 +23,8 @@
       "startsAfterSliceId": "X7-W6-F1-W5E-MULTI-SOURCE-ADMISSION-REPAIR-CANARY",
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
-      "currentRemaining": 10,
-      "consumptionEntriesInThisTranche": 2,
+      "currentRemaining": 6,
+      "consumptionEntriesInThisTranche": 6,
       "note": "Historical consumption entries below are retained for provenance. HighJump tranche accounting starts after the listed W6-F1 repair canary and must be reconciled against this object until new consumption entries are appended."
     },
     "unreconciledHistoricalNote": {
@@ -375,6 +375,54 @@
         "count": 1,
         "remainingAfter": 10,
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_W7B_Schema_Diagnostics_Repair.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-4-W7B-SUFFICIENCY-STATUS-PROJECTION-CANARY",
+        "jobId": "6b06b902e4fc4e4c95c4bca6ee16f724",
+        "classification": "STOP_X7_HJ4_W7B_SCHEMA_DIAGNOSTICS_STILL_INVALID_ENUM",
+        "implementationCommit": "aefd5daef556050fa0b773a62a14020f91b83534",
+        "runtimeCommit": "aefd5daef556050fa0b773a62a14020f91b83534",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 9,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-5-W4A-DUPLICATE-SOURCE-MATERIAL-STOP",
+        "jobId": "30cada407ac24d23b3faaef7e148142e",
+        "classification": "STOP_X7_HJ5_W4A_SOURCE_MATERIAL_RECORD_COUNT_UNSUPPORTED",
+        "implementationCommit": "0dc68a1eac7a6d75df2600095ff8902e0d89604e",
+        "runtimeCommit": "0dc68a1eac7a6d75df2600095ff8902e0d89604e",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 8,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-6-W4D-DEDUPED-ADMISSION-CARRY-CANARY",
+        "jobId": "5f7a067046274161aac05f7e9cace97c",
+        "classification": "STOP_X7_HJ6_W4D_DEDUPED_ADMISSION_NOT_CARRIED_TO_CORPUS_SHELL",
+        "implementationCommit": "62c92186d04133e0a4c5511c487a420ddbdac1f9",
+        "runtimeCommit": "62c92186d04133e0a4c5511c487a420ddbdac1f9",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 7,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer"
+      },
+      {
+        "sliceId": "X7-HJ-7-INTERNAL-ALPHA-REPORT-CANDIDATE",
+        "jobId": "3716afb37a504dd880cbf313f0fd7c5c",
+        "classification": "PASS_X7_HJ7_INTERNAL_ALPHA_REPORT_CANDIDATE_CREATED",
+        "implementationCommit": "ea8ac958dfaab4436f73c58343b62d46a47a3d21",
+        "runtimeCommit": "ea8ac958dfaab4436f73c58343b62d46a47a3d21",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 6,
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_Bar_Ladder_Plan.md and Captain message in current Codex thread authorizing HighJump implementation, prompt edits, and up to 12 live jobs",
         "canaryRunner": "Captain Deputy / Lead Developer"
       }
     ],

@@ -3381,3 +3381,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HighJump live-job budget is now `10` before the repair canary.
 - Next action: commit, refresh runtime, verify API/Web runtime commits, preflight W8-B internal route, and run one repair canary on the Captain-defined hydrogen input.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_W7B_Sufficiency_Status_Projection_Repair.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ7 Internal Alpha Report Candidate
+
+- Ran and captured HJ7 job `3716afb37a504dd880cbf313f0fd7c5c` on runtime `ea8ac958dfaab4436f73c58343b62d46a47a3d21`.
+- Classification: `PASS_X7_HJ7_INTERNAL_ALPHA_REPORT_CANDIDATE_CREATED`.
+- Public V2 remained `4.0.0-cb-precutover` / `claimboundary-v2` / `report_damaged`; W8 internal route remained authenticated and `no-store`.
+- Hidden chain reached W4-A (`6` Source Material records, `5` admitted, `1` rejected), W5 (`5` EvidenceItems), W6-C (`accepted`, `caveat_report`), W7-B (`5` boundary candidates, `5` verdict candidates, `5` cited EvidenceItem refs), and W8-B (`internal_alpha_report_result_candidate_created`, `firstIncompleteStage = none`).
+- W7-B telemetry: Anthropic `claude-haiku-4-5-20251001`, `9136` total tokens, `21103ms`, `1` attempt, `0` schema retries, `no_store_no_read`.
+- HighJump live-job tranche now has `6` remaining; ledger updated with HJ4-HJ7 consumption.
+- Next action: continue report creation with a narrow internal report prose/review package over the existing W8-B candidate, not more readiness scaffolding.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_Internal_Alpha_Report_Candidate.md

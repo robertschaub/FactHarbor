@@ -35,6 +35,8 @@ Recent HighJump evidence:
   `0069f28abad14644abd3584652be933a`.
 - HJ-3 W7-B diagnostic canary job:
   `ed3a7a7c2e8d405bba30b3ac475f265a`.
+- HJ-7 internal Alpha report-result candidate job:
+  `3716afb37a504dd880cbf313f0fd7c5c`.
 
 The validated canary proves that a lowered W6-C path can move from
 `refine_retrieval` to `caveat_report` and reach W7-A
@@ -57,6 +59,15 @@ HJ-3 identified the next concrete repair: preserve W6-C's LLM-owned
 `sufficiencyAssessment.sufficiencyStatus` and use it as W7-B
 `warningMaterialityInputs.upstreamSufficiencyStatus`, instead of reusing W6-C's
 task-level result status `accepted`.
+
+Current HJ-7 classification:
+`PASS_X7_HJ7_INTERNAL_ALPHA_REPORT_CANDIDATE_CREATED`.
+
+HJ-7 reached W8-B `internal_alpha_report_result_candidate_created` with no
+blocked/damaged reason and `firstIncompleteStage = none`. It proves an
+internal structured report-result candidate, not public report readiness and
+not report prose. The next work should continue report creation and review over
+that candidate rather than reopening broad readiness scaffolding.
 
 ## New Authority
 
@@ -243,7 +254,7 @@ Each bar-raise change needs:
 
 New tranche: `12`.
 
-Current remaining after HJ-3 canary `ed3a7a7c2e8d405bba30b3ac475f265a`: `10`.
+Current remaining after HJ-7 canary `3716afb37a504dd880cbf313f0fd7c5c`: `6`.
 
 Planned allocation:
 

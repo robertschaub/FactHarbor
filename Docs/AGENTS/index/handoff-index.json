@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-21T23:28:34.891Z",
-  "count": 415,
+  "generatedAt": "2026-05-22T00:03:47.965Z",
+  "count": 416,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9201,6 +9201,26 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff - V2 HighJump HJ-2 Canary Result"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_Internal_Alpha_Report_Candidate.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain_deputy",
+        "lead_developer"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "highjump",
+        "internal",
+        "alpha",
+        "report",
+        "candidate"
+      ],
+      "files_touched": [],
+      "summary": "Continue the HighJump V2 report path, preserve the HJ7 live evidence,"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_W7B_Schema_Diagnostics_Repair.md",
