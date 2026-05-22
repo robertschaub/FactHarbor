@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj38",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj44",
     "resetTotal": 18,
-    "currentRemaining": 12,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ38 produced a complete internal alpha report with a concrete source-usefulness defect."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 before the HJ45 bounded XLSX source-material validation."
     },
     "latestReset": {
       "date": "2026-05-22",
-      "previousRemaining": 17,
+      "previousRemaining": 12,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ38 so the team can continue using stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget after HJ44 so the team can use stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
-      "startsAfterJobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
+      "startsAfterSliceId": "X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN",
+      "startsAfterJobId": "cb3b78c16fef4a43bc88e330695c906a",
       "startingRemaining": 18,
-      "currentRemaining": 12,
-      "consumptionEntriesInThisTranche": 6,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ38. HJ39-HJ44 consumed six jobs. HJ44 preserved source-native preview context and produced another complete internal alpha report, but the report still lacks direct current-stock/population evidence and cites only contextual population, annual asylum application, and EU/EFTA resident material. The next step should raise the source-acquisition quality bar toward direct current-stock material, likely via a bounded official document/spreadsheet/PDF or source-material strategy rather than another recall/cap tweak.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ44. HJ44 preserved source-native preview context and produced another complete internal alpha report, but the report still lacks direct current-stock/population evidence and cites only contextual population, annual asylum application, and EU/EFTA resident material. HJ45 is the next stronger source-quality validation: bounded XLSX source material discovered from already fetched linked pages, with public/default containment unchanged.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

@@ -21,24 +21,18 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`8ecb0324 fix(v2): preserve source-native preview context`
+`3f5d8733 fix(v2): add bounded xlsx source material`
 
 Latest implementation repair:
 
-`8ecb0324 fix(v2): preserve source-native preview context`
+`3f5d8733 fix(v2): add bounded xlsx source material`
 
-HJ44 repairs one low-complexity source-material loss: safe provider preview
-context is preserved alongside bounded linked-page text, and the V2 query prompt
-now generically asks for source-native table/data/downloadable-record queries
-when the claim itself needs such records. W5 still owns semantic EvidenceItem
-extraction; the repair does not add a provider, parser, route, retry path,
-schema change, cache/SR/storage, public behavior, semantic deterministic
-ranking, or V1 work.
-
-The HJ44 live result shows this was not enough for the Swiss asylum-stock
-claim. The next source-quality move should be stronger than another
-search-preview/cap tweak and should target bounded official
-record/document/spreadsheet source material.
+HJ45 adds one bounded source-quality repair: XLSX attachments discovered from
+already fetched safe linked pages can become hidden/admin-only Source Material
+records. This targets official record/spreadsheet evidence without adding a
+provider, public surface, retry path, cache/SR/storage behavior, semantic
+deterministic row selection, direct URL/ACS support, V1 work, or a broad parser
+framework. W5 still owns semantic EvidenceItem extraction.
 
 ## Latest Result
 
@@ -261,21 +255,19 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `6`;
-- remaining: `12`;
-- latest reset starts after HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after HJ44 job `cb3b78c16fef4a43bc88e330695c906a`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Decide HJ45 with a compact Steer-Co/expert review before editing: the
-   current report path is open, but source acquisition still lacks direct
-   current-stock material after HJ44. The likely next move is a bounded official
-   record/document/spreadsheet source-material strategy, not another
-   search-preview/recall/cap tweak.
-2. Keep HJ45 HighJump-scoped: one quality bar, no public exposure, no cache/SR
-   storage, no V1 work, and no broad provider expansion.
+1. Refresh runtime to `3f5d8733` and run one HJ45 HighJump live validation on
+   the Captain-defined German asylum aggregate input.
+2. Classify the information yield: report produced with direct-stock evidence,
+   report produced but still source-usefulness-defective, XLSX material present
+   but not used downstream, or XLSX material absent.
 
 ## Stop Conditions
 
