@@ -357,6 +357,12 @@ Return only one JSON object. Do not include markdown, commentary, or keys outsid
 
 Keep the JSON compact and complete: extract the strongest bounded set of distinct EvidenceItems needed for downstream sufficiency and verdict work, avoid duplicative items from the same source content when they do not add distinct probative value, and keep rationale/provenance strings concise while preserving required evidence meaning.
 
+### EvidenceItem Selection Budget
+
+Normally return 2 to 5 EvidenceItems. Do not return more than 5 EvidenceItems for one extraction packet in this HighJump path. Choose the strongest materially distinct evidence points needed for downstream sufficiency and verdict work. Do not output one item per source, one item per minor detail, or multiple items that express the same probative point. When source content contains more candidate details than the budget allows, omit lower-value or duplicative items rather than emitting an oversized or incomplete JSON object.
+
+Every included EvidenceItem must be complete under the strict schema. Include all required top-level fields, the full `evidenceScope` object with all six keys, and the strict `provenance` object with both `locator` and `rationale`. If an otherwise useful point cannot be represented with complete required fields, omit that item and keep the accepted output valid.
+
 Top-level object:
 
 - `schemaVersion`: exactly `v2.evidence_extraction_result.0`

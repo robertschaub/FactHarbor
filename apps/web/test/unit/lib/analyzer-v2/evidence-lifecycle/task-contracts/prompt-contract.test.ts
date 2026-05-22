@@ -216,6 +216,17 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Keep the JSON compact and complete");
     expect(section).toContain("avoid duplicative items from the same source content");
     expect(section).toContain("while preserving required evidence meaning");
+    expect(section).toContain("### EvidenceItem Selection Budget");
+    expect(section).toContain("Normally return 2 to 5 EvidenceItems");
+    expect(section).toContain("Do not return more than 5 EvidenceItems");
+    expect(section).toContain("Do not output one item per source");
+    expect(section).toContain("omit lower-value or duplicative items");
+    expect(section).toContain("Every included EvidenceItem must be complete under the strict schema");
+    expect(section).toContain("the full `evidenceScope` object with all six keys");
+    expect(section).toContain("strict `provenance` object with both `locator` and `rationale`");
+    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
+      expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
+    }
   });
 
   it("renders the boundary/verdict execution prompt contract with citation and internal-label constraints", () => {

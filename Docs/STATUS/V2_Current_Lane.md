@@ -17,11 +17,16 @@ by step.
 
 ## Active Package
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ19_Canary_Result.md`
+`Docs/WIP/2026-05-22_V2_HighJump_HJ20_W5_EvidenceItem_Output_Shaping_Repair.md`
 
-Latest implementation commit:
+Latest committed implementation anchor:
 
-`2cdc9ce5 fix(v2): repair highjump report writer output budget`
+`4e2ed098 docs(v2): add current lane projection`
+
+Current uncommitted implementation:
+
+- HJ20 W5 prompt-only output-shaping repair;
+- pending focused commit before any live canary.
 
 ## Latest Canary Result
 
@@ -38,16 +43,16 @@ Planning, W2, and W5; W5 stopped as `damaged_execution` /
 
 ## Current Repair
 
-HJ19 remains locally implemented and verifier-clean, but its behavior is not
-canary-validated because W5 blocked first. It amends the existing
-`aggregation_narrative` report-writer path in place.
-
-Current active repair target is now HJ20:
+HJ19 remains locally implemented, but its canary did not reach the report
+writer because W5 blocked first. HJ20 is the active repair:
 
 - W5 output-shaping under the richer nine-record mixed OpenAlex/Wikimedia source
   packet;
-- keep the repair inside the existing W5 prompt/contract/output-shaping path if
-  local diagnosis supports it;
+- implemented locally as an existing `V2_EVIDENCE_EXTRACTION` prompt-contract
+  amendment only;
+- focused prompt-contract/runtime/gate/build verifiers passed;
+- a first broad `analyzer-v2` run exposed a W7C timeout/order symptom that
+  passed in isolation and on full rerun, so no W7C patch was made;
 - avoid retries, schema relaxation, new report path, source/provider expansion,
   public behavior, parser/cache/SR/storage, ACS/direct URL, and V1 work.
 
@@ -78,17 +83,17 @@ Ledger:
 
 ## Next Action
 
-1. Document and commit the HJ19 canary result.
-2. Use Steer-Co/debt-guard to select the smallest HJ20 W5 output-shaping repair.
-3. Prefer topic-neutral W5 prompt/contract alignment if local diagnosis confirms
-   the model exceeded the intended bounded EvidenceItem set.
-4. Run local verifiers before any next canary.
+1. Finish HJ20 closeout docs and index.
+2. Run final diff hygiene.
+3. Commit the focused HJ20 package.
+4. Refresh runtime, verify API/Web runtime hash, preflight hidden routes, then
+   run exactly one HJ20 canary if provenance is clean.
 
 ## Stop Conditions
 
 Stop and reconvene Steer-Co if:
 
-- HJ20 local diagnosis shows the W5 stop requires schema relaxation, source
+- HJ20 canary or local evidence shows the W5 stop requires schema relaxation, source
   expansion, retries, or a new mechanism rather than prompt/contract alignment;
 - route/default-admin/public/log/error surfaces leak report text, source text,
   prompt text, provider payload, hidden ids, or public verdict/truth/confidence;

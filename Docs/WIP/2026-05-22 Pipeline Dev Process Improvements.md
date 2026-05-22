@@ -122,6 +122,36 @@ Deferred intentionally:
   report generation, live inspection, or safe canary execution.
 - Boundary-guard splitting remains process debt, not an HJ19 blocker.
 
+### HJ20 Update
+
+**Status:** current-lane projection is in active use and remains advisory.
+
+What changed after HJ19:
+
+- The projection was advanced from the HJ19 canary stop to the HJ20 W5
+  output-shaping repair.
+- The projection records that HJ20 is a prompt-only repair inside the existing
+  W5 contract, not a new hidden mechanism.
+- It also records the failed-verifier recovery: a W7C broad-suite symptom passed
+  in isolation and on full rerun, so the team did not add a W7C patch or broaden
+  scope.
+
+Process effect:
+
+- The current-lane projection reduced reconstruction cost during HJ20 without
+  becoming an approval source.
+- It helped keep the repair focused on report-progress value: clear the W5 stop
+  so the existing W8/HJ19 report-writer path can be exercised.
+- No canary-closeout automation, WIP pruning, or boundary-guard split was pulled
+  into the HJ20 hot path.
+
+Next process posture:
+
+- Keep updating `Docs/STATUS/V2_Current_Lane.md` only at stable lane changes or
+  before expensive execution steps.
+- Do not add another process artifact unless it removes concrete manual work
+  from canary provenance, route checks, or result documentation.
+
 ## Agents Supervisor Action Plan
 
 ### 1. Friction-Reduction Test

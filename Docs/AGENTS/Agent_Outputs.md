@@ -3599,3 +3599,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HJ19 consumed `1` job from the active HighJump continuation tranche; remaining budget is `6`. No second HJ19 canary is authorized.
 - Next action: smallest HJ20 W5 output-shaping repair, likely topic-neutral prompt/contract alignment for bounded/consolidated EvidenceItems under richer source packets. Do not rerun HJ19 or change source acquisition/provider behavior for this stop.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ19_Canary_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ20 W5 Output-Shaping Repair Implementation
+
+- Implemented HJ20 under `Docs/WIP/2026-05-22_V2_HighJump_HJ20_W5_EvidenceItem_Output_Shaping_Repair.md` after HJ19 stopped before report-writer execution at W5 `schema_validation_failed` / `evidenceItems` `too_big`.
+- Debt-guard classification: `incomplete-existing-mechanism`; chosen path was to amend the existing W5 prompt contract, not relax schemas, normalize invalid output, add retries, add diagnostics, change source/provider/model behavior, or create a parallel mechanism.
+- Added topic-neutral `EvidenceItem Selection Budget` guidance to `V2_EVIDENCE_EXTRACTION`: normally return `2` to `5` EvidenceItems, do not exceed `5` for one HighJump extraction packet, choose materially distinct points, and keep every included EvidenceItem complete under the strict schema.
+- Updated the focused prompt-contract test to assert the new guidance and reject Captain canary-domain terms in the W5 prompt section.
+- Failed-attempt recovery: the first broad `analyzer-v2` run surfaced a W7C product-chain timeout/order symptom; HJ20 was classified `keep`, W7C passed in isolation (`1` file / `5` tests), and the full `analyzer-v2` rerun passed (`144` files / `871` tests), so no W7C source/test change was made.
+- Verifiers passed: focused HJ20 suite (`2` files / `17` tests), full `analyzer-v2-runtime` (`75` files / `356` tests), isolated W7C (`1` file / `5` tests), full `analyzer-v2` rerun (`144` files / `871` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), and build.
+- Process update: advanced `Docs/STATUS/V2_Current_Lane.md` and the pipeline process-improvements note to reflect how the current-lane projection was used during HJ20 without adding a new approval gate.
+- Next action after commit: refresh runtime, verify API/Web runtime hashes, preflight route/default redaction posture, and run exactly one HJ20 canary on the Captain-defined hydrogen input if provenance is clean. Current HighJump budget before that canary remains `6`; no second HJ20 canary is authorized.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ20_W5_Output_Shaping_Repair_Implementation.md
