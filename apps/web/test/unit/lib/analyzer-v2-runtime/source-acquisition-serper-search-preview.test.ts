@@ -13,6 +13,9 @@ import {
   type SerperSearchPreviewHttpClient,
   type SerperSearchPreviewHttpRequest,
 } from "@/lib/analyzer-v2-runtime/source-acquisition-serper-search-preview";
+import {
+  SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-xlsx-attachment-source-material";
 
 function queryEntry(index: number) {
   return {
@@ -51,6 +54,99 @@ function linkedPageResponse(body: string, overrides: {
     durationMs: overrides.durationMs ?? 84,
     truncated: overrides.truncated ?? false,
   };
+}
+
+function linkedBinaryResponse(body: Buffer, overrides: {
+  readonly statusCode?: number;
+  readonly headers?: Readonly<Record<string, string | readonly string[] | undefined>>;
+  readonly durationMs?: number;
+  readonly truncated?: boolean;
+} = {}) {
+  return {
+    statusCode: overrides.statusCode ?? 200,
+    headers: overrides.headers ?? {
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    },
+    remoteAddress: "93.184.216.34",
+    body,
+    durationMs: overrides.durationMs ?? 94,
+    truncated: overrides.truncated ?? false,
+  };
+}
+
+function localFileHeader(name: string, data: Buffer): Buffer {
+  const nameBytes = Buffer.from(name, "utf8");
+  const header = Buffer.alloc(30);
+  header.writeUInt32LE(0x04034b50, 0);
+  header.writeUInt16LE(20, 4);
+  header.writeUInt16LE(0, 6);
+  header.writeUInt16LE(0, 8);
+  header.writeUInt32LE(0, 14);
+  header.writeUInt32LE(data.byteLength, 18);
+  header.writeUInt32LE(data.byteLength, 22);
+  header.writeUInt16LE(nameBytes.byteLength, 26);
+  return Buffer.concat([header, nameBytes, data]);
+}
+
+function centralDirectoryHeader(name: string, data: Buffer, localOffset: number): Buffer {
+  const nameBytes = Buffer.from(name, "utf8");
+  const header = Buffer.alloc(46);
+  header.writeUInt32LE(0x02014b50, 0);
+  header.writeUInt16LE(20, 4);
+  header.writeUInt16LE(20, 6);
+  header.writeUInt16LE(0, 8);
+  header.writeUInt16LE(0, 10);
+  header.writeUInt32LE(0, 16);
+  header.writeUInt32LE(data.byteLength, 20);
+  header.writeUInt32LE(data.byteLength, 24);
+  header.writeUInt16LE(nameBytes.byteLength, 28);
+  header.writeUInt32LE(localOffset, 42);
+  return Buffer.concat([header, nameBytes]);
+}
+
+function minimalZip(entries: readonly { readonly name: string; readonly data: string }[]): Buffer {
+  const localParts: Buffer[] = [];
+  const centralParts: Buffer[] = [];
+  let offset = 0;
+  for (const entry of entries) {
+    const data = Buffer.from(entry.data, "utf8");
+    const local = localFileHeader(entry.name, data);
+    const central = centralDirectoryHeader(entry.name, data, offset);
+    localParts.push(local);
+    centralParts.push(central);
+    offset += local.byteLength;
+  }
+  const centralDirectory = Buffer.concat(centralParts);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(centralDirectory.byteLength, 12);
+  eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([...localParts, centralDirectory, eocd]);
+}
+
+function minimalXlsx(): Buffer {
+  return minimalZip([
+    {
+      name: "xl/sharedStrings.xml",
+      data: [
+        "<sst>",
+        "<si><t>Official spreadsheet</t></si>",
+        "<si><t>Total persons in process</t></si>",
+        "</sst>",
+      ].join(""),
+    },
+    {
+      name: "xl/worksheets/sheet1.xml",
+      data: [
+        "<worksheet><sheetData>",
+        "<row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c></row>",
+        "<row r=\"7\"><c r=\"A7\" t=\"s\"><v>1</v></c><c r=\"B7\"><v>135078</v></c></row>",
+        "</sheetData></worksheet>",
+      ].join(""),
+    },
+  ]);
 }
 
 afterEach(() => {
@@ -344,6 +440,67 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     expect(records[0]?.sourceMaterialText).toContain("Official statistics A short provider preview.");
     expect(records[0]?.sourceMaterialText).toContain("Official source page text");
     expect(records[0]?.sourceMaterialText).not.toContain("secret()");
+    expect(serialized).not.toContain("https://official.example.test");
+  });
+
+  it("prefers bounded same-host XLSX attachment text discovered from a linked page", async () => {
+    const linkedRequests: SerperLinkedPageFetchRequest[] = [];
+    const linkedPageHttpClient: SerperLinkedPageFetchHttpClient = async (request) => {
+      linkedRequests.push(request);
+      if (request.url.endsWith("/statistics")) {
+        return linkedPageResponse([
+          "<html><body>",
+          "<a href=\"/downloads/monthly-stock.xlsx\">Monthly stock</a>",
+          "<a href=\"https://other.example.test/downloads/cross-host.xlsx\">Cross host</a>",
+          "</body></html>",
+        ].join(""));
+      }
+      return linkedBinaryResponse(minimalXlsx());
+    };
+
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1)],
+      apiKey: "test-serper-key",
+      httpClient: async () => response({
+        organic: [{
+          title: "Official statistics",
+          snippet: "A short provider preview.",
+          link: "https://official.example.test/statistics",
+        }],
+      }),
+      linkedPageHttpClient,
+      languageCode: "de",
+    });
+    const serialized = JSON.stringify(records);
+
+    expect(linkedRequests).toEqual([
+      {
+        url: "https://official.example.test/statistics",
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
+      },
+      {
+        url: "https://official.example.test/downloads/monthly-stock.xlsx",
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+      },
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      providerId: "serper_web_search",
+      sourceMaterialEndpointId: "ep_serper_linked_xlsx_fetch",
+      sourceMaterialKind: "provider_search_result_xlsx_text_bounded",
+      languageCode: "de",
+      parserExecuted: false,
+      cacheRead: false,
+      cacheWrite: false,
+      storageWrite: false,
+      sourceReliabilityCalled: false,
+      publicSurfaceWritten: false,
+    });
+    expect(records[0]?.sourceMaterialText).toContain("A7=Total persons in process");
+    expect(records[0]?.sourceMaterialText).toContain("B7=135078");
+    expect(records[0]?.sourceMaterialText).not.toContain("https://official.example.test");
     expect(serialized).not.toContain("https://official.example.test");
   });
 

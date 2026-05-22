@@ -9,6 +9,7 @@ import {
 import {
   buildSourceMaterialSearchPreviewRecord,
   buildSourceMaterialSerperLinkedPageTextRecord,
+  buildSourceMaterialSerperLinkedXlsxTextRecord,
   type SourceMaterialPageSummaryRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type {
@@ -17,6 +18,13 @@ import type {
 import {
   classifySourceAcquisitionNetworkIpAddress,
 } from "./source-acquisition-network-transport";
+import {
+  SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+  SERPER_XLSX_ATTACHMENT_MAX_LINKS_PER_PAGE,
+  discoverSameHostXlsxAttachmentUrls,
+  extractBoundedTextFromXlsxAttachmentBuffer,
+  responseLooksLikeXlsxAttachment,
+} from "./source-acquisition-xlsx-attachment-source-material";
 
 export const SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN = 9;
 export const SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY = 3;
@@ -68,7 +76,7 @@ export type SerperSearchPreviewHttpClient = (
 export type SerperLinkedPageFetchRequest = {
   readonly url: string;
   readonly timeoutMs: typeof SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS;
-  readonly maxResponseBytes: typeof SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP;
+  readonly maxResponseBytes: number;
 };
 
 export type SerperLinkedPageFetchResponse = {
@@ -127,6 +135,17 @@ function responseHasLinkedPageTextContentType(response: SerperLinkedPageFetchRes
     || contentType.startsWith("text/plain;")
     || contentType === "application/xhtml+xml"
     || contentType.startsWith("application/xhtml+xml;");
+}
+
+function responseContentType(response: SerperLinkedPageFetchResponse): string | null {
+  return headerValue(response.headers, "content-type");
+}
+
+function responseIsSuccessfulWithoutRedirect(response: SerperLinkedPageFetchResponse): boolean {
+  return response.statusCode >= 200
+    && response.statusCode <= 299
+    && headerValue(response.headers, "location") === null
+    && response.body.byteLength > 0;
 }
 
 function resolvedPublicAddressesAreValid(resolved: readonly { readonly address: string; readonly family: number }[]):
@@ -269,7 +288,7 @@ async function defaultSerperLinkedPageFetchHttpClient(
       agent: false,
       timeout: request.timeoutMs,
       headers: {
-        "accept": "text/html,text/plain;q=0.9,*/*;q=0.1",
+        "accept": "text/html,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;q=0.9,*/*;q=0.1",
         "user-agent": SERPER_USER_AGENT,
       },
     }, (response) => {
@@ -411,6 +430,86 @@ function combinePreviewAndLinkedPageText(params: {
     .join("\n\n");
 }
 
+function buildLinkedXlsxSourceMaterialRecords(params: {
+  readonly previewRecord: SourceCandidatePreviewProjection;
+  readonly languageCode: string;
+  readonly response: SerperLinkedPageFetchResponse;
+}): readonly SourceMaterialPageSummaryRecord[] {
+  if (!responseIsSuccessfulWithoutRedirect(params.response) || params.response.truncated) {
+    return [];
+  }
+  const extracted = extractBoundedTextFromXlsxAttachmentBuffer(Buffer.from(params.response.body));
+  if (extracted.status !== "success") {
+    return [];
+  }
+  const recordDecision = buildSourceMaterialSerperLinkedXlsxTextRecord({
+    previewRecord: params.previewRecord,
+    languageCode: params.languageCode,
+    sourceText: extracted.text,
+    diagnostic: {
+      compressedBytes: params.response.body.byteLength,
+      decompressedBytes: extracted.byteLength,
+      durationMs: params.response.durationMs,
+      timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+      truncationApplied: extracted.truncated,
+    },
+  });
+  return recordDecision.status === "record_created" ? [recordDecision.record] : [];
+}
+
+async function collectLinkedPageXlsxRecords(params: {
+  readonly pageUrl: URL;
+  readonly linkedPage: SerperLinkedPageFetchResponse;
+  readonly linkedPageHttpClient: SerperLinkedPageFetchHttpClient;
+  readonly previewRecord: SourceCandidatePreviewProjection;
+  readonly languageCode: string;
+}): Promise<readonly SourceMaterialPageSummaryRecord[]> {
+  const contentType = responseContentType(params.linkedPage);
+  if (!responseIsSuccessfulWithoutRedirect(params.linkedPage)) {
+    return [];
+  }
+  if (responseLooksLikeXlsxAttachment({ url: params.pageUrl, contentType })) {
+    return buildLinkedXlsxSourceMaterialRecords({
+      previewRecord: params.previewRecord,
+      languageCode: params.languageCode,
+      response: params.linkedPage,
+    });
+  }
+  if (!responseHasLinkedPageTextContentType(params.linkedPage)) {
+    return [];
+  }
+  const htmlText = Buffer.from(params.linkedPage.body).toString("utf8");
+  const attachmentUrls = discoverSameHostXlsxAttachmentUrls({
+    htmlText,
+    pageUrl: params.pageUrl,
+    maxLinks: SERPER_XLSX_ATTACHMENT_MAX_LINKS_PER_PAGE,
+  });
+  const records: SourceMaterialPageSummaryRecord[] = [];
+  for (const attachmentUrl of attachmentUrls) {
+    try {
+      const attachment = await params.linkedPageHttpClient({
+        url: attachmentUrl.toString(),
+        timeoutMs: SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
+        maxResponseBytes: SERPER_XLSX_ATTACHMENT_FETCH_RESPONSE_BYTE_CAP,
+      });
+      if (!responseLooksLikeXlsxAttachment({
+        url: attachmentUrl,
+        contentType: responseContentType(attachment),
+      })) {
+        continue;
+      }
+      records.push(...buildLinkedXlsxSourceMaterialRecords({
+        previewRecord: params.previewRecord,
+        languageCode: params.languageCode,
+        response: attachment,
+      }));
+    } catch {
+      // Attachment materialization is optional; keep the linked-page/preview record.
+    }
+  }
+  return records;
+}
+
 function languageCode(value: unknown): string {
   return typeof value === "string" && /^[a-z]{2,8}$/i.test(value.trim())
     ? value.trim().toLowerCase()
@@ -520,6 +619,7 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
         continue;
       }
       let record = recordDecision.record;
+      let preferredRecords: readonly SourceMaterialPageSummaryRecord[] = [record];
       if (linkedPageHttpClient) {
         const url = safeLinkedPageUrl(candidate.link);
         if (url) {
@@ -551,21 +651,38 @@ export async function collectSerperSearchPreviewSourceMaterialRecords(params: {
                 record = linkedPageRecord.record;
               }
             }
+            const xlsxRecords = await collectLinkedPageXlsxRecords({
+              pageUrl: url,
+              linkedPage,
+              linkedPageHttpClient,
+              previewRecord: projection,
+              languageCode: languageCode(params.languageCode),
+            });
+            preferredRecords = xlsxRecords.length > 0 ? xlsxRecords : [record];
           } catch {
             // Fall back to the bounded search-result preview record.
           }
         }
       }
-      if (
-        seen.has(record.sourceMaterialTextHash)
-        || aggregateTextBytes + record.sourceMaterialTextByteLength > SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES
-      ) {
-        continue;
+      for (const preferredRecord of preferredRecords) {
+        if (
+          records.length >= SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN
+          || recordsForQuery >= SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY
+        ) {
+          break;
+        }
+        if (
+          seen.has(preferredRecord.sourceMaterialTextHash)
+          || aggregateTextBytes + preferredRecord.sourceMaterialTextByteLength >
+            SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES
+        ) {
+          continue;
+        }
+        records.push(preferredRecord);
+        seen.add(preferredRecord.sourceMaterialTextHash);
+        aggregateTextBytes += preferredRecord.sourceMaterialTextByteLength;
+        recordsForQuery += 1;
       }
-      records.push(record);
-      seen.add(record.sourceMaterialTextHash);
-      aggregateTextBytes += record.sourceMaterialTextByteLength;
-      recordsForQuery += 1;
     }
   }
 

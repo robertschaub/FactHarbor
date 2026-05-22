@@ -12,6 +12,7 @@ import {
   SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
   buildSourceMaterialPageSummaryRecord,
   buildSourceMaterialSerperLinkedPageTextRecord,
+  buildSourceMaterialSerperLinkedXlsxTextRecord,
   buildSourceMaterialSearchPreviewRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 import type {
@@ -238,6 +239,62 @@ describe("Analyzer V2 W3-B page-summary Source Material record builder", () => {
     });
     expect(safeRecord.record?.sourceMaterialText).toContain("source-attributed aggregate");
     expect(JSON.stringify(safeRecord)).not.toContain("https://official.example.test");
+  });
+
+  it("creates one bounded hidden Source Material record from Serper linked XLSX text", () => {
+    const previewRecord = buildSourceCandidatePreviewProjection({
+      providerId: "serper_web_search",
+      endpointId: "ep_serper_google_search",
+      providerAttemptOrdinal: 3,
+      providerRank: 1,
+      candidateOrdinal: 1,
+      sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_3_1",
+      candidate: {
+        title: "Official statistics page",
+        snippet: "Downloadable table is available.",
+        link: "https://official.example.test/statistics",
+      },
+    });
+
+    const record = buildSourceMaterialSerperLinkedXlsxTextRecord({
+      previewRecord,
+      languageCode: "de",
+      sourceText: "# Worksheet 1: xl/worksheets/sheet1.xml\nRow 7: A7=Total persons | B7=135078",
+      diagnostic: {
+        compressedBytes: 270_000,
+        decompressedBytes: 84,
+        durationMs: 90,
+        timeoutMs: 5000,
+        truncationApplied: false,
+      },
+    });
+
+    expect(record).toMatchObject({
+      status: "record_created",
+      bodyStatus: "source_material_record_created",
+      record: {
+        recordVersion: SOURCE_MATERIAL_PAGE_SUMMARY_RECORD_VERSION,
+        providerId: "serper_web_search",
+        sourceMaterialEndpointId: "ep_serper_linked_xlsx_fetch",
+        sourceMaterialKind: "provider_search_result_xlsx_text_bounded",
+        responseStatusCategory: "success_2xx",
+        contentTypeCategory: "accepted_text",
+        parserExecuted: false,
+        cacheRead: false,
+        cacheWrite: false,
+        storageWrite: false,
+        sourceReliabilityCalled: false,
+        evidenceCorpusCreated: false,
+        evidenceItemGenerated: false,
+        warningGenerated: false,
+        reportGenerated: false,
+        verdictGenerated: false,
+        confidenceGenerated: false,
+        publicSurfaceWritten: false,
+      },
+    });
+    expect(record.record?.sourceMaterialText).toContain("B7=135078");
+    expect(JSON.stringify(record)).not.toContain("https://official.example.test");
   });
 
   it("fails closed for missing, blank, unsafe, oversized, or non-object extract payloads", () => {
