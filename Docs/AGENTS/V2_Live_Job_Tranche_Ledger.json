@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-hj25",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj25",
     "resetTotal": 18,
     "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ24 exposed the remaining source-usefulness generalization gap."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ25 confirmed the remaining source-usefulness generalization gap."
     },
     "latestReset": {
       "date": "2026-05-22",
       "previousRemaining": 11,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget before the next HJ25 validation run."
+      "reason": "Captain provided a fresh 18-job budget after the HJ25 no-extractable-evidence result."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-24-HYDROGEN-REPORT-WRITER-BOUNDARY-ID-REPAIR-RERUN",
-      "startsAfterJobId": "0a769c00825e48e5933cb1b1286b85c1",
+      "startsAfterSliceId": "X7-HJ-25-BOLSONARO-SEARCH-PREVIEW-MATERIAL-VALIDATION",
+      "startsAfterJobId": "d2e18575dcbe453c9cbae2281438405e",
       "startingRemaining": 18,
       "currentRemaining": 18,
       "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 again after HJ24. No jobs have been consumed from this fresh HJ25 tranche yet.",
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ25. No jobs have been consumed from this fresh post-HJ25 tranche yet.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

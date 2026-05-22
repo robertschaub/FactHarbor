@@ -21,56 +21,60 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`526fac85 fix(v2): materialize bounded search previews`
+`30d8d011 fix(v2): add bounded serper preview material`
 
-This commit admits bounded provider-owned search-preview text as weak hidden
-Source Material when at least one stronger Source Material record already
-exists. It keeps the repair inside the existing W3-B/W4/W5 path: no new
-provider, no extra HTTP call, no parser, no cache/SR/storage, no public
-behavior, and no topic-specific logic.
+This commit adds a bounded, hidden/admin-only Serper search-preview Source
+Material feed into the existing W3-B/W4/W5 path. It uses V2-owned transport
+and redaction, hashes raw locators, caps records/bytes/time, admits preview
+material only alongside stronger Source Material, and keeps parser,
+cache/SR/storage, retries, report/verdict/confidence behavior, V1 reuse, and
+public exposure closed.
 
 Runtime has not yet been refreshed to this commit for the next validation job.
 
 ## Latest Result
 
-Latest gauntlet:
+Latest validation:
 
-`PASS_WITH_OPEN_GENERALIZATION_GAP_X7_HJ24_STRONGER_REPORT_GAUNTLET`
+`STOP_X7_HJ25_BOLSONARO_W5_NO_EXTRACTABLE_EVIDENCE_AFTER_PREVIEW_MATERIAL`
 
 Result document:
 
-`Docs/WIP/2026-05-22_V2_HighJump_HJ24_Stronger_Report_Gauntlet_Result.md`
+No standalone result document has been written yet; the job was recorded in
+the active Codex thread and should be folded into the next HighJump closeout.
 
 Important evidence:
 
-- HJ24 consumed `7` jobs from the previous Captain-reset `18` job tranche.
-  Captain has since reset the active budget to `18` again before HJ25.
-- `b943c31f416941c9b46887e5b996c901` produced a complete hidden/internal
-  German asylum report draft on runtime `366dce54`: W5 extracted `1`
-  EvidenceItem; report writer produced `2891` bytes with `Evidence References`
-  and `2` citations.
-- `0a769c00825e48e5933cb1b1286b85c1` produced a complete hidden/internal
-  hydrogen report draft on runtime `beb23bca`: W5 extracted `4` EvidenceItems;
-  W8 result/draft were created; report writer produced `5906` bytes with
-  `Evidence References`; `boundary_reference_mismatch` was absent.
+- `d2e18575dcbe453c9cbae2281438405e` ran the default manual V2 path for the
+  Bolsonaro/fair-trial input on runtime/docs commit `52afbc2b`.
+- Claim Understanding accepted; Query Planning produced five legal/fair-trial
+  queries; candidate provider network completed; W3-B created nine Source
+  Material records with `8626` aggregate bytes.
+- W5 still returned `hidden_no_extractable_evidence` and no report was created.
+- This confirmed the next missing capability is source-content usefulness, not
+  another report-writer repair or more preview-only lowering.
 - Public/default containment held: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
-  default job/page surfaces did not expose hidden report text or hidden statuses,
-  and unauthenticated internal report-writer access returned `401`.
+  default job/page surfaces did not expose hidden report text or hidden statuses.
 
 ## Open Generalization Gap
 
-The Bolsonaro input now reaches W5 after W3-B and W4-A repairs, but W5 still
-returns `hidden_no_extractable_evidence`:
+The Bolsonaro input now reaches W5 after W3-B and W4-A repairs, but the
+Wikimedia/OpenAlex material has been insufficient for W5 extraction. HJ25
+confirmed this after bounded preview material:
 
 - `315886278aa34b4a9ba8fd91d9ac3cc0`: W3-B later fetch failure;
 - `d2aaaee251cd40bb9d6dd2291d235a76`: W4-A fetch diagnostic overstrictness;
 - `34e0057f557a4e3f859702dbb1a45874`: W5 no extractable evidence;
 - `4d9ff1dd1292405e8796937472774e51`: W5 no extractable evidence persisted
   after topic-neutral prompt lowering.
+- `d2e18575dcbe453c9cbae2281438405e`: W5 no extractable evidence persisted
+  after bounded search-preview material.
 
 Treat this as a source-content/usefulness and evidence-extraction
-generalization problem, not as another report-writer problem.
+generalization problem. The next committed repair is the bounded Serper preview
+Source Material feed at `30d8d011`; validate whether the stronger snippet pool
+allows W5 and the internal report writer to progress.
 
 ## Live Budget
 
@@ -87,12 +91,14 @@ Current active tranche:
 ## Next Action
 
 1. Commit this current-lane and live-budget sync.
-2. Refresh runtime to `526fac85` plus this docs sync.
+2. Refresh runtime to `30d8d011` plus this docs sync.
 3. Run one Captain-defined Bolsonaro-family validation job through the default
    manual V2 path and classify its information yield.
-4. If the run still reaches W5 with no extractable evidence, stop adding source
-   material and pivot the next repair toward the W5 extraction contract/prompt
-   using the observed hidden evidence.
+4. If Serper preview material remains absent, first inspect the bounded
+   transport/key path. If Serper material is present but W5 still returns no
+   extractable evidence, pivot the next repair toward W5 extraction/report
+   quality using the observed hidden evidence rather than adding more source
+   acquisition machinery.
 
 ## Stop Conditions
 
