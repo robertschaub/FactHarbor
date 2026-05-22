@@ -364,6 +364,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
 
     const diagnostics: EvidenceLifecycleSourceMaterialPageSummaryFetchDiagnostic[] = [];
     const records: SourceMaterialPageSummaryRecord[] = [];
+    let firstRecordStopReason: SourceMaterialPageSummaryBodyStatus | null = null;
     for (const [index, locator] of locators.entries()) {
       const attemptOrdinal = index + 1;
       const transportOutcome = await executeEvidenceLifecycleSourceMaterialPageSummaryTransport({
@@ -391,16 +392,8 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
         diagnostic: transportOutcome.diagnostic,
       });
       if (recordDecision.status !== "record_created") {
-        return baseDecision({
-          status: "source_material_page_summary_failed_structural",
-          stopReason: recordDecision.bodyStatus,
-          networkDecision: params.networkDecision,
-          previewDecision: params.previewDecision,
-          attemptedFetchCount: diagnostics.length,
-          records,
-          diagnostics,
-          extraHttpCallMade: true,
-        });
+        firstRecordStopReason ??= recordDecision.bodyStatus;
+        continue;
       }
       records.push(recordDecision.record);
     }
@@ -409,6 +402,18 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
       wikimediaRecords: records,
     });
+    if (mergedRecords.length === 0) {
+      return baseDecision({
+        status: "source_material_page_summary_failed_structural",
+        stopReason: firstRecordStopReason ?? "source_material_extract_missing",
+        networkDecision: params.networkDecision,
+        previewDecision: params.previewDecision,
+        attemptedFetchCount: diagnostics.length,
+        records,
+        diagnostics,
+        extraHttpCallMade: true,
+      });
+    }
     return baseDecision({
       status: "source_material_page_summary_completed",
       stopReason: "not_stopped",

@@ -620,4 +620,54 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       }),
     });
   });
+
+  it("continues within the bounded fetch set when one fetched page lacks usable extract", async () => {
+    const previewRecords = [
+      projection("Disambiguation_page", "Disambiguation page", 1, 1),
+      projection("Material_page", "Material page", 2, 1),
+    ];
+    const requestedPaths: string[] = [];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 2,
+          totalCandidateCount: 2,
+        },
+      }),
+      previewDecision: previewDecision(previewRecords),
+      fetchLocators: [
+        locator("Disambiguation_page", "Disambiguation page", 1, 1),
+        locator("Material_page", "Material page", 2, 1),
+      ],
+      lowLevelTransport: {
+        resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+        request: async (request) => {
+          requestedPaths.push(request.pathWithQuery);
+          const body = requestedPaths.length === 1
+            ? { extract_html: "<p>not allowed</p>" }
+            : { extract: "Bounded source material text from the second eligible page." };
+          return {
+            statusCode: 200,
+            headers: { "content-type": "application/json" },
+            remoteAddress: "93.184.216.34",
+            body: Buffer.from(JSON.stringify(body), "utf8"),
+          };
+        },
+      },
+    });
+
+    expect(decision).toMatchObject({
+      status: "source_material_page_summary_completed",
+      stopReason: "not_stopped",
+      attemptedFetchCount: 2,
+      fetchDiagnosticCount: 2,
+      sourceMaterialRecordCount: 1,
+    });
+    expect(decision.sourceMaterialRecords[0]?.candidatePreviewId).toBe("SOURCE_CANDIDATE_PREVIEW_1_2");
+    expect(requestedPaths).toEqual([
+      actionApiTextExtractPath("Disambiguation_page"),
+      actionApiTextExtractPath("Material_page"),
+    ]);
+  });
 });
