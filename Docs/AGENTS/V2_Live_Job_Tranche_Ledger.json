@@ -24,9 +24,9 @@
       "startsAfterJobId": "2c60d8e749514f0d84e1158ae7dc9354",
       "startingRemaining": 12,
       "currentRemaining": 0,
-      "consumptionEntriesInThisTranche": 16,
-      "note": "HighJump tranche is exhausted. Five Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, evaluate the HJ13 OpenAlex balance repair, evaluate the HJ14 Wikimedia depth repair, and evaluate the HJ15 OpenAlex fan-in repair under the Captain no-artificial-block directive. HJ16 has one pending Steer-Co-reconciled exception canary after a committed repair, clean status, runtime refresh, runtime hash match, and route/runtime preflight.",
-      "exceptionOverrunCount": 5
+      "consumptionEntriesInThisTranche": 17,
+      "note": "HighJump tranche is exhausted. Six Steer-Co-authorized exception jobs were used to recover from wrong-variant operational misses, validate the HJ12 prompt-contract repair, evaluate the HJ13 OpenAlex balance repair, evaluate the HJ14 Wikimedia depth repair, evaluate the HJ15 OpenAlex fan-in repair, and evaluate the HJ16 W4-G/W4-H aggregate cap recalibration under the Captain no-artificial-block directive. Do not run another live job before a new reviewed package and explicit Steer-Co/Captain budget reconciliation.",
+      "exceptionOverrunCount": 6
     },
     "unreconciledHistoricalNote": {
       "date": "2026-05-22",
@@ -570,25 +570,39 @@
         "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ15_OpenAlex_Source_Material_Fan_In_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "note": "OpenAlex Source Material fan-in improved to three OpenAlex records plus six Wikimedia records, but the resulting 12736-byte bounded material set exceeded the existing 12288-byte W4-G aggregate cap, so W4-H/W5/W8 did not proceed."
+      },
+      {
+        "sliceId": "X7-HJ-16-W4G-W4H-AGGREGATE-CAP-RECALIBRATION-CANARY",
+        "jobId": "801450beed9b4de184f1a5ae532f00dd",
+        "classification": "PARTIAL_X7_HJ16_AGGREGATE_CAP_RECALIBRATED_W5_PARSE_FAILURE",
+        "implementationCommit": "06865c3fde5d0432e3a38afd91d4a7645d4c07e3",
+        "runtimeCommit": "06865c3fde5d0432e3a38afd91d4a7645d4c07e3",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "budgetException": "steer_co_authorized_aggregate_cap_recalibration_validation_overrun_6",
+        "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "note": "HJ16 closed the prior W4-G aggregate cap stop: W4-A admitted nine records and W4-H created one 11111-byte aggregate packet under the new 16384-byte cap. W5 executed and stopped at damaged_execution / parse_failure with json_parse_error, so W8-B/W8-G were not created."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "overrun_recorded_for_wrong_variant_recovery_and_highjump_validation",
-      "overrunCount": 5,
-      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, one HJ14 Wikimedia depth canary, and one HJ15 OpenAlex fan-in canary to avoid an artificial report-creation stop; all are recorded transparently.",
-      "nextLiveJobRequirement": "HJ16 has one pending Steer-Co-reconciled exception canary after a committed repair, runtime refresh, clean git status, route/runtime preflight, and API/Web runtime commit match. Any further HighJump live job after HJ16 requires another reviewed package and explicit Steer-Co/Captain budget reconciliation."
+      "overrunCount": 6,
+      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, one HJ14 Wikimedia depth canary, one HJ15 OpenAlex fan-in canary, and one HJ16 aggregate-cap recalibration canary to avoid an artificial report-creation stop; all are recorded transparently.",
+      "nextLiveJobRequirement": "Any further HighJump live job requires a committed repair, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and explicit Steer-Co/Captain budget reconciliation."
     },
     "pendingExceptionAuthorization": {
       "sliceId": "X7-HJ-16-W4G-W4H-AGGREGATE-CAP-RECALIBRATION-CANARY",
-      "status": "pending",
+      "status": "consumed",
       "maxJobs": 1,
-      "remaining": 1,
+      "remaining": 0,
       "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
       "reason": "HJ15 proved OpenAlex fan-in improved Source Material to three OpenAlex plus six Wikimedia records, but the resulting 12736-byte bounded material set exceeded the existing 12288-byte W4-G/W4-H aggregate cap. HJ16 amends only the existing shared aggregate cap to 16384 with no new provider, selector, route, prompt, schema, or public behavior. One canary is needed to determine whether the richer source set now reaches W4-H/W5/W8 or stops on a new non-cap issue.",
       "mustRecordConsumptionBeforeNextLiveJob": true,
-      "consumedByJobId": null,
-      "classification": null
+      "consumedByJobId": "801450beed9b4de184f1a5ae532f00dd",
+      "classification": "PARTIAL_X7_HJ16_AGGREGATE_CAP_RECALIBRATED_W5_PARSE_FAILURE"
     }
   }
 }

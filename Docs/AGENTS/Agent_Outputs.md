@@ -3502,3 +3502,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Parallel broad-suite note: one concurrent run timed out in the parser-runner protocol test; the file passed in isolation and both broad suites passed sequentially, so no parser-runner change was made.
 - Next action: commit, refresh runtime, verify API/Web runtime hashes, preflight containment, and run exactly one HJ16 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration_Implementation.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ16 Aggregate Cap Canary
+
+- Ran HJ16 canary job `801450beed9b4de184f1a5ae532f00dd` on API/Web runtime `06865c3fde5d0432e3a38afd91d4a7645d4c07e3` with explicit `claimboundary-v2` and the Captain-defined hydrogen input.
+- Classification: `PARTIAL_X7_HJ16_AGGREGATE_CAP_RECALIBRATED_W5_PARSE_FAILURE`.
+- Public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; no public Source Material, EvidenceItem, source text, or draft leak was found.
+- HJ16 closed the prior cap stop for this scenario: W4-A admitted `9` Source Material records (`3` OpenAlex / `4235` bytes, `6` Wikimedia / `6860` bytes), and W4-H created one aggregate extraction-input packet with `11111` bytes under the new `16384` byte cap.
+- New downstream stop: W5 executed but returned `damaged_execution` / `parse_failure`; schema diagnostics reported `json_parse_error`; token usage was `8253` input, `4000` output, `12253` total.
+- W5E/W5-F blocked because W5 was not accepted, and W8-B/W8-G were not created.
+- HJ16 consumed Steer-Co exception overrun `6`; no second HJ16 canary is authorized.
+- Next action: Steer-Co should choose the narrowest balanced HJ17 repair for the W5 parse/truncation stop, likely inside the existing W5 prompt/model/output-token contract path, not source acquisition or cap handling.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ16_Canary_Result.md

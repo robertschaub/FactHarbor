@@ -187,3 +187,34 @@ reconciliation. The canary uses the Captain-defined input:
 The canary is intended to determine whether the HJ15 source set now passes
 W4-G/W4-H, whether W5 executes without cap/schema regression, and whether W8-G
 reaches an internal Alpha draft or returns a clearer non-cap stop.
+
+## Canary Result
+
+Job: `801450beed9b4de184f1a5ae532f00dd`
+Runtime commit: `06865c3fde5d0432e3a38afd91d4a7645d4c07e3`
+Classification: `PARTIAL_X7_HJ16_AGGREGATE_CAP_RECALIBRATED_W5_PARSE_FAILURE`
+
+HJ16 achieved the intended cap repair and exposed the next non-cap stop:
+
+- public V2 stayed `4.0.0-cb-precutover` / `blocked_precutover` /
+  `report_damaged`;
+- W4-A admitted `9` Source Material records:
+  - `3` OpenAlex records, `4235` bytes;
+  - `6` Wikimedia records, `6860` bytes;
+- the W4-H aggregate extraction-input packet was created with `11111` bytes,
+  under the new `16384` byte cap;
+- W5 executed the bounded evidence extraction task and returned
+  `damaged_execution` / `parse_failure`;
+- W5 schema diagnostics report `parse_failure` with `json_parse_error`;
+- W5 token usage was `8253` input tokens, `4000` output tokens, `12253` total
+  tokens;
+- W5E/W5-F blocked downstream because W5 was not accepted;
+- W8-B/W8-G were not created;
+- no public Source Material, EvidenceItem, source text, or draft leak was found.
+
+The prior W4-G aggregate-size stop is therefore closed for this scenario. The
+new active stop is W5 evidence-extraction JSON parse failure on the larger
+multi-source aggregate. Do not run a second HJ16 canary. Next action should be
+Steer-Co review of the smallest balanced W5 parse/truncation repair, likely in
+the existing W5 prompt/model/token-output contract path rather than another
+source-acquisition or aggregate-cap change.

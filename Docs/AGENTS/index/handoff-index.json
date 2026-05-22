@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T05:01:03.430Z",
-  "count": 427,
+  "generatedAt": "2026-05-22T05:08:47.392Z",
+  "count": 428,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9338,6 +9338,23 @@
       ],
       "files_touched": [],
       "summary": "2026-05-22 - Captain Deputy - V2 HighJump HJ15 OpenAlex Source Material Fan-In Implementation"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ16_Canary_Result.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj16",
+        "canary",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy Handoff - V2 HighJump HJ16 Canary Result"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration_Implementation.md",
