@@ -1000,6 +1000,10 @@ describe("Analyzer V2 orchestrator X7-S Query Planning product-internal executio
     });
     expect(result.reportMarkdown).toContain("Internal Alpha Stop Summary");
     expect(result.reportMarkdown).toContain("Stop Point");
+    expect(result.reportMarkdown).toContain("W4-G bounded text");
+    expect(result.reportMarkdown).toContain("W4-H extraction input");
+    expect(result.reportMarkdown).toContain("W4-I readiness");
+    expect(result.reportMarkdown).toContain("W5 blocked");
     expect(result.reportMarkdown).toContain("Public/default V2 output remains blocked");
     expect(result.reportMarkdown).not.toContain("Asylbereich Schweiz 235000");
     expect(result.reportMarkdown).not.toContain("job-v2-x7s-orchestrator:precutover-observability");

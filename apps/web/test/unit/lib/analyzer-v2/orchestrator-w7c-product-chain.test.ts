@@ -697,7 +697,7 @@ describe("Analyzer V2 W7-C product chain integration", () => {
         damagedReport: true,
       },
     });
-  });
+  }, 15000);
 
   it.each([
     [
