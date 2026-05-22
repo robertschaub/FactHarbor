@@ -3883,3 +3883,17 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18`. HJ32-HJ35 consumed `4`, so `14` remain before the HJ36 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ36, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. If HJ36 still has Source Material records `0`, inspect provider/materialization telemetry rather than lowering W3-B blindly again.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ38 Internal Alpha Report Produced
+
+**Task:** Continue the German asylum aggregate HighJump path after HJ37C reached W5 with one bounded linked-page packet but still returned `hidden_no_extractable_evidence`.
+
+**Repair:** Committed `fb8b50f3` to amend the existing Serper linked-page Source Material collector cap from one full-size bounded page (`4096` bytes) to the already-owned downstream three-record aggregate (`12288` bytes). This is an in-place source-depth repair: no provider expansion, retry path, parser, cache/SR/storage, route, public behavior, V1 work, or prompt loosening.
+
+**Verification before live job:** Focused Serper/source-material/evidence-corpus/extraction-input tests passed (`4` files / `36` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `08444a86aa71f0ebb4fb5dd1a38dd2e9dfa018d2` before submission.
+
+**Live result:** HJ38 job `1d07cbaa4b9247e1b5e054e48dece2dc` ran through the default manual V2 path for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default report markdown null). The authenticated admin reportMarkdown was `3561` characters and produced a complete internal alpha review with verdict `UNVERIFIED`, truth `0`, confidence `0`.
+
+**Observed quality defect:** The report path is now open for this input, but source usefulness is weak. The report relied on annual asylum-application flow evidence (`27,740` new applications in 2024) rather than direct current stock/registration evidence for the claimed `235,000+` asylum-domain population. The next step should review the report against Captain quality expectations and raise one concrete source-acquisition/source-material bar from this observed defect.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ37C. HJ38 consumed `1`; `17` remain.

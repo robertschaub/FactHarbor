@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj37c",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN",
       "startsAfterJobId": "75a8aaf414d94d3ea8f32555ed9712a6",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ37C. HJ37C reached W5 with one 4096-byte bounded linked-page packet and public/default containment held, but W5 returned no_extractable_evidence. Commit fb8b50f3 now amends the existing Serper linked-page collector aggregate cap to allow up to the already-owned downstream three-record aggregate before the next validation job.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ37C. HJ38 consumed the first job in the fresh tranche and produced a complete internal alpha report for the German asylum aggregate input. The next step is report-quality review and targeted source-material improvement from observed report defects, not more reachability plumbing.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1104,6 +1104,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ37C reran the German asylum aggregate input after bounded truncation preservation. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 1, W4-G bounded_corpus_text_sidecar_created_extraction_gate_closed with 1 sidecar, W4-H bounded_extraction_input_packet_created_extraction_execution_closed with 1 packet, W4-I structurally eligible, and W5 hidden_no_extractable_evidence with 1 source-content packet and 4096 input bytes. The observed stop is no longer a downstream gate mismatch; it is source depth/usefulness or W5 selectivity, so fb8b50f3 first amends the existing Serper aggregate cap before changing W5."
+      },
+      {
+        "sliceId": "X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN",
+        "jobId": "1d07cbaa4b9247e1b5e054e48dece2dc",
+        "classification": "PASS_X7_HJ38_ASYLUM_INTERNAL_ALPHA_REPORT_CREATED_SOURCE_USEFULNESS_DEFECT",
+        "implementationCommit": "fb8b50f34a4deb16d7b94043ca2d728db0c82cb1",
+        "runtimeCommit": "08444a86aa71f0ebb4fb5dd1a38dd2e9dfa018d2",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ38 reran the German asylum aggregate input after widening the bounded Serper linked-page aggregate cap. The run stayed on claimboundary-v2 and public/default containment held: public/default reportMarkdown stayed null, schema stayed 4.0.0-cb-precutover, cutover stayed blocked_precutover, and issue stayed report_damaged. Authenticated admin reportMarkdown was 3561 characters and produced a complete internal alpha review with UNVERIFIED / truth 0 / confidence 0. The observed report defect is source usefulness: the report relied on annual asylum-application flow evidence rather than direct current stock evidence for the claimed 235000+ asylum-domain population."
       }
     ],
     "blockedPending": [],

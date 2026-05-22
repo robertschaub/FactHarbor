@@ -36,7 +36,7 @@ Runtime has not yet been refreshed to HJ38 for the next validation job.
 
 Latest validation:
 
-`X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN`
+`X7-HJ-38-ASYLUM-235000-DE-SERPER-AGGREGATE-CAP-RERUN`
 
 Result document:
 
@@ -83,6 +83,16 @@ Important evidence:
   `hidden_no_extractable_evidence`. HJ38 therefore amends the existing Serper
   linked-page collector aggregate cap so the next run can provide up to three
   bounded linked-page records to W5 before changing W5 prompt/selectivity.
+- `1d07cbaa4b9247e1b5e054e48dece2dc` (German asylum aggregate) ran on HJ38
+  and stayed on `claimboundary-v2`; public/default containment held. The
+  authenticated admin reportMarkdown was `3561` characters and produced a
+  complete internal alpha review with verdict `UNVERIFIED`, truth `0`, and
+  confidence `0`. The concrete observed quality defect is source usefulness:
+  the report relied on a 2024 asylum-application flow item (`27,740` new
+  applications) and explicitly could not verify the claimed current stock of
+  `235,000+` persons. The next lane is report-quality review and targeted
+  retrieval/source-material improvement toward direct stock evidence, not more
+  reachability plumbing.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -187,25 +197,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Refresh runtime to the committed HJ38 state and verify Web/API/proxy runtime
-   commit match.
-2. Run one default/manual V2 validation job for the Captain-defined German
-   asylum aggregate input.
-3. If HJ38 produces a hidden internal report, review report quality before
-   adding more plumbing.
-4. If HJ38 reaches W5 with multiple bounded linked-page packets but still
-   returns `no_extractable_evidence`, inspect W5 extraction selectivity before
-   spending another source-depth repair.
-5. If HJ38 still reaches W5 with only one packet, consider a bounded
-   per-query fan-in adjustment at the same Serper seam before W5 changes.
-6. Treat the plastic CU stop as a separate follow-up unless the same repair
+1. Review the HJ38 internal alpha report against Captain quality expectations
+   and the expected asylum-family evidence needs.
+2. Choose the single next bar to raise from observed report evidence. Current
+   likely bar: source acquisition/source material must surface direct stock or
+   registration evidence for the claimed current asylum-domain population,
+   rather than only annual application-flow evidence.
+3. Do not add more reachability plumbing unless the report-quality review shows
+   the report path is still structurally blocked.
+4. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
 
