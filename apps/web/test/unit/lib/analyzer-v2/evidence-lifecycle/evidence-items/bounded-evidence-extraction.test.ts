@@ -11,6 +11,9 @@ import type {
   BoundedExtractionInputAuthorizationDecision,
   BoundedTextExtractionInputPacket,
 } from "@/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization";
+import {
+  BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
+} from "@/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization";
 import type {
   EvidenceLifecycleExecutionReadinessDenialDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial";
@@ -115,7 +118,7 @@ function packet(text = SOURCE_TEXT): BoundedTextExtractionInputPacket {
     inputTextHash: hash,
     inputTextByteLength: Buffer.byteLength(text, "utf8"),
     inputTextCharLength: Array.from(text).length,
-    maxInputTextBytes: 12288,
+    maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
     truncationApplied: false,
     sourceMaterialTextHash: hash,
     sourceMaterialTextHashes: [hash],
@@ -323,7 +326,7 @@ function w4i(inputPacket = packet()): EvidenceLifecycleExecutionReadinessDenialD
       inputTextHash: inputPacket.inputTextHash,
       inputTextByteLength: inputPacket.inputTextByteLength,
       inputTextCharLength: inputPacket.inputTextCharLength,
-      maxInputTextBytes: 12288,
+      maxInputTextBytes: BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
       sourceMaterialTextHash: inputPacket.sourceMaterialTextHash,
       sourceMaterialTextByteLength: inputPacket.sourceMaterialTextByteLength,
       sourceMaterialEndpointId: inputPacket.sourceMaterialEndpointId,

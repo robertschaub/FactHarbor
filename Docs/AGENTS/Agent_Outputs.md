@@ -3491,3 +3491,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - HJ15 consumed Steer-Co exception overrun `5`; no second HJ15 canary is authorized.
 - Next action: Steer-Co should decide a narrow W4-G/W4-H aggregate handling repair. Do not add provider expansion, another source route, another readiness layer, report-prose patch, public behavior, cache/SR/storage, parser, ACS/direct URL, or V1 work for this stop.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ15_OpenAlex_Fan_In_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ16 W4-G/W4-H Aggregate Cap Recalibration Implementation
+
+- Steer-Co consented to HJ16 as a narrow `incomplete-existing-mechanism` repair after HJ15 proved OpenAlex/Wikimedia source fan-in but W4-G blocked on the existing `12288` byte aggregate bounded-text cap.
+- Implemented only the existing shared W4-G/W4-H aggregate-cap amendment: `EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES` is now `16384`; per-record cap `4096`, fan-in count `9`, providers, endpoints, routes, prompts, schemas, models, configs, parser, cache/SR/storage, public behavior, ACS/direct URL, V1 work, and V1 cleanup are unchanged.
+- Added focused HJ15-shaped W4-G/W4-H/W5 tests proving a mixed `3` OpenAlex + `6` Wikimedia aggregate greater than `12288` and within `16384` is accepted while shared cap behavior remains enforced.
+- Claude Opus review was attempted through `scripts/agents/invoke-claude.cjs` but timed out; recorded as degraded reviewer coverage, not approval. Three internal Steer-Co lanes consented.
+- Verifiers passed: focused W4-G/W4-H/W5 suite (`3` files / `20` tests), isolated parser-runner protocol test (`1` file / `6` tests), full `analyzer-v2-runtime` (`74` files / `353` tests), full `analyzer-v2` (`142` files / `861` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Parallel broad-suite note: one concurrent run timed out in the parser-runner protocol test; the file passed in isolation and both broad suites passed sequentially, so no parser-runner change was made.
+- Next action: commit, refresh runtime, verify API/Web runtime hashes, preflight containment, and run exactly one HJ16 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ16_W4G_W4H_Aggregate_Cap_Recalibration_Implementation.md

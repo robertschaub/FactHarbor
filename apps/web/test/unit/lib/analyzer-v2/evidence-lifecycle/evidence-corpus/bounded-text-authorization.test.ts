@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES,
   EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES,
   buildEvidenceCorpusBoundedTextAuthorization,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization";
@@ -373,14 +374,20 @@ describe("EvidenceCorpus bounded-text authorization", () => {
     expect(JSON.stringify(denial)).toBe(denialBefore);
   });
 
-  it("creates nine linked bounded-text sidecars while preserving the shell-only extraction denial", () => {
+  it("creates nine linked mixed-provider bounded-text sidecars for the HJ15 aggregate size", () => {
     const texts = Array.from({ length: 9 }, (_, index) =>
-      `Bounded source summary text ${index + 1} for W4-G fan-in.`
+      `${index + 1}: ${"x".repeat(1410 + index)}`
     );
     const records = texts.map((text, index) => ({
       ...sourceMaterialRecord(text),
+      sourceMaterialId: index < 3
+        ? `SOURCE_MATERIAL_OPENALEX_${sha256Text(text).slice(0, 16).toUpperCase()}`
+        : `SOURCE_MATERIAL_PAGE_SUMMARY_${sha256Text(text).slice(0, 16).toUpperCase()}`,
       locatorRef: `OPAQUE_SOURCE_LOCATOR_${index + 1}_1_ABCDEF123456`,
       candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${index + 1}_1`,
+      providerId: index < 3 ? "openalex" : "wikimedia_core",
+      sourceMaterialEndpointId: index < 3 ? "ep_openalex_works_search" : "ep_wikimedia_project_page_summary",
+      sourceMaterialKind: index < 3 ? "openalex_work_abstract_text" : "wikimedia_page_summary_extract_text",
     }));
     const corpusAdmissionInputs = records.map((record) => ({
       ...admissionDecision(record.sourceMaterialText).corpusAdmissionInput,
@@ -388,6 +395,9 @@ describe("EvidenceCorpus bounded-text authorization", () => {
       sourceMaterialRef: record.sourceMaterialId,
       locatorRef: record.locatorRef,
       candidatePreviewId: record.candidatePreviewId,
+      providerId: record.providerId,
+      sourceMaterialEndpointId: record.sourceMaterialEndpointId,
+      sourceMaterialKind: record.sourceMaterialKind,
       sourceMaterialTextHash: record.sourceMaterialTextHash,
       sourceMaterialTextByteLength: record.sourceMaterialTextByteLength,
       sourceMaterialTextCharLength: record.sourceMaterialTextCharLength,
@@ -454,9 +464,23 @@ describe("EvidenceCorpus bounded-text authorization", () => {
 
     expect(decision.status).toBe("bounded_corpus_text_sidecar_created_extraction_gate_closed");
     expect(decision.boundedTextSidecarCount).toBe(9);
+    const aggregateTextByteLength = Buffer.byteLength(texts.join("\n\n"), "utf8");
+    expect(aggregateTextByteLength).toBeGreaterThan(12_288);
+    expect(aggregateTextByteLength).toBeLessThanOrEqual(EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES);
     expect(decision.boundedTextSidecars.map((sidecar) => sidecar.textHash)).toEqual(
       records.map((record) => record.sourceMaterialTextHash),
     );
+    expect(decision.boundedTextSidecars.map((sidecar) => sidecar.providerId)).toEqual([
+      "openalex",
+      "openalex",
+      "openalex",
+      "wikimedia_core",
+      "wikimedia_core",
+      "wikimedia_core",
+      "wikimedia_core",
+      "wikimedia_core",
+      "wikimedia_core",
+    ]);
     expect(decision.extractionInput).toBeNull();
     expect(decision.evidenceItems).toEqual([]);
   });

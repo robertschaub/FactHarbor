@@ -27,7 +27,7 @@ export const EVIDENCE_CORPUS_BOUNDED_TEXT_SIDECAR_VERSION =
   "v2.evidence-lifecycle.evidence-corpus.bounded-text-sidecar.x7w4g";
 export const EVIDENCE_CORPUS_BOUNDED_TEXT_MAX_BYTES = SOURCE_MATERIAL_PAGE_SUMMARY_MAX_TEXT_BYTES;
 export const EVIDENCE_CORPUS_BOUNDED_TEXT_FAN_IN_MAX_RECORDS = 9;
-export const EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES = 12_288;
+export const EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES = 16_384;
 
 export type EvidenceCorpusBoundedTextRuntimeOwnership =
   | "owned"

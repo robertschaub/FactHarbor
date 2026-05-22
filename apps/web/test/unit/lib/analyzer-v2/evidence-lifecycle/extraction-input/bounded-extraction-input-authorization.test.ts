@@ -230,7 +230,7 @@ describe("bounded extraction-input authorization", () => {
 
   it("creates one aggregate extraction-input packet from nine bounded W4-G sidecars", () => {
     const texts = Array.from({ length: BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS }, (_, index) =>
-      `Bounded page-summary text ${index + 1} for extraction fan-in.`
+      `${index + 1}: ${"x".repeat(1410 + index)}`
     );
     const sidecars = texts.map((text, index) => sidecar(text, {
       sourceMaterialRef: `SOURCE_MATERIAL_PAGE_SUMMARY_${index + 1}_ABCDEF123456`,
@@ -250,6 +250,10 @@ describe("bounded extraction-input authorization", () => {
     expect(decision.extractionInputPacket?.sourceContentPackets).toHaveLength(BOUNDED_EXTRACTION_INPUT_FAN_IN_MAX_SIDECARS);
     expect(decision.extractionInputPacket?.inputTextHash).toBe(sha256Text(expectedAggregateText));
     expect(decision.extractionInputPacket?.inputTextByteLength).toBe(Buffer.byteLength(expectedAggregateText, "utf8"));
+    expect(decision.extractionInputPacket?.inputTextByteLength).toBeGreaterThan(12_288);
+    expect(decision.extractionInputPacket?.inputTextByteLength).toBeLessThanOrEqual(
+      BOUNDED_EXTRACTION_INPUT_AGGREGATE_MAX_TEXT_BYTES,
+    );
     expect(decision.extractionExecutionAuthorized).toBe(false);
     expect(decision.evidenceItems).toEqual([]);
   });
