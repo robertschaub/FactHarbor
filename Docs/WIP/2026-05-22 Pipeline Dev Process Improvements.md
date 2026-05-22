@@ -87,6 +87,41 @@ Captain-Deputy answer, consolidated:
 - Periodically review working conditions with Captain-Deputy and monitoring
   agents, then consolidate only the changes that reduce coordination weight.
 
+## Captain Deputy Disposition
+
+**Status:** addressed for the active HJ19 lane without adding a new approval
+gate.
+
+Applied now:
+
+- Created `Docs/STATUS/V2_Current_Lane.md` as the single compact projection for
+  the active V2 lane.
+- Kept the projection advisory: it mirrors package, ledger, gate, and Captain
+  authority; it is not a second source of truth.
+- Used the current-lane projection to make the next action explicit:
+  committed HJ19 repair, refresh runtime, preflight routes, then run exactly one
+  HJ19 canary.
+- Preserved HighJump momentum: no new proof layer, no added review loop, and no
+  extra Captain question before the HJ19 canary path.
+- Kept Lead Developer mechanics inside the approved package: runtime refresh,
+  route preflight, artifact capture, and result documentation do not need a
+  separate Captain decision unless a hard stop appears.
+- Kept the hidden-mechanism rule active: HJ19 adds no new hidden mechanism; it
+  amends the existing report-writer mechanism.
+- Did not use `context-extension` for this step because the needed state is now
+  captured in committed WIP, handoff, status, ledger, and the current-lane
+  projection. It remains available for phase-boundary checkpoints or complex
+  delegation.
+
+Deferred intentionally:
+
+- Canary closeout automation remains useful but should not be built before the
+  HJ19 canary. The next manual closeout will provide concrete data for a small
+  helper script later.
+- Broad WIP/handoff cleanup remains out of the active lane unless it blocks
+  report generation, live inspection, or safe canary execution.
+- Boundary-guard splitting remains process debt, not an HJ19 blocker.
+
 ## Agents Supervisor Action Plan
 
 ### 1. Friction-Reduction Test

@@ -3580,3 +3580,10 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Verifiers passed: focused HJ19 suites (`6` files / `128` tests across split focused runs), full `analyzer-v2-runtime` (`75` files / `356` tests), full `analyzer-v2` (`144` files / `871` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
 - Next action after commit: refresh runtime, verify API/Web runtime hashes, preflight the HJ19 internal report-writer artifact route/default redaction posture, and run exactly one HJ19 canary on the Captain-defined hydrogen input. Current HighJump continuation budget before that canary remains `7`; no second HJ19 canary is authorized.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair_Implementation.md
+
+## 2026-05-22 - Captain Deputy - V2 Process Friction Reduction
+
+- Addressed the `Open For Captain Deputy` items in `Docs/WIP/2026-05-22 Pipeline Dev Process Improvements.md` after the HJ19 implementation reached a stable committed state.
+- Added `Docs/STATUS/V2_Current_Lane.md` as a compact advisory current-lane projection for the active HJ19 phase: goal, active package, latest canary result, repair state, live budget, next action, stop conditions, and coordination rules.
+- Kept the projection explicitly non-authoritative so it reduces reconstruction cost without adding an approval layer; package, ledger, gate register, and Captain authority remain the source of truth.
+- Deferred canary-closeout automation, broad WIP/handoff cleanup, and boundary-guard splitting so process work does not block the HJ19 canary path.
