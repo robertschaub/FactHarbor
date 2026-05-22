@@ -3677,3 +3677,12 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ23 consumed the last two live jobs in the active HighJump continuation tranche; remaining budget is `0`.
 
 **Next:** Continue local source-material generalization. The first future live validation should rerun `bolsonaro-en` against `70644fcb` after a new or extended budget, because it directly targets the observed W3-B stop. `asylum-235000-de` still needs separate source-material selection/fan-in improvement without topic-specific hardcoding.
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump Direct-Record Query Planning Repair
+
+**Task:** Continue clearing local roadblocks after HJ23 showed the non-hydrogen report path is source-material limited.
+
+**Result:** Committed `02b35ebb fix(v2): steer queries toward direct records`. The `V2_EVIDENCE_QUERY_PLANNING` prompt now requires a small balanced query set that includes direct-record/primary-source intent when selected AtomicClaims concern current aggregates, legal/procedural events, official status, measured comparisons, or time-sensitive factual states. It explicitly prevents academic, encyclopedic, or contextual intent from crowding out the direct evidence need. The wording remains topic-neutral and does not hardcode source names, domains, countries, people, institutions, or language-specific phrases.
+
+**Verification:** Focused prompt-contract test passed (`10` tests). `npm run validate:v2-gates` passed. `npm -w apps/web run build` passed. `git diff --check` passed. Debt sensors remain `advisory_warn` for known V2 footprint/docs/guard-size/consolidation pressure.
+
+**Budget:** No live job was run; active HighJump tranche remains at `0`.

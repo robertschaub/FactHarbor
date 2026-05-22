@@ -130,6 +130,17 @@ This repairs the Bolsonaro-exposed W3-B fail-fast behavior locally. No live
 budget remains to validate it until Captain/Steer-Co resets or extends the
 tranche.
 
+Additional local query-planning repair:
+
+`02b35ebb fix(v2): steer queries toward direct records`
+
+This adds topic-neutral retrieval-intent guidance to `V2_EVIDENCE_QUERY_PLANNING`
+so current aggregate, legal/procedural, official-status, measured-comparison,
+and other time-sensitive factual claims include direct-record/primary-source
+intent instead of letting academic, encyclopedic, or contextual intent crowd out
+the evidence needed by the claim. It has focused prompt-contract, V2 gate,
+debt-sensor, diff-check, and build verification, but no live validation yet.
+
 Result document:
 
 `Docs/WIP/2026-05-22_V2_HighJump_HJ23_Report_Quality_Mini_Gauntlet_Result.md`
