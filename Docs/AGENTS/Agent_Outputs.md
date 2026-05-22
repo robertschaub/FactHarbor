@@ -3943,3 +3943,15 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, and HJ41 consumed `3`; `15` remain before the next validation job.
 
 **Next:** Commit this HJ41 lane/ledger sync, then implement one focused HJ42 repair in existing acquisition/source-selection seams. If the next repair requires document/spreadsheet/PDF parser execution, source/provider expansion, public behavior, cache/SR/storage, ACS/direct URL support, or V1 work, reconvene Steer-Co before editing.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ42 Serper Recall Repair
+
+**Task:** Apply one stronger but bounded acquisition/source-selection repair after HJ41 produced a complete internal report that still cited monthly inflow evidence rather than direct current-stock/population material.
+
+**Repair:** HJ42 commits `983484f0` to amend the existing Serper Source Material path. Serper preview collection now allows up to `9` records per run, `3` records per query, and `24,576` aggregate source-text bytes. W3-B may admit up to `6` already-provided Serper Source Material records inside the existing nine-record Source Material budget. The generic search-preview fallback remains capped separately at `3` records / `2,048` bytes so Wikimedia preview fallback was not widened by accident.
+
+**DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism` / failed-validation recovery after HJ41 report-quality evidence. Chosen option: amend existing source-acquisition/source-material caps. Rejected path: parser/document handling, provider expansion, semantic deterministic ranking, retries, or another diagnostic route, because HJ41 still proved the report path is open and the current Serper path had unused bounded recall room. What was removed/simplified: the earlier accidental widening of generic preview fallback was narrowed during verifier recovery. What was added: one Serper-provided record cap constant and higher bounded Serper record/byte caps. Net mechanism count: essentially unchanged; no new execution path. Verification: focused Serper test passed (`7` tests); focused W3-B owner test passed (`15` tests); broader Serper/source-material verifier passed (`3` files / `26` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `git diff --check` passed. Debt accepted and removal trigger: these HighJump caps should be revisited when source-material selection/ranking is consolidated before public cutover.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ38. HJ39, HJ40, and HJ41 consumed `3`; `15` remain before the HJ42 validation run.
+
+**Next:** Commit this lane sync, refresh runtime to HJ42, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. If HJ42 still produces only flow/inflow evidence, use Steer-Co before another live job on this claim family.

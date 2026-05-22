@@ -21,23 +21,23 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`c262d83e docs(v2): record hj40 result and hj41 repair`
+`aed576b5 docs(v2): record hj41 report-quality result`
 
 Latest implementation repair:
 
-`fbfbdad5 fix(v2): balance source material provider order`
+`983484f0 fix(v2): strengthen serper source material recall`
 
-HJ41 validated the structural Source Material provider-order balance. The
-default manual V2 path still creates a complete internal alpha report for the
-German asylum aggregate input, and public/default containment still holds. The
-remaining observed defect is source usefulness: the report now cites monthly
-inflow evidence instead of weak OpenAlex composition evidence, but still lacks
-direct current-stock/population evidence for the claimed `235,000+`
-asylum-domain population.
+HJ42 strengthens the existing Serper Source Material recall path after HJ41
+showed the report still lacked direct current-stock/population material. It
+raises bounded Serper collection from five records / two per query / `12,288`
+aggregate bytes to nine records / three per query / `24,576` aggregate bytes,
+and lets W3-B admit up to six provided Serper records inside the existing
+nine-record Source Material budget. Generic Wikimedia preview fallback stays at
+its previous cap.
 
-The next repair should stay focused on acquisition/source-selection quality for
-direct stock material. Do not add another reachability layer unless the next
-evidence shows the report path is blocked again.
+This remains an existing-mechanism repair: no new provider, parser, route,
+retry path, prompt/schema change, cache/SR/storage, public behavior, semantic
+deterministic ranking, or V1 work.
 
 ## Latest Result
 
@@ -237,16 +237,14 @@ Current active tranche:
 
 ## Next Action
 
-1. Commit this HJ41 result lane sync.
-2. Apply one focused HJ42 acquisition/source-selection quality repair aimed at
-   direct stock/current-count material for the German asylum aggregate input.
-3. Keep the next repair inside existing Source Material/query/source-selection
-   seams if possible. If the repair requires document/spreadsheet/PDF parser
-   execution, source/provider expansion, or another hidden mechanism, reconvene
-   Steer-Co first and keep the package bounded.
-4. After the committed repair, refresh runtime, verify Web/API/proxy commit
-   match, and run one default/manual V2 validation job for
+1. Commit this HJ42 repair lane sync.
+2. Refresh runtime to the latest committed HJ42 source/docs anchor, verify
+   Web/API/proxy commit match, and run one default/manual V2 validation job for
    `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+3. If HJ42 still produces only flow/inflow evidence, reconvene Steer-Co before
+   spending another live job on this claim family. The likely next decision is
+   whether to open a bounded document/spreadsheet/PDF source-material path or a
+   narrower source-selection strategy.
 
 ## Stop Conditions
 
