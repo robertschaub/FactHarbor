@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-writer-2026-05-22",
     "resetTotal": 8,
-    "currentRemaining": 2,
+    "currentRemaining": 0,
     "approvalPointer": {
       "source": "Captain messages in current Codex thread after HJ17/HJ18 continuation",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-17-W5-OUTPUT-BUDGET-REPAIR-CANARY",
       "startsAfterJobId": "ec943a2eeedf41a5890c7a0222286f50",
       "startingRemaining": 8,
-      "currentRemaining": 2,
-      "consumptionEntriesInThisTranche": 6,
-      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247. HJ22 validated citation/readability repair on runtime 2e12b254; the next validation should be a compact report-quality gauntlet rather than another single-path canary.",
+      "currentRemaining": 0,
+      "consumptionEntriesInThisTranche": 8,
+      "note": "New Captain-authorized HighJump continuation budget. HJ18 and HJ19 each consumed one canary after committed implementation, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and artifact capture discipline. HJ19 did not reach the report writer because W5 stopped earlier on schema_validation_failed / evidenceItems too_big. HJ20 first canary consumed one slot but is unevaluable because hidden artifact route capture failed with app-level HTML 404 responses before process-local artifacts could be captured. HJ20 evaluability rerun then passed and produced a hidden internal report-writer draft. HJ21 validated the default manual V2 path and admin UI report-markdown exposure on runtime 7b900247. HJ22 validated citation/readability repair on runtime 2e12b254. HJ23 spent the final two slots on a mini-gauntlet across asylum-235000-de and bolsonaro-en; both preserved containment but stopped before completed internal report generation because of source-material/W5 generalization gaps.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -680,6 +680,34 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Default manual web path submitted without explicit pipelineVariant and stored claimboundary-v2. Admin reportMarkdown length was 8190; public/default reportMarkdown stayed null and public V2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged. Primary hydrogen-family verdict was FALSE, truth 25, confidence 72, inside expected band. Report markdown included inline exact EvidenceItem citations and an Evidence References section."
+      },
+      {
+        "sliceId": "X7-HJ-23-MINI-GAUNTLET-ASYLUM-235000-DE",
+        "jobId": "0194c58b3e9245e6b63eda6cdf2bf4d6",
+        "classification": "STOP_X7_HJ23_ASYLUM_W5_NO_EXTRACTABLE_EVIDENCE",
+        "implementationCommit": "036a2c04cd0a3360e1dadb3f623d6b1a9edf9857",
+        "runtimeCommit": "036a2c04cd0a3360e1dadb3f623d6b1a9edf9857",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 1,
+        "approvalPointer": "Captain request for stronger validation than single canaries under current HighJump lane",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "Default manual web path submitted without explicit pipelineVariant and stored claimboundary-v2. Hidden chain reached W5 after one OpenAlex Source Material record, but W5 returned accepted no_extractable_evidence with evidenceItemCount 0. Public V2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public reportMarkdown stayed null."
+      },
+      {
+        "sliceId": "X7-HJ-23-MINI-GAUNTLET-BOLSONARO-EN",
+        "jobId": "d3a622a352ba4b27b18d10250e21fbac",
+        "classification": "STOP_X7_HJ23_BOLSONARO_W3B_SOURCE_MATERIAL_STRUCTURAL_REJECTED",
+        "implementationCommit": "036a2c04cd0a3360e1dadb3f623d6b1a9edf9857",
+        "runtimeCommit": "036a2c04cd0a3360e1dadb3f623d6b1a9edf9857",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "approvalPointer": "Captain request for stronger validation than single canaries under current HighJump lane",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "Default manual web path submitted without explicit pipelineVariant and stored claimboundary-v2. Hidden chain reached W3-B; transport succeeded but Source Material creation failed as source_material_extract_structural_rejected, so W4-G/H/W5 blocked. Follow-up local repair 70644fcb amends W3-B to continue through the bounded locator set after one invalid summary. Public V2 stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged and public reportMarkdown stayed null."
       }
     ],
     "blockedPending": [],

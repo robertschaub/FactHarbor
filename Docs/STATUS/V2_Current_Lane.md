@@ -99,10 +99,40 @@ Result document:
 
 `Docs/WIP/2026-05-22_V2_HighJump_HJ22_Report_Citation_Readability_Canary_Result.md`
 
-The active HighJump continuation tranche has `2` live jobs remaining. The next
-step should be a compact report-quality gauntlet over multiple Captain-defined
-inputs, not another single path canary, unless a gauntlet run exposes a specific
-repair stop.
+The HJ23 two-job mini-gauntlet consumed the remaining two live-job slots and
+found source-material generalization gaps outside the hydrogen path. The active
+HighJump continuation tranche now has `0` remaining.
+
+Latest gauntlet:
+
+`STOP_X7_HJ23_MINI_GAUNTLET_SOURCE_MATERIAL_AND_W5_GENERALIZATION_GAPS`
+
+Jobs:
+
+- `0194c58b3e9245e6b63eda6cdf2bf4d6` (`asylum-235000-de`)
+- `d3a622a352ba4b27b18d10250e21fbac` (`bolsonaro-en`)
+
+Result summary:
+
+- both jobs stored `pipelineVariant = claimboundary-v2`;
+- both jobs preserved public/precutover containment;
+- neither produced a completed admin internal report;
+- asylum reached W5 but W5 returned `hidden_no_extractable_evidence` over one
+  OpenAlex Source Material record;
+- Bolsonaro stopped earlier because W3-B failed the whole Source Material stage
+  on one structurally rejected Wikimedia page-summary body.
+
+Follow-up local repair:
+
+`70644fcb fix(v2): continue w3b after invalid summaries`
+
+This repairs the Bolsonaro-exposed W3-B fail-fast behavior locally. No live
+budget remains to validate it until Captain/Steer-Co resets or extends the
+tranche.
+
+Result document:
+
+`Docs/WIP/2026-05-22_V2_HighJump_HJ23_Report_Quality_Mini_Gauntlet_Result.md`
 
 ## Previous Canary Result
 

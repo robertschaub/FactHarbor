@@ -3666,3 +3666,14 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Verification:** Focused prompt/draft route tests passed (`26` tests). `npm run validate:v2-gates` passed. `npm -w apps/web run build` passed. `git diff --check` passed. Debt sensors remain `advisory_warn` for known V2 footprint/docs/guard-size/consolidation pressure.
 
 **Next:** Move from single-job canaries to a compact report-quality gauntlet over Captain-defined inputs. Active HighJump continuation tranche has `2` jobs remaining after HJ22.
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ23 Mini-Gauntlet And W3-B Repair
+
+**Task:** Replace single canary confidence with a stronger compact validation over multiple Captain-defined inputs, then clear the next roadblock without adding new hidden machinery.
+
+**Result:** Ran two default/manual V2 jobs on runtime `036a2c04`: `0194c58b3e9245e6b63eda6cdf2bf4d6` (`asylum-235000-de`) and `d3a622a352ba4b27b18d10250e21fbac` (`bolsonaro-en`). Both stored `claimboundary-v2` and kept public V2 `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, but neither produced a completed admin report. Asylum reached W5 and returned `hidden_no_extractable_evidence` over one OpenAlex Source Material record. Bolsonaro stopped at W3-B with `source_material_page_summary_failed_structural` / `source_material_extract_structural_rejected`, blocking W4-G/H/W5. Committed `70644fcb fix(v2): continue w3b after invalid summaries`, which amends the existing W3-B owner to continue through the bounded locator set when one fetched page lacks usable extract and fail closed only if all attempted materialization paths yield no Source Material.
+
+**Verification:** W3-B focused owner test passed (`10` tests). `npm run validate:v2-gates` passed. `npm -w apps/web run build` passed. `git diff --check` passed. Debt sensors remain `advisory_warn` for known V2 footprint/docs/guard-size/consolidation pressure.
+
+**Budget:** HJ23 consumed the last two live jobs in the active HighJump continuation tranche; remaining budget is `0`.
+
+**Next:** Continue local source-material generalization. The first future live validation should rerun `bolsonaro-en` against `70644fcb` after a new or extended budget, because it directly targets the observed W3-B stop. `asylum-235000-de` still needs separate source-material selection/fan-in improvement without topic-specific hardcoding.
