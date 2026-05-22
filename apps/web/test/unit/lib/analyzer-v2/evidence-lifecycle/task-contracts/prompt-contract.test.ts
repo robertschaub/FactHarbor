@@ -289,6 +289,11 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("It does not recompute truth percentages, confidence, verdict labels");
     expect(section).toContain("cite only supplied EvidenceItem IDs");
     expect(section).toContain("reportMarkdown");
+    expect(section).toContain("### Markdown Citation Rendering");
+    expect(section).toContain("Every material verdict conclusion, evidence-backed reason, and");
+    expect(section).toContain("EvidenceItem ID in square brackets");
+    expect(section).toContain("Do not renumber, alias, abbreviate, or invent numeric footnotes");
+    expect(section).toContain("Include a compact `Evidence References` subsection");
     expect(section).toContain("### Compactness Budget");
     expect(section).toContain("3500-6500 UTF-8 bytes");
     expect(section).toContain("Avoid duplicating the same evidence explanation");

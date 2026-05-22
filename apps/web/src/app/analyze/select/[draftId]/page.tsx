@@ -47,6 +47,7 @@ type DraftResponse = {
   draftId: string;
   status: DraftStatus;
   progress: number;
+  pipelineVariant: string | null;
   isHidden: boolean;
   lastEventMessage: string | null;
   selectionMode: "interactive" | "automatic";
@@ -159,6 +160,13 @@ function formatCountdownDuration(durationMs: number | null | undefined): string 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatPipelineVariantLabel(pipelineVariant: string | null | undefined): string {
+  const normalized = typeof pipelineVariant === "string" ? pipelineVariant.trim() : "";
+  if (normalized === "claimboundary-v2") return "Pipeline V2";
+  if (normalized === "claimboundary") return "Pipeline V1";
+  return normalized.length > 0 ? normalized : "Default pipeline";
 }
 
 function orderClaims(claims: AtomicClaim[], rankedClaimIds: string[]): AtomicClaim[] {
@@ -684,6 +692,7 @@ export default function ClaimSelectionDraftPage() {
       : "Loading session state.";
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
+  const pipelineVariantLabel = draft ? formatPipelineVariantLabel(draft.pipelineVariant) : null;
   const preparationObservability = draftState?.observability;
   const preparationTimingSummary = buildPreparationTimingSummary(preparationObservability);
   const livePreparationMessage = draft?.lastEventMessage ?? preparationObservability?.eventMessage ?? null;
@@ -693,6 +702,7 @@ export default function ClaimSelectionDraftPage() {
       draftId: draft.draftId,
       status: draft.status,
       progress: draft.progress,
+      pipelineVariant: draft.pipelineVariant,
       isHidden: draft.isHidden,
       lastEventMessage: draft.lastEventMessage,
       selectionMode: draft.selectionMode,
@@ -941,6 +951,10 @@ export default function ClaimSelectionDraftPage() {
             </span>
             <span className={jobStyles.metaInlineItem}>
               <b>Created:</b> <code>{formattedCreatedAt ?? "Unknown"}</code>
+            </span>
+            <span className={jobStyles.metaInlineItem}>
+              <b>Pipeline:</b>{" "}
+              <code title={draft.pipelineVariant ?? "default"}>{pipelineVariantLabel ?? "Default pipeline"}</code>
             </span>
           </div>
           <div className={styles.headerStatusRow}>

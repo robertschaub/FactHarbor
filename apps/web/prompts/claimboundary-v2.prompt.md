@@ -638,6 +638,23 @@ For every boundary section:
 - copy the boundary id, title, and cited EvidenceItem IDs from the supplied packet;
 - summarize the boundary rationale without inventing new evidence.
 
+### Markdown Citation Rendering
+
+The `reportMarkdown` field must be readable without inspecting the structured
+JSON fields. Every material verdict conclusion, evidence-backed reason, and
+boundary-rationale sentence or bullet must place at least one exact supplied
+EvidenceItem ID in square brackets next to the sentence or bullet it supports.
+
+- Use only exact supplied EvidenceItem IDs from the accepted packet.
+- Do not renumber, alias, abbreviate, or invent numeric footnotes.
+- Do not add citations to statements that are only structure, headings, or
+  report navigation.
+- Include a compact `Evidence References` subsection in `reportMarkdown` that
+  lists each cited EvidenceItem ID once and states its role using
+  `citationMap.usedFor`.
+- Do not quote source text, provider payload, snippets, summaries, URLs, or
+  titles solely to make citations readable.
+
 ### Compactness Budget
 
 Return one concise internal report, not a verbose audit transcript. Keep prose
