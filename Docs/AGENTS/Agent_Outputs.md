@@ -3446,3 +3446,13 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 - Closeout debt sensor: `advisory_warn` at `2026-05-22T03:44:12.103Z` with the known V2 footprint, boundary-guard, docs-volume, net-mechanism, and consolidation-marker warnings.
 - Next action: Steer-Co should choose the smallest balanced HJ14 direction for direct comparator evidence acquisition/source-material selection or report-quality review before another retrieval change.
 -> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ13_OpenAlex_Balance_Result.md
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ14 Wikimedia Source Material Depth Implementation
+
+- Implemented HJ14 under `Docs/WIP/2026-05-22_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Repair.md` after Steer-Co consensus.
+- Amended the existing W3-B Wikimedia Source Material transport in place to use project-local MediaWiki Action API TextExtracts with `exchars=1200`, `explaintext=1`, and the already materialized title as a query-string parameter.
+- Preserved downstream W3-B contract labels and normalized provider responses to `{ extract }`, stripping raw provider title/page id/key metadata before record creation.
+- No provider expansion, parser/full page/source/html fetch, prompt/model/config/schema edit, retry, cache/SR/storage, public surface, ACS/direct URL, V1 work, or V1 cleanup was added.
+- Verifiers passed: focused W3-B suite (`3` files / `14` tests), full `analyzer-v2-runtime` (`74` files / `352` tests), full `analyzer-v2` (`142` files / `860` tests), `validate:v2-gates`, gate-register self-test, `debt:sensors` (`advisory_warn`), build, and `git diff --check`.
+- Pending next action: commit, refresh runtime, verify runtime hashes/clean status, preflight containment, then run exactly one HJ14 canary on the Captain-defined hydrogen input under Steer-Co budget reconciliation.
+-> Docs/AGENTS/Handoffs/2026-05-22_Captain_Deputy_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Implementation.md

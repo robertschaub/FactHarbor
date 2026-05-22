@@ -46,12 +46,21 @@ function transport(
       headers: { "content-type": "application/json" },
       remoteAddress: "93.184.216.34",
       body: Buffer.from(JSON.stringify({
-        extract: "Hydrogen vehicles store hydrogen and use it to power an electric motor.",
-        extract_html: "<p>ignored</p>",
+        query: {
+          pages: [{
+            title: "Hydrogen vehicle",
+            extract: "Hydrogen vehicles store hydrogen and use it to power an electric motor.",
+          }],
+        },
       }), "utf8"),
     })),
     now: overrides.now ?? (() => 100),
   };
+}
+
+function actionApiTextExtractPath(title: string): string {
+  return "/w/api.php?action=query&prop=extracts&exchars=1200&explaintext=1"
+    + `&exsectionformat=plain&format=json&formatversion=2&redirects=1&titles=${title}`;
 }
 
 describe("Analyzer V2 W3-B page-summary transport", () => {
@@ -66,7 +75,16 @@ describe("Analyzer V2 W3-B page-summary transport", () => {
             statusCode: 200,
             headers: { "content-type": "application/json" },
             remoteAddress: "93.184.216.34",
-            body: Buffer.from("{\"extract\":\"A bounded summary extract.\"}", "utf8"),
+            body: Buffer.from(JSON.stringify({
+              query: {
+                pages: [{
+                  pageid: 123,
+                  key: "Hydrogen_vehicle",
+                  title: "Hydrogen vehicle",
+                  extract: "A bounded action-api text extract.",
+                }],
+              },
+            }), "utf8"),
           };
         },
       }),
@@ -78,7 +96,7 @@ describe("Analyzer V2 W3-B page-summary transport", () => {
         hostname: "en.wikipedia.org",
         port: 443,
         method: "GET",
-        pathWithQuery: "/api/rest_v1/page/summary/Hydrogen_vehicle",
+        pathWithQuery: actionApiTextExtractPath("Hydrogen_vehicle"),
         timeoutMs: 1500,
         maxCompressedBytes: 8192,
       }),
@@ -89,7 +107,7 @@ describe("Analyzer V2 W3-B page-summary transport", () => {
     });
     expect(outcome).toMatchObject({
       status: "success",
-      json: { extract: "A bounded summary extract." },
+      json: { extract: "A bounded action-api text extract." },
       diagnostic: {
         visibility: "internal_admin_only",
         providerId: "wikimedia_core",
@@ -113,6 +131,8 @@ describe("Analyzer V2 W3-B page-summary transport", () => {
       },
     });
     expect(serialized).not.toContain("Hydrogen_vehicle");
+    expect(serialized).not.toContain("Hydrogen vehicle");
+    expect(serialized).not.toContain("pageid");
     expect(serialized).not.toContain("https://example.invalid");
     expect(serialized).not.toContain("sk_test");
     expect(serialized).not.toContain("headers");

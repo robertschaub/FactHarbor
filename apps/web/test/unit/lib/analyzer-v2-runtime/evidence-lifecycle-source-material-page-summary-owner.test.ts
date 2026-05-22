@@ -20,6 +20,11 @@ import type {
   SourceMaterialPageSummaryRecord,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-material/page-summary-source-material";
 
+function actionApiTextExtractPath(title: string): string {
+  return "/w/api.php?action=query&prop=extracts&exchars=1200&explaintext=1"
+    + `&exsectionformat=plain&format=json&formatversion=2&redirects=1&titles=${title}`;
+}
+
 function networkDecision(
   overrides: Partial<SourceAcquisitionCandidateProviderNetworkLoopDecision> = {},
 ): SourceAcquisitionCandidateProviderNetworkLoopDecision {
@@ -329,15 +334,15 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     ]);
     expect(decision.fetchDiagnostics.map((diagnostic) => diagnostic.attemptOrdinal)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(requestedPaths).toEqual([
-      "/api/rest_v1/page/summary/Hydrogen_vehicle",
-      "/api/rest_v1/page/summary/Vehicle_efficiency",
-      "/api/rest_v1/page/summary/Fuel_cell_vehicle",
-      "/api/rest_v1/page/summary/Electric_vehicle",
-      "/api/rest_v1/page/summary/Battery_electric_vehicle",
-      "/api/rest_v1/page/summary/Energy_conversion",
-      "/api/rest_v1/page/summary/Electric_motor",
-      "/api/rest_v1/page/summary/Fuel_economy",
-      "/api/rest_v1/page/summary/Hydrogen_storage",
+      actionApiTextExtractPath("Hydrogen_vehicle"),
+      actionApiTextExtractPath("Vehicle_efficiency"),
+      actionApiTextExtractPath("Fuel_cell_vehicle"),
+      actionApiTextExtractPath("Electric_vehicle"),
+      actionApiTextExtractPath("Battery_electric_vehicle"),
+      actionApiTextExtractPath("Energy_conversion"),
+      actionApiTextExtractPath("Electric_motor"),
+      actionApiTextExtractPath("Fuel_economy"),
+      actionApiTextExtractPath("Hydrogen_storage"),
     ]);
   });
 

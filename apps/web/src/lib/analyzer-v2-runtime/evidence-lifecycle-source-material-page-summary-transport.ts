@@ -18,6 +18,7 @@ export const EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_TRANSPORT_TIMEOUT_M
 export const EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_COMPRESSED_BYTE_CAP = 8_192;
 export const EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_DECOMPRESSED_BYTE_CAP = 16_384;
 export const EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_PAGE_SUMMARY_TOTAL_BYTE_CAP = 16_384;
+export const EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_WIKIMEDIA_TEXT_EXTRACT_CHARS = 1_200;
 
 export type EvidenceLifecycleSourceMaterialPageSummaryTransportStatus =
   | "success"
@@ -379,7 +380,18 @@ function requestPath(locator: SourceMaterialPageSummaryFetchLocator): string | n
   if (!locator.encodedTitlePathSegment || locator.encodedTitlePathSegment.length === 0) {
     return null;
   }
-  return `/api/rest_v1/page/summary/${locator.encodedTitlePathSegment}`;
+  const query = [
+    "action=query",
+    "prop=extracts",
+    `exchars=${EVIDENCE_LIFECYCLE_SOURCE_MATERIAL_WIKIMEDIA_TEXT_EXTRACT_CHARS}`,
+    "explaintext=1",
+    "exsectionformat=plain",
+    "format=json",
+    "formatversion=2",
+    "redirects=1",
+    `titles=${locator.encodedTitlePathSegment}`,
+  ].join("&");
+  return `/w/api.php?${query}`;
 }
 
 function requestHeaders(): Readonly<Record<string, string>> {
@@ -425,6 +437,45 @@ function statusFromStopReason(
     return "blocked";
   }
   return "failed";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractFromActionApiJson(json: unknown): string | null {
+  if (!isRecord(json)) {
+    return null;
+  }
+  if (typeof json.extract === "string") {
+    return json.extract;
+  }
+  const query = json.query;
+  if (!isRecord(query)) {
+    return null;
+  }
+  const pages = query.pages;
+  if (Array.isArray(pages)) {
+    for (const page of pages) {
+      if (isRecord(page) && typeof page.extract === "string") {
+        return page.extract;
+      }
+    }
+    return null;
+  }
+  if (isRecord(pages)) {
+    for (const page of Object.values(pages)) {
+      if (isRecord(page) && typeof page.extract === "string") {
+        return page.extract;
+      }
+    }
+  }
+  return null;
+}
+
+function sourceMaterialExtractOnlyJson(json: unknown): { readonly extract?: string } {
+  const extract = extractFromActionApiJson(json);
+  return typeof extract === "string" ? { extract } : {};
 }
 
 function decodeBody(params: {
@@ -722,7 +773,7 @@ export async function executeEvidenceLifecycleSourceMaterialPageSummaryTransport
 
   return {
     status: "success",
-    json,
+    json: sourceMaterialExtractOnlyJson(json),
     diagnostic: diagnostic({
       locator: input.locator,
       attemptOrdinal,

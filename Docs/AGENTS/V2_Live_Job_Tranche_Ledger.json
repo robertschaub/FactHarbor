@@ -549,18 +549,18 @@
       "status": "overrun_recorded_for_wrong_variant_recovery",
       "overrunCount": 3,
       "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, and one HJ13 OpenAlex balance canary to avoid an artificial report-creation stop; all are recorded transparently.",
-      "nextLiveJobRequirement": "new_reviewed_package_plus_steer_co_or_captain_budget_reconciliation"
+      "nextLiveJobRequirement": "HJ14 reviewed package plus Steer-Co budget reconciliation is pending for one implementation canary"
     },
     "pendingExceptionAuthorization": {
-      "sliceId": "X7-HJ-13-OPENALEX-SOURCE-MATERIAL-BALANCE-REPAIR-CANARY",
-      "status": "consumed",
+      "sliceId": "X7-HJ-14-WIKIMEDIA-SOURCE-MATERIAL-DEPTH-REPAIR-CANARY",
+      "status": "pending",
       "maxJobs": 1,
-      "remaining": 0,
-      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ13_OpenAlex_Source_Material_Balance_Repair.md plus Steer-Co consent in current Codex thread under Captain no-artificial-block directive",
-      "reason": "HJ12 reached an internal Alpha draft but remained UNVERIFIED due source portfolio quality. HJ13 amends existing OpenAlex Source Material breadth without new provider, prompt, schema, or public behavior. One canary is needed to determine whether the report-quality path improves or provider expansion is required.",
-      "mustRecordConsumptionBeforeNextLiveJob": false,
-      "consumedByJobId": "1d85ff88bf6945cb8f7caefcbabc7d9c",
-      "classification": "STOP_X7_HJ13_OPENALEX_BALANCE_NOT_REALIZED_INTERNAL_ALPHA_DRAFT_CREATED"
+      "remaining": 1,
+      "approvalPointer": "Docs/WIP/2026-05-22_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Repair.md plus Steer-Co consensus in current Codex thread under Captain no-artificial-block directive",
+      "reason": "HJ13 produced an internal Alpha draft but did not improve source balance or direct comparator evidence. HJ14 amends the existing W3-B Wikimedia Source Material transport in place to use bounded project-local TextExtracts source material without provider expansion, prompt/schema edits, parser/full page fetch, retry, cache/SR/storage, or public behavior. One canary is needed to determine whether the report-quality path improves or whether a broader provider/endpoint package is needed.",
+      "mustRecordConsumptionBeforeNextLiveJob": true,
+      "consumedByJobId": null,
+      "classification": null
     }
   }
 }

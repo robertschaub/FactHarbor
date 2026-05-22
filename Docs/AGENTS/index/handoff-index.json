@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T03:44:07.938Z",
-  "count": 422,
+  "generatedAt": "2026-05-22T04:08:53.527Z",
+  "count": 423,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9258,6 +9258,26 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Handoff: V2 HighJump HJ13 OpenAlex Balance Result"
+    },
+    {
+      "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ14_Wikimedia_Source_Material_Depth_Implementation.md",
+      "date": "2026-05-22",
+      "roles": [
+        "captain"
+      ],
+      "topics": [
+        "deputy",
+        "v2",
+        "highjump",
+        "hj14",
+        "wikimedia",
+        "source",
+        "material",
+        "depth",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "Captain Deputy V2 HighJump HJ14 Wikimedia Source Material Depth Implementation"
     },
     {
       "file": "2026-05-22_Captain_Deputy_V2_HighJump_HJ2_Canary_Result.md",
