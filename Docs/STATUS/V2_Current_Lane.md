@@ -21,23 +21,22 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`f479df9f fix(v2): preserve bounded source truncation downstream`
+`fb8b50f3 fix(v2): widen bounded serper source material cap`
 
-The current committed repair is HJ37C: bounded source truncation preservation.
-HJ37B passed `accepted_text` material through W4-C, then W4-G blocked because
-the bounded linked-page record truthfully carried `truncationApplied=true` after
-being capped to 4096 bytes. HJ37C preserves that truncation flag through W4-A,
-W4-C, W4-D, W4-G, and W4-H while keeping the same byte caps, hash checks,
-hidden/admin-only containment, extraction closure, and public/default
-blocked-precutover behavior.
+The current committed repair is HJ38: bounded Serper linked-page source depth.
+HJ37C restored the chain through W5 with one 4096-byte bounded linked-page
+packet, but W5 still extracted no EvidenceItems. HJ38 amends the existing
+Serper Source Material collector cap from one full-size page to the
+already-owned downstream three-record aggregate cap. It does not add a provider,
+parser, retry path, route, public behavior, or prompt loosening.
 
-Runtime has not yet been refreshed to HJ37C for the next validation job.
+Runtime has not yet been refreshed to HJ38 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-37B-ASYLUM-235000-DE-ACCEPTED-TEXT-DOWNSTREAM-RERUN`
+`X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN`
 
 Result document:
 
@@ -76,6 +75,14 @@ Important evidence:
 - HJ37C is therefore an in-place cap/provenance repair: allow already-bounded
   truncated source text through downstream handoff while preserving the same
   byte limits and hash checks.
+- `75a8aaf414d94d3ea8f32555ed9712a6` (German asylum aggregate) ran on HJ37C
+  and stayed on `claimboundary-v2`; public/default containment held. It reached
+  W5 with Source Material records `1`, W4-G sidecars `1`, W4-H packets `1`,
+  W4-I readiness `extraction_input_structurally_eligible_execution_denied`,
+  source-content packets `1`, and input packet bytes `4096`, then W5 returned
+  `hidden_no_extractable_evidence`. HJ38 therefore amends the existing Serper
+  linked-page collector aggregate cap so the next run can provide up to three
+  bounded linked-page records to W5 before changing W5 prompt/selectivity.
 
 - `83734c0d433849eba1a493307e25de76` (German asylum aggregate) reran on HJ32
   and produced a durable admin stop summary: Stage `Evidence Extraction`,
@@ -180,26 +187,25 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `7`;
-- remaining: `11`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ37C lane/ledger sync.
-2. Refresh runtime to the committed HJ37C state and verify Web/API/proxy runtime
+1. Refresh runtime to the committed HJ38 state and verify Web/API/proxy runtime
    commit match.
-3. Run one default/manual V2 validation job for the Captain-defined German
+2. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ37C produces a hidden internal report, review report quality before
+3. If HJ38 produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ37C materially increases Source Material bytes but still reaches
-   `no_extractable_evidence`, inspect the bounded linked-page material and W5
-   extraction decision before another prompt or source-depth repair.
-6. If HJ37C still blocks at W4-C/W4-D/W4-G, treat it as a downstream lineage
-   compatibility bug and repair the existing gate rather than changing W5.
-7. Treat the plastic CU stop as a separate follow-up unless the same repair
+4. If HJ38 reaches W5 with multiple bounded linked-page packets but still
+   returns `no_extractable_evidence`, inspect W5 extraction selectivity before
+   spending another source-depth repair.
+5. If HJ38 still reaches W5 with only one packet, consider a bounded
+   per-query fan-in adjustment at the same Serper seam before W5 changes.
+6. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.
 

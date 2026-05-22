@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj31",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj37c",
     "resetTotal": 18,
-    "currentRemaining": 11,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ31 identified remaining cross-input stops and requested continued stronger HighJump validation."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ37C reached W5 with one bounded linked-page packet but still produced no EvidenceItems."
     },
     "latestReset": {
       "date": "2026-05-22",
       "previousRemaining": 10,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ31 so the team can continue using stronger report-quality validation and targeted diagnostic reruns under HighJump without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget after HJ37C so the team can continue using stronger HighJump validation toward complete V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-31-ASYLUM-WW2-VARIANT-STOP-SUMMARY-RERUN",
-      "startsAfterJobId": "95d5e671ecd64e4a8edbd9aef3f45b36",
+      "startsAfterSliceId": "X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN",
+      "startsAfterJobId": "75a8aaf414d94d3ea8f32555ed9712a6",
       "startingRemaining": 18,
-      "currentRemaining": 11,
-      "consumptionEntriesInThisTranche": 7,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ31. HJ32 narrowed the asylum-family stop to W5 receiving source-content packets but extracting no EvidenceItems. HJ33-HJ35 all regressed or remained at zero Source Material records. HJ36 restored Source Material/W5 input through bounded Serper search-preview material, but the material remained too thin. HJ37 produced Source Material records through bounded linked-page materialization, then exposed a downstream accepted-text corpus-gate bug. HJ37B passed accepted_text through W4-C but exposed a truncation-flag gate at W4-G. Commit f479df9f repairs that existing downstream gate before the HJ37C rerun.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ37C. HJ37C reached W5 with one 4096-byte bounded linked-page packet and public/default containment held, but W5 returned no_extractable_evidence. Commit fb8b50f3 now amends the existing Serper linked-page collector aggregate cap to allow up to the already-owned downstream three-record aggregate before the next validation job.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1089,6 +1089,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_stage_reached",
         "note": "HJ37B reran the German asylum aggregate input after accepted_text downstream admission. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 1, then W4-G blocked with source_material_text_oversized because the bounded linked-page Source Material carried truncationApplied=true at the 4096-byte cap. The observed failure is a downstream cap/provenance mismatch, so f479df9f preserves the truncation flag through W4-A/W4-C/W4-D/W4-G/W4-H while keeping the same byte caps and hash checks."
+      },
+      {
+        "sliceId": "X7-HJ-37C-ASYLUM-235000-DE-BOUNDED-TRUNCATION-RERUN",
+        "jobId": "75a8aaf414d94d3ea8f32555ed9712a6",
+        "classification": "STOP_X7_HJ37C_W5_NO_EXTRACTABLE_EVIDENCE_WITH_ONE_BOUNDED_LINKED_PAGE_PACKET",
+        "implementationCommit": "03ce29038362354bede0a63d671cf4d062cdaa50",
+        "runtimeCommit": "03ce29038362354bede0a63d671cf4d062cdaa50",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "fb8b50f3_serper_aggregate_cap_pending_validation",
+        "count": 1,
+        "remainingAfter": 10,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\"; superseded by the later fresh reset to 18 after this HJ37C result.",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ37C reran the German asylum aggregate input after bounded truncation preservation. The run stayed on claimboundary-v2 and public/default containment held. Durable admin summary showed Source Material records 1, W4-G bounded_corpus_text_sidecar_created_extraction_gate_closed with 1 sidecar, W4-H bounded_extraction_input_packet_created_extraction_execution_closed with 1 packet, W4-I structurally eligible, and W5 hidden_no_extractable_evidence with 1 source-content packet and 4096 input bytes. The observed stop is no longer a downstream gate mismatch; it is source depth/usefulness or W5 selectivity, so fb8b50f3 first amends the existing Serper aggregate cap before changing W5."
       }
     ],
     "blockedPending": [],
