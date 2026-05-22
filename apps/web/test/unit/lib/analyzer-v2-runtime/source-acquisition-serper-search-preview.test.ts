@@ -4,6 +4,7 @@ import {
   SERPER_LINKED_PAGE_FETCH_RESPONSE_BYTE_CAP,
   SERPER_LINKED_PAGE_FETCH_TIMEOUT_MS,
   SERPER_SEARCH_PREVIEW_MAX_AGGREGATE_TEXT_BYTES,
+  SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY,
   SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN,
   SERPER_SEARCH_PREVIEW_RESPONSE_BYTE_CAP,
   collectSerperSearchPreviewSourceMaterialRecords,
@@ -77,12 +78,12 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
           },
           {
             title: `Search lane ${ordinal} second result`,
-            snippet: "This fallback should stay unused while the first result is materializable.",
+            snippet: `Distinct bounded second-preview text ${ordinal}.`,
             link: "https://law.example.test/fair-trial",
           },
           {
             title: `Search lane ${ordinal} third result`,
-            snippet: "This fallback should also stay unused.",
+            snippet: "This third result should stay unused while the per-query cap is two.",
             link: "https://analysis.example.test/chronology",
           },
         ],
@@ -107,10 +108,8 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     });
     const serialized = JSON.stringify({ records, previews });
 
-    expect(requests).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN);
+    expect(requests).toHaveLength(3);
     expect(requests.map((request) => request.hostname)).toEqual([
-      "google.serper.dev",
-      "google.serper.dev",
       "google.serper.dev",
       "google.serper.dev",
       "google.serper.dev",
@@ -119,15 +118,11 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
       "/search",
       "/search",
       "/search",
-      "/search",
-      "/search",
     ]);
     expect(requests.map((request) => request.body)).toEqual([
       { q: "bounded provider query 1", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
       { q: "bounded provider query 2", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
       { q: "bounded provider query 3", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
-      { q: "bounded provider query 4", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
-      { q: "bounded provider query 5", num: SERPER_SEARCH_PREVIEW_MAX_CANDIDATES_PER_QUERY },
     ]);
     expect(records).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_RUN);
     expect(records.map((record) => record.providerId)).toEqual([
@@ -146,15 +141,16 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     ]);
     expect(records.map((record) => record.sourceMaterialText)).toEqual([
       "Search lane 1 first result Distinct bounded preview text 1.",
+      "Search lane 1 second result Distinct bounded second-preview text 1.",
       "Search lane 2 first result Distinct bounded preview text 2.",
+      "Search lane 2 second result Distinct bounded second-preview text 2.",
       "Search lane 3 first result Distinct bounded preview text 3.",
-      "Search lane 4 first result Distinct bounded preview text 4.",
-      "Search lane 5 first result Distinct bounded preview text 5.",
     ]);
     expect(previews).toHaveLength(5);
-    expect(serialized).toContain("Search lane 5 first result");
-    expect(serialized).not.toContain("Search lane 6 first result");
-    expect(serialized).not.toContain("fallback should stay unused");
+    expect(serialized).toContain("Search lane 3 first result");
+    expect(serialized).not.toContain("Search lane 3 second result");
+    expect(serialized).not.toContain("Search lane 4 first result");
+    expect(serialized).not.toContain("third result should stay unused");
     expect(serialized).not.toContain("https://news.example.test");
     expect(serialized).not.toContain("https://law.example.test");
     expect(serialized).not.toContain("bounded provider query");
@@ -163,6 +159,45 @@ describe("Analyzer V2 Serper search-preview Source Material collector", () => {
     expect(info).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
+  });
+
+  it("materializes a bounded second organic candidate per query while rejecting the third", async () => {
+    const previews: unknown[] = [];
+    const records = await collectSerperSearchPreviewSourceMaterialRecords({
+      queryEntries: [queryEntry(1)],
+      apiKey: "test-serper-key",
+      httpClient: async () => response({
+        organic: [
+          {
+            title: "First source result",
+            snippet: "First bounded source preview.",
+            link: "https://source.example.test/first",
+          },
+          {
+            title: "Second source result",
+            snippet: "Second bounded source preview.",
+            link: "https://source.example.test/second",
+          },
+          {
+            title: "Third source result",
+            snippet: "Third bounded source preview.",
+            link: "https://source.example.test/third",
+          },
+        ],
+      }),
+      linkedPageHttpClient: null,
+      candidatePreviewProjectionSink: (projection) => previews.push(projection),
+    });
+    const serialized = JSON.stringify({ records, previews });
+
+    expect(records).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY);
+    expect(records.map((record) => record.sourceMaterialText)).toEqual([
+      "First source result First bounded source preview.",
+      "Second source result Second bounded source preview.",
+    ]);
+    expect(previews).toHaveLength(SERPER_SEARCH_PREVIEW_MAX_RECORDS_PER_QUERY);
+    expect(serialized).not.toContain("Third source result");
+    expect(serialized).not.toContain("https://source.example.test");
   });
 
   it("fails closed without a usable API key or when the response violates bounds", async () => {
