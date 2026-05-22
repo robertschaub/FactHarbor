@@ -9371,6 +9371,14 @@ describe("analyzer-v2 boundary guard", () => {
             new Set(["createHash"]),
           ],
           [
+            "@/lib/analyzer-v2/claim-understanding/schemas",
+            new Set(["ClaimContractSchema"]),
+          ],
+          [
+            "@/lib/analyzer-v2/claim-understanding/types",
+            new Set(["ClaimContract"]),
+          ],
+          [
             "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
             new Set(["BoundedEvidenceExtractionDecision"]),
           ],
@@ -10055,6 +10063,10 @@ describe("analyzer-v2 boundary guard", () => {
           ["@ai-sdk/anthropic", new Set(["anthropic"])],
           ["ai", new Set(["generateText"])],
           [
+            "@/lib/analyzer-v2/claim-understanding/types",
+            new Set(["ClaimContract"]),
+          ],
+          [
             "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
             new Set(["BoundedEvidenceExtractionDecision"]),
           ],
@@ -10272,6 +10284,10 @@ describe("analyzer-v2 boundary guard", () => {
           ["@ai-sdk/anthropic", new Set(["anthropic"])],
           ["ai", new Set(["generateText"])],
           [
+            "@/lib/analyzer-v2/claim-understanding/types",
+            new Set(["ClaimContract"]),
+          ],
+          [
             "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction",
             new Set(["BoundedEvidenceExtractionDecision"]),
           ],
@@ -10284,6 +10300,7 @@ describe("analyzer-v2 boundary guard", () => {
             new Set([
               "BOUNDARY_VERDICT_EXECUTION_INPUT_PACKET_VERSION",
               "BOUNDARY_VERDICT_EXECUTION_SOURCE_PACKAGE",
+              "buildBoundaryVerdictSelectedAtomicClaimProjections",
               "runBoundaryVerdictExecutionRuntime",
               "BoundaryVerdictEvidenceScopeProjection",
               "BoundaryVerdictExecutionDecision",
@@ -10291,6 +10308,7 @@ describe("analyzer-v2 boundary guard", () => {
               "BoundaryVerdictExecutionInputPacketItem",
               "BoundaryVerdictExecutionProviderCallRequest",
               "BoundaryVerdictExecutionProviderCallResponse",
+              "BoundaryVerdictExecutionSelectedAtomicClaimProjection",
             ]),
           ],
           [

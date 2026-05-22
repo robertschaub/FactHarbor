@@ -226,8 +226,9 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("`truthPercentage`");
     expect(section).toContain("`confidence`");
     expect(section).toContain("`evidenceIds`");
-    expect(section).toContain("Preserve comparison structure and measurement boundaries visible in the cited EvidenceItem statements");
-    expect(section).toContain("same compared entities, property, direction, and measurement frame");
+    expect(section).toContain("selected AtomicClaim statement projections plus bounded EvidenceItem statements");
+    expect(section).toContain("Preserve comparison structure and measurement boundaries visible in the selected AtomicClaim statements");
+    expect(section).toContain("same compared entities, property, direction, and measurement frame as the selected AtomicClaim");
     expect(section).toContain("keep the internal report path open with a caveated or `UNVERIFIED` candidate");
     expect(section).not.toMatch(/\$\{\w+\}/);
   });

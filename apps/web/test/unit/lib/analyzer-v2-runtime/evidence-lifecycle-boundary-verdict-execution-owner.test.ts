@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generateText } from "ai";
 
+import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
   BOUNDED_EVIDENCE_EXTRACTION_DECISION_VERSION,
   BOUNDED_EVIDENCE_EXTRACTION_RUNTIME_VERSION,
@@ -74,6 +75,46 @@ function context(options: {
       ? undefined
       : QUERY_PLANNING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT,
   });
+}
+
+function claimContract(overrides: Partial<ClaimContract> = {}): ClaimContract {
+  const base: ClaimContract = {
+    schemaVersion: "v2.claim_contract.0",
+    input: {
+      inputType: "text",
+      inputValue: INPUT,
+      resolvedInputText: INPUT,
+      detectedLanguage: "en",
+      selectedAtomicClaimIds: ["AC_001"],
+    },
+    inputGroundingSeed: {
+      source: "direct_input",
+      inputType: "text",
+      inputValue: INPUT,
+      resolvedInputText: INPUT,
+      detectedLanguage: "en",
+      currentDate: "2026-05-20",
+      acsSnapshotHash: null,
+      inputGroundingSeedHash: "1".repeat(64),
+    },
+    atomicClaims: [{
+      id: "AC_001",
+      statement: INPUT,
+      selected: true,
+      source: "v2_claim_understanding",
+      gate1Status: {
+        status: "passed",
+        source: "v2_claim_understanding",
+        summary: "accepted",
+        reasons: [],
+      },
+      integrityEvents: [],
+    }],
+    integrityEvents: [],
+    acsMigration: null,
+  };
+
+  return { ...base, ...overrides };
 }
 
 function evidenceItem(overrides: Partial<ExtractedEvidenceItemContract> = {}): ExtractedEvidenceItemContract {
@@ -373,6 +414,7 @@ describe("boundary/verdict execution runtime owner", () => {
     const lineage = await parents();
     const decision = await runBoundaryVerdictExecutionDecision({
       context: context(),
+      claimContract: claimContract(),
       boundedEvidenceExtraction: lineage.w5Decision,
       evidenceItemHandoff: lineage.handoff,
       sufficiencyIntake: lineage.intake,
@@ -410,6 +452,7 @@ describe("boundary/verdict execution runtime owner", () => {
       maxRetries: 0,
     }));
     const prompt = String(vi.mocked(generateText).mock.calls[0]?.[0]?.prompt ?? "");
+    expect(prompt).toContain(INPUT);
     expect(prompt).toContain(STATEMENT);
     expect(prompt).not.toContain(SCOPE_TEXT);
     expect(prompt).not.toContain(LOCATOR_TEXT);
@@ -494,6 +537,7 @@ describe("boundary/verdict execution runtime owner", () => {
     const input = await buildInput();
     const decision = await runBoundaryVerdictExecutionDecision({
       context: context(),
+      claimContract: claimContract(),
       ...input,
     });
 
@@ -505,10 +549,37 @@ describe("boundary/verdict execution runtime owner", () => {
     expect(isBoundaryVerdictExecutionRuntimeOwnedDecision(decision)).toBe(true);
   });
 
+  it("fails closed before provider execution when selected AtomicClaim context is unavailable", async () => {
+    const lineage = await parents();
+    const decision = await runBoundaryVerdictExecutionDecision({
+      context: context(),
+      claimContract: claimContract({
+        input: {
+          ...claimContract().input,
+          selectedAtomicClaimIds: ["AC_MISSING"],
+        },
+      }),
+      boundedEvidenceExtraction: lineage.w5Decision,
+      evidenceItemHandoff: lineage.handoff,
+      sufficiencyIntake: lineage.intake,
+      sufficiencyAssessment: lineage.assessment,
+      boundaryVerdictCandidate: lineage.boundaryVerdict,
+      internalAlphaReportStop: lineage.reportStop,
+    });
+
+    expect(decision.status).toBe("boundary_verdict_execution_blocked");
+    expect(decision.blockedReason).toBe("input_contract_invalid");
+    expect(decision.sideEffects.adapterCalled).toBe(false);
+    expect(decision.sideEffects.modelCalled).toBe(false);
+    expect(generateText).not.toHaveBeenCalled();
+    expect(isBoundaryVerdictExecutionRuntimeOwnedDecision(decision)).toBe(true);
+  });
+
   it("validates hidden direct-text activation before provider execution and sanitizes failure", async () => {
     const lineage = await parents();
     const decision = await runBoundaryVerdictExecutionDecision({
       context: context({ hiddenDirectText: false }),
+      claimContract: claimContract(),
       boundedEvidenceExtraction: lineage.w5Decision,
       evidenceItemHandoff: lineage.handoff,
       sufficiencyIntake: lineage.intake,
@@ -529,6 +600,7 @@ describe("boundary/verdict execution runtime owner", () => {
     const lineage = await parents();
     const decision = await runBoundaryVerdictExecutionDecision({
       context: context(),
+      claimContract: claimContract(),
       boundedEvidenceExtraction: lineage.w5Decision,
       evidenceItemHandoff: lineage.handoff,
       sufficiencyIntake: lineage.intake,
@@ -542,6 +614,7 @@ describe("boundary/verdict execution runtime owner", () => {
     expect(decision.damagedReason).toBe("provider_unavailable");
     expect(generateText).toHaveBeenCalledTimes(1);
     expect(serialized).not.toContain(PROVIDER_SECRET);
+    expect(serialized).not.toContain(INPUT);
     expect(serialized).not.toContain(STATEMENT);
     expect(isBoundaryVerdictExecutionRuntimeOwnedDecision(decision)).toBe(true);
   });
@@ -551,6 +624,7 @@ describe("boundary/verdict execution runtime owner", () => {
     const lineage = await parents();
     const decision = await runBoundaryVerdictExecutionDecision({
       context: context(),
+      claimContract: claimContract(),
       boundedEvidenceExtraction: lineage.w5Decision,
       evidenceItemHandoff: lineage.handoff,
       sufficiencyIntake: lineage.intake,
@@ -561,6 +635,7 @@ describe("boundary/verdict execution runtime owner", () => {
     const serialized = JSON.stringify(decision);
 
     expect(serialized).not.toContain(STATEMENT);
+    expect(serialized).not.toContain(INPUT);
     expect(serialized).not.toContain(SCOPE_TEXT);
     expect(serialized).not.toContain(LOCATOR_TEXT);
     expect(serialized).not.toContain(PROVENANCE_TEXT);

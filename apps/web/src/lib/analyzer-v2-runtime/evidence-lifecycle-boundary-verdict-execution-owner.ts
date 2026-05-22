@@ -5,6 +5,7 @@ import path from "node:path";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
+import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types";
 import type {
   BoundedEvidenceExtractionDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
@@ -14,6 +15,7 @@ import type {
 import {
   BOUNDARY_VERDICT_EXECUTION_INPUT_PACKET_VERSION,
   BOUNDARY_VERDICT_EXECUTION_SOURCE_PACKAGE,
+  buildBoundaryVerdictSelectedAtomicClaimProjections,
   runBoundaryVerdictExecutionRuntime,
   type BoundaryVerdictEvidenceScopeProjection,
   type BoundaryVerdictExecutionDecision,
@@ -21,6 +23,7 @@ import {
   type BoundaryVerdictExecutionInputPacketItem,
   type BoundaryVerdictExecutionProviderCallRequest,
   type BoundaryVerdictExecutionProviderCallResponse,
+  type BoundaryVerdictExecutionSelectedAtomicClaimProjection,
 } from "@/lib/analyzer-v2/evidence-lifecycle/boundary-verdict/boundary-verdict-execution";
 import type {
   BoundaryVerdictCandidateDecision,
@@ -82,6 +85,7 @@ export class BoundaryVerdictExecutionProviderCallError extends Error {
 
 export type RunBoundaryVerdictExecutionDecisionInput = {
   readonly context: PipelineRunContext;
+  readonly claimContract: ClaimContract | null;
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision | null;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision | null;
   readonly sufficiencyIntake: SufficiencyIntakeDecision | null;
@@ -265,6 +269,7 @@ function packetItem(item: ExtractedEvidenceItemContract): BoundaryVerdictExecuti
 }
 
 function buildPromptInputPacket(params: {
+  readonly claimContract: ClaimContract;
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
   readonly sufficiencyIntake: SufficiencyIntakeDecision;
@@ -275,6 +280,12 @@ function buildPromptInputPacket(params: {
   const evidenceItems = params.boundedEvidenceExtraction.extractionResult?.status === "accepted"
     ? params.boundedEvidenceExtraction.extractionResult.evidenceItems.map(packetItem)
     : [];
+  const selectedAtomicClaimProjection = buildBoundaryVerdictSelectedAtomicClaimProjections(params.claimContract);
+  if (selectedAtomicClaimProjection.status !== "accepted") {
+    throw new BoundaryVerdictExecutionProviderCallError();
+  }
+  const selectedAtomicClaims: readonly BoundaryVerdictExecutionSelectedAtomicClaimProjection[] =
+    selectedAtomicClaimProjection.claims;
   const base = {
     packetVersion: BOUNDARY_VERDICT_EXECUTION_INPUT_PACKET_VERSION,
     parentW5DecisionId: params.boundedEvidenceExtraction.decisionId,
@@ -283,6 +294,8 @@ function buildPromptInputPacket(params: {
     parentW6CDecisionId: params.sufficiencyAssessment.decisionId,
     parentW7ADecisionId: params.boundaryVerdictCandidate.decisionId,
     parentW8ADecisionId: params.internalAlphaReportStop.decisionId,
+    selectedAtomicClaimCount: selectedAtomicClaims.length,
+    selectedAtomicClaims,
     evidenceItemCount: evidenceItems.length,
     evidenceItems,
     sufficiencyAssessmentProjection: {
@@ -308,6 +321,7 @@ function buildPromptInputPacket(params: {
 
 function buildPromptVariables(params: {
   readonly context: PipelineRunContext;
+  readonly claimContract: ClaimContract;
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision;
   readonly sufficiencyIntake: SufficiencyIntakeDecision;
@@ -401,6 +415,7 @@ export async function runBoundaryVerdictExecutionDecision(
   const runtimeOwnedSufficiencyAssessment = readSufficiencyAssessmentRuntimeOwnedDecision(
     input.sufficiencyAssessment,
   );
+  const selectedAtomicClaimProjection = buildBoundaryVerdictSelectedAtomicClaimProjections(input.claimContract);
   const configSnapshotHash = buildConfigSnapshotHash({
     context: input.context,
     boundedEvidenceExtraction: runtimeOwnedW5,
@@ -418,10 +433,13 @@ export async function runBoundaryVerdictExecutionDecision(
     !runtimeOwnedSufficiencyAssessment ||
     !runtimeOwnedSufficiencyAssessment.sufficiencyAssessmentStatus ||
     !input.boundaryVerdictCandidate ||
-    !input.internalAlphaReportStop
+    !input.internalAlphaReportStop ||
+    !input.claimContract ||
+    selectedAtomicClaimProjection.status !== "accepted"
   ) {
     const decision = await runBoundaryVerdictExecutionRuntime({
       context: input.context,
+      claimContract: input.claimContract,
       boundedEvidenceExtraction: runtimeOwnedW5,
       evidenceItemHandoff: input.evidenceItemHandoff,
       sufficiencyIntake: input.sufficiencyIntake,
@@ -446,6 +464,7 @@ export async function runBoundaryVerdictExecutionDecision(
     runtimeOwnedSufficiencyAssessment as PromptReadySufficiencyAssessmentDecision;
   const renderedPrompt = await loadAndRenderPrompt(buildPromptVariables({
     context: input.context,
+    claimContract: input.claimContract,
     boundedEvidenceExtraction: runtimeOwnedW5,
     evidenceItemHandoff: input.evidenceItemHandoff,
     sufficiencyIntake: input.sufficiencyIntake,
@@ -462,6 +481,7 @@ export async function runBoundaryVerdictExecutionDecision(
   });
   const decision = await runBoundaryVerdictExecutionRuntime({
     context: input.context,
+    claimContract: input.claimContract,
     boundedEvidenceExtraction: runtimeOwnedW5,
     evidenceItemHandoff: input.evidenceItemHandoff,
     sufficiencyIntake: input.sufficiencyIntake,

@@ -482,7 +482,7 @@ This task forms evidence-emergent ClaimAssessmentBoundary candidates before prop
 
 The hidden/internal W7-B runtime loader provides these JSON packets:
 
-- `boundaryVerdictInputPacketJson`: bounded EvidenceItem statements plus hash/length/provenance projections from approved W5/W5-F lineage.
+- `boundaryVerdictInputPacketJson`: selected AtomicClaim statement projections plus bounded EvidenceItem statements and hash/length/provenance projections from approved W5/W5-F lineage.
 - `taskPolicySnapshotJson`: the frozen task, prompt, model, and cache policy snapshot.
 - `sufficiencyAssessmentProjectionJson`: the accepted W6-C sufficiency projection.
 - `warningMaterialitySeedJson`: internal warning-materiality seed data already shaped for `warningMaterialityInputs`; warning publication remains closed.
@@ -495,7 +495,7 @@ First group EvidenceItems into ClaimAssessmentBoundary candidates based on compa
 
 Every boundary candidate must cite at least one supplied EvidenceItem ID. Every verdict candidate must cite at least one supplied EvidenceItem ID and at least one boundary candidate ID. Use only IDs present in `boundaryVerdictInputPacketJson`.
 
-Preserve comparison structure and measurement boundaries visible in the cited EvidenceItem statements and claim directions. Before assigning verdict direction, check whether the cited EvidenceItems address the same compared entities, property, direction, and measurement frame as the claim. Evidence with a missing, adjacent, or third-entity comparator may form a context or limitation boundary, but it must not drive a true-side or false-side candidate for the original comparison unless the evidence itself explicitly bridges the comparator mismatch. When the supplied evidence is useful but materially indirect, keep the internal report path open with a caveated or `UNVERIFIED` candidate rather than fabricating a direct comparison.
+Preserve comparison structure and measurement boundaries visible in the selected AtomicClaim statements, cited EvidenceItem statements, and claim directions. Before assigning verdict direction, check whether the cited EvidenceItems address the same compared entities, property, direction, and measurement frame as the selected AtomicClaim. Evidence with a missing, adjacent, or third-entity comparator may form a context or limitation boundary, but it must not drive a true-side or false-side candidate for the original comparison unless the evidence itself explicitly bridges the comparator mismatch. When the supplied evidence is useful but materially indirect, keep the internal report path open with a caveated or `UNVERIFIED` candidate rather than fabricating a direct comparison.
 
 ### Output Contract
 

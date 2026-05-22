@@ -410,6 +410,7 @@ export async function runClaimBoundaryPipelineV2(
             });
             boundaryVerdictExecution = await runBoundaryVerdictExecutionDecision({
               context,
+              claimContract: claimUnderstandingHandoff.claimContract,
               boundedEvidenceExtraction,
               evidenceItemHandoff,
               sufficiencyIntake,

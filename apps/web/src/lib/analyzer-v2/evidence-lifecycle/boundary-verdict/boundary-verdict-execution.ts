@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { ClaimContractSchema } from "@/lib/analyzer-v2/claim-understanding/schemas";
+import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { BoundedEvidenceExtractionDecision } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
 import type { EvidenceItemHandoffDecision } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff";
 import { EVIDENCE_ITEM_HANDOFF_DECISION_VERSION } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/evidence-item-handoff";
@@ -104,6 +106,13 @@ export type BoundaryVerdictEvidenceScopeProjection = {
   readonly limitationHashes: readonly string[];
 };
 
+export type BoundaryVerdictExecutionSelectedAtomicClaimProjection = {
+  readonly atomicClaimId: string;
+  readonly statement: string;
+  readonly statementHash: string;
+  readonly statementByteLength: number;
+};
+
 export type BoundaryVerdictExecutionInputPacketItem = {
   readonly evidenceItemId: string;
   readonly statement: string;
@@ -128,6 +137,8 @@ export type BoundaryVerdictExecutionInputPacket = {
   readonly parentW6CDecisionId: string;
   readonly parentW7ADecisionId: string;
   readonly parentW8ADecisionId: string;
+  readonly selectedAtomicClaimCount: number;
+  readonly selectedAtomicClaims: readonly BoundaryVerdictExecutionSelectedAtomicClaimProjection[];
   readonly evidenceItemCount: number;
   readonly evidenceItems: readonly BoundaryVerdictExecutionInputPacketItem[];
   readonly sufficiencyAssessmentProjection: {
@@ -334,6 +345,7 @@ export type BoundaryVerdictExecutionDecision = {
 
 export type RunBoundaryVerdictExecutionRequest = {
   readonly context: PipelineRunContext;
+  readonly claimContract: ClaimContract | null;
   readonly boundedEvidenceExtraction: BoundedEvidenceExtractionDecision | null;
   readonly evidenceItemHandoff: EvidenceItemHandoffDecision | null;
   readonly sufficiencyIntake: SufficiencyIntakeDecision | null;
@@ -453,6 +465,47 @@ function packetItem(item: ExtractedEvidenceItemContract): BoundaryVerdictExecuti
     evidenceScope: evidenceScopeProjection(item.evidenceScope),
     provenanceHash: sha256Json(item.provenance),
   };
+}
+
+export function buildBoundaryVerdictSelectedAtomicClaimProjections(
+  claimContract: ClaimContract | null,
+): { readonly status: "accepted"; readonly claims: readonly BoundaryVerdictExecutionSelectedAtomicClaimProjection[] } | {
+  readonly status: "blocked";
+} {
+  const parsed = ClaimContractSchema.safeParse(claimContract);
+  if (!parsed.success) {
+    return { status: "blocked" };
+  }
+
+  const rawSelectedAtomicClaimIds = parsed.data.input.selectedAtomicClaimIds;
+  const selectedAtomicClaimIds = rawSelectedAtomicClaimIds.map((claimId) => claimId.trim());
+  if (selectedAtomicClaimIds.length === 0 || new Set(selectedAtomicClaimIds).size !== selectedAtomicClaimIds.length) {
+    return { status: "blocked" };
+  }
+  if (rawSelectedAtomicClaimIds.some((claimId, index) => claimId !== selectedAtomicClaimIds[index])) {
+    return { status: "blocked" };
+  }
+
+  const claimById = new Map(parsed.data.atomicClaims.map((claim) => [claim.id, claim]));
+  const claims: BoundaryVerdictExecutionSelectedAtomicClaimProjection[] = [];
+  for (const claimId of selectedAtomicClaimIds) {
+    const claim = claimById.get(claimId);
+    if (
+      !claim ||
+      !claim.selected ||
+      !isRealValue(claim.statement)
+    ) {
+      return { status: "blocked" };
+    }
+    claims.push({
+      atomicClaimId: claimId,
+      statement: claim.statement,
+      statementHash: sha256Text(claim.statement),
+      statementByteLength: utf8ByteLength(claim.statement),
+    });
+  }
+
+  return { status: "accepted", claims };
 }
 
 function parentSideEffectsClosed(input: {
@@ -597,6 +650,9 @@ function validateParents(request: RunBoundaryVerdictExecutionRequest): BoundaryV
   if (w5.evidenceItemCount > BOUNDARY_VERDICT_EXECUTION_MAX_EVIDENCE_ITEMS) {
     return "boundary_verdict_input_too_large";
   }
+  if (buildBoundaryVerdictSelectedAtomicClaimProjections(request.claimContract).status !== "accepted") {
+    return "input_contract_invalid";
+  }
   return null;
 }
 
@@ -687,6 +743,10 @@ function buildInputPacket(request: RunBoundaryVerdictExecutionRequest): Boundary
   const evidenceItems = w5.extractionResult?.status === "accepted"
     ? w5.extractionResult.evidenceItems.map(packetItem)
     : [];
+  const selectedAtomicClaimProjection = buildBoundaryVerdictSelectedAtomicClaimProjections(request.claimContract);
+  const selectedAtomicClaims = selectedAtomicClaimProjection.status === "accepted"
+    ? selectedAtomicClaimProjection.claims
+    : [];
   const base = {
     packetVersion: BOUNDARY_VERDICT_EXECUTION_INPUT_PACKET_VERSION,
     parentW5DecisionId: w5.decisionId,
@@ -695,6 +755,8 @@ function buildInputPacket(request: RunBoundaryVerdictExecutionRequest): Boundary
     parentW6CDecisionId: assessment.decisionId,
     parentW7ADecisionId: w7a.decisionId,
     parentW8ADecisionId: w8a.decisionId,
+    selectedAtomicClaimCount: selectedAtomicClaims.length,
+    selectedAtomicClaims,
     evidenceItemCount: evidenceItems.length,
     evidenceItems,
     sufficiencyAssessmentProjection: {
