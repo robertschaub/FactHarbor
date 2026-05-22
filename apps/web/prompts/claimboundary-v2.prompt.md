@@ -278,6 +278,13 @@ help interpret or caveat the direct evidence.
   topics, or language-specific phrases.
 - Preserve the claim's language signal, and use supplementary-language intent
   only when the task policy and source-language rationale support it.
+- For quantitative or current-aggregate claims, preserve the explicit quantity,
+  unit, population/domain, and time posture in at least one direct-record query
+  when those elements are present in the selected AtomicClaim. If the source may
+  format the same quantity differently, include a concise alternate query that
+  keeps the same claim relation while normalizing only numeric spacing or
+  separators. Do not replace the direct numeric intent with only broad topical,
+  institutional, encyclopedic, academic, or explanatory context.
 - Keep each query concise and explain which selected AtomicClaim evidence need
   it serves.
 
