@@ -21,24 +21,23 @@ from observed report defects.
 
 Latest committed implementation anchor:
 
-`496129da fix(v2): recover quantitative extraction path`
+`2736cdd2 fix(v2): admit bounded search-preview source material`
 
-The current committed repair is HJ35: revert the HJ33/HJ34 query-planning
-overcorrection and repair the existing W5 evidence-extraction prompt where HJ32
-showed the actual stop. Quantitative/current-aggregate source content may now
-be materially aligned when it addresses the same population/domain and time
-posture, while mismatches remain represented through evidence strength,
-limitations, and provenance. This is a bounded prompt/test repair of an
-existing mechanism, not provider, schema, route, retry, parser,
-cache/SR/storage, public behavior, or V1 work.
+The current committed repair is HJ36: remove the W3-B strong-anchor coverage
+cliff for already-bounded Serper search-preview Source Material records.
+Serper preview text was already capped, redacted from public/default surfaces,
+and accepted downstream by lineage; HJ36 lets it become Source Material even
+when OpenAlex/Wikimedia did not also produce a strong anchor. This is a bounded
+amendment of an existing Source Material owner, not a new provider, schema,
+route, retry, parser, cache/SR/storage, public behavior, or V1 work.
 
-Runtime has not yet been refreshed to HJ35 for the next validation job.
+Runtime has not yet been refreshed to HJ36 for the next validation job.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-34-ASYLUM-235000-DE-BALANCED-QUERY-DISCOVERY-RERUN`
+`X7-HJ-35-ASYLUM-235000-DE-QUANTITATIVE-EXTRACTION-PATH-RERUN`
 
 Result document:
 
@@ -65,10 +64,13 @@ Important evidence:
   after the balanced query-discovery repair. It repeated the HJ33 regression:
   Source Material records `0`, W4-G `w3b_not_completed`, W4-H
   `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
-- HJ35 therefore reverts the HJ33/HJ34 query-planning hunk rather than stacking
-  more source-acquisition machinery. It repairs the W5 extraction prompt where
-  HJ32 proved source-content packets reached the model but yielded
-  `no_extractable_evidence`.
+- `c42b423674624bb39743498174ca1bac` (German asylum aggregate) reran on HJ35
+  after the query-planning revert and W5 extraction-path repair. It still had
+  Source Material records `0`, W4-G `w3b_not_completed`, W4-H
+  `w4g_not_positive`, W5 `blocked_pre_execution`, source-content packets `0`.
+- HJ36 therefore amends the existing W3-B Source Material owner: bounded
+  Serper search-preview records no longer require an OpenAlex/Wikimedia anchor
+  before they can feed the hidden internal Alpha report path.
 - Public/default containment held: public/default reportMarkdown stayed `null`,
   schema stayed `4.0.0-cb-precutover`, cutover stayed `blocked_precutover`, and
   issue stayed `report_damaged`.
@@ -92,10 +94,11 @@ Important evidence:
 - Public/default containment held for all HJ30 jobs: public V2 stayed
   `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public and
   default job/page surfaces did not expose hidden report text or hidden statuses.
-- HJ35 now addresses the HJ33/HJ34 failed-attempt recovery: restore the HJ32
-  source-material path and calibrate W5 so same-population/domain/time
-  quantitative source content is not rejected solely because the exact value is
-  rounded, differently formatted, partial-period, or non-identical.
+- HJ36 now addresses the HJ33-HJ35 failed-attempt recovery: the query-planning
+  hypothesis is exhausted for this claim family, and the next lowest-complexity
+  path is to lower the existing W3-B strong-anchor bar for bounded search
+  previews while keeping W5 quality controls responsible for semantic
+  EvidenceItem selection.
 
 ## Open Generalization Gap
 
@@ -146,26 +149,26 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `3`;
-- remaining: `15`;
+- consumed after latest reset: `4`;
+- remaining: `14`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Commit the HJ35 lane/ledger sync.
-2. Refresh runtime to the committed HJ35 state and verify Web/API/proxy runtime
+1. Commit the HJ36 lane/ledger sync.
+2. Refresh runtime to the committed HJ36 state and verify Web/API/proxy runtime
    commit match.
 3. Run one default/manual V2 validation job for the Captain-defined German
    asylum aggregate input.
-4. If HJ35 produces a hidden internal report, review report quality before
+4. If HJ36 produces a hidden internal report, review report quality before
    adding more plumbing.
-5. If HJ35 restores Source Material/W5 input but still reaches
+5. If HJ36 restores Source Material/W5 input but still reaches
    `no_extractable_evidence`, stop iterating this prompt path and use Steer-Co
    to choose a source-material/usefulness strategy from the observed packets.
-6. If HJ35 still has Source Material records `0`, inspect the existing source
-   acquisition/materialization path instead of further query-planning prompt
-   edits.
+6. If HJ36 still has Source Material records `0`, inspect Serper availability,
+   candidate/provider telemetry, and W3-B record materialization before further
+   query-planning or W5 prompt edits.
 7. Treat the plastic CU stop as a separate follow-up unless the same repair
    naturally covers short broad assertions without lowering Gate 1 quality too
    far.

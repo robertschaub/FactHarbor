@@ -3865,3 +3865,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job budget to `18`; HJ32, HJ33, and HJ34 consumed `3`, so `15` remain before the HJ35 validation run.
 
 **Next:** Commit this lane/ledger sync, refresh runtime to HJ35, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ35 Result And HJ36 Search-Preview Source Material Unlock
+
+**Task:** Validate HJ35 after reverting the query-planning overcorrection and repairing the existing W5 quantitative extraction path, then apply the lowest-complexity next HighJump repair if the German asylum aggregate path still failed before report generation.
+
+**Result:** HJ35 job `c42b423674624bb39743498174ca1bac` ran on committed runtime `e94d76bc4b6a77a5ad499fa6bd20fe5913761801` through the default manual V2 path for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2` and public/default containment held, but Source Material records remained `0`, W4-G stayed `w3b_not_completed`, W4-H stayed `w4g_not_positive`, W5 stayed `blocked_pre_execution`, and source-content packets stayed `0`. This disproved the W5-only repair path for this run and pointed back to W3-B Source Material materialization.
+
+**Steer-Co / expert review:** Claude Opus 4.6 read-only review agreed the remaining blocker was the W3-B strong-anchor coverage cliff for already-bounded Serper search-preview records. Recommendation was to remove that conditional for `webSearchPreviewRecords` only, keep Wikimedia preview fill gated by existing strong records, preserve all caps/redaction/public containment, and track the lowering in the V2 Retirement Ledger for later re-tightening from report evidence.
+
+**Repair:** HJ36 commits `2736cdd2` to amend the existing Source Material owner so bounded Serper search-preview Source Material records can be admitted even when OpenAlex/Wikimedia did not also produce a strong anchor. No provider, schema, route, retry, parser, cache/SR/storage, public behavior, prompt/model/config change, or V1 work was added. The temporary lowering is recorded as V2-RL-021.
+
+**Debt-guard:** Classified as failed-validation recovery on an existing coverage cliff. The chosen path lowers an existing bar with caps already in place instead of adding source machinery or another diagnostic layer. Net mechanisms are unchanged; W5 remains responsible for semantic EvidenceItem selection.
+
+**Verification:** Focused Source Material owner test passed (`13` tests); focused HJ36/Serper/boundary-guard verifier passed (`3` files / `112` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/source/test/docs/boundary-guard footprint warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed before source commit.
+
+**Budget:** Captain reset the live-job budget to `18`. HJ32-HJ35 consumed `4`, so `14` remain before the HJ36 validation run.
+
+**Next:** Commit this lane/ledger sync, refresh runtime to HJ36, verify API/Web/proxy commit match, then run one default/manual V2 validation job for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. If HJ36 still has Source Material records `0`, inspect provider/materialization telemetry rather than lowering W3-B blindly again.
