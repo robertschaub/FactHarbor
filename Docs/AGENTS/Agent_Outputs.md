@@ -5038,3 +5038,27 @@ source-material plumbing.
 `Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
 `Docs/STATUS/V2_Current_Lane.md`;
 `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+## 2026-05-23 - Captain Deputy - HJ76 Staged Report-Quality Gauntlet Package
+
+**Task:** Continue after HJ75 and decide how to use the fresh Captain-approved
+12-job budget without defaulting to more single-family plumbing.
+
+**Steer-Co synthesis:** Claude Opus and GPT sidecar review both returned
+`modify`. Consolidated decision: do not immediately repair the asylum-current
+path again, and do not spend an unbounded 8-job batch. Prepare a staged
+report-quality gauntlet. HJ75 counts as the `asylum-235000-de` datapoint. Wave
+1 submits hydrogen, plastic, Bolsonaro EN, and asylum-WWII; Wave 2 submits
+Bundesrat simple, Bundesrat rechtskräftig, and Bolsonaro PT only if Wave 1 has
+no hard stop.
+
+**Result:** Added
+`Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md` and
+updated the live-job ledger/current status/current lane/backlog to start a fresh
+post-HJ75 tranche with `12` remaining. No source, prompt, model, config, schema,
+provider, parser, public behavior, cache/SR/storage, ACS/direct URL, or V1 work
+changed.
+
+**Next:** Commit this no-code package, refresh runtime to the package commit,
+preflight API/Web health, commit match, runner auth, admin auth, and default
+pipeline, then run HJ76 Wave 1 sequentially unless a hard stop appears.

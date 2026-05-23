@@ -19,30 +19,28 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ73 durable source-chain attribution
-implementation was committed. Older HJ history below is kept as context, but
+This projection is synced after HJ75 produced a true-side internal current-asylum
+report and Captain approved a fresh 12-job tranche. Older HJ history below is kept as context, but
 the active anchor and budget are:
 
 - committed implementation anchor:
   HJ75 source-material source-native selection repair at
   `522beebb9fe36c89e011777118e6fcde6ece0c50`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
-- latest no-live package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ73_Durable_Source_Chain_Attribution_Package.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
 - next prepared package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md`;
 - latest canary result:
   HJ75 replacement canary `ad76c64ca5eb46c7904043975e0c483c`,
   classified
   `PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`;
 - current live-job tranche:
-  Captain reset to `12` on 2026-05-23 after HJ73;
-  HJ74 consumed `1`; the invalid HJ75 runtime-auth trigger miss consumed `1`;
-  the valid HJ75 replacement consumed `1`; `9` remain;
+  Captain reset to `12` on 2026-05-23 after HJ75;
+  HJ76 starts with `12` remaining and no jobs consumed in the new tranche;
 - next action:
-  review the HJ75 internal current-asylum report quality against expectations,
-  then raise one targeted bar from observed report defects. Do not add more
+  run the HJ76 staged report-quality gauntlet. HJ75 counts as the
+  `asylum-235000-de` datapoint. Wave 1 submits hydrogen, plastic, Bolsonaro EN,
+  and asylum-WWII; Wave 2 proceeds only if no hard stop appears. Do not add more
   source-material plumbing by default and do not run a second HJ75 canary;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
@@ -87,6 +85,12 @@ abstract, `3` preview-only), W5 extracted `2` EvidenceItems, and the internal
 report writer created a `4268` byte draft. The observed internal report top
 line is `MOSTLY-TRUE`, truth `78`, confidence `72`, improving the current
 asylum input from HJ74 `UNVERIFIED`. No second HJ75 canary is authorized.
+
+HJ76 is prepared as a no-code staged report-quality gauntlet. It uses HJ75 as
+the `asylum-235000-de` datapoint and spends the fresh 12-job tranche only on
+fresh cross-family signals. Wave 1 is hydrogen, plastic, Bolsonaro EN, and
+asylum-WWII. Wave 2 is Bundesrat simple, Bundesrat rechtskräftig, and
+Bolsonaro PT if Wave 1 has no hard stop.
 
 HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
@@ -763,10 +767,10 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `12`;
-- consumed after latest reset: `1`;
-- remaining: `11`;
-- latest reset starts after the HJ73 durable source-chain attribution no-live
-  package, latest live job remains HJ72 `e2730cb5795e441cbf10831edd18047c`;
+- consumed after latest reset: `0`;
+- remaining: `12`;
+- latest reset starts after HJ75 replacement canary
+  `ad76c64ca5eb46c7904043975e0c483c`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
@@ -794,6 +798,9 @@ Current active tranche:
    true-side internal Alpha report with stronger Source Material. Do not run a
    second HJ75 canary. Next, review report quality and raise one targeted bar
    from observed report defects.
+9. Treat HJ76 as the active validation lane: staged report-quality gauntlet over
+   Captain-defined inputs, no code change, no prompt/config/schema change, and
+   no second asylum-current rerun by default.
 
 ## Stop Conditions
 

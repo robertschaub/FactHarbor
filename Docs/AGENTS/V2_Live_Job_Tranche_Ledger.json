@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj74-attribution-2026-05-23-reset-12-after-hj73",
+    "trancheId": "v2-highjump-hj76-report-quality-gauntlet-2026-05-23-reset-12-after-hj75",
     "resetTotal": 12,
-    "currentRemaining": 9,
+    "currentRemaining": 12,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
-      "summary": "Captain approved a fresh V2 HighJump live-job budget of 12 after HJ73 durable source-chain attribution was committed and HJ74 was prepared as the next attribution canary."
+      "summary": "Captain approved a fresh 12-job V2 HighJump budget after HJ75 replacement produced a true-side internal current-asylum report. HJ76 will use this tranche for staged report-quality validation before another repair."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 0,
+      "previousRemaining": 9,
       "resetRemaining": 12,
-      "reason": "Captain provided a fresh 12-job budget so the team can run the HJ74 HJ73-attribution canary and continue HighJump report-quality repair from durable attribution evidence."
+      "reason": "Captain approved a new 12-job tranche for continued HighJump work after HJ75. The next direction is staged HJ76 report-quality gauntlet, not another immediate single-family source repair."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-73-DURABLE-SOURCE-CHAIN-ATTRIBUTION",
-      "startsAfterJobId": "none_no_live_hj73",
+      "startsAfterSliceId": "X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY",
+      "startsAfterJobId": "ad76c64ca5eb46c7904043975e0c483c",
       "startingRemaining": 12,
-      "currentRemaining": 9,
-      "consumptionEntriesInThisTranche": 3,
-      "note": "HJ64 through HJ72 are fully recorded below against the prior 18-job tranche. HJ72 spent the final job in that tranche and repeated the current-asylum aggregate evidence gap. HJ73 then ran no live job and added durable redacted source-chain attribution to the V2 raw/admin result envelope. Captain approved a fresh 12-job budget for continuation. HJ74 spent the first job after committed-package provenance, runtime refresh, and public/default containment preflight; it captured durable attribution and kept public containment, but the report still lacked direct current stock evidence. HJ75 first submission spent one job but is analytically invalid because API-to-Web runner auth failed before analyzer execution. HJ75 replacement spent one job after auth/provenance preflight and produced a true-side internal Alpha report. 9 jobs remain.",
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "Fresh post-HJ75 tranche. HJ75 remains recorded in the previous tranche as the current-asylum datapoint. HJ76 may use HJ75 as the asylum-current family datapoint unless a fresh same-input rerun is explicitly needed. No HJ76 jobs have been submitted yet.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1987,10 +1987,10 @@
     ],
     "blockedPending": [],
     "exceptionAccounting": {
-      "status": "overrun_recorded_for_wrong_variant_recovery_and_highjump_validation",
-      "overrunCount": 7,
-      "reason": "Two HJ11 jobs consumed budget without exercising V2 because they used the V1 claimboundary variant. Steer-Co then authorized one corrective HJ11 V2 canary, one HJ12 prompt-contract validation canary, one HJ13 OpenAlex balance canary, one HJ14 Wikimedia depth canary, one HJ15 OpenAlex fan-in canary, one HJ16 aggregate-cap recalibration canary, and one HJ17 W5 output-budget validation canary to avoid an artificial report-creation stop; all are recorded transparently.",
-      "nextLiveJobRequirement": "Any further HighJump live job requires a committed repair, runtime refresh, clean git status, route/runtime preflight, API/Web runtime commit match, and explicit Steer-Co/Captain budget reconciliation."
+      "status": "none_for_current_tranche",
+      "overrunCount": 0,
+      "reason": "Fresh 12-job tranche; no HJ76 consumption yet.",
+      "nextLiveJobRequirement": "Commit HJ76 package first, refresh runtime to the package commit, verify clean git status and API/Web runtime commit match, then run staged Captain-defined inputs with public containment checks."
     },
     "pendingExceptionAuthorization": null
   }
