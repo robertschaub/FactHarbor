@@ -4525,6 +4525,10 @@ Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain u
 **For next agent:** Highest-value path is shadow-mode local/cheap pre-extraction and HyPE-style source-material indexing for W4/W5 before any model downgrade or runtime fallback. CoA is promising for cross-chunk source synthesis but may trade cost for latency; AgentGuard ideas are useful for structural source/tool/token guardrails only, not semantic analysis decisions.
 → Docs/AGENTS/Handoffs/2026-05-23_Product_Strategy_Filip_W_Cost_Speed_Research.md
 
+### 2026-05-23 | Product Strategy | Codex (GPT-5) | Minions Low-Cost FactHarbor / Modal Investigation — [Standard] [open-items: yes]
+**For next agent:** Implement any Minions-style path as hidden shadow preprocessing at the V2 W4-H/W5 seam first. W5 standard-model extraction stays authoritative. Modal serverless GPU is viable for batched/offline source preprocessing but likely not the first one-person-project option for sporadic interactive jobs; cheap hosted small models or local Ollama are lower-friction first experiments.
+→ Docs/AGENTS/Handoffs/2026-05-23_Product_Strategy_Minions_Low_Cost_FactHarbor_Modal_Investigation.md
+
 ## 2026-05-23 - Senior Developer - Candidate Pipeline Ranking
 
 **Task:** Rank seven candidate commits by Captain-expectation report quality and assess extractability for side-by-side legacy pipeline integration.
