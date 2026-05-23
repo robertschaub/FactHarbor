@@ -329,6 +329,13 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(section).toContain("performs better or worse than alternatives");
     expect(section).toContain("produces effects that can be assessed from evidence");
     expect(section).toContain("select the central asserted proposition without adding background assumptions");
+    expect(section).toContain("For direct comparative input, preserve the comparison endpoints as submitted");
+    expect(section).toContain("must keep both endpoints");
+    expect(section).toContain("the stated purpose when supplied");
+    expect(section).toContain("compared property or outcome");
+    expect(section).toContain("Do not substitute a broader, narrower, default, conventional, adjacent, inverse, or more common comparator");
+    expect(section).toContain("preserve its submitted wording");
+    expect(section).toContain("leave interpretation, caveats, and measurement-frame refinement to later evidence stages");
 
     for (const term of captainCanaryTopicTerms) {
       expect(section).not.toContain(term);

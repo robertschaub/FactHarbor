@@ -257,6 +257,14 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("For comparative claims, preserve the compared entities");
     expect(section).toContain("Evidence comparing a claim entity to a third entity is contextual or unclear");
     expect(section).toContain("Do not treat adjacent or substitute comparators as direct support or opposition");
+    expect(section).toContain("For endpoint-comparison claims");
+    expect(section).toContain("outside baseline, default alternative, conventional reference");
+    expect(section).toContain("may be extracted only as contextual, unclear, mixed, or limited");
+    expect(section).toContain("unless the supplied content explicitly bridges that outside comparison");
+    expect(section).toContain("Do not label such outside-baseline evidence as `supports` or `opposes`");
+    expect(section).toContain("do not give it high probative value");
+    expect(section).toContain("crowd out lower-volume source material that directly addresses the selected endpoints");
+    expect(section).toContain("make that comparator gap visible");
     expect(section).toContain("For quantitative or current-aggregate claims");
     expect(section).toContain("source-attributed counts, rates, stocks, flows, thresholds");
     expect(section).toContain("same population/domain and time posture");
