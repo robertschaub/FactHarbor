@@ -23,18 +23,18 @@ This projection is synced after HJ52 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `937e65a7 docs(v2): define hj52 stronger validation gauntlet`;
+  `5f608219 fix(v2): admit short broad claim understanding inputs`;
 - latest canary result:
   HJ52 gauntlet, classified
   `MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 consumed one job, HJ52
-  consumed four jobs, and `13` remain;
+  Captain reset to `18` on 2026-05-23 after HJ52/HJ53 source commit;
+  `18` remain before the focused HJ53 validation rerun;
 - next action:
-  repair the highest-value HJ52 defect: Claim Understanding is too strict for
-  short broad but analyzable claims such as `Plastic recycling is pointless`;
-  keep the repair topic-neutral and prompt/UCM-owned, then validate with one
-  focused rerun before touching the separate W4-G oversized-text defect;
+  activate the committed HJ53 `claimboundary-v2` prompt repair in UCM, refresh
+  runtime from the committed tree, then validate with exactly one focused rerun
+  for `Plastic recycling is pointless` before touching the separate W4-G
+  oversized-text defect;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
