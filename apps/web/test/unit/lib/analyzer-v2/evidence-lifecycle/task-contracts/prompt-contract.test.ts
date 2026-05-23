@@ -191,6 +191,16 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("material literal values and their immediately associated");
     expect(section).toContain("immediately associated unit or domain terms");
     expect(section).toContain("Do not normalize away, round away, translate away, or replace");
+    expect(section).toContain("use the bounded query budget to create direct-record queries before");
+    expect(section).toContain("period-flow or context queries");
+    expect(section).toContain("include two");
+    expect(section).toContain("non-duplicate direct-record queries");
+    expect(section).toContain("current/stock/status frame");
+    expect(section).toContain("source-native");
+    expect(section).toContain("official, public-record, or directly measured aggregate material");
+    expect(section).toContain("applications, inflow, outflow, activity volume");
+    expect(section).toContain("do not satisfy this");
+    expect(section).toContain("direct-record obligation unless the selected claim itself asks");
     expect(section).toContain("When that direct record is likely carried in a downloadable file");
     expect(section).toContain("downloadable public record");
     expect(section).toContain("spreadsheet, data table");

@@ -302,6 +302,17 @@ rationale.
   a material threshold/value with only broad category wording. If a value is
   unsafe or unsupported by the claim contract, omit it and explain that in the
   query rationale.
+- For point-in-time stock, current-status, threshold, or standing-total claims,
+  use the bounded query budget to create direct-record queries before
+  period-flow or context queries. When budget permits, include two
+  non-duplicate direct-record queries: one that preserves the literal
+  threshold/value with its unit or domain and current/stock/status frame, and
+  one that preserves the same measurement frame while seeking source-native,
+  official, public-record, or directly measured aggregate material. Queries
+  about applications, inflow, outflow, activity volume, source availability,
+  general background, or broad category context do not satisfy this
+  direct-record obligation unless the selected claim itself asks about those
+  movement or context metrics.
 - When the decisive direct record is likely source-native data rather than
   article prose, shape at least one direct-record query to find public data
   tables, statistical releases, downloadable records, registers, or comparable

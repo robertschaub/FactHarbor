@@ -34,8 +34,10 @@ but the active anchor and budget are:
   HJ64 through HJ70 consumed `16`, so `2` remain;
 - next action:
   keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
-  output-contract repair; next address the report-quality gap that the
-  current-asylum report lacks source-native current population stock evidence;
+  output-contract repair; HJ71 amends the existing Query Planning direct-record
+  obligation for current stock/threshold claims so the next focused rerun can
+  test whether source coverage reaches source-native current population stock
+  evidence;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
