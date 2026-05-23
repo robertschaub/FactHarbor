@@ -19,15 +19,15 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ76 Wave 1 produced a cross-family
-report-quality stop under the fresh Captain-approved 12-job tranche. Older HJ
-history below is kept as context, but the active anchor and budget are:
+This projection is synced while HJ77 is the active repair after HJ76 Wave 1
+produced a cross-family report-quality stop under the fresh
+Captain-approved 12-job tranche. Older HJ history below is kept as context, but
+the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ76 no-code staged gauntlet package at
-  `f49866b403a1a3e06400bdfe9e5a53b739e143b2`;
-- active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md`;
+  HJ76 result closeout at `3f5c5fb1`; HJ77 prompt repair commit pending;
+- active repair package:
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ77_Target_Frame_Directness_Prompt_Repair.md`;
 - latest canary result:
   HJ76 Wave 1 jobs `8bcbb1f4ffdf4924b4d75e87c3543916`,
   `f6c391bb682345d4afba808f99e58958`,
@@ -38,10 +38,12 @@ history below is kept as context, but the active anchor and budget are:
   Captain reset to `12` on 2026-05-23 after HJ75;
   HJ76 Wave 1 consumed `4`; `8` remain;
 - next action:
-  do not run HJ76 Wave 2. Prepare HJ77 as a no-live owner classification and
-  target-frame/directness repair package before spending more jobs. Priority is
-  the confident wrong-direction reports for hydrogen and plastic; the
-  Bolsonaro/asylum-WWII UNVERIFIED reports are the second mode to classify;
+  finish HJ77 prompt-only W5/W7 target-frame/directness repair, run local
+  verifiers, commit, refresh runtime to the HJ77 commit, then submit exactly one
+  four-job HJ77 wave using the HJ76 Wave 1 inputs if provenance is clean.
+  Priority is the confident wrong-direction reports for hydrogen and plastic;
+  Bolsonaro/asylum-WWII remain a likely follow-up source-yield owner if HJ77
+  improves direction but still lacks direct source material;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak

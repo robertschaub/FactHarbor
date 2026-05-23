@@ -5066,3 +5066,27 @@ pipeline, then run HJ76 Wave 1 sequentially unless a hard stop appears.
 ### 2026-05-23 | Captain Deputy | Codex | V2 HighJump HJ76 Wave 1 Result — [Significant] [open-items: yes]
 **For next agent:** HJ76 Wave 1 stopped as `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`; hold Wave 2 and prepare HJ77 no-live target-frame/directness owner classification before more jobs. Primary artifact: `Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json`.
 → Docs/AGENTS/Handoffs/2026-05-23_Captain_Deputy_V2_HighJump_HJ76_Wave1_Result.md
+
+## 2026-05-23 - Captain Deputy - HJ77 Target-Frame Directness Prompt Repair Package
+
+**Task:** Continue after HJ76 Wave 1 and prepare the smallest report-quality
+repair before spending more live jobs.
+
+**Result:** Added
+`Docs/WIP/2026-05-23_V2_HighJump_HJ77_Target_Frame_Directness_Prompt_Repair.md`
+and amended `apps/web/prompts/claimboundary-v2.prompt.md` only. HJ77 is a
+prompt-only W5/W7 calibration of existing mechanisms: W5 now checks the
+selected AtomicClaim target relation before EvidenceItem selection, and W7 now
+checks target-frame/directness before assigning true-side or false-side verdict
+labels. The repair is topic-neutral and contains no benchmark examples,
+deterministic semantic filters, new routes, source/provider/cap/retry changes,
+schema/model/config changes, public behavior, parser/cache/SR/storage work,
+ACS/direct URL work, or V1 work.
+
+**Debt-guard:** Classified as `incomplete-existing-mechanism`; chosen path is
+`amend existing W5/W7 prompt guidance in place`. Net mechanism count is
+unchanged.
+
+**Next:** Run the HJ77 verifier set, commit if clean, refresh runtime to the
+HJ77 commit, and then submit exactly one four-job HJ77 wave with the HJ76 Wave
+1 inputs if provenance is clean. HJ76 Wave 2 remains held.

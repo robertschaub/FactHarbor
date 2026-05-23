@@ -25,7 +25,7 @@
       "startingRemaining": 12,
       "currentRemaining": 8,
       "consumptionEntriesInThisTranche": 1,
-      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. Wave 2 is held. Next action is HJ77 no-live owner classification / target-frame-directness repair planning before spending more jobs.",
+      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. Wave 2 is held. HJ77 is the active prompt-only W5/W7 target-frame-directness repair; a four-job HJ77 wave may run only after local verifiers, commit, runtime refresh, commit-match preflight, and clean provenance.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2012,7 +2012,7 @@
       "status": "none_for_current_tranche",
       "overrunCount": 0,
       "reason": "HJ76 Wave 1 stayed inside the 12-job tranche and consumed 4 jobs; 8 remain.",
-      "nextLiveJobRequirement": "Do not run HJ76 Wave 2. Prepare and commit the HJ76 result closeout, then perform HJ77 no-live owner classification and reviewed repair planning before another canary."
+      "nextLiveJobRequirement": "Do not run HJ76 Wave 2. Commit the HJ77 prompt-only repair package, refresh runtime to the HJ77 commit, verify runtime/source provenance, then submit at most the approved four-job HJ77 wave. No second HJ77 wave without a fresh stop/pass classification."
     },
     "pendingExceptionAuthorization": null
   }
