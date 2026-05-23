@@ -19,23 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced before the HJ55 live validation. Older HJ history below is
+This projection is synced after the HJ55 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   `9466a71b fix(v2): broaden query planning angles`;
 - latest canary result:
-  HJ54 focused rerun, classified
-  `PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED`;
+  HJ55 focused rerun, classified
+  `PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ54;
-  HJ55 has not yet consumed a job, and `18` remain;
+  HJ55 consumed one job, and `17` remain;
 - next action:
-  run exactly one HJ55 focused rerun for `Plastic recycling is pointless` after
-  clean runtime provenance. HJ55 tests whether the query-planning prompt repair
-  uses the existing bounded query budget for distinct investigative angles so
-  the plastic report has better evidence breadth before any downstream verdict
-  or report-writer change;
+  review the HJ55 internal Alpha report and choose the next single
+  report-quality bar. HJ55 cleared query-planning underuse for the plastic
+  input, but W5 still emitted only three EvidenceItems, so the next bar should
+  be EvidenceItem breadth/admission, report roll-up/calibration, or
+  source-usefulness quality based on direct report review;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -64,14 +64,29 @@ or V1 work.
 
 Latest validation:
 
-`X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN`
+`X7-HJ-55-QUERY-PLANNING-BREADTH-REPAIR-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj54-cu-no-valid-claim-definition-repair.json`
+`Docs/WIP/canary-evidence-hj55-query-planning-breadth-repair.json`
 
 Important evidence:
 
+- `8e7375f8d29e4d5b8fe453ebcfe6c295` (plastic recycling) ran on HJ55 after
+  importing and activating the query-planning angle-breadth prompt profile
+  (`3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`) on
+  runtime/job commit `16c09339fc37f6e82aa094d70fff3ab8feaf253e`. It stayed on
+  `claimboundary-v2`; public/default containment held
+  (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`,
+  public/default reportMarkdown `null`) and unauthenticated hidden artifact
+  access returned `401`. Claim Understanding accepted one selected
+  AtomicClaim, Query Planning produced `5` distinct queries, Candidate Provider
+  Network completed with `15` retained candidates (`21` total), W5 extracted
+  `3` EvidenceItems, sufficiency assessment completed, the Alpha result first
+  incomplete stage was `none`, and the internal report writer produced a
+  `6545` byte internal Alpha report. HJ55's information yield is
+  `report_produced`; query-planning underuse is repaired, but EvidenceItem
+  breadth remains thin.
 - `c3718a3e383442c29361e058ef4f16ad` (plastic recycling) ran on HJ54 after the
   no_valid_claim definition repair. It stayed on `claimboundary-v2`; public/
   default containment held (`4.0.0-cb-precutover`, `blocked_precutover`,
@@ -381,27 +396,29 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after HJ54 job `c3718a3e383442c29361e058ef4f16ad`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Review the HJ54 plastic internal Alpha report against Captain quality
-   expectations and the recent HJ52/HJ54 multi-input evidence. The immediate
+1. Review the HJ55 plastic internal Alpha report against Captain quality
+   expectations and the recent HJ52/HJ55 multi-input evidence. The immediate
    defect is now report quality and cross-input consistency, not reachability
-   for the plastic input.
+   or query-planning underuse for the plastic input.
 2. Prefer raising one observed quality bar at a time from report evidence.
    Candidate targets are source usefulness, EvidenceItem selectivity, boundary
    separation, verdict calibration, and warning/materiality clarity. Do not add
    new hidden plumbing unless it directly retires or replaces an older stop
    mechanism or closes an observed report-quality defect.
-3. Keep the next HighJump step scoped to one concrete report-quality defect. Do
-   not add provider expansion, recursive crawling, public exposure,
-   cache/SR/storage, direct URL/ACS, V1 work, or another hidden mechanism unless
-   the report-quality evidence proves that specific gap is blocking progress.
+3. Keep the next HighJump step scoped to one concrete report-quality defect.
+   Given HJ55, likely candidates are W5 EvidenceItem breadth/admission,
+   report roll-up/calibration, or source-usefulness quality. Do not add provider
+   expansion, recursive crawling, public exposure, cache/SR/storage, direct
+   URL/ACS, V1 work, or another hidden mechanism unless the report-quality
+   evidence proves that specific gap is blocking progress.
 
 ## Stop Conditions
 

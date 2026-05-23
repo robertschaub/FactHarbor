@@ -4206,3 +4206,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Information yield:** `report_produced`. The focused CU admission blocker is cleared for this input. The next useful step is report-quality review of the produced internal Alpha report and current cross-input quality defects, not another Claim Understanding admission repair for this input.
 
 **Budget:** Captain reset the tranche to `18` after HJ53. HJ54 consumed `1`; `17` remain.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ55 Query Planning Breadth Repair Result
+
+**Task:** Validate the committed HJ55 `claimboundary-v2` prompt repair for query-planning breadth on the Captain-defined input `Plastic recycling is pointless`.
+
+**Repair:** HJ55 commit `9466a71b` amends only `V2_EVIDENCE_QUERY_PLANNING` so concise, broad, or evaluative assessable assertions use the existing bounded query budget for distinct investigative angles. It adds no code-side semantic query logic, model/provider change, schema relaxation, source/provider/parser route, public surface, cache/SR/storage behavior, direct URL/ACS support, or V1 work.
+
+**Verification before live job:** Focused Evidence Lifecycle prompt-contract and query-planning prompt-loader tests passed (`13` tests across `2` files); focused query-planning model/runtime/inspection tests passed (`12` tests across `3` files); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2 footprint/docs/boundary-guard/consolidation warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. The updated prompt was imported and activated in UCM as `hj55-query-planning-angle-breadth` with content hash `3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`. Lane/budget sync was committed at `16c09339`, and Web/API/proxy version endpoints reported `16c09339fc37f6e82aa094d70fff3ab8feaf253e` before submission.
+
+**Live result:** HJ55 job `8e7375f8d29e4d5b8fe453ebcfe6c295` ran the exact Captain-defined input `Plastic recycling is pointless`. It stayed on `claimboundary-v2`, finished `SUCCEEDED`, and public/default output remained `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged` with public/default report markdown, verdict, truth percentage, and confidence absent.
+
+**Hidden-chain evidence:** Claim Understanding accepted the input with `1` selected AtomicClaim. Query Planning produced `5` distinct queries. Candidate Provider Network completed with `15` retained candidates (`21` total before structural drops). W5 extracted `3` EvidenceItems. Sufficiency assessment completed. Internal Alpha first incomplete stage was `none`. The internal report writer created a `6545` byte internal Alpha report.
+
+**Classification:** `PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN`.
+
+**Information yield:** `report_produced`. Query-planning underuse is repaired for this input: HJ55 increased from HJ54's `3` queries and `9` retained candidates to `5` queries and `15` retained candidates. W5 still emitted only `3` EvidenceItems, so the next report-quality bar should be chosen from direct report review: EvidenceItem breadth/admission, report roll-up/calibration, or source-usefulness quality.
+
+**Budget:** Captain reset the tranche to `18` after HJ54. HJ55 consumed `1`; `17` remain.

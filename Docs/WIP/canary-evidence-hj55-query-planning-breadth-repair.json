@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-55-QUERY-PLANNING-BREADTH-REPAIR-RERUN",
+  "classification": "PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN",
+  "informationYield": "report_produced",
+  "jobId": "8e7375f8d29e4d5b8fe453ebcfe6c295",
+  "input": "Plastic recycling is pointless",
+  "implementationCommit": "9466a71b1c84bea45c0be68e9b35d3add46a9f00",
+  "runtimeCommit": "16c09339fc37f6e82aa094d70fff3ab8feaf253e",
+  "promptProfile": "claimboundary-v2",
+  "promptVersionLabel": "hj55-query-planning-angle-breadth",
+  "promptContentHash": "3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1",
+  "pipelineVariant": "claimboundary-v2",
+  "jobStatus": "SUCCEEDED",
+  "hiddenChainEvidence": {
+    "ledgerId": "8e7375f8d29e4d5b8fe453ebcfe6c295:precutover-observability",
+    "claimUnderstandingStatus": "accepted",
+    "selectedAtomicClaimCount": 1,
+    "queryEntryCount": 5,
+    "queryEntries": [
+      {
+        "queryId": "q1_direct_efficacy",
+        "retrievalPolicyKey": "primary_source_refinement",
+        "queryText": "plastic recycling effectiveness rates environmental impact"
+      },
+      {
+        "queryId": "q2_economic_viability",
+        "retrievalPolicyKey": "baseline_research",
+        "queryText": "plastic recycling economic cost benefit analysis market viability"
+      },
+      {
+        "queryId": "q3_contamination_sorting",
+        "retrievalPolicyKey": "primary_source_refinement",
+        "queryText": "plastic recycling contamination rates sorting challenges processing limitations"
+      },
+      {
+        "queryId": "q4_counter_evidence",
+        "retrievalPolicyKey": "contradiction_search",
+        "queryText": "plastic recycling benefits environmental value resource recovery success"
+      },
+      {
+        "queryId": "q5_policy_standards",
+        "retrievalPolicyKey": "baseline_research",
+        "queryText": "plastic recycling policy standards regulations mandatory programs"
+      }
+    ],
+    "candidateProviderStatus": "candidate_provider_network_completed",
+    "candidateCount": 15,
+    "totalCandidateCount": 21,
+    "evidenceExtractionStatus": "evidence_extracted",
+    "evidenceItemCount": 3,
+    "sufficiencyStatus": "sufficiency_assessment_completed",
+    "alphaFirstIncompleteStage": "none",
+    "reportWriterStatus": "internal_report_writer_draft_created",
+    "reportMarkdownByteLength": 6545
+  },
+  "publicContainment": {
+    "publicSchema": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicIssue": "report_damaged",
+    "publicReportMarkdownIsNull": true,
+    "publicVerdictIsNull": true,
+    "publicTruthIsNull": true,
+    "hiddenRouteUnauthStatus": 401
+  },
+  "budget": {
+    "resetRemainingBeforeRun": 18,
+    "count": 1,
+    "remainingAfter": 17
+  },
+  "notes": [
+    "HJ55 verifies the prompt repair used the existing bounded query budget: Query Planning increased from HJ54's 3 queries to 5 distinct query angles.",
+    "Candidate breadth improved from HJ54's 9 retained / 18 total candidates to 15 retained / 21 total candidates.",
+    "W5 still extracted 3 EvidenceItems, so evidence selection breadth remains thin and may be the next improvement bar.",
+    "The internal report converged to one MIXED verdict section with 35% truth and 62% confidence, instead of HJ54's competing candidate verdict sections.",
+    "The report remains internal Alpha and pre-cutover only; public/default V2 still returns the damaged shell contract."
+  ]
+}

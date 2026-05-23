@@ -1,7 +1,7 @@
 # V2 HighJump HJ55 - Query Planning Breadth Repair
 
-**Status:** local implementation verifier-clean; pending commit, UCM activation,
-runtime refresh, and one focused live rerun
+**Status:** live rerun complete; HJ55 passed as query-planning breadth repair
+with residual W5 evidence-item breadth defect
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ54 job `c3718a3e383442c29361e058ef4f16ad`
@@ -144,3 +144,52 @@ Completed before commit on 2026-05-23:
   - passed
 - `git diff --check`
   - passed
+
+## Live Result
+
+Completed on 2026-05-23:
+
+- implementation commit: `9466a71b1c84bea45c0be68e9b35d3add46a9f00`
+- runtime/job commit after docs-only lane sync:
+  `16c09339fc37f6e82aa094d70fff3ab8feaf253e`
+- UCM prompt label: `hj55-query-planning-angle-breadth`
+- active prompt hash:
+  `3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`
+- job: `8e7375f8d29e4d5b8fe453ebcfe6c295`
+- input: `Plastic recycling is pointless`
+- classification:
+  `PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN`
+- information yield: `report_produced`
+
+Hidden-chain evidence:
+
+- Claim Understanding: `accepted`
+- selected AtomicClaims: `1`
+- Query Planning: `5` distinct queries
+- Candidate Provider Network: `candidate_provider_network_completed`
+- candidates: `15` retained / `21` total
+- W5 extraction: `evidence_extracted`
+- EvidenceItems: `3`
+- sufficiency: `sufficiency_assessment_completed`
+- internal Alpha first incomplete stage: `none`
+- internal report writer: `internal_report_writer_draft_created`
+- internal report markdown bytes: `6545`
+
+Public/default containment:
+
+- public/default schema: `4.0.0-cb-precutover`
+- public cutover status: `blocked_precutover`
+- public issue: `report_damaged`
+- public/default report markdown, verdict, truth percentage, and confidence:
+  absent
+- unauthenticated hidden route: `401`
+
+Assessment:
+
+HJ55 achieved the intended query-planning repair. The planner used five
+distinct angles and candidate breadth materially improved compared with HJ54
+(`3` queries and `9` retained candidates). W5 still extracted only three
+EvidenceItems, so the next report-quality bar should not be another generic
+query-breadth prompt tweak. The next useful step is to decide whether to raise
+EvidenceItem selection/admission breadth, report roll-up/calibration, or
+source-usefulness quality based on direct report review.

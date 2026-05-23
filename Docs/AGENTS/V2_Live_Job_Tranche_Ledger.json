@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj54",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN",
       "startsAfterJobId": "c3718a3e383442c29361e058ef4f16ad",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ54 is the last completed live job before this reset and produced a complete internal Alpha report for the plastic input after the no_valid_claim definition repair. HJ55 is the next focused rerun and has not yet consumed a job in this tranche.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ54 is the last completed live job before this reset and produced a complete internal Alpha report for the plastic input after the no_valid_claim definition repair. HJ55 consumed one job from this tranche and verified the query-planning breadth repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1378,6 +1378,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ54 reran the Captain-defined plastic input after importing and activating the no_valid_claim definition repair. Claim Understanding accepted one selected AtomicClaim, Query Planning created three queries, Candidate Provider Network completed with nine retained candidates, W5 extracted three EvidenceItems, sufficiency assessment completed, and the internal report writer produced a 5757-byte internal Alpha report. Public/default containment held with schema 4.0.0-cb-precutover, blocked_precutover, report_damaged, no public/default report markdown, and no public verdict/truth/confidence."
+      },
+      {
+        "sliceId": "X7-HJ-55-QUERY-PLANNING-BREADTH-REPAIR-RERUN",
+        "jobId": "8e7375f8d29e4d5b8fe453ebcfe6c295",
+        "classification": "PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN",
+        "implementationCommit": "9466a71b1c84bea45c0be68e9b35d3add46a9f00",
+        "runtimeCommit": "16c09339fc37f6e82aa094d70fff3ab8feaf253e",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ55 package `Docs/WIP/2026-05-23_V2_HighJump_HJ55_Query_Planning_Breadth_Repair.md`",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ55 reran the Captain-defined plastic input after importing and activating the query-planning angle-breadth prompt profile. Query Planning increased from three to five distinct query angles and Candidate Provider Network improved to 15 retained / 21 total candidates. W5 still extracted three EvidenceItems, so the evidence-item breadth defect remains, but the internal report converged to one MIXED verdict section and public/default containment held."
       }
     ],
     "blockedPending": [],
