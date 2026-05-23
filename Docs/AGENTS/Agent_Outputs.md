@@ -4487,6 +4487,40 @@ Debt accepted and removal trigger: no accepted mechanism debt; remaining report-
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
 
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ70 W5 Output Contract Repair
+
+**Task:** Resume after reboot, restore sub-agent orchestration, repair the HJ69 W5 schema/output stop, and run exactly one focused current-asylum rerun after committed prompt import/runtime refresh.
+
+**Implementation anchor:** `b800c8bc1609f6e7075ef497cfba342fa1444b31`; active `claimboundary-v2` prompt label/hash after UCM import: `hj70-w5-output-contract` / `8285ad6101d7c57dc162b0e043a3ed7db4a59571fcc4ff6e43f2c6abe336ea9f`.
+
+**Sub-agent orchestration:** Existing sidecars were restored after reboot. Noether reviewed HJ70 and agreed the lowest-net-complexity owner was W5 prompt/output contract hardening, not schema relaxation, cap increase, source filtering, retry/fallback, report writer, public behavior, parser/cache/SR/storage/ACS/V1 work.
+
+**Local verification:** focused prompt/W5 tests passed (`2` files / `17` tests); boundary guard passed (`1` file / `96` tests, about `158s`); `npm -w apps/web run build` passed; `npm run debt:sensors` returned `advisory_warn` only for known V2 footprint/guard/docs/consolidation warnings; `npm run index`, `git diff --check`, and `git diff --cached --check` passed. The initial combined Vitest command hit the shell timeout because the boundary guard exceeds `120s`; split verifiers passed.
+
+**Live job:** HJ70 spent one job: `5bce26affa5146d8bce4f65e13a2e9c9`.
+
+**Result:** `PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED`. The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default containment. W4-H produced a `12680` byte extraction-input packet, W4-I stayed structurally eligible, W5 completed with accepted `evidence_extracted`, `3` EvidenceItems, and `schemaDiagnostics = null`. W8 internal Alpha `firstIncompleteStage` was `none`; the internal report writer created a `4731` byte draft. The report remains quality-poor: internal top-line `UNVERIFIED` (`50` truth, `25` confidence) because the source chain surfaced annual asylum-application flow values and SEM current-statistics context, but not the actual current asylum-domain stock count needed to assess the `235000` threshold.
+
+**Budget:** HJ70 consumed `1`; current HighJump tranche remaining is `2`.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj70-w5-output-contract-repair.json`; closeout package `Docs/WIP/2026-05-23_V2_HighJump_HJ70_W5_Output_Contract_Repair.md`; active lane projection `Docs/STATUS/V2_Current_Lane.md`; live-job ledger `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+**Next owner:** Query/source-material evidence coverage for the source-native current population stock metric. Do not spend the next repair on W5 schema, W4-I readiness, cap increase, report writer, or public-surface work unless new evidence contradicts this attribution.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing W5 output prompt contract and focused prompt-contract tests
+Rejected path and why: schema relaxation, caps, source/provider filtering, retries, and report-writer changes would add mechanism or move the stop without addressing the observed output-shape failure
+What was removed/simplified: none
+What was added: stricter wording inside the existing W5 prompt section and assertions for that wording
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in prompt, prompt-contract test, WIP package, and result/status/ledger docs
+Verification: focused tests, boundary guard, build, debt sensors, index, diff checks, sidecar review, UCM prompt import, runtime commit preflight, one focused live canary, hidden-chain inspection, and public/default containment checks
+Debt accepted and removal trigger: no accepted mechanism debt; next owner is evidence coverage for the current stock metric, not W5 schema/readiness
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```
+
 ### 2026-05-23 | Product Strategy | Codex (GPT-5) | Filip W. Cost/Speed Research — [Standard] [open-items: yes]
 **For next agent:** Highest-value path is shadow-mode local/cheap pre-extraction and HyPE-style source-material indexing for W4/W5 before any model downgrade or runtime fallback. CoA is promising for cross-chunk source synthesis but may trade cost for latency; AgentGuard ideas are useful for structural source/tool/token guardrails only, not semantic analysis decisions.
 → Docs/AGENTS/Handoffs/2026-05-23_Product_Strategy_Filip_W_Cost_Speed_Research.md

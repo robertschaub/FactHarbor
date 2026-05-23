@@ -1,6 +1,6 @@
 # V2 HighJump HJ70 - W5 Output Contract Repair
 
-Status: local implementation verifier-clean; live rerun pending committed prompt import/runtime refresh
+Status: live-validated; W5 output-contract repair passed with a report-quality gap
 
 ## Objective
 
@@ -143,6 +143,66 @@ Stop:
 - public/default leak;
 - pressure to change schema/caps/source/provider/report writer before the
   focused W5 contract question is answered.
+
+## Live Result
+
+After commit `b800c8bc1609f6e7075ef497cfba342fa1444b31`, runtime was refreshed,
+the revised `claimboundary-v2` prompt was imported/activated in UCM as
+`hj70-w5-output-contract`, and Web/API version endpoints both reported
+`b800c8bc1609f6e7075ef497cfba342fa1444b31`.
+
+Active V2 prompt hash:
+
+`8285ad6101d7c57dc162b0e043a3ed7db4a59571fcc4ff6e43f2c6abe336ea9f`
+
+One focused live rerun was submitted:
+
+- job: `5bce26affa5146d8bce4f65e13a2e9c9`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- terminal status: `SUCCEEDED`;
+- pipeline: `claimboundary-v2`;
+- public/default containment: held. Unauthenticated/default job response returned
+  no report markdown, verdict, truth percentage, or confidence. W5 and report
+  writer internal routes returned `401` without admin auth.
+
+Hidden chain evidence:
+
+- W4-H packet: `12680` bytes, provider `serper_web_search`;
+- W4-I: `extraction_input_structurally_eligible_execution_denied`;
+- W5: `hidden_evidence_item_extraction_completed`;
+- W5 extraction result: `accepted` / `evidence_extracted`;
+- W5 EvidenceItems: `3`;
+- W5 schema diagnostics: `null`;
+- W8 internal Alpha result: `firstIncompleteStage = none`;
+- internal report writer: `internal_report_writer_draft_created`;
+- internal report markdown length: `4731` bytes.
+
+Classification:
+
+`PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED`
+
+HJ70 repaired the W5 schema/output-contract blocker. The new observed report
+quality gap is evidence coverage: the internal Alpha report remains
+`UNVERIFIED` (`50` truth, `25` confidence) because the source chain surfaced
+annual asylum-application flow values and SEM current-statistics context, but
+not the actual current asylum-domain stock count needed to assess the
+`235000` threshold.
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj70-w5-output-contract-repair.json`
+
+Live-job budget:
+
+- spent: `1`;
+- remaining in active tranche: `2`.
+
+Next likely owner:
+
+Query/source-material evidence coverage for source-native current population
+stock metrics. Do not spend the next repair on W5 schema, W4-I readiness, cap
+increase, report writer, or public-surface work unless new evidence contradicts
+this attribution.
 
 ## Local Implementation Result
 

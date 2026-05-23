@@ -19,23 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ69. Older HJ history below is kept as context,
+This projection is synced after HJ70. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `f4f6e103 fix(v2): align w4i unicode packet length validation`;
+  `b800c8bc fix(v2): harden w5 evidence extraction output contract`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ69_W4I_Unicode_Length_Readiness_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ70_W5_Output_Contract_Repair.md`;
 - latest canary result:
-  HJ69 focused W4-I Unicode length readiness rerun, classified
-  `PARTIAL_PASS_X7_HJ69_W4I_UNICODE_LENGTH_REPAIR_W5_SCHEMA_VALIDATION_FAILED`;
+  HJ70 focused current-asylum W5 output-contract rerun, classified
+  `PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ69 consumed `15`, so `3` remain;
+  HJ64 through HJ70 consumed `16`, so `2` remain;
 - next action:
-  keep the HJ68 W5 recall improvement and HJ69 W4-I length repair, then address
-  the W5 `evidence_extraction` output contract for high-volume current-asylum
-  packets before adding report-layer or source-expansion work;
+  keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
+  output-contract repair; next address the report-quality gap that the
+  current-asylum report lacks source-native current population stock evidence;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,31 +46,49 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`f4f6e103 fix(v2): align w4i unicode packet length validation`
+`b800c8bc fix(v2): harden w5 evidence extraction output contract`
 
 Active implementation repair:
 
-HJ69 amended W4-I to validate extraction-input packet character length with the
-same Unicode code-point contract used by W4-H. The focused current-asylum
-rerun proved the HJ68 W4-I stop is gone: W4-H produced one `8898` byte packet,
-W4-I reported `extraction_input_structurally_eligible_execution_denied`, and
-W5 executed. The new stop is W5 `damaged_execution` /
-`schema_validation_failed` with `evidenceItems` `too_big` plus provenance
-shape/literal diagnostics. The next quality owner is therefore W5 output
-contract shaping for high-volume packets, not W4-I readiness, another cap
-increase, source/provider widening, or report-writer plumbing.
+HJ70 hardened the existing W5 `V2_EVIDENCE_EXTRACTION` output contract and
+focused prompt-contract tests. The focused current-asylum rerun proved the HJ69
+W5 schema stop is gone: W5 completed with `3` EvidenceItems and
+`schemaDiagnostics = null`, W8 reported `firstIncompleteStage = none`, and the
+internal report writer created a `4731` byte internal Alpha report. The report
+is still quality-poor: top-line internal verdict is `UNVERIFIED` (`50` truth,
+`25` confidence) because the source chain surfaced annual application-flow
+values and SEM current-statistics context, but not the actual current
+asylum-domain stock count needed to assess the `235000` threshold. The next
+quality owner is therefore query/source-material evidence coverage for the
+source-native current population stock metric, not W5 schema, W4-I readiness,
+another cap increase, report-writer plumbing, or public-surface work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-69-W4I-UNICODE-LENGTH-READINESS-REPAIR`
+`X7-HJ-70-W5-OUTPUT-CONTRACT-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj69-w4i-unicode-length-readiness-repair.json`
+`Docs/WIP/canary-evidence-hj70-w5-output-contract-repair.json`
 
 Important evidence:
+
+- HJ70 ran one focused `asylum-235000-de` rerun on runtime/source commit
+  `b800c8bc1609f6e7075ef497cfba342fa1444b31` with active
+  `claimboundary-v2` prompt label/hash `hj70-w5-output-contract` /
+  `8285ad6101d7c57dc162b0e043a3ed7db4a59571fcc4ff6e43f2c6abe336ea9f`.
+  Job `5bce26affa5146d8bce4f65e13a2e9c9` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. W4-H produced
+  a `12680` byte extraction-input packet; W4-I was structurally eligible. W5
+  completed as `hidden_evidence_item_extraction_completed` with accepted
+  `evidence_extracted`, `3` EvidenceItems, and `schemaDiagnostics = null`.
+  W8 internal Alpha `firstIncompleteStage` was `none`; the internal report
+  writer created a `4731` byte draft. The report remains `UNVERIFIED` because
+  supplied source material did not include the actual current stock count needed
+  for the `235000` threshold. Information yield is
+  `report_produced_with_quality_gap`.
 
 - HJ69 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b` with active

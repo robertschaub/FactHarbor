@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 3,
+    "currentRemaining": 2,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 3,
-      "consumptionEntriesInThisTranche": 6,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop; 3 remain.",
+      "currentRemaining": 2,
+      "consumptionEntriesInThisTranche": 7,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric; 2 remain.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1897,6 +1897,21 @@
         "approvalPointer": "Captain HighJump direction and HJ69 package Docs/WIP/2026-05-23_V2_HighJump_HJ69_W4I_Unicode_Length_Readiness_Repair.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure"
+      },
+      {
+        "sliceId": "X7-HJ-70-W5-OUTPUT-CONTRACT-REPAIR",
+        "jobId": "5bce26affa5146d8bce4f65e13a2e9c9",
+        "classification": "PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED",
+        "implementationCommit": "b800c8bc1609f6e7075ef497cfba342fa1444b31",
+        "runtimeCommit": "b800c8bc1609f6e7075ef497cfba342fa1444b31",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "8285ad6101d7c57dc162b0e043a3ed7db4a59571fcc4ff6e43f2c6abe336ea9f",
+        "count": 1,
+        "remainingAfter": 2,
+        "approvalPointer": "Captain HighJump direction, Captain authorization for prompt edits/live jobs/schema changes, and HJ70 package Docs/WIP/2026-05-23_V2_HighJump_HJ70_W5_Output_Contract_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_quality_gap",
+        "note": "HJ70 ran one focused current-asylum rerun after prompt import/runtime refresh. W5 accepted with 3 EvidenceItems and schemaDiagnostics null; W8 reached firstIncompleteStage none and report writer created a 4731-byte internal report draft. The report remained UNVERIFIED because the source chain lacked the actual current stock count needed to assess the 235000 threshold. Public/default containment held."
       }
     ],
     "blockedPending": [],
