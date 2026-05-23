@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj50",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 13,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-50-SOURCE-MATERIAL-QUERY-DIVERSITY-RERUN",
       "startsAfterJobId": "2d7402c4dc8947438b2f0ff74e5c8ce6",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset: it produced an improved internal Alpha report with current-stock evidence and public/default containment held. HJ51 consumed one job and proved direct manual UI submission creates a claimboundary-v2 job and displays the internal V2 report to authenticated admin users while public/default surfaces remain blocked/precutover/damaged.",
+      "currentRemaining": 13,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset. HJ51 consumed one job and proved direct manual UI submission creates a claimboundary-v2 job and displays the internal V2 report to authenticated admin users while public/default surfaces remain blocked/precutover/damaged. HJ52 consumed four jobs and produced two internal reports plus two useful stops for the next HighJump bar.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1294,6 +1294,62 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_ui_path_verified",
         "note": "HJ51 submitted the German asylum aggregate input through the manual Analyze UI. The page navigated directly to /jobs/a8df993eb4804d0ba9310979e3e4b0a9 instead of /analyze/select, the job ran claimboundary-v2 via the UCM default, and authenticated admin UI displayed the internal V2 report. Public/default API and UI surfaces stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged with no reportMarkdown, verdict, truth percentage, or confidence exposure."
+      },
+      {
+        "sliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-GAUNTLET-HYDROGEN",
+        "jobId": "7a36772a9f8b42f8ad510ad7d483bc88",
+        "classification": "PASS_X7_HJ52_HYDROGEN_INTERNAL_REPORT_PRODUCED",
+        "implementationCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "runtimeCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md plus Captain reset to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Hydrogen ran through default claimboundary-v2, produced an internal report writer draft with 3 EvidenceItems, and public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-GAUNTLET-BOLSONARO",
+        "jobId": "39a9ab83d52741c282ecf337037bc97a",
+        "classification": "PASS_X7_HJ52_BOLSONARO_INTERNAL_REPORT_PRODUCED_WITH_QUALITY_GAP",
+        "implementationCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "runtimeCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 15,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md plus Captain reset to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Bolsonaro ran through default claimboundary-v2 and produced an internal report writer draft with 3 EvidenceItems. Report quality remains limited by direct legal/fair-trial compliance evidence."
+      },
+      {
+        "sliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-GAUNTLET-PLASTIC",
+        "jobId": "b89acb3e1d1745a9835d0125fd4b48c9",
+        "classification": "STOP_X7_HJ52_PLASTIC_CLAIM_UNDERSTANDING_BLOCKED_SHORT_BROAD_CLAIM",
+        "implementationCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "runtimeCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 14,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md plus Captain reset to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_useful_evidence",
+        "note": "Plastic recycling repeated the Claim Understanding stop: selected AtomicClaims 0 and Query Planning did not run. This identifies a topic-neutral CU bar-calibration defect for short broad but analyzable claims."
+      },
+      {
+        "sliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-GAUNTLET-ASYLUM-WW2",
+        "jobId": "7321d207499f416193e12d6c2e854bc3",
+        "classification": "STOP_X7_HJ52_ASYLUM_WW2_W4G_SOURCE_MATERIAL_TEXT_OVERSIZED",
+        "implementationCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "runtimeCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 13,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md plus Captain reset to 18",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_stage_reached_with_useful_stop",
+        "note": "The German asylum/WW2 comparison reached Query Planning and six Source Material records, then W4-G blocked with source_material_text_oversized and W5 stayed blocked_pre_execution. Public/default containment held."
       }
     ],
     "blockedPending": [],

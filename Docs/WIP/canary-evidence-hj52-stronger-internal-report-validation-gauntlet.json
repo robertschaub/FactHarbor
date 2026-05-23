@@ -1,0 +1,114 @@
+{
+  "classification": "MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET",
+  "runtimeCommit": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+  "package": "Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md",
+  "budget": {
+    "latestCaptainReset": 18,
+    "remainingBeforeGauntlet": 17,
+    "jobsConsumedByThisRun": 4,
+    "remainingAfterThisRun": 13
+  },
+  "runtimePreflight": {
+    "webGitSha": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+    "apiGitSha": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+    "webProxyApiGitSha": "937e65a7ff2b8de4f689236ae5b5b50a06305276",
+    "ucmDefaultPipelineVariant": "claimboundary-v2",
+    "activePromptHash": "1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318"
+  },
+  "jobs": [
+    {
+      "label": "hydrogen",
+      "jobId": "7a36772a9f8b42f8ad510ad7d483bc88",
+      "input": "Using hydrogen for cars is more efficient than using electricity",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "informationYield": "report_produced",
+      "adminReportMarkdownLength": 8284,
+      "queryCount": 3,
+      "sourceContentPacketCount": 9,
+      "evidenceItemCount": 3,
+      "boundaryCandidateCount": 3,
+      "verdictCandidateCount": 3,
+      "writerStatus": "internal_report_writer_draft_created",
+      "observedReportDirection": "contradicts the claim; internal report explains battery-electric efficiency evidence is stronger than hydrogen efficiency evidence",
+      "publicContainment": "held"
+    },
+    {
+      "label": "bolsonaro",
+      "jobId": "39a9ab83d52741c282ecf337037bc97a",
+      "input": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "informationYield": "report_produced",
+      "adminReportMarkdownLength": 8447,
+      "queryCount": 5,
+      "sourceMaterialRecordCount": 9,
+      "sourceMaterialKinds": {
+        "provider_search_result_page_text_bounded": 1,
+        "openalex_work_abstract_text": 3,
+        "provider_search_result_preview_text": 5
+      },
+      "sourceMaterialBytes": 9517,
+      "sourceContentPacketCount": 9,
+      "evidenceItemCount": 3,
+      "boundaryCandidateCount": 3,
+      "verdictCandidateCount": 3,
+      "writerStatus": "internal_report_writer_draft_created",
+      "observedReportDirection": "mostly UNVERIFIED or MIXED because supplied evidence documents process/background but does not directly verify legal compliance or international fair-trial standards",
+      "publicContainment": "held"
+    },
+    {
+      "label": "plastic",
+      "jobId": "b89acb3e1d1745a9835d0125fd4b48c9",
+      "input": "Plastic recycling is pointless",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "informationYield": "same_stop_repeated_with_useful_evidence",
+      "adminReportMarkdownLength": 721,
+      "stopStage": "Query Planning readiness",
+      "stopSummary": "Claim Understanding blocked, selected AtomicClaims = 0, Query Planning did not run",
+      "writerStatus": null,
+      "observedDefect": "Claim Understanding still rejects a short broad but analyzable claim instead of creating at least one bounded interpretation for internal report generation",
+      "publicContainment": "held"
+    },
+    {
+      "label": "asylum_ww2",
+      "jobId": "7321d207499f416193e12d6c2e854bc3",
+      "input": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "informationYield": "new_stage_reached_with_useful_stop",
+      "adminReportMarkdownLength": 1175,
+      "queryCount": 3,
+      "sourceMaterialRecordCount": 6,
+      "w5Status": "blocked_pre_execution",
+      "w5BlockedReason": "w4h_packet_invalid",
+      "stopStage": "Evidence Extraction",
+      "stopSummary": "Source Material reached six records, then W4-G blocked with source_material_text_oversized and W4-H/W5 stayed blocked",
+      "writerStatus": null,
+      "observedDefect": "The two-part German refugee/WW2 comparison family reaches source material but still needs balanced bounded-text selection/trimming before extraction",
+      "publicContainment": "held"
+    }
+  ],
+  "publicContainment": {
+    "allJobsPublicSchema": "4.0.0-cb-precutover",
+    "allJobsPublicCutoverStatus": "blocked_precutover",
+    "allJobsPublicIssue": "report_damaged",
+    "publicReportMarkdownReturned": false,
+    "publicVerdictTruthConfidenceReturned": false,
+    "unauthenticatedInternalArtifactStatus": 401
+  },
+  "summary": {
+    "reportsProduced": 2,
+    "earlyStops": 2,
+    "directDefaultV2RouteVerifiedAcrossJobs": true,
+    "strongerThanSingleCanary": true,
+    "nextBestAction": "Do not add more report plumbing. First raise the Claim Understanding bar for short broad claims enough to admit Plastic recycling is pointless as a bounded analyzable claim, then address bounded text aggregation for multi-part German comparison claims if still needed."
+  },
+  "artifactEvidenceLocations": [
+    "test-output/hj52-7a36772a9f8b42f8ad510ad7d483bc88",
+    "test-output/hj52-39a9ab83d52741c282ecf337037bc97a",
+    "test-output/hj52-b89acb3e1d1745a9835d0125fd4b48c9",
+    "test-output/hj52-7321d207499f416193e12d6c2e854bc3"
+  ]
+}

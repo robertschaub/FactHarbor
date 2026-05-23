@@ -19,21 +19,22 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ51 live validation. Older HJ history below is
+This projection is synced after HJ52 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `2b77391b docs(v2): sync hj51 lane and live budget`;
+  `937e65a7 docs(v2): define hj52 stronger validation gauntlet`;
 - latest canary result:
-  HJ51 job `a8df993eb4804d0ba9310979e3e4b0a9`, classified
-  `PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY`;
+  HJ52 gauntlet, classified
+  `MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 consumed one job and
-  `17` remain;
+  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 consumed one job, HJ52
+  consumed four jobs, and `13` remain;
 - next action:
-  run a stronger multi-input V2 internal-report validation set through the
-  direct manual/default V2 path, using Captain-defined inputs and preserving
-  public precutover containment;
+  repair the highest-value HJ52 defect: Claim Understanding is too strict for
+  short broad but analyzable claims such as `Plastic recycling is pointless`;
+  keep the repair topic-neutral and prompt/UCM-owned, then validate with one
+  focused rerun before touching the separate W4-G oversized-text defect;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,

@@ -4149,3 +4149,25 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` before HJ51. HJ51 consumed `1`; `17` remain.
 
 **Next:** Run a stronger, small multi-input V2 internal-report validation set through the direct manual/default V2 path using Captain-defined inputs, then review concrete report defects before further repairs. Keep public V2 blocked/precutover/damaged until an explicit cutover/exposure package.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ52 Stronger Internal Report Validation Gauntlet
+
+**Task:** Run a stronger-than-single-canary validation set through the default V2 route after HJ51 proved direct manual job creation and admin report display.
+
+**Package:** `Docs/WIP/2026-05-23_V2_HighJump_HJ52_Stronger_Internal_Report_Validation_Gauntlet.md` committed at `937e65a7`. It authorized exactly four Captain-defined inputs, no source/prompt/config/schema/code changes, no provider/parser/cache/SR/storage/public/V1 work, and preserved public V2 precutover containment.
+
+**Preflight:** Runtime was refreshed to `937e65a7ff2b8de4f689236ae5b5b50a06305276`; Web/API/proxy version endpoints matched; git status was clean; UCM effective `defaultPipelineVariant` was `claimboundary-v2`; active V2 prompt hash remained `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+
+**Live jobs:** Hydrogen `7a36772a9f8b42f8ad510ad7d483bc88`, Bolsonaro `39a9ab83d52741c282ecf337037bc97a`, plastic `b89acb3e1d1745a9835d0125fd4b48c9`, and German asylum/WW2 comparison `7321d207499f416193e12d6c2e854bc3` all ran `claimboundary-v2` and finished `SUCCEEDED` with expected public/default issue `report_damaged`.
+
+**Results:** Hydrogen produced an internal report writer draft (`8284` admin markdown characters, `3` EvidenceItems, `3` boundary candidates, `3` verdict candidates). Bolsonaro produced an internal report writer draft (`8447` admin markdown characters, `3` EvidenceItems, `3` boundary candidates, `3` verdict candidates), but still shows a report-quality gap around direct legal/fair-trial compliance evidence. Plastic repeated a useful early stop: Claim Understanding blocked, selected `0` AtomicClaims, and Query Planning did not run. The German asylum/WW2 comparison reached Query Planning and six Source Material records, then W4-G blocked with `source_material_text_oversized`, leaving W5 `blocked_pre_execution`.
+
+**Classification:** `MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET`.
+
+**Information yield:** Two reports produced, two useful stops. The route/default pipeline path is viable beyond one job; the next useful quality bar is not more report plumbing. The highest-value repair is Claim Understanding bar calibration for short broad but analyzable claims such as `Plastic recycling is pointless`; the separate German comparison defect is bounded-text selection/trimming before extraction.
+
+**Containment:** Public/default API surfaces stayed `4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged` with no report markdown, verdict, truth percentage, or confidence. Unauthenticated internal report-writer artifact routes returned `401`.
+
+**Budget:** HJ52 consumed `4` jobs from the Captain-reset tranche. `13` remain.
+
+**Next:** Prepare and implement a narrow topic-neutral Claim Understanding prompt/UCM repair for short broad analyzable claims, then run one focused plastic rerun if verifiers and runtime provenance are clean. Do not address the W4-G oversized-text stop until the CU blocker is repaired or consciously deferred.

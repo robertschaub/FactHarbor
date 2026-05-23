@@ -1,6 +1,6 @@
 # V2 HighJump HJ52 - Stronger Internal Report Validation Gauntlet
 
-**Status:** review/package committed before live execution
+**Status:** live validated; mixed pass with two reports and two useful stops
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ51 job `a8df993eb4804d0ba9310979e3e4b0a9`
@@ -130,3 +130,55 @@ After completion:
 - `git diff --check`;
 - commit result docs.
 
+## Live Result
+
+HJ52 ran four jobs on runtime `937e65a7ff2b8de4f689236ae5b5b50a06305276`.
+All four jobs resolved to `claimboundary-v2` through the UCM default and all
+public/default surfaces remained `4.0.0-cb-precutover`,
+`blocked_precutover`, `report_damaged` with no public report markdown, verdict,
+truth percentage, or confidence.
+
+Classification:
+`MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET`.
+
+Results:
+
+- Hydrogen job `7a36772a9f8b42f8ad510ad7d483bc88` produced an authenticated
+  admin internal report writer draft (`8284` admin markdown characters,
+  `3` EvidenceItems, `3` boundary candidates, `3` verdict candidates). The
+  observed report direction contradicted the claim, consistent with prior
+  hydrogen-family expectations.
+- Bolsonaro job `39a9ab83d52741c282ecf337037bc97a` produced an authenticated
+  admin internal report writer draft (`8447` admin markdown characters,
+  `3` EvidenceItems, `3` boundary candidates, `3` verdict candidates). The
+  observed report stayed mostly `UNVERIFIED`/`MIXED` because evidence still
+  documents process/background more than direct compliance with legal and
+  international fair-trial standards.
+- Plastic recycling job `b89acb3e1d1745a9835d0125fd4b48c9` repeated the useful
+  early stop: Claim Understanding blocked, selected `0` AtomicClaims, and Query
+  Planning did not run. This is now a clear CU bar-calibration defect for short
+  broad but analyzable claims.
+- German asylum/WW2 comparison job `7321d207499f416193e12d6c2e854bc3` reached
+  Query Planning and Source Material (`6` records) but stopped before
+  extraction because W4-G blocked with `source_material_text_oversized`, leaving
+  W4-H invalid and W5 `blocked_pre_execution`.
+
+Budget: HJ52 consumed four jobs from the Captain-reset tranche. `13` remain.
+
+Detailed canary evidence:
+`Docs/WIP/canary-evidence-hj52-stronger-internal-report-validation-gauntlet.json`.
+
+## Next Direction
+
+The next HighJump bar should not add report plumbing. Two distinct report
+defects are now visible:
+
+1. Claim Understanding is too strict for short broad claims such as
+   `Plastic recycling is pointless`.
+2. The multi-part German comparison family needs bounded source-text
+   selection/trimming before W4-H/W5, not more public/report output.
+
+Recommended next repair: first address the Claim Understanding bar for short
+broad but analyzable claims because it blocks the whole pipeline before source
+work. Keep the repair topic-neutral and prompt/UCM-owned; do not add
+deterministic semantic code-side exceptions.
