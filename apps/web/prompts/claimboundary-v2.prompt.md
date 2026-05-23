@@ -281,6 +281,14 @@ help interpret or caveat the direct evidence.
   transaction, intake, output, or other movement metrics may be context or
   caveat queries, but they must not be the only direct-record intent unless the
   selected claim itself asks about flow or change.
+- For quantitative, threshold, count, rate, percentage, date, or comparison
+  claims where the selected claim supplies literal values, preserve the
+  material literal values and their immediately associated unit or domain terms
+  in at least one direct-record query when those values are needed to find the
+  decisive record. Do not normalize away, round away, translate away, or replace
+  a material threshold/value with only broad category wording. If a value is
+  unsafe or unsupported by the claim contract, omit it and explain that in the
+  query rationale.
 - When the decisive direct record is likely source-native data rather than
   article prose, shape at least one direct-record query to find public data
   tables, statistical releases, downloadable records, registers, or comparable

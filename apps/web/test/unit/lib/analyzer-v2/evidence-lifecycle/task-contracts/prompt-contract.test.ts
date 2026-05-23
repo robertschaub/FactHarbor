@@ -180,6 +180,10 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Preserve the selected claim's measurement frame");
     expect(section).toContain("point-in-time stock, current status");
     expect(section).toContain("they must not be the only direct-record intent unless the");
+    expect(section).toContain("selected claim supplies literal values");
+    expect(section).toContain("material literal values and their immediately associated");
+    expect(section).toContain("immediately associated unit or domain terms");
+    expect(section).toContain("Do not normalize away, round away, translate away, or replace");
     expect(section).toContain("When that direct record is likely carried in a downloadable file");
     expect(section).toContain("downloadable public record");
     expect(section).toContain("spreadsheet, data table");
