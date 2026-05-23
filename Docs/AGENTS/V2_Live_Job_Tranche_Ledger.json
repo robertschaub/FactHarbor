@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj57-w5-repair-2026-05-23-reset-18-after-hj56",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-56-FULL-INTERNAL-REPORT-GAUNTLET",
       "startsAfterJobId": "328b65a37a2b431a802f8aea5df7d988",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ56 is the last completed live validation before this reset and mapped broad internal-report reachability plus repeated W5 extraction contract/schema and EvidenceItem-breadth defects. HJ57 will spend from this fresh tranche only after committed prompt repair, UCM activation, runtime refresh, and clean provenance.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ56 is the last completed live validation before this reset and mapped broad internal-report reachability plus repeated W5 extraction contract/schema and EvidenceItem-breadth defects. HJ57 consumed two jobs: hydrogen verified the W5 contract repair and Bundesrat-simple exposed an upstream W4-G source_material_text_oversized blocker before W5 execution.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1504,6 +1504,34 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_quality_gap",
         "note": "Plastic produced a large internal report with 4 EvidenceItems and five verdict sections, showing reachability and a report roll-up/consolidation gap. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-57-W5-CONTRACT-REPAIR-HYDROGEN",
+        "jobId": "837c65bedaf94fb8bd0e91a65e607963",
+        "classification": "PASS_X7_HJ57_HYDROGEN_W5_SCHEMA_FAILURE_CLEARED_INTERNAL_REPORT_PRODUCED",
+        "implementationCommit": "f4c3357b090445b0b1f93eba1070e3a1432e54a6",
+        "runtimeCommit": "44154ac093a323a6c8e83dffca6a6e2493d856f1",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ57_W5_Extraction_Contract_Repair.md plus Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Hydrogen reran with the HJ57 prompt hash and cleared the HJ56 W5 schema_validation_failed / evidenceItems too_big stop. W5 completed with 4 admitted EvidenceItems, sufficiency completed, internal Alpha first incomplete stage was none, and the internal report writer produced a 6130 byte admin-only report. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-57-W5-CONTRACT-REPAIR-BUNDESRAT-SIMPLE",
+        "jobId": "b1356da1f72f4f27a6fafb3bc5418746",
+        "classification": "STOP_X7_HJ57_BUNDESRAT_SIMPLE_W4G_SOURCE_MATERIAL_TEXT_OVERSIZED",
+        "implementationCommit": "f4c3357b090445b0b1f93eba1070e3a1432e54a6",
+        "runtimeCommit": "44154ac093a323a6c8e83dffca6a6e2493d856f1",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ57_W5_Extraction_Contract_Repair.md plus Captain message in current Codex thread: \"New job budget: 18\"",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure_or_upstream_stop_with_useful_evidence",
+        "note": "Bundesrat-simple did not reproduce the HJ56 W5 approved_packet_mismatch, but it also did not reach W5 execution. The run stopped upstream at W4-G source_material_text_oversized with 9 Source Material records, aggregate source-material text byte length 19216, 0 W4-G sidecars, 0 W4-H packets, and W5 blocked_pre_execution. Public/default containment held."
       }
     ],
     "blockedPending": [],

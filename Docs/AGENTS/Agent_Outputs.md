@@ -4246,3 +4246,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ56 consumed `8` jobs from the tranche. HJ55 plus HJ56 consumed `9` after the reset; `9` remain.
 
 **Next:** Prepare a bounded W5 repair focused on schema/task-contract robustness and EvidenceItem breadth. Use the HJ56 diagnostics as the defect source. Do not move to public cutover, source/provider expansion, or report-writer roll-up before W5 is stable enough to feed downstream stages.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ57 W5 Contract Repair Result
+
+**Task:** Repair the two HJ56 W5 failure modes without adding code-side semantic extraction logic: hydrogen W5 `schema_validation_failed` / `evidenceItems` too big, and Bundesrat-simple W5 `task_contract_validation_failed` / `approved_packet_mismatch`.
+
+**Repair:** HJ57 commit `f4c3357b` amends only `V2_EVIDENCE_EXTRACTION` in `claimboundary-v2.prompt.md` and its prompt-contract test. The prompt now reinforces the existing 2-5 EvidenceItem budget, explicitly forbids a sixth item or oversized array, and requires `sourceRecordId`, `contentPacketId`, and selected AtomicClaim IDs to be copied exactly from supplied structural inputs. It adds no schema relaxation, retries/repairs, source/provider/parser expansion, public behavior, cache/SR/storage, direct URL/ACS, or V1 work. Lane/budget sync commit `44154ac0` recorded the fresh Captain reset to `18`.
+
+**Verification before live jobs:** Focused Evidence Lifecycle prompt-contract and bounded extraction tests passed (`2` files / `17` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned advisory warnings only for known V2/test/boundary-guard/docs/consolidation footprint; `npm -w apps/web run build` passed after clearing stale generated `.next` output; `npm run index` passed; `git diff --check` passed. UCM `claimboundary-v2` was saved and activated as `hj57-w5-extraction-contract-repair` with hash `5a00717b8deb9a7c38f679cac4ee99414cc07b842f0837719bb86b904f810413`. Runtime was refreshed and Web/API/proxy reported `44154ac093a323a6c8e83dffca6a6e2493d856f1`.
+
+**Live result:** Hydrogen job `837c65bedaf94fb8bd0e91a65e607963` stayed on `claimboundary-v2`, used the HJ57 prompt hash, cleared the HJ56 W5 schema failure, completed W5 with `4` admitted EvidenceItems, completed sufficiency, reached internal Alpha first incomplete stage `none`, and produced a `6130` byte authenticated admin-only report. Bundesrat-simple job `b1356da1f72f4f27a6fafb3bc5418746` stayed on `claimboundary-v2`, but stopped before W5 at W4-G `source_material_text_oversized` with `9` Source Material records and `19216` aggregate source-material bytes; W4-G sidecars and W4-H packets were `0`, W5 stayed `blocked_pre_execution`, and EvidenceItems stayed `0`.
+
+**Classification:** `PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED`.
+
+**Information yield:** Hydrogen = `report_produced` and verifies the W5 oversized-output repair. Bundesrat-simple = `new_failure_or_upstream_stop_with_useful_evidence`; the previous W5 packet mismatch was not re-tested because the run stopped earlier at W4-G oversized Source Material.
+
+**Containment:** Public/default V2 remained `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; public/default reportMarkdown, verdict, truth percentage, and confidence remained absent. Unauthenticated hidden route access returned `401`.
+
+**Budget:** Fresh tranche reset to `18`; HJ57 consumed `2`; `16` remain.
+
+**Next:** Do not stack another W5 prompt tweak. The next concrete HighJump bar is recurring W4-G oversized Source Material handling, observed in HJ56 Bolsonaro-PT and HJ57 Bundesrat-simple, while preserving source-text containment and public/default precutover blocking.

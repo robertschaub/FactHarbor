@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "v2.highjump.canary-evidence.v1",
+  "sliceId": "X7-HJ-57-W5-CONTRACT-REPAIR",
+  "classification": "PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED",
+  "runtimeCommit": "44154ac093a323a6c8e83dffca6a6e2493d856f1",
+  "implementationCommit": "f4c3357b090445b0b1f93eba1070e3a1432e54a6",
+  "activePrompt": {
+    "profileKey": "claimboundary-v2",
+    "versionLabel": "hj57-w5-extraction-contract-repair",
+    "contentHash": "5a00717b8deb9a7c38f679cac4ee99414cc07b842f0837719bb86b904f810413"
+  },
+  "jobs": [
+    {
+      "jobId": "837c65bedaf94fb8bd0e91a65e607963",
+      "input": "Using hydrogen for cars is more efficient than using electricity",
+      "pipelineVariant": "claimboundary-v2",
+      "status": "SUCCEEDED",
+      "informationYield": "report_produced",
+      "publicContainment": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "publicCutoverStatus": "blocked_precutover",
+        "analysisIssueCode": "report_damaged",
+        "publicReportMarkdown": null,
+        "publicVerdictTruthConfidence": null,
+        "unauthenticatedHiddenRouteStatus": 401
+      },
+      "hiddenEvidence": {
+        "claimUnderstandingStatus": "accepted",
+        "queryEntryCount": 5,
+        "candidateCount": 15,
+        "totalCandidateCount": 21,
+        "boundedEvidenceExtractionStatus": "hidden_evidence_item_extraction_completed",
+        "extractionResultStatus": "accepted",
+        "evidenceItemCount": 4,
+        "sufficiencyAssessmentStatus": "sufficiency_assessment_completed",
+        "internalAlphaFirstIncompleteStage": "none",
+        "internalReportWriterStatus": "internal_report_writer_draft_created",
+        "internalReportMarkdownByteLength": 6130
+      },
+      "hj57Signal": "Cleared the HJ56 W5 schema_validation_failed / evidenceItems too_big stop for this input."
+    },
+    {
+      "jobId": "b1356da1f72f4f27a6fafb3bc5418746",
+      "input": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+      "pipelineVariant": "claimboundary-v2",
+      "status": "SUCCEEDED",
+      "informationYield": "new_failure_or_upstream_stop_with_useful_evidence",
+      "publicContainment": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "publicCutoverStatus": "blocked_precutover",
+        "analysisIssueCode": "report_damaged",
+        "publicReportMarkdown": null,
+        "publicVerdictTruthConfidence": null,
+        "unauthenticatedHiddenRouteStatus": 401
+      },
+      "hiddenEvidence": {
+        "claimUnderstandingStatus": "accepted",
+        "queryEntryCount": 5,
+        "candidateCount": 0,
+        "sourceMaterialRecordCount": 9,
+        "aggregateSourceMaterialTextByteLength": 19216,
+        "w4gStatus": "blocked_pre_bounded_corpus_text_oversized",
+        "w4gStop": "source_material_text_oversized",
+        "w4gSidecarCount": 0,
+        "w4hPacketCount": 0,
+        "boundedEvidenceExtractionStatus": "blocked_pre_execution",
+        "boundedEvidenceExtractionBlockedReason": "w4h_packet_invalid",
+        "evidenceItemCount": 0,
+        "internalReportWriterStatus": "not_created"
+      },
+      "hj57Signal": "The prior W5 approved_packet_mismatch was not reproduced, but the run stopped upstream at W4-G oversized Source Material before W5 execution."
+    }
+  ],
+  "budget": {
+    "resetTotal": 18,
+    "consumedByHJ57": 2,
+    "remainingAfterHJ57": 16
+  },
+  "nextRecommendedBar": "Recurring W4-G oversized Source Material handling before another Bundesrat W5 verification rerun."
+}

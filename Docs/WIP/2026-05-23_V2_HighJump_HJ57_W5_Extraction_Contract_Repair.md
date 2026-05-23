@@ -1,6 +1,6 @@
 # V2 HighJump HJ57 - W5 Extraction Contract Repair
 
-**Status:** local implementation verifier-clean; live reruns pending committed runtime/UCM refresh
+**Status:** live validation complete; docs closeout in progress
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ56 full internal-report gauntlet
@@ -121,3 +121,60 @@ Live validation:
   repair as insufficient;
 - if W5 passes but report quality remains weak, document the next concrete
   report-quality bar instead of stacking another W5 prompt tweak.
+
+## Live Validation Result
+
+Runtime and UCM state:
+
+- implementation commit: `f4c3357b090445b0b1f93eba1070e3a1432e54a6`;
+- runtime/docs sync commit under test:
+  `44154ac093a323a6c8e83dffca6a6e2493d856f1`;
+- active `claimboundary-v2` prompt label:
+  `hj57-w5-extraction-contract-repair`;
+- active prompt hash:
+  `5a00717b8deb9a7c38f679cac4ee99414cc07b842f0837719bb86b904f810413`;
+- default pipeline: `claimboundary-v2`;
+- public/default containment held for both jobs.
+
+Jobs:
+
+- `837c65bedaf94fb8bd0e91a65e607963` ran
+  `Using hydrogen for cars is more efficient than using electricity`.
+  The HJ56 W5 `schema_validation_failed` / `evidenceItems too_big` stop was
+  cleared. W5 completed with `4` admitted EvidenceItems, sufficiency completed,
+  internal Alpha result first incomplete stage was `none`, and the internal
+  report writer produced a `6130` byte authenticated admin-only internal report.
+- `b1356da1f72f4f27a6fafb3bc5418746` ran
+  `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`.
+  The prior HJ56 W5 `approved_packet_mismatch` was not reproduced, but the run
+  also did not reach W5 execution. It stopped upstream with W4-G
+  `source_material_text_oversized`: `9` Source Material records,
+  aggregate source-material text byte length `19216`, `0` W4-G sidecars,
+  `0` W4-H packets, W5 `blocked_pre_execution`, and EvidenceItems `0`.
+
+Classification:
+
+`PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED`
+
+Information yield:
+
+- hydrogen: `report_produced`; the prompt repair prevented the observed W5
+  oversized-output schema failure and improved EvidenceItem breadth from the
+  failing HJ56 state to `4` admitted EvidenceItems;
+- Bundesrat-simple: `new_failure_or_upstream_stop_with_useful_evidence`; the
+  run identifies W4-G oversized Source Material as the next blocker for this
+  input, so spending another HJ57 rerun would be low-yield until W4-G handling
+  is addressed.
+
+Budget:
+
+- fresh tranche reset: `18`;
+- HJ57 consumed: `2`;
+- remaining after HJ57: `16`.
+
+Next:
+
+Do not stack another W5 prompt tweak from this result. The next concrete
+HighJump bar is the recurring W4-G oversized Source Material blocker, now seen
+in HJ56 Bolsonaro-PT and HJ57 Bundesrat-simple, while preserving source-text
+containment and public/default precutover blocking.

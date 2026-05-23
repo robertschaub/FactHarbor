@@ -19,21 +19,20 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ57 verifier-clean prompt repair commit. Older HJ history below is
+This projection is synced after the HJ57 focused live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   `f4c3357b fix(v2): repair w5 extraction contract prompt`;
 - latest canary result:
-  HJ56 full internal-report gauntlet, classified
-  `MIXED_PASS_X7_HJ56_FULL_INTERNAL_REPORT_GAUNTLET_REACHABILITY_BROAD_W5_AND_QUALITY_DEFECTS_MAPPED`;
+  HJ57 focused W5 contract repair reruns, classified
+  `PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ56;
-  HJ57 has not consumed from the fresh tranche yet, so `18` remain;
+  HJ57 consumed `2`, so `16` remain;
 - next action:
-  import and activate the HJ57 W5 extraction-contract prompt repair in UCM,
-  refresh runtime to the committed state, then run the two focused HJ57 reruns
-  for hydrogen and Bundesrat-simple to verify the observed W5 stops are cleared;
+  address the recurring W4-G `source_material_text_oversized` blocker before
+  spending another Bundesrat-simple rerun on W5 packet-mismatch verification;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -63,14 +62,28 @@ or V1 work.
 
 Latest validation:
 
-`X7-HJ-56-FULL-INTERNAL-REPORT-GAUNTLET`
+`X7-HJ-57-W5-CONTRACT-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj56-full-internal-report-gauntlet.json`
+`Docs/WIP/canary-evidence-hj57-w5-contract-repair.json`
 
 Important evidence:
 
+- HJ57 ran two focused reruns on runtime commit
+  `44154ac093a323a6c8e83dffca6a6e2493d856f1` after activating
+  `claimboundary-v2` prompt hash
+  `5a00717b8deb9a7c38f679cac4ee99414cc07b842f0837719bb86b904f810413`.
+  `837c65bedaf94fb8bd0e91a65e607963` (hydrogen) cleared the HJ56 W5
+  `schema_validation_failed` / `evidenceItems` too-big stop: W5 completed with
+  `4` admitted EvidenceItems, sufficiency completed, internal Alpha first
+  incomplete stage was `none`, and the internal report writer produced a
+  `6130` byte admin-only report. `b1356da1f72f4f27a6fafb3bc5418746`
+  (Bundesrat-simple) did not reproduce the HJ56 W5
+  `approved_packet_mismatch`, but also did not reach W5 execution: it stopped
+  upstream at W4-G `source_material_text_oversized` with `9` Source Material
+  records and `19216` aggregate source-material bytes. Public/default
+  containment held for both jobs.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -418,8 +431,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after the HJ56 gauntlet job
   `328b65a37a2b431a802f8aea5df7d988`;
 - every live job still requires clean git status, committed source, runtime
@@ -427,18 +440,20 @@ Current active tranche:
 
 ## Next Action
 
-1. Prepare and implement the next bounded W5 repair. The gauntlet shows broad
-   internal-report reachability, but W5 damaged execution and thin EvidenceItem
-   output are the repeated quality bottleneck.
+1. Prepare the next bounded repair for W4-G oversized Source Material handling.
+   HJ57 cleared the hydrogen W5 oversized-output failure, but Bundesrat-simple
+   and HJ56 Bolsonaro-PT now show `source_material_text_oversized` as the next
+   repeated upstream blocker before W5 can be evaluated.
 2. Prefer raising one observed quality bar at a time from report evidence.
    Candidate targets are source usefulness, EvidenceItem selectivity, boundary
    separation, verdict calibration, and warning/materiality clarity. Do not add
    new hidden plumbing unless it directly retires or replaces an older stop
    mechanism or closes an observed report-quality defect.
-3. Keep the next HighJump step scoped to one concrete W5 defect:
-   schema/task-contract robustness and EvidenceItem breadth. Defer report
-   roll-up/calibration and source/provider expansion until W5 can reliably pass
-   bounded, useful EvidenceItems to downstream report stages.
+3. Keep the next HighJump step scoped to one concrete W4-G defect: safely
+   admitting or trimming already bounded Source Material without leaking source
+   text, raising byte caps broadly, adding providers, or changing public
+   behavior. Defer report roll-up/calibration until the affected inputs can
+   reliably pass bounded, useful EvidenceItems to downstream report stages.
 
 ## Stop Conditions
 
