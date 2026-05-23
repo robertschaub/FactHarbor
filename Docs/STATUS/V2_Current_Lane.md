@@ -19,29 +19,30 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ78 produced a complete internal V2 report
-from the normal product-route job path.
+This projection is synced after HJ79 corrected the first complete HJ78 report's
+categorical-verdict calibration defect.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   HJ78 implementation commit `55d00a81e342aa2e0dd59433c4df9d6412df42e5`
   plus stabilization commit `9e361fc4eaaf93909884d54195a87115d91997eb`;
+  HJ79 prompt repair commit `981b7c4eac901f13e149d1d1bae2a1582d8b47b7`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ78_Full_Report_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ79_Categorical_Verdict_Calibration_Result.md`;
 - latest validation result:
-  `PASS_X7_HJ78_FULL_V2_INTERNAL_REPORT_PRODUCED_AFTER_APPLICABILITY_FALLBACK_REPAIR`;
-  job `3dd2d8781dc94cc1b20845a5ed7bc814` ran
+  `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
+  job `a4a7aa1973e04721a9ee7192d382f732` ran
   `Plastic recycling is pointless` on `claimboundary-v2` and runtime
-  `9e361fc4eaaf93909884d54195a87115d91997eb`, produced a `9870` character
-  internal report, extracted and admitted `5` EvidenceItems, and preserved
-  public/default blocked-precutover containment;
+  `981b7c4eac901f13e149d1d1bae2a1582d8b47b7`, produced a `10403`
+  character internal report, moved the verdict candidates to `MIXED` `45/72`
+  and `LEANING-FALSE` `38/58`, and preserved public/default
+  blocked-precutover containment;
 - current live-job tranche:
-  Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`; `9`
-  remain;
+  Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
+  consumed `1`; `8` remain;
 - next action:
-  review the full internal report and the damaged applicability-precheck
-  fallback, then raise exactly one quality bar without adding another
-  proof-only layer;
+  use the corrected full-report path on one different high-signal family to
+  check generalization, then raise the next observed report-quality bar;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak

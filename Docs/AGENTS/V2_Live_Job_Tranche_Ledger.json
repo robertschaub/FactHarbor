@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 9,
+    "currentRemaining": 8,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 9,
-      "consumptionEntriesInThisTranche": 3,
-      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair.",
+      "currentRemaining": 8,
+      "consumptionEntriesInThisTranche": 4,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed one job and improved the categorical verdict calibration on the same plastic report path.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2070,14 +2070,28 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Plastic recycling produced a complete 9870-character internal V2 report. W5 extracted 5 EvidenceItems, W5E admitted 5, W5F handoff was ready, and the internal report writer created a draft. Public/default containment held: no public report markdown, verdict, truth, confidence, or admin diagnostics."
+      },
+      {
+        "sliceId": "X7-HJ-79-CATEGORICAL-VERDICT-CALIBRATION-PLASTIC",
+        "jobId": "a4a7aa1973e04721a9ee7192d382f732",
+        "classification": "PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT",
+        "implementationCommit": "981b7c4eac901f13e149d1d1bae2a1582d8b47b7",
+        "runtimeCommit": "981b7c4eac901f13e149d1d1bae2a1582d8b47b7",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 8,
+        "approvalPointer": "Captain message in current Codex thread approving prompt edits, schema changes, and live jobs as naturally needed to complete the plan plus HJ79 package Docs/WIP/2026-05-23_V2_HighJump_HJ79_Categorical_Verdict_Calibration_Prompt_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved",
+        "note": "After HJ79 W7 categorical-calibration prompt repair, the same plastic input produced a complete 10403-character internal V2 report with verdict candidates MIXED 45/72 and LEANING-FALSE 38/58, replacing HJ78's strong true-side primary calibration defect. Public/default containment held: no public report markdown, verdict, truth, confidence, or admin diagnostics."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ78 consumed three jobs from the reset 12-job tranche; 9 remain.",
-      "nextLiveJobRequirement": "Review the HJ78 full internal report and the damaged applicability-precheck fallback before spending more jobs. Prefer one targeted quality-bar raise from observed report evidence."
+      "reason": "HJ78 consumed three jobs and HJ79 consumed one job from the reset 12-job tranche; 8 remain.",
+      "nextLiveJobRequirement": "Use the corrected full-report path on one different high-signal family or stop for report-quality review if the team cannot agree on the next single bar to raise."
     },
     "pendingExceptionAuthorization": null
   }
