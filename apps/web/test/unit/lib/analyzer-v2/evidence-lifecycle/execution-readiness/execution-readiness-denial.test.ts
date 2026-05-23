@@ -42,13 +42,13 @@ function sidecar(text = TEXT): EvidenceCorpusBoundedTextSidecar {
     text,
     textHash: hash,
     textByteLength: Buffer.byteLength(text, "utf8"),
-    textCharLength: text.length,
+    textCharLength: Array.from(text).length,
     maxTextBytes: 4096,
     truncationApplied: false,
     sourceMaterialRecordVersion: "v2.evidence-lifecycle.source-material.page-summary-record.x7w3b",
     sourceMaterialTextHash: hash,
     sourceMaterialTextByteLength: Buffer.byteLength(text, "utf8"),
-    sourceMaterialTextCharLength: text.length,
+    sourceMaterialTextCharLength: Array.from(text).length,
     sourceMaterialRuntimeOwned: true,
     admissionDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-source-material-admission.x7w4c",
     shellDecisionVersion: "v2.evidence-lifecycle.evidence-corpus-shell.x7w4d",
@@ -191,6 +191,33 @@ describe("evidence lifecycle execution-readiness denial", () => {
     expect(decision.evidenceItems).toEqual([]);
     expect(decision.parserOutput).toBeNull();
     expect(decision.reportOutput).toBeNull();
+  });
+
+  it("accepts packet text with supplementary Unicode code points under the approved cap", () => {
+    const text = `Bounded packet text ${String.fromCodePoint(0x1f4a1)} stays under the cap.`;
+    expect(text.length).toBeGreaterThan(Array.from(text).length);
+
+    const parent = buildBoundedExtractionInputAuthorization({
+      boundedTextAuthorization: {
+        ...boundedTextAuthorization(),
+        boundedTextSidecar: sidecar(text),
+        boundedTextSidecars: [sidecar(text)],
+      },
+      boundedTextRuntimeOwnership: "owned",
+    });
+
+    expect(parent.extractionInputPacket?.inputTextByteLength).toBeLessThanOrEqual(
+      EVIDENCE_LIFECYCLE_EXECUTION_READINESS_INPUT_MAX_TEXT_BYTES,
+    );
+
+    const decision = buildEvidenceLifecycleExecutionReadinessDenial({
+      extractionInputAuthorization: parent,
+      extractionInputRuntimeOwnership: "owned",
+    });
+
+    expect(decision.status).toBe("extraction_input_structurally_eligible_execution_denied");
+    expect(decision.stopCondition).toBe("extraction_execution_not_authorized_in_x7w4i");
+    expect(decision.packetObservation.inputTextByteLength).toBe(Buffer.byteLength(text, "utf8"));
   });
 
   it("fails closed when the W4-H decision is not runtime-owned", () => {

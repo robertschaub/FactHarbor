@@ -391,7 +391,7 @@ function validatePacketText(
   if (
     packet.inputTextByteLength > EVIDENCE_LIFECYCLE_EXECUTION_READINESS_INPUT_MAX_TEXT_BYTES ||
     Buffer.byteLength(packet.inputText, "utf8") !== packet.inputTextByteLength ||
-    packet.inputTextCharLength !== packet.inputText.length
+    packet.inputTextCharLength !== Array.from(packet.inputText).length
   ) {
     return "blocked_pre_execution_readiness_packet_text_oversized";
   }
