@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 12,
+    "currentRemaining": 9,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 12,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "HJ76 Wave 1 and HJ77 are historical to this reset. HJ78 will spend from this tranche only after implementation commit, runtime refresh, and provenance checks.",
+      "currentRemaining": 9,
+      "consumptionEntriesInThisTranche": 3,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2028,14 +2028,56 @@
         "informationYield": "same_stop_repeated_with_new_evidence",
         "stopReason": "HJ77 failed pass criteria because hydrogen remained confidently wrong-side/off-comparator and asylum-WWII produced no EvidenceItems. The useful movement was partial only: plastic gained a MIXED countervailing-value verdict and Bolsonaro EN Brazilian-law compliance moved to LEANING-TRUE.",
         "publicContainment": "pass_precise_public_projection_check"
+      },
+      {
+        "sliceId": "X7-HJ-78-EVIDENCE-APPLICABILITY-PRECHECK-HYDROGEN",
+        "jobId": "fc63415b7c564947995009df23d4f938",
+        "classification": "STOP_X7_HJ78_HARD_GATED_APPLICABILITY_PRECHECK_W5_DAMAGED",
+        "implementationCommit": "55d00a81e342aa2e0dd59433c4df9d6412df42e5",
+        "runtimeCommit": "55d00a81e342aa2e0dd59433c4df9d6412df42e5",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\" plus HJ78 package Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure",
+        "note": "Hydrogen ran on claimboundary-v2 but produced only an internal stop summary. The new applicability precheck returned damaged/task-contract validation and was still hard-gated before W5 extraction."
+      },
+      {
+        "sliceId": "X7-HJ-78-EVIDENCE-APPLICABILITY-PRECHECK-PLASTIC-FIRST",
+        "jobId": "8d28d4493f82401b85fabca4b2c8ab11",
+        "classification": "STOP_X7_HJ78_HARD_GATED_APPLICABILITY_PRECHECK_W5_DAMAGED",
+        "implementationCommit": "55d00a81e342aa2e0dd59433c4df9d6412df42e5",
+        "runtimeCommit": "55d00a81e342aa2e0dd59433c4df9d6412df42e5+e3b0c442",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 10,
+        "approvalPointer": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\" plus HJ78 package Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "Plastic repeated the HJ78 hard-gated applicability-precheck stop. The dirty suffix was caused by local untracked capture files and this job is not the final HJ78 proof."
+      },
+      {
+        "sliceId": "X7-HJ-78-FULL-V2-INTERNAL-REPORT",
+        "jobId": "3dd2d8781dc94cc1b20845a5ed7bc814",
+        "classification": "PASS_X7_HJ78_FULL_V2_INTERNAL_REPORT_PRODUCED_AFTER_APPLICABILITY_FALLBACK_REPAIR",
+        "implementationCommit": "9e361fc4eaaf93909884d54195a87115d91997eb",
+        "runtimeCommit": "9e361fc4eaaf93909884d54195a87115d91997eb",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 9,
+        "approvalPointer": "Captain message in current Codex thread requesting a full report plus HJ78 package Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Plastic recycling produced a complete 9870-character internal V2 report. W5 extracted 5 EvidenceItems, W5E admitted 5, W5F handoff was ready, and the internal report writer created a draft. Public/default containment held: no public report markdown, verdict, truth, confidence, or admin diagnostics."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "Fresh Captain reset after HJ77; no HJ78 jobs have been spent from this tranche yet.",
-      "nextLiveJobRequirement": "Commit HJ78, refresh runtime, verify provenance, and run the next full V2 validation job from the committed runtime."
+      "reason": "HJ78 consumed three jobs from the reset 12-job tranche; 9 remain.",
+      "nextLiveJobRequirement": "Review the HJ78 full internal report and the damaged applicability-precheck fallback before spending more jobs. Prefer one targeted quality-bar raise from observed report evidence."
     },
     "pendingExceptionAuthorization": null
   }

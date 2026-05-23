@@ -19,31 +19,29 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced during HJ78 implementation after HJ77 ran one
-four-job wave and stopped with partial prompt-quality improvement but unresolved
-source-directness failures.
+This projection is synced after HJ78 produced a complete internal V2 report
+from the normal product-route job path.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ78 implementation pending commit: evidence applicability now runs before
-  W5 extraction in the product runtime owner, replacing fabricated live-owner
-  all-uncertain applicability with the existing LLM-owned
-  `evidence_applicability` task;
+  HJ78 implementation commit `55d00a81e342aa2e0dd59433c4df9d6412df42e5`
+  plus stabilization commit `9e361fc4eaaf93909884d54195a87115d91997eb`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md`;
-- latest canary result:
-  HJ77 jobs `9ef3a6cf64244c6ea87f200e0db58fd0`,
-  `3c8eb6181a5941a69219f9562f338ffa`,
-  `5f4eb7709fc6416eaec2e8ab961f8d33`, and
-  `6f4fb7f9c5ce41579f53c657e3c07528`, classified
-  `STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ78_Full_Report_Result.md`;
+- latest validation result:
+  `PASS_X7_HJ78_FULL_V2_INTERNAL_REPORT_PRODUCED_AFTER_APPLICABILITY_FALLBACK_REPAIR`;
+  job `3dd2d8781dc94cc1b20845a5ed7bc814` ran
+  `Plastic recycling is pointless` on `claimboundary-v2` and runtime
+  `9e361fc4eaaf93909884d54195a87115d91997eb`, produced a `9870` character
+  internal report, extracted and admitted `5` EvidenceItems, and preserved
+  public/default blocked-precutover containment;
 - current live-job tranche:
-  Captain reset to `12` on 2026-05-23 after HJ77; `12` remain before the HJ78
-  full-report validation job;
+  Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`; `9`
+  remain;
 - next action:
-  commit HJ78 after clean diff/index checks, refresh runtime, and run a full V2
-  validation job on the Captain-defined hydrogen input to produce a completed
-  report or a concrete next stop;
+  review the full internal report and the damaged applicability-precheck
+  fallback, then raise exactly one quality bar without adding another
+  proof-only layer;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
