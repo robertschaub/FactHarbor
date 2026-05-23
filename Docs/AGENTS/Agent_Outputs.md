@@ -4107,3 +4107,25 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ46. HJ47-HJ49 consumed `3`; `15` remain.
 
 **Next:** Commit this HJ49 result sync, then target the next concrete report-quality defect: direct current-stock source material selection/materialization. Do not spend another live job on verdict calibration until direct current-stock evidence is reliably present again.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ50 Source Material Query-Diversity Result
+
+**Task:** Repair the HJ49 source-usefulness defect where a later direct-record query candidate was visible in preview but could be excluded from Source Material by the first-six provided-Serper cap.
+
+**Repair:** HJ50 commit `952858fa` amends the existing provided-Serper Source Material selector to reserve the top bounded record from each provider attempt before filling remaining slots, while preserving the existing six-record cap, byte caps, dedupe, public/default containment, no semantic title/snippet ranking, no provider expansion, no parser/XLSX broadening, no cache/SR/storage, no direct URL/ACS, and no V1 work. The selector now applies the aggregate byte cap after provider-attempt balancing, with a regression test covering the old starvation path.
+
+**Verification before live job:** Focused owner test passed (`1` file / `17` tests); focused Serper/source-material suite passed (`4` files / `36` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/boundary-guard/docs/consolidation warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `952858fab47399e6afc1ded715d5a5b28982a232`. The V2 prompt profile stayed active with hash `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+
+**Live result:** HJ50 job `2d7402c4dc8947438b2f0ff74e5c8ce6` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown `null`) and unauthenticated internal report-writer artifact access returned `401`.
+
+**Hidden-chain evidence:** Query Planning completed with `2` queries and preserved `235000` in the direct-record query. Source Candidate Preview materialized `6` Serper records across two provider attempts. Source Material completed with `6` records in balanced order: `SOURCE_CANDIDATE_PREVIEW_5_1`, `SOURCE_CANDIDATE_PREVIEW_6_1`, `SOURCE_CANDIDATE_PREVIEW_5_2`, `SOURCE_CANDIDATE_PREVIEW_5_3`, `SOURCE_CANDIDATE_PREVIEW_6_2`, `SOURCE_CANDIDATE_PREVIEW_6_3`. W5 completed with `2` EvidenceItems: `EVI_ASYLUM_POPULATION_2024_APPLICATIONS` and `EVI_ASYLUM_POPULATION_AUGUST_2025`. The internal report writer created a `7137` byte report with `2` verdict sections and `2` boundary sections.
+
+**Classification:** `PASS_X7_HJ50_SOURCE_MATERIAL_QUERY_DIVERSITY_REPORT_QUALITY_IMPROVED`.
+
+**Information yield:** `report_produced_with_quality_improvement`. HJ50 materially improved over HJ49: current-stock evidence was recovered and the internal report's primary verdict candidate moved to `FALSE` with caveats, while a secondary `UNVERIFIED` candidate preserves broader-scope ambiguity. This is still internal Alpha/pre-cutover, not final public report semantics.
+
+**Budget:** Captain reset the live-job tranche to `18` immediately before HJ50. HJ50 consumed `1`; `17` remain.
+
+**DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism`. Chosen option: amend the existing Source Material selector. Rejected path: raising caps, semantic source ranking, provider expansion, prompt-only W5 loosening, crawler/parser/XLSX widening, public behavior, or V1 work. What was added: provider-attempt balancing inside the existing selector and focused tests. Net mechanism count: unchanged; no new route/provider/artifact family. Verification: listed above. Debt accepted and removal trigger: consolidate HJ source-selection policy before public cutover if the selector family continues to grow.
+
+**Next:** Move from single canaries to a stronger HighJump validation step: make V2 report visibility/manual V2 submission/default-UCM behavior usable under the Captain-approved direction, then run a small multi-input internal-report validation set using only Captain-defined inputs.

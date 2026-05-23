@@ -1,0 +1,119 @@
+{
+  "jobId": "2d7402c4dc8947438b2f0ff74e5c8ce6",
+  "classification": "PASS_X7_HJ50_SOURCE_MATERIAL_QUERY_DIVERSITY_REPORT_QUALITY_IMPROVED",
+  "executedWebGitCommitHash": "952858fab47399e6afc1ded715d5a5b28982a232",
+  "captainDefinedInput": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "budget": {
+    "latestCaptainReset": 18,
+    "jobsConsumedByThisRun": 1,
+    "remainingAfterThisRun": 17
+  },
+  "runtimePreflight": {
+    "webGitSha": "952858fab47399e6afc1ded715d5a5b28982a232",
+    "apiGitSha": "952858fab47399e6afc1ded715d5a5b28982a232",
+    "webProxyApiGitSha": "952858fab47399e6afc1ded715d5a5b28982a232",
+    "activePromptHash": "1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318"
+  },
+  "queryPlanning": {
+    "status": "completed",
+    "queryCount": 2,
+    "queries": [
+      {
+        "queryId": "q1_direct_record",
+        "retrievalPolicyKey": "primary_source_refinement",
+        "queryText": "235000 Personen Asylbereich Schweiz aktuell Statistik"
+      },
+      {
+        "queryId": "q2_baseline_context",
+        "retrievalPolicyKey": "baseline_research",
+        "queryText": "Asylbereich Schweiz Bevölkerung Bestand 2026"
+      }
+    ]
+  },
+  "sourceCandidatePreview": {
+    "status": "source_candidate_preview_materialized",
+    "previewRecordCount": 6,
+    "materializedPreviewRecordCount": 6,
+    "providerAttemptCoverage": [
+      {
+        "providerAttemptOrdinal": 5,
+        "candidatePreviewIds": [
+          "SOURCE_CANDIDATE_PREVIEW_5_1",
+          "SOURCE_CANDIDATE_PREVIEW_5_2",
+          "SOURCE_CANDIDATE_PREVIEW_5_3"
+        ]
+      },
+      {
+        "providerAttemptOrdinal": 6,
+        "candidatePreviewIds": [
+          "SOURCE_CANDIDATE_PREVIEW_6_1",
+          "SOURCE_CANDIDATE_PREVIEW_6_2",
+          "SOURCE_CANDIDATE_PREVIEW_6_3"
+        ]
+      }
+    ]
+  },
+  "sourceMaterial": {
+    "status": "source_material_page_summary_completed",
+    "sourceMaterialRecordCount": 6,
+    "selectedCandidatePreviewIdsInOrder": [
+      "SOURCE_CANDIDATE_PREVIEW_5_1",
+      "SOURCE_CANDIDATE_PREVIEW_6_1",
+      "SOURCE_CANDIDATE_PREVIEW_5_2",
+      "SOURCE_CANDIDATE_PREVIEW_5_3",
+      "SOURCE_CANDIDATE_PREVIEW_6_2",
+      "SOURCE_CANDIDATE_PREVIEW_6_3"
+    ],
+    "recordKinds": {
+      "provider_search_result_preview_text": 5,
+      "provider_search_result_page_text_bounded": 1
+    },
+    "sourceMaterialBytes": 5079
+  },
+  "boundedEvidenceExtraction": {
+    "status": "hidden_evidence_item_extraction_completed",
+    "evidenceItemCount": 2,
+    "evidenceItemIds": [
+      "EVI_ASYLUM_POPULATION_2024_APPLICATIONS",
+      "EVI_ASYLUM_POPULATION_AUGUST_2025"
+    ],
+    "currentStockEvidenceRecovered": true,
+    "annualFlowEvidenceStillPresent": true
+  },
+  "internalAlphaReport": {
+    "resultStatus": "internal_alpha_report_result_candidate_created",
+    "draftStatus": "internal_alpha_report_draft_created",
+    "writerStatus": "internal_report_writer_draft_created",
+    "reportMarkdownByteLength": 7137,
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 2,
+    "observedVerdictCandidateSummary": [
+      {
+        "label": "FALSE",
+        "truthPercentage": 8,
+        "confidence": 78,
+        "basis": "direct current-stock evidence below the claimed threshold"
+      },
+      {
+        "label": "UNVERIFIED",
+        "truthPercentage": 25,
+        "confidence": 42,
+        "basis": "broader claim-scope ambiguity remains unresolved"
+      }
+    ]
+  },
+  "publicContainment": {
+    "publicStatus": "SUCCEEDED",
+    "publicAnalysisIssueCode": "report_damaged",
+    "publicResultSchema": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null,
+    "publicReportMarkdownReturned": false,
+    "unauthenticatedInternalArtifactStatus": 401
+  },
+  "artifactEvidenceLocation": "test-output/hj50-2d7402c4dc8947438b2f0ff74e5c8ce6",
+  "informationYield": "report_produced_with_quality_improvement",
+  "nextBestAction": "Expose the internal V2 report path in the UI/default V2 workflow under the Captain-approved HighJump direction, then run a small stronger multi-input internal-report validation set rather than more single canaries."
+}

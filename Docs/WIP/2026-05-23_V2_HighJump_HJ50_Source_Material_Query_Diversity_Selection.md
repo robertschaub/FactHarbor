@@ -1,6 +1,6 @@
 # V2 HighJump HJ50 - Source Material Query-Diversity Selection
 
-**Status:** local implementation verifier-clean; live rerun pending committed runtime refresh
+**Status:** live validated; docs result pending commit
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ49 report `910b9892ae3345a2a72ca1ca14b14990`
@@ -129,6 +129,56 @@ Live validation:
   classify the next defect as W5 extraction/materialization quality;
 - if Source Material still drops the later top candidate, inspect the selector
   with no additional live job first.
+
+## Live Result
+
+HJ50 job `2d7402c4dc8947438b2f0ff74e5c8ce6` ran on committed runtime
+`952858fab47399e6afc1ded715d5a5b28982a232` with Web/API/proxy hashes
+matching before submission. The active `claimboundary-v2` prompt hash remained
+`1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+
+Classification:
+`PASS_X7_HJ50_SOURCE_MATERIAL_QUERY_DIVERSITY_REPORT_QUALITY_IMPROVED`.
+
+Information yield: `report_produced_with_quality_improvement`.
+
+Evidence summary:
+
+- Query Planning completed with two queries and preserved the `235000` literal
+  in the direct-record query.
+- Source Candidate Preview materialized six Serper records across two provider
+  attempts.
+- Source Material completed with six records in provider-attempt balanced order:
+  `5_1`, `6_1`, `5_2`, `5_3`, `6_2`, `6_3`.
+- W5 completed with two EvidenceItems:
+  `EVI_ASYLUM_POPULATION_2024_APPLICATIONS` and
+  `EVI_ASYLUM_POPULATION_AUGUST_2025`.
+- The internal Alpha report writer created a 7137-byte admin/internal report
+  with two verdict sections and two boundary sections.
+- The observed internal verdict candidates improved materially over HJ49:
+  a primary `FALSE` candidate at `8%` truth / `78%` confidence based on
+  current-stock evidence below the claim threshold, plus an `UNVERIFIED`
+  broader-scope candidate at `25%` truth / `42%` confidence.
+- Public/default containment held: public/default result remained
+  `4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`; public
+  verdict/truth/confidence stayed `null`; public/default report markdown stayed
+  `null`; unauthenticated internal artifact route returned `401`.
+
+Budget: Captain reset the tranche to `18` immediately before HJ50. HJ50 consumed
+one live job; `17` remain.
+
+Detailed canary evidence:
+`Docs/WIP/canary-evidence-2d7402c4dc8947438b2f0ff74e5c8ce6.json`.
+
+## Next Direction
+
+HJ50 closes the immediate source-material selection defect. The next step should
+not be another single canary. Under the Captain-approved HighJump direction,
+move toward V2 report visibility and manual V2 submission/default-UCM behavior,
+then run a small stronger internal-report validation set across Captain-defined
+inputs. Keep public cutover semantics explicit and avoid turning temporary
+internal Alpha report exposure into final public report semantics without a
+reviewed cutover package.
 
 ## Stop Conditions
 
