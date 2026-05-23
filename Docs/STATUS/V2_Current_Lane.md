@@ -19,24 +19,24 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for HJ61 after the HJ60 stronger internal report
-gauntlet and the Captain's 18-job budget reset. Older HJ history below is kept
-as context, but the active anchor and budget are:
+This projection is synced after HJ61. Older HJ history below is kept as context,
+but the active anchor and budget are:
 
 - committed implementation anchor:
   `9576896a docs(v2): record hj60 report gauntlet`;
 - active repair package:
-  HJ61 W7-B candidate-coherence prompt repair in
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md`;
+  follow-up W7-B truth-scale polarity repair after HJ61 exposed
+  false-label/high-truth inconsistency;
 - latest canary result:
-  HJ60 eight-input gauntlet, classified
-  `MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`;
+  HJ61 four-input candidate-coherence canary, classified
+  `PARTIAL_X7_HJ61_W7B_CANDIDATE_COHERENCE_IMPROVED_ONE_TARGET_POLARITY_REPAIR_REQUIRED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ60;
-  `18` remain before HJ61 live validation;
+  HJ61 consumed `4`, so `14` remain;
 - next action:
-  commit HJ61, import/activate the revised `claimboundary-v2` prompt, refresh
-  runtime, then run the bounded HJ61 canary set;
+  amend the existing W7-B internal verdict calibration prompt so truth
+  percentages are explicitly the truth of the selected claim and must align
+  with the seven-point verdict label bands;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -51,25 +51,47 @@ Latest committed source/docs anchor:
 
 Active implementation repair:
 
-HJ61 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
+HJ61 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
 W7-B forms fewer, more claim-aligned top-line verdict candidates and keeps
 context-only caveats as caveats, limitations, or material uncertainties. It
-adds no code-side semantic rule, report-writer mutation, schema relaxation,
-source or provider widening, parser, retry/repair loop, public surface,
-cache/SR/storage, direct URL/ACS support, or V1 work.
+partially worked for `bundesrat-simple`, but it exposed a stronger calibration
+defect: W7-B can emit a false-side label with a high truth percentage. The next
+repair remains in the same existing prompt section and should add no code-side
+semantic rule, report-writer mutation, schema relaxation, source or provider
+widening, parser, retry/repair loop, public surface, cache/SR/storage, direct
+URL/ACS support, or V1 work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET`
+`X7-HJ-61-W7B-CANDIDATE-COHERENCE-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj60-stronger-internal-report-gauntlet.json`
+`Docs/WIP/canary-evidence-hj61-w7b-candidate-coherence.json`
 
 Important evidence:
 
+- HJ61 ran four targeted report-quality canaries on runtime/source commit
+  `cd7f2e214b762a456b9e3623f427f3f1c0f3015d` after importing and activating
+  `claimboundary-v2` prompt hash
+  `0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753`.
+  All four jobs stayed on `claimboundary-v2`, finished `SUCCEEDED`, produced
+  authenticated admin-only internal reports, and preserved public/default
+  containment (`4.0.0-cb-precutover`, `blocked_precutover`, no public/default
+  report markdown, no public/default verdict/truth/confidence, unauthenticated
+  hidden route `401`). `bundesrat-simple`
+  (`040fac63c75b43908ea1043dec9241a8`) improved to one coherent `MOSTLY-TRUE`
+  78/82 temporal-sequence section. `plastic-en`
+  (`212aee1b8b6340949449539e8caaca85`) still failed expectation with
+  `MOSTLY-TRUE` 72/68 plus `MIXED` 50/62. `bundesrat-rechtskraftig`
+  (`72b40abeb38f4ecca1a03a51902b72c5`) still split into `MOSTLY-TRUE` 72/78
+  plus `UNVERIFIED` 45/35. `hydrogen-en`
+  (`09e3fccef3b54f76bf7ae7d153b0eb77`) exposed the active hard blocker:
+  `FALSE` 92/88 and `MOSTLY-FALSE` 78/72, meaning W7-B treated truth
+  percentage like confidence in falsehood. The next repair is the existing W7-B
+  truth-scale polarity contract.
 - HJ57 ran two focused reruns on runtime commit
   `44154ac093a323a6c8e83dffca6a6e2493d856f1` after activating
   `claimboundary-v2` prompt hash
@@ -480,8 +502,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `4`;
+- remaining: `14`;
 - latest reset starts after the HJ60 stronger internal report gauntlet, latest
   job `71ab493bd64640f5957acd4e59e1c362`;
 - every live job still requires clean git status, committed source, runtime
@@ -489,14 +511,15 @@ Current active tranche:
 
 ## Next Action
 
-1. Commit the HJ61 W7-B candidate-coherence prompt repair and lane/ledger
-   sync.
-2. Import and activate the revised `claimboundary-v2` prompt in UCM.
-3. Refresh runtime, verify Web/API/proxy commit and active prompt hash, then run
-   the bounded HJ61 canary set.
-4. If HJ61 improves candidate coherence but numeric stock/comparison reports
-   remain weak, move next to source-material usefulness rather than adding a
-   downstream report-consolidation layer.
+1. Keep the useful HJ61 candidate-economy guidance.
+2. Amend the existing W7-B internal verdict calibration prompt with the
+   structural seven-point label/truth polarity invariant.
+3. Commit, import/activate the revised `claimboundary-v2` prompt, refresh
+   runtime, and run a small guardrail canary set focused on hydrogen, plastic,
+   and Bundesrat-simple.
+4. If polarity is repaired but plastic/asylum-family quality remains weak, move
+   next to source-material usefulness rather than adding a downstream
+   report-consolidation layer.
 
 ## Stop Conditions
 

@@ -1,6 +1,6 @@
 # V2 HighJump HJ61 W7-B Candidate Coherence Repair
 
-**Status:** implementation verifier-clean; pending UCM prompt activation and live validation
+**Status:** partial pass; follow-up W7-B polarity repair required
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, prompt edits allowed, live-job budget reset to 18
@@ -171,6 +171,47 @@ Verifier results:
 - `node -e "JSON.parse(...V2_Live_Job_Tranche_Ledger.json...)"`: PASS.
 - `npm run index`: PASS.
 - `git diff --check`: PASS.
+
+## Live Result
+
+Runtime and prompt state:
+
+- implementation/runtime commit: `cd7f2e214b762a456b9e3623f427f3f1c0f3015d`;
+- active `claimboundary-v2` prompt hash:
+  `0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753`;
+- evidence file:
+  `Docs/WIP/canary-evidence-hj61-w7b-candidate-coherence.json`.
+
+Jobs:
+
+| Input | Job ID | Result |
+| --- | --- | --- |
+| `Plastic recycling is pointless` | `212aee1b8b6340949449539e8caaca85` | Internal report produced, but still `MOSTLY-TRUE` 72/68 plus `MIXED` 50/62. This fails the accepted false-side or at-most-`MIXED` expectation. |
+| `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben` | `040fac63c75b43908ea1043dec9241a8` | Internal report produced with one coherent `MOSTLY-TRUE` 78/82 temporal-sequence section. This improves over HJ60's split report, though it remains below the HJ59 high result. |
+| `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben` | `72b40abeb38f4ecca1a03a51902b72c5` | Internal report produced but still split: `MOSTLY-TRUE` 72/78 plus `UNVERIFIED` 45/35. |
+| `Using hydrogen for cars is more efficient than using electricity` | `09e3fccef3b54f76bf7ae7d153b0eb77` | Internal report produced, but W7-B emitted `FALSE` 92/88 and `MOSTLY-FALSE` 78/72. This is a hard polarity/calibration defect because truth percentage must measure the submitted claim truth, not confidence in falsehood. |
+
+Public/default containment held for all four jobs: public/default job payloads
+kept `reportMarkdown` null, public/default verdict/truth/confidence null, the
+result envelope remained `4.0.0-cb-precutover` with
+`publicCutoverStatus: blocked_precutover`, default internal report-writer route
+stayed hash/length/provenance-only, and unauthenticated hidden artifact route
+access returned `401`.
+
+Classification:
+
+`PARTIAL_X7_HJ61_W7B_CANDIDATE_COHERENCE_IMPROVED_ONE_TARGET_POLARITY_REPAIR_REQUIRED`
+
+Failed-attempt recovery:
+
+- keep: selected-claim candidate economy and temporal pending-posture guidance,
+  because it improved `bundesrat-simple` and added no new mechanism;
+- amend: existing W7-B internal verdict calibration must state that
+  `internalTruthPercentageCandidate` is the estimated truth of the selected
+  AtomicClaim itself and must be band-consistent with the
+  `internalVerdictLabelCandidate`;
+- do not revert wholesale unless the focused polarity amendment fails local
+  verifier and live validation.
 
 ## Live Canary Set
 

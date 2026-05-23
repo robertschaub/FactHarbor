@@ -1,0 +1,299 @@
+{
+  "schemaVersion": "v2-hj61-canary-evidence.v1",
+  "sliceId": "X7-HJ-61-W7B-CANDIDATE-COHERENCE-REPAIR",
+  "implementationCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+  "promptHash": "0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753",
+  "startedAt": "2026-05-23T06:40:54.895Z",
+  "jobs": [
+    {
+      "label": "plastic-en",
+      "inputValue": "Plastic recycling is pointless",
+      "jobId": "212aee1b8b6340949449539e8caaca85",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "executedWebGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "promptContentHash": null,
+      "reportMarkdownLength": 7809,
+      "resultSummary": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "issue": null,
+        "promptContentHash": null,
+        "verdict": "UNVERIFIED",
+        "truthPercentage": 50,
+        "confidence": 0,
+        "claimVerdicts": [],
+        "warningTypes": [
+          "report_damaged"
+        ],
+        "warningCount": 1
+      },
+      "leakChecks": {
+        "ledgerId": "212aee1b8b6340949449539e8caaca85:precutover-observability",
+        "adminSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": "UNVERIFIED",
+          "truthPercentage": 50,
+          "confidence": 0,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "adminReportMarkdownLength": 7809,
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "alphaDefaultStatus": 200,
+        "alphaDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    },
+    {
+      "label": "bundesrat-simple",
+      "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+      "jobId": "040fac63c75b43908ea1043dec9241a8",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "executedWebGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "promptContentHash": null,
+      "reportMarkdownLength": 5478,
+      "resultSummary": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "issue": null,
+        "promptContentHash": null,
+        "verdict": "UNVERIFIED",
+        "truthPercentage": 50,
+        "confidence": 0,
+        "claimVerdicts": [],
+        "warningTypes": [
+          "report_damaged"
+        ],
+        "warningCount": 1
+      },
+      "leakChecks": {
+        "ledgerId": "040fac63c75b43908ea1043dec9241a8:precutover-observability",
+        "adminSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": "UNVERIFIED",
+          "truthPercentage": 50,
+          "confidence": 0,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "adminReportMarkdownLength": 5478,
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "alphaDefaultStatus": 200,
+        "alphaDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    },
+    {
+      "label": "bundesrat-rechtskraftig",
+      "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "jobId": "72b40abeb38f4ecca1a03a51902b72c5",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "executedWebGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "promptContentHash": null,
+      "reportMarkdownLength": 7811,
+      "resultSummary": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "issue": null,
+        "promptContentHash": null,
+        "verdict": "UNVERIFIED",
+        "truthPercentage": 50,
+        "confidence": 0,
+        "claimVerdicts": [],
+        "warningTypes": [
+          "report_damaged"
+        ],
+        "warningCount": 1
+      },
+      "leakChecks": {
+        "ledgerId": "72b40abeb38f4ecca1a03a51902b72c5:precutover-observability",
+        "adminSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": "UNVERIFIED",
+          "truthPercentage": 50,
+          "confidence": 0,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "adminReportMarkdownLength": 7811,
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "alphaDefaultStatus": 200,
+        "alphaDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    },
+    {
+      "label": "hydrogen-en",
+      "inputValue": "Using hydrogen for cars is more efficient than using electricity",
+      "jobId": "09e3fccef3b54f76bf7ae7d153b0eb77",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "executedWebGitCommitHash": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+      "promptContentHash": null,
+      "reportMarkdownLength": 8720,
+      "resultSummary": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "issue": null,
+        "promptContentHash": null,
+        "verdict": "UNVERIFIED",
+        "truthPercentage": 50,
+        "confidence": 0,
+        "claimVerdicts": [],
+        "warningTypes": [
+          "report_damaged"
+        ],
+        "warningCount": 1
+      },
+      "leakChecks": {
+        "ledgerId": "09e3fccef3b54f76bf7ae7d153b0eb77:precutover-observability",
+        "adminSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": "UNVERIFIED",
+          "truthPercentage": 50,
+          "confidence": 0,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "issue": null,
+          "promptContentHash": null,
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "claimVerdicts": [],
+          "warningTypes": [
+            "report_damaged"
+          ],
+          "warningCount": 1
+        },
+        "adminReportMarkdownLength": 8720,
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "alphaDefaultStatus": 200,
+        "alphaDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    }
+  ],
+  "completedAt": "2026-05-23T06:51:02.987Z",
+  "updatedAt": "2026-05-23T06:51:02.987Z"
+}

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj61-w7b-candidate-coherence-2026-05-23-reset-18-after-hj60",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 14,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET",
       "startsAfterJobId": "71ab493bd64640f5957acd4e59e1c362",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ60 remains the latest completed gauntlet and is the evidence base for HJ61 W7-B candidate-coherence repair.",
+      "currentRemaining": 14,
+      "consumptionEntriesInThisTranche": 4,
+      "note": "HJ61 spent four jobs after the post-HJ60 18-job reset. It partially passed: all four jobs produced internal reports and public/default containment held; Bundesrat-simple improved to one coherent true-side section, but plastic remained true-side, Bundesrat-rechtskraeftig remained split, and hydrogen exposed a W7-B label/truth polarity regression. HJ62 is expected to repair the existing W7-B truth-scale polarity contract before more live validation.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1672,6 +1672,66 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_quality_gap",
         "note": "Plastic produced an 8055-character internal report with MOSTLY-TRUE 72/78 primary verdict and a caveat for the absolute wording, but the Captain benchmark expects a false-side or at most MIXED result. This is a W7-B candidate-coherence/calibration quality gap. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-61-W7B-CANDIDATE-COHERENCE-PLASTIC",
+        "jobId": "212aee1b8b6340949449539e8caaca85",
+        "classification": "FAIL_X7_HJ61_PLASTIC_TRUE_SIDE_EXPECTATION_MISSED",
+        "note": "Plastic produced an internal report but stayed MOSTLY-TRUE 72/68 plus MIXED 50/62, failing the accepted false-side or at-most-MIXED expectation. Public/default containment held.",
+        "implementationCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "runtimeCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ61 package Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_quality_gap"
+      },
+      {
+        "sliceId": "X7-HJ-61-W7B-CANDIDATE-COHERENCE-BUNDESRAT-SIMPLE",
+        "jobId": "040fac63c75b43908ea1043dec9241a8",
+        "classification": "PASS_X7_HJ61_BUNDESRAT_SIMPLE_COHERENT_TRUE_SIDE_SECTION",
+        "note": "Bundesrat-simple improved from the HJ60 split report to one MOSTLY-TRUE 78/82 temporal-sequence section. Public/default containment held.",
+        "implementationCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "runtimeCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ61 package Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved"
+      },
+      {
+        "sliceId": "X7-HJ-61-W7B-CANDIDATE-COHERENCE-BUNDESRAT-RECHTSKRAFTIG",
+        "jobId": "72b40abeb38f4ecca1a03a51902b72c5",
+        "classification": "PARTIAL_X7_HJ61_BUNDESRAT_RECHTSKRAFTIG_SPLIT_REMAINS",
+        "note": "Bundesrat rechtskraeftig still split into MOSTLY-TRUE 72/78 temporal-sequence and UNVERIFIED 45/35 signature-context sections. Public/default containment held.",
+        "implementationCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "runtimeCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753",
+        "count": 1,
+        "remainingAfter": 15,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ61 package Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_quality_gap"
+      },
+      {
+        "sliceId": "X7-HJ-61-W7B-CANDIDATE-COHERENCE-HYDROGEN",
+        "jobId": "09e3fccef3b54f76bf7ae7d153b0eb77",
+        "classification": "FAIL_X7_HJ61_HYDROGEN_FALSE_LABEL_TRUTH_POLARITY_REGRESSION",
+        "note": "Hydrogen produced FALSE 92/88 and MOSTLY-FALSE 78/72, exposing a W7-B polarity contract regression: truth percentage must measure the submitted claim truth, not confidence in falsehood. Public/default containment held.",
+        "implementationCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "runtimeCommit": "cd7f2e214b762a456b9e3623f427f3f1c0f3015d",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753",
+        "count": 1,
+        "remainingAfter": 14,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ61 package Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_quality_gap"
       }
     ],
     "blockedPending": [],

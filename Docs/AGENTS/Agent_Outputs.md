@@ -4315,7 +4315,7 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 
 **Results:** Seven jobs produced internal Alpha reports. Bolsonaro PT produced a short admin stop summary at W5 with `hidden_no_extractable_evidence` and `0` EvidenceItems. Public/default containment held for every submitted job: no public/default report markdown, verdict, truth percentage, or confidence.
 
-**Quality signal:** HJ60 proves broad internal report reachability, but quality remains mixed. Hydrogen and plastic are comparatively strong. Bolsonaro EN gives a useful caveated true-side legal/procedural report. The asylum-family reports still lack decisive stock/comparison evidence. Bundesrat-simple did not reproduce the HJ59 TRUE 88/85 result; it produced a weaker split report, so verdict/report consolidation and stability are now concrete owners.
+**Quality signal:** HJ60 proves broad internal report reachability, but quality remains mixed. Hydrogen is comparatively strong. Plastic is a real quality miss because it produced a true-side primary verdict while Captain expectations accept false-side or at most mixed. Bolsonaro EN gives a useful caveated true-side legal/procedural report. The asylum-family reports still lack decisive stock/comparison evidence. Bundesrat-simple did not reproduce the HJ59 TRUE 88/85 result; it produced a weaker split report, so W7-B verdict/candidate coherence and stability are now concrete owners.
 
 **Classification:** `MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`.
 
@@ -4324,3 +4324,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ60 consumed `8` jobs. HJ58, HJ59, and HJ60 consumed `10` of the reset `18`; `8` remain.
 
 **Next:** Run report-quality review against Captain expectations and comparator guidance, then prepare one targeted repair package. Leading candidates are report consolidation/stability for split verdicts, direct source-material usefulness for stock/comparison claims, and multilingual W5 extraction robustness for the Portuguese Bolsonaro variant.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ61 W7-B Candidate Coherence Result
+
+**Task:** Amend the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt so W7-B forms fewer, more claim-aligned top-line verdict candidates and treats context-only caveats as caveats or limitations rather than equal competing verdicts.
+
+**Repair:** HJ61 commit `cd7f2e21` changed only `apps/web/prompts/claimboundary-v2.prompt.md`, its focused prompt-contract test, and lane/ledger/package docs. It added no code-side semantic rule, report-writer mutation, schema/model/config/provider/source/parser/cache/SR/storage change, public behavior, ACS/direct URL, retry path, or V1 work. UCM `claimboundary-v2` was imported and activated as `hj61-w7b-candidate-coherence` with hash `0d2aa1e11c26b89fe61023822e8ded1a989c7c7c27e5515272bacb5841ac9753`.
+
+**Verification before live jobs:** Prompt-contract test passed; focused boundary guard passed; web build passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/boundary-guard/consolidation signals; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy endpoints reported `cd7f2e214b762a456b9e3623f427f3f1c0f3015d`.
+
+**Live jobs:** `plastic-en` `212aee1b8b6340949449539e8caaca85`; `bundesrat-simple` `040fac63c75b43908ea1043dec9241a8`; `bundesrat-rechtskraftig` `72b40abeb38f4ecca1a03a51902b72c5`; `hydrogen-en` `09e3fccef3b54f76bf7ae7d153b0eb77`.
+
+**Result:** HJ61 is a partial pass, not a quality pass. All four jobs stayed on `claimboundary-v2`, finished `SUCCEEDED`, produced authenticated admin-only internal reports, and preserved public/default containment. `bundesrat-simple` improved to one coherent `MOSTLY-TRUE` 78/82 temporal-sequence section. `plastic-en` still failed expectation with `MOSTLY-TRUE` 72/68 plus `MIXED` 50/62. `bundesrat-rechtskraftig` still split into `MOSTLY-TRUE` 72/78 plus `UNVERIFIED` 45/35. `hydrogen-en` exposed the hard blocker: `FALSE` 92/88 and `MOSTLY-FALSE` 78/72, meaning W7-B treated truth percentage like confidence in falsehood.
+
+**Classification:** `PARTIAL_X7_HJ61_W7B_CANDIDATE_COHERENCE_IMPROVED_ONE_TARGET_POLARITY_REPAIR_REQUIRED`.
+
+**Failed-attempt recovery:** Keep the HJ61 candidate-economy/temporal-posture guidance because it improved one target and adds no new mechanism. Amend the existing W7-B internal verdict calibration prompt so `internalTruthPercentageCandidate` is explicitly the estimated truth of the selected AtomicClaim and must be band-consistent with `internalVerdictLabelCandidate`.
+
+**Budget:** HJ61 consumed `4` jobs from the post-HJ60 reset `18`; `14` remain.
+
+**Next:** Prepare the smallest W7-B truth-scale polarity repair. Do not move the repair to the report writer; W8 copies W7-B label/truth/confidence exactly.
