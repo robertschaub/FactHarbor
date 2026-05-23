@@ -372,6 +372,10 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("do not treat it as independent numerical or comparative verification");
     expect(section).toContain("Avoid near-duplicate verdict candidates");
     expect(section).toContain("must remain band-consistent with `internalVerdictLabelCandidate`");
+    expect(section).toContain("`caveats` must be an array of strings");
+    expect(section).toContain("Use `[]` when there are no caveats");
+    expect(section).toContain("`materialUncertaintySignals` must be an array of strings");
+    expect(section).toContain("Use `[]` when there are no material uncertainty signals");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
     }

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic; 17 remain.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C; 16 remain before HJ66.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1807,6 +1807,21 @@
         "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ64 package Docs/WIP/2026-05-23_V2_HighJump_HJ64_W7B_Label_Truth_Coupling_Repair.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_new_quality_gap_evidence"
+      },
+      {
+        "sliceId": "X7-HJ-65-W7B-SELECTED-CLAIM-POLARITY-PLASTIC",
+        "jobId": "c5b93bf07d084a95b5d1bce6ddb03979",
+        "classification": "STOP_X7_HJ65_W7B_SCHEMA_VALIDATION_CAVEATS_TYPE_AFTER_POLARITY_PROMPT",
+        "note": "Plastic stayed on V2 and reached W5 with 4 EvidenceItems plus accepted W6-C sufficiency, but W7-B damaged on schema validation because both verdict candidate caveats fields had invalid_type. Public/default containment held. HJ65 selected-claim polarity wording is kept; HJ66 amends the existing W7-B output contract to require caveats/materialUncertaintySignals arrays.",
+        "implementationCommit": "4891d73f8ebf2ba8084975970dac9e58b8294739",
+        "runtimeCommit": "4891d73f8ebf2ba8084975970dac9e58b8294739",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "1d590cb6b328678c180b3b7a1f68d79ee3b140002ff14cf4b048e3efd46ca840",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ65 package Docs/WIP/2026-05-23_V2_HighJump_HJ65_W7B_Selected_Claim_Polarity_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure_with_actionable_schema_diagnostics"
       }
     ],
     "blockedPending": [],

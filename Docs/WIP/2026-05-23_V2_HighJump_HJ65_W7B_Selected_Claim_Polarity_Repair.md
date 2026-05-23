@@ -1,6 +1,7 @@
 # V2 HighJump HJ65 W7-B Selected-Claim Polarity Repair
 
-**Status:** local implementation verifier-clean; live validation pending
+**Status:** live validation stopped at W7-B schema validation; actionable
+follow-up repair in progress
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction; prompt edits, schema changes, and live
@@ -155,6 +156,60 @@ Stop signals:
   prompt repair;
 - W8 or upstream stages regress to a different blocker that prevents evaluating
   W7-B selected-claim polarity.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj65-w7b-selected-claim-polarity.json`
+
+Runtime/source:
+
+- implementation commit:
+  `4891d73f8ebf2ba8084975970dac9e58b8294739`;
+- active `claimboundary-v2` prompt label/hash:
+  `hj65-w7b-selected-claim-polarity` /
+  `1d590cb6b328678c180b3b7a1f68d79ee3b140002ff14cf4b048e3efd46ca840`;
+- job:
+  `c5b93bf07d084a95b5d1bce6ddb03979`;
+- job executed web git hash:
+  `4891d73f8ebf2ba8084975970dac9e58b8294739`.
+
+Result:
+
+- The job stayed on `claimboundary-v2` and finished `SUCCEEDED`.
+- Public/default containment held: public/default V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover`; public/default report
+  markdown, verdict, truth percentage, and confidence were absent; default W8
+  writer projection remained hash/length/provenance-only; unauthenticated W8
+  writer route access returned `401`.
+- The hidden chain reached W5 with `4` EvidenceItems and W6-C with accepted
+  sufficiency assessment.
+- W7-B returned `boundary_verdict_execution_damaged` with schema diagnostics:
+  `verdictSetCandidate.verdictCandidates.0.caveats` and
+  `verdictSetCandidate.verdictCandidates.1.caveats` had `invalid_type`.
+- W8 internal report writer therefore blocked before report creation.
+
+Classification:
+
+`STOP_X7_HJ65_W7B_SCHEMA_VALIDATION_CAVEATS_TYPE_AFTER_POLARITY_PROMPT`
+
+Information yield:
+
+`new_failure_with_actionable_schema_diagnostics`.
+
+Failed-attempt recovery:
+
+Keep the HJ65 selected-claim polarity wording. The live failure does not
+contradict that hypothesis; it exposes a narrower W7-B output contract gap. The
+existing prompt output contract names `caveats` and
+`materialUncertaintySignals` but does not explicitly state that they must be
+arrays of strings. The follow-up repair amends that existing output contract in
+place.
+
+Budget:
+
+HJ65 consumed `1` job from the current `18`-job tranche. `16` remain.
 
 ## Sidecar Review
 

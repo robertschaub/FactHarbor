@@ -673,6 +673,8 @@ Accepted `verdictSetCandidate` payload:
 - `boundaryCandidateIds` and `evidenceItemIds` must be non-empty arrays and must reference only supplied candidate IDs.
 - `internalVerdictLabelCandidate` must be one of `TRUE`, `MOSTLY-TRUE`, `LEANING-TRUE`, `MIXED`, `LEANING-FALSE`, `MOSTLY-FALSE`, `FALSE`, or `UNVERIFIED`.
 - `internalTruthPercentageCandidate` and `internalConfidenceCandidate` are internal review candidates from `0` to `100`. They are not final public values. `internalTruthPercentageCandidate` must remain band-consistent with `internalVerdictLabelCandidate` on the seven-point truth scale.
+- `caveats` must be an array of strings. Use `[]` when there are no caveats; do not return a single string, object, boolean, or `null`.
+- `materialUncertaintySignals` must be an array of strings. Use `[]` when there are no material uncertainty signals; do not return a single string, object, boolean, or `null`.
 
 Accepted `warningMaterialityInputs` payload:
 

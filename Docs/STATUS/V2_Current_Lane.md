@@ -19,23 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for HJ64. Older HJ history below is kept as context,
+This projection is synced for HJ66. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `95312f5e fix(v2): couple w7b labels with truth scale`;
+  `4891d73f fix(v2): keep w7b verdicts oriented to selected claim`;
 - active repair package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ64_W7B_Label_Truth_Coupling_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ66_W7B_Caveats_Array_Contract_Repair.md`;
 - latest canary result:
-  HJ64 focused plastic canary, classified
-  `PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS`;
+  HJ65 focused plastic canary, classified
+  `STOP_X7_HJ65_W7B_SCHEMA_VALIDATION_CAVEATS_TYPE_AFTER_POLARITY_PROMPT`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 consumed `1`, so `17` remain;
+  HJ64 and HJ65 consumed `2`, so `16` remain before HJ66;
 - next action:
-  keep HJ64 and repair W7-B selected-claim polarity/orientation so evidence
-  for the opposite proposition lowers the submitted claim truth instead of
-  creating a true-side top-line verdict for a counterclaim;
+  keep HJ65 selected-claim polarity wording and finish the narrow HJ66 W7-B
+  output-contract repair requiring `caveats` and
+  `materialUncertaintySignals` arrays before one focused plastic canary;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,34 +46,46 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`95312f5e fix(v2): couple w7b labels with truth scale`
+`4891d73f fix(v2): keep w7b verdicts oriented to selected claim`
 
 Active implementation repair:
 
-HJ64 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section
-so `internalVerdictLabelCandidate` and `internalTruthPercentageCandidate` are a
-coupled judgment from the same seven-point scale. The focused plastic canary
-confirmed numeric coupling is repaired (`MOSTLY-TRUE` truth `78`,
-`UNVERIFIED` truth `50`) while preserving the complete internal report path.
-The same report exposed the next W7-B quality owner: selected-claim
-polarity/orientation. The top-line verdict is still oriented around the
-counterclaim that recycling has purpose rather than the selected AtomicClaim
-that plastic recycling is pointless. The next repair should stay in W7-B
-prompt/contract calibration unless local evidence proves a missing runtime
-capability.
+HJ65 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section
+so W7-B must answer the selected AtomicClaim as written rather than silently
+replacing it with an inverse or counter-proposition. The focused plastic
+canary kept the V2 chain contained and reached W5 with `4` EvidenceItems plus
+accepted W6-C sufficiency, but W7-B returned schema damage because both verdict
+candidate `caveats` fields had invalid type. HJ66 keeps the polarity wording
+and amends the same W7-B output contract to require `caveats` and
+`materialUncertaintySignals` as arrays of strings. This remains prompt/test
+calibration only; no runtime coercion, schema relaxation, retry, fallback, or
+parallel report path is authorized.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-64-W7B-LABEL-TRUTH-COUPLING-REPAIR`
+`X7-HJ-65-W7B-SELECTED-CLAIM-POLARITY-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj64-w7b-label-truth-coupling.json`
+`Docs/WIP/canary-evidence-hj65-w7b-selected-claim-polarity.json`
 
 Important evidence:
 
+- HJ65 ran one focused plastic canary on runtime/source commit
+  `4891d73f8ebf2ba8084975970dac9e58b8294739` after importing and activating
+  `claimboundary-v2` prompt hash
+  `1d590cb6b328678c180b3b7a1f68d79ee3b140002ff14cf4b048e3efd46ca840`.
+  Job `c5b93bf07d084a95b5d1bce6ddb03979` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. The hidden
+  chain reached W5 with `4` EvidenceItems and W6-C accepted sufficiency, then
+  W7-B returned `boundary_verdict_execution_damaged` with schema diagnostics:
+  `verdictSetCandidate.verdictCandidates.0.caveats` and
+  `verdictSetCandidate.verdictCandidates.1.caveats` had `invalid_type`.
+  Information yield is `new_failure_with_actionable_schema_diagnostics`.
+  Failed-attempt recovery keeps the HJ65 selected-claim polarity wording and
+  treats HJ66 as an in-place W7-B output-contract repair for array fields.
 - HJ64 ran one focused plastic canary on runtime/source commit
   `95312f5e0970f8879e296bbae8bf98aab9ec9489` after importing and activating
   `claimboundary-v2` prompt hash
@@ -550,8 +562,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -559,14 +571,12 @@ Current active tranche:
 
 ## Next Action
 
-1. Keep HJ64; numeric W7-B label/truth coupling and W8 report creation worked.
-2. Use `/debt-guard` for the remaining W7-B selected-claim polarity/orientation
-   defect because it is a live report-quality failure.
-3. Inspect the W7-B prompt contract and any existing output-contract tests for
-   the lowest-complexity way to make verdict label/truth refer to the selected
-   AtomicClaim, not a reformulated counterclaim.
-4. After verifier-clean repair and commit/runtime refresh, rerun one focused
-   plastic canary before spending broader gauntlet budget.
+1. Keep HJ65 selected-claim polarity wording; the live stop was a narrow W7-B
+   schema contract failure, not evidence against the polarity repair.
+2. Finish HJ66 by amending the existing W7-B output contract so `caveats` and
+   `materialUncertaintySignals` must be arrays of strings.
+3. After verifier-clean repair, commit, prompt import, and runtime refresh,
+   rerun one focused plastic canary before spending broader gauntlet budget.
 
 ## Stop Conditions
 
