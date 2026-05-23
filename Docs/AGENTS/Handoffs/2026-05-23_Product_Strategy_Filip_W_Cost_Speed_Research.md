@@ -127,4 +127,3 @@ is proven.
   decisions.
 - Batch APIs can cut cost for offline validation but do not directly improve
   user-facing latency.
-

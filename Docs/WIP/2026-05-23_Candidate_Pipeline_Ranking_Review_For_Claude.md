@@ -1,8 +1,8 @@
 # Candidate Pipeline Ranking Review For Claude
 
-Date: 2026-05-23  
-Prepared by: Senior Developer / Codex  
-Status: Investigation complete; ready for Claude review or extraction planning  
+Date: 2026-05-23
+Prepared by: Senior Developer / Codex
+Status: Investigation complete; ready for Claude review or extraction planning
 
 ## Original Request Snapshot
 
