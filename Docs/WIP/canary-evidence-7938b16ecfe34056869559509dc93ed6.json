@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-48-ASYLUM-235000-DE-BOUNDARY-VERDICT-CALIBRATION-RERUN",
+  "jobId": "7938b16ecfe34056869559509dc93ed6",
+  "captainDefinedInput": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "pipelineVariant": "claimboundary-v2",
+  "implementationCommit": "595c40c4d30256b54d837b8917dbaed884af6980",
+  "runtimeCommit": "595c40c4d30256b54d837b8917dbaed884af6980",
+  "submittedUtc": "2026-05-23T00:25:57Z",
+  "completedUtc": "2026-05-23T00:27:26Z",
+  "classification": "STOP_X7_HJ48_W5_NO_EXTRACTABLE_EVIDENCE_CALIBRATION_NOT_EXERCISED",
+  "informationYield": "new_failure",
+  "liveBudget": {
+    "resetTotalBeforeRun": 18,
+    "consumedByThisRun": 1,
+    "remainingAfterRun": 16
+  },
+  "preflight": {
+    "cleanGitStatusBeforeSubmission": true,
+    "runtimeRefreshedBeforeSubmission": true,
+    "webApiProxyCommitMatchedHead": true,
+    "healthChecksPassed": true,
+    "promptProfileImportedAndActivated": true,
+    "activePromptContentHash": "df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e"
+  },
+  "publicContainment": {
+    "publicSchemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicIssueCode": "report_damaged",
+    "publicReportMarkdown": null,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "unauthenticatedHiddenArtifactRouteStatus": 401
+  },
+  "queryPlanning": {
+    "status": "completed",
+    "promptContentHash": "df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e",
+    "renderedPromptHash": "38d421d2d90123f5a5661120213ae1247c3ce9ce415ee22fb17c5d35d8cde10e",
+    "queryCount": 2,
+    "queries": [
+      "Asylbereich Schweiz aktuelle Bevölkerungszahl Personen 2026",
+      "Schweiz Asylsuchende Flüchtlinge Bevölkerung Statistik"
+    ],
+    "tokenUsage": {
+      "inputTokens": 3031,
+      "outputTokens": 533,
+      "totalTokens": 3564,
+      "durationMs": 6671
+    }
+  },
+  "sourceMaterial": {
+    "status": "source_material_page_summary_completed",
+    "recordCount": 5,
+    "recordKinds": {
+      "provider_search_result_page_text_bounded": 2,
+      "provider_search_result_preview_text": 3,
+      "provider_search_result_xlsx_text_bounded": 0
+    },
+    "endpointCounts": {
+      "ep_serper_linked_page_fetch": 2,
+      "ep_serper_google_search": 3,
+      "ep_serper_linked_xlsx_fetch": 0
+    },
+    "sourceMaterialTextByteLengths": [
+      4044,
+      203,
+      207,
+      4059,
+      195
+    ],
+    "xlsxLocatorPathExercised": false
+  },
+  "hiddenChain": {
+    "w5Status": "hidden_no_extractable_evidence",
+    "extractionStatus": "no_extractable_evidence",
+    "evidenceItemCount": 0,
+    "evidenceItemIds": [],
+    "evidenceItemAdmissionStatus": "evidence_item_admission_blocked",
+    "internalReportWriterStatus": "not_created",
+    "internalAlphaResultStatus": "not_created",
+    "firstIncompleteStage": "Evidence Extraction",
+    "adminReportMarkdownLength": 1210,
+    "adminReportKind": "internal_alpha_stop_summary"
+  },
+  "w5Telemetry": {
+    "promptContentHash": "df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e",
+    "renderedPromptHash": "b3d2dccae0c71a6c3d7afd87484b206c8dd728dc14694db24f0fcccc4a2c3f42",
+    "modelId": "claude-haiku-4-5-20251001",
+    "providerId": "anthropic",
+    "tokenUsage": {
+      "inputTokens": 8941,
+      "outputTokens": 384,
+      "totalTokens": 9325
+    },
+    "durationMs": 6037,
+    "cacheDecision": "no_store_no_read"
+  },
+  "observedDefect": {
+    "summary": "HJ48 did not exercise the boundary/verdict calibration repair because bounded evidence extraction returned no EvidenceItems before report drafting.",
+    "comparisonToHJ47": "HJ47 extracted two EvidenceItems and created an internal Alpha report; HJ48 used the active calibrated prompt profile but changed query/source material enough that W5 returned hidden_no_extractable_evidence.",
+    "nextAction": "Do failed-attempt recovery before another live job: keep the generic boundary/verdict calibration, but repair/report why W5 lost extractable evidence or reroute source selection back to direct current-stock evidence without adding broad crawler/provider machinery."
+  }
+}

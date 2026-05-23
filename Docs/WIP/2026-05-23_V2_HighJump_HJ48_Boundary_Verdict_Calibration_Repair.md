@@ -1,6 +1,6 @@
 # V2 HighJump HJ48 - Boundary/Verdict Calibration Repair
 
-**Status:** implementation in progress under Captain Deputy HighJump authority
+**Status:** live result recorded - stopped before calibration could be evaluated
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ47 internal Alpha report `b6498cbb050641ff91f5bdcd5886590c`
@@ -121,6 +121,44 @@ Live validation:
   candidate from `TRUE` toward `MOSTLY-TRUE` or `LEANING-TRUE`, with truth and
   confidence materially reduced into or near the accepted family band;
 - preserve public/default containment.
+
+Live validation result:
+
+- HJ48 job `7938b16ecfe34056869559509dc93ed6` ran on runtime commit
+  `595c40c4d30256b54d837b8917dbaed884af6980` after the V2 prompt profile was
+  imported and activated with content hash
+  `df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e`.
+- Public/default containment held: public/default result stayed
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public
+  reportMarkdown stayed `null`, public verdict/truth stayed `null`, and an
+  unauthenticated hidden artifact route returned `401`.
+- Query Planning completed with two queries:
+  `Asylbereich Schweiz aktuelle Bevölkerungszahl Personen 2026` and
+  `Schweiz Asylsuchende Flüchtlinge Bevölkerung Statistik`.
+- Source Material completed with `5` records: `2` bounded linked-page records,
+  `3` search-preview records, and `0` XLSX records.
+- W5 returned `hidden_no_extractable_evidence` / `no_extractable_evidence`
+  with `0` EvidenceItems. Internal Alpha result, draft, and report-writer
+  artifacts were not created. The admin reportMarkdown was a `1210` character
+  internal Alpha stop summary, not a complete report.
+
+Classification:
+
+`STOP_X7_HJ48_W5_NO_EXTRACTABLE_EVIDENCE_CALIBRATION_NOT_EXERCISED`
+
+Information yield:
+
+`new_failure`
+
+Interpretation:
+
+HJ48 did not prove whether the boundary/verdict calibration wording works,
+because the run stopped before boundary verdict generation. The generic
+calibration wording remains locally verifier-clean and active, but live evidence
+now points to a W5/source-selection regression relative to HJ47. Failed-attempt
+recovery applies before spending another job: keep the calibration wording only
+to the extent it remains justified, and repair the loss of extractable evidence
+without adding a broad crawler, provider, or parallel report path.
 
 ## Stop Conditions
 

@@ -1,6 +1,6 @@
 # V2 Current Lane Projection
 
-**Last updated:** 2026-05-22
+**Last updated:** 2026-05-23
 **Status:** advisory projection for active coordination, not a second approval source
 
 This file mirrors the active V2 lane so agents do not need to reconstruct the
@@ -21,33 +21,52 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`81e9f0f7 fix(v2): add one-hop xlsx locator expansion`
+`595c40c4 fix(v2): calibrate boundary verdict candidates`
 
 Latest implementation repair:
 
-`81e9f0f7 fix(v2): add one-hop xlsx locator expansion`
+`595c40c4 fix(v2): calibrate boundary verdict candidates`
 
-HJ47 amends the existing Serper linked-page/XLSX Source Material seam with
-bounded one-hop same-host HTML locator expansion. Expansion runs only after
-direct same-page XLSX discovery yields no records, stays same-host/HTTPS, uses
-structural document order, is capped at two expansion pages per landing page
-and four per run, and does not recurse. It adds no provider, public surface,
-retry path, cache/SR/storage behavior, semantic deterministic link ranking,
-direct URL/ACS support, V1 work, or broad crawler/parser framework. W5 still
-owns semantic EvidenceItem extraction.
+HJ48 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
+internal verdict candidates must account for sufficiency/caveat signals,
+approximate-versus-threshold quantitative support, source singularity, and
+non-independent authority context when assigning label, truth, and confidence.
+It adds no source/provider/parser route, schema, public surface,
+cache/SR/storage behavior, direct URL/ACS support, V1 work, or deterministic
+code-side analytical calibration.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-47-ASYLUM-235000-DE-ONE-HOP-LOCATOR-EXPANSION-RERUN`
+`X7-HJ-48-ASYLUM-235000-DE-BOUNDARY-VERDICT-CALIBRATION-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-b6498cbb050641ff91f5bdcd5886590c.json`
+`Docs/WIP/canary-evidence-7938b16ecfe34056869559509dc93ed6.json`
 
 Important evidence:
 
+- `7938b16ecfe34056869559509dc93ed6` (German asylum aggregate) ran on HJ48
+  after importing and activating the calibrated V2 prompt profile
+  (`df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e`) on
+  runtime `595c40c4d30256b54d837b8917dbaed884af6980`. It stayed on
+  `claimboundary-v2`; public/default containment held
+  (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`,
+  public/default reportMarkdown `null`) and unauthenticated hidden artifact
+  access returned `401`.
+- HJ48 did not evaluate the calibration repair. Query Planning completed,
+  Source Material completed with `5` records (`2` linked-page, `3`
+  search-preview, `0` XLSX), but W5 returned
+  `hidden_no_extractable_evidence` with `0` EvidenceItems. Internal Alpha
+  result, draft, and report-writer artifacts were not created; authenticated
+  admin reportMarkdown was only a `1210` character internal Alpha stop summary.
+- HJ48's information yield is `new_failure`. The live evidence points to a
+  W5/source-selection regression relative to HJ47, not to a verdict-calibration
+  pass/fail. Failed-attempt recovery applies before another live job: keep the
+  generic calibration wording only if still justified, and repair the loss of
+  extractable direct current-stock evidence without adding broad crawler,
+  provider, public, or parallel report machinery.
 - `b6498cbb050641ff91f5bdcd5886590c` (German asylum aggregate) ran on HJ47
   after bounded one-hop same-host Source Material locator expansion. It stayed
   on `claimboundary-v2`; public/default containment held
@@ -305,22 +324,27 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after HJ46 job `4208458670644489a07db2536d7c7332`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Review the HJ47 internal Alpha report quality against Captain expectations
-   and comparator evidence. The report path is now complete for this input and
-   direct current-stock evidence is present, so the next bar should be an
-   observed report-quality bar, not another source locator layer by default.
-2. Keep the next HighJump step scoped to one concrete report defect. Do not add
-   provider expansion, recursive crawling, public exposure, cache/SR/storage,
-   direct URL/ACS, V1 work, or another hidden mechanism unless the report review
-   shows that specific gap is blocking quality.
+1. Apply failed-attempt recovery to HJ48. Classify the calibration prompt repair
+   as `keep` only for its generic boundary/verdict value, but do not spend
+   another job on calibration until W5 again produces EvidenceItems and a
+   report draft.
+2. Repair the concrete regression from HJ48: W5 lost extractable evidence after
+   HJ47 had produced two EvidenceItems from direct current-stock evidence and
+   SEM authority context. Prefer the lowest-complexity path that preserves the
+   HJ47 direct-evidence route or source-selection behavior, then rerun one
+   committed, refreshed HighJump validation job.
+3. Keep the next HighJump step scoped to this one defect. Do not add provider
+   expansion, recursive crawling, public exposure, cache/SR/storage, direct
+   URL/ACS, V1 work, or another hidden mechanism unless the failed-attempt
+   evidence proves that specific gap is blocking quality.
 
 ## Stop Conditions
 

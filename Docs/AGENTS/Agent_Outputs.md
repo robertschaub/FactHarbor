@@ -4067,3 +4067,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism` after HJ45/HJ46 live evidence. Chosen option: amend the existing Serper/XLSX Source Material seam with one-hop same-host locator expansion. Rejected path: semantic link ranking, source-specific rules, provider expansion, recursive crawling, public behavior, cache/SR/storage, W5 loosening, or another prompt-only nudge. What was added: one bounded structural helper and one existing-seam expansion path. Net mechanism count: slight bounded increase inside an existing mechanism; no new route/provider/artifact family. Verification: listed above. Debt accepted and removal trigger: consolidate HJ45/HJ47 into a general Source Material locator policy before public cutover or remove it if report-quality evidence shows it is not materially useful.
 
 **Next:** Commit this HJ47 result sync, then pivot to report-quality review of job `b6498cbb050641ff91f5bdcd5886590c` before spending more live jobs or adding more source-material reachability machinery.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ48 Boundary/Verdict Calibration Stop
+
+**Task:** Validate HJ48 after adding generic internal verdict-calibration wording to `V2_BOUNDARY_VERDICT_EXECUTION`.
+
+**Repair under test:** HJ48 commit `595c40c4` amends only the existing V2 boundary/verdict prompt section. The wording requires internal verdict candidates to account for supplied sufficiency/caveat signals, source singularity, approximate-versus-threshold quantitative support, and non-independent authority context when assigning label, truth, and confidence. It adds no source/provider/parser route, schema, cache/SR/storage behavior, public behavior, deterministic analytical calibration, direct URL/ACS support, or V1 work.
+
+**Runtime preparation:** The V2 prompt profile was imported and activated through UCM before submission because `claimboundary-v2` is not file-seeded by `reseed-all-prompts`. Active prompt hash was `df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e`. Runtime was refreshed and Web/API/proxy version endpoints matched `595c40c4d30256b54d837b8917dbaed884af6980`.
+
+**Live result:** HJ48 job `7938b16ecfe34056869559509dc93ed6` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown `null`) and unauthenticated internal report-writer artifact access returned `401`.
+
+**Hidden-chain evidence:** Query Planning completed with `2` queries. Source Material completed with `5` records: `2` bounded linked-page records, `3` search-preview records, and `0` XLSX records. W5 made a model call on the active prompt profile (`claude-haiku-4-5-20251001`, `9325` total tokens) but returned `hidden_no_extractable_evidence` / `no_extractable_evidence` with `0` EvidenceItems. Internal Alpha result, draft, and report-writer artifacts were not created. Authenticated admin reportMarkdown was only a `1210` character internal Alpha stop summary.
+
+**Classification:** `STOP_X7_HJ48_W5_NO_EXTRACTABLE_EVIDENCE_CALIBRATION_NOT_EXERCISED`.
+
+**Information yield:** `new_failure`. HJ48 did not test whether the verdict-calibration prompt works, because the run stopped before boundary verdict generation. Compared with HJ47, the regression is loss of extractable evidence despite a similar source-material count. Failed-attempt recovery applies before another live job: keep the generic calibration wording only to the extent it remains justified, and repair the W5/source-selection regression without adding broad crawler/provider/public/report-path machinery.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ46. HJ47 and HJ48 consumed `2`; `16` remain.
+
+**Next:** Commit this HJ48 result sync, then apply a narrow failed-attempt recovery package. The immediate goal is to regain HJ47-style EvidenceItems/report generation under the calibrated prompt profile before spending another job on calibration quality.
