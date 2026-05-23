@@ -179,6 +179,26 @@ function matchingMaterializedPreviewRecords(
     .map((record) => [record.candidatePreviewId, record]));
 }
 
+function readStructuralCandidatePreviewOrdinals(
+  candidatePreviewId: string,
+): { readonly providerAttemptOrdinal: number; readonly candidateOrdinal: number } | null {
+  const match = /^SOURCE_CANDIDATE_PREVIEW_(\d+)_(\d+)$/.exec(candidatePreviewId);
+  if (!match) {
+    return null;
+  }
+  const providerAttemptOrdinal = Number(match[1]);
+  const candidateOrdinal = Number(match[2]);
+  if (
+    !Number.isSafeInteger(providerAttemptOrdinal)
+    || providerAttemptOrdinal <= 0
+    || !Number.isSafeInteger(candidateOrdinal)
+    || candidateOrdinal <= 0
+  ) {
+    return null;
+  }
+  return { providerAttemptOrdinal, candidateOrdinal };
+}
+
 function locatorDedupeKey(locator: SourceMaterialPageSummaryFetchLocator): string | null {
   if (!locator.pageKeyHash) {
     return null;
@@ -361,10 +381,19 @@ function selectedProvidedSerperRecords(
     }
     seen.add(record.sourceMaterialTextHash);
     const previewRecord = acceptedPreviewRecords.get(record.candidatePreviewId);
+    const structuralOrdinals = previewRecord === undefined
+      ? readStructuralCandidatePreviewOrdinals(record.candidatePreviewId)
+      : null;
     eligible.push({
       record,
-      providerAttemptOrdinal: previewRecord?.providerAttemptOrdinal ?? Number.MAX_SAFE_INTEGER,
-      candidateOrdinal: previewRecord?.candidateOrdinal ?? recordOrdinal + 1,
+      providerAttemptOrdinal:
+        previewRecord?.providerAttemptOrdinal
+        ?? structuralOrdinals?.providerAttemptOrdinal
+        ?? Number.MAX_SAFE_INTEGER,
+      candidateOrdinal:
+        previewRecord?.candidateOrdinal
+        ?? structuralOrdinals?.candidateOrdinal
+        ?? recordOrdinal + 1,
       recordOrdinal,
     });
   }

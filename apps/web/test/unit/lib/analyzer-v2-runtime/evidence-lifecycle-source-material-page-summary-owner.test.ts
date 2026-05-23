@@ -582,6 +582,107 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     ]);
   });
 
+  it("preserves Serper provider-attempt balancing when preview-cap records are missing from the map", async () => {
+    const previewRecords = [1, 2, 3].map((candidateOrdinal) =>
+      serperProjection(1, candidateOrdinal)
+    );
+    const sourceMaterialRecords = [
+      ...[1, 2, 3, 4, 5].map((candidateOrdinal) =>
+        webSearchPreviewRecordForAttempt(1, candidateOrdinal)
+      ),
+      webSearchPreviewRecordForAttempt(2, 1),
+      webSearchPreviewRecordForAttempt(3, 1),
+      webSearchPreviewRecordForAttempt(4, 1),
+    ];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: sourceMaterialRecords.length,
+          totalCandidateCount: sourceMaterialRecords.length,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: previewRecords.length,
+            totalCandidateCount: previewRecords.length,
+          },
+        }),
+        previewProjections: previewRecords,
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: sourceMaterialRecords,
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecordCount).toBe(6);
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_4_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
+    ]);
+  });
+
+  it("keeps malformed Serper preview ids behind structurally ordered records", async () => {
+    const malformedRecord: SourceMaterialPageSummaryRecord = {
+      ...webSearchPreviewRecordForAttempt(2, 1),
+      sourceMaterialId: "SOURCE_MATERIAL_SEARCH_PREVIEW_FFFFFFFFFFFFFFFF",
+      candidatePreviewId: "SOURCE_CANDIDATE_PREVIEW_NOT_STRUCTURAL",
+      sourceMaterialText: "Malformed structural id fallback record.",
+      sourceMaterialTextHash: "f".repeat(64),
+      sourceMaterialTextByteLength: 40,
+      sourceMaterialTextCharLength: 40,
+    };
+    const sourceMaterialRecords = [
+      webSearchPreviewRecordForAttempt(1, 1),
+      malformedRecord,
+      webSearchPreviewRecordForAttempt(2, 1),
+      webSearchPreviewRecordForAttempt(3, 1),
+      webSearchPreviewRecordForAttempt(4, 1),
+      webSearchPreviewRecordForAttempt(5, 1),
+      webSearchPreviewRecordForAttempt(6, 1),
+    ];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: sourceMaterialRecords.length,
+          totalCandidateCount: sourceMaterialRecords.length,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: 1,
+            totalCandidateCount: 1,
+          },
+        }),
+        previewProjections: [serperProjection(1, 1)],
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: sourceMaterialRecords,
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecordCount).toBe(6);
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_4_1",
+      "SOURCE_CANDIDATE_PREVIEW_5_1",
+      "SOURCE_CANDIDATE_PREVIEW_6_1",
+    ]);
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId))
+      .not.toContain("SOURCE_CANDIDATE_PREVIEW_NOT_STRUCTURAL");
+  });
+
   it("applies the aggregate byte cap after provider-attempt balancing", async () => {
     const entries = [
       ...[1, 2, 3, 4, 5, 6].map((candidateOrdinal) => ({ providerAttemptOrdinal: 1, candidateOrdinal })),
