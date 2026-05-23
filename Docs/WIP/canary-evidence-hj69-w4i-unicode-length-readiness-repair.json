@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-69-W4I-UNICODE-LENGTH-READINESS-REPAIR",
+  "classification": "PARTIAL_PASS_X7_HJ69_W4I_UNICODE_LENGTH_REPAIR_W5_SCHEMA_VALIDATION_FAILED",
+  "informationYield": "new_failure",
+  "jobId": "9b37bbdf944d478b8bfc20193725c969",
+  "inputKey": "asylum-235000-de",
+  "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "implementationCommit": "f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b",
+  "runtimeCommit": "f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b",
+  "promptProfile": "claimboundary-v2",
+  "promptHash": "7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610",
+  "job": {
+    "apiStatus": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "publicSchema": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownIsNull": true,
+    "publicVerdictTruthConfidenceNull": true
+  },
+  "sourceMaterial": {
+    "status": "source_material_page_summary_completed",
+    "recordCount": 6,
+    "records": [
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_preview_text",
+        "byteLength": 177,
+        "truncationApplied": false
+      },
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_page_text_bounded",
+        "byteLength": 4059,
+        "truncationApplied": false
+      },
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_preview_text",
+        "byteLength": 161,
+        "truncationApplied": false
+      },
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_page_text_bounded",
+        "byteLength": 4096,
+        "truncationApplied": true
+      },
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_preview_text",
+        "byteLength": 197,
+        "truncationApplied": false
+      },
+      {
+        "providerId": "serper_web_search",
+        "kind": "provider_search_result_preview_text",
+        "byteLength": 198,
+        "truncationApplied": false
+      }
+    ]
+  },
+  "extractionInput": {
+    "status": "bounded_extraction_input_packet_created_extraction_execution_closed",
+    "blockedReason": null,
+    "packetCount": 1,
+    "packetByteLength": 8898,
+    "packetCharLength": 8762,
+    "packetHash": "d259ad47c3ef8adb76dea0eb555ef0c7c65e669c4d04b1f17d3a1023efe4b666",
+    "providerId": "serper_web_search"
+  },
+  "w5": {
+    "status": "damaged_execution",
+    "damagedReason": "schema_validation_failed",
+    "evidenceItemCount": 0,
+    "parentW4iStatus": "extraction_input_structurally_eligible_execution_denied",
+    "parentPacketByteLength": 8898,
+    "parentProviderId": "serper_web_search",
+    "schemaIssueCount": 8,
+    "schemaIssueCodes": [
+      "invalid_union",
+      "invalid_type:evidenceItems.[non_structural].provenance.rationale",
+      "unrecognized_keys:evidenceItems.[non_structural].provenance",
+      "invalid_literal:extractionStatus",
+      "too_big:evidenceItems",
+      "invalid_type:evidenceItems.[non_structural].provenance.rationale",
+      "unrecognized_keys:evidenceItems.[non_structural].provenance",
+      "invalid_literal:status"
+    ],
+    "tokenUsage": {
+      "inputTokens": 10598,
+      "outputTokens": 3038,
+      "totalTokens": 13636
+    },
+    "durationMs": 23975,
+    "publicProjectionWritten": false,
+    "parserExecuted": false,
+    "cacheRead": false,
+    "cacheWrite": false,
+    "sourceReliabilityRead": false,
+    "storageWrite": false
+  },
+  "reportWriterArtifacts": 0,
+  "containment": {
+    "publicV2BlockedPrecutover": true,
+    "defaultPublicReportLeak": false,
+    "defaultPublicVerdictLeak": false,
+    "rawProviderPayloadRecordedInEvidence": false,
+    "sourceTextRecordedInEvidence": false
+  },
+  "nextOwner": "W5 evidence_extraction output contract for high-volume current-asylum packets",
+  "notNextOwner": [
+    "W4-I Unicode readiness",
+    "cap increase",
+    "source/provider widening",
+    "report writer",
+    "public surface"
+  ]
+}

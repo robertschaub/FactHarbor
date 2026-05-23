@@ -1,6 +1,6 @@
 # V2 HighJump HJ69 W4-I Unicode Length Readiness Repair
 
-**Status:** local implementation verifier-clean; live rerun pending committed runtime refresh
+**Status:** closed as partial pass; W4-I Unicode readiness repaired, W5 schema output is next owner
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction; HJ68 sidecar steering; current live-job
@@ -165,6 +165,55 @@ Sidecar review on 2026-05-23:
 - residual concern: none blocking; one focused live rerun remains justified
   after commit and runtime refresh.
 
-Next authorized step after committing this package: refresh the runtime to the
-committed HJ69 source and run exactly one focused `asylum-235000-de` product
-route canary if provenance is clean.
+## Live Result
+
+One focused product-route canary ran after commit `f4f6e103` with clean
+provenance:
+
+- job: `9b37bbdf944d478b8bfc20193725c969`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- runtime/API/Web commit: `f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b`;
+- active V2 prompt hash:
+  `7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`;
+- terminal status: `SUCCEEDED`;
+- public/default result stayed `4.0.0-cb-precutover` /
+  `blocked_precutover` / `report_damaged`, with no public report markdown,
+  verdict, truth percentage, or confidence.
+
+Classification:
+
+`PARTIAL_PASS_X7_HJ69_W4I_UNICODE_LENGTH_REPAIR_W5_SCHEMA_VALIDATION_FAILED`
+
+Evidence:
+
+`Docs/WIP/canary-evidence-hj69-w4i-unicode-length-readiness-repair.json`
+
+Important signal:
+
+- W3 Source Material completed with `6` Serper records.
+- W4-H produced one extraction-input packet: `8898` bytes, `8762` code
+  points, provider `serper_web_search`.
+- W4-I no longer reported
+  `blocked_pre_execution_readiness_packet_text_oversized`; parent W4-I status
+  was `extraction_input_structurally_eligible_execution_denied`.
+- W5 executed and failed closed as `damaged_execution` /
+  `schema_validation_failed`, with `0` EvidenceItems.
+- W5 schema diagnostics included `evidenceItems` `too_big`, provenance
+  `rationale` invalid type, unrecognized provenance keys, and invalid
+  `status` / `extractionStatus` literals.
+
+Canary information yield:
+
+`new_failure`
+
+Budget:
+
+HJ69 consumed `1` live job. The active HighJump tranche now has `3` live jobs
+remaining.
+
+Next owner:
+
+W5 `evidence_extraction` output contract for high-volume current-asylum
+packets. Do not continue W4-I readiness, cap increases, source/provider
+widening, report-writer work, public behavior, parser/cache/SR/storage,
+ACS/direct URL, V1 work, or V1 cleanup for this stop.

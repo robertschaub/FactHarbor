@@ -19,23 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ68. Older HJ history below is kept as context,
+This projection is synced after HJ69. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `bc88d64a fix(v2): improve w5 component evidence recall`;
-- active repair package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ68_W5_Component_Evidence_Recall_Repair.md`;
+  `f4f6e103 fix(v2): align w4i unicode packet length validation`;
+- active result package:
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ69_W4I_Unicode_Length_Readiness_Repair.md`;
 - latest canary result:
-  HJ68 focused W5 recall validation, classified
-  `PARTIAL_PASS_X7_HJ68_W5_COMPONENT_EVIDENCE_RECALL_2_OF_3_REPORTS_CURRENT_ASYLUM_CAP_STOP`;
+  HJ69 focused W4-I Unicode length readiness rerun, classified
+  `PARTIAL_PASS_X7_HJ69_W4I_UNICODE_LENGTH_REPAIR_W5_SCHEMA_VALIDATION_FAILED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ68 consumed `14`, so `4` remain;
+  HJ64 through HJ69 consumed `15`, so `3` remain;
 - next action:
-  keep the HJ68 W5 recall improvement and address the current-asylum aggregate
-  roadblock at bounded packet-size/readiness policy or source-material
-  selection before adding another report-layer mechanism;
+  keep the HJ68 W5 recall improvement and HJ69 W4-I length repair, then address
+  the W5 `evidence_extraction` output contract for high-volume current-asylum
+  packets before adding report-layer or source-expansion work;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,33 +46,48 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`bc88d64a fix(v2): improve w5 component evidence recall`
+`f4f6e103 fix(v2): align w4i unicode packet length validation`
 
 Active implementation repair:
 
-HJ68 ran three focused Captain-defined inputs on the HJ68 prompt/runtime anchor.
-The two prior HJ67 no-report families improved: `asylum-wwii-de` reached W5
-with `2` EvidenceItems and an internal report writer draft, and `bolsonaro-pt`
-reached W5 with `4` EvidenceItems and an internal report writer draft. Public/
-default containment held for all three HJ68 jobs. `asylum-235000-de` now stops
-before W5 execution because W4-I reports
-`blocked_pre_execution_readiness_packet_text_oversized` over a `13915` byte
-source-content packet set. The next quality owner is therefore packet-size/
-readiness policy or source-material selection for the current-asylum aggregate,
-not more W5 recall prompting or report-writer plumbing.
+HJ69 amended W4-I to validate extraction-input packet character length with the
+same Unicode code-point contract used by W4-H. The focused current-asylum
+rerun proved the HJ68 W4-I stop is gone: W4-H produced one `8898` byte packet,
+W4-I reported `extraction_input_structurally_eligible_execution_denied`, and
+W5 executed. The new stop is W5 `damaged_execution` /
+`schema_validation_failed` with `evidenceItems` `too_big` plus provenance
+shape/literal diagnostics. The next quality owner is therefore W5 output
+contract shaping for high-volume packets, not W4-I readiness, another cap
+increase, source/provider widening, or report-writer plumbing.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-68-W5-COMPONENT-EVIDENCE-RECALL`
+`X7-HJ-69-W4I-UNICODE-LENGTH-READINESS-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj68-w5-component-evidence-recall.json`
+`Docs/WIP/canary-evidence-hj69-w4i-unicode-length-readiness-repair.json`
 
 Important evidence:
 
+- HJ69 ran one focused `asylum-235000-de` rerun on runtime/source commit
+  `f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b` with active
+  `claimboundary-v2` prompt hash
+  `7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`.
+  Job `9b37bbdf944d478b8bfc20193725c969` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. W3 Source
+  Material completed with `6` Serper records. W4-H produced one `8898` byte
+  extraction-input packet with `8762` code points and provider
+  `serper_web_search`. W4-I no longer reported the HJ68 oversized readiness
+  stop; parent W4-I status was
+  `extraction_input_structurally_eligible_execution_denied`. W5 executed and
+  failed closed as `damaged_execution` / `schema_validation_failed` with
+  `0` EvidenceItems, schema issue count `8`, including `evidenceItems`
+  `too_big`, invalid provenance rationale type, unrecognized provenance keys,
+  and invalid `status` / `extractionStatus` literals. Information yield is
+  `new_failure`.
 - HJ68 ran three focused Captain-defined inputs sequentially on execution
   anchor `bc88d64aea6f872cd90a33604c2ed970ad7932e8` with active
   `claimboundary-v2` prompt hash
@@ -603,8 +618,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `14`;
-- remaining: `4`;
+- consumed after latest reset: `15`;
+- remaining: `3`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -613,11 +628,14 @@ Current active tranche:
 ## Next Action
 
 1. Treat HJ68 as the current W5 recall baseline and keep the prompt repair.
-2. Pick the next single bar from observed defects: current-asylum aggregate
-   packet-size/readiness policy or source-material selection before W5.
-3. Avoid report-writer, verdict-calibration, retry, schema-relaxation, or
-   public-surface work until the current-asylum source-content packet path is
-   addressed or Steer-Co identifies a better owner.
+2. Treat HJ69 as the W4-I readiness repair: the current-asylum packet now
+   reaches W5 execution.
+3. Pick the next single bar from observed defects: W5 `evidence_extraction`
+   schema/output contract over high-volume current-asylum packets.
+4. Avoid W4-I readiness work, cap increases, source/provider widening,
+   report-writer, verdict-calibration, retry, schema relaxation, or public
+   behavior until the W5 output-contract stop is addressed or Steer-Co
+   identifies a better owner.
 
 ## Stop Conditions
 

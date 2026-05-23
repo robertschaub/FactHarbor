@@ -4606,3 +4606,33 @@ Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain u
 ### 2026-05-23 | Senior Architect | Claude Agent | Candidate Pipeline Ranking Review — [Significant] [open-items: yes]
 **For next agent:** Do not rely on the earlier composite quality ranking for legacy candidate pipelines; the review found legacy candidate scores were not backed by accessible exact-SHA job provenance. Deployed 22.4 may still be a pragmatic extraction spike on architecture/extractability grounds, but not because its quality score is proven by current local data.
 → Docs/AGENTS/Handoffs/2026-05-23_Senior_Architect_Candidate_Pipeline_Ranking_Review.md
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ69 W4-I Unicode Length Readiness Repair
+
+**Task:** Resume after reboot, restore sub-agent orchestration, close the HJ69 W4-I readiness repair, and run exactly one focused current-asylum canary after committed runtime refresh.
+
+**Implementation anchor:** `f4f6e1034a1d1618bc1ba29ba38947f4ffb8305b`; active `claimboundary-v2` prompt label/hash: `hj68-w5-component-evidence-recall` / `7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`.
+
+**Local verification:** focused W4-I/W4-H/W5 tests passed (`3` files / `20` tests); `npm -w apps/web run build` passed; `npm run debt:sensors` returned `advisory_warn` only for known V2 footprint/guard/docs/consolidation warnings; `npm run index`, `git diff --check`, and `git diff --cached --check` passed. Russell sidecar reviewed the HJ69 diff as pass-with-concerns; the concern was resolved by making the Unicode test use a supplementary code point and assert UTF-16 code-unit versus Unicode code-point divergence.
+
+**Live job:** HJ69 spent one job: `9b37bbdf944d478b8bfc20193725c969`.
+
+**Result:** `PARTIAL_PASS_X7_HJ69_W4I_UNICODE_LENGTH_REPAIR_W5_SCHEMA_VALIDATION_FAILED`. The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default containment. W4-H produced one `8898` byte extraction-input packet with `8762` code points; W4-I no longer reported `blocked_pre_execution_readiness_packet_text_oversized` and instead had parent status `extraction_input_structurally_eligible_execution_denied`. W5 executed and failed closed as `damaged_execution` / `schema_validation_failed` with `0` EvidenceItems. Schema diagnostics included `evidenceItems` `too_big`, provenance `rationale` invalid type, unrecognized provenance keys, and invalid `status` / `extractionStatus` literals.
+
+**Budget:** HJ69 consumed `1`; current HighJump tranche remaining is `3`.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj69-w4i-unicode-length-readiness-repair.json`; closeout package `Docs/WIP/2026-05-23_V2_HighJump_HJ69_W4I_Unicode_Length_Readiness_Repair.md`; active lane projection `Docs/STATUS/V2_Current_Lane.md`; live-job ledger `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing W4-I validation to match the W4-H/W5 Unicode code-point contract
+Rejected path and why: cap increases, source/provider widening, retries, W5 prompt edits, or report-writer changes would hide the deterministic contract mismatch and add complexity
+What was removed/simplified: no mechanism removed; the inconsistent validation expression was narrowed to the shared contract
+What was added: one focused supplementary-code-point unit test and HJ69 result documentation
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in W4-I validation, focused tests, and status/ledger/result docs
+Verification: focused tests, build, debt sensors, index, diff checks, sidecar review, runtime commit preflight, one focused live canary, and public/default containment checks
+Debt accepted and removal trigger: no accepted mechanism debt; next owner is W5 evidence_extraction output contract, not W4-I readiness
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```
