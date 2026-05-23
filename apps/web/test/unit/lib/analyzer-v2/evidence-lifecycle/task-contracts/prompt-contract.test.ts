@@ -286,6 +286,17 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Do not let source-material kind or fetch depth override material alignment");
     expect(section).toContain("Give fetched summaries, abstracts, or bounded page text more weight");
     expect(section).toContain("preserve uncertainty in `provenance.rationale`");
+    expect(section).toContain("### Temporal and Procedural Relation Claims");
+    expect(section).toContain("turns on the order between an event and another decision");
+    expect(section).toContain("approval, ratification, vote, publication, implementation");
+    expect(section).toContain("source-attributed date or status of the first event");
+    expect(section).toContain("compared milestone was still pending");
+    expect(section).toContain("not yet held, not yet submitted, not yet finalized");
+    expect(section).toContain("Treat a source-attributed pending or not-yet-completed status as evidence");
+    expect(section).toContain("not as absence of evidence");
+    expect(section).toContain("Do not require one source to state the entire timeline");
+    expect(section).toContain("Do not collapse a relation claim to `no_extractable_evidence`");
+    expect(section).toContain("Do not infer missing dates beyond the supplied content");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
     }
