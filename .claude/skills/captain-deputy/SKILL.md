@@ -133,6 +133,44 @@ authority, safety, cost, or quality. Timeout or silence is never approval.
 8. **Close:** Consolidate the result into the required Exchange Protocol output
    and state remaining risks, validation, and next autonomous trigger.
 
+## Active Lane Discipline
+
+Use this loop for long-running lanes, expensive validation, live jobs, and
+restart-sensitive work. It operationalizes the Authority Model; it does not
+replace the escalation rules or Compact Authority Matrix.
+
+- Do not pause for cost avoidance, uncertainty comfort, or micro-permission
+  when the action is justified, inside the accepted packet, and within an
+  explicitly granted budget or live-validation tranche.
+- Beyond-tranche live spend remains a Captain gate. Prompt, model, config,
+  schema, approval-record, public-surface, and security/data changes remain
+  Captain gates; freshness and execution happen only after approval.
+- Before expensive or live validation, require the lane to state the hypothesis,
+  expected signal, decision boundary, why cheaper checks are insufficient, exact
+  command or job set, and source/runtime freshness status.
+- Before live jobs after approved source, prompt, or config behavior changes,
+  require commit first, then restart/reseed when needed, then submit. Results
+  from stale or uncommitted runtime state are exploratory, not verification.
+- Before broad rediscovery, require `fhAgentKnowledge.preflight_task` when
+  available; otherwise use the generated indexes for prior-work, stage, and
+  model-tier lookup before wider handoff or documentation scanning.
+- Report-quality lanes must satisfy `AGENTS.md` §Report Quality Baseline
+  Comparison obligations. Do not restate or weaken those comparator rules here.
+- Analysis and report lanes must use Captain-defined analysis inputs verbatim in
+  prompts and job parameters. Operational chunking or formatting for context
+  fit is allowed; paraphrase, translation, normalization, or substitute inputs
+  are not. Missing approved inputs require Captain input.
+- Use `/context-extension` for compact checkpoints when long work, app restart,
+  compaction, delegation, or model/tool switch would otherwise lose
+  expensive-to-reconstruct state.
+- After failed validation, apply debt-guard triage before broadening scope:
+  keep, quarantine, revert, or amend the prior attempt with a verifier-backed
+  reason.
+- Reconvene `/steer-co` for material new evidence, verifier failure with unclear
+  root cause, scope drift, contested causality, unresolved dissent, or direction
+  choices inside deputy authority. Do not use Steer-Co for routine
+  implementation choices already owned by the delivery lane.
+
 ## Context Continuity
 
 Use `/context-extension` selectively when it lowers handoff or reload cost. It

@@ -4386,3 +4386,33 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ63 consumed `1` job from the new `18`-job tranche; `17` remain.
 
 **Next:** Keep HJ63. Use `/debt-guard` to inspect W7-B prompt/schema/runtime validation and make the smallest repair that prevents label/truth polarity mismatches in either direction while preserving LLM-owned analytical judgment.
+
+## 2026-05-23 - Agents Supervisor - Captain Deputy Active Lane Discipline Update
+
+**Task:** Durable process update for Captain Deputy after Captain clarified that justified paid/long-running validation is allowed and agents should pause for Captain input only on essential gates.
+
+**Files touched:** `.claude/skills/captain-deputy/SKILL.md`, `AGENTS.md`.
+
+**Review:** Claude Opus 4.6 and Gemini 3.1 Pro both returned `APPROVE_WITH_EDITS`. Consolidated requirements were applied: do not duplicate Captain escalation gates, keep paid/live validation tranche-scoped, preserve prompt/model/config/schema approval gates, reference report comparator obligations instead of restating them, tie checkpoints to `/context-extension`, and defer `CLAUDE.md`, `GEMINI.md`, `.gemini`, `/pipeline`, `/report-review`, and `/validate`.
+
+**Change made:** Added `## Active Lane Discipline` to `/captain-deputy` after the Operating Loop. It codifies decision boundaries before expensive/live validation, runtime freshness before live jobs, preflight/index lookup before broad rediscovery, exact Captain-defined inputs, report-quality comparator cross-reference, `/context-extension` checkpoints, debt-guard failed-validation triage, and bounded Steer-Co reconvene triggers. Added one `AGENTS.md` pointer in the `/captain-deputy` Named Workflows row.
+
+**Verification:** `git diff --check -- .claude/skills/captain-deputy/SKILL.md AGENTS.md` passed; manual diff inspection confirmed only the approved two-file docs scope changed.
+
+**Warnings:** This update does not grant new live-job budget and does not authorize prompt/model/config/schema edits. It only prevents unnecessary micro-pauses inside an already approved scope/tranche.
+
+**Learnings:** For Captain Deputy process updates, amend the existing skill as the durable rule source and keep root `AGENTS.md` as a pointer when the detailed rule would otherwise duplicate authority gates.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism governance amendment
+Chosen option: amend existing Captain Deputy workflow and AGENTS pointer
+Rejected path and why: adding a new workflow, changing specialist skills, or copying the same rules into CLAUDE/GEMINI would increase mechanism count and create drift
+What was removed/simplified: none
+What was added: Active Lane Discipline section plus one root AGENTS pointer
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed within the expected two docs files; no app code, prompt/model/config, schema, live-job, or public behavior change
+Verification: Claude/Gemini reviews; git diff --check; manual diff inspection
+Debt accepted and removal trigger: none
+Residual debt: no known residual debt; future tool-specific sync can be considered only if Gemini/other tools are assigned Captain Deputy directly and fail to discover AGENTS/skill guidance
+```
