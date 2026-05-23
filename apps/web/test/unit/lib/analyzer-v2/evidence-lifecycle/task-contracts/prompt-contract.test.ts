@@ -297,7 +297,16 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Do not require one source to state the entire timeline");
     expect(section).toContain("Do not collapse a relation claim to `no_extractable_evidence`");
     expect(section).toContain("Do not infer missing dates beyond the supplied content");
-    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
+    expect(section).toContain("### Legal, Procedural, and Standards Claims");
+    expect(section).toContain("lawfulness, procedural compliance, constitutional or institutional requirements");
+    expect(section).toContain("procedural acts, forum or authority, charge or allegation status");
+    expect(section).toContain("do not return `no_extractable_evidence` merely because the content supplies only one material component");
+    expect(section).toContain("### Category, Scope, and Component Claims");
+    expect(section).toContain("one clause, one endpoint, one side of a comparison");
+    expect(section).toContain("category definitions, inclusion or exclusion rules, status classes");
+    expect(section).toContain("narrower, broader, administrative, colloquial, translated, or partially overlapping category label");
+    expect(section).toContain("Do not invent a bridge between mismatched categories, endpoints, or comparators");
+    for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient", "bolsonaro", "asylum", "schweiz", "flüchtlinge"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
     }
   });

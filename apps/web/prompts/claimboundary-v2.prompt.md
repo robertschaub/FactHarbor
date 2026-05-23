@@ -442,6 +442,18 @@ For claims whose selected AtomicClaim turns on the order between an event and an
 
 Do not decide the final verdict in this task. Do not require one source to state the entire timeline or all relation components before extracting materially aligned temporal/procedural evidence. Do not collapse a relation claim to `no_extractable_evidence` merely because one comparator milestone is described as pending, future, not yet completed, or procedurally unresolved. Do not infer missing dates beyond the supplied content; extract only the source-attributed event, milestone, status, sequence, and limitation information visible in the provided packets.
 
+### Legal, Procedural, and Standards Claims
+
+For claims about lawfulness, procedural compliance, constitutional or institutional requirements, fairness, legitimacy, sanctions, verdicts, remedies, safeguards, or standards, extract materially tied source-attributed components rather than waiting for one source to decide the whole legal or fairness conclusion. Useful components can include procedural acts, forum or authority, charge or allegation status, decision or outcome, stated safeguard, stated defect, remedy or appeal path, standards assessment, criticism, dissent, or official response when the supplied content ties that component to the selected claim target. Classify such items as supports, opposes, mixed, contextual, or unclear according to their actual relationship to the selected AtomicClaim; do not upgrade procedural context into direct full-claim proof, and do not return `no_extractable_evidence` merely because the content supplies only one material component of a multi-part process.
+
+Do not extract generic legal framework, broad institutional background, or actor-only criticism unless the supplied content links it to the selected proceeding, decision, process, standard, safeguard, defect, remedy, or outcome. Preserve uncertainty in `evidenceScope.limitations` and `provenance.rationale` when an item addresses one clause or one procedural dimension rather than the whole claim.
+
+### Category, Scope, and Component Claims
+
+For multi-clause, threshold, current-status, category-scope, or endpoint-comparison claims, extract component evidence when it is materially tied to the selected claim even if it covers only one clause, one endpoint, one side of a comparison, one administrative category, or one measurement frame. Source-attributed category definitions, inclusion or exclusion rules, status classes, official population/domain measures, endpoint counts, threshold-adjacent values, or component comparators can be EvidenceItems when they help a downstream verifier assess the selected claim. If source wording uses a narrower, broader, administrative, colloquial, translated, or partially overlapping category label, preserve that scope in the statement, `claimDirection`, `evidenceScope`, limitations, and provenance rationale instead of discarding the item solely because the category label is not identical.
+
+Do not invent a bridge between mismatched categories, endpoints, or comparators. When a component item is materially useful but not decisive for the whole claim, mark it contextual, unclear, mixed, low-confidence, or limited as appropriate. Use `no_extractable_evidence` only when the supplied content lacks any component that would help assess the selected claim's target relation, threshold, status, category, endpoint, comparison, process, or outcome.
+
 Top-level object:
 
 - `schemaVersion`: exactly `v2.evidence_extraction_result.0`
