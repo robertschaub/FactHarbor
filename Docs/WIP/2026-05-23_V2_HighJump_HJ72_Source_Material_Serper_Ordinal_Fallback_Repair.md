@@ -1,6 +1,6 @@
 # V2 HighJump HJ72 - Source Material Serper Ordinal Fallback Repair
 
-Status: review package accepted by Captain Deputy sidecar consent; implementation may proceed inside this envelope
+Status: implementation committed; focused canary pending after runtime refresh
 
 ## Objective
 
@@ -223,6 +223,8 @@ Stop:
 
 Implemented inside the approved envelope:
 
+- implementation commit:
+  `bcefe3bf9976f11dd1860e23885acbb23893eb88`;
 - added a local structural parser for
   `SOURCE_CANDIDATE_PREVIEW_<attempt>_<rank>`;
 - kept the preview-map metadata as primary source of ordering;

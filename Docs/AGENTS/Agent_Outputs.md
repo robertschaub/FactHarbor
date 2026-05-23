@@ -4731,3 +4731,56 @@ Verification: focused prompt-contract test, boundary guard, build, debt sensors,
 Debt accepted and removal trigger: no new mechanism debt; next owner should be source-acquisition/source-material coverage only if HJ72 local attribution confirms this from HJ70/HJ71 evidence
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged; hidden process artifact routes returned 404 for HJ71 and remain an observability gap
 ```
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ72 Source Material Ordinal Fallback Repair
+
+**Task:** Resume V2 HighJump after HJ71, restore sub-agent orchestration, run
+no-live attribution, and implement only a concrete source-material repair if the
+team found a bounded existing-mechanism owner.
+
+**Sub-agent orchestration:** Existing sidecars Sagan, Noether, and Russell were
+resumed. Consensus: do not spend the final live job immediately; HJ72 should
+target Source Material/source-acquisition attribution and avoid another prompt
+nudge, W5/report-writer change, provider expansion, cap increase, retry,
+parser/cache/SR/storage, public surface, or V1 work.
+
+**Implementation anchor:** `bcefe3bf9976f11dd1860e23885acbb23893eb88`
+(`fix(v2): preserve serper source material ordinal fallback`).
+
+**Result:** HJ72 is locally implemented and verifier-clean. Local attribution
+found that Serper-provided Source Material records preserve HJ50 provider-attempt
+balancing only when their `candidatePreviewId` is present in the capped preview
+map. The repair keeps preview-map metadata primary and falls back to the
+structural `SOURCE_CANDIDATE_PREVIEW_<attempt>_<rank>` id when the map lacks the
+record. Malformed ids remain late unknown records. No prompt/model/config/schema,
+provider, cap, retry, parser, cache/SR/storage, public/API/UI/report/export,
+W5/W6/W7/W8, direct URL/ACS, or V1 behavior changed.
+
+**Validation:** Focused Source Material owner test passed (`19` tests); Serper
+preview test passed (`10` tests); boundary guard passed (`96` tests) after a
+longer timeout; `npm -w apps/web run build` passed; `npm run debt:sensors`
+returned advisory warnings only; `npm run index` passed; `git diff --check`
+passed.
+
+**Budget:** No live job was spent. Current HighJump tranche remaining is still
+`1`; the final job is reserved for exactly one HJ72 canary after runtime refresh
+and API/Web commit verification.
+
+**Evidence:** Package
+`Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
+active lane projection `Docs/STATUS/V2_Current_Lane.md`; backlog
+`Docs/STATUS/Backlog.md`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing Source Material selector
+Rejected path and why: prompt stacking, semantic source ranking, observability repair, provider expansion, cap increases, retries, parser/cache/SR/storage, and W5/report-writer changes would add mechanisms or touch the wrong owner before preserving HJ50 balancing
+What was removed/simplified: none
+What was added: one local structural candidate-preview id parser plus two focused tests
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in one runtime owner, one focused test, package/status docs, and indexes; no public routes, flags, caps, providers, retries, or semantic text-analysis logic were added
+Verification: focused tests, boundary guard, build, debt sensors, index, and diff check
+Debt accepted and removal trigger: no accepted mechanism debt
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain; HJ71 hidden process artifact 404 remains an observability gap but was not expanded in HJ72
+```

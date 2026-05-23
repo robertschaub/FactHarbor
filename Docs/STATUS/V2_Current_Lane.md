@@ -19,13 +19,14 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ71 focused live rerun. Older HJ history
-below is kept as context, but the active anchor and budget are:
+This projection is synced after the HJ72 source-material ordinal fallback
+implementation. Older HJ history below is kept as context, but the active
+anchor and budget are:
 
 - committed implementation anchor:
-  `472d8c4e fix(v2): strengthen query planning current-stock intent`;
+  `bcefe3bf fix(v2): preserve serper source material ordinal fallback`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ71_Query_Planning_Current_Stock_Direct_Record_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
 - latest canary result:
   HJ71 focused current-asylum query-planning/direct-record rerun, classified
   `PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED`;
@@ -35,9 +36,9 @@ below is kept as context, but the active anchor and budget are:
 - next action:
   keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
   output-contract repair; keep the HJ71 partial query-planning improvement and
-  perform HJ72 no-live attribution/local inspection before deciding whether a
-  narrow source-acquisition/source-material repair is justified; preserve the
-  final live job until a tight HJ72 package exists;
+  run exactly one HJ72 focused canary after clean provenance, runtime refresh,
+  and API/Web commit verification against `bcefe3bf` or a later docs-only lane
+  projection commit;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -48,26 +49,26 @@ below is kept as context, but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`472d8c4e fix(v2): strengthen query planning current-stock intent`
+`bcefe3bf fix(v2): preserve serper source material ordinal fallback`
 
 Active implementation repair:
 
 HJ71 amended the existing `V2_EVIDENCE_QUERY_PLANNING` prompt contract and
-focused prompt-contract tests so point-in-time stock/current-status/threshold
-claims request direct-record queries before flow/context queries. The live
-rerun produced a complete internal Alpha report with one new partial direct
+produced a complete internal Alpha report with one new partial direct
 protection-status stock snapshot, but it still lacked the decisive current
-aggregate asylum-domain stock metric. The active canary owner therefore moves
-from query-planning wording toward source-acquisition/source-material evidence
-coverage for source-native current aggregate stock records, not W5 schema,
-W4-I readiness, another cap increase, report-writer plumbing, or public-surface
-work.
+aggregate asylum-domain stock metric. HJ72 no-live attribution found a concrete
+existing-mechanism gap in the Source Material owner: Serper-provided records
+kept HJ50 provider-attempt balancing only when their `candidatePreviewId` was
+present in the capped preview map. HJ72 now preserves that balancing by using
+the structural `SOURCE_CANDIDATE_PREVIEW_<attempt>_<rank>` id as a fallback
+only when the preview map lacks the record. This changes no prompt/model/config,
+provider, cap, retry, parser, cache/SR/storage, public surface, W5/W6/W7/W8, or
+V1 behavior.
 
-Post-HJ71 sidecar review agreed not to spend the final live job immediately.
-HJ72 should attribute the missing aggregate current-stock record without live
-execution first, then prepare a narrow source-acquisition/source-material
-repair package only if local evidence identifies a concrete owner. Provider
-expansion or source strategy widening remains a separate reviewed package.
+Focused owner tests, Serper preview tests, boundary guard, build, debt sensors,
+index, and diff checks passed before the HJ72 implementation commit. The final
+live job is now reserved for one focused HJ72 canary after runtime freshness
+checks.
 
 ## Latest Result
 
