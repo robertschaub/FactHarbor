@@ -19,12 +19,12 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ59 W5 temporal relation extraction live
-result. Older HJ history below is kept as context, but the active anchor and
-budget are:
+This projection is synced for the HJ60 stronger internal report gauntlet after
+the HJ59 W5 temporal relation extraction live result. Older HJ history below is
+kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `e5654ea7 docs(v2): sync hj59 lane` plus the HJ59 W5 prompt repair at
+  `f8d1a818 docs(v2): record hj59 temporal relation result` plus the HJ59 W5 prompt repair at
   `05194d37 fix(v2): guide w5 temporal relation extraction`;
 - latest canary result:
   HJ59 Bundesrat-simple rerun, classified
@@ -33,9 +33,9 @@ budget are:
   Captain reset to `18` on 2026-05-23 after HJ57;
   HJ58 and HJ59 consumed `2`, so `16` remain;
 - next action:
-  record the HJ59 closeout, then run a stronger HighJump validation pass before
-  any further prompt edit so the next repair is chosen from cross-input report
-  evidence rather than one successful Bundesrat-only run;
+  execute HJ60, a sequential eight-input HighJump validation pass under
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ60_Stronger_Internal_Report_Gauntlet.md`,
+  before any further prompt or source edit;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,7 +46,7 @@ budget are:
 
 Latest committed source/docs anchor:
 
-`e5654ea7 docs(v2): sync hj59 lane`
+`f8d1a818 docs(v2): record hj59 temporal relation result`
 
 Latest implementation repair:
 
@@ -470,14 +470,16 @@ Current active tranche:
 
 ## Next Action
 
-1. Close out HJ59 in the ledger/status/docs and commit the provenance update.
-2. Prepare a stronger HighJump validation pass using Captain-defined inputs
-   before another repair. The validation should test whether HJ59's W5 relation
-   repair generalizes and should identify the next highest-value report-quality
-   defect from live evidence.
-3. Spend the next jobs deliberately from the `16` remaining budget: prefer a
-   compact multi-input gauntlet over another single-input canary unless the
-   gauntlet package identifies a hard containment or provenance risk.
+1. Commit the HJ60 validation-only package and refresh runtime from committed
+   HEAD.
+2. Verify clean provenance, Web/API/proxy commit match, UCM default
+   `claimboundary-v2`, and active prompt hash
+   `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`.
+3. Run the eight Captain-defined inputs sequentially. Continue through
+   analytical stops, but stop on stale runtime, V1 routing, public/default leak,
+   or repeated infrastructure failure.
+4. Close out HJ60 with machine-readable evidence and pick the next repair owner
+   from cross-input report evidence.
 
 ## Stop Conditions
 
