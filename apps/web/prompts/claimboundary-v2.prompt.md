@@ -627,6 +627,8 @@ For temporal or procedural sequence claims, if the supplied EvidenceItems suppor
 
 Assign internal verdict labels, truth percentages, and confidence candidates from the strength of the supplied EvidenceItems and the supplied sufficiency/warning-materiality signals. Caveats must affect the candidate values, not only the prose rationale.
 
+`internalTruthPercentageCandidate` is the estimated truth of the selected AtomicClaim itself, not confidence in the chosen verdict label and not confidence that the opposite of the claim is true. Keep label and truth-score polarity aligned to the seven-point truth scale: `TRUE` 86-100, `MOSTLY-TRUE` 72-85, `LEANING-TRUE` 58-71, `MIXED` or `UNVERIFIED` 43-57, `LEANING-FALSE` 29-42, `MOSTLY-FALSE` 15-28, `FALSE` 0-14. False-side labels require low truth scores for the selected claim; never pair `FALSE`, `MOSTLY-FALSE`, or `LEANING-FALSE` with a high truth percentage. Use `internalConfidenceCandidate` to express confidence in the evidence and calibration.
+
 Reserve the strongest true-side or false-side labels and very high truth/confidence values for evidence that directly establishes the full selected claim relation, measurement frame, temporal posture, and any threshold or comparison required by the AtomicClaim, with only minor residual caveats. When `sufficiencyAssessmentProjectionJson` or `warningMaterialitySeedJson` indicates caveated sufficiency, retrieval refinement, material gaps, source singularity, or report caveats, lower the internal label, truth percentage, and confidence unless the cited EvidenceItems independently resolve those gaps.
 
 For quantitative, threshold, current-status, or point-in-time aggregate claims, distinguish close or approximate support from threshold-crossing proof. Rounded, approximate, partial-scope, differently framed, or source-attributed values can support a true-side candidate when they address the same population/domain and time posture, but they should normally produce `MOSTLY-TRUE` or `LEANING-TRUE` rather than `TRUE` unless the supplied evidence explicitly establishes the threshold, current status, or aggregate relation required by the claim. If an authority-context EvidenceItem confirms source provenance, publication practice, or date but does not independently state the decisive value or comparison, use it as context that can support confidence modestly; do not treat it as independent numerical or comparative verification.
@@ -668,7 +670,7 @@ Accepted `verdictSetCandidate` payload:
 - Each verdict candidate has `verdictCandidateId`, `boundaryCandidateIds`, `targetAtomicClaimIds`, `evidenceItemIds`, `internalVerdictLabelCandidate`, `internalTruthPercentageCandidate`, `internalConfidenceCandidate`, `rationale`, `caveats`, and `materialUncertaintySignals`.
 - `boundaryCandidateIds` and `evidenceItemIds` must be non-empty arrays and must reference only supplied candidate IDs.
 - `internalVerdictLabelCandidate` must be one of `TRUE`, `MOSTLY-TRUE`, `LEANING-TRUE`, `MIXED`, `LEANING-FALSE`, `MOSTLY-FALSE`, `FALSE`, or `UNVERIFIED`.
-- `internalTruthPercentageCandidate` and `internalConfidenceCandidate` are internal review candidates from `0` to `100`. They are not final public values.
+- `internalTruthPercentageCandidate` and `internalConfidenceCandidate` are internal review candidates from `0` to `100`. They are not final public values. `internalTruthPercentageCandidate` must remain band-consistent with `internalVerdictLabelCandidate` on the seven-point truth scale.
 
 Accepted `warningMaterialityInputs` payload:
 

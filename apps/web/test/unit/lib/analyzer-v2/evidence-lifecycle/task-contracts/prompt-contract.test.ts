@@ -349,11 +349,19 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Keep that pending posture as a caveat or material uncertainty");
     expect(section).toContain("Internal Verdict Calibration");
     expect(section).toContain("Caveats must affect the candidate values, not only the prose rationale");
+    expect(section).toContain("estimated truth of the selected AtomicClaim itself");
+    expect(section).toContain("not confidence in the chosen verdict label");
+    expect(section).toContain("seven-point truth scale");
+    expect(section).toContain("`FALSE` 0-14");
+    expect(section).toContain("False-side labels require low truth scores");
+    expect(section).toContain("never pair `FALSE`, `MOSTLY-FALSE`, or `LEANING-FALSE` with a high truth percentage");
+    expect(section).toContain("Use `internalConfidenceCandidate` to express confidence");
     expect(section).toContain("caveated sufficiency, retrieval refinement, material gaps, source singularity");
     expect(section).toContain("distinguish close or approximate support from threshold-crossing proof");
     expect(section).toContain("should normally produce `MOSTLY-TRUE` or `LEANING-TRUE` rather than `TRUE`");
     expect(section).toContain("do not treat it as independent numerical or comparative verification");
     expect(section).toContain("Avoid near-duplicate verdict candidates");
+    expect(section).toContain("must remain band-consistent with `internalVerdictLabelCandidate`");
     for (const term of ["hydrogen", "electricity", "cars", "vehicle", "efficient"]) {
       expect(section.toLowerCase()).not.toMatch(new RegExp(`\\b${term}\\b`));
     }
