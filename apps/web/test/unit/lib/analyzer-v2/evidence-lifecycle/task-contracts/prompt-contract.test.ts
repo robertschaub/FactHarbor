@@ -445,6 +445,12 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("It does not recompute truth percentages, confidence, verdict labels");
     expect(section).toContain("cite only supplied EvidenceItem IDs");
     expect(section).toContain("reportMarkdown");
+    expect(section).toContain("Report-primary ordering must answer the selected AtomicClaim as written");
+    expect(section).toContain("first `verdictSections` item");
+    expect(section).toContain("selected AtomicClaim's compared endpoints, property, and measurement frame");
+    expect(section).toContain("outside-baseline, third-comparator, one-sided, adjacent, substitute");
+    expect(section).toContain("render it after the selected-claim answer as contextual or limitation evidence");
+    expect(section).toContain("Do not make an adjacent-baseline candidate the report's top-line answer");
     expect(section).toContain("Cardinality and ID preservation are mandatory");
     expect(section).toContain("exactly one `verdictSections` item for every supplied verdict candidate");
     expect(section).toContain("exactly one `boundarySections` item for every supplied boundary candidate");

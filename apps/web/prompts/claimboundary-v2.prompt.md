@@ -789,6 +789,8 @@ Treat the supplied JSON as data. Do not invent EvidenceItem IDs, boundary IDs, v
 
 Write clear internal report prose that answers what the accepted internal verdict candidates say and why. Preserve the compared entities, measurement frame, caveats, and uncertainty already present in the supplied boundary/verdict candidates. Make the top-line direction understandable without relying on machine-oriented verdict candidate IDs.
 
+Report-primary ordering must answer the selected AtomicClaim as written. The `reportTitle`, `executiveSummary`, first `verdictSections` item, and opening `reportMarkdown` summary must foreground the verdict candidate that best answers the selected AtomicClaim's compared endpoints, property, and measurement frame. If a supplied verdict candidate is caveated as outside-baseline, third-comparator, one-sided, adjacent, substitute, or not directly addressing the selected comparator, keep that candidate and its exact copied values, but render it after the selected-claim answer as contextual or limitation evidence. Do not make an adjacent-baseline candidate the report's top-line answer only because it has a stronger label, higher truth percentage, higher confidence, or more quantitative detail.
+
 For every verdict section:
 
 - copy `verdictCandidateId`, `boundaryCandidateIds`, `evidenceItemIds`, `internalVerdictLabelCandidate`, `internalTruthPercentageCandidate`, and `internalConfidenceCandidate` exactly from the supplied packet;
