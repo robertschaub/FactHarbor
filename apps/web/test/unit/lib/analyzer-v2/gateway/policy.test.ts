@@ -8,6 +8,7 @@ import {
 } from "@/lib/analyzer-v2/gateway/policy";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
   ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
@@ -30,6 +31,7 @@ import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 const APPROVED_EXECUTABLE_TASK_IDS = [
   "claim_understanding_gate1",
   "evidence_query_planning",
+  "evidence_applicability",
   "evidence_extraction",
   "evidence_sufficiency",
   "boundary_verdict_execution",
@@ -62,6 +64,7 @@ describe("analyzer-v2 gateway policy registry", () => {
       if (
         task.id === "claim_understanding_gate1" ||
         task.id === "evidence_query_planning" ||
+        task.id === "evidence_applicability" ||
         task.id === "evidence_extraction" ||
         task.id === "evidence_sufficiency" ||
         task.id === "boundary_verdict_execution" ||
@@ -159,6 +162,21 @@ describe("analyzer-v2 gateway policy registry", () => {
         ]);
         expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.evidence_query_planning.0");
         expect(task.cachePolicy?.policyId).toBe("v2.semantic.evidence-query-planning");
+        expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
+        expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
+      } else if (taskKey === "evidence_applicability") {
+        expect(task.status).toBe("executable");
+        expect(task.promptPolicy?.requiredVariables).toEqual([
+          "claimContractJson",
+          "taskPolicySnapshotJson",
+          "sourceContentPacketsJson",
+          "sourceAcquisitionTraceJson",
+        ]);
+        expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.evidence_applicability.hj78");
+        expect(task.cachePolicy?.policyId).toBe("v2.semantic.evidence-applicability.hj78");
+        expect(task.promptPolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+        expect(task.modelPolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+        expect(task.cachePolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
         expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(true);
         expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(true);
       } else {
@@ -270,6 +288,32 @@ describe("analyzer-v2 gateway policy registry", () => {
     expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL);
   });
 
+  it("declares the exact Captain-approved HJ78 evidence-applicability model policy", () => {
+    const policy = getAnalyzerV2TaskModelPolicy("evidence_applicability");
+    const gatewayTask = getAnalyzerV2GatewayTask("evidence_applicability");
+
+    expect(policy).toMatchObject({
+      policyId: "v2.model.evidence_applicability.hj78",
+      gatewayTaskId: "evidence_applicability",
+      modelTask: "extract_evidence",
+      modelTier: "standard",
+      providerPolicy: "from_config_snapshot",
+      temperature: 0.1,
+      maxCalls: 1,
+      schemaRetryCount: 0,
+      timeoutMs: 90000,
+      maxOutputTokens: 4000,
+      fallbackBehavior: "none_fail_closed",
+      escalationBehavior: "surface_provider_failure",
+      execution: "blocked_until_prompt_model_cache_approval",
+      approval: ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
+    });
+    expect(policy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+    expect(gatewayTask.promptPolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+    expect(gatewayTask.modelPolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+    expect(gatewayTask.cachePolicy?.approval).toBe(ANALYZER_V2_HJ78_CAPTAIN_APPROVAL);
+  });
+
   it("declares the exact Captain-approved W7-B boundary/verdict execution model policy", () => {
     const policy = getAnalyzerV2TaskModelPolicy("boundary_verdict_execution");
     const gatewayTask = getAnalyzerV2GatewayTask("boundary_verdict_execution");
@@ -379,7 +423,7 @@ describe("analyzer-v2 gateway policy registry", () => {
       expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(isApprovedExecutableTaskId(task.id));
     }
 
-    const laterPromptBackedTask = getAnalyzerV2GatewayTask("evidence_applicability");
+    const laterPromptBackedTask = getAnalyzerV2GatewayTask("research_acquisition");
     expect(canExecuteAnalyzerV2GatewayTask({
       ...laterPromptBackedTask,
       status: "executable",

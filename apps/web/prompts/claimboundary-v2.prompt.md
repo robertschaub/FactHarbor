@@ -372,7 +372,7 @@ This task interprets source content meaning. It does not perform provider IO, tr
 
 ### Inputs
 
-A future non-executable loader package must provide these JSON packets:
+The hidden runtime provides these JSON packets:
 
 - `claimContractJson`: the accepted `v2.claim_contract.0` object.
 - `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
@@ -406,7 +406,7 @@ Accepted `applicabilityDecisions` payload:
 
 ### Rules
 
-Assess meaning, not wording overlap. Do not use English-only cues, provider metadata, source domain, or source type as a proxy for applicability. If source content is missing or the task policy is not executable, return a blocked envelope rather than fabricating applicability.
+Assess meaning, not wording overlap. Do not use English-only cues, provider metadata, source domain, or source type as a proxy for applicability. Differentiate direct, partial, contextual, and off-frame material through `applicability`, `missingDimensions`, and rationale; do not collapse every packet to `uncertain` when the supplied content supports a clearer applicability judgment. If source content is missing or the task policy is not executable, return a blocked envelope rather than fabricating applicability.
 
 ## V2_EVIDENCE_EXTRACTION
 
@@ -418,7 +418,7 @@ This task does not decide final verdicts, sufficiency, Source Reliability, repor
 
 ### Inputs
 
-A future non-executable loader package must provide these JSON packets:
+The hidden runtime provides these JSON packets:
 
 - `claimContractJson`: the accepted `v2.claim_contract.0` object.
 - `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
@@ -540,6 +540,8 @@ Accepted `evidenceItems` payload:
 ### Rules
 
 Extract only from supplied content. Preserve original-language evidence wording unless the schema field explicitly asks for normalized metadata. Do not map provider rank, source type, fetch success, or Source Reliability to probative value. If probative value or evidence strength is later split out, it must move to an LLM-owned `evidence_quality` task, not deterministic code.
+
+Use `applicabilityResultJson` as the packet-level semantic precheck. Do not extract EvidenceItems from packets marked `not_applicable` unless the supplied content itself visibly contradicts that precheck and the extraction rationale explains the mismatch. Packets marked `uncertain` may still produce limited, contextual, mixed, or unclear EvidenceItems when the supplied content contains materially useful component evidence. If all packets are `not_applicable` and no packet text supplies a material component for a selected AtomicClaim, return `no_extractable_evidence`.
 
 Prefer bounded extraction over premature empty output only after checking material alignment. If supplied content states a verifiable factual, procedural, quantitative, or source-attributed point that is materially relevant to any selected AtomicClaim, extract it even when it is only partial, indirect, low-confidence, or limited in scope. For short preview or abstract content, a materially tied source-attributed point can be extracted as limited, contextual, mixed, or unclear even when it would not decide sufficiency by itself. Do not extract a point merely because it names the claim actor, appears in the same broad domain, states a generic standard, describes unrelated conduct, or supplies background context. Generic framework evidence may be extracted only when the supplied content links it to the selected claim target or when it is a clearly necessary standard reference and does not crowd out more case-specific or claim-specific EvidenceItems. When direct or target-specific material exists, omit lower-value background or adjacent-domain context rather than filling the 2-to-5 item budget with weak items. When all materially aligned candidate points are weak but at least one point is tied to the selected claim target relation, return the strongest limited/contextual/unclear item or items instead of returning an empty result; do not pad the output with actor-only, broad-domain, or adjacent-domain background. Use `claimDirection`, `probativeValue`, `evidenceStrength`, `extractionConfidence`, `evidenceScope`, and `limitations` to express remaining weakness clearly.
 

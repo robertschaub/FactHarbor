@@ -18,6 +18,9 @@ export const ANALYZER_V2_HJ18_APPROVAL_ANCHOR =
 export const ANALYZER_V2_HJ19_APPROVAL_ANCHOR =
   "Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md#steer-co-reduced-quorum-captain-authorized" as const;
 
+export const ANALYZER_V2_HJ78_APPROVAL_ANCHOR =
+  "Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md#captain-authorized-highjump" as const;
+
 export const ANALYZER_V2_7L1_CAPTAIN_APPROVAL = {
   status: "approved",
   reviewer: "Captain",
@@ -70,4 +73,12 @@ export const ANALYZER_V2_HJ19_CAPTAIN_APPROVAL = {
   // Durable approval anchor:
   // Docs/WIP/2026-05-22_V2_HighJump_HJ19_Report_Writer_Output_Budget_Repair.md
   approvedAt: ANALYZER_V2_HJ19_APPROVAL_ANCHOR,
+} as const satisfies AnalyzerV2PolicyApproval;
+
+export const ANALYZER_V2_HJ78_CAPTAIN_APPROVAL = {
+  status: "approved",
+  reviewer: "Captain",
+  // Durable approval anchor:
+  // Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md
+  approvedAt: ANALYZER_V2_HJ78_APPROVAL_ANCHOR,
 } as const satisfies AnalyzerV2PolicyApproval;

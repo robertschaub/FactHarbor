@@ -5,6 +5,8 @@ import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types"
 import {
   BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
   runBoundedEvidenceExtractionRuntime,
+  type BoundedEvidenceApplicabilityProviderCallRequest,
+  type BoundedEvidenceApplicabilityProviderCallResponse,
   type BoundedEvidenceExtractionDecision,
   type BoundedEvidenceExtractionProviderCallRequest,
   type BoundedEvidenceExtractionProviderCallResponse,
@@ -80,7 +82,7 @@ function assertActivation(context: PipelineRunContext): void {
   }
 }
 
-function assertRequestMatchesSnapshot(
+function assertExtractionRequestMatchesSnapshot(
   request: BoundedEvidenceExtractionProviderCallRequest,
   context: PipelineRunContext,
 ): void {
@@ -102,13 +104,39 @@ function assertRequestMatchesSnapshot(
   }
 }
 
+function assertApplicabilityRequestMatchesSnapshot(
+  request: BoundedEvidenceApplicabilityProviderCallRequest,
+  context: PipelineRunContext,
+): void {
+  const modelPolicy = getPipelineRunTaskModelPolicy(context, "evidence_applicability");
+  if (!modelPolicy) {
+    throw new BoundedEvidenceExtractionProviderCallError();
+  }
+  if (
+    request.modelPolicy.policyId !== modelPolicy.policyId ||
+    request.modelPolicy.gatewayTaskId !== "evidence_applicability" ||
+    request.modelPolicy.modelTask !== "extract_evidence" ||
+    request.modelPolicy.temperature !== modelPolicy.temperature ||
+    request.modelPolicy.maxCalls !== modelPolicy.maxCalls ||
+    request.modelPolicy.schemaRetryCount !== modelPolicy.schemaRetryCount ||
+    request.modelPolicy.timeoutMs !== modelPolicy.timeoutMs ||
+    request.modelPolicy.maxOutputTokens !== modelPolicy.maxOutputTokens
+  ) {
+    throw new BoundedEvidenceExtractionProviderCallError();
+  }
+}
+
 async function executeAnthropicProviderCall(params: {
-  readonly request: BoundedEvidenceExtractionProviderCallRequest;
+  readonly request: BoundedEvidenceExtractionProviderCallRequest | BoundedEvidenceApplicabilityProviderCallRequest;
   readonly context: PipelineRunContext;
   readonly startedAt: number;
-}): Promise<BoundedEvidenceExtractionProviderCallResponse> {
+}): Promise<BoundedEvidenceExtractionProviderCallResponse | BoundedEvidenceApplicabilityProviderCallResponse> {
   try {
-    assertRequestMatchesSnapshot(params.request, params.context);
+    if (params.request.outputSchemaVersion === "v2.evidence_applicability_result.0") {
+      assertApplicabilityRequestMatchesSnapshot(params.request, params.context);
+    } else {
+      assertExtractionRequestMatchesSnapshot(params.request, params.context);
+    }
     const modelId = params.context.queryPlanningRuntimeActivation.provider.modelId;
     const result = await generateText({
       model: anthropic(modelId as Parameters<typeof anthropic>[0]),
@@ -140,6 +168,8 @@ function buildConfigSnapshotHash(context: PipelineRunContext): string {
     sourcePackage: BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
     providerFactoryVersion: BOUNDED_EVIDENCE_EXTRACTION_PROVIDER_FACTORY_VERSION,
     activationSnapshotHash: context.queryPlanningRuntimeActivation.activationSnapshotHash,
+    applicabilityGatewayTask: getPipelineRunGatewayTask(context, "evidence_applicability"),
+    applicabilityModelPolicy: getPipelineRunTaskModelPolicy(context, "evidence_applicability"),
     gatewayTask: getPipelineRunGatewayTask(context, "evidence_extraction"),
     modelPolicy: getPipelineRunTaskModelPolicy(context, "evidence_extraction"),
     modelPolicySnapshotHash: context.modelPolicy.snapshotHash,
@@ -166,7 +196,16 @@ export async function runBoundedEvidenceExtractionDecision(
     request: BoundedEvidenceExtractionProviderCallRequest,
   ): Promise<BoundedEvidenceExtractionProviderCallResponse> => {
     assertActivation(input.context);
-    return executeAnthropicProviderCall({ request, context: input.context, startedAt: Date.now() });
+    return executeAnthropicProviderCall({ request, context: input.context, startedAt: Date.now() }) as
+      Promise<BoundedEvidenceExtractionProviderCallResponse>;
+  };
+
+  const applicabilityProviderCall = async (
+    request: BoundedEvidenceApplicabilityProviderCallRequest,
+  ): Promise<BoundedEvidenceApplicabilityProviderCallResponse> => {
+    assertActivation(input.context);
+    return executeAnthropicProviderCall({ request, context: input.context, startedAt: Date.now() }) as
+      Promise<BoundedEvidenceApplicabilityProviderCallResponse>;
   };
 
   const decision = await runBoundedEvidenceExtractionRuntime({
@@ -177,6 +216,7 @@ export async function runBoundedEvidenceExtractionDecision(
     executionReadinessDenial: runtimeOwnedExecutionReadiness,
     executionReadinessRuntimeOwnership,
     providerCall,
+    applicabilityProviderCall,
     providerId: "anthropic",
     modelId: input.context.queryPlanningRuntimeActivation.provider.modelId,
     configSnapshotHash: buildConfigSnapshotHash(input.context),

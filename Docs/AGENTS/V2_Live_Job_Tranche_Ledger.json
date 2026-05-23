@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj76-report-quality-gauntlet-2026-05-23-reset-12-after-hj75",
+    "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 8,
+    "currentRemaining": 12,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
-      "summary": "Captain approved a fresh 12-job V2 HighJump budget after HJ75 replacement produced a true-side internal current-asylum report. HJ76 will use this tranche for staged report-quality validation before another repair."
+      "summary": "Captain approved a fresh 12-job V2 HighJump budget after HJ77 and requested proof of progress through a completed V2 report, not another incomplete canary."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 9,
+      "previousRemaining": 4,
       "resetRemaining": 12,
-      "reason": "Captain approved a new 12-job tranche for continued HighJump work after HJ75. The next direction is staged HJ76 report-quality gauntlet, not another immediate single-family source repair."
+      "reason": "Captain approved a new 12-job tranche for continued HighJump work after HJ77 and asked for a completed full V2 report as proof of progress."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY",
-      "startsAfterJobId": "ad76c64ca5eb46c7904043975e0c483c",
+      "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
+      "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 4,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. HJ77 consumed four jobs and produced partial prompt-quality improvement, but hydrogen remained confidently wrong-side/off-comparator and asylum-WWII stopped at W5 with no EvidenceItems. Wave 2 is held. Next action is HJ78 source-material usefulness/direct-comparator yield before more live jobs.",
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "HJ76 Wave 1 and HJ77 are historical to this reset. HJ78 will spend from this tranche only after implementation commit, runtime refresh, and provenance checks.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2034,8 +2034,8 @@
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ76 Wave 1 and HJ77 each consumed 4 jobs from the 12-job tranche; 4 remain.",
-      "nextLiveJobRequirement": "Do not run HJ76 Wave 2 or a second HJ77 wave. Prepare HJ78 around source-material usefulness/direct-comparator yield, commit any repair, refresh runtime, verify provenance, and spend more jobs only under the next explicit package criteria."
+      "reason": "Fresh Captain reset after HJ77; no HJ78 jobs have been spent from this tranche yet.",
+      "nextLiveJobRequirement": "Commit HJ78, refresh runtime, verify provenance, and run the next full V2 validation job from the committed runtime."
     },
     "pendingExceptionAuthorization": null
   }

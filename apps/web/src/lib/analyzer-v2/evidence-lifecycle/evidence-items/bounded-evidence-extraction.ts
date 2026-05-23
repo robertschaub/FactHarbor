@@ -16,8 +16,12 @@ import {
   EVIDENCE_LIFECYCLE_EXECUTION_READINESS_DENIAL_DECISION_VERSION,
   type EvidenceLifecycleExecutionReadinessDenialDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial";
-import { EvidenceExtractionResultSchema } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas";
 import {
+  EvidenceApplicabilityResultSchema,
+  EvidenceExtractionResultSchema,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/schemas";
+import {
+  EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
   EVIDENCE_TASK_PROMPT_SECTION_IDS,
   type EvidenceApplicabilityResult,
@@ -25,8 +29,14 @@ import {
   type EvidenceLifecycleTaskEvent,
   type ExtractedEvidenceItemContract,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
-import { ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL } from "@/lib/analyzer-v2/gateway/approval-records";
-import { ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
+import {
+  ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
+  ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL,
+} from "@/lib/analyzer-v2/gateway/approval-records";
+import {
+  ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
+} from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import { canExecuteAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2CacheDecision,
@@ -47,14 +57,25 @@ export const BOUNDED_EVIDENCE_EXTRACTION_DECISION_VERSION =
   "v2.evidence-lifecycle.bounded-evidence-extraction.x7w5" as const;
 export const BOUNDED_EVIDENCE_EXTRACTION_RUNTIME_VERSION =
   "v2.evidence-lifecycle.bounded-evidence-extraction.runtime.x7w5" as const;
+export const BOUNDED_EVIDENCE_APPLICABILITY_RUNTIME_VERSION =
+  "v2.evidence-lifecycle.evidence-applicability.runtime.hj78" as const;
 export const BOUNDED_EVIDENCE_EXTRACTION_ARTIFACT_VERSION =
   "v2.evidence-lifecycle.bounded-evidence-extraction-artifact.x7w5" as const;
 export const BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE =
   "Docs/WIP/2026-05-19_V2_Slice_X7-W5_First_Bounded_EvidenceItem_Authorization_Review_Package.md" as const;
+export const BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE =
+  "Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md" as const;
 export const BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE = "claimboundary-v2" as const;
 export const BOUNDED_EVIDENCE_EXTRACTION_PROMPT_FILE = "claimboundary-v2.prompt.md" as const;
+export const BOUNDED_EVIDENCE_APPLICABILITY_SECTION_ID =
+  EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_applicability;
 export const BOUNDED_EVIDENCE_EXTRACTION_SECTION_ID =
   EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_extraction;
+export const BOUNDED_EVIDENCE_APPLICABILITY_CACHE_NAMESPACE = [
+  "analyzer-v2",
+  ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY.policyId,
+  "evidence_applicability",
+].join(":");
 export const BOUNDED_EVIDENCE_EXTRACTION_CACHE_NAMESPACE = [
   "analyzer-v2",
   ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY.policyId,
@@ -75,8 +96,18 @@ const BOUNDED_EVIDENCE_EXTRACTION_VARIABLES = [
   "applicabilityResultJson",
 ] as const;
 
+const BOUNDED_EVIDENCE_APPLICABILITY_VARIABLES = [
+  "claimContractJson",
+  "taskPolicySnapshotJson",
+  "sourceContentPacketsJson",
+  "sourceAcquisitionTraceJson",
+] as const;
+
 export type BoundedEvidenceExtractionPromptVariable =
   typeof BOUNDED_EVIDENCE_EXTRACTION_VARIABLES[number];
+
+export type BoundedEvidenceApplicabilityPromptVariable =
+  typeof BOUNDED_EVIDENCE_APPLICABILITY_VARIABLES[number];
 
 export type BoundedEvidenceExtractionRuntimeOwnership =
   | "owned"
@@ -167,6 +198,25 @@ export type BoundedEvidenceExtractionProviderCall = (
   request: BoundedEvidenceExtractionProviderCallRequest,
 ) => Promise<BoundedEvidenceExtractionProviderCallResponse>;
 
+export type BoundedEvidenceApplicabilityProviderCallRequest = {
+  readonly renderedPrompt: string;
+  readonly promptContentHash: string;
+  readonly outputSchemaVersion: typeof EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION;
+  readonly attemptNumber: number;
+  readonly maxAttempts: number;
+  readonly modelPolicy: AnalyzerV2TaskModelPolicy;
+  readonly inputFrame: BoundedEvidenceExtractionInputFrame;
+};
+
+export type BoundedEvidenceApplicabilityProviderCallResponse = {
+  readonly output: unknown;
+  readonly telemetry: BoundedEvidenceExtractionProviderTelemetry;
+};
+
+export type BoundedEvidenceApplicabilityProviderCall = (
+  request: BoundedEvidenceApplicabilityProviderCallRequest,
+) => Promise<BoundedEvidenceApplicabilityProviderCallResponse>;
+
 export type BoundedEvidenceExtractionSchemaDiagnosticIssue = {
   readonly path: readonly string[];
   readonly code: string;
@@ -242,6 +292,35 @@ export type BoundedEvidenceExtractionModelTelemetry = {
   readonly approvalPointer: typeof BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE | null;
 };
 
+export type BoundedEvidenceApplicabilityPrecheckSummary = {
+  readonly source: "runtime_evidence_applicability_task" | "structural_uncertain_fallback" | "not_reached";
+  readonly resultStatus: EvidenceApplicabilityResult["status"] | null;
+  readonly resultHash: string | null;
+  readonly decisionCount: number;
+  readonly applicableCount: number;
+  readonly notApplicableCount: number;
+  readonly uncertainCount: number;
+  readonly modelCalled: boolean;
+  readonly promptContentHash: string | null;
+  readonly renderedPromptHash: string | null;
+  readonly modelPolicyId: string | null;
+  readonly providerId: string | null;
+  readonly modelId: string | null;
+  readonly tokenUsage: {
+    readonly inputTokens: number | null;
+    readonly outputTokens: number | null;
+    readonly totalTokens: number | null;
+  };
+  readonly durationMs: number | null;
+  readonly cacheDecision: "no_store_no_read";
+  readonly cacheDecisionReason: AnalyzerV2CacheDecision["reason"] | null;
+  readonly resultReturnedByDefault: false;
+  readonly rationaleReturnedByDefault: false;
+  readonly sourceTextReturnedByDefault: false;
+  readonly promptTextReturnedByDefault: false;
+  readonly approvalPointer: typeof BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE | null;
+};
+
 export type EvidenceItemStatementProjection = {
   readonly evidenceItemId: string;
   readonly sourceRecordId: string;
@@ -295,6 +374,7 @@ export type BoundedEvidenceExtractionDecision = {
     }[];
   };
   readonly extractionResult: EvidenceExtractionResult | null;
+  readonly applicabilityPrecheck?: BoundedEvidenceApplicabilityPrecheckSummary;
   readonly extractionResultHash: string | null;
   readonly extractionResultStatus: EvidenceExtractionResult["status"] | null;
   readonly extractionStatus: Extract<EvidenceExtractionResult, { status: "accepted" }>["extractionStatus"] | null;
@@ -333,6 +413,8 @@ export type RunBoundedEvidenceExtractionRuntimeRequest = {
   readonly executionReadinessDenial: EvidenceLifecycleExecutionReadinessDenialDecision | null;
   readonly executionReadinessRuntimeOwnership: BoundedEvidenceExtractionRuntimeOwnership;
   readonly providerCall: BoundedEvidenceExtractionProviderCall;
+  readonly applicabilityProviderCall?: BoundedEvidenceApplicabilityProviderCall;
+  readonly applicabilityResult?: EvidenceApplicabilityResult | null;
   readonly providerId: string;
   readonly modelId: string;
   readonly configSnapshotHash: string;
@@ -344,6 +426,14 @@ type CacheKeyInput = Partial<Record<AnalyzerV2CacheDimension, string | number>>;
 type RenderedBoundedEvidenceExtractionPrompt = {
   readonly profile: typeof BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE;
   readonly sectionId: typeof BOUNDED_EVIDENCE_EXTRACTION_SECTION_ID;
+  readonly promptFilePath: string;
+  readonly promptContentHash: string;
+  readonly renderedPrompt: string;
+};
+
+type RenderedEvidenceApplicabilityPrompt = {
+  readonly profile: typeof BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE;
+  readonly sectionId: typeof BOUNDED_EVIDENCE_APPLICABILITY_SECTION_ID;
   readonly promptFilePath: string;
   readonly promptContentHash: string;
   readonly renderedPrompt: string;
@@ -462,6 +552,78 @@ function telemetry(
     approvalPointer: null,
     ...overrides,
   };
+}
+
+function applicabilityPrecheckSummary(
+  overrides: Partial<BoundedEvidenceApplicabilityPrecheckSummary> = {},
+): BoundedEvidenceApplicabilityPrecheckSummary {
+  return {
+    source: "not_reached",
+    resultStatus: null,
+    resultHash: null,
+    decisionCount: 0,
+    applicableCount: 0,
+    notApplicableCount: 0,
+    uncertainCount: 0,
+    modelCalled: false,
+    promptContentHash: null,
+    renderedPromptHash: null,
+    modelPolicyId: null,
+    providerId: null,
+    modelId: null,
+    tokenUsage: {
+      inputTokens: null,
+      outputTokens: null,
+      totalTokens: null,
+    },
+    durationMs: null,
+    cacheDecision: "no_store_no_read",
+    cacheDecisionReason: null,
+    resultReturnedByDefault: false,
+    rationaleReturnedByDefault: false,
+    sourceTextReturnedByDefault: false,
+    promptTextReturnedByDefault: false,
+    approvalPointer: null,
+    ...overrides,
+  };
+}
+
+function summarizeApplicabilityResult(params: {
+  readonly result: EvidenceApplicabilityResult;
+  readonly source: BoundedEvidenceApplicabilityPrecheckSummary["source"];
+  readonly modelCalled?: boolean;
+  readonly promptContentHash?: string | null;
+  readonly renderedPromptHash?: string | null;
+  readonly modelPolicyId?: string | null;
+  readonly providerTelemetry?: BoundedEvidenceExtractionProviderTelemetry | null;
+  readonly cacheDecisionReason?: AnalyzerV2CacheDecision["reason"] | null;
+}): BoundedEvidenceApplicabilityPrecheckSummary {
+  const decisions = params.result.status === "accepted" ? params.result.applicabilityDecisions : [];
+  return applicabilityPrecheckSummary({
+    source: params.source,
+    resultStatus: params.result.status,
+    resultHash: sha256Json(params.result),
+    decisionCount: decisions.length,
+    applicableCount: decisions.filter((decisionEntry) => decisionEntry.applicability === "applicable").length,
+    notApplicableCount: decisions.filter((decisionEntry) => decisionEntry.applicability === "not_applicable").length,
+    uncertainCount: decisions.filter((decisionEntry) => decisionEntry.applicability === "uncertain").length,
+    modelCalled: params.modelCalled === true,
+    promptContentHash: params.promptContentHash ?? null,
+    renderedPromptHash: params.renderedPromptHash ?? null,
+    modelPolicyId: params.modelPolicyId ?? null,
+    providerId: params.providerTelemetry?.providerId ?? null,
+    modelId: params.providerTelemetry?.modelId ?? null,
+    tokenUsage: {
+      inputTokens: params.providerTelemetry?.inputTokens ?? null,
+      outputTokens: params.providerTelemetry?.outputTokens ?? null,
+      totalTokens: params.providerTelemetry?.totalTokens ?? null,
+    },
+    durationMs: params.providerTelemetry?.durationMs ?? null,
+    cacheDecisionReason: params.cacheDecisionReason ?? null,
+    approvalPointer: params.source === "runtime_evidence_applicability_task"
+      ? BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE
+      : null,
+  });
 }
 
 function boundedDiagnosticCode(value: string): string {
@@ -599,6 +761,7 @@ function decision(params: {
   readonly blockedReason: BoundedEvidenceExtractionBlockedReason | null;
   readonly damagedReason: BoundedEvidenceExtractionDamagedReason | null;
   readonly extractionResult: EvidenceExtractionResult | null;
+  readonly applicabilityPrecheck?: BoundedEvidenceApplicabilityPrecheckSummary;
   readonly executionTelemetry: BoundedEvidenceExtractionModelTelemetry;
   readonly sideEffects: BoundedEvidenceExtractionSideEffects;
 }): BoundedEvidenceExtractionDecision {
@@ -632,6 +795,7 @@ function decision(params: {
     sourceTextReturnedByDefault: false,
     parent: parentSummary(params.request, params.packet),
     extractionResult: params.extractionResult,
+    applicabilityPrecheck: params.applicabilityPrecheck,
     extractionResultHash,
     extractionResultStatus: params.extractionResult?.status ?? null,
     extractionStatus: params.extractionResult?.status === "accepted"
@@ -929,6 +1093,25 @@ function isApprovedX7W5ModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
     && policy.approval.approvedAt === ANALYZER_V2_X7_W5_A_CAPTAIN_APPROVAL.approvedAt;
 }
 
+function isApprovedHJ78ApplicabilityModelPolicy(policy: AnalyzerV2TaskModelPolicy): boolean {
+  return policy.policyId === "v2.model.evidence_applicability.hj78"
+    && policy.gatewayTaskId === "evidence_applicability"
+    && policy.modelTask === "extract_evidence"
+    && policy.modelTier === "standard"
+    && policy.providerPolicy === "from_config_snapshot"
+    && policy.temperature === 0.1
+    && policy.maxCalls === 1
+    && policy.schemaRetryCount === 0
+    && policy.timeoutMs === 90000
+    && policy.maxOutputTokens === 4000
+    && policy.fallbackBehavior === "none_fail_closed"
+    && policy.escalationBehavior === "surface_provider_failure"
+    && policy.execution === "blocked_until_prompt_model_cache_approval"
+    && policy.approval.status === ANALYZER_V2_HJ78_CAPTAIN_APPROVAL.status
+    && policy.approval.reviewer === ANALYZER_V2_HJ78_CAPTAIN_APPROVAL.reviewer
+    && policy.approval.approvedAt === ANALYZER_V2_HJ78_CAPTAIN_APPROVAL.approvedAt;
+}
+
 function validateTaskPolicy(
   context: PipelineRunContext,
 ): {
@@ -944,6 +1127,32 @@ function validateTaskPolicy(
   const modelPolicy = getPipelineRunTaskModelPolicy(context, "evidence_extraction");
   const cachePolicy = gatewayTask.cachePolicy ?? ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY;
   if (!modelPolicy || !isApprovedX7W5ModelPolicy(modelPolicy)) {
+    return { status: "blocked", reason: "prompt_or_model_not_approved" };
+  }
+  if (!canExecuteAnalyzerV2GatewayTask(gatewayTask)) {
+    return { status: "blocked", reason: "task_policy_not_executable" };
+  }
+  if (cachePolicy.approval.status !== "approved") {
+    return { status: "blocked", reason: "prompt_or_model_not_approved" };
+  }
+  return { status: "accepted", gatewayTask, modelPolicy, cachePolicy };
+}
+
+function validateApplicabilityTaskPolicy(
+  context: PipelineRunContext,
+): {
+  status: "accepted";
+  gatewayTask: AnalyzerV2GatewayTask;
+  modelPolicy: AnalyzerV2TaskModelPolicy;
+  cachePolicy: AnalyzerV2CachePolicy;
+} | {
+  status: "blocked";
+  reason: BoundedEvidenceExtractionBlockedReason;
+} {
+  const gatewayTask = getPipelineRunGatewayTask(context, "evidence_applicability");
+  const modelPolicy = getPipelineRunTaskModelPolicy(context, "evidence_applicability");
+  const cachePolicy = gatewayTask.cachePolicy ?? ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY;
+  if (!modelPolicy || !isApprovedHJ78ApplicabilityModelPolicy(modelPolicy)) {
     return { status: "blocked", reason: "prompt_or_model_not_approved" };
   }
   if (!canExecuteAnalyzerV2GatewayTask(gatewayTask)) {
@@ -973,13 +1182,17 @@ function buildCacheKeyParts(
     }));
 }
 
-function buildNoStoreCacheDecision(input: CacheKeyInput): AnalyzerV2CacheDecision {
-  const missingDimensions = ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY.requiredDimensions.filter(
+function buildNoStoreCacheDecision(
+  policy: AnalyzerV2CachePolicy,
+  namespace: string,
+  input: CacheKeyInput,
+): AnalyzerV2CacheDecision {
+  const missingDimensions = policy.requiredDimensions.filter(
     (dimension) => !hasCacheDimensionValue(input, dimension),
   );
   if (missingDimensions.length > 0) {
     return {
-      namespace: BOUNDED_EVIDENCE_EXTRACTION_CACHE_NAMESPACE,
+      namespace,
       canRead: false,
       canWrite: false,
       reason: "no_store_until_execution_approved",
@@ -988,12 +1201,12 @@ function buildNoStoreCacheDecision(input: CacheKeyInput): AnalyzerV2CacheDecisio
     };
   }
   return {
-    namespace: BOUNDED_EVIDENCE_EXTRACTION_CACHE_NAMESPACE,
+    namespace,
     canRead: false,
     canWrite: false,
     reason: "no_store_runtime_dispatch_safety",
     missingDimensions: [],
-    keyParts: buildCacheKeyParts(ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY, input),
+    keyParts: buildCacheKeyParts(policy, input),
   };
 }
 
@@ -1017,6 +1230,20 @@ function buildTaskPolicySnapshot(params: {
   };
 }
 
+function buildApplicabilityTaskPolicySnapshot(params: {
+  gatewayTask: AnalyzerV2GatewayTask;
+  modelPolicy: AnalyzerV2TaskModelPolicy;
+  cachePolicy: AnalyzerV2CachePolicy;
+}): Record<string, unknown> {
+  return {
+    gatewayTask: params.gatewayTask,
+    modelPolicy: params.modelPolicy,
+    cachePolicy: params.cachePolicy,
+    approvedScope: "hidden_internal_evidence_applicability_precheck_single_packet",
+    sourcePackage: BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE,
+  };
+}
+
 function buildSourceContentPacketsJson(packet: BoundedTextExtractionInputPacket): string {
   return JSON.stringify(packet.sourceContentPackets.map((contentPacket) => ({
     sourceRecordId: contentPacket.sourceRecordId,
@@ -1037,11 +1264,45 @@ function buildSourceContentPacketsJson(packet: BoundedTextExtractionInputPacket)
   })));
 }
 
-function buildApplicabilityResultJson(
+function buildSourceAcquisitionTraceJson(packet: BoundedTextExtractionInputPacket): string {
+  return JSON.stringify({
+    traceVersion: "v2.evidence-lifecycle.evidence-applicability.source-trace.hj78",
+    parentPacketId: packet.packetId,
+    parentPacketHash: packet.inputTextHash,
+    parentPacketByteLength: packet.inputTextByteLength,
+    sourceMaterialRefs: packet.sourceMaterialRefs,
+    providerIds: packet.providerIds,
+    sourceMaterialEndpointIds: packet.sourceMaterialEndpointIds,
+    sourceMaterialKinds: packet.sourceMaterialKinds,
+    languageCodes: packet.languageCodes,
+    sourceContentPackets: packet.sourceContentPackets.map((contentPacket) => ({
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
+      providerId: contentPacket.providerId,
+      sourceMaterialEndpointId: contentPacket.sourceMaterialEndpointId,
+      sourceMaterialKind: contentPacket.sourceMaterialKind,
+      languageCode: contentPacket.languageCode,
+      contentTextHash: contentPacket.contentTextHash,
+      contentTextByteLength: contentPacket.contentTextByteLength,
+      contentTextCharLength: contentPacket.contentTextCharLength,
+      maxContentTextBytes: contentPacket.maxContentTextBytes,
+      provenance: contentPacket.provenance,
+    })),
+    redaction: {
+      contentTextReturned: false,
+      inputTextReturned: false,
+      sourceTextReturned: false,
+      rawProviderPayloadReturned: false,
+      promptTextReturned: false,
+    },
+  });
+}
+
+function buildStructuralApplicabilityResult(
   packet: BoundedTextExtractionInputPacket,
   selectedAtomicClaimIds: readonly string[],
-): string {
-  const applicabilityResult: EvidenceApplicabilityResult = {
+): EvidenceApplicabilityResult {
+  return {
     schemaVersion: "v2.evidence_applicability_result.0",
     taskKey: "evidence_applicability",
     status: "accepted",
@@ -1057,7 +1318,6 @@ function buildApplicabilityResultJson(
     blockedReason: null,
     damagedReason: null,
   };
-  return JSON.stringify(applicabilityResult);
 }
 
 function buildPromptVariables(params: {
@@ -1065,12 +1325,26 @@ function buildPromptVariables(params: {
   taskPolicySnapshot: Record<string, unknown>;
   packet: BoundedTextExtractionInputPacket;
   selectedAtomicClaimIds: readonly string[];
+  applicabilityResult: EvidenceApplicabilityResult;
 }): Record<BoundedEvidenceExtractionPromptVariable, string> {
   return {
     claimContractJson: JSON.stringify(params.claimContract),
     taskPolicySnapshotJson: JSON.stringify(params.taskPolicySnapshot),
     sourceContentPacketsJson: buildSourceContentPacketsJson(params.packet),
-    applicabilityResultJson: buildApplicabilityResultJson(params.packet, params.selectedAtomicClaimIds),
+    applicabilityResultJson: JSON.stringify(params.applicabilityResult),
+  };
+}
+
+function buildApplicabilityPromptVariables(params: {
+  claimContract: ClaimContract;
+  taskPolicySnapshot: Record<string, unknown>;
+  packet: BoundedTextExtractionInputPacket;
+}): Record<BoundedEvidenceApplicabilityPromptVariable, string> {
+  return {
+    claimContractJson: JSON.stringify(params.claimContract),
+    taskPolicySnapshotJson: JSON.stringify(params.taskPolicySnapshot),
+    sourceContentPacketsJson: buildSourceContentPacketsJson(params.packet),
+    sourceAcquisitionTraceJson: buildSourceAcquisitionTraceJson(params.packet),
   };
 }
 
@@ -1106,6 +1380,47 @@ async function loadAndRenderPrompt(
       section,
       "### Runtime JSON Packets",
       ...BOUNDED_EVIDENCE_EXTRACTION_VARIABLES.map((variableName) => [
+        `Packet: ${variableName}`,
+        "```json",
+        variables[variableName],
+        "```",
+      ].join("\n")),
+    ].join("\n\n"),
+  };
+}
+
+async function loadAndRenderApplicabilityPrompt(
+  variables: Record<BoundedEvidenceApplicabilityPromptVariable, string>,
+): Promise<RenderedEvidenceApplicabilityPrompt> {
+  const promptRoot = path.resolve(process.cwd(), "prompts");
+  const promptFilePath = path.join(promptRoot, BOUNDED_EVIDENCE_EXTRACTION_PROMPT_FILE);
+  for (const variableName of BOUNDED_EVIDENCE_APPLICABILITY_VARIABLES) {
+    JSON.parse(variables[variableName]);
+  }
+  const content = (await readFile(promptFilePath, "utf8")).replace(/\r\n/g, "\n");
+  const frontmatterPipeline = readFrontmatterPipeline(content);
+  if (frontmatterPipeline !== BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE) {
+    throw new Error("Analyzer V2 evidence-applicability prompt frontmatter pipeline mismatch.");
+  }
+  const section = readSection(content, BOUNDED_EVIDENCE_APPLICABILITY_SECTION_ID);
+  if (!section.includes(EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION)) {
+    throw new Error("Analyzer V2 evidence-applicability prompt section is not aligned to the approved schema.");
+  }
+  for (const variableName of BOUNDED_EVIDENCE_APPLICABILITY_VARIABLES) {
+    if (!section.includes(variableName)) {
+      throw new Error("Analyzer V2 evidence-applicability prompt section is missing a required packet name.");
+    }
+  }
+
+  return {
+    profile: BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE,
+    sectionId: BOUNDED_EVIDENCE_APPLICABILITY_SECTION_ID,
+    promptFilePath,
+    promptContentHash: computeContentHash(canonicalizeContent("prompt", content)),
+    renderedPrompt: [
+      section,
+      "### Runtime JSON Packets",
+      ...BOUNDED_EVIDENCE_APPLICABILITY_VARIABLES.map((variableName) => [
         `Packet: ${variableName}`,
         "```json",
         variables[variableName],
@@ -1216,6 +1531,257 @@ function validateAcceptedResultContent(
     }
   }
   return null;
+}
+
+function applicabilityBlockedResult(
+  reason: "task_policy_not_executable" | "input_contract_invalid" | "prompt_not_approved",
+  message: string,
+): EvidenceApplicabilityResult {
+  return {
+    schemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+    taskKey: "evidence_applicability",
+    status: "blocked",
+    applicabilityDecisions: null,
+    integrityEvents: [
+      event(
+        reason === "input_contract_invalid" ? "input_contract_invalid" : "task_policy_blocked",
+        "error",
+        message,
+        ["evidence_applicability"],
+      ),
+    ],
+    blockedReason: reason,
+    damagedReason: null,
+  };
+}
+
+function applicabilityDamagedResult(
+  reason: "provider_unavailable" | "schema_validation_failed" | "task_contract_validation_failed",
+  message: string,
+): EvidenceApplicabilityResult {
+  return {
+    schemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+    taskKey: "evidence_applicability",
+    status: "damaged",
+    applicabilityDecisions: null,
+    integrityEvents: [
+      event(
+        reason === "provider_unavailable" ? "provider_unavailable" : "schema_validation_failed",
+        "error",
+        message,
+        ["evidence_applicability"],
+      ),
+    ],
+    blockedReason: null,
+    damagedReason: reason,
+  };
+}
+
+function validateAcceptedApplicabilityContent(
+  result: EvidenceApplicabilityResult,
+  frame: BoundedEvidenceExtractionInputFrame,
+): "accepted" | "content_packet_mismatch" | "missing_decision" | "duplicate_decision" | "unselected_target_atomic_claim" {
+  if (result.status !== "accepted") {
+    return "accepted";
+  }
+  const selectedIds = new Set(frame.targetAtomicClaimIds);
+  const expectedPairs = new Set(
+    frame.sourceContentPackets.map((packet) => `${packet.sourceRecordId}\u0000${packet.contentPacketId}`),
+  );
+  const observedPairs = new Set<string>();
+  for (const decisionEntry of result.applicabilityDecisions) {
+    const pair = `${decisionEntry.sourceRecordId}\u0000${decisionEntry.contentPacketId}`;
+    if (!expectedPairs.has(pair)) {
+      return "content_packet_mismatch";
+    }
+    if (observedPairs.has(pair)) {
+      return "duplicate_decision";
+    }
+    observedPairs.add(pair);
+    for (const claimId of decisionEntry.targetAtomicClaimIds) {
+      if (!selectedIds.has(claimId)) {
+        return "unselected_target_atomic_claim";
+      }
+    }
+  }
+  return observedPairs.size === expectedPairs.size ? "accepted" : "missing_decision";
+}
+
+async function executeApplicabilityAdapter(params: {
+  readonly gatewayTask: AnalyzerV2GatewayTask;
+  readonly modelPolicy: AnalyzerV2TaskModelPolicy;
+  readonly renderedPrompt: RenderedEvidenceApplicabilityPrompt;
+  readonly inputFrame: BoundedEvidenceExtractionInputFrame;
+  readonly cacheDecision: AnalyzerV2CacheDecision;
+  readonly providerCall: BoundedEvidenceApplicabilityProviderCall;
+}): Promise<{
+  readonly result: EvidenceApplicabilityResult;
+  readonly summary: BoundedEvidenceApplicabilityPrecheckSummary;
+}> {
+  if (!canExecuteAnalyzerV2GatewayTask(params.gatewayTask)) {
+    const result = applicabilityBlockedResult(
+      "task_policy_not_executable",
+      "Evidence applicability gateway policy is not executable.",
+    );
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "runtime_evidence_applicability_task",
+        promptContentHash: params.renderedPrompt.promptContentHash,
+        renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+        modelPolicyId: params.modelPolicy.policyId,
+        cacheDecisionReason: params.cacheDecision.reason,
+      }),
+    };
+  }
+
+  const maxAttempts = Math.max(1, Math.min(params.modelPolicy.maxCalls, params.modelPolicy.schemaRetryCount + 1));
+  for (let attemptNumber = 1; attemptNumber <= maxAttempts; attemptNumber += 1) {
+    let providerResponse: BoundedEvidenceApplicabilityProviderCallResponse;
+    try {
+      providerResponse = await params.providerCall({
+        renderedPrompt: params.renderedPrompt.renderedPrompt,
+        promptContentHash: params.renderedPrompt.promptContentHash,
+        outputSchemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+        attemptNumber,
+        maxAttempts,
+        modelPolicy: params.modelPolicy,
+        inputFrame: params.inputFrame,
+      });
+    } catch {
+      const result = applicabilityDamagedResult(
+        "provider_unavailable",
+        "Evidence applicability provider was unavailable.",
+      );
+      return {
+        result,
+        summary: summarizeApplicabilityResult({
+          result,
+          source: "runtime_evidence_applicability_task",
+          modelCalled: true,
+          promptContentHash: params.renderedPrompt.promptContentHash,
+          renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+          modelPolicyId: params.modelPolicy.policyId,
+          cacheDecisionReason: params.cacheDecision.reason,
+        }),
+      };
+    }
+
+    const telemetryError = validateProviderTelemetry(providerResponse.telemetry);
+    if (telemetryError) {
+      const result = applicabilityDamagedResult(
+        "provider_unavailable",
+        "Evidence applicability provider telemetry was invalid.",
+      );
+      return {
+        result,
+        summary: summarizeApplicabilityResult({
+          result,
+          source: "runtime_evidence_applicability_task",
+          modelCalled: true,
+          promptContentHash: params.renderedPrompt.promptContentHash,
+          renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+          modelPolicyId: params.modelPolicy.policyId,
+          cacheDecisionReason: params.cacheDecision.reason,
+        }),
+      };
+    }
+
+    const parsedOutput = coerceProviderOutput(providerResponse.output);
+    if (parsedOutput.status === "parse_failure") {
+      const result = applicabilityDamagedResult(
+        "schema_validation_failed",
+        "Evidence applicability output could not be parsed as JSON.",
+      );
+      return {
+        result,
+        summary: summarizeApplicabilityResult({
+          result,
+          source: "runtime_evidence_applicability_task",
+          modelCalled: true,
+          promptContentHash: params.renderedPrompt.promptContentHash,
+          renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+          modelPolicyId: params.modelPolicy.policyId,
+          providerTelemetry: providerResponse.telemetry,
+          cacheDecisionReason: params.cacheDecision.reason,
+        }),
+      };
+    }
+
+    const parsedResult = EvidenceApplicabilityResultSchema.safeParse(parsedOutput.value);
+    if (!parsedResult.success) {
+      const result = applicabilityDamagedResult(
+        "schema_validation_failed",
+        "Evidence applicability output failed schema validation.",
+      );
+      return {
+        result,
+        summary: summarizeApplicabilityResult({
+          result,
+          source: "runtime_evidence_applicability_task",
+          modelCalled: true,
+          promptContentHash: params.renderedPrompt.promptContentHash,
+          renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+          modelPolicyId: params.modelPolicy.policyId,
+          providerTelemetry: providerResponse.telemetry,
+          cacheDecisionReason: params.cacheDecision.reason,
+        }),
+      };
+    }
+
+    const result = parsedResult.data as EvidenceApplicabilityResult;
+    const contentValidation = validateAcceptedApplicabilityContent(result, params.inputFrame);
+    if (contentValidation !== "accepted") {
+      const damaged = applicabilityDamagedResult(
+        "task_contract_validation_failed",
+        "Evidence applicability output failed task contract validation.",
+      );
+      return {
+        result: damaged,
+        summary: summarizeApplicabilityResult({
+          result: damaged,
+          source: "runtime_evidence_applicability_task",
+          modelCalled: true,
+          promptContentHash: params.renderedPrompt.promptContentHash,
+          renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+          modelPolicyId: params.modelPolicy.policyId,
+          providerTelemetry: providerResponse.telemetry,
+          cacheDecisionReason: params.cacheDecision.reason,
+        }),
+      };
+    }
+
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "runtime_evidence_applicability_task",
+        modelCalled: true,
+        promptContentHash: params.renderedPrompt.promptContentHash,
+        renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+        modelPolicyId: params.modelPolicy.policyId,
+        providerTelemetry: providerResponse.telemetry,
+        cacheDecisionReason: params.cacheDecision.reason,
+      }),
+    };
+  }
+
+  const result = applicabilityDamagedResult(
+    "schema_validation_failed",
+    "Evidence applicability output failed validation.",
+  );
+  return {
+    result,
+    summary: summarizeApplicabilityResult({
+      result,
+      source: "runtime_evidence_applicability_task",
+      promptContentHash: params.renderedPrompt.promptContentHash,
+      renderedPromptHash: sha256Text(params.renderedPrompt.renderedPrompt),
+      modelPolicyId: params.modelPolicy.policyId,
+      cacheDecisionReason: params.cacheDecision.reason,
+    }),
+  };
 }
 
 async function executeAdapter(params: {
@@ -1447,6 +2013,205 @@ function buildCacheDecisionInput(params: {
   };
 }
 
+function buildApplicabilityCacheDecisionInput(params: {
+  readonly renderedPromptContentHash: string;
+  readonly request: RunBoundedEvidenceExtractionRuntimeRequest;
+  readonly packet: BoundedTextExtractionInputPacket;
+  readonly selectedAtomicClaimIds: readonly string[];
+  readonly modelPolicy: AnalyzerV2TaskModelPolicy;
+}): CacheKeyInput {
+  return {
+    promptProfile: BOUNDED_EVIDENCE_EXTRACTION_PROMPT_PROFILE,
+    promptSectionId: BOUNDED_EVIDENCE_APPLICABILITY_SECTION_ID,
+    promptContentHash: params.renderedPromptContentHash,
+    modelTask: params.modelPolicy.modelTask,
+    provider: params.request.providerId,
+    modelName: params.request.modelId,
+    temperature: params.modelPolicy.temperature,
+    outputSchemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+    configSnapshotHash: params.request.configSnapshotHash,
+    resultSchemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+    inputIdentityHash: sha256Json({
+      claimContract: params.request.claimContract,
+      selectedAtomicClaimIds: params.selectedAtomicClaimIds,
+      packetId: params.packet.packetId,
+      packetHash: params.packet.inputTextHash,
+      taskKey: "evidence_applicability",
+    }),
+    sourceIdentityHash: params.packet.inputTextHash,
+    languageContextHash: sha256Json({ languageCode: params.packet.languageCode }),
+    currentDateBucket: params.request.context.currentDate,
+    adapterVersion: BOUNDED_EVIDENCE_APPLICABILITY_RUNTIME_VERSION,
+  };
+}
+
+async function resolveApplicabilityPrecheck(params: {
+  readonly request: RunBoundedEvidenceExtractionRuntimeRequest;
+  readonly packet: BoundedTextExtractionInputPacket;
+  readonly selectedAtomicClaimIds: readonly string[];
+  readonly inputFrame: BoundedEvidenceExtractionInputFrame;
+}): Promise<{
+  readonly result: EvidenceApplicabilityResult;
+  readonly summary: BoundedEvidenceApplicabilityPrecheckSummary;
+  readonly blockedReason: BoundedEvidenceExtractionBlockedReason | null;
+  readonly damagedReason: BoundedEvidenceExtractionDamagedReason | null;
+  readonly promptLoaded: boolean;
+  readonly promptRendered: boolean;
+  readonly cacheDecisionConstructed: boolean;
+}> {
+  if (params.request.applicabilityResult) {
+    const parsed = EvidenceApplicabilityResultSchema.safeParse(params.request.applicabilityResult);
+    const result = parsed.success
+      ? parsed.data as EvidenceApplicabilityResult
+      : applicabilityDamagedResult(
+        "task_contract_validation_failed",
+        "Supplied evidence applicability result failed schema validation.",
+      );
+    const contentValidation = validateAcceptedApplicabilityContent(result, params.inputFrame);
+    const resolved = contentValidation === "accepted"
+      ? result
+      : applicabilityDamagedResult(
+        "task_contract_validation_failed",
+        "Supplied evidence applicability result failed task contract validation.",
+      );
+    return {
+      result: resolved,
+      summary: summarizeApplicabilityResult({
+        result: resolved,
+        source: "runtime_evidence_applicability_task",
+      }),
+      blockedReason: resolved.status === "blocked" ? "task_policy_not_executable" : null,
+      damagedReason: resolved.status === "damaged" ? "task_contract_validation_failed" : null,
+      promptLoaded: false,
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+    };
+  }
+
+  if (!params.request.applicabilityProviderCall) {
+    const result = buildStructuralApplicabilityResult(params.packet, params.selectedAtomicClaimIds);
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "structural_uncertain_fallback",
+      }),
+      blockedReason: null,
+      damagedReason: null,
+      promptLoaded: false,
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+    };
+  }
+
+  const policyValidation = validateApplicabilityTaskPolicy(params.request.context);
+  if (policyValidation.status === "blocked") {
+    const result = applicabilityBlockedResult(
+      policyValidation.reason === "prompt_or_model_not_approved" ? "prompt_not_approved" : "task_policy_not_executable",
+      "Evidence applicability pre-call gate blocked execution.",
+    );
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "runtime_evidence_applicability_task",
+      }),
+      blockedReason: policyValidation.reason,
+      damagedReason: null,
+      promptLoaded: false,
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+    };
+  }
+
+  let renderedPrompt: RenderedEvidenceApplicabilityPrompt;
+  try {
+    renderedPrompt = await loadAndRenderApplicabilityPrompt(buildApplicabilityPromptVariables({
+      claimContract: params.request.claimContract,
+      taskPolicySnapshot: buildApplicabilityTaskPolicySnapshot({
+        gatewayTask: policyValidation.gatewayTask,
+        modelPolicy: policyValidation.modelPolicy,
+        cachePolicy: policyValidation.cachePolicy,
+      }),
+      packet: params.packet,
+    }));
+  } catch {
+    const result = applicabilityDamagedResult(
+      "task_contract_validation_failed",
+      "Evidence applicability prompt render failed.",
+    );
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "runtime_evidence_applicability_task",
+        modelPolicyId: policyValidation.modelPolicy.policyId,
+      }),
+      blockedReason: null,
+      damagedReason: "prompt_render_failed",
+      promptLoaded: true,
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+    };
+  }
+
+  const cacheDecision = buildNoStoreCacheDecision(
+    policyValidation.cachePolicy,
+    BOUNDED_EVIDENCE_APPLICABILITY_CACHE_NAMESPACE,
+    buildApplicabilityCacheDecisionInput({
+      renderedPromptContentHash: renderedPrompt.promptContentHash,
+      request: params.request,
+      packet: params.packet,
+      selectedAtomicClaimIds: params.selectedAtomicClaimIds,
+      modelPolicy: policyValidation.modelPolicy,
+    }),
+  );
+  if (cacheDecision.reason !== "no_store_runtime_dispatch_safety" || cacheDecision.canRead || cacheDecision.canWrite) {
+    const result = applicabilityBlockedResult(
+      "task_policy_not_executable",
+      "Evidence applicability cache contract blocked execution.",
+    );
+    return {
+      result,
+      summary: summarizeApplicabilityResult({
+        result,
+        source: "runtime_evidence_applicability_task",
+        promptContentHash: renderedPrompt.promptContentHash,
+        renderedPromptHash: sha256Text(renderedPrompt.renderedPrompt),
+        modelPolicyId: policyValidation.modelPolicy.policyId,
+        cacheDecisionReason: cacheDecision.reason,
+      }),
+      blockedReason: "cache_contract_not_no_store",
+      damagedReason: null,
+      promptLoaded: true,
+      promptRendered: true,
+      cacheDecisionConstructed: true,
+    };
+  }
+
+  const outcome = await executeApplicabilityAdapter({
+    gatewayTask: policyValidation.gatewayTask,
+    modelPolicy: policyValidation.modelPolicy,
+    renderedPrompt,
+    inputFrame: params.inputFrame,
+    cacheDecision,
+    providerCall: params.request.applicabilityProviderCall,
+  });
+  return {
+    result: outcome.result,
+    summary: outcome.summary,
+    blockedReason: outcome.result.status === "blocked" ? "task_policy_not_executable" : null,
+    damagedReason: outcome.result.status === "damaged"
+      ? outcome.result.damagedReason === "provider_unavailable"
+        ? "provider_unavailable"
+        : "task_contract_validation_failed"
+      : null,
+    promptLoaded: true,
+    promptRendered: true,
+    cacheDecisionConstructed: true,
+  };
+}
+
 function blockedDecision(
   request: RunBoundedEvidenceExtractionRuntimeRequest,
   packet: BoundedTextExtractionInputPacket | null,
@@ -1512,52 +2277,6 @@ export async function runBoundedEvidenceExtractionRuntime(
     cachePolicy: policyValidation.cachePolicy,
     w4iStatus: request.executionReadinessDenial?.status ?? "missing",
   });
-  let renderedPrompt: RenderedBoundedEvidenceExtractionPrompt;
-  try {
-    renderedPrompt = await loadAndRenderPrompt(buildPromptVariables({
-      claimContract: request.claimContract,
-      taskPolicySnapshot,
-      packet,
-      selectedAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
-    }));
-  } catch {
-    return decision({
-      request,
-      packet,
-      status: "damaged_execution",
-      blockedReason: null,
-      damagedReason: "prompt_render_failed",
-      extractionResult: damagedResult("task_contract_validation_failed", "Evidence extraction prompt render failed."),
-      executionTelemetry: telemetry({
-        configSnapshotHash: request.configSnapshotHash,
-        modelPolicyId: policyValidation.modelPolicy.policyId,
-        providerId: request.providerId,
-        modelId: request.modelId,
-        approvalPointer: BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
-      }),
-      sideEffects: noSideEffects({
-        ...providerFlags,
-        promptLoaded: true,
-      }),
-    });
-  }
-
-  const cacheDecision = buildNoStoreCacheDecision(buildCacheDecisionInput({
-    renderedPromptContentHash: renderedPrompt.promptContentHash,
-    request,
-    packet,
-    selectedAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
-    modelPolicy: policyValidation.modelPolicy,
-  }));
-  const postRenderSideEffects = noSideEffects({
-    ...providerFlags,
-    promptLoaded: true,
-    promptRendered: true,
-    cacheDecisionConstructed: true,
-  });
-  if (cacheDecision.reason !== "no_store_runtime_dispatch_safety" || cacheDecision.canRead || cacheDecision.canWrite) {
-    return blockedDecision(request, packet, "cache_contract_not_no_store", postRenderSideEffects, cacheDecision);
-  }
 
   const inputFrame: BoundedEvidenceExtractionInputFrame = {
     packetId: packet.packetId,
@@ -1573,6 +2292,99 @@ export async function runBoundedEvidenceExtractionRuntime(
     })),
     targetAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
   };
+
+  const applicabilityPrecheck = await resolveApplicabilityPrecheck({
+    request,
+    packet,
+    selectedAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
+    inputFrame,
+  });
+  if (applicabilityPrecheck.blockedReason) {
+    return blockedDecision(
+      request,
+      packet,
+      applicabilityPrecheck.blockedReason,
+      noSideEffects(providerFlags),
+    );
+  }
+  if (applicabilityPrecheck.damagedReason) {
+    return decision({
+      request,
+      packet,
+      status: "damaged_execution",
+      blockedReason: null,
+      damagedReason: applicabilityPrecheck.damagedReason,
+      extractionResult: damagedResult(
+        applicabilityPrecheck.damagedReason === "provider_unavailable"
+          ? "provider_unavailable"
+          : "task_contract_validation_failed",
+        "Evidence applicability precheck failed before evidence extraction.",
+      ),
+      applicabilityPrecheck: applicabilityPrecheck.summary,
+      executionTelemetry: telemetry({
+        configSnapshotHash: request.configSnapshotHash,
+        modelPolicyId: policyValidation.modelPolicy.policyId,
+        providerId: request.providerId,
+        modelId: request.modelId,
+        approvalPointer: BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
+      }),
+      sideEffects: noSideEffects(providerFlags),
+    });
+  }
+
+  let renderedPrompt: RenderedBoundedEvidenceExtractionPrompt;
+  try {
+    renderedPrompt = await loadAndRenderPrompt(buildPromptVariables({
+      claimContract: request.claimContract,
+      taskPolicySnapshot,
+      packet,
+      selectedAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
+      applicabilityResult: applicabilityPrecheck.result,
+    }));
+  } catch {
+    return decision({
+      request,
+      packet,
+      status: "damaged_execution",
+      blockedReason: null,
+      damagedReason: "prompt_render_failed",
+      extractionResult: damagedResult("task_contract_validation_failed", "Evidence extraction prompt render failed."),
+      applicabilityPrecheck: applicabilityPrecheck.summary,
+      executionTelemetry: telemetry({
+        configSnapshotHash: request.configSnapshotHash,
+        modelPolicyId: policyValidation.modelPolicy.policyId,
+        providerId: request.providerId,
+        modelId: request.modelId,
+        approvalPointer: BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
+      }),
+      sideEffects: noSideEffects({
+        ...providerFlags,
+        promptLoaded: true,
+      }),
+    });
+  }
+
+  const cacheDecision = buildNoStoreCacheDecision(
+    policyValidation.cachePolicy,
+    BOUNDED_EVIDENCE_EXTRACTION_CACHE_NAMESPACE,
+    buildCacheDecisionInput({
+      renderedPromptContentHash: renderedPrompt.promptContentHash,
+      request,
+      packet,
+      selectedAtomicClaimIds: claimContractValidation.selectedAtomicClaimIds,
+      modelPolicy: policyValidation.modelPolicy,
+    }),
+  );
+  const postRenderSideEffects = noSideEffects({
+    ...providerFlags,
+    promptLoaded: true,
+    promptRendered: true,
+    cacheDecisionConstructed: true,
+  });
+  if (cacheDecision.reason !== "no_store_runtime_dispatch_safety" || cacheDecision.canRead || cacheDecision.canWrite) {
+    return blockedDecision(request, packet, "cache_contract_not_no_store", postRenderSideEffects, cacheDecision);
+  }
+
   const adapterOutcome = await executeAdapter({
     gatewayTask: policyValidation.gatewayTask,
     modelPolicy: policyValidation.modelPolicy,
@@ -1599,6 +2411,7 @@ export async function runBoundedEvidenceExtractionRuntime(
       blockedReason: null,
       damagedReason: null,
       extractionResult: adapterOutcome.result,
+      applicabilityPrecheck: applicabilityPrecheck.summary,
       executionTelemetry: adapterOutcome.telemetry,
       sideEffects: completedSideEffects,
     });
@@ -1611,6 +2424,7 @@ export async function runBoundedEvidenceExtractionRuntime(
       blockedReason: null,
       damagedReason: null,
       extractionResult: adapterOutcome.result,
+      applicabilityPrecheck: applicabilityPrecheck.summary,
       executionTelemetry: adapterOutcome.telemetry,
       sideEffects: completedSideEffects,
     });
@@ -1623,6 +2437,7 @@ export async function runBoundedEvidenceExtractionRuntime(
       blockedReason: "task_policy_not_executable",
       damagedReason: null,
       extractionResult: adapterOutcome.result,
+      applicabilityPrecheck: applicabilityPrecheck.summary,
       executionTelemetry: adapterOutcome.telemetry,
       sideEffects: completedSideEffects,
     });
@@ -1634,6 +2449,7 @@ export async function runBoundedEvidenceExtractionRuntime(
     blockedReason: null,
     damagedReason: adapterOutcome.damagedReason ?? "task_contract_validation_failed",
     extractionResult: adapterOutcome.result,
+    applicabilityPrecheck: applicabilityPrecheck.summary,
     executionTelemetry: adapterOutcome.telemetry,
     sideEffects: completedSideEffects,
   });

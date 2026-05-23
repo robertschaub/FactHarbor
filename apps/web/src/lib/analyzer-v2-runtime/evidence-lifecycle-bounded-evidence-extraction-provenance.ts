@@ -41,6 +41,11 @@ const DECISION_KEYS = [
   "visibility",
 ].sort();
 
+const DECISION_KEYS_WITH_APPLICABILITY_PRECHECK = [
+  ...DECISION_KEYS,
+  "applicabilityPrecheck",
+].sort();
+
 const runtimeOwnedDecisions = new WeakMap<object, string>();
 
 export function markBoundedEvidenceExtractionRuntimeOwnedDecision(
@@ -53,7 +58,13 @@ export function markBoundedEvidenceExtractionRuntimeOwnedDecision(
 export function inspectBoundedEvidenceExtractionRuntimeOwnership(
   value: unknown,
 ): BoundedEvidenceExtractionRuntimeOwnership {
-  if (!isRecord(value) || !hasExactKeys(value, DECISION_KEYS)) {
+  if (
+    !isRecord(value) ||
+    (
+      !hasExactKeys(value, DECISION_KEYS) &&
+      !hasExactKeys(value, DECISION_KEYS_WITH_APPLICABILITY_PRECHECK)
+    )
+  ) {
     return "not_owned";
   }
   const recordedHash = runtimeOwnedDecisions.get(value);

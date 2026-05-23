@@ -19,14 +19,18 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ77 ran one four-job wave and stopped with
-partial prompt-quality improvement but unresolved source-directness failures.
+This projection is synced during HJ78 implementation after HJ77 ran one
+four-job wave and stopped with partial prompt-quality improvement but unresolved
+source-directness failures.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ77 prompt repair at `1090e7db0bbf079fc8d7339c49d5654e36815aaa`;
+  HJ78 implementation pending commit: evidence applicability now runs before
+  W5 extraction in the product runtime owner, replacing fabricated live-owner
+  all-uncertain applicability with the existing LLM-owned
+  `evidence_applicability` task;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ77_Target_Frame_Directness_Prompt_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ78_Evidence_Applicability_Precheck.md`;
 - latest canary result:
   HJ77 jobs `9ef3a6cf64244c6ea87f200e0db58fd0`,
   `3c8eb6181a5941a69219f9562f338ffa`,
@@ -34,14 +38,12 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   `6f4fb7f9c5ce41579f53c657e3c07528`, classified
   `STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP`;
 - current live-job tranche:
-  Captain reset to `12` on 2026-05-23 after HJ75;
-  HJ76 Wave 1 consumed `4`; HJ77 consumed `4`; `4` remain;
+  Captain reset to `12` on 2026-05-23 after HJ77; `12` remain before the HJ78
+  full-report validation job;
 - next action:
-  prepare HJ78 around source-material usefulness/direct-comparator yield, not
-  another broad prompt-only tweak. Preserve HJ77 partial gains: plastic now has
-  a countervailing `MIXED` verdict and Bolsonaro EN moved Brazilian-law
-  compliance to `LEANING-TRUE`; focus the next owner on hydrogen's off-comparator
-  source/evidence path and asylum-WWII's W5 no-extractable-evidence stop;
+  commit HJ78 after clean diff/index checks, refresh runtime, and run a full V2
+  validation job on the Captain-defined hydrogen input to produce a completed
+  report or a concrete next stop;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak

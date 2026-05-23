@@ -5,6 +5,7 @@ import type { ClaimContract } from "@/lib/analyzer-v2/claim-understanding/types"
 import {
   BOUNDED_EVIDENCE_EXTRACTION_SOURCE_PACKAGE,
   runBoundedEvidenceExtractionRuntime,
+  type BoundedEvidenceApplicabilityProviderCall,
   type BoundedEvidenceExtractionProviderCall,
 } from "@/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction";
 import type {
@@ -18,7 +19,9 @@ import type {
   EvidenceLifecycleExecutionReadinessDenialDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/execution-readiness/execution-readiness-denial";
 import {
+  EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
   EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
+  type EvidenceApplicabilityResult,
   type EvidenceExtractionResult,
 } from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import {
@@ -394,6 +397,28 @@ function evidenceExtractedResult(inputPacket = packet()): EvidenceExtractionResu
   };
 }
 
+function applicabilityResult(
+  inputPacket = packet(),
+  applicability: "applicable" | "not_applicable" | "uncertain" = "applicable",
+): EvidenceApplicabilityResult {
+  return {
+    schemaVersion: EVIDENCE_APPLICABILITY_RESULT_SCHEMA_VERSION,
+    taskKey: "evidence_applicability",
+    status: "accepted",
+    applicabilityDecisions: inputPacket.sourceContentPackets.map((contentPacket) => ({
+      sourceRecordId: contentPacket.sourceRecordId,
+      contentPacketId: contentPacket.contentPacketId,
+      targetAtomicClaimIds: ["AC_001"],
+      applicability,
+      rationale: "The bounded packet is judged against the selected claim target frame.",
+      missingDimensions: applicability === "not_applicable" ? ["direct_evidence"] : [],
+    })),
+    integrityEvents: [],
+    blockedReason: null,
+    damagedReason: null,
+  };
+}
+
 function providerCall(output: unknown): BoundedEvidenceExtractionProviderCall {
   return async () => ({
     output,
@@ -404,6 +429,20 @@ function providerCall(output: unknown): BoundedEvidenceExtractionProviderCall {
       outputTokens: 80,
       totalTokens: 200,
       durationMs: 25,
+    },
+  });
+}
+
+function applicabilityProviderCall(output: unknown): BoundedEvidenceApplicabilityProviderCall {
+  return async () => ({
+    output,
+    telemetry: {
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      inputTokens: 90,
+      outputTokens: 35,
+      totalTokens: 125,
+      durationMs: 20,
     },
   });
 }
@@ -447,6 +486,103 @@ describe("bounded evidence extraction runtime", () => {
       targetAtomicClaimIds: ["AC_001"],
     });
     expect(JSON.stringify(result.evidenceItemStatementProjections)).not.toContain("Hydrogen cars require");
+  });
+
+  it("runs evidence applicability before W5 and passes differentiated decisions into extraction", async () => {
+    const inputPacket = mixedProviderPacket();
+    const applicability = applicabilityResult(inputPacket, "not_applicable");
+    let extractionPrompt = "";
+    const extractionProvider: BoundedEvidenceExtractionProviderCall = async (request) => {
+      extractionPrompt = request.renderedPrompt;
+      return {
+        output: evidenceExtractedResult(inputPacket),
+        telemetry: {
+          providerId: "anthropic",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 120,
+          outputTokens: 80,
+          totalTokens: 200,
+          durationMs: 25,
+        },
+      };
+    };
+
+    const result = await runBoundedEvidenceExtractionRuntime({
+      context: context(),
+      claimContract: claimContract(),
+      extractionInputAuthorization: w4h(inputPacket),
+      extractionInputRuntimeOwnership: "owned",
+      executionReadinessDenial: w4i(inputPacket),
+      executionReadinessRuntimeOwnership: "owned",
+      applicabilityProviderCall: applicabilityProviderCall(applicability),
+      providerCall: extractionProvider,
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      configSnapshotHash: "config-hash-w5",
+      providerCallbackCreated: true,
+      providerSdkLoaded: true,
+    });
+
+    expect(result.status).toBe("hidden_evidence_item_extraction_completed");
+    expect(result.applicabilityPrecheck).toMatchObject({
+      source: "runtime_evidence_applicability_task",
+      resultStatus: "accepted",
+      decisionCount: 2,
+      applicableCount: 0,
+      notApplicableCount: 2,
+      uncertainCount: 0,
+      modelCalled: true,
+      resultReturnedByDefault: false,
+      sourceTextReturnedByDefault: false,
+    });
+    expect(extractionPrompt).toContain("\"taskKey\":\"evidence_applicability\"");
+    expect(extractionPrompt).toContain("\"applicability\":\"not_applicable\"");
+    expect(extractionPrompt).not.toContain("structural-only applicability context");
+  });
+
+  it("fails closed when the applicability task returns an incomplete content-packet decision set", async () => {
+    const inputPacket = mixedProviderPacket();
+    let extractionCalled = false;
+    const incompleteApplicability = {
+      ...applicabilityResult(inputPacket, "applicable"),
+      applicabilityDecisions: applicabilityResult(inputPacket, "applicable").applicabilityDecisions.slice(0, 1),
+    } satisfies EvidenceApplicabilityResult;
+    const result = await runBoundedEvidenceExtractionRuntime({
+      context: context(),
+      claimContract: claimContract(),
+      extractionInputAuthorization: w4h(inputPacket),
+      extractionInputRuntimeOwnership: "owned",
+      executionReadinessDenial: w4i(inputPacket),
+      executionReadinessRuntimeOwnership: "owned",
+      applicabilityProviderCall: applicabilityProviderCall(incompleteApplicability),
+      providerCall: async () => {
+        extractionCalled = true;
+        return {
+          output: evidenceExtractedResult(inputPacket),
+          telemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 120,
+            outputTokens: 80,
+            totalTokens: 200,
+            durationMs: 25,
+          },
+        };
+      },
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+      configSnapshotHash: "config-hash-w5",
+    });
+
+    expect(result.status).toBe("damaged_execution");
+    expect(result.damagedReason).toBe("task_contract_validation_failed");
+    expect(result.applicabilityPrecheck).toMatchObject({
+      source: "runtime_evidence_applicability_task",
+      resultStatus: "damaged",
+      modelCalled: true,
+    });
+    expect(extractionCalled).toBe(false);
+    expect(JSON.stringify(result)).not.toContain(inputPacket.sourceContentPackets[0]?.contentText);
   });
 
   it("accepts EvidenceItems copied from any approved multi-provider source content packet", async () => {

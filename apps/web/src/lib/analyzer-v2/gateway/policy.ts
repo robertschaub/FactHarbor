@@ -7,6 +7,7 @@ import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_BOUNDARY_VERDICT_EXECUTION_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+  ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY,
   ANALYZER_V2_EVIDENCE_SUFFICIENCY_CACHE_POLICY,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
   ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
@@ -49,6 +51,7 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
 export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
   "claim_understanding_gate1",
   "evidence_query_planning",
+  "evidence_applicability",
   "evidence_extraction",
   "evidence_sufficiency",
   "boundary_verdict_execution",
@@ -100,6 +103,7 @@ function task(params: {
   claimUnderstandingCache?: boolean;
   queryPlanningCache?: boolean;
   evidenceExtractionCache?: boolean;
+  evidenceApplicabilityCache?: boolean;
   evidenceSufficiencyCache?: boolean;
   boundaryVerdictExecutionCache?: boolean;
   aggregationNarrativeCache?: boolean;
@@ -121,6 +125,8 @@ function task(params: {
       ? ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY
       : params.queryPlanningCache
       ? ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY
+      : params.evidenceApplicabilityCache
+      ? ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY
       : params.evidenceExtractionCache
       ? ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY
       : params.evidenceSufficiencyCache
@@ -187,10 +193,18 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
   task({
     id: "evidence_applicability",
     owner: "evidence_lifecycle",
+    status: "executable",
     modelTask: "extract_evidence",
     promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_applicability,
     outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_applicability,
-    sourceAware: true,
+    requiredVariables: [
+      "claimContractJson",
+      "taskPolicySnapshotJson",
+      "sourceContentPacketsJson",
+      "sourceAcquisitionTraceJson",
+    ],
+    promptApproval: ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
+    evidenceApplicabilityCache: true,
     notes: "Owns V2 Evidence Lifecycle applicability assessment after prompt/model/cache policy approval.",
   }),
   task({

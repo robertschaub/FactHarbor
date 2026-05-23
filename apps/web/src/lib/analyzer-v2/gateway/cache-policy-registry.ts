@@ -5,6 +5,7 @@ import type {
 } from "@/lib/analyzer-v2/gateway/types";
 import {
   ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+  ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
   ANALYZER_V2_HJ19_CAPTAIN_APPROVAL,
   ANALYZER_V2_W6_C_CAPTAIN_APPROVAL,
   ANALYZER_V2_W7_B_CAPTAIN_APPROVAL,
@@ -98,6 +99,30 @@ export const ANALYZER_V2_EVIDENCE_QUERY_PLANNING_CACHE_POLICY: AnalyzerV2CachePo
     "adapterVersion",
   ],
   approval: ANALYZER_V2_7L1_CAPTAIN_APPROVAL,
+};
+
+export const ANALYZER_V2_EVIDENCE_APPLICABILITY_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.evidence-applicability.hj78",
+  requiredDimensions: [
+    "promptProfile",
+    "promptSectionId",
+    "promptContentHash",
+    "modelTask",
+    "provider",
+    "modelName",
+    "temperature",
+    "outputSchemaVersion",
+    "configSnapshotHash",
+    "resultSchemaVersion",
+    "inputIdentityHash",
+    "sourceIdentityHash",
+    "languageContextHash",
+    "currentDateBucket",
+  ],
+  optionalDimensions: [
+    "adapterVersion",
+  ],
+  approval: ANALYZER_V2_HJ78_CAPTAIN_APPROVAL,
 };
 
 export const ANALYZER_V2_EVIDENCE_EXTRACTION_CACHE_POLICY: AnalyzerV2CachePolicy = {
