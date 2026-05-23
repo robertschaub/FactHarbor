@@ -19,14 +19,16 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ72 source-material ordinal fallback
-canary. Older HJ history below is kept as context, but the active anchor and
-budget are:
+This projection is synced after the HJ73 durable source-chain attribution
+package was prepared and Steer-Co reviewed the HJ72 stop. Older HJ history
+below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   `bcefe3bf fix(v2): preserve serper source material ordinal fallback`;
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
+- active no-live package:
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ73_Durable_Source_Chain_Attribution_Package.md`;
 - latest canary result:
   HJ72 focused current-asylum Serper ordinal fallback rerun, classified
   `STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`;
@@ -34,10 +36,10 @@ budget are:
   Captain reset to `18` on 2026-05-23 after HJ63;
   HJ64 through HJ72 consumed `18`, so `0` remains;
 - next action:
-  keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
-  output-contract repair; keep the HJ71 partial query-planning improvement and
-  keep the HJ72 Serper ordinal fallback invariant, but do not run another live
-  job until a new tranche/approval exists;
+  implement HJ73 only if it stays inside the amended package: durable redacted
+  admin-only source-chain attribution on the existing V2 result envelope, no
+  live job, no route/sink/table/provider/cap/retry/parser/cache/SR/storage
+  expansion, and blocked public projection must omit the attribution;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -51,6 +53,15 @@ Latest source/docs anchor:
 `bcefe3bf fix(v2): preserve serper source material ordinal fallback`
 
 Active implementation repair:
+
+HJ73 is the active no-live coordination package. It follows HJ72's repeated
+`same_stop_repeated_without_useful_new_information` result and the repeated
+process-local hidden artifact route `404`. Steer-Co consensus is to amend the
+existing V2 admin result-envelope diagnostics with a redacted source-chain
+attribution snapshot before another source strategy or live canary. HJ73 must
+not add a hidden route family, new storage infrastructure, provider/cap/retry
+change, parser/cache/SR/storage work, prompt/model/config/schema edit, public
+projection, ACS/direct URL, or V1 work.
 
 HJ71 amended the existing `V2_EVIDENCE_QUERY_PLANNING` prompt contract and
 produced a complete internal Alpha report with one new partial direct
