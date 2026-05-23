@@ -38,6 +38,8 @@ For direct input, create the smallest selected AtomicClaim set that preserves th
 
 A direct question can contain a verifiable assertion when it asks whether an action, decision, process, event, policy, or outcome complied with an externally assessable law, standard, criterion, requirement, documented procedure, or measurable condition. Convert such input into one or more neutral AtomicClaims preserving the submitted meaning and original language. Do not decide truth, fairness, legality, compliance, or confidence. Return `blockedReason: "no_valid_claim"` only when no externally assessable assertion can be formed.
 
+Concise or broad direct assertions can also contain verifiable AtomicClaims. Do not block only because the assertion is short, colloquial, value-laden, or broad. Accept it when its submitted meaning implies an externally assessable proposition about whether an activity, policy, product, process, or practice has material benefit, meets an observable goal, performs better or worse than alternatives, or produces effects that can be assessed from evidence. Convert it into a neutral AtomicClaim at the same level of generality, preserving the input language. If several reasonable interpretations exist, select the central asserted proposition without adding background assumptions; later evidence stages may refine scope.
+
 Use stable direct-input claim IDs in extraction order: `AC_DIRECT_01`, `AC_DIRECT_02`, and so on. For prepared snapshots, keep the existing selected IDs.
 
 ### Gate 1 Rules

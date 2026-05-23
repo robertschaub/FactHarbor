@@ -306,6 +306,24 @@ describe("V2 Claim Understanding prompt contract", () => {
     }
   });
 
+  it("pins generic short broad assertion guidance without canary topics", () => {
+    const section = readSection(readPrompt(), sectionId);
+    const abstractBroadAssertion = "Practice A has no material benefit";
+
+    expect(abstractBroadAssertion).not.toMatch(/Plastic|recycling|Asylbereich|Schweiz|Bolsonaro|hydrogen/i);
+    expect(section).toContain("Concise or broad direct assertions can also contain verifiable AtomicClaims");
+    expect(section).toContain("Do not block only because the assertion is short, colloquial, value-laden, or broad");
+    expect(section).toContain("has material benefit");
+    expect(section).toContain("meets an observable goal");
+    expect(section).toContain("performs better or worse than alternatives");
+    expect(section).toContain("produces effects that can be assessed from evidence");
+    expect(section).toContain("select the central asserted proposition without adding background assumptions");
+
+    for (const term of captainCanaryTopicTerms) {
+      expect(section).not.toContain(term);
+    }
+  });
+
   it("keeps the prompt source clean-room, generic, and not file-seeded", () => {
     const content = readPrompt();
     const registryEntry = getPromptSurfaceRegistryEntry("claimboundary-v2");
