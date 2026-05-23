@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj50",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-50-SOURCE-MATERIAL-QUERY-DIVERSITY-RERUN",
       "startsAfterJobId": "2d7402c4dc8947438b2f0ff74e5c8ce6",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset: it produced an improved internal Alpha report with current-stock evidence, public/default containment held, and the next lane is manual V2 UI/direct submission validation plus stronger multi-job report validation.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset: it produced an improved internal Alpha report with current-stock evidence and public/default containment held. HJ51 consumed one job and proved direct manual UI submission creates a claimboundary-v2 job and displays the internal V2 report to authenticated admin users while public/default surfaces remain blocked/precutover/damaged.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1280,6 +1280,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "HJ49 reran the German asylum aggregate input after importing and activating the query-planning literal-value preservation prompt. Runtime commit and active prompt hash matched the implementation. Public/default containment held. Query Planning preserved 235000 in the first direct query, Source Material completed with 6 records, W5 extracted 1 EvidenceItem, and internal report writer produced 3504 bytes. The report still returned UNVERIFIED 0/15 because the evidence was annual application-flow material, so the next defect is source usefulness/direct-stock retrieval, not report reachability."
+      },
+      {
+        "sliceId": "X7-HJ-51-UI-DIRECT-V2-SUBMISSION",
+        "jobId": "a8df993eb4804d0ba9310979e3e4b0a9",
+        "classification": "PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY",
+        "implementationCommit": "1d10da26c68523c2973445ec7e603969e5747d85",
+        "runtimeCommit": "2b77391b6e809299fb7707d63ede0ed79886f502",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus approved HighJump direction to expose V2 reports in UI and manual V2 submission",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_ui_path_verified",
+        "note": "HJ51 submitted the German asylum aggregate input through the manual Analyze UI. The page navigated directly to /jobs/a8df993eb4804d0ba9310979e3e4b0a9 instead of /analyze/select, the job ran claimboundary-v2 via the UCM default, and authenticated admin UI displayed the internal V2 report. Public/default API and UI surfaces stayed 4.0.0-cb-precutover / blocked_precutover / report_damaged with no reportMarkdown, verdict, truth percentage, or confidence exposure."
       }
     ],
     "blockedPending": [],

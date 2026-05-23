@@ -1,0 +1,88 @@
+{
+  "jobId": "a8df993eb4804d0ba9310979e3e4b0a9",
+  "classification": "PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY",
+  "implementationCommit": "1d10da26c68523c2973445ec7e603969e5747d85",
+  "runtimeCommit": "2b77391b6e809299fb7707d63ede0ed79886f502",
+  "captainDefinedInput": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "budget": {
+    "latestCaptainReset": 18,
+    "jobsConsumedByThisRun": 1,
+    "remainingAfterThisRun": 17
+  },
+  "runtimePreflight": {
+    "webGitSha": "2b77391b6e809299fb7707d63ede0ed79886f502",
+    "apiGitSha": "2b77391b6e809299fb7707d63ede0ed79886f502",
+    "webProxyApiGitSha": "2b77391b6e809299fb7707d63ede0ed79886f502",
+    "ucmDefaultPipelineVariant": "claimboundary-v2",
+    "activePromptHash": "1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318"
+  },
+  "submission": {
+    "submittedThrough": "manual_analyze_ui",
+    "navigationTarget": "/jobs/a8df993eb4804d0ba9310979e3e4b0a9",
+    "draftSelectionRouteUsed": false,
+    "apiSubmissionPath": "direct-api",
+    "jobPipelineVariant": "claimboundary-v2",
+    "jobStatus": "SUCCEEDED",
+    "analysisIssueCode": "report_damaged"
+  },
+  "queryPlanning": {
+    "status": "completed",
+    "queryCount": 3,
+    "queries": [
+      "235000 Personen Asylbereich Schweiz aktuell Bestand",
+      "Asylbereich Schweiz Bevölkerung Statistik gegenwärtig",
+      "Asylbereich Schweiz Personenzahl aktuelle Zahlen"
+    ]
+  },
+  "sourceMaterial": {
+    "status": "source_material_page_summary_completed",
+    "sourceCandidatePreviewStatus": "source_candidate_preview_materialized",
+    "sourceCandidatePreviewRecordCount": 9,
+    "sourceMaterialRecordCount": 6,
+    "recordKinds": {
+      "provider_search_result_page_text_bounded": 2,
+      "provider_search_result_preview_text": 4
+    },
+    "sourceMaterialBytes": 8862
+  },
+  "boundedEvidenceExtraction": {
+    "status": "hidden_evidence_item_extraction_completed",
+    "evidenceItemCount": 2
+  },
+  "internalAlphaReport": {
+    "resultStatus": "internal_alpha_report_result_candidate_created",
+    "draftStatus": "internal_alpha_report_draft_created",
+    "writerStatus": "internal_report_writer_draft_created",
+    "writerResultStatus": "accepted",
+    "reportMarkdownByteLength": 6995,
+    "boundaryCandidateCount": 2,
+    "verdictCandidateCount": 2,
+    "citedEvidenceItemCount": 2,
+    "observedAdminReportSummary": {
+      "topVerdictLabel": "LEANING-FALSE",
+      "topTruthPercentage": 28,
+      "topConfidence": 72,
+      "basis": "internal alpha report cites recent current-stock evidence below the 235000 threshold, with caveats about asylum-domain scope"
+    }
+  },
+  "uiProjection": {
+    "authenticatedAdminJobPageShowsV2Report": true,
+    "authenticatedAdminReportHeadingObserved": "Internal Alpha Review: Asylum Population in Switzerland (August 2025)",
+    "publicJobPageShowsInternalReport": false,
+    "publicJobPageShowsBlockedPrecutoverDamagedState": true
+  },
+  "publicContainment": {
+    "publicStatus": "SUCCEEDED",
+    "publicAnalysisIssueCode": "report_damaged",
+    "publicResultSchema": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null,
+    "publicReportMarkdownReturned": false,
+    "unauthenticatedInternalArtifactStatus": 401
+  },
+  "artifactEvidenceLocation": "test-output/hj51-a8df993eb4804d0ba9310979e3e4b0a9",
+  "informationYield": "report_produced_ui_path_verified",
+  "nextBestAction": "Run a stronger multi-input V2 internal-report validation set through the now-direct manual/default V2 path, using Captain-defined inputs and preserving public precutover containment."
+}

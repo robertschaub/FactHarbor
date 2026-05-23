@@ -1,6 +1,6 @@
 # V2 HighJump HJ51 - UI Direct V2 Submission
 
-**Status:** local implementation verifier-clean; live UI/direct-submission validation pending
+**Status:** live validated; direct manual V2 job creation and admin report display passed
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ50 report `2d7402c4dc8947438b2f0ff74e5c8ce6`
@@ -105,6 +105,41 @@ Local verifier result, 2026-05-23:
   consolidation-marker warnings.
 - `npm -w apps/web run build` passed.
 - `git diff --check` passed.
+
+## Live Result
+
+HJ51 job `a8df993eb4804d0ba9310979e3e4b0a9` was submitted through the manual
+Analyze UI after runtime refresh to `2b77391b6e809299fb7707d63ede0ed79886f502`.
+The UI navigated directly to `/jobs/a8df993eb4804d0ba9310979e3e4b0a9`, not to
+`/analyze/select/...`.
+
+Classification:
+`PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY`.
+
+Evidence summary:
+
+- UCM effective `defaultPipelineVariant` was `claimboundary-v2`.
+- Web, API, and Web proxy runtime hashes all matched
+  `2b77391b6e809299fb7707d63ede0ed79886f502` before submission.
+- The active `claimboundary-v2` prompt hash remained
+  `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+- The job was created as a real direct job with `submissionPath = direct-api`,
+  `pipelineVariant = claimboundary-v2`, and no claim-selection draft id.
+- Hidden V2 completed through Query Planning, Source Material, W5 EvidenceItem
+  extraction, W8-B/W8-G internal Alpha result/draft, and HJ18 internal report
+  writer.
+- The authenticated admin job page displayed the V2 internal report; the public
+  job page did not.
+- Public/default containment held: public result stayed
+  `4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`; public
+  verdict, truth, confidence, and report markdown stayed absent; unauthenticated
+  internal artifact access returned `401`.
+
+Budget: Captain reset the tranche to `18` before HJ51. HJ51 consumed one live
+job; `17` remain.
+
+Detailed canary evidence:
+`Docs/WIP/canary-evidence-a8df993eb4804d0ba9310979e3e4b0a9.json`.
 
 ## Stop Conditions
 

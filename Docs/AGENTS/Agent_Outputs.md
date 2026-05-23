@@ -4129,3 +4129,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism`. Chosen option: amend the existing Source Material selector. Rejected path: raising caps, semantic source ranking, provider expansion, prompt-only W5 loosening, crawler/parser/XLSX widening, public behavior, or V1 work. What was added: provider-attempt balancing inside the existing selector and focused tests. Net mechanism count: unchanged; no new route/provider/artifact family. Verification: listed above. Debt accepted and removal trigger: consolidate HJ source-selection policy before public cutover if the selector family continues to grow.
 
 **Next:** Move from single canaries to a stronger HighJump validation step: make V2 report visibility/manual V2 submission/default-UCM behavior usable under the Captain-approved direction, then run a small multi-input internal-report validation set using only Captain-defined inputs.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ51 UI Direct V2 Submission Result
+
+**Task:** Validate that the manual Analyze UI creates a real default V2 job directly, instead of sending new V2 users through the claim-selection draft/preparation detour shown on `/analyze/select/...`.
+
+**Implementation under test:** HJ51 commit `1d10da26` changes `apps/web/src/app/analyze/page.tsx` to post to the existing UCM-backed `/api/fh/analyze` route and navigate to `/jobs/{jobId}`. It preserves admin-key and invite-code forwarding, relies on the existing UCM `defaultPipelineVariant`, and does not change public cutover semantics or non-admin report exposure. Docs/budget sync commit `2b77391b` updated the active lane and live-job tranche before validation.
+
+**Verification before live job:** Focused Analyze/claim-selection route tests passed (`2` files / `18` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/boundary-guard/docs/consolidation warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `2b77391b6e809299fb7707d63ede0ed79886f502`. UCM effective pipeline config returned `defaultPipelineVariant = claimboundary-v2`, and the active V2 prompt hash remained `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+
+**Live result:** HJ51 job `a8df993eb4804d0ba9310979e3e4b0a9` was submitted through the manual Analyze UI for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. The browser navigated directly to `/jobs/a8df993eb4804d0ba9310979e3e4b0a9`, not `/analyze/select/...`. The job stayed on `claimboundary-v2`, recorded `submissionPath = direct-api`, and succeeded with public/default issue `report_damaged` as expected for V2 pre-cutover.
+
+**Hidden-chain evidence:** Query Planning completed with `3` queries, Source Candidate Preview materialized `9` records, Source Material completed with `6` records (`2` bounded linked-page, `4` search-preview; `8862` bytes), W5 completed with `2` EvidenceItems, W8-B and W8-G created internal Alpha result/draft artifacts, and the internal report writer created a `6995` byte internal report. Authenticated admin UI displayed the V2 report. Public UI/API did not expose the internal report; public/default result stayed `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; public verdict, truth, confidence, and report markdown stayed absent; unauthenticated internal artifact route returned `401`.
+
+**Classification:** `PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY`.
+
+**Information yield:** `report_produced_ui_path_verified`. HJ51 closes the specific UX detour: new manual V2 submissions now create a real V2 job and an authenticated admin can see the internal V2 report in the job UI. It does not claim public cutover or final public report semantics.
+
+**Budget:** Captain reset the live-job tranche to `18` before HJ51. HJ51 consumed `1`; `17` remain.
+
+**Next:** Run a stronger, small multi-input V2 internal-report validation set through the direct manual/default V2 path using Captain-defined inputs, then review concrete report defects before further repairs. Keep public V2 blocked/precutover/damaged until an explicit cutover/exposure package.

@@ -19,20 +19,21 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for HJ51 live validation. Older HJ history below is
+This projection is synced after HJ51 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `1d10da26 fix(v2): submit manual analyses directly to default pipeline`;
+  `2b77391b docs(v2): sync hj51 lane and live budget`;
 - latest canary result:
-  HJ50 job `2d7402c4dc8947438b2f0ff74e5c8ce6`, classified
-  `PASS_X7_HJ50_SOURCE_MATERIAL_QUERY_DIVERSITY_REPORT_QUALITY_IMPROVED`;
+  HJ51 job `a8df993eb4804d0ba9310979e3e4b0a9`, classified
+  `PASS_X7_HJ51_UI_DIRECT_V2_SUBMISSION_AND_ADMIN_REPORT_DISPLAY`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 has not consumed a job;
+  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 consumed one job and
+  `17` remain;
 - next action:
-  refresh runtime to `1d10da26`, confirm Web/API/proxy hashes and UCM
-  `defaultPipelineVariant = claimboundary-v2`, then run exactly one HJ51
-  direct manual V2 submission validation if provenance is clean;
+  run a stronger multi-input V2 internal-report validation set through the
+  direct manual/default V2 path, using Captain-defined inputs and preserving
+  public precutover containment;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
