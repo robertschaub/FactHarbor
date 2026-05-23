@@ -383,6 +383,14 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("categorical or absolute wording");
     expect(section).toContain("calibrate the verdict against the whole categorical assertion");
     expect(section).toContain("material countervailing value, benefit, compliance, support, or unresolved scope");
+    expect(section).toContain("categorical comparative assertion");
+    expect(section).toContain("supplies no numeric threshold, percentage, ratio, magnitude, or specific measurement frame");
+    expect(section).toContain("directly compares the same entities or classes along the same stated dimension");
+    expect(section).toContain("opposite comparative direction can support a strong opposite-side label");
+    expect(section).toContain("Absence of detailed quantitative measurements");
+    expect(section).toContain("not by forcing the truth percentage toward `MIXED`");
+    expect(section).toContain("this categorical allowance does not relax it");
+    expect(section).toContain("same comparative direction as the selected AtomicClaim");
     expect(section).toContain("do not create a separate `UNVERIFIED` verdict candidate merely because the later decision");
     expect(section).toContain("Keep that pending posture as a caveat or material uncertainty");
     expect(section).toContain("Internal Verdict Calibration");
