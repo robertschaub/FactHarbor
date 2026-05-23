@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-before-hj47",
     "resetTotal": 18,
-    "currentRemaining": 16,
+    "currentRemaining": 15,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN",
       "startsAfterJobId": "4208458670644489a07db2536d7c7332",
       "startingRemaining": 18,
-      "currentRemaining": 16,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ46. HJ47 produced a complete internal Alpha report with direct current-stock evidence and public/default containment held. HJ48 imported the boundary/verdict calibration prompt and ran on the committed runtime, but stopped at W5 hidden_no_extractable_evidence before report drafting, so the calibration repair was not exercised. Next work should apply failed-attempt recovery: keep the generic calibration wording if still justified, but repair the W5/source-selection regression before another live job.",
+      "currentRemaining": 15,
+      "consumptionEntriesInThisTranche": 3,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ46. HJ47 produced a complete internal Alpha report with direct current-stock evidence and public/default containment held. HJ48 imported the boundary/verdict calibration prompt but stopped at W5 hidden_no_extractable_evidence before report drafting. HJ49 repaired the query-planning literal-value loss: the direct query preserved 235000, W5 produced one EvidenceItem, and the internal report path reopened, but report quality remains poor because the evidence supports annual application flow rather than current asylum-domain population stock.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1266,6 +1266,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "HJ48 reran the German asylum aggregate input after importing and activating the generic boundary/verdict calibration prompt. Runtime commit and active prompt hash matched the implementation. Public/default containment held. Source Material completed with 5 records (2 linked-page, 3 search-preview, 0 XLSX), but W5 returned hidden_no_extractable_evidence and no internal report draft/writer artifacts were created. Therefore HJ48 did not test verdict calibration; it revealed a W5/source-selection regression relative to HJ47."
+      },
+      {
+        "sliceId": "X7-HJ-49-ASYLUM-235000-DE-QUERY-LITERAL-VALUE-PRESERVATION-RERUN",
+        "jobId": "910b9892ae3345a2a72ca1ca14b14990",
+        "classification": "PASS_X7_HJ49_QUERY_LITERAL_VALUE_RESTORED_REPORT_PATH_SOURCE_USEFULNESS_DEFECT",
+        "implementationCommit": "7319ada8e8beaf7bea27693611214465319ab745",
+        "runtimeCommit": "7319ada8e8beaf7bea27693611214465319ab745",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 15,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ49 failed-attempt-recovery package under HighJump standing authorization",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ49 reran the German asylum aggregate input after importing and activating the query-planning literal-value preservation prompt. Runtime commit and active prompt hash matched the implementation. Public/default containment held. Query Planning preserved 235000 in the first direct query, Source Material completed with 6 records, W5 extracted 1 EvidenceItem, and internal report writer produced 3504 bytes. The report still returned UNVERIFIED 0/15 because the evidence was annual application-flow material, so the next defect is source usefulness/direct-stock retrieval, not report reachability."
       }
     ],
     "blockedPending": [],

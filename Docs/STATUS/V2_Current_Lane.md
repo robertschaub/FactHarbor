@@ -21,32 +21,51 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`595c40c4 fix(v2): calibrate boundary verdict candidates`
+`7319ada8 fix(v2): preserve literal values in query planning`
 
 Latest implementation repair:
 
-`595c40c4 fix(v2): calibrate boundary verdict candidates`
+`7319ada8 fix(v2): preserve literal values in query planning`
 
-HJ48 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
-internal verdict candidates must account for sufficiency/caveat signals,
-approximate-versus-threshold quantitative support, source singularity, and
-non-independent authority context when assigning label, truth, and confidence.
-It adds no source/provider/parser route, schema, public surface,
-cache/SR/storage behavior, direct URL/ACS support, V1 work, or deterministic
-code-side analytical calibration.
+HJ49 amends only the existing `V2_EVIDENCE_QUERY_PLANNING` prompt section so
+material claim-supplied literal values, units, dates, thresholds, or comparison
+values are preserved in at least one direct-record query when needed to find
+decisive evidence. It adds no source/provider/parser route, schema, public
+surface, cache/SR/storage behavior, direct URL/ACS support, V1 work, or
+deterministic code-side query rewriting.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-48-ASYLUM-235000-DE-BOUNDARY-VERDICT-CALIBRATION-RERUN`
+`X7-HJ-49-ASYLUM-235000-DE-QUERY-LITERAL-VALUE-PRESERVATION-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-7938b16ecfe34056869559509dc93ed6.json`
+`Docs/WIP/canary-evidence-910b9892ae3345a2a72ca1ca14b14990.json`
 
 Important evidence:
 
+- `910b9892ae3345a2a72ca1ca14b14990` (German asylum aggregate) ran on HJ49
+  after importing and activating the literal-value query-planning prompt profile
+  (`1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`) on
+  runtime `7319ada8e8beaf7bea27693611214465319ab745`. It stayed on
+  `claimboundary-v2`; public/default containment held
+  (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`,
+  public/default reportMarkdown `null`) and unauthenticated hidden artifact
+  access returned `401`.
+- HJ49 repaired the immediate HJ48 regression. Query Planning produced `3`
+  queries and preserved the material threshold in the first direct query
+  (`235000 Personen Asylbereich Schweiz aktuell Bestand`). Source Material
+  completed with `6` records (`3` linked-page, `3` search-preview, `0` XLSX),
+  W5 extracted `1` EvidenceItem, and internal Alpha result/draft/report-writer
+  artifacts were created. Authenticated admin reportMarkdown was `3504` bytes.
+- HJ49's information yield is `report_produced`, but report quality remains
+  below Captain expectation: the report returned `UNVERIFIED`, truth `0`,
+  confidence `15`, because the extracted EvidenceItem supports annual
+  application-flow material rather than current asylum-domain population stock
+  or the `235000+` threshold. The next defect is source usefulness/direct-stock
+  retrieval, not report reachability or verdict calibration.
 - `7938b16ecfe34056869559509dc93ed6` (German asylum aggregate) ran on HJ48
   after importing and activating the calibrated V2 prompt profile
   (`df910d01a155db500ee4356d4ebe421dbf5405480fe1ee3582fdf15b9d419d7e`) on
@@ -324,26 +343,27 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `3`;
+- remaining: `15`;
 - latest reset starts after HJ46 job `4208458670644489a07db2536d7c7332`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Apply failed-attempt recovery to HJ48. Classify the calibration prompt repair
-   as `keep` only for its generic boundary/verdict value, but do not spend
-   another job on calibration until W5 again produces EvidenceItems and a
-   report draft.
-2. Repair the concrete regression from HJ48: W5 lost extractable evidence after
-   HJ47 had produced two EvidenceItems from direct current-stock evidence and
-   SEM authority context. Prefer the lowest-complexity path that preserves the
-   HJ47 direct-evidence route or source-selection behavior, then rerun one
-   committed, refreshed HighJump validation job.
+1. Target the observed HJ49 report-quality defect: Source Material and W5 are
+   live again, but the selected/extracted evidence is annual application-flow
+   material rather than current stock/threshold evidence. The next repair should
+   improve direct-stock source material selection/materialization before another
+   verdict-calibration job.
+2. Prefer amending the existing source-selection/source-material mechanism over
+   adding a new provider, crawler, parser, or public/report path. Use live
+   evidence from HJ47/HJ49 to preserve the direct current-stock route while
+   filtering or deprioritizing flow-only material only through LLM/prompt-owned
+   intent, not deterministic semantic code.
 3. Keep the next HighJump step scoped to this one defect. Do not add provider
    expansion, recursive crawling, public exposure, cache/SR/storage, direct
-   URL/ACS, V1 work, or another hidden mechanism unless the failed-attempt
+   URL/ACS, V1 work, or another hidden mechanism unless the source-usefulness
    evidence proves that specific gap is blocking quality.
 
 ## Stop Conditions

@@ -1,6 +1,6 @@
 # V2 HighJump HJ49 - Query Planning Literal-Value Preservation
 
-**Status:** implementation in progress under Captain Deputy HighJump authority
+**Status:** live result recorded - report path restored, source usefulness defect remains
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ48 stop `7938b16ecfe34056869559509dc93ed6`
@@ -123,6 +123,46 @@ Live validation:
 - if Query Planning still omits the value, stop and reconsider whether the
   prompt guidance is being loaded/rendered or whether query planning requires a
   stronger generic contract.
+
+Live validation result:
+
+- HJ49 job `910b9892ae3345a2a72ca1ca14b14990` ran on runtime commit
+  `7319ada8e8beaf7bea27693611214465319ab745` after the V2 prompt profile was
+  imported and activated with content hash
+  `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+- Public/default containment held: public/default result stayed
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`, public
+  reportMarkdown stayed `null`, public verdict/truth stayed `null`, and an
+  unauthenticated hidden artifact route returned `401`.
+- Query Planning completed with `3` queries and preserved the material literal
+  threshold in the first direct-record query:
+  `235000 Personen Asylbereich Schweiz aktuell Bestand`.
+- Source Material completed with `6` records: `3` bounded linked-page records,
+  `3` search-preview records, and `0` XLSX records.
+- W5 returned `hidden_evidence_item_extraction_completed` with `1` EvidenceItem,
+  and the internal Alpha result, draft, and report-writer artifacts were
+  created. Authenticated admin reportMarkdown was `3504` bytes.
+- The report remained low quality for the Captain expectation: it returned
+  `UNVERIFIED`, truth `0`, confidence `15`, because the extracted EvidenceItem
+  supported annual asylum-application flow rather than current population stock
+  or the `235000+` threshold.
+
+Classification:
+
+`PASS_X7_HJ49_QUERY_LITERAL_VALUE_RESTORED_REPORT_PATH_SOURCE_USEFULNESS_DEFECT`
+
+Information yield:
+
+`report_produced`
+
+Interpretation:
+
+HJ49 repaired the immediate HJ48 regression. Query Planning now preserved the
+literal threshold, W5 again extracted evidence, and the internal report path
+reopened under the calibrated prompt profile. The active defect has moved back
+to source usefulness/direct-stock retrieval: V2 still needs to surface direct
+current-stock evidence reliably before verdict calibration can be evaluated
+meaningfully on this claim family.
 
 ## Stop Conditions
 

@@ -4087,3 +4087,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ46. HJ47 and HJ48 consumed `2`; `16` remain.
 
 **Next:** Commit this HJ48 result sync, then apply a narrow failed-attempt recovery package. The immediate goal is to regain HJ47-style EvidenceItems/report generation under the calibrated prompt profile before spending another job on calibration quality.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ49 Query Literal-Value Recovery Result
+
+**Task:** Repair the HJ48 failed-attempt regression where Query Planning omitted the material threshold and W5 returned no EvidenceItems.
+
+**Repair:** HJ49 commit `7319ada8` amends only `V2_EVIDENCE_QUERY_PLANNING` so material claim-supplied literal values, units, dates, thresholds, or comparison values are preserved in at least one direct-record query when needed to find decisive evidence. The repair keeps HJ48 boundary/verdict calibration, adds no code-side deterministic semantic rewriting, no provider/parser/source expansion, no public behavior, no cache/SR/storage, no direct URL/ACS, and no V1 work.
+
+**Verification before live job:** Focused prompt-contract test passed (`1` file / `10` tests; first assertion attempt failed only due prompt line wrapping and was corrected without changing behavior); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/boundary-guard/docs footprint and consolidation-marker warnings; `npm -w apps/web run build` passed after clearing a corrupted generated `.next` cache; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `7319ada8e8beaf7bea27693611214465319ab745`. The V2 prompt profile was imported and activated with content hash `1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`.
+
+**Live result:** HJ49 job `910b9892ae3345a2a72ca1ca14b14990` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown `null`) and unauthenticated internal report-writer artifact access returned `401`.
+
+**Hidden-chain evidence:** Query Planning completed with `3` queries and preserved the material literal threshold in `235000 Personen Asylbereich Schweiz aktuell Bestand`. Source Material completed with `6` records (`3` linked-page, `3` search-preview, `0` XLSX). W5 completed with `1` EvidenceItem, bounded EvidenceItem admission passed, and internal Alpha result/draft/report-writer artifacts were created. Authenticated admin reportMarkdown was `3504` bytes.
+
+**Classification:** `PASS_X7_HJ49_QUERY_LITERAL_VALUE_RESTORED_REPORT_PATH_SOURCE_USEFULNESS_DEFECT`.
+
+**Information yield:** `report_produced`. HJ49 restored the report path and proved the query literal-value repair is active. The report remains below Captain expectation: it is `UNVERIFIED`, truth `0`, confidence `15`, because the extracted evidence supports annual application flow rather than the current asylum-domain population stock or `235000+` threshold.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ46. HJ47-HJ49 consumed `3`; `15` remain.
+
+**Next:** Commit this HJ49 result sync, then target the next concrete report-quality defect: direct current-stock source material selection/materialization. Do not spend another live job on verdict calibration until direct current-stock evidence is reliably present again.
