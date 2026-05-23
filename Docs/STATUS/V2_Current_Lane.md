@@ -19,11 +19,11 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ58 W4-G bounded sidecar prefix repair live result. Older HJ history below is
+This projection is synced for the HJ59 W5 temporal relation extraction repair. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `b4c9de14 fix(v2): admit bounded w4g sidecar prefix`;
+  `05194d37 fix(v2): guide w5 temporal relation extraction`;
 - latest canary result:
   HJ58 Bundesrat-simple rerun, classified
   `PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED`;
@@ -31,8 +31,9 @@ kept as context, but the active anchor and budget are:
   Captain reset to `18` on 2026-05-23 after HJ57;
   HJ58 consumed `1`, so `17` remain;
 - next action:
-  pivot from reachability repair to report-quality review of HJ58 and the other
-  successful internal Alpha reports, then choose one concrete quality bar to raise;
+  import/activate the HJ59 prompt profile in UCM, refresh runtime, and run one
+  Bundesrat-simple rerun to test whether W5 now preserves temporal/procedural
+  relation evidence better;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -43,18 +44,17 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`b4c9de14 fix(v2): admit bounded w4g sidecar prefix`
+`05194d37 fix(v2): guide w5 temporal relation extraction`
 
 Latest implementation repair:
 
-`b4c9de14 fix(v2): admit bounded w4g sidecar prefix`
+`05194d37 fix(v2): guide w5 temporal relation extraction`
 
-HJ58 amends the existing W4-G bounded corpus text authorization mechanism so the
-current `16384` byte aggregate cap is used as a deterministic upstream-order
-admission budget instead of an all-or-nothing stage blocker. It keeps the cap,
-adds no semantic source ranking, and adds no provider, parser, retry/repair,
-public surface, prompt/model/config/schema behavior, cache/SR/storage, direct
-URL/ACS support, or V1 work.
+HJ59 amends only the existing `V2_EVIDENCE_EXTRACTION` prompt section so W5
+extracts generic temporal/procedural relation components when supplied content
+states them. It adds no code-side semantic rule, schema relaxation, source or
+provider widening, parser, retry/repair loop, public surface, cache/SR/storage,
+direct URL/ACS support, or V1 work.
 
 ## Latest Result
 
@@ -93,6 +93,16 @@ Important evidence:
   schema `4.0.0-cb-precutover`, cutover `blocked_precutover`, no public/default
   report markdown, verdict, truth percentage, or confidence, and unauthenticated
   hidden artifact route access returned `401`.
+- HJ59 was prepared from HJ58 report-quality evidence. Two GPT sidecar reviewers
+  agreed W5 EvidenceItem extraction is the lowest-complexity next owner because
+  Query Planning produced `5` queries, W4-G/W4-H delivered `8` source-content
+  packets, W5 executed, and the internal report writer carried a weak
+  `UNVERIFIED` candidate. An Opus 4.6 challenge call timed out; reduced quorum
+  is accepted for this bounded, reversible prompt-only repair. HJ59 adds
+  generic W5 guidance for temporal/procedural relation claims so pending,
+  not-yet-completed, later, or procedurally unresolved comparator milestones can
+  become EvidenceItems when source-attributed content supports them, rather than
+  being treated as absence of evidence. Live validation is still pending.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -449,17 +459,13 @@ Current active tranche:
 
 ## Next Action
 
-1. Review the actual internal Alpha reports now being produced, including HJ58
-   Bundesrat-simple, HJ57 hydrogen, and the successful HJ56 reports. Choose one
-   concrete report-quality defect to fix next.
-2. Prefer the next HighJump bar that most directly improves report value:
-   source usefulness, EvidenceItem selectivity/breadth, boundary separation,
-   verdict calibration, or warning/materiality clarity. Do not add another
-   reachability/proof layer unless live evidence shows a repeated report-path
-   blocker.
-3. Keep public/default V2 precutover containment intact while improving internal
-   report quality. Any public UI/API/report/export exposure, cutover, or V1
-   cleanup remains a separate approval-gated transition.
+1. Import and activate the HJ59 `claimboundary-v2` prompt profile in UCM.
+2. Refresh runtime from the committed HJ59 source/docs state and verify Web/API
+   runtime commit match before submission.
+3. Run one Bundesrat-simple rerun. Pass means the report materially improves
+   toward the high-true chronology expectation or at least exposes a clearer
+   next owner with richer relation evidence. Stop if the same `UNVERIFIED`
+   shape repeats without useful new evidence.
 
 ## Stop Conditions
 
