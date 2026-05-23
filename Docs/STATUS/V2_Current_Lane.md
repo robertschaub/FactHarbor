@@ -19,22 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ67. Older HJ history below is kept as context,
+This projection is synced after HJ68. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `a64db294 docs(v2): prepare hj67 report quality gauntlet`;
+  `bc88d64a fix(v2): improve w5 component evidence recall`;
 - active repair package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ67_Stronger_Report_Quality_Gauntlet.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ68_W5_Component_Evidence_Recall_Repair.md`;
 - latest canary result:
-  HJ67 eight-input gauntlet, classified
-  `PARTIAL_PASS_X7_HJ67_STRONGER_GAUNTLET_6_OF_8_REPORTS_PUBLIC_CONTAINMENT_HELD`;
+  HJ68 focused W5 recall validation, classified
+  `PARTIAL_PASS_X7_HJ68_W5_COMPONENT_EVIDENCE_RECALL_2_OF_3_REPORTS_CURRENT_ASYLUM_CAP_STOP`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ67 consumed `11`, so `7` remain;
+  HJ64 through HJ68 consumed `14`, so `4` remain;
 - next action:
-  use HJ67 report evidence to choose one bounded source usefulness / W5
-  extraction-recall quality bar; do not add another report-layer mechanism;
+  keep the HJ68 W5 recall improvement and address the current-asylum aggregate
+  roadblock at bounded packet-size/readiness policy or source-material
+  selection before adding another report-layer mechanism;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -45,31 +46,47 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`a64db294 docs(v2): prepare hj67 report quality gauntlet`
+`bc88d64a fix(v2): improve w5 component evidence recall`
 
 Active implementation repair:
 
-HJ67 ran all eight Captain-defined inputs on the HJ66 prompt/runtime anchor.
-Six produced hidden/admin internal reports and all eight preserved public/
-default containment. Four families are useful or near expected
-(`bundesrat-simple`, `bolsonaro-en`, `hydrogen-en`, `plastic-en`). Two reports
-expose quality gaps (`bundesrat-rechtskraftig`, `asylum-235000-de`). Two inputs
-did not produce reports because W5 returned `hidden_no_extractable_evidence`
-(`asylum-wwii-de`, `bolsonaro-pt`). The next quality owner is therefore source
-usefulness / W5 extraction recall, not another downstream report-writer layer.
+HJ68 ran three focused Captain-defined inputs on the HJ68 prompt/runtime anchor.
+The two prior HJ67 no-report families improved: `asylum-wwii-de` reached W5
+with `2` EvidenceItems and an internal report writer draft, and `bolsonaro-pt`
+reached W5 with `4` EvidenceItems and an internal report writer draft. Public/
+default containment held for all three HJ68 jobs. `asylum-235000-de` now stops
+before W5 execution because W4-I reports
+`blocked_pre_execution_readiness_packet_text_oversized` over a `13915` byte
+source-content packet set. The next quality owner is therefore packet-size/
+readiness policy or source-material selection for the current-asylum aggregate,
+not more W5 recall prompting or report-writer plumbing.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-67-STRONGER-REPORT-QUALITY-GAUNTLET`
+`X7-HJ-68-W5-COMPONENT-EVIDENCE-RECALL`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj67-stronger-report-quality-gauntlet.json`
+`Docs/WIP/canary-evidence-hj68-w5-component-evidence-recall.json`
 
 Important evidence:
 
+- HJ68 ran three focused Captain-defined inputs sequentially on execution
+  anchor `bc88d64aea6f872cd90a33604c2ed970ad7932e8` with active
+  `claimboundary-v2` prompt hash
+  `7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`.
+  `asylum-wwii-de` job `250092b5d6c74a4ca4c80c0c6a2f6979` produced `2`
+  EvidenceItems and a `6489` byte internal report writer draft. `bolsonaro-pt`
+  job `b97f69f1e3f944878c22d96618d1936b` produced `4` EvidenceItems and a
+  `7888` byte internal report writer draft. `asylum-235000-de` job
+  `7dc49f6bfbde4a58a8445edfa8a0849f` produced `6` source-material records and
+  reached W5 with `6` source-content packets / `13915` parent-packet bytes, but
+  W5 blocked pre-execution because W4-I returned
+  `blocked_pre_execution_readiness_packet_text_oversized`. All three jobs
+  stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/
+  default containment.
 - HJ67 ran eight Captain-defined inputs sequentially on execution anchor
   `a64db2942167ca4abb7bf1f1e6c0e79ca3b2fcdd` with active `claimboundary-v2`
   prompt hash `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
@@ -586,8 +603,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `11`;
-- remaining: `7`;
+- consumed after latest reset: `14`;
+- remaining: `4`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -595,12 +612,12 @@ Current active tranche:
 
 ## Next Action
 
-1. Treat HJ67 as the current report-quality baseline.
-2. Pick the next single bar from observed defects: source usefulness / W5
-   extraction recall for asylum-family and Portuguese Bolsonaro gaps.
+1. Treat HJ68 as the current W5 recall baseline and keep the prompt repair.
+2. Pick the next single bar from observed defects: current-asylum aggregate
+   packet-size/readiness policy or source-material selection before W5.
 3. Avoid report-writer, verdict-calibration, retry, schema-relaxation, or
-   public-surface work until the missing/weak evidence path is addressed or
-   Steer-Co identifies a better owner.
+   public-surface work until the current-asylum source-content packet path is
+   addressed or Steer-Co identifies a better owner.
 
 ## Stop Conditions
 

@@ -1,10 +1,61 @@
 # V2 HighJump HJ68 W5 Component Evidence Recall Repair
 
-**Status:** implementation package in progress
+**Status:** live validation closed / partial pass
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, approved prompt edits, current live-job
 tranche with `7` jobs remaining after HJ67
+
+## Closeout
+
+**Classification:**
+`PARTIAL_PASS_X7_HJ68_W5_COMPONENT_EVIDENCE_RECALL_2_OF_3_REPORTS_CURRENT_ASYLUM_CAP_STOP`
+
+**Execution anchor:** `bc88d64aea6f872cd90a33604c2ed970ad7932e8`
+
+**Active prompt:** `claimboundary-v2` label
+`hj68-w5-component-evidence-recall`, hash
+`7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`
+
+**Result artifact:**
+`Docs/WIP/canary-evidence-hj68-w5-component-evidence-recall.json`
+
+**Budget:** HJ68 consumed `3` live jobs from the current tranche. Remaining
+budget is `4`.
+
+| Family | Job | Result | Information yield |
+|---|---|---|---|
+| `asylum-wwii-de` | `250092b5d6c74a4ca4c80c0c6a2f6979` | W5 completed with `2` EvidenceItems and W8 internal report writer created a `6489` byte draft. Public/default containment held. | `report_produced` |
+| `bolsonaro-pt` | `b97f69f1e3f944878c22d96618d1936b` | W5 completed with `4` EvidenceItems and W8 internal report writer created a `7888` byte draft. Public/default containment held. | `report_produced` |
+| `asylum-235000-de` | `7dc49f6bfbde4a58a8445edfa8a0849f` | W3 produced `6` source-material records and W5 saw `6` source-content packets / `13915` parent-packet bytes, but W5 blocked pre-execution because W4-I reported `blocked_pre_execution_readiness_packet_text_oversized`. Public/default containment held. | `new_stage_reached` |
+
+**Conclusion:** The W5 component-evidence recall prompt repair did real work for
+the two prior no-report families. It should be kept. The remaining current
+asylum aggregate problem is no longer the same W5 no-evidence defect; the
+observed owner is bounded packet-size/readiness policy or source-material
+selection before W5 execution.
+
+**Sidecar steering:** Russell reviewed the HJ68 artifact and consented to
+classify HJ68 as partial pass / keep. The recommended next owner is W4-I /
+extraction-input packet readiness, with no further W5 prompt edit before that
+owner is addressed. The sidecar noted a provenance caveat: the API job
+top-level `executedWebGitCommitHash` fields were null, while the public V2
+result metadata and runtime preflight anchored execution to `bc88d64a`.
+Future live spend should keep checking both runtime version and job/result
+metadata.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_EVIDENCE_EXTRACTION prompt contract
+Rejected path and why: runtime coercion, schema relaxation, retries, provider expansion, and report-writer changes would add mechanisms or bypass the observed W5 contract gap
+What was removed/simplified: none
+What was added: generic W5 prompt guidance plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Verification: focused prompt-contract test, boundary guard, build, debt sensors, index, diff checks, prompt import, runtime preflight, and three committed/refreshed live jobs
+Debt accepted and removal trigger: no new mechanism debt; stop further W5 recall lowering for the current-asylum aggregate because the live blocker moved to W4-I packet-size/readiness
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```
 
 ## Purpose
 

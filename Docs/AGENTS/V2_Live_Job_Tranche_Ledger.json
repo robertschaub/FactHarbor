@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 7,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 7,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet; 7 remain.",
+      "currentRemaining": 4,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs; 4 remain.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1862,6 +1862,26 @@
         "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ67 package Docs/WIP/2026-05-23_V2_HighJump_HJ67_Stronger_Report_Quality_Gauntlet.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_quality_baseline_with_gaps"
+      },
+      {
+        "sliceId": "X7-HJ-68-W5-COMPONENT-EVIDENCE-RECALL",
+        "jobId": "multiple_hj68_jobs_see_result_artifact",
+        "jobIds": [
+          "250092b5d6c74a4ca4c80c0c6a2f6979",
+          "b97f69f1e3f944878c22d96618d1936b",
+          "7dc49f6bfbde4a58a8445edfa8a0849f"
+        ],
+        "classification": "PARTIAL_PASS_X7_HJ68_W5_COMPONENT_EVIDENCE_RECALL_2_OF_3_REPORTS_CURRENT_ASYLUM_CAP_STOP",
+        "note": "HJ68 ran three focused Captain-defined inputs after prompt import/runtime refresh. The two prior HJ67 no-report families improved: asylum-wwii-de produced 2 EvidenceItems and an internal report draft, and bolsonaro-pt produced 4 EvidenceItems and an internal report draft. Public/default containment held for all three jobs. The current asylum aggregate did not produce a report; it reached W5 with 6 source-content packets and 13915 parent packet bytes but blocked pre-execution because W4-I reported readiness_packet_text_oversized. Next owner is a bounded W4-H/W4-I/W5 packet-size/readiness policy decision or source-material selection, not more W5 recall prompting.",
+        "implementationCommit": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+        "runtimeCommit": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610",
+        "count": 3,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain messages in current Codex thread approving prompt edits, live jobs, schema changes, and HighJump continuation plus HJ68 package Docs/WIP/2026-05-23_V2_HighJump_HJ68_W5_Component_Evidence_Recall_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_and_new_stage_reached"
       }
     ],
     "blockedPending": [],

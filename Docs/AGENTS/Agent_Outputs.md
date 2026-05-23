@@ -4570,3 +4570,35 @@ Verification: committed package, clean/runtime preflight before execution, per-j
 Debt accepted and removal trigger: no new mechanism debt; next package must target one observed quality bar and avoid accumulating hidden readiness/proof layers
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ68 W5 Component Evidence Recall
+
+**Task:** Continue the V2 HighJump lane after reboot, keep sub-agent orchestration available, apply the approved W5 component-evidence recall prompt repair, and run the focused HJ68 validation.
+
+**Execution anchor:** `bc88d64aea6f872cd90a33604c2ed970ad7932e8`; active `claimboundary-v2` prompt label/hash: `hj68-w5-component-evidence-recall` / `7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610`.
+
+**Live jobs:** HJ68 spent three jobs: `250092b5d6c74a4ca4c80c0c6a2f6979`, `b97f69f1e3f944878c22d96618d1936b`, and `7dc49f6bfbde4a58a8445edfa8a0849f`.
+
+**Result:** `PARTIAL_PASS_X7_HJ68_W5_COMPONENT_EVIDENCE_RECALL_2_OF_3_REPORTS_CURRENT_ASYLUM_CAP_STOP`. The two prior HJ67 no-report families improved: `asylum-wwii-de` produced `2` EvidenceItems and a hidden/admin internal report draft; `bolsonaro-pt` produced `4` EvidenceItems and a hidden/admin internal report draft. Public/default containment held for all three jobs.
+
+**Remaining gap:** `asylum-235000-de` produced `6` source-material records and reached W5 with `6` source-content packets / `13915` parent-packet bytes, but W5 blocked pre-execution because W4-I returned `blocked_pre_execution_readiness_packet_text_oversized`. The next likely owner is bounded packet-size/readiness policy or source-material selection before W5, not more W5 recall prompting.
+
+**Sidecar steering:** Russell reviewed the HJ68 result and consented to partial pass / keep. Recommended next owner: W4-I / extraction-input packet readiness. No further W5 prompt edits or extra live jobs are justified before a bounded readiness/packet-size package. Provenance caveat: API job top-level `executedWebGitCommitHash` fields were null, while runtime preflight and public V2 result metadata anchored execution to `bc88d64a`; future canaries should keep checking both.
+
+**Budget:** HJ68 consumed `3`; current tranche remaining is `4`.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj68-w5-component-evidence-recall.json`; closeout package `Docs/WIP/2026-05-23_V2_HighJump_HJ68_W5_Component_Evidence_Recall_Repair.md`; active lane projection `Docs/STATUS/V2_Current_Lane.md`; live-job ledger `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_EVIDENCE_EXTRACTION prompt contract
+Rejected path and why: runtime coercion, schema relaxation, retries, provider expansion, and report-writer changes would add mechanisms or bypass the observed W5 contract gap
+What was removed/simplified: none
+What was added: generic W5 prompt guidance plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Budget reconciliation: 3 live jobs spent from the HJ68 package; 4 remain in the active tranche
+Verification: focused prompt-contract test, boundary guard, build, debt sensors, index, diff checks, prompt import, runtime preflight, per-job terminal status, and public/default containment checks
+Debt accepted and removal trigger: no new mechanism debt; stop further W5 recall lowering for the current-asylum aggregate because the live blocker moved to W4-I packet-size/readiness
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```

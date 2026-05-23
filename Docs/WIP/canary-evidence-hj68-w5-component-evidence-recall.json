@@ -1,0 +1,383 @@
+{
+  "sliceId": "X7-HJ-68-W5-COMPONENT-EVIDENCE-RECALL",
+  "executionAnchor": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+  "promptHash": "7765cd746fd5db645748f51f31b211f995eeedfbd4347b3ccd3ae8546f9c9610",
+  "generatedUtc": "2026-05-23T11:53:10.447Z",
+  "jobCount": 3,
+  "budget": {
+    "before": 7,
+    "consumed": 3,
+    "remainingAfter": 4
+  },
+  "counts": {
+    "report_produced": 2,
+    "new_stage_reached": 1
+  },
+  "stopReason": null,
+  "results": [
+    {
+      "label": "asylum-wwii-de",
+      "input": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.",
+      "jobId": "250092b5d6c74a4ca4c80c0c6a2f6979",
+      "ledger": "250092b5d6c74a4ca4c80c0c6a2f6979:precutover-observability",
+      "jobStatus": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "executedWebGitCommitHash": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+      "publicSchema": "4.0.0-cb-precutover",
+      "publicCutoverStatus": "blocked_precutover",
+      "publicReportMarkdownPresent": false,
+      "publicVerdictLabel": null,
+      "publicTruthPercentage": null,
+      "publicConfidence": null,
+      "publicLeakDetected": false,
+      "routeStatuses": {
+        "claimUnderstanding": 200,
+        "queryPlanning": 200,
+        "candidateProvider": 200,
+        "candidatePreview": 200,
+        "sourceMaterial": 200,
+        "extractionInput": 404,
+        "boundedExtraction": 200,
+        "sufficiency": 404,
+        "alphaResult": 200,
+        "reportWriterDefault": 200,
+        "reportWriterInspect": 200,
+        "reportWriterUnauth": 401
+      },
+      "claimUnderstandingStatus": "accepted",
+      "selectedAtomicClaimCount": null,
+      "queryPlanningStatus": "ready_not_executable",
+      "queryEntryCount": 5,
+      "queryTexts": [
+        "235000 Flüchtlinge Schweiz aktuelle Anzahl",
+        "Flüchtlinge Schweiz Ende Zweiter Weltkrieg 1945 Anzahl",
+        "Schweiz Flüchtlingspolitik Geschichte Zweiter Weltkrieg",
+        "Flüchtlinge Schweiz Herkunftsländer Kategorien Definition",
+        "Flüchtlinge Schweiz 2026 Statistik Bevölkerung"
+      ],
+      "candidateProvider": {
+        "status": "candidate_provider_network_completed",
+        "totalCandidateCount": 1,
+        "candidateCount": 1,
+        "structurallyDroppedCandidateCount": 0,
+        "providerAttemptCount": 10,
+        "totalBytes": 2514
+      },
+      "candidatePreviewStatus": "source_candidate_preview_materialized",
+      "sourceMaterial": {
+        "status": "source_material_page_summary_completed",
+        "sourceMaterialRecordCount": 8,
+        "totalTextBytes": 10366,
+        "providerCounts": {
+          "serper_web_search": 6,
+          "wikimedia_core": 2
+        },
+        "kindCounts": {
+          "provider_search_result_preview_text": 5,
+          "wikimedia_page_summary_extract_text": 1,
+          "provider_search_result_page_text_bounded": 2
+        },
+        "defaultTextReturned": false
+      },
+      "extractionInput": {
+        "status": null,
+        "packetByteLength": null,
+        "defaultInputTextReturned": false
+      },
+      "boundedEvidenceExtraction": {
+        "status": "hidden_evidence_item_extraction_completed",
+        "extractionStatus": "evidence_extracted",
+        "evidenceItemCount": 2,
+        "parentPacketByteLength": 10380,
+        "sourceContentPacketCount": 8,
+        "sourceContentProviderCounts": {
+          "serper_web_search": 6,
+          "wikimedia_core": 2
+        },
+        "tokenUsage": {
+          "inputTokens": 12093,
+          "outputTokens": 1325,
+          "totalTokens": 13418
+        },
+        "schemaDiagnostics": null
+      },
+      "sufficiency": {
+        "status": null,
+        "resultStatus": null
+      },
+      "alphaResult": {
+        "status": "internal_alpha_report_result_candidate_created",
+        "firstIncompleteStage": "none"
+      },
+      "reportWriter": {
+        "status": "internal_report_writer_draft_created",
+        "aggregationNarrativeResultStatus": "accepted",
+        "reportMarkdownByteLength": 6489,
+        "reportMarkdownReturnedByDefault": false,
+        "defaultProjection": "hash_length_provenance_only_or_stop_summary",
+        "inspectReportMarkdownReturned": true,
+        "unauthStatus": 401,
+        "verdictSectionCount": 4,
+        "boundarySectionCount": 4,
+        "citedEvidenceItemRefCount": 2,
+        "verdictLines": [
+          "Two claims regarding Swiss refugee populations remain unverified. The first asserts 235,000 refugees currently in Switzerland; evidence confirms Amnesty International publishes asylum statistics but does not provide the specific numerical figure. The second claims current refugee numbers resemble WWII-era figures; evidence confirms historical data exists but provides neither historical nor current figures for comparison. Both verdicts are UNVERIFIED with low confidence due to absence of direct numerical verification.",
+          "## Verdict: Current Swiss Refugee Population (235,000)",
+          "**Verdict Label:** UNVERIFIED",
+          "**Truth Percentage:** 50",
+          "**Confidence:** 35",
+          "The claim that 235,000 refugees currently reside in Switzerland cannot be directly verified from supplied evidence. Evidence confirms that Amnesty International Switzerland publishes structured asylum and refugee statistics [EVI_001_AC_DIRECT_01_CURRENT_REFUGEE_FRAMEWORK], establishing that data collection and public reporting mechanisms exist. However, the evidence does not state the specific numerical figure of 235,000 or provide the current aggregate refugee count. The evidence is contextual—confirming data availability rather than the numerical assertion itself.",
+          "- Evidence confirms data publication exists but does not provide the specific numerical figure of 235,000.",
+          "- Evidence scope includes limitations in methodology and temporal bounds that are not fully specified.",
+          "- The claim requires a precise current-status numerical assertion; contextual evidence of data availability does not satisfy this requirement.",
+          "- No direct numerical verification of the 235,000 figure is present in the supplied evidence.",
+          "- The evidence does not establish the temporal reference point (current date) for the claimed refugee population.",
+          "- Distinction between asylum seekers, provisionally admitted persons, and refugees as defined in the claim is not clarified by the evidence.",
+          "- Source singularity: only one contextual evidence item addresses this claim.",
+          "## Verdict: WWII-Era Refugee Population Similarity",
+          "**Verdict Label:** UNVERIFIED",
+          "**Truth Percentage:** 48",
+          "**Confidence:** 32",
+          "The claim that current Swiss refugee numbers resemble WWII-era figures cannot be verified from supplied evidence. Evidence confirms a dedicated Wikipedia section documents refugees admitted during and at the end of World War II [EVI_002_AC_DIRECT_02_WWII_REFUGEE_SECTION], establishing that historical data is structured and available. However, the evidence provides neither the actual WWII-era numerical figures nor the current figure required for comparison. The similarity assertion ('ähnlich') requires both historical and contemporary numerical data; evidence confirms only the structural existence of one historical source.",
+          "- Evidence confirms the existence of historical refugee data but does not provide the actual WWII-era numerical figures.",
+          "- Evidence does not establish what the WWII-era refugee population was or how it compares to 235,000."
+        ]
+      },
+      "defaultHiddenTextLeak": false,
+      "informationYield": "report_produced"
+    },
+    {
+      "label": "bolsonaro-pt",
+      "input": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+      "jobId": "b97f69f1e3f944878c22d96618d1936b",
+      "ledger": "b97f69f1e3f944878c22d96618d1936b:precutover-observability",
+      "jobStatus": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "executedWebGitCommitHash": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+      "publicSchema": "4.0.0-cb-precutover",
+      "publicCutoverStatus": "blocked_precutover",
+      "publicReportMarkdownPresent": false,
+      "publicVerdictLabel": null,
+      "publicTruthPercentage": null,
+      "publicConfidence": null,
+      "publicLeakDetected": false,
+      "routeStatuses": {
+        "claimUnderstanding": 200,
+        "queryPlanning": 200,
+        "candidateProvider": 200,
+        "candidatePreview": 200,
+        "sourceMaterial": 404,
+        "extractionInput": 404,
+        "boundedExtraction": 200,
+        "sufficiency": 404,
+        "alphaResult": 200,
+        "reportWriterDefault": 200,
+        "reportWriterInspect": 200,
+        "reportWriterUnauth": 401
+      },
+      "claimUnderstandingStatus": "accepted",
+      "selectedAtomicClaimCount": null,
+      "queryPlanningStatus": "ready_not_executable",
+      "queryEntryCount": 5,
+      "queryTexts": [
+        "sentença Jair Bolsonaro golpe de Estado processo judicial",
+        "processo Bolsonaro golpe Estado direito processual brasileiro requisitos constitucionais",
+        "Bolsonaro tentativa golpe Estado julgamento condenação sentença",
+        "crítica defesa Bolsonaro processo judicial inconstitucional irregular",
+        "análise jurídica sentença Bolsonaro golpe Estado justiça imparcialidade"
+      ],
+      "candidateProvider": {
+        "status": "candidate_provider_network_completed",
+        "totalCandidateCount": 3,
+        "candidateCount": 0,
+        "structurallyDroppedCandidateCount": 3,
+        "providerAttemptCount": 7,
+        "totalBytes": 15350
+      },
+      "candidatePreviewStatus": "source_candidate_preview_materialized",
+      "sourceMaterial": {
+        "status": null,
+        "sourceMaterialRecordCount": 0,
+        "totalTextBytes": 0,
+        "providerCounts": {},
+        "kindCounts": {},
+        "defaultTextReturned": false
+      },
+      "extractionInput": {
+        "status": null,
+        "packetByteLength": null,
+        "defaultInputTextReturned": false
+      },
+      "boundedEvidenceExtraction": {
+        "status": "hidden_evidence_item_extraction_completed",
+        "extractionStatus": "evidence_extracted",
+        "evidenceItemCount": 4,
+        "parentPacketByteLength": 16080,
+        "sourceContentPacketCount": 9,
+        "sourceContentProviderCounts": {
+          "serper_web_search": 6,
+          "openalex": 3
+        },
+        "tokenUsage": {
+          "inputTokens": 13900,
+          "outputTokens": 2476,
+          "totalTokens": 16376
+        },
+        "schemaDiagnostics": null
+      },
+      "sufficiency": {
+        "status": null,
+        "resultStatus": null
+      },
+      "alphaResult": {
+        "status": "internal_alpha_report_result_candidate_created",
+        "firstIncompleteStage": "none"
+      },
+      "reportWriter": {
+        "status": "internal_report_writer_draft_created",
+        "aggregationNarrativeResultStatus": "accepted",
+        "reportMarkdownByteLength": 7888,
+        "reportMarkdownReturnedByDefault": false,
+        "defaultProjection": "hash_length_provenance_only_or_stop_summary",
+        "inspectReportMarkdownReturned": true,
+        "unauthStatus": 401,
+        "verdictSectionCount": 4,
+        "boundarySectionCount": 6,
+        "citedEvidenceItemRefCount": 4,
+        "verdictLines": [
+          "This internal Alpha report evaluates two atomic claims regarding a Brazilian STF conviction: procedural compliance with constitutional requirements, and fairness of imposed sentences. Evidence establishes that a formal judicial process occurred with documented conviction and 27-year-3-month sentence. However, unresolved procedural challenges regarding forum competence and evidence access prevent categorical confirmation of full procedural compliance. Sentence fairness cannot be verified from supplied evidence, which lacks sentencing rationale and proportionality analysis. Both verdicts carry material uncertainty.",
+          "## Verdict 1: Procedural Compliance with Constitutional Requirements",
+          "**Verdict Label:** LEANING-TRUE",
+          "**Truth Percentage:** 62%",
+          "**Confidence:** 55%",
+          "The evidence confirms that a formal judicial process occurred in the STF First Panel with documented charges and a definitive sentence [EVI_001_CONVICTION_SENTENCE]. However, the claim asserts categorical respect for Brazilian procedural law and constitutional requirements. Defense arguments in Criminal Review 6021 raise substantive procedural objections: allegations of forum incompetence (First Panel versus Plenary jurisdiction) and inadequate access to evidence affecting the right to broad defense [EVI_002_FORUM_COMPETENCE_ARGUMENT, EVI_003_DEFENSE_ACCESS_EVIDENCE_ARGUMENT]. The supplied evidence does not include STF rulings on these challenges or confirmation that procedural requirements were ultimately satisfied. The formal judicial structure is evident, but material fairness questions remain contested and unresolved in supplied materials.",
+          "- Procedural challenges in Criminal Review 6021 remain unresolved in supplied evidence; no STF ruling on forum competence or evidence access claims is cited.",
+          "- Evidence of procedural challenges does not establish that procedures were violated, only that violations are alleged; the truth of the allegations themselves is not independently verified in supplied evidence.",
+          "- No evidence of appellate or review court findings on the merits of forum competence or evidence access arguments.",
+          "## Verdict 2: Fairness of Imposed Sentences",
+          "**Verdict Label:** UNVERIFIED",
+          "**Truth Percentage:** 50%",
+          "**Confidence:** 40%",
+          "The supplied evidence establishes that sentences of 27 years and 3 months were imposed and execution has begun with documented detention and subsequent humanitarian relief [EVI_001_CONVICTION_SENTENCE, EVI_004_SENTENCE_EXECUTION_STATUS]. However, the claim asserts that sentences were 'just' (justas), requiring evaluation of proportionality, alignment with sentencing law, and fairness of the specific penalties. The supplied evidence does not include judicial reasoning for sentence length, comparison to sentencing guidelines or precedent, or proportionality analysis. The grant of humanitarian home confinement reflects judicial discretion in execution but does not address whether the underlying sentence was fair. Without sentencing rationale or fairness evaluation, the truth of the claim cannot be determined.",
+          "- Supplied evidence establishes that sentences were imposed and are being executed, but does not include judicial reasoning, proportionality analysis, or fairness evaluation.",
+          "- No evidence of sentencing rationale or judicial explanation for sentence length.",
+          "- Fairness evaluation requires analysis not present in supplied evidence.",
+          "This boundary establishes the factual foundation of the judicial process and its outcome. The evidence documents that the STF First Panel issued a conviction in Criminal Action 2668 on multiple charges, resulting in a sentence of 27 years and 3 months [EVI_001_CONVICTION_SENTENCE]. This boundary provides the core factual context for both atomic claims: it confirms that a judicial process occurred, resulted in conviction, and produced a definitive sentence. The evidence scope covers the specific court, case number, charges, and sentence imposed.",
+          "This boundary isolates contested procedural dimensions from the factual conviction itself. Defense arguments in Criminal Review 6021 allege forum incompetence (questioning whether the First Panel had jurisdiction versus the Plenary) and inadequate access to evidence affecting due process and broad defense rights [EVI_002_FORUM_COMPETENCE_ARGUMENT, EVI_003_DEFENSE_ACCESS_EVIDENCE_ARGUMENT]. These objections address core constitutional procedural protections under Brazilian law (contraditório and ampla defesa). The boundary captures the specific procedural objections that remain unresolved in supplied evidence.",
+          "This boundary documents the post-conviction execution phase, beginning 25 November 2025 after final judgment. The evidence includes detention locations and the grant of humanitarian home confinement on 24 March [EVI_004_SENTENCE_EXECUTION_STATUS]. While contextual to the fairness of the sentences themselves, this evidence provides factual grounding for the procedural posture and demonstrates ongoing judicial oversight through humanitarian relief decisions. The boundary captures the execution timeline and current detention status."
+        ]
+      },
+      "defaultHiddenTextLeak": false,
+      "informationYield": "report_produced"
+    },
+    {
+      "label": "asylum-235000-de",
+      "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      "jobId": "7dc49f6bfbde4a58a8445edfa8a0849f",
+      "ledger": "7dc49f6bfbde4a58a8445edfa8a0849f:precutover-observability",
+      "jobStatus": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "executedWebGitCommitHash": "bc88d64aea6f872cd90a33604c2ed970ad7932e8",
+      "publicSchema": "4.0.0-cb-precutover",
+      "publicCutoverStatus": "blocked_precutover",
+      "publicReportMarkdownPresent": false,
+      "publicVerdictLabel": null,
+      "publicTruthPercentage": null,
+      "publicConfidence": null,
+      "publicLeakDetected": false,
+      "routeStatuses": {
+        "claimUnderstanding": 200,
+        "queryPlanning": 200,
+        "candidateProvider": 200,
+        "candidatePreview": 200,
+        "sourceMaterial": 200,
+        "extractionInput": 404,
+        "boundedExtraction": 200,
+        "sufficiency": 404,
+        "alphaResult": 404,
+        "reportWriterDefault": 404,
+        "reportWriterInspect": 404,
+        "reportWriterUnauth": 401
+      },
+      "claimUnderstandingStatus": "accepted",
+      "selectedAtomicClaimCount": null,
+      "queryPlanningStatus": "ready_not_executable",
+      "queryEntryCount": 5,
+      "queryTexts": [
+        "Asylbereich Schweiz 235000 Personen aktuelle Statistik",
+        "Schweiz Asylbereich Bevölkerung Register Statistik 2026",
+        "Asylbereich Schweiz Bevölkerungszahl Entwicklung 2025 2026",
+        "Asylbereich Definition Schweiz Asylsuchende anerkannte Flüchtlinge",
+        "Asylbereich Schweiz Personenzahl unter 235000"
+      ],
+      "candidateProvider": {
+        "status": "candidate_provider_network_completed",
+        "totalCandidateCount": 0,
+        "candidateCount": 0,
+        "structurallyDroppedCandidateCount": 0,
+        "providerAttemptCount": 10,
+        "totalBytes": 1592
+      },
+      "candidatePreviewStatus": "source_candidate_preview_materialized",
+      "sourceMaterial": {
+        "status": "source_material_page_summary_completed",
+        "sourceMaterialRecordCount": 6,
+        "totalTextBytes": 13905,
+        "providerCounts": {
+          "serper_web_search": 6
+        },
+        "kindCounts": {
+          "provider_search_result_page_text_bounded": 4,
+          "provider_search_result_preview_text": 2
+        },
+        "defaultTextReturned": false
+      },
+      "extractionInput": {
+        "status": null,
+        "packetByteLength": null,
+        "defaultInputTextReturned": false
+      },
+      "boundedEvidenceExtraction": {
+        "status": "blocked_pre_execution",
+        "blockedReason": "w4i_not_structurally_eligible",
+        "w4iStatus": "blocked_pre_execution_readiness_packet_text_oversized",
+        "extractionStatus": null,
+        "evidenceItemCount": 0,
+        "parentPacketByteLength": 13915,
+        "sourceContentPacketCount": 6,
+        "sourceContentProviderCounts": {
+          "serper_web_search": 6
+        },
+        "tokenUsage": {
+          "inputTokens": null,
+          "outputTokens": null,
+          "totalTokens": null
+        },
+        "schemaDiagnostics": null
+      },
+      "sufficiency": {
+        "status": null,
+        "resultStatus": null
+      },
+      "alphaResult": {
+        "status": null,
+        "firstIncompleteStage": null
+      },
+      "reportWriter": {
+        "status": null,
+        "aggregationNarrativeResultStatus": null,
+        "reportMarkdownByteLength": null,
+        "reportMarkdownReturnedByDefault": false,
+        "defaultProjection": "hash_length_provenance_only_or_stop_summary",
+        "inspectReportMarkdownReturned": false,
+        "unauthStatus": 401,
+        "verdictSectionCount": null,
+        "boundarySectionCount": null,
+        "citedEvidenceItemRefCount": null,
+        "verdictLines": []
+      },
+      "defaultHiddenTextLeak": false,
+      "informationYield": "new_stage_reached"
+    }
+  ]
+}
