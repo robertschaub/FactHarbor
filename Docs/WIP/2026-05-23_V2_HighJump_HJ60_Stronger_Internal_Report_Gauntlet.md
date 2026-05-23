@@ -1,6 +1,6 @@
 # V2 HighJump HJ60 Stronger Internal Report Gauntlet
 
-**Status:** approved execution package
+**Status:** closed as live-validated mixed pass
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Captain input:** Use the HighJump approach and avoid low-information one-off validation when a stronger pass is needed. New V2 live-job budget was reset to `18`; HJ58 and HJ59 consumed `2`, so `16` remain before HJ60.
@@ -122,3 +122,60 @@ After the gauntlet:
 - append `Docs/AGENTS/Agent_Outputs.md`;
 - run `npm run index`, JSON parse checks, `git diff --check`;
 - commit the closeout.
+
+## Live Validation Result
+
+HJ60 ran all eight Captain-defined inputs sequentially on runtime commit
+`58fa06a2db7182c4d879e5d96af0e654bf48bb46` with active `claimboundary-v2`
+prompt hash `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`.
+
+Result classification:
+
+`MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`
+
+Jobs:
+
+| Label | Job | Result |
+| --- | --- | --- |
+| `bundesrat-rechtskraftig` | `cb969b2d844242e2b3b48194abe6e88c` | internal report, `MOSTLY-TRUE` 78/82 primary, legal-binding caveat |
+| `bundesrat-simple` | `3d23e8347df444ec81e5fc637e3cf8d7` | internal report, `MOSTLY-TRUE` 72/68 primary, weaker than HJ59 |
+| `asylum-235000-de` | `451732eef8004b5a8f85853e992f4592` | internal report, still `UNVERIFIED` because direct stock number is missing |
+| `asylum-wwii-de` | `5e5a188a00dc4d7d8f5212268e95bb3c` | internal report, still `UNVERIFIED` because dual measurement evidence is missing |
+| `bolsonaro-en` | `615be4c9226b4900b82553286a6e4ccf` | internal report, caveated true-side legal/procedural assessment |
+| `bolsonaro-pt` | `5f026f1c4915455a88ba96f712790015` | short admin stop summary, W5 `hidden_no_extractable_evidence`, `0` EvidenceItems |
+| `hydrogen-en` | `39c3505cea344c39b4278b76d2e25e9f` | internal report, expected false-side primary verdict (`FALSE` 8/82) |
+| `plastic-en` | `71ab493bd64640f5957acd4e59e1c362` | internal report, plausible mostly-true primary verdict (`MOSTLY-TRUE` 72/78) |
+
+Public/default containment held for all submitted jobs: no public/default report
+markdown, verdict, truth percentage, or confidence was returned. The public V2
+surface remained precutover/blocked.
+
+Machine-readable evidence:
+
+`Docs/WIP/canary-evidence-hj60-stronger-internal-report-gauntlet.json`
+
+## Interpretation
+
+HJ60 is a stronger progress signal than a one-job canary: the normal manual V2
+path now produces internal Alpha reports for most benchmark inputs. The next
+bar is report quality and stability, not reachability.
+
+Important defects now visible:
+
+- Bundesrat-simple did not reproduce the HJ59 high result; it produced a weaker
+  split report (`MOSTLY-TRUE` 72/68 plus `UNVERIFIED` 45/42). This points to
+  verdict/report consolidation and stability, not another isolated W5 prompt
+  patch.
+- The asylum-family reports correctly identify stock-vs-flow and comparison
+  evidence gaps, but still do not retrieve/use the decisive current stock and
+  WWII comparator quantities.
+- Bolsonaro PT still stops at W5 with no EvidenceItems while Bolsonaro EN
+  produces a report, showing a multilingual/source-material or W5 extraction
+  robustness gap.
+- Hydrogen and plastic are comparatively strong and should be used as guardrail
+  comparators while repairing weaker families.
+
+## Budget Result
+
+HJ60 consumed `8` live jobs. Combined with HJ58 and HJ59, this tranche has
+consumed `10` of the reset `18`; `8` remain.

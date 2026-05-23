@@ -1,0 +1,203 @@
+{
+  "schemaVersion": "v2-highjump-gauntlet-evidence.v1",
+  "sliceId": "X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET",
+  "classification": "MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED",
+  "date": "2026-05-23",
+  "runtimeCommit": "58fa06a2db7182c4d879e5d96af0e654bf48bb46",
+  "promptHash": "8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20",
+  "defaultPipelineVariant": "claimboundary-v2",
+  "jobsSubmitted": 8,
+  "reportsProduced": 7,
+  "adminStops": 1,
+  "hardStop": null,
+  "publicDefaultContainmentAllJobs": true,
+  "summary": {
+    "informationYield": "report_produced_and_quality_variability_mapped",
+    "mainFinding": "The current V2 path can produce internal reports for most benchmark inputs, but report quality remains uneven and one multilingual variant still stops before EvidenceItems.",
+    "nextRepairOwner": "report-quality review plus targeted upstream evidence-usefulness and report-consolidation repairs, not another reachability/proof layer",
+    "budget": {
+      "resetTotal": 18,
+      "consumedBeforeHj60": 2,
+      "consumedByHj60": 8,
+      "remainingAfterHj60": 8
+    }
+  },
+  "results": [
+    {
+      "label": "bundesrat-rechtskraftig",
+      "jobId": "cb969b2d844242e2b3b48194abe6e88c",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 8983,
+      "classification": "REPORT_PRODUCED_WITH_LEGAL_BINDING_CAVEAT",
+      "primaryVerdicts": [
+        {
+          "section": "Executive Action Prior to Parliamentary and Popular Decision",
+          "label": "MOSTLY-TRUE",
+          "truthPercentage": 78,
+          "confidence": 82
+        },
+        {
+          "section": "Parliamentary and Popular Decision Status",
+          "label": "LEANING-FALSE",
+          "truthPercentage": 35,
+          "confidence": 79
+        }
+      ],
+      "qualityNote": "Temporal sequence is found, but 'rechtskräftig' creates a legal-binding caveat and the second verdict direction reads confusingly against the claim wording."
+    },
+    {
+      "label": "bundesrat-simple",
+      "jobId": "3d23e8347df444ec81e5fc637e3cf8d7",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 6996,
+      "classification": "REPORT_PRODUCED_BUT_HJ59_HIGH_TRUE_RESULT_NOT_REPRODUCED",
+      "primaryVerdicts": [
+        {
+          "section": "Temporal Sequence and Parliamentary Submission",
+          "label": "MOSTLY-TRUE",
+          "truthPercentage": 72,
+          "confidence": 68
+        },
+        {
+          "section": "Procedural Sequence and Popular Decision Framework",
+          "label": "UNVERIFIED",
+          "truthPercentage": 45,
+          "confidence": 42
+        }
+      ],
+      "qualityNote": "The same input produced TRUE 88/85 in HJ59, but HJ60 produced a weaker split report. This is a report-quality stability and consolidation issue."
+    },
+    {
+      "label": "asylum-235000-de",
+      "jobId": "451732eef8004b5a8f85853e992f4592",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 6757,
+      "classification": "REPORT_PRODUCED_DIRECT_STOCK_EVIDENCE_STILL_MISSING",
+      "primaryVerdicts": [
+        {
+          "section": "SEM Current Asylum Stock Threshold",
+          "label": "UNVERIFIED",
+          "truthPercentage": 0,
+          "confidence": 15
+        },
+        {
+          "section": "Asylum Applications Flow Context",
+          "label": "MIXED",
+          "truthPercentage": 50,
+          "confidence": 20
+        }
+      ],
+      "qualityNote": "The report correctly distinguishes stock from flow, but still lacks the decisive SEM stock number needed for the claim."
+    },
+    {
+      "label": "asylum-wwii-de",
+      "jobId": "5e5a188a00dc4d7d8f5212268e95bb3c",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 5277,
+      "classification": "REPORT_PRODUCED_DUAL_MEASUREMENT_EVIDENCE_MISSING",
+      "primaryVerdicts": [
+        {
+          "section": "Current Refugee Population Stock",
+          "label": "UNVERIFIED",
+          "truthPercentage": 0,
+          "confidence": 15
+        },
+        {
+          "section": "Comparability to WWII Refugee Numbers",
+          "label": "UNVERIFIED",
+          "truthPercentage": 0,
+          "confidence": 20
+        }
+      ],
+      "qualityNote": "The report identifies the right measurement-frame problem but still lacks both direct current-stock evidence and WWII comparator quantities."
+    },
+    {
+      "label": "bolsonaro-en",
+      "jobId": "615be4c9226b4900b82553286a6e4ccf",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 7492,
+      "classification": "REPORT_PRODUCED_WITH_CAVEATED_TRUE_SIDE_LEGAL_ANALYSIS",
+      "primaryVerdicts": [
+        {
+          "section": "Procedural Framework Compliance",
+          "label": "MOSTLY-TRUE",
+          "truthPercentage": 72,
+          "confidence": 68
+        },
+        {
+          "section": "International Fair Trial Standards",
+          "label": "LEANING-TRUE",
+          "truthPercentage": 58,
+          "confidence": 52
+        }
+      ],
+      "qualityNote": "The report now gives a useful caveated true-side legal/procedural assessment, but confidence remains limited by missing direct fair-trial safeguard evidence."
+    },
+    {
+      "label": "bolsonaro-pt",
+      "jobId": "5f026f1c4915455a88ba96f712790015",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 1211,
+      "classification": "ADMIN_STOP_NO_EVIDENCE_ITEMS",
+      "stopSummary": {
+        "stage": "Evidence Extraction",
+        "w5Execution": "hidden_no_extractable_evidence",
+        "extractionResult": "no_extractable_evidence",
+        "evidenceItems": 0
+      },
+      "qualityNote": "The Portuguese variant still fails at W5 despite the English Bolsonaro input producing a report. This is a multilingual/source-material or W5 extraction robustness gap."
+    },
+    {
+      "label": "hydrogen-en",
+      "jobId": "39c3505cea344c39b4278b76d2e25e9f",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 6950,
+      "classification": "REPORT_PRODUCED_EXPECTED_FALSE_SIDE",
+      "primaryVerdicts": [
+        {
+          "section": "Direct Efficiency Comparison",
+          "label": "FALSE",
+          "truthPercentage": 8,
+          "confidence": 82
+        },
+        {
+          "section": "Hydrogen vs. Gasoline and Hybrid Context",
+          "label": "UNVERIFIED",
+          "truthPercentage": 50,
+          "confidence": 35
+        }
+      ],
+      "qualityNote": "This is one of the stronger reports: direct comparator evidence supports the expected false-side outcome."
+    },
+    {
+      "label": "plastic-en",
+      "jobId": "71ab493bd64640f5957acd4e59e1c362",
+      "status": "SUCCEEDED",
+      "reportMarkdownLength": 8055,
+      "classification": "REPORT_PRODUCED_EXPECTED_MOSTLY_TRUE_SIDE_WITH_ABSOLUTE_WORDING_CAVEAT",
+      "primaryVerdicts": [
+        {
+          "section": "Recycling Ineffectiveness",
+          "label": "MOSTLY-TRUE",
+          "truthPercentage": 72,
+          "confidence": 78
+        },
+        {
+          "section": "Recycling Has Environmental Benefits",
+          "label": "LEANING-FALSE",
+          "truthPercentage": 28,
+          "confidence": 62
+        }
+      ],
+      "qualityNote": "The report handles the absolute 'pointless' wording with a caveat and produces a plausible mostly-true primary verdict."
+    }
+  ],
+  "containment": {
+    "publicDefaultReportMarkdownAbsentForAllJobs": true,
+    "publicDefaultVerdictTruthConfidenceAbsentForAllJobs": true,
+    "publicDefaultSchema": "4.0.0-cb-precutover",
+    "publicDefaultCutover": "blocked_precutover",
+    "hiddenArtifactRouteNote": "The generic runtime-artifacts route used by the runner returned 404 for this artifact type; public/default surfaces remained non-leaking. Authenticated admin job records carried the durable report summaries."
+  },
+  "nextRecommendedAction": "Run report-quality review on HJ60 reports and prepare one targeted repair package. Candidate owners: report consolidation/stability for split verdicts, direct source-material usefulness for stock/comparison claims, and multilingual W5 extraction robustness for the Portuguese Bolsonaro variant."
+}

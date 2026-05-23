@@ -4302,3 +4302,25 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Information yield:** `report_quality_improved`. HJ59 is the first focused post-HJ58 quality repair that moves this input from a weak/UNVERIFIED internal Alpha shape to a true-side benchmark-band report. It is not release-quality proof by itself; the next useful step is stronger cross-input validation and report-quality review before another prompt edit.
 
 **Budget:** Captain reset the tranche to `18` before HJ58. HJ58 and HJ59 consumed `2`; `16` remain.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ60 Stronger Internal Report Gauntlet
+
+**Task:** Run a stronger sequential validation pass over all eight Captain-defined benchmark inputs after HJ59, without changing source, prompt, schema, model, provider, parser, cache/SR/storage, public behavior, direct URL/ACS, or V1 code.
+
+**Package:** `Docs/WIP/2026-05-23_V2_HighJump_HJ60_Stronger_Internal_Report_Gauntlet.md`, committed at `58fa06a2`.
+
+**Preflight:** Git status was clean; Web/API/proxy version endpoints reported `58fa06a2db7182c4d879e5d96af0e654bf48bb46`; UCM effective pipeline default was `claimboundary-v2`; active `claimboundary-v2` prompt hash was `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`.
+
+**Live jobs:** `bundesrat-rechtskraftig` `cb969b2d844242e2b3b48194abe6e88c`; `bundesrat-simple` `3d23e8347df444ec81e5fc637e3cf8d7`; `asylum-235000-de` `451732eef8004b5a8f85853e992f4592`; `asylum-wwii-de` `5e5a188a00dc4d7d8f5212268e95bb3c`; `bolsonaro-en` `615be4c9226b4900b82553286a6e4ccf`; `bolsonaro-pt` `5f026f1c4915455a88ba96f712790015`; `hydrogen-en` `39c3505cea344c39b4278b76d2e25e9f`; `plastic-en` `71ab493bd64640f5957acd4e59e1c362`.
+
+**Results:** Seven jobs produced internal Alpha reports. Bolsonaro PT produced a short admin stop summary at W5 with `hidden_no_extractable_evidence` and `0` EvidenceItems. Public/default containment held for every submitted job: no public/default report markdown, verdict, truth percentage, or confidence.
+
+**Quality signal:** HJ60 proves broad internal report reachability, but quality remains mixed. Hydrogen and plastic are comparatively strong. Bolsonaro EN gives a useful caveated true-side legal/procedural report. The asylum-family reports still lack decisive stock/comparison evidence. Bundesrat-simple did not reproduce the HJ59 TRUE 88/85 result; it produced a weaker split report, so verdict/report consolidation and stability are now concrete owners.
+
+**Classification:** `MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`.
+
+**Information yield:** `report_produced_and_quality_variability_mapped`.
+
+**Budget:** HJ60 consumed `8` jobs. HJ58, HJ59, and HJ60 consumed `10` of the reset `18`; `8` remain.
+
+**Next:** Run report-quality review against Captain expectations and comparator guidance, then prepare one targeted repair package. Leading candidates are report consolidation/stability for split verdicts, direct source-material usefulness for stock/comparison claims, and multilingual W5 extraction robustness for the Portuguese Bolsonaro variant.

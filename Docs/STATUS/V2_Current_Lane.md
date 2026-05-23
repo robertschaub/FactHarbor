@@ -19,23 +19,22 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for the HJ60 stronger internal report gauntlet after
-the HJ59 W5 temporal relation extraction live result. Older HJ history below is
-kept as context, but the active anchor and budget are:
+This projection is synced after the HJ60 stronger internal report gauntlet.
+Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   `f8d1a818 docs(v2): record hj59 temporal relation result` plus the HJ59 W5 prompt repair at
   `05194d37 fix(v2): guide w5 temporal relation extraction`;
 - latest canary result:
-  HJ59 Bundesrat-simple rerun, classified
-  `PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED`;
+  HJ60 eight-input gauntlet, classified
+  `MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ57;
-  HJ58 and HJ59 consumed `2`, so `16` remain;
+  HJ58, HJ59, and HJ60 consumed `10`, so `8` remain;
 - next action:
-  execute HJ60, a sequential eight-input HighJump validation pass under
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ60_Stronger_Internal_Report_Gauntlet.md`,
-  before any further prompt or source edit;
+  perform report-quality review on the HJ60 reports and prepare one targeted
+  repair package from the strongest observed defect, without adding another
+  reachability/proof layer;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -62,11 +61,11 @@ direct URL/ACS support, or V1 work.
 
 Latest validation:
 
-`X7-HJ-59-W5-TEMPORAL-RELATION-EXTRACTION-REPAIR`
+`X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj59-w5-temporal-relation-repair.json`
+`Docs/WIP/canary-evidence-hj60-stronger-internal-report-gauntlet.json`
 
 Important evidence:
 
@@ -114,6 +113,23 @@ Important evidence:
   current `bundesrat-simple` benchmark band. The result is a real report-quality
   improvement over HJ58, but it still needs cross-input validation and report
   review before release confidence.
+- HJ60 ran all eight Captain-defined benchmark inputs sequentially on runtime
+  commit `58fa06a2db7182c4d879e5d96af0e654bf48bb46` with the HJ59 active
+  prompt hash. Seven jobs produced internal Alpha reports:
+  `bundesrat-rechtskraftig` (`cb969b2d844242e2b3b48194abe6e88c`),
+  `bundesrat-simple` (`3d23e8347df444ec81e5fc637e3cf8d7`),
+  `asylum-235000-de` (`451732eef8004b5a8f85853e992f4592`),
+  `asylum-wwii-de` (`5e5a188a00dc4d7d8f5212268e95bb3c`),
+  `bolsonaro-en` (`615be4c9226b4900b82553286a6e4ccf`), `hydrogen-en`
+  (`39c3505cea344c39b4278b76d2e25e9f`), and `plastic-en`
+  (`71ab493bd64640f5957acd4e59e1c362`). `bolsonaro-pt`
+  (`5f026f1c4915455a88ba96f712790015`) stopped with W5
+  `hidden_no_extractable_evidence` and `0` EvidenceItems. Public/default
+  containment held for all jobs. The quality picture is mixed: hydrogen and
+  plastic are comparatively strong; Bolsonaro EN is caveated but useful;
+  asylum-family reports still lack decisive stock/comparison evidence; and
+  Bundesrat-simple did not reproduce the HJ59 high result, exposing report
+  consolidation/stability as a real next owner.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -461,8 +477,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `10`;
+- remaining: `8`;
 - latest reset starts after the HJ57 Bundesrat-simple focused rerun
   `b1356da1f72f4f27a6fafb3bc5418746`;
 - every live job still requires clean git status, committed source, runtime
@@ -470,16 +486,13 @@ Current active tranche:
 
 ## Next Action
 
-1. Commit the HJ60 validation-only package and refresh runtime from committed
-   HEAD.
-2. Verify clean provenance, Web/API/proxy commit match, UCM default
-   `claimboundary-v2`, and active prompt hash
-   `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`.
-3. Run the eight Captain-defined inputs sequentially. Continue through
-   analytical stops, but stop on stale runtime, V1 routing, public/default leak,
-   or repeated infrastructure failure.
-4. Close out HJ60 with machine-readable evidence and pick the next repair owner
-   from cross-input report evidence.
+1. Close out HJ60 in the ledger/status/docs and commit the provenance update.
+2. Run a report-quality review of the HJ60 reports against Captain expectations
+   and comparator guidance. Do not judge the reports in isolation.
+3. Prepare one targeted repair package. The current leading candidates are:
+   report consolidation/stability for split verdicts, direct source-material
+   usefulness for stock/comparison claims, and multilingual W5 extraction
+   robustness for the Portuguese Bolsonaro variant.
 
 ## Stop Conditions
 
