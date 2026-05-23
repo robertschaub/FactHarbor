@@ -19,7 +19,7 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ57 focused live validation. Older HJ history below is
+This projection is synced for the HJ58 W4-G bounded sidecar prefix repair. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
@@ -28,11 +28,11 @@ kept as context, but the active anchor and budget are:
   HJ57 focused W5 contract repair reruns, classified
   `PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ56;
-  HJ57 consumed `2`, so `16` remain;
+  Captain reset to `18` on 2026-05-23 after HJ57;
+  no HJ58 live job has been submitted yet, so `18` remain;
 - next action:
-  address the recurring W4-G `source_material_text_oversized` blocker before
-  spending another Bundesrat-simple rerun on W5 packet-mismatch verification;
+  implement and verify HJ58 W4-G bounded sidecar prefix admission, then run one
+  Bundesrat-simple rerun only after commit, runtime refresh, and provenance checks;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -431,10 +431,10 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
-- latest reset starts after the HJ56 gauntlet job
-  `328b65a37a2b431a802f8aea5df7d988`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after the HJ57 Bundesrat-simple focused rerun
+  `b1356da1f72f4f27a6fafb3bc5418746`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 

@@ -515,6 +515,116 @@ describe("EvidenceCorpus bounded-text authorization", () => {
     expect(decision.evidenceItems).toEqual([]);
   });
 
+  it("creates a deterministic bounded prefix when full sidecar fan-in exceeds the aggregate cap", () => {
+    const texts = Array.from({ length: 9 }, (_, index) =>
+      `${index + 1}: ${"x".repeat(2990 + index)}`
+    );
+    const records = texts.map((text, index) => ({
+      ...sourceMaterialRecord(text),
+      sourceMaterialId: `SOURCE_MATERIAL_PAGE_SUMMARY_${sha256Text(text).slice(0, 16).toUpperCase()}`,
+      locatorRef: `OPAQUE_SOURCE_LOCATOR_${index + 1}_1_ABCDEF123456`,
+      candidatePreviewId: `SOURCE_CANDIDATE_PREVIEW_${index + 1}_1`,
+    }));
+    const corpusAdmissionInputs = records.map((record) => ({
+      ...admissionDecision(record.sourceMaterialText).corpusAdmissionInput,
+      corpusAdmissionInputId: `CORPUS_ADMISSION_INPUT_${record.sourceMaterialTextHash.slice(0, 16).toUpperCase()}`,
+      sourceMaterialRef: record.sourceMaterialId,
+      locatorRef: record.locatorRef,
+      candidatePreviewId: record.candidatePreviewId,
+      providerId: record.providerId,
+      sourceMaterialEndpointId: record.sourceMaterialEndpointId,
+      sourceMaterialKind: record.sourceMaterialKind,
+      sourceMaterialTextHash: record.sourceMaterialTextHash,
+      sourceMaterialTextByteLength: record.sourceMaterialTextByteLength,
+      sourceMaterialTextCharLength: record.sourceMaterialTextCharLength,
+      sourceMaterialRecordCount: records.length,
+    }));
+    const sourceMaterialAdmission = {
+      ...admissionDecision(texts[0]),
+      sourceMaterialRecordCount: records.length,
+      admittedCorpusAdmissionInputCount: records.length,
+      rejectedCorpusAdmissionInputCount: 0,
+      corpusAdmissionInput: corpusAdmissionInputs[0],
+      corpusAdmissionInputs,
+    };
+    const shell = shellDecision(texts[0]);
+    const evidenceCorpusShell = {
+      ...shell,
+      sourceMaterialRecordCount: records.length,
+      evidenceCorpus: {
+        ...shell.evidenceCorpus,
+        sourceMaterialRefs: corpusAdmissionInputs.map((input) => input.sourceMaterialRef),
+        locatorRefs: corpusAdmissionInputs.map((input) => input.locatorRef),
+        candidatePreviewIds: corpusAdmissionInputs.map((input) => input.candidatePreviewId),
+        providerIds: corpusAdmissionInputs.map((input) => input.providerId),
+        sourceMaterialEndpointIds: corpusAdmissionInputs.map((input) => input.sourceMaterialEndpointId),
+        languageCodes: corpusAdmissionInputs.map((input) => input.languageCode),
+        sourceMaterialKinds: corpusAdmissionInputs.map((input) => input.sourceMaterialKind),
+        sourceMaterialTextHashes: corpusAdmissionInputs.map((input) => input.sourceMaterialTextHash),
+        aggregateSourceMaterialTextByteLength: corpusAdmissionInputs.reduce(
+          (total, input) => total + input.sourceMaterialTextByteLength,
+          0,
+        ),
+        aggregateSourceMaterialTextCharLength: corpusAdmissionInputs.reduce(
+          (total, input) => total + input.sourceMaterialTextCharLength,
+          0,
+        ),
+        admissionLineage: {
+          ...shell.evidenceCorpus.admissionLineage,
+          corpusAdmissionInputId: corpusAdmissionInputs[0].corpusAdmissionInputId,
+          corpusAdmissionInputIds: corpusAdmissionInputs.map((input) => input.corpusAdmissionInputId),
+        },
+      },
+    };
+    const extractionReadinessDenial = {
+      ...denialDecision(texts[0]),
+      parent: {
+        ...denialDecision(texts[0]).parent,
+        evidenceCorpusId: evidenceCorpusShell.evidenceCorpus.evidenceCorpusId,
+      },
+    };
+
+    const decision = buildEvidenceCorpusBoundedTextAuthorization({
+      sourceMaterialPageSummary: {
+        ...sourceMaterialPageSummary(texts[0]),
+        sourceMaterialRecordCount: records.length,
+        sourceMaterialRecords: records,
+      },
+      sourceMaterialRuntimeOwnership: "owned",
+      sourceMaterialAdmission,
+      admissionRuntimeOwnership: "owned",
+      evidenceCorpusShell,
+      shellRuntimeOwnership: "owned",
+      extractionReadinessDenial,
+    });
+
+    expect(Buffer.byteLength(texts.join("\n\n"), "utf8")).toBeGreaterThan(
+      EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES,
+    );
+    expect(decision.status).toBe("bounded_corpus_text_sidecar_created_extraction_gate_closed");
+    expect(decision.stopReason).toBe("not_stopped");
+    expect(decision.boundedTextSidecarCount).toBeGreaterThan(0);
+    expect(decision.boundedTextSidecarCount).toBeLessThan(records.length);
+    expect(Buffer.byteLength(
+      decision.boundedTextSidecars.map((sidecar) => sidecar.text).join("\n\n"),
+      "utf8",
+    )).toBeLessThanOrEqual(EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES);
+
+    const selectedRecords = records.slice(0, decision.boundedTextSidecarCount);
+    expect(decision.boundedTextSidecars.map((sidecar) => sidecar.textHash)).toEqual(
+      selectedRecords.map((record) => record.sourceMaterialTextHash),
+    );
+    expect(decision.boundedTextSidecars.map((sidecar) => sidecar.sourceMaterialRef)).toEqual(
+      selectedRecords.map((record) => record.sourceMaterialId),
+    );
+    expect(decision.boundedTextSidecars.map((sidecar) => sidecar.text)).toEqual(
+      texts.slice(0, decision.boundedTextSidecarCount),
+    );
+    expect(decision.extractionInput).toBeNull();
+    expect(decision.evidenceItems).toEqual([]);
+    expect(decision.productExecution.publicSurfaceWritten).toBe(false);
+  });
+
   it("fails closed unless the W3-B source material decision is runtime-owned", () => {
     const decision = buildEvidenceCorpusBoundedTextAuthorization({
       sourceMaterialPageSummary: sourceMaterialPageSummary(),

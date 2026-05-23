@@ -539,6 +539,24 @@ function buildSidecar(params: {
   };
 }
 
+function aggregateSidecarTextByteLength(sidecars: readonly EvidenceCorpusBoundedTextSidecar[]): number {
+  return Buffer.byteLength(sidecars.map((sidecar) => sidecar.text).join("\n\n"), "utf8");
+}
+
+function selectAggregateBoundedSidecars(
+  sidecars: readonly EvidenceCorpusBoundedTextSidecar[],
+): readonly EvidenceCorpusBoundedTextSidecar[] {
+  const selected: EvidenceCorpusBoundedTextSidecar[] = [];
+  for (const sidecar of sidecars) {
+    const candidate = [...selected, sidecar];
+    if (aggregateSidecarTextByteLength(candidate) > EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES) {
+      break;
+    }
+    selected.push(sidecar);
+  }
+  return selected;
+}
+
 export function buildEvidenceCorpusBoundedTextAuthorization(params: {
   readonly sourceMaterialPageSummary: unknown;
   readonly sourceMaterialRuntimeOwnership: EvidenceCorpusBoundedTextRuntimeOwnership;
@@ -669,11 +687,8 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
       }
       boundedTextSidecars.push(boundedTextSidecar);
     }
-    const aggregateTextByteLength = Buffer.byteLength(
-      boundedTextSidecars.map((sidecar) => sidecar.text).join("\n\n"),
-      "utf8",
-    );
-    if (aggregateTextByteLength > EVIDENCE_CORPUS_BOUNDED_TEXT_AGGREGATE_MAX_BYTES) {
+    const aggregateBoundedTextSidecars = selectAggregateBoundedSidecars(boundedTextSidecars);
+    if (aggregateBoundedTextSidecars.length === 0) {
       return failure(
         failureParams,
         "blocked_pre_bounded_corpus_text_oversized",
@@ -685,7 +700,7 @@ export function buildEvidenceCorpusBoundedTextAuthorization(params: {
       ...failureParams,
       status: "bounded_corpus_text_sidecar_created_extraction_gate_closed",
       stopReason: "not_stopped",
-      boundedTextSidecars,
+      boundedTextSidecars: aggregateBoundedTextSidecars,
     });
   } catch {
     return decision({
