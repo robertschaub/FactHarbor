@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
-    "resetTotal": 18,
-    "currentRemaining": 0,
+    "trancheId": "v2-highjump-hj74-attribution-2026-05-23-reset-12-after-hj73",
+    "resetTotal": 12,
+    "currentRemaining": 12,
     "approvalPointer": {
-      "source": "Captain message in current Codex thread: \"New job budget: 18\"",
+      "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
-      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ63 repaired the W8 report-writer roadblock and exposed the next W7-B label/truth coupling gap."
+      "summary": "Captain approved a fresh V2 HighJump live-job budget of 12 after HJ73 durable source-chain attribution was committed and HJ74 was prepared as the next attribution canary."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 17,
-      "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ63 produced a complete plastic internal report and exposed the W7-B true-label/low-truth coupling gap."
+      "previousRemaining": 0,
+      "resetRemaining": 12,
+      "reason": "Captain provided a fresh 12-job budget so the team can run the HJ74 HJ73-attribution canary and continue HighJump report-quality repair from durable attribution evidence."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
-      "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
-      "startingRemaining": 18,
-      "currentRemaining": 0,
-      "consumptionEntriesInThisTranche": 9,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric. HJ71 spent one focused job, improved partial direct stock evidence coverage, but still lacked the decisive current aggregate stock metric. HJ72 spent the final focused job; the Serper ordinal fallback repair did not surface the decisive aggregate and the tranche is exhausted.",
+      "startsAfterSliceId": "X7-HJ-73-DURABLE-SOURCE-CHAIN-ATTRIBUTION",
+      "startsAfterJobId": "none_no_live_hj73",
+      "startingRemaining": 12,
+      "currentRemaining": 12,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "HJ64 through HJ72 are fully recorded below against the prior 18-job tranche. HJ72 spent the final job in that tranche and repeated the current-asylum aggregate evidence gap. HJ73 then ran no live job and added durable redacted source-chain attribution to the V2 raw/admin result envelope. Captain approved a fresh 12-job budget for continuation. HJ74 may spend the first job only after committed-package provenance, runtime refresh, and public/default containment preflight.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

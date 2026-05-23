@@ -20,26 +20,29 @@ from observed report defects.
 ## Current Lane Override
 
 This projection is synced after the HJ73 durable source-chain attribution
-package was prepared and Steer-Co reviewed the HJ72 stop. Older HJ history
-below is kept as context, but the active anchor and budget are:
+implementation was committed. Older HJ history below is kept as context, but
+the active anchor and budget are:
 
 - committed implementation anchor:
-  `bcefe3bf fix(v2): preserve serper source material ordinal fallback`;
+  `9267685f feat(v2): add hj73 source-chain attribution`;
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
-- active no-live package:
+- latest no-live package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ73_Durable_Source_Chain_Attribution_Package.md`;
+- next prepared package:
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
 - latest canary result:
   HJ72 focused current-asylum Serper ordinal fallback rerun, classified
   `STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ72 consumed `18`, so `0` remains;
+  Captain reset to `12` on 2026-05-23 after HJ73;
+  `12` remains before HJ74;
 - next action:
-  implement HJ73 only if it stays inside the amended package: durable redacted
-  admin-only source-chain attribution on the existing V2 result envelope, no
-  live job, no route/sink/table/provider/cap/retry/parser/cache/SR/storage
-  expansion, and blocked public projection must omit the attribution;
+  run exactly one HJ74 attribution canary after clean provenance, runtime
+  refresh, API/Web runtime commit verification, and public/default containment
+  preflight. The canary should rerun the HJ72 current-asylum input on committed
+  HJ73 source and use `adminDiagnostics.sourceChainAttribution` to select
+  exactly one next owner;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -50,15 +53,17 @@ below is kept as context, but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`bcefe3bf fix(v2): preserve serper source material ordinal fallback`
+`9267685f feat(v2): add hj73 source-chain attribution`
 
-Active implementation repair:
+Latest implementation repair:
 
-HJ73 is the active no-live coordination package. It follows HJ72's repeated
+HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
 process-local hidden artifact route `404`. Steer-Co consensus is to amend the
 existing V2 admin result-envelope diagnostics with a redacted source-chain
-attribution snapshot before another source strategy or live canary. HJ73 must
+attribution snapshot before another source strategy or live canary. HJ73 added
+durable `adminDiagnostics.sourceChainAttribution` to the existing raw/admin
+result envelope and the blocked public projection omits the attribution. It did
 not add a hidden route family, new storage infrastructure, provider/cap/retry
 change, parser/cache/SR/storage work, prompt/model/config/schema edit, public
 projection, ACS/direct URL, or V1 work.
@@ -686,11 +691,11 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 
 Current active tranche:
 
-- reset total: `18`;
-- consumed after latest reset: `18`;
-- remaining: `0`;
-- latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
-  latest job `d866675bcabf468aa4450b83ee7d87af`;
+- reset total: `12`;
+- consumed after latest reset: `0`;
+- remaining: `12`;
+- latest reset starts after the HJ73 durable source-chain attribution no-live
+  package, latest live job remains HJ72 `e2730cb5795e441cbf10831edd18047c`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
@@ -706,12 +711,17 @@ Current active tranche:
    record is still missing.
 5. Treat HJ72 as stopped: the structural Serper ordinal fallback repair did not
    surface the decisive aggregate, and the final tranche job is consumed.
-6. Reconvene Steer-Co before the next technical direction. The next lane should
-   choose between durable attribution/observability and a broader source
-   strategy package, while avoiding W4-I readiness work, cap increases,
-   source/provider widening, report-writer changes, verdict-calibration,
-   retries, schema relaxation, public behavior, or more live jobs without a new
-   tranche/approval.
+6. Treat HJ73 as complete: durable redacted admin-only source-chain attribution
+   is now available in the existing V2 raw/admin result envelope for future
+   canaries, while the public/default projection remains blocked and omits it.
+7. HJ74 is the Steer-Co-consented next direction and the Captain has approved a
+   fresh 12-job tranche. Run exactly one HJ73 attribution canary before
+   source-strategy work. Rerun the HJ72 current-asylum input on committed HJ73
+   source and classify the loss owner from
+   `adminDiagnostics.sourceChainAttribution`. Avoid W4-I readiness work, cap
+   increases, source/provider widening, report-writer changes,
+   verdict-calibration, retries, schema relaxation, public behavior, or a
+   second HJ74 job.
 
 ## Stop Conditions
 
