@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj63-w8-report-writer-2026-05-23-reset-18-after-hj62",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR",
       "startsAfterJobId": "8a48ed2378ca4963bd10231b3da6e8c6",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "HJ61 and HJ62 are fully recorded below against the prior post-HJ60 reset. HJ62 spent three jobs, repaired the W7-B label/truth polarity blocker for hydrogen, exposed W8 report-writer damage for plastic after W8G draft creation, and repeated Bundesrat-simple split-report instability. Captain then reset the next HighJump tranche to 18 jobs. No job has been spent from this reset yet.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "HJ61 and HJ62 are fully recorded below against the prior post-HJ60 reset. HJ62 spent three jobs, repaired the W7-B label/truth polarity blocker for hydrogen, exposed W8 report-writer damage for plastic after W8G draft creation, and repeated Bundesrat-simple split-report instability. Captain then reset the next HighJump tranche to 18 jobs. HJ63 spent one job from that reset and repaired the W8 report-writer roadblock for plastic; 17 remain.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1777,6 +1777,21 @@
         "approvalPointer": "Captain HighJump direction and HJ62 package Docs/WIP/2026-05-23_V2_HighJump_HJ62_W7B_Truth_Scale_Polarity_Repair.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_quality_gap_repeated_with_new_evidence"
+      },
+      {
+        "sliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-PLASTIC",
+        "jobId": "d866675bcabf468aa4450b83ee7d87af",
+        "classification": "PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS",
+        "note": "Plastic stayed on V2 and W8 internal report writer created an accepted hidden/admin report draft, repairing the HJ62 W8 damaged stop. The copied W7-B values still contain label/truth inconsistency (MOSTLY-TRUE 28, LEANING-TRUE 38), so next owner is W7-B contract enforcement/calibration. Public/default containment held.",
+        "implementationCommit": "f2e4e55a52e0c299fe85eea3f5a34f858b1856eb",
+        "runtimeCommit": "f2e4e55a52e0c299fe85eea3f5a34f858b1856eb",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ63 package Docs/WIP/2026-05-23_V2_HighJump_HJ63_W8_Report_Writer_Accepted_Branch_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_new_quality_gap_evidence"
       }
     ],
     "blockedPending": [],

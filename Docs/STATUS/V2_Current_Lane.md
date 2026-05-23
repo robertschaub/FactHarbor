@@ -25,18 +25,19 @@ but the active anchor and budget are:
 - committed implementation anchor:
   `053eae51 fix(v2): enforce w7b truth-scale polarity`;
 - active repair package:
-  HJ63 existing W8 internal report-writer accepted-branch repair is locally
-  verifier-clean and pending commit, UCM activation, runtime refresh, and one
-  focused plastic canary;
+  next HighJump repair should target W7-B label/truth contract enforcement and
+  candidate calibration after HJ63 repaired the W8 report-writer roadblock but
+  exposed plastic W7-B label/truth inconsistency;
 - latest canary result:
-  HJ62 three-input truth-scale polarity canary, classified
-  `PARTIAL_X7_HJ62_TRUTH_SCALE_POLARITY_REPAIRED_REPORT_WRITER_AND_CANDIDATE_COHERENCE_GAPS_REMAIN`;
+  HJ63 focused plastic canary, classified
+  `PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ62;
-  no jobs have been spent from this new tranche yet;
+  HJ63 consumed `1`, so `17` remain;
 - next action:
-  commit HJ63, import/activate the revised `claimboundary-v2` prompt, refresh
-  runtime, confirm clean provenance, and run one focused plastic canary;
+  use debt-guard, inspect W7-B output contract validation and prompt
+  calibration, and prepare the smallest repair that prevents true-side labels
+  with low truth scores or false-side labels with high truth scores;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -51,26 +52,42 @@ Latest committed source/docs anchor:
 
 Active implementation repair:
 
-HJ63 amends only the existing `V2_AGGREGATION_NARRATIVE` prompt section so an
-accepted structural packet defaults to an accepted internal report. It keeps
-`damaged` reserved for true exact-copy contract impossibility, not for multiple
-supplied sections, caveats, material uncertainty, limited evidence, or mixed
-report quality. The repair adds no parallel report path, schema relaxation,
-source or provider widening, parser, retry loop, public surface, cache/SR/storage,
-direct URL/ACS support, or V1 work.
+HJ63 amended only the existing `V2_AGGREGATION_NARRATIVE` prompt section so an
+accepted structural packet defaults to an accepted internal report. The focused
+plastic canary confirmed the W8 report-writer roadblock is repaired: W8 created
+an accepted hidden/admin report draft. The same report exposed the next quality
+owner: W7-B copied values are still label/truth inconsistent (`MOSTLY-TRUE`
+with truth `28`, `LEANING-TRUE` with truth `38`). The next repair should stay
+with W7-B structural contract enforcement/calibration and should add no
+parallel report path, schema relaxation, source or provider widening, parser,
+retry loop, public surface, cache/SR/storage, direct URL/ACS support, or V1
+work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR`
+`X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj62-w7b-truth-scale-polarity.json`
+`Docs/WIP/canary-evidence-hj63-w8-report-writer-accepted-branch.json`
 
 Important evidence:
 
+- HJ63 ran one focused plastic canary on runtime/source commit
+  `f2e4e55a52e0c299fe85eea3f5a34f858b1856eb` after importing and activating
+  `claimboundary-v2` prompt hash
+  `33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8`.
+  Job `d866675bcabf468aa4450b83ee7d87af` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. The hidden
+  W8 internal report writer returned `internal_report_writer_draft_created`,
+  accepted `v2.aggregation_narrative.0`, created `7907` report bytes, `2`
+  verdict sections, `2` boundary sections, and `4` cited EvidenceItem refs.
+  This repairs the HJ62 W8 damaged stop. The report is not quality-acceptable:
+  W8 copied W7-B values with label/truth mismatch (`MOSTLY-TRUE` truth `28`;
+  `LEANING-TRUE` truth `38`). The next owner is W7-B label/truth contract
+  enforcement and candidate calibration.
 - HJ62 ran three targeted canaries on runtime/source commit
   `053eae51522b8dd5ba9abe1da3c92aca35df1a19` after importing and activating
   `claimboundary-v2` prompt hash
@@ -519,8 +536,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after the HJ62 truth-scale polarity repair, latest
   job `8a48ed2378ca4963bd10231b3da6e8c6`;
 - every live job still requires clean git status, committed source, runtime
@@ -528,14 +545,14 @@ Current active tranche:
 
 ## Next Action
 
-1. Keep the useful HJ61 candidate-economy guidance and the HJ62 truth-scale
-   polarity invariant.
-2. Commit HJ63 after focused verifiers.
-3. Import/activate the revised `claimboundary-v2` prompt through UCM, refresh
-   runtime, and verify Web/API/proxy commit match.
-4. Run one focused plastic canary. If W8 produces a complete internal report,
-   move next to report-quality review; if it repeats W8 damage, inspect the new
-   failure class before another live job.
+1. Keep HJ63; the W8 report-writer accepted-branch repair worked.
+2. Use `/debt-guard` for the new W7-B label/truth inconsistency because it is a
+   live-quality defect and a failed prompt-contract compliance signal.
+3. Inspect W7-B prompt, schema, runtime validation, and tests for the
+   lowest-complexity way to prevent label/truth polarity mismatch in both
+   directions without deterministic semantic verdicting.
+4. After verifier-clean repair and commit/runtime refresh, rerun a focused
+   plastic canary before spending broader gauntlet budget.
 
 ## Stop Conditions
 

@@ -1,6 +1,6 @@
 # V2 HighJump HJ63 W8 Report Writer Accepted-Branch Repair
 
-**Status:** implementation verifier-clean; pending commit, UCM activation, runtime refresh, and live validation
+**Status:** live validation complete; W8 report-writer roadblock repaired
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, prompt edits allowed, new live-job
@@ -151,6 +151,65 @@ Stop signals:
 - W8 still returns a valid `damaged` envelope for the same structural reason;
 - W8 returns schema/parse failure that points to a distinct report-writer
   contract issue.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj63-w8-report-writer-accepted-branch.json`
+
+Runtime/source:
+
+- implementation commit:
+  `f2e4e55a52e0c299fe85eea3f5a34f858b1856eb`;
+- active `claimboundary-v2` prompt hash:
+  `33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8`;
+- job:
+  `d866675bcabf468aa4450b83ee7d87af`;
+- job created/executed web git hash:
+  `f2e4e55a52e0c299fe85eea3f5a34f858b1856eb`.
+
+Result:
+
+- The job stayed on `claimboundary-v2` and finished `SUCCEEDED`.
+- The hidden W8 internal report writer returned
+  `internal_report_writer_draft_created`.
+- The aggregation narrative result was `accepted`, with `schemaDiagnostics:
+  null`.
+- The hidden/admin report markdown was created at `7907` bytes, with `2`
+  verdict sections, `2` boundary sections, and `4` cited EvidenceItem refs.
+- Public/default containment held: public/default V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover`; public/default report
+  markdown, verdict, truth percentage, and confidence were absent; default W8
+  writer projection remained hash/length/provenance-only; unauthenticated W8
+  writer route access returned `401`.
+
+Classification:
+
+`PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS`
+
+Information yield:
+
+`report_produced_with_new_quality_gap_evidence`.
+
+Important quality gap:
+
+HJ63 repairs the W8 roadblock, but it does not make the plastic report
+quality-acceptable. The report copied W7-B verdict values that are internally
+inconsistent: `MOSTLY-TRUE` with truth `28`, and `LEANING-TRUE` with truth
+`38`. This shows the next owner is W7-B label/truth contract enforcement and
+candidate calibration, not W8 report writing.
+
+Budget:
+
+HJ63 consumed `1` job from the new `18`-job tranche. `17` remain.
+
+Next:
+
+Keep HJ63. Do not change W8 before new evidence points there. The next narrow
+HighJump repair should make W7-B structurally unable to emit label/truth
+polarity mismatches in either direction while preserving LLM-owned analytical
+judgment.
 
 ## Implementation Checkpoint
 

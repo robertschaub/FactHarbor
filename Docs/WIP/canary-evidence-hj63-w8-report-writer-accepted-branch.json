@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "v2-hj63-canary-evidence.v1",
+  "sliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
+  "implementationCommit": "f2e4e55a52e0c299fe85eea3f5a34f858b1856eb",
+  "promptHash": "33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8",
+  "jobId": "d866675bcabf468aa4450b83ee7d87af",
+  "inputValue": "Plastic recycling is pointless",
+  "status": "SUCCEEDED",
+  "pipelineVariant": "claimboundary-v2",
+  "createdGitCommitHash": "f2e4e55a52e0c299fe85eea3f5a34f858b1856eb",
+  "executedWebGitCommitHash": "f2e4e55a52e0c299fe85eea3f5a34f858b1856eb",
+  "adminReportMarkdownLength": 7905,
+  "adminReportHeadings": [
+    "# Internal Alpha Review: Plastic Recycling Pointlessness Claim",
+    "## Executive Summary",
+    "## Verdict 1: Measurable Benefits Oppose Pointlessness",
+    "## Verdict 2: False-Solution Critique Supports Pointlessness",
+    "## Boundary 1: Direct Environmental and Energy Benefits of Plastic Recycling",
+    "## Boundary 2: Plastic Recycling as False Solution and Downcycling Critique",
+    "## Evidence References",
+    "## Limitations"
+  ],
+  "adminVerdictTriples": [
+    {
+      "label": "MOSTLY-TRUE",
+      "truth": 28,
+      "confidence": 72
+    },
+    {
+      "label": "LEANING-TRUE",
+      "truth": 38,
+      "confidence": 48
+    }
+  ],
+  "hiddenWriter": {
+    "status": "internal_report_writer_draft_created",
+    "damagedReason": null,
+    "aggregationNarrativeResultStatus": "accepted",
+    "reportMarkdownByteLength": 7907,
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 2,
+    "citedEvidenceItemRefCount": 4,
+    "promptContentHash": "33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8",
+    "modelId": "claude-haiku-4-5-20251001",
+    "inputTokens": 5843,
+    "outputTokens": 4224,
+    "totalTokens": 10067,
+    "durationMs": 29786,
+    "schemaDiagnostics": null
+  },
+  "leakChecks": {
+    "publicStatus": 200,
+    "publicSchemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownLength": 0,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null,
+    "writerDefaultStatus": 200,
+    "writerDefaultProjection": "hash_length_provenance_only",
+    "writerDefaultReportMarkdownReturned": false,
+    "writerDefaultReportMarkdownByteLength": 7907,
+    "unauthWriterStatus": 401,
+    "hardLeak": false
+  },
+  "classification": "PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS",
+  "informationYield": "report_produced_with_new_quality_gap_evidence",
+  "completedAt": "2026-05-23T07:50:24.627Z"
+}

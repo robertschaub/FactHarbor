@@ -4364,3 +4364,25 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ62 consumed `3` jobs from the prior post-HJ60 tranche, taking that tranche from `14` to `11`. Captain then reset the next HighJump live-job budget to `18`; no jobs have been spent from the new tranche yet.
 
 **Next:** Keep the W7-B truth-scale invariant. The next narrow HighJump repair should target the existing W8 internal report writer contract so the plastic path can turn the already-created W8G draft state into a complete internal Alpha report. Do not add a parallel report path, schema relaxation, retry loop, source/provider widening, public surface, or V1 work.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ63 W8 Report Writer Accepted-Branch Repair Result
+
+**Task:** Repair the HJ62 plastic W8 internal report-writer damage without adding a parallel report path, retry, schema relaxation, source/provider widening, public behavior, or V1 work.
+
+**Repair:** HJ63 commit `f2e4e55a` amended only the existing `V2_AGGREGATION_NARRATIVE` prompt section and its focused prompt-contract test. The prompt now makes accepted report output the default when the supplied packet structurally contains verdict candidates, boundary candidates, and cited EvidenceItem IDs; multiple supplied sections, caveats, material uncertainty, limited evidence, or mixed quality are report content rather than damage conditions. UCM `claimboundary-v2` was imported and activated as `hj63-w8-report-writer-accepted-branch` with hash `33edfa61f2f8f904242f3c2be6b0674023d880c863192dd5afdf0a172ae1f0f8`.
+
+**Verification before live job:** Prompt-contract test passed (`10` tests); focused internal report-writer test passed (`4` tests); boundary guard passed (`96` tests); web build passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/boundary-guard/consolidation signals; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy endpoints reported `f2e4e55a52e0c299fe85eea3f5a34f858b1856eb`.
+
+**Live job:** `plastic-en` `d866675bcabf468aa4450b83ee7d87af`.
+
+**Result:** HJ63 passes its W8 repair target. The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, and the hidden W8 internal report writer returned `internal_report_writer_draft_created` with accepted aggregation narrative output, `schemaDiagnostics: null`, `7907` report bytes, `2` verdict sections, `2` boundary sections, and `4` cited EvidenceItem refs. Public/default containment held: public/default V2 stayed `4.0.0-cb-precutover` / `blocked_precutover`; public/default report markdown, verdict, truth percentage, and confidence were absent; default W8 route stayed hash/length/provenance-only; unauthenticated W8 route access returned `401`.
+
+**Classification:** `PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS`.
+
+**Information yield:** `report_produced_with_new_quality_gap_evidence`.
+
+**Quality gap:** The report is complete but not quality-acceptable. W8 copied W7-B values that remain internally inconsistent: `MOSTLY-TRUE` with truth `28`, and `LEANING-TRUE` with truth `38`. The next owner is W7-B label/truth contract enforcement and candidate calibration, not W8 report writing.
+
+**Budget:** HJ63 consumed `1` job from the new `18`-job tranche; `17` remain.
+
+**Next:** Keep HJ63. Use `/debt-guard` to inspect W7-B prompt/schema/runtime validation and make the smallest repair that prevents label/truth polarity mismatches in either direction while preserving LLM-owned analytical judgment.
