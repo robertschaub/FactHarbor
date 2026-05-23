@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 5,
+    "currentRemaining": 4,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 5,
-      "consumptionEntriesInThisTranche": 7,
-      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations. HJ80 consumed one hydrogen job after query-planning direct-comparison prompt repair; it produced a complete internal report with stronger direct-comparison source material, but the primary verdict remained too weak at LEANING-FALSE 35/62. HJ81 consumed one hydrogen job after W7 categorical-comparison prompt calibration and regressed to a strong true-side verdict on an adjacent comparator; the HJ81 prompt paragraph was reverted.",
+      "currentRemaining": 4,
+      "consumptionEntriesInThisTranche": 8,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations. HJ80 consumed one hydrogen job after query-planning direct-comparison prompt repair; it produced a complete internal report with stronger direct-comparison source material, but the primary verdict remained too weak at LEANING-FALSE 35/62. HJ81 consumed one hydrogen job after W7 categorical-comparison prompt calibration and regressed to a strong true-side verdict on an adjacent comparator; the HJ81 prompt paragraph was reverted. HJ82 consumed one hydrogen job after Claim Understanding and Evidence Extraction comparator-identity prompt repair; it produced a complete report and no longer made the selected hydrogen-vs-electricity claim true, but still foregrounded an outside-baseline hydrogen-vs-gasoline leaning-true verdict before the selected comparison.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2127,14 +2127,28 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure_with_prompt_overreach",
         "note": "HJ81 amended W7 categorical-comparison calibration and ran one hydrogen rerun on clean API/Web runtime 75f92a57. The job stayed on claimboundary-v2, succeeded, produced a complete 7757-character internal report, and public/default containment held. It regressed to a strong true-side report, MOSTLY-TRUE 74/72, by treating hydrogen-vs-ICE/HEV source material as direct enough for the hydrogen-vs-electricity claim. Per the HJ81 stop condition and failed-attempt recovery, the HJ81 prompt paragraph was reverted; next owner is source-material/query/extraction comparator identity, not broader W7 relaxation."
+      },
+      {
+        "sliceId": "X7-HJ-82-COMPARATOR-IDENTITY-PROMPT-REPAIR",
+        "jobId": "ace31183fdae47889b7771ed5fdb92a1",
+        "classification": "PARTIAL_X7_HJ82_COMPARATOR_IDENTITY_FULL_REPORT_OUTSIDE_BASELINE_STILL_FOREGROUNDED",
+        "implementationCommit": "978e7839fa676706dd953fb2d6213f668fa1f7e6",
+        "runtimeCommit": "978e7839fa676706dd953fb2d6213f668fa1f7e6",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain message in current Codex thread approving prompt edits, schema changes, live jobs, and continued HighJump work plus HJ82 package Docs/WIP/2026-05-23_V2_HighJump_HJ82_Comparator_Identity_Prompt_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_quality_gap_and_narrowed_owner",
+        "note": "HJ82 amended existing Claim Understanding and Evidence Extraction prompt guidance to preserve direct comparison endpoints and classify outside-baseline comparator material as contextual/limited unless explicitly bridged. Local prompt-contract tests, boundary guard, build, debt sensors, index, and whitespace checks passed before commit. Runtime was clean and API/Web both reported 978e7839. The hydrogen job stayed on claimboundary-v2, succeeded, produced a complete 8074-character internal report, and public/default containment held. The selected hydrogen-vs-electricity claim was no longer reported true and appeared as UNVERIFIED 48/45, but the report still foregrounded hydrogen-vs-gasoline as Verdict 1 LEANING-TRUE 62/65. Next owner is report writer or verdict/intake shaping so adjacent-baseline context cannot become the primary verdict section for a selected-comparator claim."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ78 consumed three jobs, HJ79 consumed two jobs, HJ80 consumed one job, and HJ81 consumed one job from the reset 12-job tranche; 5 remain.",
-      "nextLiveJobRequirement": "Do not spend another hydrogen job until source-material/query/extraction comparator identity is repaired or a focused no-live inspection proves a different owner. HJ81 W7 relaxation was reverted after overreach."
+      "reason": "HJ78 consumed three jobs, HJ79 consumed two jobs, HJ80 consumed one job, HJ81 consumed one job, and HJ82 consumed one job from the reset 12-job tranche; 4 remain.",
+      "nextLiveJobRequirement": "Do not spend another hydrogen job until the selected-comparator report-primary owner is repaired or a focused no-live inspection proves a lower-complexity owner. HJ82 narrowed the defect: selected hydrogen-vs-electricity is unverified, but outside-baseline hydrogen-vs-gasoline is still foregrounded as the first verdict."
     },
     "pendingExceptionAuthorization": null
   }

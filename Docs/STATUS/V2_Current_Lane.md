@@ -19,8 +19,8 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ81 produced a complete but regressed hydrogen
-report and the HJ81 W7 prompt paragraph was reverted.
+This projection is synced after HJ82 produced a complete hydrogen report that
+narrowed the HJ81 regression but did not yet pass report quality.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
@@ -30,8 +30,10 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   HJ80 prompt repair commit `b320a3ab12fde36910e028ef1445561d8d728dd9`;
   HJ81 attempted prompt repair commit `75f92a572994663262262f7050cc0ccc65687348`
   has been reverted in the active source state;
+  HJ82 comparator-identity prompt repair commit
+  `978e7839fa676706dd953fb2d6213f668fa1f7e6`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ81_Categorical_Comparison_Verdict_Calibration_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ82_Comparator_Identity_Result.md`;
 - latest validation result:
   plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
@@ -45,15 +47,23 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   `75f92a572994663262262f7050cc0ccc65687348`, produced a `7757`
   character internal report, but over-promoted hydrogen-vs-ICE/HEV material to
   a `MOSTLY-TRUE` `74/72` primary verdict for the hydrogen-vs-electricity
-  claim; public/default blocked-precutover containment still held;
+  claim; HJ82 job `ace31183fdae47889b7771ed5fdb92a1` ran the same input on
+  runtime `978e7839fa676706dd953fb2d6213f668fa1f7e6`, produced a complete
+  `8074` character internal report, held public/default containment, and
+  narrowed the defect: the selected hydrogen-vs-electricity claim is now
+  `UNVERIFIED` `48/45`, but an outside-baseline hydrogen-vs-gasoline verdict is
+  still foregrounded as `LEANING-TRUE` `62/65`;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
-  consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`; `5` remain;
+  consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`, HJ82 consumed `1`; `4`
+  remain;
 - next action:
-  use HJ80/HJ81 full reports as evidence for a source-material/query/extraction
-  comparator-identity repair. Do not spend another hydrogen job until no-live
-  inspection identifies the smallest owner. Do not add report-writer
-  recomputation or another hidden proof layer;
+  use the HJ82 full report as evidence for a selected-comparator report-primary
+  repair. The next owner is likely the existing report writer or verdict/intake
+  shaping rule that chooses report-primary verdict sections: outside-baseline
+  context may be shown as context/caveat, but it should not be the first or
+  primary verdict for a selected-comparator claim. Do not broaden W7 again and
+  do not add another hidden proof layer;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
