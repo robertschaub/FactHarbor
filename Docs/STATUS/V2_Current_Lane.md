@@ -23,20 +23,19 @@ This projection is synced for HJ64. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ64 implementation commit for this package; exact hash is recorded after
-  commit and before live execution;
+  `95312f5e fix(v2): couple w7b labels with truth scale`;
 - active repair package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ64_W7B_Label_Truth_Coupling_Repair.md`;
 - latest canary result:
-  HJ63 focused plastic canary, classified
-  `PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS`;
+  HJ64 focused plastic canary, classified
+  `PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 will be the first consumption from this reset;
+  HJ64 consumed `1`, so `17` remain;
 - next action:
-  finish HJ64 prompt/test verifier set, commit, import/activate the revised
-  `claimboundary-v2` prompt, refresh runtime, and run one focused plastic
-  canary;
+  keep HJ64 and repair W7-B selected-claim polarity/orientation so evidence
+  for the opposite proposition lowers the submitted claim truth instead of
+  creating a true-side top-line verdict for a counterclaim;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -47,32 +46,49 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-HJ64 implementation package; exact commit hash is recorded after commit and
-before live execution.
+`95312f5e fix(v2): couple w7b labels with truth scale`
 
 Active implementation repair:
 
-HJ64 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
-`internalVerdictLabelCandidate` and `internalTruthPercentageCandidate` are a
-coupled judgment from the same seven-point scale. The repair targets the HJ63
-plastic report defect where W7-B produced true-side labels with false-side truth
-percentages. It adds no deterministic semantic verdicting, no runtime
-normalizer, no schema relaxation, no parallel report path, no source/provider
-widening, no parser, no retry loop, no public surface, no cache/SR/storage, no
-direct URL/ACS support, and no V1 work.
+HJ64 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section
+so `internalVerdictLabelCandidate` and `internalTruthPercentageCandidate` are a
+coupled judgment from the same seven-point scale. The focused plastic canary
+confirmed numeric coupling is repaired (`MOSTLY-TRUE` truth `78`,
+`UNVERIFIED` truth `50`) while preserving the complete internal report path.
+The same report exposed the next W7-B quality owner: selected-claim
+polarity/orientation. The top-line verdict is still oriented around the
+counterclaim that recycling has purpose rather than the selected AtomicClaim
+that plastic recycling is pointless. The next repair should stay in W7-B
+prompt/contract calibration unless local evidence proves a missing runtime
+capability.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR`
+`X7-HJ-64-W7B-LABEL-TRUTH-COUPLING-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj63-w8-report-writer-accepted-branch.json`
+`Docs/WIP/canary-evidence-hj64-w7b-label-truth-coupling.json`
 
 Important evidence:
 
+- HJ64 ran one focused plastic canary on runtime/source commit
+  `95312f5e0970f8879e296bbae8bf98aab9ec9489` after importing and activating
+  `claimboundary-v2` prompt hash
+  `98c3e5c6673ea35f47cf0cd136e7c5638ac34b8f3c0becee435e334f3a1b3a65`.
+  Job `8b5e82cea1bd4e70b32ee06e9937900c` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. The hidden
+  W8 internal report writer returned `internal_report_writer_draft_created`,
+  accepted aggregation narrative output, `6483` report bytes, `2` verdict
+  sections, `2` boundary sections, and `4` cited EvidenceItem refs. W7-B
+  numeric label/truth coupling is repaired for this canary (`MOSTLY-TRUE`
+  truth `78`, `UNVERIFIED` truth `50`), but the report remains
+  quality-unacceptable because it orients the top-line verdict around the
+  counterclaim that recycling has measurable purpose instead of the selected
+  claim that recycling is pointless. Next owner: W7-B selected-claim
+  polarity/orientation.
 - HJ63 ran one focused plastic canary on runtime/source commit
   `f2e4e55a52e0c299fe85eea3f5a34f858b1856eb` after importing and activating
   `claimboundary-v2` prompt hash
@@ -534,8 +550,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -543,13 +559,13 @@ Current active tranche:
 
 ## Next Action
 
-1. Keep HJ63; the W8 report-writer accepted-branch repair worked.
-2. Use `/debt-guard` for the new W7-B label/truth inconsistency because it is a
-   live-quality defect and a failed prompt-contract compliance signal.
-3. Inspect W7-B prompt, schema, runtime validation, and tests for the
-   lowest-complexity way to prevent label/truth polarity mismatch in both
-   directions without deterministic semantic verdicting.
-4. After verifier-clean repair and commit/runtime refresh, rerun a focused
+1. Keep HJ64; numeric W7-B label/truth coupling and W8 report creation worked.
+2. Use `/debt-guard` for the remaining W7-B selected-claim polarity/orientation
+   defect because it is a live report-quality failure.
+3. Inspect the W7-B prompt contract and any existing output-contract tests for
+   the lowest-complexity way to make verdict label/truth refer to the selected
+   AtomicClaim, not a reformulated counterclaim.
+4. After verifier-clean repair and commit/runtime refresh, rerun one focused
    plastic canary before spending broader gauntlet budget.
 
 ## Stop Conditions

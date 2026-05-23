@@ -4416,3 +4416,73 @@ Verification: Claude/Gemini reviews; git diff --check; manual diff inspection
 Debt accepted and removal trigger: none
 Residual debt: no known residual debt; future tool-specific sync can be considered only if Gemini/other tools are assigned Captain Deputy directly and fail to discover AGENTS/skill guidance
 ```
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ64 W7-B Label/Truth Coupling Result
+
+**Task:** Repair the HJ63 plastic W7-B label/truth mismatch where complete
+internal report values paired true-side labels with false-side truth
+percentages.
+
+**Repair:** HJ64 commit `95312f5e` amended only the existing
+`V2_BOUNDARY_VERDICT_EXECUTION` prompt section and its focused prompt-contract
+test. The prompt now says `internalVerdictLabelCandidate` and
+`internalTruthPercentageCandidate` must be chosen as one coupled judgment from
+the same seven-point truth scale, with true-side labels requiring high selected
+claim truth and false-side labels requiring low selected claim truth. It added
+no code-side semantic normalizer, schema relaxation, retry/fallback, report
+writer mutation, source/provider/parser/cache/SR/storage change, public
+behavior, ACS/direct URL, or V1 work. UCM `claimboundary-v2` was imported and
+activated as `hj64-w7b-label-truth-coupling` with hash
+`98c3e5c6673ea35f47cf0cd136e7c5638ac34b8f3c0becee435e334f3a1b3a65`.
+
+**Verification before live job:** Prompt-contract test passed (`10` tests);
+focused boundary-verdict execution test passed (`11` tests); boundary guard
+passed (`96` tests); web build passed; `npm run debt:sensors` returned
+advisory warnings only for known V2 footprint/docs/boundary-guard/
+consolidation signals; `npm run index` passed; `git diff --check` passed.
+Runtime was refreshed after the reboot-sensitive commit path and Web/API
+endpoints reported `95312f5e0970f8879e296bbae8bf98aab9ec9489`.
+
+**Live job:** `plastic-en` `8b5e82cea1bd4e70b32ee06e9937900c`.
+
+**Result:** HJ64 passes its numeric label/truth coupling target. The job stayed
+on `claimboundary-v2`, finished `SUCCEEDED`, and the hidden W8 internal report
+writer returned `internal_report_writer_draft_created` with accepted
+aggregation narrative output, `6483` report bytes, `2` verdict sections, `2`
+boundary sections, and `4` cited EvidenceItem refs. Public/default containment
+held: public/default V2 stayed `4.0.0-cb-precutover` /
+`blocked_precutover`; public/default report markdown, verdict, truth
+percentage, and confidence were absent; default W8 route stayed
+hash/length/provenance-only; unauthenticated W8 route access returned `401`.
+
+**Classification:** `PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS`.
+
+**Information yield:** `report_produced_with_new_quality_gap_evidence`.
+
+**Quality gap:** The numeric contradiction is repaired (`MOSTLY-TRUE` truth
+`78`, `UNVERIFIED` truth `50`), but the report is not quality-acceptable. The
+top-line verdict is still oriented around the counterclaim that recycling has
+measurable purpose rather than the selected AtomicClaim that plastic recycling
+is pointless. The next owner is W7-B selected-claim polarity/orientation.
+
+**Budget:** Captain reset the current tranche to `18` after HJ63. HJ64
+consumed `1`; `17` remain.
+
+**Next:** Keep HJ64. Use `/debt-guard` and the updated Captain Deputy Active
+Lane Discipline to prepare the next narrow W7-B selected-claim polarity repair.
+Do not add a report-writer mutation, runtime verdict normalizer, schema
+relaxation, source/provider widening, public surface, or V1 work.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_BOUNDARY_VERDICT_EXECUTION prompt section
+Rejected path and why: deterministic code-side label normalization, retry/fallback, and schema relaxation would hide the LLM task-contract defect or add mechanisms without evidence of missing runtime capability
+What was removed/simplified: none
+What was added: bidirectional prompt-contract wording plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in prompt/test/status/package/ledger docs; no app-code execution path or public behavior changed
+Verification: prompt-contract test, boundary-verdict execution test, boundary guard, build, debt sensors, index, diff check, and one committed/refreshed live canary
+Debt accepted and removal trigger: no accepted mechanism debt; remaining report-quality gap is W7-B selected-claim polarity/orientation and should be addressed as the next repair
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```

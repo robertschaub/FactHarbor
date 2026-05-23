@@ -1,0 +1,63 @@
+{
+  "sliceId": "X7-HJ-64-W7B-LABEL-TRUTH-COUPLING-REPAIR",
+  "classification": "PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS",
+  "informationYield": "report_produced_with_new_quality_gap_evidence",
+  "jobId": "8b5e82cea1bd4e70b32ee06e9937900c",
+  "ledgerId": "8b5e82cea1bd4e70b32ee06e9937900c:precutover-observability",
+  "input": "Plastic recycling is pointless",
+  "implementationCommit": "95312f5e0970f8879e296bbae8bf98aab9ec9489",
+  "runtimeCommit": "95312f5e0970f8879e296bbae8bf98aab9ec9489",
+  "activePrompt": {
+    "profileKey": "claimboundary-v2",
+    "versionLabel": "hj64-w7b-label-truth-coupling",
+    "hash": "98c3e5c6673ea35f47cf0cd136e7c5638ac34b8f3c0becee435e334f3a1b3a65"
+  },
+  "publicContainment": {
+    "jobStatus": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "schemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownPresent": false,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null,
+    "reportWriterUnauthStatus": 401
+  },
+  "hiddenReportWriter": {
+    "status": "internal_report_writer_draft_created",
+    "aggregationNarrativeResultStatus": "accepted",
+    "reportMarkdownByteLength": 6483,
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 2,
+    "citedEvidenceItemRefCount": 4,
+    "defaultProjection": "hash_length_provenance_only",
+    "reportMarkdownReturnedByDefault": false,
+    "explicitInspectionReturnedReportMarkdown": true
+  },
+  "observedInternalVerdicts": [
+    {
+      "title": "Recycling Has Purpose and Measurable Benefits",
+      "label": "MOSTLY-TRUE",
+      "truthPercentage": 78,
+      "confidence": 72,
+      "labelTruthBandConsistent": true
+    },
+    {
+      "title": "Management System Context Remains Unverified",
+      "label": "UNVERIFIED",
+      "truthPercentage": 50,
+      "confidence": 45,
+      "labelTruthBandConsistent": true
+    }
+  ],
+  "qualityObservation": {
+    "numericLabelTruthCoupling": "repaired_for_this_canary",
+    "remainingGap": "The top-line verdict is still oriented around the counterclaim that recycling has purpose rather than the submitted AtomicClaim that recycling is pointless. Evidence that recycling has measurable purpose should lower the selected claim truth and produce a false-side or at-most-mixed top-line verdict for this Captain-defined input.",
+    "nextOwner": "W7-B selected-claim polarity and verdict orientation"
+  },
+  "budget": {
+    "resetTotal": 18,
+    "consumedByThisJob": 1,
+    "remainingAfter": 17
+  }
+}

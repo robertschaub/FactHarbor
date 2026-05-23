@@ -1,6 +1,7 @@
 # V2 HighJump HJ64 W7-B Label/Truth Coupling Repair
 
-**Status:** local implementation verifier-clean; live validation pending
+**Status:** live validation complete; numeric label/truth coupling repaired,
+claim-polarity orientation gap remains
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction; prompt edits, schema changes, and live
@@ -149,6 +150,74 @@ Stop signals:
 - W7-B still emits a label/truth polarity mismatch after the prompt repair;
 - W8 or upstream stages regress to a different blocker that prevents evaluating
   W7-B label/truth coupling.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj64-w7b-label-truth-coupling.json`
+
+Runtime/source:
+
+- implementation commit:
+  `95312f5e0970f8879e296bbae8bf98aab9ec9489`;
+- active `claimboundary-v2` prompt label/hash:
+  `hj64-w7b-label-truth-coupling` /
+  `98c3e5c6673ea35f47cf0cd136e7c5638ac34b8f3c0becee435e334f3a1b3a65`;
+- job:
+  `8b5e82cea1bd4e70b32ee06e9937900c`;
+- job executed web git hash:
+  `95312f5e0970f8879e296bbae8bf98aab9ec9489`.
+
+Result:
+
+- The job stayed on `claimboundary-v2` and finished `SUCCEEDED`.
+- The hidden W8 internal report writer returned
+  `internal_report_writer_draft_created`.
+- The aggregation narrative result was `accepted`.
+- The hidden/admin report markdown was created at `6483` bytes, with `2`
+  verdict sections, `2` boundary sections, and `4` cited EvidenceItem refs.
+- Public/default containment held: public/default V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover`; public/default report
+  markdown, verdict, truth percentage, and confidence were absent; default W8
+  writer projection remained hash/length/provenance-only; unauthenticated W8
+  writer route access returned `401`.
+
+Observed internal verdict values:
+
+- `MOSTLY-TRUE`, truth `78`, confidence `72`.
+- `UNVERIFIED`, truth `50`, confidence `45`.
+
+Classification:
+
+`PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS`
+
+Information yield:
+
+`report_produced_with_new_quality_gap_evidence`.
+
+Important quality gap:
+
+HJ64 repairs the numeric label/truth band mismatch for this canary. It does not
+make the plastic report quality-acceptable. The top-line report is still
+oriented around the counterclaim that recycling has measurable purpose rather
+than the selected AtomicClaim that plastic recycling is pointless. For this
+Captain-defined input, evidence that recycling has measurable purpose should
+lower the selected claim truth and produce a false-side or at-most-mixed
+top-line verdict. The next owner is W7-B selected-claim polarity and verdict
+orientation.
+
+Budget:
+
+Captain reset the current tranche to `18` after HJ63. HJ64 consumed `1` job
+from that reset. `17` remain.
+
+Next:
+
+Keep HJ64. Do not add a report-writer mutation, runtime verdict normalizer, or
+schema relaxation. The next narrow HighJump repair should make W7-B preserve
+selected-claim polarity when evidence supports the opposite proposition,
+especially for categorical/negated claims.
 
 ## Implementation Checkpoint
 

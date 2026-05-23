@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs; HJ64 will be the first consumption from this reset.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic; 17 remain.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1790,6 +1790,21 @@
         "count": 1,
         "remainingAfter": 17,
         "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ63 package Docs/WIP/2026-05-23_V2_HighJump_HJ63_W8_Report_Writer_Accepted_Branch_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_new_quality_gap_evidence"
+      },
+      {
+        "sliceId": "X7-HJ-64-W7B-LABEL-TRUTH-COUPLING-PLASTIC",
+        "jobId": "8b5e82cea1bd4e70b32ee06e9937900c",
+        "classification": "PASS_X7_HJ64_W7B_LABEL_TRUTH_NUMERIC_COUPLING_REPAIRED_CLAIM_POLARITY_ORIENTATION_GAP_REMAINS",
+        "note": "Plastic stayed on V2 and W8 internal report writer created an accepted hidden/admin report draft. W7-B numeric label/truth coupling was repaired for this canary (MOSTLY-TRUE 78, UNVERIFIED 50), but the top-line verdict remains oriented around the counterclaim that recycling has purpose rather than the selected claim that recycling is pointless. Public/default containment held.",
+        "implementationCommit": "95312f5e0970f8879e296bbae8bf98aab9ec9489",
+        "runtimeCommit": "95312f5e0970f8879e296bbae8bf98aab9ec9489",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "98c3e5c6673ea35f47cf0cd136e7c5638ac34b8f3c0becee435e334f3a1b3a65",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ64 package Docs/WIP/2026-05-23_V2_HighJump_HJ64_W7B_Label_Truth_Coupling_Repair.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_new_quality_gap_evidence"
       }
