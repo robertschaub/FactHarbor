@@ -1,0 +1,9 @@
+---
+### 2026-05-23 | Product Strategist | Codex (GPT-5) | Filip W. Agent Architecture Fit Assessment
+**Task:** Investigate Filip Wojcieszyn / StrathWeb work on agentic coding-adjacent agent architectures and identify where the user and FactHarbor could benefit.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-05-23_Product_Strategist_Filip_W_Agent_Architecture_Fit_Assessment.md`; `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Treat Filip's current public value for FactHarbor as agent-architecture, .NET/Azure/local-model, guardrail, RAG, and code-analysis expertise rather than direct Claude Code/Codex workflow guidance. Highest-fit topics are AgentGuard-style guardrails, SLM/LLM cost decomposition, Chain-of-Agents long-context processing, HyPE retrieval alignment, OpenAPI tool contracts, and Roslyn/static-code checks for agent-generated code.
+**Open items:** LinkedIn profile content was not directly accessible in the browser session; assessment uses StrathWeb, AgentGuard site, conference pages, and book/speaker bios. A direct conversation with Filip is the next useful step.
+**Warnings:** Do not import AgentGuard or local-model patterns directly into FactHarbor without Lead Architect/Security review. FactHarbor's AGENTS rules forbid deterministic semantic decision logic for analysis outcomes; use Filip's deterministic guardrail ideas only for structural/security boundaries unless explicitly reviewed.
+**For next agent:** If following up, prepare a short call agenda around: (1) .NET/TS guardrail middleware design, (2) local worker/cloud manager cost split for W5/source extraction, (3) OpenAPI/MCP tool contracts for internal admin/source routes, (4) HyPE-style retrieval tests for source-material usefulness, and (5) Roslyn/static analyzer equivalents for agent-coded C# and TS boundary checks.
+**Learnings:** Not appended to Role_Learnings.md; this is a one-off external fit assessment, not a durable role behavior rule.
