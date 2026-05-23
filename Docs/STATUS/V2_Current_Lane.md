@@ -25,16 +25,17 @@ kept as context, but the active anchor and budget are:
 - committed implementation anchor:
   `5f608219 fix(v2): admit short broad claim understanding inputs`;
 - latest canary result:
-  HJ52 gauntlet, classified
-  `MIXED_PASS_X7_HJ52_STRONGER_INTERNAL_REPORT_VALIDATION_GAUNTLET`;
+  HJ53 focused rerun, classified
+  `STOP_X7_HJ53_CLAIM_UNDERSTANDING_STILL_NO_VALID_CLAIM`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ52/HJ53 source commit;
-  `18` remain before the focused HJ53 validation rerun;
+  HJ53 consumed one job, and `17` remain;
 - next action:
-  activate the committed HJ53 `claimboundary-v2` prompt repair in UCM, refresh
-  runtime from the committed tree, then validate with exactly one focused rerun
-  for `Plastic recycling is pointless` before touching the separate W4-G
-  oversized-text defect;
+  apply failed-attempt recovery for the HJ53 prompt-only Claim Understanding
+  repair before spending another job: the active prompt was used, the model call
+  completed, and the semantic admission decision still returned
+  `no_valid_claim`; choose the next lowest-complexity Claim Understanding repair
+  path before touching the separate W4-G oversized-text defect;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,

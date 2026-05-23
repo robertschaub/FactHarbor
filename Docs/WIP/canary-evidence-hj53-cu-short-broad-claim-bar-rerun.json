@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-53-CU-SHORT-BROAD-CLAIM-BAR-RERUN",
+  "jobId": "dfa9bd1bdb0749b095d1dd647444d86e",
+  "classification": "STOP_X7_HJ53_CLAIM_UNDERSTANDING_STILL_NO_VALID_CLAIM",
+  "informationYield": "same_stop_repeated_with_new_evidence",
+  "input": "Plastic recycling is pointless",
+  "runtime": {
+    "implementationCommit": "5f608219",
+    "runtimeCommit": "d73ffd28fc4ad1fce0ad9cb57cac16ec68587f96",
+    "pipelineVariant": "claimboundary-v2",
+    "submissionPath": "direct-api",
+    "activePromptVersionLabel": "hj53-cu-short-broad-claim-bar-repair",
+    "activePromptContentHash": "36379bb43650056fbe5bec7eeacc4416db6399fe030d47f86159b474a74ac5aa"
+  },
+  "jobResult": {
+    "status": "SUCCEEDED",
+    "analysisIssueCode": "report_damaged",
+    "publicSchemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownReturned": false,
+    "publicVerdictReturned": false,
+    "publicTruthPercentageReturned": false,
+    "publicConfidenceReturned": false
+  },
+  "hiddenEvidence": {
+    "ledgerId": "dfa9bd1bdb0749b095d1dd647444d86e:precutover-observability",
+    "claimUnderstanding": {
+      "artifactCount": 1,
+      "executionStatus": "completed",
+      "gatewayTaskStatus": "executable",
+      "schemaOutcomeStatus": "blocked",
+      "blockedReason": "no_valid_claim",
+      "providerId": "anthropic",
+      "modelId": "claude-haiku-4-5-20251001",
+      "totalTokens": 3031,
+      "durationMs": 2517
+    },
+    "evidenceLifecycleIntake": {
+      "artifactCount": 1,
+      "handoffStatus": "blocked",
+      "blockedReason": "no_valid_claim",
+      "selectedAtomicClaimCount": 0,
+      "queryPlanningExecuted": false,
+      "sourceAcquisitionExecuted": false,
+      "reportGenerated": false,
+      "verdictGenerated": false
+    },
+    "queryPlanningRuntimeArtifacts": "not_found_as_expected_after_claim_understanding_block"
+  },
+  "containment": {
+    "unauthenticatedClaimUnderstandingArtifactRouteStatus": 401,
+    "publicJobReportMarkdown": null,
+    "publicJobPageContainsInternalAlphaText": false,
+    "publicJobPageContainsClaimBlockedText": false
+  },
+  "nextAction": "Do not run a second HJ53 rerun. Classify the failed prompt-only attempt and choose the next lowest-complexity Claim Understanding repair path before spending another live job."
+}

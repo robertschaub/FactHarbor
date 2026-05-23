@@ -1,6 +1,6 @@
 # V2 HighJump HJ53 - Claim Understanding Short Broad Claim Bar Repair
 
-**Status:** local implementation verifier-clean; UCM activation/live rerun pending
+**Status:** live rerun completed; repair did not clear the Claim Understanding stop
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ52 plastic job `b89acb3e1d1745a9835d0125fd4b48c9`
@@ -110,3 +110,70 @@ Local verifier result, 2026-05-23:
 - `npm -w apps/web run build` passed.
 - `npm run index` passed.
 - `git diff --check` passed.
+
+## Live Rerun Result
+
+Runtime preparation, 2026-05-23:
+
+- Lane sync commit: `d73ffd28`.
+- Prompt repair source commit: `5f608219`.
+- Active `claimboundary-v2` UCM prompt version:
+  `hj53-cu-short-broad-claim-bar-repair`.
+- Active prompt hash:
+  `36379bb43650056fbe5bec7eeacc4416db6399fe030d47f86159b474a74ac5aa`.
+- Web/API/proxy runtime commit before submission:
+  `d73ffd28fc4ad1fce0ad9cb57cac16ec68587f96`.
+- UCM default pipeline: `claimboundary-v2`.
+
+Live job:
+
+- Job: `dfa9bd1bdb0749b095d1dd647444d86e`.
+- Input: `Plastic recycling is pointless`.
+- Status: `SUCCEEDED`.
+- Pipeline: `claimboundary-v2`.
+- Submission path: `direct-api`.
+
+Hidden-chain evidence:
+
+- Claim Understanding artifact exists and used prompt hash
+  `36379bb43650056fbe5bec7eeacc4416db6399fe030d47f86159b474a74ac5aa`.
+- Claim Understanding execution completed through executable gateway task
+  `claim_understanding_gate1`.
+- Provider telemetry: Anthropic `claude-haiku-4-5-20251001`,
+  `3031` total tokens, `2517` ms.
+- Schema outcome remained `blocked` with blocked reason `no_valid_claim`.
+- Evidence Lifecycle intake recorded `selectedAtomicClaimCount: 0` and
+  `blockedReason: no_valid_claim`.
+- Query Planning did not execute.
+
+Containment:
+
+- Public/default result remained `4.0.0-cb-precutover`,
+  `blocked_precutover`, `report_damaged`.
+- Public/default `reportMarkdown`, verdict, truth percentage, and confidence
+  remained absent.
+- Unauthenticated Claim Understanding artifact route returned `401`.
+- Public job page did not contain the internal Alpha stop summary or Claim
+  Understanding diagnostic text.
+
+Classification:
+
+`STOP_X7_HJ53_CLAIM_UNDERSTANDING_STILL_NO_VALID_CLAIM`.
+
+Information yield:
+
+`same_stop_repeated_with_new_evidence`. The repair was active, the model call
+ran, and the failure is still at the Claim Understanding semantic admission
+decision rather than runtime activation, UCM activation, route submission, or
+downstream evidence/report stages.
+
+Evidence file:
+
+`Docs/WIP/canary-evidence-hj53-cu-short-broad-claim-bar-rerun.json`.
+
+Next:
+
+Do not run a second HJ53 rerun. Apply failed-attempt recovery before the next
+live job: keep only the generic prompt wording still justified by evidence, then
+choose the next lowest-complexity Claim Understanding repair path. The separate
+W4-G oversized-text stop from HJ52 remains deferred.

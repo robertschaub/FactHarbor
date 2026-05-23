@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj50",
+    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj52",
     "resetTotal": 18,
-    "currentRemaining": 13,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ50 and before HJ51 direct manual V2 submission validation."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ52/HJ53 source commit and before the HJ53 focused Claim Understanding rerun."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 17,
+      "previousRemaining": 13,
       "resetRemaining": 18,
       "reason": "Captain provided a fresh 18-job budget so the team can use stronger HighJump validation toward visible, complete, useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-50-SOURCE-MATERIAL-QUERY-DIVERSITY-RERUN",
-      "startsAfterJobId": "2d7402c4dc8947438b2f0ff74e5c8ce6",
+      "startsAfterSliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-VALIDATION-GAUNTLET",
+      "startsAfterJobId": "7321d207499f416193e12d6c2e854bc3",
       "startingRemaining": 18,
-      "currentRemaining": 13,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset. HJ51 consumed one job and proved direct manual UI submission creates a claimboundary-v2 job and displays the internal V2 report to authenticated admin users while public/default surfaces remain blocked/precutover/damaged. HJ52 consumed four jobs and produced two internal reports plus two useful stops for the next HighJump bar.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ52 is the last completed canary set before this reset. HJ53 consumed one focused job and proved the committed prompt repair was active but did not clear the Claim Understanding no_valid_claim stop for the plastic input.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1350,6 +1350,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_stage_reached_with_useful_stop",
         "note": "The German asylum/WW2 comparison reached Query Planning and six Source Material records, then W4-G blocked with source_material_text_oversized and W5 stayed blocked_pre_execution. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-53-CU-SHORT-BROAD-CLAIM-BAR-RERUN",
+        "jobId": "dfa9bd1bdb0749b095d1dd647444d86e",
+        "classification": "STOP_X7_HJ53_CLAIM_UNDERSTANDING_STILL_NO_VALID_CLAIM",
+        "implementationCommit": "5f608219",
+        "runtimeCommit": "d73ffd28fc4ad1fce0ad9cb57cac16ec68587f96",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ53 package `Docs/WIP/2026-05-23_V2_HighJump_HJ53_CU_Short_Broad_Claim_Bar_Repair.md`",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "note": "HJ53 reran the Captain-defined plastic input after importing and activating the `claimboundary-v2` prompt repair. Runtime and active prompt hash matched the committed repair path. The model call completed through executable Claim Understanding, but schema outcome remained blocked/no_valid_claim, selected AtomicClaims stayed 0, and Query Planning did not execute. Public/default containment held with no public report markdown, verdict, truth percentage, or confidence."
       }
     ],
     "blockedPending": [],
