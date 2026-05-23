@@ -270,6 +270,36 @@ function webSearchPreviewRecordForAttempt(
   };
 }
 
+function webSearchLinkedPageRecordForAttempt(
+  providerAttemptOrdinal: number,
+  candidateOrdinal: number,
+  sourceMaterialText = `Bounded linked page text ${providerAttemptOrdinal}.${candidateOrdinal}`,
+): SourceMaterialPageSummaryRecord {
+  const record = webSearchPreviewRecordForAttempt(providerAttemptOrdinal, candidateOrdinal, sourceMaterialText);
+  return {
+    ...record,
+    sourceMaterialId: `SOURCE_MATERIAL_LINKED_PAGE_${providerAttemptOrdinal}${candidateOrdinal}`.padEnd(37, "A"),
+    sourceMaterialEndpointId: "ep_serper_linked_page_fetch",
+    sourceMaterialKind: "provider_search_result_page_text_bounded",
+    contentTypeCategory: "accepted_text",
+  };
+}
+
+function webSearchXlsxRecordForAttempt(
+  providerAttemptOrdinal: number,
+  candidateOrdinal: number,
+  sourceMaterialText = `Bounded xlsx text ${providerAttemptOrdinal}.${candidateOrdinal}`,
+): SourceMaterialPageSummaryRecord {
+  const record = webSearchPreviewRecordForAttempt(providerAttemptOrdinal, candidateOrdinal, sourceMaterialText);
+  return {
+    ...record,
+    sourceMaterialId: `SOURCE_MATERIAL_LINKED_XLSX_${providerAttemptOrdinal}${candidateOrdinal}`.padEnd(37, "B"),
+    sourceMaterialEndpointId: "ep_serper_linked_xlsx_fetch",
+    sourceMaterialKind: "provider_search_result_xlsx_text_bounded",
+    contentTypeCategory: "accepted_text",
+  };
+}
+
 describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
   it("creates one hidden Source Material record from a completed W2 and materialized W3-A locator", async () => {
     const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
@@ -579,6 +609,67 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
       "SOURCE_CANDIDATE_PREVIEW_1_2",
       "SOURCE_CANDIDATE_PREVIEW_1_3",
       "SOURCE_CANDIDATE_PREVIEW_2_2",
+    ]);
+  });
+
+  it("prefers source-native Serper records over preview-only fallbacks within provider-attempt balancing", async () => {
+    const entries = [
+      { providerAttemptOrdinal: 1, candidateOrdinal: 1 },
+      { providerAttemptOrdinal: 1, candidateOrdinal: 2 },
+      { providerAttemptOrdinal: 2, candidateOrdinal: 1 },
+      { providerAttemptOrdinal: 2, candidateOrdinal: 2 },
+      { providerAttemptOrdinal: 3, candidateOrdinal: 1 },
+      { providerAttemptOrdinal: 3, candidateOrdinal: 2 },
+    ];
+    const previewRecords = entries.map((entry) =>
+      serperProjection(entry.providerAttemptOrdinal, entry.candidateOrdinal)
+    );
+    const sourceMaterialRecords = [
+      webSearchPreviewRecordForAttempt(1, 1),
+      webSearchLinkedPageRecordForAttempt(1, 2),
+      webSearchPreviewRecordForAttempt(2, 1),
+      webSearchXlsxRecordForAttempt(2, 2),
+      webSearchPreviewRecordForAttempt(3, 1),
+      webSearchLinkedPageRecordForAttempt(3, 2),
+    ];
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: sourceMaterialRecords.length,
+          totalCandidateCount: sourceMaterialRecords.length,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: previewRecords.length,
+            totalCandidateCount: previewRecords.length,
+          },
+        }),
+        previewProjections: previewRecords,
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: sourceMaterialRecords,
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_2_2",
+      "SOURCE_CANDIDATE_PREVIEW_3_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+    ]);
+    expect(decision.sourceMaterialRecords.map((record) => record.sourceMaterialKind)).toEqual([
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_xlsx_text_bounded",
+      "provider_search_result_page_text_bounded",
+      "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
+      "provider_search_result_preview_text",
     ]);
   });
 

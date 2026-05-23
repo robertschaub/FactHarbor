@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T16:09:40.150Z",
-  "count": 442,
+  "generatedAt": "2026-05-23T16:27:22.292Z",
+  "count": 443,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9695,6 +9695,23 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-23_Lead_Developer_HJ75_Source_Material_Source_Native_Selection.md",
+      "date": "2026-05-23",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "hj75",
+        "source",
+        "material",
+        "source",
+        "native",
+        "selection"
+      ],
+      "files_touched": [],
+      "summary": "Lead Developer Handoff - V2 HighJump HJ75 Source Material Source-Native Selection"
     },
     {
       "file": "2026-05-23_Product_Strategist_Filip_W_Agent_Architecture_Fit_Assessment.md",

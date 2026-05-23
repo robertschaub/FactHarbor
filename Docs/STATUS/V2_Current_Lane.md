@@ -24,7 +24,8 @@ implementation was committed. Older HJ history below is kept as context, but
 the active anchor and budget are:
 
 - committed implementation anchor:
-  `9267685f feat(v2): add hj73 source-chain attribution`;
+  HJ75 source-material source-native selection repair (pending closeout commit
+  in the current implementation cycle);
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
 - latest no-live package:
@@ -38,10 +39,11 @@ the active anchor and budget are:
   Captain reset to `12` on 2026-05-23 after HJ73;
   HJ74 consumed `1`, so `11` remain;
 - next action:
-  reconvene Steer-Co for HJ75 and choose one bounded source
-  acquisition/materialization package. HJ74 showed the chain reaches W5 and
-  report writer with `4` EvidenceItems, but the report still lacks direct
-  current-stock source material;
+  commit HJ75 after final closeout checks, refresh runtime, then run exactly
+  one HJ75 canary on the Captain-defined current-asylum input if provenance is
+  clean. HJ75 keeps the source-material owner narrow: existing Serper
+  source-native records (XLSX, linked-page text) are preferred over preview
+  fallback under existing caps;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -55,6 +57,13 @@ Latest source/docs anchor:
 `9267685f feat(v2): add hj73 source-chain attribution`
 
 Latest implementation repair:
+
+HJ75 is the current implementation repair after HJ74. It amends the existing
+Source Material selector so bounded Serper XLSX records are eligible and
+already-materialized source-native Serper records are selected before
+preview-only fallback records while preserving provider-attempt balancing,
+dedupe, byte caps, record caps, no public surface, no provider/cap/retry
+expansion, and no prompt/model/config/schema change.
 
 HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
@@ -732,11 +741,11 @@ Current active tranche:
 7. Treat HJ74 as partial pass: durable attribution worked, public containment
    held, and the chain reached W5/report writer, but direct current-stock source
    material was still absent. Do not run a second HJ74 job.
-8. Reconvene Steer-Co before HJ75. The next package should choose one bounded
-   source acquisition/materialization strategy for current aggregate stock
-   evidence, while avoiding W4-I readiness work, W5/report-writer changes,
-   cap increases without source-owner evidence, retries, schema relaxation,
-   public behavior, ACS/direct URL, parser/cache/SR/storage, or V1 work.
+8. Treat HJ75 as the active source-material selector repair: commit after
+   verifiers, refresh runtime, and run exactly one canary if provenance is
+   clean. If the canary repeats the missing current-stock aggregate with no
+   useful source-native improvement, stop and steer toward provider/query
+   strategy rather than another selector tweak.
 
 ## Stop Conditions
 

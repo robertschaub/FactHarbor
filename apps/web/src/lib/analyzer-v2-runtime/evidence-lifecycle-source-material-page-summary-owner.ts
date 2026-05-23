@@ -18,6 +18,7 @@ import {
   SOURCE_MATERIAL_KIND_OPENALEX_WORK_ABSTRACT,
   SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT,
   SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW,
+  SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_XLSX_TEXT,
   SOURCE_MATERIAL_PAGE_SUMMARY_VERSION,
   buildSourceMaterialPageSummaryRecord,
   buildSourceMaterialSearchPreviewRecord,
@@ -286,6 +287,16 @@ function statusFromTransportStatus(
   return "source_material_page_summary_failed_structural";
 }
 
+function serperSourceMaterialRank(record: SourceMaterialPageSummaryRecord): number {
+  if (record.sourceMaterialKind === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_XLSX_TEXT) {
+    return 0;
+  }
+  if (record.sourceMaterialKind === SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT) {
+    return 1;
+  }
+  return 2;
+}
+
 function selectedOpenAlexRecords(
   records: readonly SourceMaterialPageSummaryRecord[],
   maxRecords = SOURCE_MATERIAL_OPENALEX_MAX_RECORDS_PER_RUN,
@@ -363,6 +374,7 @@ function selectedProvidedSerperRecords(
     readonly record: SourceMaterialPageSummaryRecord;
     readonly providerAttemptOrdinal: number;
     readonly candidateOrdinal: number;
+    readonly sourceMaterialRank: number;
     readonly recordOrdinal: number;
   }[] = [];
   const seen = new Set<string>();
@@ -372,6 +384,7 @@ function selectedProvidedSerperRecords(
       || (
         record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PREVIEW
         && record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_PAGE_TEXT
+        && record.sourceMaterialKind !== SOURCE_MATERIAL_KIND_PROVIDER_SEARCH_RESULT_XLSX_TEXT
       )
       || record.sourceMaterialTextByteLength <= 0
       || record.sourceMaterialTextByteLength > 4_096
@@ -394,12 +407,14 @@ function selectedProvidedSerperRecords(
         previewRecord?.candidateOrdinal
         ?? structuralOrdinals?.candidateOrdinal
         ?? recordOrdinal + 1,
+      sourceMaterialRank: serperSourceMaterialRank(record),
       recordOrdinal,
     });
   }
 
   const ordered = [...eligible].sort((left, right) =>
     left.providerAttemptOrdinal - right.providerAttemptOrdinal
+    || left.sourceMaterialRank - right.sourceMaterialRank
     || left.candidateOrdinal - right.candidateOrdinal
     || left.recordOrdinal - right.recordOrdinal
   );

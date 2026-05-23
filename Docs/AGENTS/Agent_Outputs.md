@@ -4929,3 +4929,36 @@ package.
 `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
 `Docs/STATUS/V2_Current_Lane.md`;
 `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+## 2026-05-23 - Lead Developer - HJ75 Source Material Source-Native Selection Repair
+
+**Task:** Implement the Steer-Co/Claude-consented HJ75 Source Material repair
+after HJ74 showed W5/report-writer completion with weak source material.
+
+**Result:** Amended the existing Source Material selector so bounded Serper XLSX
+records are eligible and source-native Serper records are selected before
+preview-only fallback records under the existing provider-attempt balancing,
+dedupe, record cap, and byte cap. No prompt/model/config/schema, provider
+expansion, cap increase, retry, parser, cache/SR/storage, public behavior,
+ACS/direct URL, W5/W6/W7/W8/report-writer, or V1 work was added.
+
+**Validation:** Focused Source Material owner tests passed (20 tests), Serper
+preview/materialization tests passed (10 tests), XLSX materializer tests passed
+(4 tests), boundary guard passed (96 tests), web build passed,
+`npm run validate:v2-gates` passed, and gate-register self-test passed. Final
+debt sensors, index, and diff checks are run in closeout.
+
+**Handoff:** `Docs/AGENTS/Handoffs/2026-05-23_Lead_Developer_HJ75_Source_Material_Source_Native_Selection.md`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend the existing Source Material selector in place
+Rejected path and why: prompt repair, W5/report-writer repair, provider/cap/retry expansion, semantic source ranking, parser/cache/SR/storage, public behavior, ACS/direct URL, and V1 work either touch the wrong owner or add mechanisms before the inspected selector gap is exhausted
+What was removed/simplified: none
+What was added: one structural material-kind rank helper plus focused tests
+Net mechanism count: unchanged
+Budget reconciliation: actual source diff stayed in one existing runtime owner and one focused test file; no new route, sink, provider, cap, retry, or prompt/config/schema change
+Verification: focused owner, Serper preview, XLSX materializer, boundary guard, build, V2 gate validation, and gate-register self-test passed
+Debt accepted and removal trigger: none
+```
