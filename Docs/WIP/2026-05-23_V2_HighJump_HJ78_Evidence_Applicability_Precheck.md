@@ -16,9 +16,12 @@ HJ77 improved some target-frame behavior but left two material defects:
 - The asylum-WWII input stopped at W5 with no extractable evidence.
 
 HJ78 activates the already-designed `evidence_applicability` task before W5
-EvidenceItem extraction. This replaces the live owner's fabricated
-all-uncertain applicability frame with one LLM-owned applicability precheck over
-the same bounded source-content packets that W5 already receives.
+EvidenceItem extraction. The first live attempt showed that treating this new
+precheck as a hard gate blocks report creation when the precheck contract is not
+yet stable. HJ78 therefore runs the precheck as an advisory report-quality
+signal: accepted applicability guides W5, while damaged applicability falls back
+to the existing structural-uncertain frame so W5 can still produce report
+evidence.
 
 ## Scope
 
@@ -31,6 +34,8 @@ Allowed:
   the applicability task;
 - feed the accepted applicability result into the existing W5
   `evidence_extraction` prompt;
+- if the advisory applicability precheck is damaged, record a sanitized
+  fallback summary and continue W5 with structural uncertain applicability;
 - record only sanitized hash/status/count/token applicability telemetry in the
   hidden/admin-only W5 decision.
 
@@ -55,12 +60,14 @@ Expected scorecard movement is report-quality value, not new reachability:
 ## V2 Retirement Ledger Impact
 
 HJ78 retires the fabricated all-uncertain live-owner applicability behavior for
-product runtime execution. A structural all-uncertain fallback remains only for
-direct/unit harness calls that do not supply an applicability provider.
+accepted applicability precheck results. A structural all-uncertain fallback
+remains for direct/unit harness calls that do not supply an applicability
+provider and for damaged advisory-precheck attempts until the precheck contract
+is stable.
 
-Removal trigger: after two successful post-HJ78 report waves show the runtime
-provider path is stable, remove or test-confine the structural fallback if no
-production caller still needs it.
+Removal trigger: after two successful post-HJ78 report waves show accepted
+runtime applicability results are stable, remove or test-confine the structural
+fallback if no production caller still needs it.
 
 ## Debt-Guard Result
 
@@ -76,8 +83,9 @@ Rejected paths:
 - broad prompt-only iteration without fixing fabricated applicability input.
 
 Net mechanism impact: one planned task becomes executable in the hidden runtime
-path. This is accepted because it removes a fabricated semantic placeholder and
-keeps semantic applicability LLM-owned.
+path. The advisory fallback is accepted temporary debt because the Captain's
+HighJump direction requires complete internal report evidence before raising
+this bar again.
 
 ## Verification
 
@@ -106,7 +114,8 @@ First validation input:
 Decision boundary:
 
 - pass if a complete internal V2 report is produced and applicability precheck
-  reduces or blocks the HJ77 off-comparator true-side failure;
+  either guides W5 or records a bounded advisory fallback without blocking the
+  report path;
 - quality-gap pass if a complete report is produced but still needs a targeted
   next bar raise;
 - stop if no complete report is produced, public/default leakage appears, or

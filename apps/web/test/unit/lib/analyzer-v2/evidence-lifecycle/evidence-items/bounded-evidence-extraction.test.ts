@@ -540,9 +540,10 @@ describe("bounded evidence extraction runtime", () => {
     expect(extractionPrompt).not.toContain("structural-only applicability context");
   });
 
-  it("fails closed when the applicability task returns an incomplete content-packet decision set", async () => {
+  it("falls back to structural applicability when the applicability task returns an incomplete content-packet decision set", async () => {
     const inputPacket = mixedProviderPacket();
     let extractionCalled = false;
+    let extractionPrompt = "";
     const incompleteApplicability = {
       ...applicabilityResult(inputPacket, "applicable"),
       applicabilityDecisions: applicabilityResult(inputPacket, "applicable").applicabilityDecisions.slice(0, 1),
@@ -555,8 +556,9 @@ describe("bounded evidence extraction runtime", () => {
       executionReadinessDenial: w4i(inputPacket),
       executionReadinessRuntimeOwnership: "owned",
       applicabilityProviderCall: applicabilityProviderCall(incompleteApplicability),
-      providerCall: async () => {
+      providerCall: async (request) => {
         extractionCalled = true;
+        extractionPrompt = request.renderedPrompt;
         return {
           output: evidenceExtractedResult(inputPacket),
           telemetry: {
@@ -574,14 +576,17 @@ describe("bounded evidence extraction runtime", () => {
       configSnapshotHash: "config-hash-w5",
     });
 
-    expect(result.status).toBe("damaged_execution");
-    expect(result.damagedReason).toBe("task_contract_validation_failed");
+    expect(result.status).toBe("hidden_evidence_item_extraction_completed");
+    expect(result.damagedReason).toBe(null);
     expect(result.applicabilityPrecheck).toMatchObject({
-      source: "runtime_evidence_applicability_task",
-      resultStatus: "damaged",
+      source: "runtime_evidence_applicability_damaged_structural_fallback",
+      resultStatus: "accepted",
+      decisionCount: 2,
+      uncertainCount: 2,
       modelCalled: true,
     });
-    expect(extractionCalled).toBe(false);
+    expect(extractionCalled).toBe(true);
+    expect(extractionPrompt).toContain("\"applicability\":\"uncertain\"");
     expect(JSON.stringify(result)).not.toContain(inputPacket.sourceContentPackets[0]?.contentText);
   });
 

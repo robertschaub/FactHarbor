@@ -293,7 +293,11 @@ export type BoundedEvidenceExtractionModelTelemetry = {
 };
 
 export type BoundedEvidenceApplicabilityPrecheckSummary = {
-  readonly source: "runtime_evidence_applicability_task" | "structural_uncertain_fallback" | "not_reached";
+  readonly source:
+    | "runtime_evidence_applicability_task"
+    | "runtime_evidence_applicability_damaged_structural_fallback"
+    | "structural_uncertain_fallback"
+    | "not_reached";
   readonly resultStatus: EvidenceApplicabilityResult["status"] | null;
   readonly resultHash: string | null;
   readonly decisionCount: number;
@@ -620,9 +624,11 @@ function summarizeApplicabilityResult(params: {
     },
     durationMs: params.providerTelemetry?.durationMs ?? null,
     cacheDecisionReason: params.cacheDecisionReason ?? null,
-    approvalPointer: params.source === "runtime_evidence_applicability_task"
-      ? BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE
-      : null,
+    approvalPointer:
+      params.source === "runtime_evidence_applicability_task"
+        || params.source === "runtime_evidence_applicability_damaged_structural_fallback"
+        ? BOUNDED_EVIDENCE_APPLICABILITY_SOURCE_PACKAGE
+        : null,
   });
 }
 
@@ -2197,15 +2203,31 @@ async function resolveApplicabilityPrecheck(params: {
     cacheDecision,
     providerCall: params.request.applicabilityProviderCall,
   });
+  if (outcome.result.status === "damaged") {
+    const fallbackResult = buildStructuralApplicabilityResult(params.packet, params.selectedAtomicClaimIds);
+    return {
+      result: fallbackResult,
+      summary: summarizeApplicabilityResult({
+        result: fallbackResult,
+        source: "runtime_evidence_applicability_damaged_structural_fallback",
+        modelCalled: outcome.summary.modelCalled,
+        promptContentHash: outcome.summary.promptContentHash,
+        renderedPromptHash: outcome.summary.renderedPromptHash,
+        modelPolicyId: outcome.summary.modelPolicyId,
+        cacheDecisionReason: outcome.summary.cacheDecisionReason,
+      }),
+      blockedReason: null,
+      damagedReason: null,
+      promptLoaded: true,
+      promptRendered: true,
+      cacheDecisionConstructed: true,
+    };
+  }
   return {
     result: outcome.result,
     summary: outcome.summary,
     blockedReason: outcome.result.status === "blocked" ? "task_policy_not_executable" : null,
-    damagedReason: outcome.result.status === "damaged"
-      ? outcome.result.damagedReason === "provider_unavailable"
-        ? "provider_unavailable"
-        : "task_contract_validation_failed"
-      : null,
+    damagedReason: null,
     promptLoaded: true,
     promptRendered: true,
     cacheDecisionConstructed: true,
