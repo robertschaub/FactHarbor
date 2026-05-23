@@ -19,13 +19,14 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ70. Older HJ history below is kept as context,
-but the active anchor and budget are:
+This projection is synced after the HJ71 implementation commit and before the
+HJ71 focused live rerun. Older HJ history below is kept as context, but the
+active anchor and budget are:
 
 - committed implementation anchor:
-  `b800c8bc fix(v2): harden w5 evidence extraction output contract`;
+  `472d8c4e fix(v2): strengthen query planning current-stock intent`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ70_W5_Output_Contract_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ71_Query_Planning_Current_Stock_Direct_Record_Repair.md`;
 - latest canary result:
   HJ70 focused current-asylum W5 output-contract rerun, classified
   `PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED`;
@@ -34,10 +35,10 @@ but the active anchor and budget are:
   HJ64 through HJ70 consumed `16`, so `2` remain;
 - next action:
   keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
-  output-contract repair; HJ71 amends the existing Query Planning direct-record
-  obligation for current stock/threshold claims so the next focused rerun can
-  test whether source coverage reaches source-native current population stock
-  evidence;
+  output-contract repair; run exactly one HJ71 focused rerun from committed and
+  refreshed runtime `472d8c4e` with the active
+  `hj71-query-current-stock-direct-record` prompt to test whether source
+  coverage reaches source-native current population stock evidence;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -48,20 +49,14 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`b800c8bc fix(v2): harden w5 evidence extraction output contract`
+`472d8c4e fix(v2): strengthen query planning current-stock intent`
 
 Active implementation repair:
 
-HJ70 hardened the existing W5 `V2_EVIDENCE_EXTRACTION` output contract and
-focused prompt-contract tests. The focused current-asylum rerun proved the HJ69
-W5 schema stop is gone: W5 completed with `3` EvidenceItems and
-`schemaDiagnostics = null`, W8 reported `firstIncompleteStage = none`, and the
-internal report writer created a `4731` byte internal Alpha report. The report
-is still quality-poor: top-line internal verdict is `UNVERIFIED` (`50` truth,
-`25` confidence) because the source chain surfaced annual application-flow
-values and SEM current-statistics context, but not the actual current
-asylum-domain stock count needed to assess the `235000` threshold. The next
-quality owner is therefore query/source-material evidence coverage for the
+HJ71 amends the existing `V2_EVIDENCE_QUERY_PLANNING` prompt contract and
+focused prompt-contract tests so point-in-time stock/current-status/threshold
+claims request direct-record queries before flow/context queries. The active
+canary owner remains query/source-material evidence coverage for the
 source-native current population stock metric, not W5 schema, W4-I readiness,
 another cap increase, report-writer plumbing, or public-surface work.
 
@@ -638,8 +633,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `15`;
-- remaining: `3`;
+- consumed after latest reset: `16`;
+- remaining: `2`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -650,12 +645,14 @@ Current active tranche:
 1. Treat HJ68 as the current W5 recall baseline and keep the prompt repair.
 2. Treat HJ69 as the W4-I readiness repair: the current-asylum packet now
    reaches W5 execution.
-3. Pick the next single bar from observed defects: W5 `evidence_extraction`
-   schema/output contract over high-volume current-asylum packets.
-4. Avoid W4-I readiness work, cap increases, source/provider widening,
+3. Treat HJ70 as the W5 output-contract repair: W5 can now produce accepted
+   EvidenceItems and an internal report can be written.
+4. Run the HJ71 focused current-asylum rerun from clean, committed, refreshed
+   runtime and active HJ71 prompt; classify whether direct current-stock source
+   coverage is improved, unchanged, or moved to a downstream owner.
+5. Avoid W4-I readiness work, cap increases, source/provider widening,
    report-writer, verdict-calibration, retry, schema relaxation, or public
-   behavior until the W5 output-contract stop is addressed or Steer-Co
-   identifies a better owner.
+   behavior unless HJ71 evidence identifies that owner.
 
 ## Stop Conditions
 
