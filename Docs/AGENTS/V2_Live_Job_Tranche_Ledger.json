@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 7,
+    "currentRemaining": 6,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 7,
-      "consumptionEntriesInThisTranche": 5,
-      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations.",
+      "currentRemaining": 6,
+      "consumptionEntriesInThisTranche": 6,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations. HJ80 consumed one hydrogen job after query-planning direct-comparison prompt repair; it produced a complete internal report with stronger direct-comparison source material, but the primary verdict remained too weak at LEANING-FALSE 35/62.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2098,14 +2098,28 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_quality_improved_but_next_failure_visible",
         "note": "Hydrogen produced a complete 8997-character internal V2 report with public/default containment closed. The top verdict moved to false-side LEANING-FALSE 35/62, but accepted hydrogen expectation is FALSE/MOSTLY-FALSE with truth 5-25 plus tolerance. The report exposes a direct-comparator source-material gap: evidence still relies partly on hydrogen-vs-hybrid and adjacent comparator material instead of direct hydrogen-vs-BEV same-frame efficiency evidence."
+      },
+      {
+        "sliceId": "X7-HJ-80-COMPARISON-QUERY-DIRECTNESS",
+        "jobId": "2e3c8862b6d042fcb3a07a4cbb063cf7",
+        "classification": "PARTIAL_X7_HJ80_HYDROGEN_DIRECT_COMPARISON_REPORT_STILL_TOO_WEAK",
+        "implementationCommit": "b320a3ab12fde36910e028ef1445561d8d728dd9",
+        "runtimeCommit": "b320a3ab12fde36910e028ef1445561d8d728dd9",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 6,
+        "approvalPointer": "Captain message in current Codex thread approving prompt edits, schema changes, live jobs, and continued HighJump work plus HJ80 package Docs/WIP/2026-05-23_V2_HighJump_HJ80_Comparison_Query_Directness_Prompt_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_quality_stop_repeated_with_new_direct_comparison_evidence",
+        "note": "HJ80 amended existing query-planning direct-comparison guidance and ran one hydrogen rerun on clean API/Web runtime b320a3ab. The job stayed on claimboundary-v2, succeeded, produced a complete 9173-character internal report, and public/default containment held. Source Material completed with 9 records, W5 extracted 4 EvidenceItems, and the report writer created a draft. The report now cites a direct EV-vs-HFCV comparative item plus hydrogen-side context, but the primary verdict remains LEANING-FALSE 35/62 instead of the accepted FALSE/MOSTLY-FALSE hydrogen band."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ78 consumed three jobs and HJ79 consumed two jobs from the reset 12-job tranche; 7 remain.",
-      "nextLiveJobRequirement": "Repair existing comparison-query/source-material directness before another hydrogen rerun. Do not add report-writer recomputation or hidden proof machinery."
+      "reason": "HJ78 consumed three jobs, HJ79 consumed two jobs, and HJ80 consumed one job from the reset 12-job tranche; 6 remain.",
+      "nextLiveJobRequirement": "Use HJ80's complete report as evidence for the next single-bar repair. Do not spend another hydrogen job until deciding whether the owner is source-material quantitative directness or W7 verdict calibration over direct qualitative comparison evidence."
     },
     "pendingExceptionAuthorization": null
   }

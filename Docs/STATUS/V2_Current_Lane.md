@@ -19,34 +19,38 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ79 corrected the first complete HJ78 report's
-categorical-verdict calibration defect.
+This projection is synced after HJ80 produced another complete hydrogen report
+after direct-comparison query-planning repair.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   HJ78 implementation commit `55d00a81e342aa2e0dd59433c4df9d6412df42e5`
   plus stabilization commit `9e361fc4eaaf93909884d54195a87115d91997eb`;
   HJ79 prompt repair commit `981b7c4eac901f13e149d1d1bae2a1582d8b47b7`;
+  HJ80 prompt repair commit `b320a3ab12fde36910e028ef1445561d8d728dd9`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ79_Categorical_Verdict_Calibration_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ80_Comparison_Query_Directness_Result.md`;
 - latest validation result:
   plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
-  hydrogen then produced a complete internal report but stopped quality review as
-  `PARTIAL_X7_HJ79_HYDROGEN_FULL_REPORT_FALSE_SIDE_BUT_TOO_WEAK`: job
-  `54131f5e03e643aea97fa060886633ca` ran
+  HJ80 hydrogen then produced another complete internal report after
+  query-planning direct-comparison repair but stopped quality review as
+  `PARTIAL_X7_HJ80_HYDROGEN_DIRECT_COMPARISON_REPORT_STILL_TOO_WEAK`: job
+  `2e3c8862b6d042fcb3a07a4cbb063cf7` ran
   `Using hydrogen for cars is more efficient than using electricity` on
   `claimboundary-v2` and runtime
-  `1fa884c515f0baa7d3836daf5ebcfbedd8061461`, produced an `8997`
-  character internal report, moved direction to `LEANING-FALSE` `35/62`, and
-  preserved public/default blocked-precutover containment;
+  `b320a3ab12fde36910e028ef1445561d8d728dd9`, produced a `9173`
+  character internal report, cited direct EV-vs-HFCV comparative evidence plus
+  hydrogen-side context, kept the primary verdict at `LEANING-FALSE` `35/62`,
+  and preserved public/default blocked-precutover containment;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
-  consumed `2`; `7` remain;
+  consumed `2`, HJ80 consumed `1`; `6` remain;
 - next action:
-  repair the existing query-planning/source-material direct-comparator yield
-  for comparison claims; do not add report-writer recomputation or another
-  hidden proof layer;
+  use HJ80's full report as evidence for the next single-bar repair. Decide
+  whether the owner is source-material quantitative directness or W7 verdict
+  calibration over direct qualitative comparison evidence; do not add
+  report-writer recomputation or another hidden proof layer;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
