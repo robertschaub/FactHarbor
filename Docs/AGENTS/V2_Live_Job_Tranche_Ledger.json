@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj61-w7b-candidate-coherence-2026-05-23-reset-18-after-hj60",
+    "trancheId": "v2-highjump-hj63-w8-report-writer-2026-05-23-reset-18-after-hj62",
     "resetTotal": 18,
-    "currentRemaining": 14,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ60 mapped the cross-input internal-report quality picture."
+      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ62 repaired the W7-B truth-scale polarity blocker and exposed the next W8 report-writer roadblock."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 8,
+      "previousRemaining": 11,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ60 produced seven internal reports, one multilingual W5 stop, and concrete quality gaps."
+      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ62 repaired the hydrogen false-label/high-truth polarity regression and exposed plastic W8 report-writer damage."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET",
-      "startsAfterJobId": "71ab493bd64640f5957acd4e59e1c362",
+      "startsAfterSliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR",
+      "startsAfterJobId": "8a48ed2378ca4963bd10231b3da6e8c6",
       "startingRemaining": 18,
-      "currentRemaining": 14,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "HJ61 spent four jobs after the post-HJ60 18-job reset. It partially passed: all four jobs produced internal reports and public/default containment held; Bundesrat-simple improved to one coherent true-side section, but plastic remained true-side, Bundesrat-rechtskraeftig remained split, and hydrogen exposed a W7-B label/truth polarity regression. HJ62 is expected to repair the existing W7-B truth-scale polarity contract before more live validation.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "HJ61 and HJ62 are fully recorded below against the prior post-HJ60 reset. HJ62 spent three jobs, repaired the W7-B label/truth polarity blocker for hydrogen, exposed W8 report-writer damage for plastic after W8G draft creation, and repeated Bundesrat-simple split-report instability. Captain then reset the next HighJump tranche to 18 jobs. No job has been spent from this reset yet.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1732,6 +1732,51 @@
         "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ61 package Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md",
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_quality_gap"
+      },
+      {
+        "sliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-HYDROGEN",
+        "jobId": "fe125887384b47838104bad693dfd329",
+        "classification": "PASS_X7_HJ62_HYDROGEN_TRUTH_SCALE_POLARITY_REPAIRED",
+        "note": "Hydrogen produced one internal Alpha verdict, MOSTLY-FALSE with truth 18 and confidence 78, clearing the HJ61 false-label/high-truth polarity blocker. Public/default containment held.",
+        "implementationCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "runtimeCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194",
+        "count": 1,
+        "remainingAfter": 13,
+        "approvalPointer": "Captain HighJump direction and HJ62 package Docs/WIP/2026-05-23_V2_HighJump_HJ62_W7B_Truth_Scale_Polarity_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved"
+      },
+      {
+        "sliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-PLASTIC",
+        "jobId": "19ca87dab27a4446b5dd366eb89361db",
+        "classification": "STOP_X7_HJ62_PLASTIC_W8_REPORT_WRITER_DAMAGED_AFTER_W8G_DRAFT",
+        "note": "Plastic stayed on V2 and reached W5 with 4 EvidenceItems plus W8G draft state, but the W8 internal report writer returned a damaged stop before producing a complete report. Public/default containment held.",
+        "implementationCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "runtimeCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194",
+        "count": 1,
+        "remainingAfter": 12,
+        "approvalPointer": "Captain HighJump direction and HJ62 package Docs/WIP/2026-05-23_V2_HighJump_HJ62_W7B_Truth_Scale_Polarity_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure"
+      },
+      {
+        "sliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-BUNDESRAT-SIMPLE",
+        "jobId": "8a48ed2378ca4963bd10231b3da6e8c6",
+        "classification": "PARTIAL_X7_HJ62_BUNDESRAT_SIMPLE_SPLIT_REPORT_REPEATED",
+        "note": "Bundesrat-simple stayed on V2 and produced an internal report, but split into MOSTLY-TRUE 76/72 and UNVERIFIED 48/55 sections. Public/default containment held.",
+        "implementationCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "runtimeCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194",
+        "count": 1,
+        "remainingAfter": 11,
+        "approvalPointer": "Captain HighJump direction and HJ62 package Docs/WIP/2026-05-23_V2_HighJump_HJ62_W7B_Truth_Scale_Polarity_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_quality_gap_repeated_with_new_evidence"
       }
     ],
     "blockedPending": [],

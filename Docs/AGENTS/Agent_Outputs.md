@@ -4344,3 +4344,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** HJ61 consumed `4` jobs from the post-HJ60 reset `18`; `14` remain.
 
 **Next:** Prepare the smallest W7-B truth-scale polarity repair. Do not move the repair to the report writer; W8 copies W7-B label/truth/confidence exactly.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ62 W7-B Truth-Scale Polarity Repair Result
+
+**Task:** Validate the HJ62 `claimboundary-v2` prompt repair that makes W7-B truth percentage explicitly measure the selected AtomicClaim truth and stay band-consistent with the seven-point verdict label.
+
+**Repair:** HJ62 commit `053eae51` amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section and its focused prompt-contract test. It added no code-side semantic rule, report-writer correction, schema/model/config/provider/source/parser/cache/SR/storage change, public behavior, ACS/direct URL, retry path, or V1 work. UCM `claimboundary-v2` was imported and activated as `hj62-w7b-truth-scale-polarity` with hash `c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194`.
+
+**Verification before live jobs:** Prompt-contract test passed; focused boundary guard passed; web build passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/boundary-guard/consolidation signals; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy endpoints reported `053eae51522b8dd5ba9abe1da3c92aca35df1a19`.
+
+**Live jobs:** `hydrogen-en` `fe125887384b47838104bad693dfd329`; `plastic-en` `19ca87dab27a4446b5dd366eb89361db`; `bundesrat-simple` `8a48ed2378ca4963bd10231b3da6e8c6`.
+
+**Result:** HJ62 is a partial pass. All three jobs stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default containment. `hydrogen-en` produced one internal Alpha verdict, `MOSTLY-FALSE` truth `18` confidence `78`, clearing the HJ61 false-label/high-truth polarity blocker. `plastic-en` reached W5 with `4` EvidenceItems and W8G draft state, but the W8 internal report writer returned a damaged stop before a complete report. `bundesrat-simple` produced an internal report but repeated the split-shape gap: `MOSTLY-TRUE` 76/72 plus `UNVERIFIED` 48/55.
+
+**Classification:** `PARTIAL_X7_HJ62_TRUTH_SCALE_POLARITY_REPAIRED_REPORT_WRITER_AND_CANDIDATE_COHERENCE_GAPS_REMAIN`.
+
+**Information yield:** `hydrogen-en` = `report_quality_improved`; `plastic-en` = `new_failure`; `bundesrat-simple` = `same_quality_gap_repeated_with_new_evidence`.
+
+**Budget:** HJ62 consumed `3` jobs from the prior post-HJ60 tranche, taking that tranche from `14` to `11`. Captain then reset the next HighJump live-job budget to `18`; no jobs have been spent from the new tranche yet.
+
+**Next:** Keep the W7-B truth-scale invariant. The next narrow HighJump repair should target the existing W8 internal report writer contract so the plastic path can turn the already-created W8G draft state into a complete internal Alpha report. Do not add a parallel report path, schema relaxation, retry loop, source/provider widening, public surface, or V1 work.

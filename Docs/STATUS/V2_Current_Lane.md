@@ -19,24 +19,25 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ61. Older HJ history below is kept as context,
+This projection is synced after HJ62. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `9576896a docs(v2): record hj60 report gauntlet`;
+  `053eae51 fix(v2): enforce w7b truth-scale polarity`;
 - active repair package:
-  follow-up W7-B truth-scale polarity repair after HJ61 exposed
-  false-label/high-truth inconsistency;
+  next HighJump repair should target the existing W8 internal report writer
+  contract after HJ62 showed plastic reaches W8G draft state but damages at
+  final report writer output;
 - latest canary result:
-  HJ61 four-input candidate-coherence canary, classified
-  `PARTIAL_X7_HJ61_W7B_CANDIDATE_COHERENCE_IMPROVED_ONE_TARGET_POLARITY_REPAIR_REQUIRED`;
+  HJ62 three-input truth-scale polarity canary, classified
+  `PARTIAL_X7_HJ62_TRUTH_SCALE_POLARITY_REPAIRED_REPORT_WRITER_AND_CANDIDATE_COHERENCE_GAPS_REMAIN`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ60;
-  HJ61 consumed `4`, so `14` remain;
+  Captain reset to `18` on 2026-05-23 after HJ62;
+  no jobs have been spent from this new tranche yet;
 - next action:
-  amend the existing W7-B internal verdict calibration prompt so truth
-  percentages are explicitly the truth of the selected claim and must align
-  with the seven-point verdict label bands;
+  use debt-guard, inspect W8 aggregation/report-writer contract diagnostics,
+  and prepare the smallest existing-owner repair that lets the plastic path
+  turn an already-created W8G draft into a complete internal Alpha report;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -47,32 +48,52 @@ but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`9576896a docs(v2): record hj60 report gauntlet`
+`053eae51 fix(v2): enforce w7b truth-scale polarity`
 
 Active implementation repair:
 
-HJ61 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
-W7-B forms fewer, more claim-aligned top-line verdict candidates and keeps
-context-only caveats as caveats, limitations, or material uncertainties. It
-partially worked for `bundesrat-simple`, but it exposed a stronger calibration
-defect: W7-B can emit a false-side label with a high truth percentage. The next
-repair remains in the same existing prompt section and should add no code-side
-semantic rule, report-writer mutation, schema relaxation, source or provider
-widening, parser, retry/repair loop, public surface, cache/SR/storage, direct
-URL/ACS support, or V1 work.
+HJ62 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
+W7-B truth percentages are explicitly the estimated truth of the selected
+AtomicClaim and must stay band-consistent with the seven-point verdict label.
+It repaired the hydrogen false-label/high-truth regression. It also exposed the
+next immediate report-path blocker: the plastic path reached W5 with
+EvidenceItems and W8G draft state, but the W8 internal report writer returned a
+damaged result before producing a complete report. The next repair should stay
+with the existing W8 report-writer owner and should add no parallel report path,
+schema relaxation, source or provider widening, parser, retry loop, public
+surface, cache/SR/storage, direct URL/ACS support, or V1 work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-61-W7B-CANDIDATE-COHERENCE-REPAIR`
+`X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj61-w7b-candidate-coherence.json`
+`Docs/WIP/canary-evidence-hj62-w7b-truth-scale-polarity.json`
 
 Important evidence:
 
+- HJ62 ran three targeted canaries on runtime/source commit
+  `053eae51522b8dd5ba9abe1da3c92aca35df1a19` after importing and activating
+  `claimboundary-v2` prompt hash
+  `c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194`.
+  All three jobs stayed on `claimboundary-v2`, finished `SUCCEEDED`, and
+  preserved public/default containment (`4.0.0-cb-precutover`,
+  `blocked_precutover`, no public/default report markdown, no public/default
+  verdict/truth/confidence, unauthenticated hidden report-writer route `401`).
+  `hydrogen-en` (`fe125887384b47838104bad693dfd329`) produced one internal
+  Alpha verdict, `MOSTLY-FALSE` truth `18` confidence `78`, so the HJ61
+  false-label/high-truth polarity blocker is repaired. `plastic-en`
+  (`19ca87dab27a4446b5dd366eb89361db`) reached W5 with `4` EvidenceItems and
+  W8G draft state, but the W8 internal report writer produced a damaged stop
+  instead of a complete report. `bundesrat-simple`
+  (`8a48ed2378ca4963bd10231b3da6e8c6`) produced an internal report but
+  repeated the split-shape quality gap: `MOSTLY-TRUE` 76/72 plus `UNVERIFIED`
+  48/55. HJ62 is therefore a partial pass: keep the W7-B truth-scale invariant,
+  repair the W8 report-writer roadblock next, then return to W7-B candidate
+  coherence and source-quality gaps from report evidence.
 - HJ61 ran four targeted report-quality canaries on runtime/source commit
   `cd7f2e214b762a456b9e3623f427f3f1c0f3015d` after importing and activating
   `claimboundary-v2` prompt hash
@@ -502,24 +523,25 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `4`;
-- remaining: `14`;
-- latest reset starts after the HJ60 stronger internal report gauntlet, latest
-  job `71ab493bd64640f5957acd4e59e1c362`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after the HJ62 truth-scale polarity repair, latest
+  job `8a48ed2378ca4963bd10231b3da6e8c6`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Keep the useful HJ61 candidate-economy guidance.
-2. Amend the existing W7-B internal verdict calibration prompt with the
-   structural seven-point label/truth polarity invariant.
-3. Commit, import/activate the revised `claimboundary-v2` prompt, refresh
-   runtime, and run a small guardrail canary set focused on hydrogen, plastic,
-   and Bundesrat-simple.
-4. If polarity is repaired but plastic/asylum-family quality remains weak, move
-   next to source-material usefulness rather than adding a downstream
-   report-consolidation layer.
+1. Keep the useful HJ61 candidate-economy guidance and the HJ62 truth-scale
+   polarity invariant.
+2. Use `/debt-guard` for the HJ62 plastic failure because this is now a
+   verifier/live-result repair.
+3. Inspect the existing W8 aggregation/report-writer contract, schema, tests,
+   and plastic W8G/W8 diagnostics.
+4. Prepare the smallest HJ63 W8 report-writer repair that converts the existing
+   W8G draft state into a complete internal Alpha report without adding a
+   parallel report path, schema relaxation, retry loop, public surface, source
+   widening, or V1 work.
 
 ## Stop Conditions
 

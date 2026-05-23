@@ -1,10 +1,10 @@
 # V2 HighJump HJ62 W7-B Truth-Scale Polarity Repair
 
-**Status:** implementation verifier-clean; pending UCM prompt activation and live validation
+**Status:** live validation complete; HJ62 partial pass with polarity repaired
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, prompt edits allowed, live-job budget
-remaining `14` after HJ61
+remaining `14` before HJ62; Captain later reset the next tranche to `18`
 
 ## Purpose
 
@@ -167,3 +167,64 @@ Stop signals:
 - W7-B schema/contract damage;
 - false-side label/high-truth polarity repeats after the prompt amendment;
 - the next live result shows the defect is elsewhere than W7-B.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj62-w7b-truth-scale-polarity.json`
+
+Runtime/source:
+
+- implementation commit:
+  `053eae51522b8dd5ba9abe1da3c92aca35df1a19`;
+- active `claimboundary-v2` prompt hash:
+  `c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194`;
+- all three jobs reported created/executed web git hash
+  `053eae51522b8dd5ba9abe1da3c92aca35df1a19`.
+
+Jobs:
+
+- `hydrogen-en` job `fe125887384b47838104bad693dfd329` finished
+  `SUCCEEDED` and produced one internal Alpha verdict:
+  `MOSTLY-FALSE`, truth `18`, confidence `78`. This clears the HJ61 hard
+  polarity blocker: a false-side label no longer carries high truth.
+- `plastic-en` job `19ca87dab27a4446b5dd366eb89361db` finished
+  `SUCCEEDED`, but the authenticated admin report was only a stop summary.
+  The run reached W5 with `4` EvidenceItems and produced W8G draft state, but
+  the W8 internal report writer returned a damaged result before a complete
+  report could be displayed. This is a new immediate report-path blocker.
+- `bundesrat-simple` job `8a48ed2378ca4963bd10231b3da6e8c6` finished
+  `SUCCEEDED` and produced an internal Alpha report, but it regressed from the
+  HJ61 one-section shape into a split report: `MOSTLY-TRUE` truth `76`
+  confidence `72` plus `UNVERIFIED` truth `48` confidence `55`.
+
+Containment:
+
+- public/default V2 remained `4.0.0-cb-precutover` /
+  `blocked_precutover`;
+- public/default report markdown, verdict, truth percentage, and confidence
+  remained absent;
+- default hidden report-writer projection stayed hash/length/provenance-only;
+- unauthenticated hidden report-writer access returned `401`.
+
+Classification:
+
+`PARTIAL_X7_HJ62_TRUTH_SCALE_POLARITY_REPAIRED_REPORT_WRITER_AND_CANDIDATE_COHERENCE_GAPS_REMAIN`
+
+Information yield:
+
+- `hydrogen-en`: `report_quality_improved`; the W7-B label/truth polarity bar
+  is repaired for the focused false-side regression.
+- `plastic-en`: `new_failure`; W8 report writer contract robustness is now the
+  next report-path blocker before another plastic quality canary is useful.
+- `bundesrat-simple`: `same_quality_gap_repeated_with_new_evidence`; split
+  verdict/caveat handling remains unstable after the polarity repair.
+
+Next:
+
+Keep HJ62. Do not revert the W7-B truth-scale invariant. The next narrow
+HighJump repair should inspect and amend the existing W8 internal report writer
+contract so the plastic path can produce a complete internal report from the
+already-created W8G draft. Do not add a parallel report path, schema relaxation,
+source/provider widening, retry loop, parser, public surface, or V1 work.

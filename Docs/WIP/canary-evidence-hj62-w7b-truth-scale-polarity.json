@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "v2-hj62-canary-evidence.v1",
+  "sliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR",
+  "implementationCommit": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+  "promptHash": "c92c84935af7e789850574157aca8eadb6aebbfad65f5c5356cad8ddfaf78194",
+  "startedAt": "2026-05-23T07:11:02.480Z",
+  "jobs": [
+    {
+      "label": "hydrogen-en",
+      "inputValue": "Using hydrogen for cars is more efficient than using electricity",
+      "jobId": "fe125887384b47838104bad693dfd329",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "executedWebGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "promptContentHash": null,
+      "reportMarkdownLength": 4325,
+      "verdictTriples": [
+        {
+          "title": "Verdict: MOSTLY-FALSE (18% truth, 78% confidence)",
+          "label": "MOSTLY-FALSE",
+          "truth": 18,
+          "confidence": 78
+        }
+      ],
+      "polarityViolations": [],
+      "reportExcerpt": "## Executive Summary\n## Verdict: MOSTLY-FALSE (18% truth, 78% confidence)\n### Primary Finding\n### Contextual Boundary: Hydrogen vs. Gasoline and Hybrid Vehicles\n## Caveats and Material Uncertainty\n### Sufficiency and Evidence Limitations\n### Temporal and Technology Scope\n### Source Singularity Risk\n## Evidence References",
+      "leakChecks": {
+        "ledgerId": "fe125887384b47838104bad693dfd329:precutover-observability",
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "warningTypes": [
+            "report_damaged"
+          ]
+        },
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    },
+    {
+      "label": "plastic-en",
+      "inputValue": "Plastic recycling is pointless",
+      "jobId": "19ca87dab27a4446b5dd366eb89361db",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "executedWebGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "promptContentHash": null,
+      "reportMarkdownLength": 1253,
+      "verdictTriples": [],
+      "polarityViolations": [],
+      "reportExcerpt": "## Stop Point\n## Structural Observations\n## Next Step",
+      "leakChecks": {
+        "ledgerId": "19ca87dab27a4446b5dd366eb89361db:precutover-observability",
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "warningTypes": [
+            "report_damaged"
+          ]
+        },
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    },
+    {
+      "label": "bundesrat-simple",
+      "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+      "jobId": "8a48ed2378ca4963bd10231b3da6e8c6",
+      "status": "SUCCEEDED",
+      "createdGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "executedWebGitCommitHash": "053eae51522b8dd5ba9abe1da3c92aca35df1a19",
+      "promptContentHash": null,
+      "reportMarkdownLength": 6487,
+      "verdictTriples": [
+        {
+          "title": "Verdict 1: Temporal Ordering of Bundesrat Approval and Parliamentary Handoff",
+          "label": "MOSTLY-TRUE",
+          "truth": 76,
+          "confidence": 72
+        },
+        {
+          "title": "Verdict 2: Procedural Posture and Decision Completion",
+          "label": "UNVERIFIED",
+          "truth": 48,
+          "confidence": 55
+        }
+      ],
+      "polarityViolations": [],
+      "reportExcerpt": "## Executive Summary\n## Verdict 1: Temporal Ordering of Bundesrat Approval and Parliamentary Handoff\n**Verdict Label:** MOSTLY-TRUE  \n**Truth Percentage:** 76%  \n**Confidence:** 72%\n### Narrative\n### Material Uncertainty Signals\n## Verdict 2: Procedural Posture and Decision Completion\n**Verdict Label:** UNVERIFIED  \n**Truth Percentage:** 48%  \n**Confidence:** 55%\n### Narrative\n### Material Uncertainty Signals\n## Boundary: Bundesrat Approval and Parliamentary Handoff Sequence\n### Narrative\n## Limitations\n## Evidence References",
+      "leakChecks": {
+        "ledgerId": "8a48ed2378ca4963bd10231b3da6e8c6:precutover-observability",
+        "publicSummary": {
+          "schemaVersion": "4.0.0-cb-precutover",
+          "pipeline": "claimboundary-v2",
+          "publicCutoverStatus": "blocked_precutover",
+          "verdict": null,
+          "truthPercentage": null,
+          "confidence": null,
+          "warningTypes": [
+            "report_damaged"
+          ]
+        },
+        "publicStatus": 200,
+        "publicTopLevelVerdictLabel": null,
+        "publicTopLevelTruthPercentage": null,
+        "publicTopLevelConfidence": null,
+        "publicReportMarkdownLength": 0,
+        "writerDefaultStatus": 200,
+        "writerDefaultProjection": "hash_length_provenance_only",
+        "writerDefaultReportMarkdownReturned": false,
+        "writerDefaultArtifactCount": 1,
+        "unauthWriterStatus": 401,
+        "hardLeak": false
+      }
+    }
+  ],
+  "updatedAt": "2026-05-23T07:19:08.310Z",
+  "completedAt": "2026-05-23T07:19:08.309Z"
+}
