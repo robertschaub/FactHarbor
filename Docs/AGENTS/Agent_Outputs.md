@@ -4486,3 +4486,15 @@ Verification: prompt-contract test, boundary-verdict execution test, boundary gu
 Debt accepted and removal trigger: no accepted mechanism debt; remaining report-quality gap is W7-B selected-claim polarity/orientation and should be addressed as the next repair
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
+
+## 2026-05-23 - Senior Developer - Candidate Pipeline Ranking
+
+**Task:** Rank seven candidate commits by Captain-expectation report quality and assess extractability for side-by-side legacy pipeline integration.
+
+**Result:** Selected `quality_before_decline` (`d3ad26c`, 8/8 covered, 8/8 passing, 92.9 composite) and `deployed_22.4` (`2f7a280`, 8/8 covered, 8/8 passing, 90.6 composite). `best_reports_19.4` (`8f3ca9d`, 89.3 composite) remains the fallback if `quality_before_decline` fails an early extraction spike. `current_v1` (`95312f5`) scored 56.1 on 7/8 covered families after live reruns; `Alpha`, `quality_window_end`, and `quality_window_start` had no matched report data and are unverifiable.
+
+**Live-job budget:** Used 8/16 jobs, all current_v1 V1 `claimboundary` jobs on ports 3000/5000. Seven succeeded; plastic job `d1728abc82e64a53af784a4fe9b4e837` was interrupted by reboot at 58%. A clean exact-commit rerun setup was attempted in `C:\DEV\FH-current_v1-95312`, but no job was submitted because the old API failed fresh-DB migration at `AddClaimSelectionDraftIsHidden` due missing `ClaimSelectionDrafts`; temporary worktree removed.
+
+**Debate:** Advocate favored `quality_before_decline` + `deployed_22.4` for maximum quality. Challenger preferred `deployed_22.4` + `best_reports_19.4` due lower extraction cost. Reconciler selected `quality_before_decline` + `deployed_22.4`, treating extraction cost as a risk constraint rather than a replacement for quality ranking.
+
+**Handoff:** `Docs/AGENTS/Handoffs/2026-05-23_Senior_Developer_Candidate_Pipeline_Ranking.md`.

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-22T18:59:26.303Z",
-  "count": 436,
+  "generatedAt": "2026-05-23T10:32:40.992Z",
+  "count": 437,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9661,6 +9661,20 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Takeover Checkpoint - V2 W6-C HighJump"
+    },
+    {
+      "file": "2026-05-23_Senior_Developer_Candidate_Pipeline_Ranking.md",
+      "date": "2026-05-23",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "candidate",
+        "pipeline",
+        "ranking"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-23 - Senior Developer - Candidate Pipeline Ranking"
     }
   ]
 }
