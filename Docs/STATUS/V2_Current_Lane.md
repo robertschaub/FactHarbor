@@ -19,8 +19,9 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ82 produced a complete hydrogen report that
-narrowed the HJ81 regression but did not yet pass report quality.
+This projection is synced after HJ83 produced a complete hydrogen report that
+passes the selected-claim-primary report-composition repair but still needs
+verdict-strength improvement.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
@@ -32,8 +33,10 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   has been reverted in the active source state;
   HJ82 comparator-identity prompt repair commit
   `978e7839fa676706dd953fb2d6213f668fa1f7e6`;
+  HJ83 report-primary selected-claim prompt repair commit
+  `259b6eef52195fc3589a234e1b0289bf6d451ddd`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ82_Comparator_Identity_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ83_Report_Primary_Selected_Claim_Result.md`;
 - latest validation result:
   plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
@@ -52,18 +55,23 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   `8074` character internal report, held public/default containment, and
   narrowed the defect: the selected hydrogen-vs-electricity claim is now
   `UNVERIFIED` `48/45`, but an outside-baseline hydrogen-vs-gasoline verdict is
-  still foregrounded as `LEANING-TRUE` `62/65`;
+  still foregrounded as `LEANING-TRUE` `62/65`; HJ83 job
+  `0f282532282046659320db02bdfbd4f5` ran on runtime
+  `259b6eef52195fc3589a234e1b0289bf6d451ddd`, produced a complete `6211`
+  character internal report, and fixed report composition: the title, executive
+  summary, and primary verdict now answer the selected EV-vs-HFCV comparison as
+  `LEANING-FALSE` `35/62`, with gasoline/hybrid material moved to contextual
+  status;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
-  consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`, HJ82 consumed `1`; `4`
-  remain;
+  consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`, HJ82 consumed `1`, HJ83
+  consumed `1`; `3` remain;
 - next action:
-  use the HJ82 full report as evidence for a selected-comparator report-primary
-  repair. The next owner is likely the existing report writer or verdict/intake
-  shaping rule that chooses report-primary verdict sections: outside-baseline
-  context may be shown as context/caveat, but it should not be the first or
-  primary verdict for a selected-comparator claim. Do not broaden W7 again and
-  do not add another hidden proof layer;
+  use the HJ83 full report as evidence for the next single-bar quality repair.
+  The report is now coherent and selected-claim-primary, but the verdict remains
+  too weak (`LEANING-FALSE 35/62`) versus the accepted hydrogen expectation.
+  Inspect W7 calibration and evidence-strength handling for direct selected-
+  endpoint opposition without repeating HJ81's adjacent-comparator overreach;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
