@@ -335,12 +335,18 @@ function selectedSearchPreviewRecords(
 
 function selectedProvidedSerperRecords(
   records: readonly SourceMaterialPageSummaryRecord[],
+  previewDecision?: EvidenceLifecycleSourceCandidatePreviewDecision,
   maxRecords = SOURCE_MATERIAL_SERPER_PROVIDED_MAX_RECORDS_PER_RUN,
 ): readonly SourceMaterialPageSummaryRecord[] {
-  const selected: SourceMaterialPageSummaryRecord[] = [];
+  const acceptedPreviewRecords = previewDecision ? matchingMaterializedPreviewRecords(previewDecision) : new Map();
+  const eligible: {
+    readonly record: SourceMaterialPageSummaryRecord;
+    readonly providerAttemptOrdinal: number;
+    readonly candidateOrdinal: number;
+    readonly recordOrdinal: number;
+  }[] = [];
   const seen = new Set<string>();
-  let aggregateTextBytes = 0;
-  for (const record of records) {
+  for (const [recordOrdinal, record] of records.entries()) {
     if (
       record.providerId !== SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID
       || (
@@ -350,30 +356,71 @@ function selectedProvidedSerperRecords(
       || record.sourceMaterialTextByteLength <= 0
       || record.sourceMaterialTextByteLength > 4_096
       || seen.has(record.sourceMaterialTextHash)
-      || aggregateTextBytes + record.sourceMaterialTextByteLength >
-        SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES
     ) {
       continue;
     }
-    selected.push(record);
     seen.add(record.sourceMaterialTextHash);
-    aggregateTextBytes += record.sourceMaterialTextByteLength;
+    const previewRecord = acceptedPreviewRecords.get(record.candidatePreviewId);
+    eligible.push({
+      record,
+      providerAttemptOrdinal: previewRecord?.providerAttemptOrdinal ?? Number.MAX_SAFE_INTEGER,
+      candidateOrdinal: previewRecord?.candidateOrdinal ?? recordOrdinal + 1,
+      recordOrdinal,
+    });
+  }
+
+  const ordered = [...eligible].sort((left, right) =>
+    left.providerAttemptOrdinal - right.providerAttemptOrdinal
+    || left.candidateOrdinal - right.candidateOrdinal
+    || left.recordOrdinal - right.recordOrdinal
+  );
+  const selected: typeof ordered = [];
+  const selectedRecordOrdinals = new Set<number>();
+  let aggregateTextBytes = 0;
+  function selectIfWithinBudget(item: (typeof ordered)[number]): void {
+    if (
+      selected.length >= maxRecords
+      || selectedRecordOrdinals.has(item.recordOrdinal)
+      || aggregateTextBytes + item.record.sourceMaterialTextByteLength >
+        SOURCE_MATERIAL_SERPER_PROVIDED_MAX_AGGREGATE_TEXT_BYTES
+    ) {
+      return;
+    }
+    selected.push(item);
+    selectedRecordOrdinals.add(item.recordOrdinal);
+    aggregateTextBytes += item.record.sourceMaterialTextByteLength;
+  }
+  const firstByProviderAttempt = new Map<number, (typeof ordered)[number]>();
+  for (const item of ordered) {
+    if (!firstByProviderAttempt.has(item.providerAttemptOrdinal)) {
+      firstByProviderAttempt.set(item.providerAttemptOrdinal, item);
+    }
+  }
+  for (const item of firstByProviderAttempt.values()) {
+    selectIfWithinBudget(item);
+  }
+  for (const item of ordered) {
     if (selected.length >= maxRecords) {
       break;
     }
+    selectIfWithinBudget(item);
   }
-  return selected;
+  return selected.map((item) => item.record);
 }
 
 function mergedSourceMaterialRecords(params: {
   readonly openAlexRecords: readonly SourceMaterialPageSummaryRecord[];
+  readonly previewDecision?: EvidenceLifecycleSourceCandidatePreviewDecision;
   readonly webSearchPreviewRecords?: readonly SourceMaterialPageSummaryRecord[];
   readonly searchPreviewRecords?: readonly SourceMaterialPageSummaryRecord[];
   readonly wikimediaRecords: readonly SourceMaterialPageSummaryRecord[];
 }): readonly SourceMaterialPageSummaryRecord[] {
   const openAlexRecords = selectedOpenAlexRecords(params.openAlexRecords);
   const strongRecordCount = openAlexRecords.length + params.wikimediaRecords.length;
-  const webSearchPreviewRecords = selectedProvidedSerperRecords(params.webSearchPreviewRecords ?? []);
+  const webSearchPreviewRecords = selectedProvidedSerperRecords(
+    params.webSearchPreviewRecords ?? [],
+    params.previewDecision,
+  );
   const searchPreviewRecords = strongRecordCount > 0 ? params.searchPreviewRecords ?? [] : [];
   const merged: SourceMaterialPageSummaryRecord[] = [];
   const seen = new Set<string>();
@@ -460,6 +507,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
     if (locators.length === 0) {
       const openAlexOnlyRecords = mergedSourceMaterialRecords({
         openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+        previewDecision: params.previewDecision,
         webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
         searchPreviewRecords: [],
         wikimediaRecords: [],
@@ -497,6 +545,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
       if (transportOutcome.status !== "success") {
         const mergedRecords = mergedSourceMaterialRecords({
           openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+          previewDecision: params.previewDecision,
           webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
           searchPreviewRecords,
           wikimediaRecords: records,
@@ -539,6 +588,7 @@ export async function runEvidenceLifecycleSourceMaterialPageSummaryDecision(para
 
     const mergedRecords = mergedSourceMaterialRecords({
       openAlexRecords: params.openAlexSourceMaterialRecords ?? [],
+      previewDecision: params.previewDecision,
       webSearchPreviewRecords: params.webSearchPreviewSourceMaterialRecords ?? [],
       searchPreviewRecords,
       wikimediaRecords: records,

@@ -216,20 +216,58 @@ function webSearchLinkedPageRecord(
   };
 }
 
-function serperProjection(): ReturnType<typeof buildSourceCandidatePreviewProjection> {
+function serperProjection(
+  providerAttemptOrdinal = 9,
+  candidateOrdinal = 1,
+  title = "Web search court-process result",
+  snippet = "The public search result describes procedural objections and court votes.",
+): ReturnType<typeof buildSourceCandidatePreviewProjection> {
   return buildSourceCandidatePreviewProjection({
     providerId: SOURCE_CANDIDATE_PREVIEW_SERPER_PROVIDER_ID,
     endpointId: SOURCE_CANDIDATE_PREVIEW_SERPER_ENDPOINT_ID,
-    providerAttemptOrdinal: 9,
-    providerRank: 1,
-    candidateOrdinal: 1,
-    sourceCandidateRef: "OPAQUE_SOURCE_CANDIDATE_SERPER_9_1",
+    providerAttemptOrdinal,
+    providerRank: candidateOrdinal,
+    candidateOrdinal,
+    sourceCandidateRef: `OPAQUE_SOURCE_CANDIDATE_SERPER_${providerAttemptOrdinal}_${candidateOrdinal}`,
     candidate: {
-      title: "Web search court-process result",
-      snippet: "The public search result describes procedural objections and court votes.",
-      link: "https://example.test/web-search-court-process",
+      title,
+      snippet,
+      link: `https://example.test/web-search-${providerAttemptOrdinal}-${candidateOrdinal}`,
     },
   });
+}
+
+function webSearchPreviewRecordForAttempt(
+  providerAttemptOrdinal: number,
+  candidateOrdinal: number,
+  sourceMaterialText = `Bounded source preview ${providerAttemptOrdinal}.${candidateOrdinal}`,
+): SourceMaterialPageSummaryRecord {
+  const previewRecord = serperProjection(
+    providerAttemptOrdinal,
+    candidateOrdinal,
+    `Attempt ${providerAttemptOrdinal} candidate ${candidateOrdinal}`,
+    `Bounded source preview ${providerAttemptOrdinal}.${candidateOrdinal}`,
+  );
+  const recordDecision = buildSourceMaterialSearchPreviewRecord({
+    previewRecord,
+    languageCode: "en",
+    diagnostic: {
+      compressedBytes: 1000,
+      decompressedBytes: 1000,
+      durationMs: 41,
+      timeoutMs: 3000,
+    },
+  });
+  if (recordDecision.status !== "record_created") {
+    throw new Error("test web search preview record should materialize");
+  }
+  return {
+    ...recordDecision.record,
+    sourceMaterialText,
+    sourceMaterialTextHash: `${providerAttemptOrdinal}${candidateOrdinal}`.repeat(32).slice(0, 64),
+    sourceMaterialTextByteLength: Buffer.byteLength(sourceMaterialText, "utf8"),
+    sourceMaterialTextCharLength: sourceMaterialText.length,
+  };
 }
 
 describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
@@ -497,6 +535,104 @@ describe("Analyzer V2 W3-B page-summary Source Material owner", () => {
     expect(decision.sourceMaterialRecords[0]?.sourceMaterialKind)
       .toBe("provider_search_result_page_text_bounded");
     expect(decision.sourceMaterialRecords[0]?.sourceMaterialTextByteLength).toBe(4_096);
+  });
+
+  it("reserves top bounded web-search source material from each provider attempt before filling remaining slots", async () => {
+    const previewRecords = [1, 2, 3].flatMap((providerAttemptOrdinal) =>
+      [1, 2, 3].map((candidateOrdinal) =>
+        serperProjection(providerAttemptOrdinal, candidateOrdinal)
+      )
+    );
+    const sourceMaterialRecords = [1, 2, 3].flatMap((providerAttemptOrdinal) =>
+      [1, 2, 3].map((candidateOrdinal) =>
+        webSearchPreviewRecordForAttempt(providerAttemptOrdinal, candidateOrdinal)
+      )
+    );
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: 9,
+          totalCandidateCount: 9,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: 9,
+            totalCandidateCount: 9,
+          },
+        }),
+        previewProjections: previewRecords,
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: sourceMaterialRecords,
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecordCount).toBe(6);
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
+      "SOURCE_CANDIDATE_PREVIEW_2_2",
+    ]);
+  });
+
+  it("applies the aggregate byte cap after provider-attempt balancing", async () => {
+    const entries = [
+      ...[1, 2, 3, 4, 5, 6].map((candidateOrdinal) => ({ providerAttemptOrdinal: 1, candidateOrdinal })),
+      { providerAttemptOrdinal: 2, candidateOrdinal: 1 },
+      { providerAttemptOrdinal: 3, candidateOrdinal: 1 },
+    ];
+    const previewRecords = entries.map((entry) =>
+      serperProjection(entry.providerAttemptOrdinal, entry.candidateOrdinal)
+    );
+    const sourceMaterialRecords = entries.map((entry) =>
+      webSearchPreviewRecordForAttempt(
+        entry.providerAttemptOrdinal,
+        entry.candidateOrdinal,
+        `${entry.providerAttemptOrdinal}.${entry.candidateOrdinal} `.padEnd(4_096, "A"),
+      )
+    );
+    const decision = await runEvidenceLifecycleSourceMaterialPageSummaryDecision({
+      networkDecision: networkDecision({
+        telemetry: {
+          ...networkDecision().telemetry,
+          candidateCount: entries.length,
+          totalCandidateCount: entries.length,
+        },
+      }),
+      previewDecision: buildEvidenceLifecycleSourceCandidatePreviewDecision({
+        networkDecision: networkDecision({
+          telemetry: {
+            ...networkDecision().telemetry,
+            candidateCount: entries.length,
+            totalCandidateCount: entries.length,
+          },
+        }),
+        previewProjections: previewRecords,
+      }),
+      fetchLocators: [],
+      webSearchPreviewSourceMaterialRecords: sourceMaterialRecords,
+    });
+
+    expect(decision.status).toBe("source_material_page_summary_completed");
+    expect(decision.sourceMaterialRecords.map((record) => record.candidatePreviewId)).toEqual([
+      "SOURCE_CANDIDATE_PREVIEW_1_1",
+      "SOURCE_CANDIDATE_PREVIEW_2_1",
+      "SOURCE_CANDIDATE_PREVIEW_3_1",
+      "SOURCE_CANDIDATE_PREVIEW_1_2",
+      "SOURCE_CANDIDATE_PREVIEW_1_3",
+      "SOURCE_CANDIDATE_PREVIEW_1_4",
+    ]);
+    expect(decision.sourceMaterialRecords.reduce(
+      (total, record) => total + record.sourceMaterialTextByteLength,
+      0,
+    )).toBe(24_576);
   });
 
   it("fetches up to nine structurally distinct page summaries in provider-attempt balanced order", async () => {
