@@ -19,25 +19,24 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ62. Older HJ history below is kept as context,
+This projection is synced for HJ64. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `053eae51 fix(v2): enforce w7b truth-scale polarity`;
+  HJ64 implementation commit for this package; exact hash is recorded after
+  commit and before live execution;
 - active repair package:
-  next HighJump repair should target W7-B label/truth contract enforcement and
-  candidate calibration after HJ63 repaired the W8 report-writer roadblock but
-  exposed plastic W7-B label/truth inconsistency;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ64_W7B_Label_Truth_Coupling_Repair.md`;
 - latest canary result:
   HJ63 focused plastic canary, classified
   `PASS_X7_HJ63_W8_REPORT_WRITER_ACCEPTED_BRANCH_REPAIR_W7B_LABEL_TRUTH_QUALITY_GAP_REMAINS`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ62;
-  HJ63 consumed `1`, so `17` remain;
+  Captain reset to `18` on 2026-05-23 after HJ63;
+  HJ64 will be the first consumption from this reset;
 - next action:
-  use debt-guard, inspect W7-B output contract validation and prompt
-  calibration, and prepare the smallest repair that prevents true-side labels
-  with low truth scores or false-side labels with high truth scores;
+  finish HJ64 prompt/test verifier set, commit, import/activate the revised
+  `claimboundary-v2` prompt, refresh runtime, and run one focused plastic
+  canary;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,22 +45,21 @@ but the active anchor and budget are:
 
 ## Current Implementation Anchor
 
-Latest committed source/docs anchor:
+Latest source/docs anchor:
 
-`053eae51 fix(v2): enforce w7b truth-scale polarity`
+HJ64 implementation package; exact commit hash is recorded after commit and
+before live execution.
 
 Active implementation repair:
 
-HJ63 amended only the existing `V2_AGGREGATION_NARRATIVE` prompt section so an
-accepted structural packet defaults to an accepted internal report. The focused
-plastic canary confirmed the W8 report-writer roadblock is repaired: W8 created
-an accepted hidden/admin report draft. The same report exposed the next quality
-owner: W7-B copied values are still label/truth inconsistent (`MOSTLY-TRUE`
-with truth `28`, `LEANING-TRUE` with truth `38`). The next repair should stay
-with W7-B structural contract enforcement/calibration and should add no
-parallel report path, schema relaxation, source or provider widening, parser,
-retry loop, public surface, cache/SR/storage, direct URL/ACS support, or V1
-work.
+HJ64 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
+`internalVerdictLabelCandidate` and `internalTruthPercentageCandidate` are a
+coupled judgment from the same seven-point scale. The repair targets the HJ63
+plastic report defect where W7-B produced true-side labels with false-side truth
+percentages. It adds no deterministic semantic verdicting, no runtime
+normalizer, no schema relaxation, no parallel report path, no source/provider
+widening, no parser, no retry loop, no public surface, no cache/SR/storage, no
+direct URL/ACS support, and no V1 work.
 
 ## Latest Result
 
@@ -536,10 +534,10 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
-- latest reset starts after the HJ62 truth-scale polarity repair, latest
-  job `8a48ed2378ca4963bd10231b3da6e8c6`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
+  latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 

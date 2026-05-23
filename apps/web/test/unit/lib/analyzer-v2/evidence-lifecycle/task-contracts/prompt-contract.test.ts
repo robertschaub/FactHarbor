@@ -353,8 +353,14 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("not confidence in the chosen verdict label");
     expect(section).toContain("seven-point truth scale");
     expect(section).toContain("`FALSE` 0-14");
+    expect(section).toContain("Choose `internalVerdictLabelCandidate` and `internalTruthPercentageCandidate` as one coupled judgment");
+    expect(section).toContain("True-side labels require high truth scores");
+    expect(section).toContain("never pair `TRUE`, `MOSTLY-TRUE`, or `LEANING-TRUE` with a low or false-side truth percentage");
     expect(section).toContain("False-side labels require low truth scores");
-    expect(section).toContain("never pair `FALSE`, `MOSTLY-FALSE`, or `LEANING-FALSE` with a high truth percentage");
+    expect(section).toContain("never pair `FALSE`, `MOSTLY-FALSE`, or `LEANING-FALSE` with a high or true-side truth percentage");
+    expect(section).toContain("If cited evidence mainly contradicts the selected AtomicClaim");
+    expect(section).toContain("If cited evidence mainly supports the selected AtomicClaim");
+    expect(section).toContain("use `MIXED` or `UNVERIFIED` in the 43-57 band");
     expect(section).toContain("Use `internalConfidenceCandidate` to express confidence");
     expect(section).toContain("caveated sufficiency, retrieval refinement, material gaps, source singularity");
     expect(section).toContain("distinguish close or approximate support from threshold-crossing proof");

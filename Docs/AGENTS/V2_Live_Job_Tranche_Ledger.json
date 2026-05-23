@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj63-w8-report-writer-2026-05-23-reset-18-after-hj62",
+    "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ62 repaired the W7-B truth-scale polarity blocker and exposed the next W8 report-writer roadblock."
+      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ63 repaired the W8 report-writer roadblock and exposed the next W7-B label/truth coupling gap."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 11,
+      "previousRemaining": 17,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ62 repaired the hydrogen false-label/high-truth polarity regression and exposed plastic W8 report-writer damage."
+      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ63 produced a complete plastic internal report and exposed the W7-B true-label/low-truth coupling gap."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-62-W7B-TRUTH-SCALE-POLARITY-REPAIR",
-      "startsAfterJobId": "8a48ed2378ca4963bd10231b3da6e8c6",
+      "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
+      "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "HJ61 and HJ62 are fully recorded below against the prior post-HJ60 reset. HJ62 spent three jobs, repaired the W7-B label/truth polarity blocker for hydrogen, exposed W8 report-writer damage for plastic after W8G draft creation, and repeated Bundesrat-simple split-report instability. Captain then reset the next HighJump tranche to 18 jobs. HJ63 spent one job from that reset and repaired the W8 report-writer roadblock for plastic; 17 remain.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs; HJ64 will be the first consumption from this reset.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
