@@ -19,8 +19,8 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ80 produced another complete hydrogen report
-after direct-comparison query-planning repair.
+This projection is synced after HJ81 produced a complete but regressed hydrogen
+report and the HJ81 W7 prompt paragraph was reverted.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
@@ -28,29 +28,32 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   plus stabilization commit `9e361fc4eaaf93909884d54195a87115d91997eb`;
   HJ79 prompt repair commit `981b7c4eac901f13e149d1d1bae2a1582d8b47b7`;
   HJ80 prompt repair commit `b320a3ab12fde36910e028ef1445561d8d728dd9`;
+  HJ81 attempted prompt repair commit `75f92a572994663262262f7050cc0ccc65687348`
+  has been reverted in the active source state;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ80_Comparison_Query_Directness_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ81_Categorical_Comparison_Verdict_Calibration_Result.md`;
 - latest validation result:
   plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
-  HJ80 hydrogen then produced another complete internal report after
-  query-planning direct-comparison repair but stopped quality review as
-  `PARTIAL_X7_HJ80_HYDROGEN_DIRECT_COMPARISON_REPORT_STILL_TOO_WEAK`: job
-  `2e3c8862b6d042fcb3a07a4cbb063cf7` ran
+  HJ80 hydrogen produced a complete report with direct-comparison evidence but
+  stayed too weak; HJ81 hydrogen then produced a complete report but regressed
+  as
+  `REGRESSION_X7_HJ81_PROMPT_OVERREACH_ADJACENT_COMPARATOR_TRUE_SIDE`: job
+  `1d46faadc2a74ff490172d3fd545faab` ran
   `Using hydrogen for cars is more efficient than using electricity` on
   `claimboundary-v2` and runtime
-  `b320a3ab12fde36910e028ef1445561d8d728dd9`, produced a `9173`
-  character internal report, cited direct EV-vs-HFCV comparative evidence plus
-  hydrogen-side context, kept the primary verdict at `LEANING-FALSE` `35/62`,
-  and preserved public/default blocked-precutover containment;
+  `75f92a572994663262262f7050cc0ccc65687348`, produced a `7757`
+  character internal report, but over-promoted hydrogen-vs-ICE/HEV material to
+  a `MOSTLY-TRUE` `74/72` primary verdict for the hydrogen-vs-electricity
+  claim; public/default blocked-precutover containment still held;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
-  consumed `2`, HJ80 consumed `1`; `6` remain;
+  consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`; `5` remain;
 - next action:
-  use HJ80's full report as evidence for the next single-bar repair. Decide
-  whether the owner is source-material quantitative directness or W7 verdict
-  calibration over direct qualitative comparison evidence; do not add
-  report-writer recomputation or another hidden proof layer;
+  use HJ80/HJ81 full reports as evidence for a source-material/query/extraction
+  comparator-identity repair. Do not spend another hydrogen job until no-live
+  inspection identifies the smallest owner. Do not add report-writer
+  recomputation or another hidden proof layer;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
