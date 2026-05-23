@@ -4266,3 +4266,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Fresh tranche reset to `18`; HJ57 consumed `2`; `16` remain.
 
 **Next:** Do not stack another W5 prompt tweak. The next concrete HighJump bar is recurring W4-G oversized Source Material handling, observed in HJ56 Bolsonaro-PT and HJ57 Bundesrat-simple, while preserving source-text containment and public/default precutover blocking.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ58 W4-G Bounded Prefix Repair Result
+
+**Task:** Repair the repeated W4-G `source_material_text_oversized` stop without raising caps, adding semantic source ranking, widening providers, changing prompts/models/config/schema, or exposing public/default V2 output.
+
+**Repair:** HJ58 commit `b4c9de14` amends the existing W4-G bounded corpus text authorization owner so the current `16384` byte aggregate cap becomes a deterministic upstream-order admission budget. If full source-material fan-in exceeds the cap, W4-G admits the first already-valid bounded sidecars that fit; if none fit, it still fails closed. No new route, artifact family, provider, parser, retry, cache/SR/storage, public behavior, ACS/direct URL, or V1 path was added.
+
+**Verification before live job:** Focused W4-G test passed (`7` tests); focused extraction-input/runtime-owner/boundary-guard set passed (`3` files / `107` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/consolidation signals; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` and `git diff --cached --check` passed. Runtime was refreshed and Web/API/proxy endpoints reported `b4c9de14a557d280254ff940626ef3987b448236`.
+
+**Live result:** HJ58 job `b6ac7b2a8ad646c0897cce8cddd8e37c` ran the exact Captain-defined input `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`. It stayed on `claimboundary-v2`, finished `SUCCEEDED`, did not repeat the W4-G oversized stop, reached W5 with `8` source-content packets and a `14176` byte W4-H parent packet, extracted `4` EvidenceItems, and produced an authenticated admin-only internal report. The authenticated job report markdown was `5721` characters; immediate hidden artifact inspection recorded an internal report writer draft of `5728` bytes with `4` cited EvidenceItem refs.
+
+**Containment:** Public/default fetch remained `4.0.0-cb-precutover` / `blocked_precutover`; public/default report markdown, verdict, truth percentage, and confidence were absent. Unauthenticated hidden report-writer route access returned `401`. Hidden artifacts are process-local, and later direct route calls returned `404` after runtime movement; the durable closeout therefore records the immediate artifact inspection summary plus the authenticated job record.
+
+**Classification:** `PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED`.
+
+**Information yield:** `report_produced`. The repeated W4-G oversized reachability blocker is cleared for Bundesrat-simple. Next should be report-quality review of the successful internal Alpha reports and one targeted quality-bar repair, not another reachability/proof layer.
+
+**Budget:** Captain reset the tranche to `18` before HJ58. HJ58 consumed `1`; `17` remain.

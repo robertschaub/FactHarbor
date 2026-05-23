@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-58-W4G-BOUNDED-SIDECAR-PREFIX-REPAIR",
+  "classification": "PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED",
+  "date": "2026-05-23",
+  "implementationCommit": "b4c9de14a557d280254ff940626ef3987b448236",
+  "runtimeCommit": "b4c9de14a557d280254ff940626ef3987b448236",
+  "captainInput": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+  "job": {
+    "id": "b6ac7b2a8ad646c0897cce8cddd8e37c",
+    "status": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "submissionPath": "manual_default_v2_route_via_api_fh_analyze",
+    "inviteCodeRetryNote": "The first submission attempt without invite code was rejected before job creation. The successful run used inviteCode SELF-TEST and is the only HJ58 live job consumed."
+  },
+  "publicDefaultContainment": {
+    "httpStatus": 200,
+    "schemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownIsNull": true,
+    "publicVerdictIsNull": true,
+    "publicTruthPercentageIsNull": true,
+    "publicConfidenceIsNull": true,
+    "unauthenticatedInternalReportWriterRouteStatus": 401,
+    "analysisIssueCodeObserved": null,
+    "note": "Public/default fetch redacted report markdown, verdict, truth percentage, and confidence. The authenticated admin fetch exposed the internal V2 report data only to admin."
+  },
+  "authenticatedAdminResult": {
+    "reportMarkdownLength": 5721,
+    "resultJsonSchemaVersion": "4.0.0-cb-precutover",
+    "resultJsonPublicCutoverStatus": "blocked_precutover",
+    "adminVerdictLabel": "UNVERIFIED",
+    "adminVerdictTruthPercentage": 50,
+    "adminVerdictConfidence": 0,
+    "resultEnvelopeEvidenceItems": 0,
+    "resultEnvelopeNote": "The public result envelope remains the precutover damaged shell. The internal report markdown is carried as authenticated admin-only job data."
+  },
+  "immediateHiddenArtifactEvidence": {
+    "ledgerId": "b6ac7b2a8ad646c0897cce8cddd8e37c:precutover-observability",
+    "captureDurabilityNote": "Hidden artifacts are process-local. They were inspected immediately after the run; later direct route calls returned 404 after runtime movement, so the durable evidence is the job record plus this recorded inspection summary.",
+    "claimUnderstanding": {
+      "executionStatus": "completed",
+      "gatewayTaskStatus": "executable",
+      "schemaOutcome": "accepted",
+      "selectedAtomicClaimIds": [
+        "AC_DIRECT_01"
+      ],
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "queryPlanning": {
+      "status": "completed",
+      "resultStatus": "accepted",
+      "queryCount": 5,
+      "sourceLanguagePrimary": "de"
+    },
+    "boundedEvidenceExtraction": {
+      "status": "hidden_evidence_item_extraction_completed",
+      "extractionResultStatus": "accepted",
+      "extractionStatus": "evidence_extracted",
+      "evidenceItemCount": 4,
+      "parentW4HStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+      "parentW4IStatus": "extraction_input_structurally_eligible_execution_denied",
+      "parentPacketByteLength": 14176,
+      "sourceContentPacketCount": 8,
+      "model": "claude-haiku-4-5-20251001",
+      "tokenUsageTotal": 14159,
+      "durationMs": 17777,
+      "retryCount": 0
+    },
+    "internalReportWriter": {
+      "status": "internal_report_writer_draft_created",
+      "reportMarkdownReturnedByDefault": false,
+      "reportMarkdownByteLength": 5728,
+      "verdictSectionCount": 1,
+      "boundarySectionCount": 2,
+      "citedEvidenceItemRefCount": 4,
+      "reportReviewReadiness": "ready_for_internal_report_review",
+      "model": "claude-haiku-4-5-20251001",
+      "tokenUsageTotal": 8769,
+      "durationMs": 21856
+    }
+  },
+  "w4gRepairEvidence": {
+    "priorObservedStop": "HJ57 Bundesrat-simple stopped at W4-G source_material_text_oversized with 9 Source Material records and 19216 aggregate bytes.",
+    "hj58Outcome": "The rerun did not stop at W4-G. W5 received 8 source-content packets, the W4-H parent packet was 14176 bytes within the 16384 cap, W5 extracted 4 EvidenceItems, and the internal report writer produced an admin-only draft."
+  },
+  "liveBudget": {
+    "resetTotal": 18,
+    "consumedByThisCanary": 1,
+    "remainingAfter": 17
+  },
+  "informationYield": "report_produced",
+  "nextRecommendedAction": "Pivot from reachability repair to report-quality review of the HJ58 report and existing successful internal Alpha reports. Choose the single next quality bar from observed defects instead of adding another reachability/proof layer."
+}

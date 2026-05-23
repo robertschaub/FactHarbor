@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj58-w4g-prefix-repair-2026-05-23-reset-18-after-hj57",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-57-W5-CONTRACT-REPAIR-BUNDESRAT-SIMPLE",
       "startsAfterJobId": "b1356da1f72f4f27a6fafb3bc5418746",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ57 is the last completed live validation before this reset: hydrogen verified the W5 contract repair and Bundesrat-simple exposed an upstream W4-G source_material_text_oversized blocker before W5 execution.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ58 is the first completed live validation after this reset: Bundesrat-simple cleared the repeated W4-G source_material_text_oversized blocker and produced an internal admin-only report.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1532,6 +1532,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure_or_upstream_stop_with_useful_evidence",
         "note": "Bundesrat-simple did not reproduce the HJ56 W5 approved_packet_mismatch, but it also did not reach W5 execution. The run stopped upstream at W4-G source_material_text_oversized with 9 Source Material records, aggregate source-material text byte length 19216, 0 W4-G sidecars, 0 W4-H packets, and W5 blocked_pre_execution. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-58-W4G-BOUNDED-SIDECAR-PREFIX-REPAIR",
+        "jobId": "b6ac7b2a8ad646c0897cce8cddd8e37c",
+        "classification": "PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED",
+        "implementationCommit": "b4c9de14a557d280254ff940626ef3987b448236",
+        "runtimeCommit": "b4c9de14a557d280254ff940626ef3987b448236",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ58 package `Docs/WIP/2026-05-23_V2_HighJump_HJ58_W4G_Bounded_Sidecar_Prefix_Repair.md`",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "Bundesrat-simple reran after W4-G aggregate-cap prefix admission. The run stayed on claimboundary-v2, did not repeat W4-G source_material_text_oversized, reached W5 with 8 source-content packets and a 14176-byte W4-H parent packet, extracted 4 EvidenceItems, and produced an authenticated admin-only internal report. Public/default containment held; unauthenticated hidden route access returned 401. An initial invite-code-missing submit attempt was rejected before job creation and did not consume a live job."
       }
     ],
     "blockedPending": [],

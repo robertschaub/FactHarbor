@@ -1,6 +1,6 @@
 # V2 HighJump HJ58 W4-G Bounded Sidecar Prefix Repair
 
-**Status:** implementation/verifier package
+**Status:** implemented, committed, live-verified
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Captain input:** V2 HighJump continues toward complete internal reports; new live-job budget is `18`.
@@ -95,3 +95,66 @@ Stop and reconvene Steer-Co if:
 - local verifiers fail with unclear root cause;
 - live validation repeats the same W4-G stop without useful new evidence;
 - public/default route leaks hidden source/report/prompt/verdict/truth/confidence data.
+
+## Local Verification
+
+Implementation commit:
+
+`b4c9de14a557d280254ff940626ef3987b448236 fix(v2): admit bounded w4g sidecar prefix`
+
+Verifier results:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/bounded-text-authorization.test.ts` passed (`7` tests).
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/extraction-input/bounded-extraction-input-authorization.test.ts test/unit/lib/analyzer-v2-runtime/evidence-lifecycle-evidence-corpus-bounded-text-authorization-owner.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed (`3` files / `107` tests).
+- `npm run validate:v2-gates` passed.
+- `npm run debt:sensors` returned advisory warnings only for known V2 footprint, boundary-guard, docs, and consolidation signals.
+- `npm -w apps/web run build` passed.
+- `npm run index` passed.
+- `git diff --check` and `git diff --cached --check` passed.
+
+Debt-guard result: keep. The repair amends the existing W4-G aggregate-cap mechanism and adds no new route, artifact family, provider, parser, retry, cache/SR/storage, public surface, prompt/model/config/schema behavior, or V1 path.
+
+## Live Validation Result
+
+Evidence file:
+
+`Docs/WIP/canary-evidence-hj58-w4g-bounded-prefix-repair.json`
+
+Runtime/source provenance:
+
+- committed implementation: `b4c9de14a557d280254ff940626ef3987b448236`;
+- runtime Web/API/proxy version endpoints reported `b4c9de14a557d280254ff940626ef3987b448236`;
+- git status was clean before submission.
+
+Live job:
+
+- job: `b6ac7b2a8ad646c0897cce8cddd8e37c`;
+- input: `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`;
+- pipeline variant: `claimboundary-v2`;
+- status: `SUCCEEDED`.
+
+Result:
+
+- classification: `PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED`;
+- information yield: `report_produced`;
+- the previous W4-G `source_material_text_oversized` stop did not recur;
+- W5 received `8` source-content packets through a W4-H parent packet of `14176` bytes, within the `16384` byte aggregate cap;
+- W5 extracted `4` EvidenceItems;
+- internal report writer produced an authenticated admin-only report draft (`5728` hidden artifact bytes, `5721` authenticated job markdown characters).
+
+Containment:
+
+- public/default fetch stayed `4.0.0-cb-precutover` and `blocked_precutover`;
+- public/default report markdown, verdict, truth percentage, and confidence remained absent;
+- unauthenticated internal report-writer artifact route returned `401`;
+- authenticated/default hidden artifact routes are process-local and later returned `404` after runtime movement, so the durable closeout records the immediate artifact inspection summary and the authenticated job record.
+
+Budget:
+
+- Captain reset live-job budget to `18` before HJ58;
+- HJ58 consumed `1` successful job;
+- `17` remain.
+
+## Next Direction
+
+Do not add another reachability/proof layer from HJ58. The repair reached an internal report on the previously blocked Bundesrat-simple input. The next HighJump step should inspect report quality across the successful internal Alpha reports and choose one concrete quality bar to raise from observed report defects.

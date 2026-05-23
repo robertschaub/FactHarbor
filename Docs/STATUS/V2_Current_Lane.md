@@ -19,20 +19,20 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for the HJ58 W4-G bounded sidecar prefix repair. Older HJ history below is
+This projection is synced after the HJ58 W4-G bounded sidecar prefix repair live result. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `f4c3357b fix(v2): repair w5 extraction contract prompt`;
+  `b4c9de14 fix(v2): admit bounded w4g sidecar prefix`;
 - latest canary result:
-  HJ57 focused W5 contract repair reruns, classified
-  `PARTIAL_PASS_X7_HJ57_W5_CONTRACT_REPAIR_HYDROGEN_VERIFIED_BUNDESRAT_BLOCKED_UPSTREAM_W4G_OVERSIZED`;
+  HJ58 Bundesrat-simple rerun, classified
+  `PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ57;
-  no HJ58 live job has been submitted yet, so `18` remain;
+  HJ58 consumed `1`, so `17` remain;
 - next action:
-  implement and verify HJ58 W4-G bounded sidecar prefix admission, then run one
-  Bundesrat-simple rerun only after commit, runtime refresh, and provenance checks;
+  pivot from reachability repair to report-quality review of HJ58 and the other
+  successful internal Alpha reports, then choose one concrete quality bar to raise;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -43,30 +43,28 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`f4c3357b fix(v2): repair w5 extraction contract prompt`
+`b4c9de14 fix(v2): admit bounded w4g sidecar prefix`
 
 Latest implementation repair:
 
-`f4c3357b fix(v2): repair w5 extraction contract prompt`
+`b4c9de14 fix(v2): admit bounded w4g sidecar prefix`
 
-HJ57 amends only the existing `V2_EVIDENCE_EXTRACTION` prompt section so W5
-keeps EvidenceItems inside the strict five-item cap, prefers fuller but bounded
-EvidenceItem breadth when distinct material points exist, and copies
-`sourceRecordId` / `contentPacketId` plus selected AtomicClaim IDs exactly from
-the supplied structural inputs. It adds no code-side semantic extraction rule,
-model/provider change, schema relaxation, retry/repair loop, source/provider/
-parser route, public surface, cache/SR/storage behavior, direct URL/ACS support,
-or V1 work.
+HJ58 amends the existing W4-G bounded corpus text authorization mechanism so the
+current `16384` byte aggregate cap is used as a deterministic upstream-order
+admission budget instead of an all-or-nothing stage blocker. It keeps the cap,
+adds no semantic source ranking, and adds no provider, parser, retry/repair,
+public surface, prompt/model/config/schema behavior, cache/SR/storage, direct
+URL/ACS support, or V1 work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-57-W5-CONTRACT-REPAIR`
+`X7-HJ-58-W4G-BOUNDED-SIDECAR-PREFIX-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj57-w5-contract-repair.json`
+`Docs/WIP/canary-evidence-hj58-w4g-bounded-prefix-repair.json`
 
 Important evidence:
 
@@ -84,6 +82,17 @@ Important evidence:
   upstream at W4-G `source_material_text_oversized` with `9` Source Material
   records and `19216` aggregate source-material bytes. Public/default
   containment held for both jobs.
+- HJ58 reran the Bundesrat-simple input on runtime commit
+  `b4c9de14a557d280254ff940626ef3987b448236` after amending W4-G to admit a
+  deterministic bounded sidecar prefix inside the existing aggregate cap. Job
+  `b6ac7b2a8ad646c0897cce8cddd8e37c` stayed on `claimboundary-v2`, did not
+  repeat the W4-G `source_material_text_oversized` stop, gave W5 `8`
+  source-content packets through a W4-H parent packet of `14176` bytes,
+  extracted `4` EvidenceItems, and produced an authenticated admin-only internal
+  report (`5721` job markdown characters). Public/default containment held:
+  schema `4.0.0-cb-precutover`, cutover `blocked_precutover`, no public/default
+  report markdown, verdict, truth percentage, or confidence, and unauthenticated
+  hidden artifact route access returned `401`.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -431,8 +440,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `0`;
-- remaining: `18`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
 - latest reset starts after the HJ57 Bundesrat-simple focused rerun
   `b1356da1f72f4f27a6fafb3bc5418746`;
 - every live job still requires clean git status, committed source, runtime
@@ -440,20 +449,17 @@ Current active tranche:
 
 ## Next Action
 
-1. Prepare the next bounded repair for W4-G oversized Source Material handling.
-   HJ57 cleared the hydrogen W5 oversized-output failure, but Bundesrat-simple
-   and HJ56 Bolsonaro-PT now show `source_material_text_oversized` as the next
-   repeated upstream blocker before W5 can be evaluated.
-2. Prefer raising one observed quality bar at a time from report evidence.
-   Candidate targets are source usefulness, EvidenceItem selectivity, boundary
-   separation, verdict calibration, and warning/materiality clarity. Do not add
-   new hidden plumbing unless it directly retires or replaces an older stop
-   mechanism or closes an observed report-quality defect.
-3. Keep the next HighJump step scoped to one concrete W4-G defect: safely
-   admitting or trimming already bounded Source Material without leaking source
-   text, raising byte caps broadly, adding providers, or changing public
-   behavior. Defer report roll-up/calibration until the affected inputs can
-   reliably pass bounded, useful EvidenceItems to downstream report stages.
+1. Review the actual internal Alpha reports now being produced, including HJ58
+   Bundesrat-simple, HJ57 hydrogen, and the successful HJ56 reports. Choose one
+   concrete report-quality defect to fix next.
+2. Prefer the next HighJump bar that most directly improves report value:
+   source usefulness, EvidenceItem selectivity/breadth, boundary separation,
+   verdict calibration, or warning/materiality clarity. Do not add another
+   reachability/proof layer unless live evidence shows a repeated report-path
+   blocker.
+3. Keep public/default V2 precutover containment intact while improving internal
+   report quality. Any public UI/API/report/export exposure, cutover, or V1
+   cleanup remains a separate approval-gated transition.
 
 ## Stop Conditions
 
