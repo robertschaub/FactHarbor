@@ -394,6 +394,12 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("exactly one `boundarySections` item for every supplied boundary candidate");
     expect(section).toContain("no omissions and no extras");
     expect(section).toContain('damagedReason: "task_contract_validation_failed"');
+    expect(section).toContain("Accepted-branch default");
+    expect(section).toContain('return `status: "accepted"`');
+    expect(section).toContain("multiple supplied verdict candidates or boundary candidates are normal internal Alpha material");
+    expect(section).toContain("caveated sufficiency, material uncertainty, limited evidence, or mixed report quality are report content");
+    expect(section).toContain("preserve the supplied cardinality and values first");
+    expect(section).toContain("use `damaged` only when the supplied packet itself lacks the IDs or values");
     expect(section).toContain("### Markdown Citation Rendering");
     expect(section).toContain("Every material verdict conclusion, evidence-backed reason, and");
     expect(section).toContain("EvidenceItem ID in square brackets");

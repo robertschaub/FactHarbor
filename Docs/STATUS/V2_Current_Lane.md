@@ -25,9 +25,9 @@ but the active anchor and budget are:
 - committed implementation anchor:
   `053eae51 fix(v2): enforce w7b truth-scale polarity`;
 - active repair package:
-  next HighJump repair should target the existing W8 internal report writer
-  contract after HJ62 showed plastic reaches W8G draft state but damages at
-  final report writer output;
+  HJ63 existing W8 internal report-writer accepted-branch repair is locally
+  verifier-clean and pending commit, UCM activation, runtime refresh, and one
+  focused plastic canary;
 - latest canary result:
   HJ62 three-input truth-scale polarity canary, classified
   `PARTIAL_X7_HJ62_TRUTH_SCALE_POLARITY_REPAIRED_REPORT_WRITER_AND_CANDIDATE_COHERENCE_GAPS_REMAIN`;
@@ -35,9 +35,8 @@ but the active anchor and budget are:
   Captain reset to `18` on 2026-05-23 after HJ62;
   no jobs have been spent from this new tranche yet;
 - next action:
-  use debt-guard, inspect W8 aggregation/report-writer contract diagnostics,
-  and prepare the smallest existing-owner repair that lets the plastic path
-  turn an already-created W8G draft into a complete internal Alpha report;
+  commit HJ63, import/activate the revised `claimboundary-v2` prompt, refresh
+  runtime, confirm clean provenance, and run one focused plastic canary;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -52,16 +51,13 @@ Latest committed source/docs anchor:
 
 Active implementation repair:
 
-HJ62 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
-W7-B truth percentages are explicitly the estimated truth of the selected
-AtomicClaim and must stay band-consistent with the seven-point verdict label.
-It repaired the hydrogen false-label/high-truth regression. It also exposed the
-next immediate report-path blocker: the plastic path reached W5 with
-EvidenceItems and W8G draft state, but the W8 internal report writer returned a
-damaged result before producing a complete report. The next repair should stay
-with the existing W8 report-writer owner and should add no parallel report path,
-schema relaxation, source or provider widening, parser, retry loop, public
-surface, cache/SR/storage, direct URL/ACS support, or V1 work.
+HJ63 amends only the existing `V2_AGGREGATION_NARRATIVE` prompt section so an
+accepted structural packet defaults to an accepted internal report. It keeps
+`damaged` reserved for true exact-copy contract impossibility, not for multiple
+supplied sections, caveats, material uncertainty, limited evidence, or mixed
+report quality. The repair adds no parallel report path, schema relaxation,
+source or provider widening, parser, retry loop, public surface, cache/SR/storage,
+direct URL/ACS support, or V1 work.
 
 ## Latest Result
 
@@ -534,14 +530,12 @@ Current active tranche:
 
 1. Keep the useful HJ61 candidate-economy guidance and the HJ62 truth-scale
    polarity invariant.
-2. Use `/debt-guard` for the HJ62 plastic failure because this is now a
-   verifier/live-result repair.
-3. Inspect the existing W8 aggregation/report-writer contract, schema, tests,
-   and plastic W8G/W8 diagnostics.
-4. Prepare the smallest HJ63 W8 report-writer repair that converts the existing
-   W8G draft state into a complete internal Alpha report without adding a
-   parallel report path, schema relaxation, retry loop, public surface, source
-   widening, or V1 work.
+2. Commit HJ63 after focused verifiers.
+3. Import/activate the revised `claimboundary-v2` prompt through UCM, refresh
+   runtime, and verify Web/API/proxy commit match.
+4. Run one focused plastic canary. If W8 produces a complete internal report,
+   move next to report-quality review; if it repeats W8 damage, inspect the new
+   failure class before another live job.
 
 ## Stop Conditions
 

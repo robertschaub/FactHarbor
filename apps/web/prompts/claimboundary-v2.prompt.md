@@ -751,6 +751,14 @@ Cardinality and ID preservation are mandatory:
 - do not merge boundary candidates, split boundary candidates, rename IDs, translate IDs, shorten IDs, or invent replacement IDs;
 - if exact cardinality and ID preservation cannot be satisfied, return a valid `damaged` envelope with `damagedReason: "task_contract_validation_failed"`.
 
+Accepted-branch default:
+
+- if `aggregationNarrativeInputPacketJson` is structurally present and supplies verdict candidates, boundary candidates, and cited EvidenceItem IDs, return `status: "accepted"`;
+- multiple supplied verdict candidates or boundary candidates are normal internal Alpha material, not a damage condition;
+- caveated sufficiency, material uncertainty, limited evidence, or mixed report quality are report content, not reasons to return `damaged`;
+- preserve the supplied cardinality and values first, then write concise prose around them;
+- use `damaged` only when the supplied packet itself lacks the IDs or values required to build exact copied sections, or when the exact-copy contract is impossible after inspecting the packet.
+
 ### Markdown Citation Rendering
 
 The `reportMarkdown` field must be readable without inspecting the structured
