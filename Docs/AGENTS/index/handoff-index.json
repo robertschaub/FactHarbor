@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T17:51:48.863Z",
-  "count": 444,
+  "generatedAt": "2026-05-23T18:32:19.732Z",
+  "count": 445,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9681,6 +9681,24 @@
         "Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json"
       ],
       "summary": "Use `Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json` as the primary evidence bundle. Do not run HJ76 Wave 2. Inspect prompt/config provenance and the W5/W7/W8 target-frame handoff before editing. Avoid family-specific wording, deterministic semantic filters, new hidden routes, cit"
+    },
+    {
+      "file": "2026-05-23_Captain_Deputy_V2_HighJump_HJ77_Wave_Result.md",
+      "date": "2026-05-23",
+      "roles": [
+        "captain_deputy"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "highjump",
+        "hj77",
+        "wave",
+        "result"
+      ],
+      "files_touched": [],
+      "summary": "owner:** HJ78 should target source-material usefulness/direct-comparator yield. The prompt-only target-frame repair helped plastic/Bolsonaro, but hydrogen still depends on off-comparator evidence and asylum-WWII has no extracted EvidenceItems. Do not stack another broad prompt-only tweak without new"
     },
     {
       "file": "2026-05-23_Lead_Developer_HJ73_Source_Chain_Attribution.md",

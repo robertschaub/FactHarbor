@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY",
       "startsAfterJobId": "ad76c64ca5eb46c7904043975e0c483c",
       "startingRemaining": 12,
-      "currentRemaining": 8,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. Wave 2 is held. HJ77 is the active prompt-only W5/W7 target-frame-directness repair; a four-job HJ77 wave may run only after local verifiers, commit, runtime refresh, commit-match preflight, and clean provenance.",
+      "currentRemaining": 4,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. HJ77 consumed four jobs and produced partial prompt-quality improvement, but hydrogen remained confidently wrong-side/off-comparator and asylum-WWII stopped at W5 with no EvidenceItems. Wave 2 is held. Next action is HJ78 source-material usefulness/direct-comparator yield before more live jobs.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2005,14 +2005,37 @@
         "informationYield": "new_failure_with_cross_family_quality_signal",
         "stopReason": "Wave 1 consumed four jobs. Public/default containment held, but report quality stop criteria fired: hydrogen and plastic produced confident wrong-side report drafts versus accepted expectations; Bolsonaro EN and asylum-WWII produced UNVERIFIED/MIXED or UNVERIFIED drafts versus accepted true-side/false-side expectations. Wave 2 is held pending no-live owner classification and HJ77 repair package.",
         "artifactRouteProbe": "Process-local hidden artifact routes returned 404 for all four HJ76 job IDs; classification uses persisted admin resultJson/source-chain attribution and reportMarkdown."
+      },
+      {
+        "sliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
+        "jobId": "multiple_hj77_jobs_see_result_artifact",
+        "jobIds": [
+          "9ef3a6cf64244c6ea87f200e0db58fd0",
+          "3c8eb6181a5941a69219f9562f338ffa",
+          "5f4eb7709fc6416eaec2e8ab961f8d33",
+          "6f4fb7f9c5ce41579f53c657e3c07528"
+        ],
+        "classification": "STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP",
+        "note": "HJ77 amended existing W5/W7 target-frame/directness prompt guidance, then ran the HJ76 Wave 1 inputs on runtime 1090e7db+e3b0c442. All jobs stayed on claimboundary-v2, succeeded, and public/default containment held. Plastic improved by adding a MIXED countervailing-value verdict, and Bolsonaro EN moved Brazilian-law compliance to LEANING-TRUE, but hydrogen still includes a confident MOSTLY-TRUE off-comparator verdict and asylum-WWII stopped at W5 hidden_no_extractable_evidence with zero EvidenceItems. Next owner is source-material usefulness/direct-comparator yield, not another broad prompt-only tweak.",
+        "implementationCommit": "1090e7db0bbf079fc8d7339c49d5654e36815aaa",
+        "runtimeCommit": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "d37a3110880aab898a346b8264e741f20ae607e4199071d33545280fa1003e3d",
+        "count": 4,
+        "remainingAfter": 4,
+        "approvalPointer": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\" plus HJ77 package Docs/WIP/2026-05-23_V2_HighJump_HJ77_Target_Frame_Directness_Prompt_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_with_new_evidence",
+        "stopReason": "HJ77 failed pass criteria because hydrogen remained confidently wrong-side/off-comparator and asylum-WWII produced no EvidenceItems. The useful movement was partial only: plastic gained a MIXED countervailing-value verdict and Bolsonaro EN Brazilian-law compliance moved to LEANING-TRUE.",
+        "publicContainment": "pass_precise_public_projection_check"
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ76 Wave 1 stayed inside the 12-job tranche and consumed 4 jobs; 8 remain.",
-      "nextLiveJobRequirement": "Do not run HJ76 Wave 2. Commit the HJ77 prompt-only repair package, refresh runtime to the HJ77 commit, verify runtime/source provenance, then submit at most the approved four-job HJ77 wave. No second HJ77 wave without a fresh stop/pass classification."
+      "reason": "HJ76 Wave 1 and HJ77 each consumed 4 jobs from the 12-job tranche; 4 remain.",
+      "nextLiveJobRequirement": "Do not run HJ76 Wave 2 or a second HJ77 wave. Prepare HJ78 around source-material usefulness/direct-comparator yield, commit any repair, refresh runtime, verify provenance, and spend more jobs only under the next explicit package criteria."
     },
     "pendingExceptionAuthorization": null
   }

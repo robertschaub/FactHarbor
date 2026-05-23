@@ -6,6 +6,47 @@
 **Implementation type:** prompt-only amendment to existing `claimboundary-v2` W5/W7 sections
 **Live-job tranche:** active 12-job tranche, 8 jobs remaining before HJ77
 
+## Live Result
+
+HJ77 ran exactly one four-job wave after commit/runtime refresh:
+
+- hydrogen `9ef3a6cf64244c6ea87f200e0db58fd0`;
+- plastic `3c8eb6181a5941a69219f9562f338ffa`;
+- Bolsonaro EN `5f4eb7709fc6416eaec2e8ab961f8d33`;
+- asylum-WWII DE `6f4fb7f9c5ce41579f53c657e3c07528`.
+
+Classification:
+`STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP`.
+
+Information yield: `same_stop_repeated_with_new_evidence`.
+
+All four jobs stayed on `claimboundary-v2`, ran on
+`1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442`, reached `SUCCEEDED`,
+and preserved public/default containment. The precise public check found no
+public report markdown, verdict label, truth percentage, confidence,
+`adminDiagnostics`, or non-public result keys.
+
+The repair produced useful but insufficient movement:
+
+- Plastic improved from a one-sided wrong report into a report that includes a
+  `MIXED` 50/68 countervailing-value verdict, but still includes a confident
+  `MOSTLY-TRUE` 74/82 recycling-outcomes verdict.
+- Bolsonaro EN improved the Brazilian-law half to `LEANING-TRUE` 62/58, but
+  international fair-trial standards remain `UNVERIFIED` 48/42.
+- Hydrogen still includes a confident `MOSTLY-TRUE` 72/68 verdict driven by
+  vehicle-level / hybrid-comparator evidence rather than a direct electricity
+  comparison.
+- Asylum-WWII stopped at W5 with `hidden_no_extractable_evidence` and no
+  EvidenceItems despite six Source Material records.
+
+HJ77 therefore does not pass its stop criteria. The next owner is not another
+broad prompt-only tweak. The clear next package should target source-material
+usefulness/direct-comparator yield for hydrogen and asylum-WWII while preserving
+the partial plastic/Bolsonaro prompt gains.
+
+Result evidence:
+`Docs/WIP/canary-evidence-hj77-target-frame-directness-prompt-repair.json`.
+
 ## Decision
 
 HJ76 Wave 1 produced four complete product-route V2 jobs with public/default

@@ -19,31 +19,29 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced while HJ77 is the active repair after HJ76 Wave 1
-produced a cross-family report-quality stop under the fresh
-Captain-approved 12-job tranche. Older HJ history below is kept as context, but
-the active anchor and budget are:
+This projection is synced after HJ77 ran one four-job wave and stopped with
+partial prompt-quality improvement but unresolved source-directness failures.
+Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ76 result closeout at `3f5c5fb1`; HJ77 prompt repair commit pending;
-- active repair package:
+  HJ77 prompt repair at `1090e7db0bbf079fc8d7339c49d5654e36815aaa`;
+- active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ77_Target_Frame_Directness_Prompt_Repair.md`;
 - latest canary result:
-  HJ76 Wave 1 jobs `8bcbb1f4ffdf4924b4d75e87c3543916`,
-  `f6c391bb682345d4afba808f99e58958`,
-  `999e99260839451c9274b9f3194bd58b`, and
-  `629e9b2c5df542c1be7a3a4cb45760bc`, classified
-  `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`;
+  HJ77 jobs `9ef3a6cf64244c6ea87f200e0db58fd0`,
+  `3c8eb6181a5941a69219f9562f338ffa`,
+  `5f4eb7709fc6416eaec2e8ab961f8d33`, and
+  `6f4fb7f9c5ce41579f53c657e3c07528`, classified
+  `STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP`;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ75;
-  HJ76 Wave 1 consumed `4`; `8` remain;
+  HJ76 Wave 1 consumed `4`; HJ77 consumed `4`; `4` remain;
 - next action:
-  finish HJ77 prompt-only W5/W7 target-frame/directness repair, run local
-  verifiers, commit, refresh runtime to the HJ77 commit, then submit exactly one
-  four-job HJ77 wave using the HJ76 Wave 1 inputs if provenance is clean.
-  Priority is the confident wrong-direction reports for hydrogen and plastic;
-  Bolsonaro/asylum-WWII remain a likely follow-up source-yield owner if HJ77
-  improves direction but still lacks direct source material;
+  prepare HJ78 around source-material usefulness/direct-comparator yield, not
+  another broad prompt-only tweak. Preserve HJ77 partial gains: plastic now has
+  a countervailing `MIXED` verdict and Bolsonaro EN moved Brazilian-law
+  compliance to `LEANING-TRUE`; focus the next owner on hydrogen's off-comparator
+  source/evidence path and asylum-WWII's W5 no-extractable-evidence stop;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak

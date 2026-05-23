@@ -5090,3 +5090,7 @@ unchanged.
 **Next:** Run the HJ77 verifier set, commit if clean, refresh runtime to the
 HJ77 commit, and then submit exactly one four-job HJ77 wave with the HJ76 Wave
 1 inputs if provenance is clean. HJ76 Wave 2 remains held.
+
+### 2026-05-23 | Captain Deputy | Codex | V2 HighJump HJ77 Wave Result — [Significant] [open-items: yes]
+**For next agent:** HJ77 is classified `STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP`. Commit `1090e7db` amended the existing W5/W7 prompt target-frame/directness guidance, local verifiers passed, runtime refreshed to `1090e7db+e3b0c442`, and four jobs ran: hydrogen `9ef3a6cf64244c6ea87f200e0db58fd0`, plastic `3c8eb6181a5941a69219f9562f338ffa`, Bolsonaro EN `5f4eb7709fc6416eaec2e8ab961f8d33`, and asylum-WWII `6f4fb7f9c5ce41579f53c657e3c07528`. Public/default containment held. Plastic and Bolsonaro improved partially, but hydrogen remains confidently wrong-side/off-comparator and asylum-WWII stopped at W5 with no EvidenceItems. Next owner: HJ78 source-material usefulness/direct-comparator yield, not another broad prompt-only tweak. Primary artifact: `Docs/WIP/canary-evidence-hj77-target-frame-directness-prompt-repair.json`.
+→ Docs/AGENTS/Handoffs/2026-05-23_Captain_Deputy_V2_HighJump_HJ77_Wave_Result.md

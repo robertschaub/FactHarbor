@@ -1,0 +1,923 @@
+{
+  "sliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
+  "classification": "STOP_X7_HJ77_TARGET_FRAME_PROMPT_REPAIR_PARTIAL_IMPROVEMENT_HYDROGEN_WRONG_SIDE_AND_ASYLUM_W5_STOP",
+  "informationYield": "same_stop_repeated_with_new_evidence",
+  "submittedUtc": "2026-05-23T18:22:25.6931996Z",
+  "classifiedUtc": "2026-05-23T18:28:28.4117323Z",
+  "implementationCommit": "1090e7db0bbf079fc8d7339c49d5654e36815aaa",
+  "runtimeCommit": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+  "promptHash": "d37a3110880aab898a346b8264e741f20ae607e4199071d33545280fa1003e3d",
+  "liveJobsConsumed": 4,
+  "remainingBudget": 4,
+  "publicContainmentOverall": "pass_precise_public_projection_check",
+  "passCriteriaMet": false,
+  "summary": "HJ77 prompt calibration produced useful but insufficient movement: plastic gained a mixed countervailing-value verdict and Bolsonaro Brazilian-law compliance moved to leaning-true, but hydrogen remains confidently wrong-side/off-comparator and asylum-WWII stopped at W5 with no EvidenceItems.",
+  "jobs": [
+    {
+      "slug": "hydrogen",
+      "jobId": "9ef3a6cf64244c6ea87f200e0db58fd0",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "gitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "promptContentHash": null,
+      "reportMarkdownLength": 11596,
+      "expected": "false-side",
+      "observedOutcome": "STOP: still includes confident MOSTLY-TRUE 72/68 vehicle-level/hybrid-comparator verdict plus MIXED and LEANING-FALSE alternatives",
+      "uniqueEvidenceRefs": [
+        "EVI_001",
+        "EVI_001_HYDROGEN_FC_EFFICIENCY",
+        "EVI_002",
+        "EVI_002_HYDROGEN_VS_EV_COMPARATIVE",
+        "EVI_003",
+        "EVI_003_HYDROGEN_FC_HYBRID_COMPARISON",
+        "EVI_004",
+        "EVI_004_HYDROGEN_PRODUCTION_EMISSIONS"
+      ],
+      "uniqueEvidenceRefCount": 8,
+      "resultMeta": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "resultContractVersion": 1,
+        "runId": "9ef3a6cf64244c6ea87f200e0db58fd0",
+        "generatedUtc": "2026-05-23T18:22:30.108Z",
+        "currentDate": "2026-05-23",
+        "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+        "promptContentHash": null,
+        "pipelineConfigHash": null,
+        "searchConfigHash": null,
+        "calcConfigHash": null,
+        "modelPolicyHash": null
+      },
+      "sourceChainAttribution": {
+        "version": "v2.highjump.source-chain-attribution.hj73",
+        "visibility": "internal_admin_only",
+        "defaultProjection": "redacted_hash_length_provenance_only",
+        "runId": "9ef3a6cf64244c6ea87f200e0db58fd0",
+        "createdUtc": "2026-05-23T18:22:30.108Z",
+        "publicCutoverStatus": "blocked_precutover",
+        "stages": {
+          "claimUnderstanding": {
+            "status": "accepted",
+            "selectedAtomicClaimCount": 0
+          },
+          "queryPlanning": {
+            "status": "inspected",
+            "runtimeStatus": "completed",
+            "resultStatus": "accepted",
+            "queryEntryCount": 6
+          },
+          "candidateProviderNetwork": {
+            "status": "candidate_provider_network_completed",
+            "providerAttemptCount": 9,
+            "candidateCount": 15,
+            "totalCandidateCount": 24,
+            "totalBytes": 54072
+          },
+          "sourceCandidatePreview": {
+            "status": "source_candidate_preview_partial",
+            "previewRecordCount": 9
+          },
+          "sourceMaterial": {
+            "status": "source_material_page_summary_completed",
+            "recordCount": 9,
+            "materializedPreviewRecordCount": 8,
+            "attemptedFetchCount": 6,
+            "fetchDiagnosticCount": 6,
+            "totalBoundedTextBytes": 14766,
+            "truncationCount": 3,
+            "sourceMaterialKindCounts": {
+              "provider_search_result_page_text_bounded": 3,
+              "wikimedia_page_summary_extract_text": 2,
+              "openalex_work_abstract_text": 2,
+              "provider_search_result_preview_text": 2
+            },
+            "providerIdCounts": {
+              "serper_web_search": 3,
+              "wikimedia_core": 4,
+              "openalex": 2
+            }
+          },
+          "w4": {
+            "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+            "boundedTextSidecarCount": 9,
+            "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+            "extractionInputPacketCount": 1,
+            "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+          },
+          "w5": {
+            "executionStatus": "hidden_evidence_item_extraction_completed",
+            "extractionStatus": "evidence_extracted",
+            "evidenceItemCount": 4,
+            "sourceContentPacketCount": 9,
+            "parentPacketByteLength": 14782
+          },
+          "reportWriter": {
+            "status": "internal_report_writer_draft_created",
+            "citedEvidenceItemRefCount": 4,
+            "reportMarkdownHash": "e1cd38dc839d6feeafa698d09783e858c8d775b650cb511ba09d83c08967f192",
+            "reportMarkdownByteLength": 11606
+          }
+        },
+        "sourceMaterialRefs": [
+          {
+            "ordinal": 1,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_56A08C687D1EBFA5",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "56a08c687d1ebfa5181dfc969b657eb1f378a52f1fcdc6f594540ea73ff4d846",
+            "textByteLength": 4096,
+            "textCharLength": 4096,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 2,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_D76D80837FD520E4",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "d76d80837fd520e475acf4745faeb72c01d3ea824c1b062c57d0e2dc91ebdeef",
+            "textByteLength": 1215,
+            "textCharLength": 1211,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 3,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_8BF7FD2FFE44699E",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "8bf7fd2ffe44699e856c72e978653b2c360973d2b6f27b6886ac4e721f879cb9",
+            "textByteLength": 2027,
+            "textCharLength": 2027,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 4,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_A0FD59C4BB1359E5",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "a0fd59c4bb1359e51fc0a53e86e434c328013f482b9fe3886a991d4849ecdc29",
+            "textByteLength": 218,
+            "textCharLength": 218,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 5,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_27808B06A14DD5B2",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "27808b06a14dd5b2809174e458c2a25a33dd050f45d90a8b2fb49ccf635572e7",
+            "textByteLength": 4096,
+            "textCharLength": 4084,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 6,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_E427E272ACCDCAC6",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "e427e272accdcac67ada0c44a34c4dc1660e892a43b7ffdf2286aa1127308130",
+            "textByteLength": 1206,
+            "textCharLength": 1206,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 7,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_0E99E5A3A75551D3",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "0e99e5a3a75551d3d5d968898ee48a76161dfb4acd1701b650431d2289258cdc",
+            "textByteLength": 970,
+            "textCharLength": 968,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 8,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_63C73A58CD324EA5",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "63c73a58cd324ea56a9c254ccb4814c0e4c942dc6e6cbd834c9130c21ae88abd",
+            "textByteLength": 235,
+            "textCharLength": 235,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 9,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_9743F6CC955F95E5",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "9743f6cc955f95e5fec26d8ab41fb2365e7d79ad25e9fd41642a78a2c97aadf3",
+            "textByteLength": 703,
+            "textCharLength": 703,
+            "truncationApplied": true
+          }
+        ],
+        "redaction": {
+          "sourceTextReturned": false,
+          "snippetsReturned": false,
+          "summariesReturned": false,
+          "titlesReturned": false,
+          "urlsReturned": false,
+          "pageKeysReturned": false,
+          "providerPayloadsReturned": false,
+          "rawQueryTextReturned": false,
+          "promptTextReturned": false,
+          "hiddenLedgerIdsReturned": false,
+          "stackTracesReturned": false,
+          "modelOutputReturned": false
+        },
+        "lossPointCandidate": "unknown"
+      },
+      "publicContainment": {
+        "publicSchema": "4.0.0-cb-precutover",
+        "publicPipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "reportMarkdownValueReturned": false,
+        "adminDiagnosticsReturned": false,
+        "verdictOrConfidenceValuePatternReturned": false,
+        "publicResultKeys": [
+          "input",
+          "meta",
+          "warnings",
+          "_schemaVersion"
+        ],
+        "precisePublicLeakCheck": {
+          "reportMarkdownAbsent": true,
+          "topLevelVerdictLabelAbsent": true,
+          "topLevelTruthPercentageAbsent": true,
+          "topLevelConfidenceAbsent": true,
+          "resultJsonHasOnlyPublicKeys": true,
+          "adminDiagnosticsAbsent": true
+        }
+      }
+    },
+    {
+      "slug": "plastic",
+      "jobId": "3c8eb6181a5941a69219f9562f338ffa",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "gitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "promptContentHash": null,
+      "reportMarkdownLength": 7821,
+      "expected": "false-side or mixed, not confident pointless true-side",
+      "observedOutcome": "PARTIAL: added MIXED 50/68 countervailing-value verdict but still includes MOSTLY-TRUE 74/82 recycling-outcomes verdict",
+      "uniqueEvidenceRefs": [
+        "EVI_001_RECYCLING_RATES_OUTCOMES",
+        "EVI_002",
+        "EVI_002_ENVIRONMENTAL_IMPACT_REDUCTION",
+        "EVI_003",
+        "EVI_003_MECHANICAL_RECYCLING_DEGRADATION",
+        "EVI_004",
+        "EVI_004_RECYCLING_OBSTACLES_EUROPE"
+      ],
+      "uniqueEvidenceRefCount": 7,
+      "resultMeta": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "resultContractVersion": 1,
+        "runId": "3c8eb6181a5941a69219f9562f338ffa",
+        "generatedUtc": "2026-05-23T18:22:30.132Z",
+        "currentDate": "2026-05-23",
+        "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+        "promptContentHash": null,
+        "pipelineConfigHash": null,
+        "searchConfigHash": null,
+        "calcConfigHash": null,
+        "modelPolicyHash": null
+      },
+      "sourceChainAttribution": {
+        "version": "v2.highjump.source-chain-attribution.hj73",
+        "visibility": "internal_admin_only",
+        "defaultProjection": "redacted_hash_length_provenance_only",
+        "runId": "3c8eb6181a5941a69219f9562f338ffa",
+        "createdUtc": "2026-05-23T18:22:30.132Z",
+        "publicCutoverStatus": "blocked_precutover",
+        "stages": {
+          "claimUnderstanding": {
+            "status": "accepted",
+            "selectedAtomicClaimCount": 0
+          },
+          "queryPlanning": {
+            "status": "inspected",
+            "runtimeStatus": "completed",
+            "resultStatus": "accepted",
+            "queryEntryCount": 5
+          },
+          "candidateProviderNetwork": {
+            "status": "candidate_provider_network_completed",
+            "providerAttemptCount": 7,
+            "candidateCount": 13,
+            "totalCandidateCount": 19,
+            "totalBytes": 40026
+          },
+          "sourceCandidatePreview": {
+            "status": "source_candidate_preview_materialized",
+            "previewRecordCount": 9
+          },
+          "sourceMaterial": {
+            "status": "source_material_page_summary_completed",
+            "recordCount": 9,
+            "materializedPreviewRecordCount": 9,
+            "attemptedFetchCount": 5,
+            "fetchDiagnosticCount": 5,
+            "totalBoundedTextBytes": 10559,
+            "truncationCount": 1,
+            "sourceMaterialKindCounts": {
+              "provider_search_result_preview_text": 4,
+              "wikimedia_page_summary_extract_text": 2,
+              "openalex_work_abstract_text": 2,
+              "provider_search_result_page_text_bounded": 1
+            },
+            "providerIdCounts": {
+              "serper_web_search": 3,
+              "wikimedia_core": 4,
+              "openalex": 2
+            }
+          },
+          "w4": {
+            "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+            "boundedTextSidecarCount": 9,
+            "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+            "extractionInputPacketCount": 1,
+            "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+          },
+          "w5": {
+            "executionStatus": "hidden_evidence_item_extraction_completed",
+            "extractionStatus": "evidence_extracted",
+            "evidenceItemCount": 4,
+            "sourceContentPacketCount": 9,
+            "parentPacketByteLength": 10575
+          },
+          "reportWriter": {
+            "status": "internal_report_writer_draft_created",
+            "citedEvidenceItemRefCount": 4,
+            "reportMarkdownHash": "a84071242cb45b9e35617acf34a2d8a96e7e579e78ff91fb09b452b39cd76b2a",
+            "reportMarkdownByteLength": 7825
+          }
+        },
+        "sourceMaterialRefs": [
+          {
+            "ordinal": 1,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_46B7C5E41D27B035",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "46b7c5e41d27b03597947ab4b0d12454fea7d483cd436efc3536ff0b6f0c1997",
+            "textByteLength": 228,
+            "textCharLength": 228,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 2,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_426E33F69BA53B4B",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "426e33f69ba53b4b7cc617a3ce809e67c1a5156442dcd131776c9d2b1ae15c04",
+            "textByteLength": 1203,
+            "textCharLength": 1203,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 3,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_C629F8B994D7EF7C",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "c629f8b994d7ef7cad0b97a382b9854952050f066b3ea4e7bee137131eb27627",
+            "textByteLength": 2219,
+            "textCharLength": 2219,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 4,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_7E9A65CA12816C5C",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "7e9a65ca12816c5c3a5b3d25cbf452bad99cbce755c0a6d3908750f067e220e8",
+            "textByteLength": 222,
+            "textCharLength": 222,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 5,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_A5F8F46DDE0BEE1D",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "a5f8f46dde0bee1da41511dd1d1500d94a780e3ec9dcc91d2a96be51ff09a346",
+            "textByteLength": 231,
+            "textCharLength": 231,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 6,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_60FDD36C9E583552",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "60fdd36c9e58355254d9eaae52cd4458ddd1f53dcbc45404a340179b552941fd",
+            "textByteLength": 1204,
+            "textCharLength": 1204,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 7,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_E2070E8C552045EF",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "e2070e8c552045ef01409e9921ba077bb14afc2ddceafe00bf563d81f428dbaa",
+            "textByteLength": 883,
+            "textCharLength": 883,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 8,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_1143CD68C358942B",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "1143cd68c358942b81f32c2bcfe6eef414026a8ae063fa140e44003a718ef169",
+            "textByteLength": 273,
+            "textCharLength": 273,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 9,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_7F0AAB3E76B2F77A",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "7f0aab3e76b2f77a88fc8cfc6b3b4aaeaa876aaa6342c7fc654cf2010d16c775",
+            "textByteLength": 4096,
+            "textCharLength": 4064,
+            "truncationApplied": true
+          }
+        ],
+        "redaction": {
+          "sourceTextReturned": false,
+          "snippetsReturned": false,
+          "summariesReturned": false,
+          "titlesReturned": false,
+          "urlsReturned": false,
+          "pageKeysReturned": false,
+          "providerPayloadsReturned": false,
+          "rawQueryTextReturned": false,
+          "promptTextReturned": false,
+          "hiddenLedgerIdsReturned": false,
+          "stackTracesReturned": false,
+          "modelOutputReturned": false
+        },
+        "lossPointCandidate": "unknown"
+      },
+      "publicContainment": {
+        "publicSchema": "4.0.0-cb-precutover",
+        "publicPipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "reportMarkdownValueReturned": false,
+        "adminDiagnosticsReturned": false,
+        "verdictOrConfidenceValuePatternReturned": false,
+        "publicResultKeys": [
+          "input",
+          "meta",
+          "warnings",
+          "_schemaVersion"
+        ],
+        "precisePublicLeakCheck": {
+          "reportMarkdownAbsent": true,
+          "topLevelVerdictLabelAbsent": true,
+          "topLevelTruthPercentageAbsent": true,
+          "topLevelConfidenceAbsent": true,
+          "resultJsonHasOnlyPublicKeys": true,
+          "adminDiagnosticsAbsent": true
+        }
+      }
+    },
+    {
+      "slug": "bolsonaro-en",
+      "jobId": "5f4eb7709fc6416eaec2e8ab961f8d33",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "gitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "promptContentHash": null,
+      "reportMarkdownLength": 8914,
+      "expected": "true-side with caveats",
+      "observedOutcome": "PARTIAL: Brazilian-law half moved to LEANING-TRUE 62/58; international fair-trial half remains UNVERIFIED 48/42",
+      "uniqueEvidenceRefs": [
+        "EVI_001",
+        "EVI_001_BOLSONARO_CONVICTION_VERDICT",
+        "EVI_002_INVESTIGATION_FOUNDATION_PLEA_BARGAIN",
+        "EVI_003_STF_LULA_CASE_NULLIFICATION_PROCEDURAL_CONTEXT",
+        "EVI_004",
+        "EVI_004_ELECTORAL_COURT_ELECTION_INTEGRITY_ASSESSMENT"
+      ],
+      "uniqueEvidenceRefCount": 6,
+      "resultMeta": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "resultContractVersion": 1,
+        "runId": "5f4eb7709fc6416eaec2e8ab961f8d33",
+        "generatedUtc": "2026-05-23T18:24:43.131Z",
+        "currentDate": "2026-05-23",
+        "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+        "promptContentHash": null,
+        "pipelineConfigHash": null,
+        "searchConfigHash": null,
+        "calcConfigHash": null,
+        "modelPolicyHash": null
+      },
+      "sourceChainAttribution": {
+        "version": "v2.highjump.source-chain-attribution.hj73",
+        "visibility": "internal_admin_only",
+        "defaultProjection": "redacted_hash_length_provenance_only",
+        "runId": "5f4eb7709fc6416eaec2e8ab961f8d33",
+        "createdUtc": "2026-05-23T18:24:43.131Z",
+        "publicCutoverStatus": "blocked_precutover",
+        "stages": {
+          "claimUnderstanding": {
+            "status": "accepted",
+            "selectedAtomicClaimCount": 0
+          },
+          "queryPlanning": {
+            "status": "inspected",
+            "runtimeStatus": "completed",
+            "resultStatus": "accepted",
+            "queryEntryCount": 6
+          },
+          "candidateProviderNetwork": {
+            "status": "candidate_provider_network_completed",
+            "providerAttemptCount": 7,
+            "candidateCount": 17,
+            "totalCandidateCount": 20,
+            "totalBytes": 39238
+          },
+          "sourceCandidatePreview": {
+            "status": "source_candidate_preview_partial",
+            "previewRecordCount": 9
+          },
+          "sourceMaterial": {
+            "status": "source_material_page_summary_completed",
+            "recordCount": 9,
+            "materializedPreviewRecordCount": 7,
+            "attemptedFetchCount": 6,
+            "fetchDiagnosticCount": 6,
+            "totalBoundedTextBytes": 13419,
+            "truncationCount": 2,
+            "sourceMaterialKindCounts": {
+              "provider_search_result_page_text_bounded": 2,
+              "wikimedia_page_summary_extract_text": 2,
+              "openalex_work_abstract_text": 2,
+              "provider_search_result_preview_text": 3
+            },
+            "providerIdCounts": {
+              "serper_web_search": 3,
+              "wikimedia_core": 4,
+              "openalex": 2
+            }
+          },
+          "w4": {
+            "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+            "boundedTextSidecarCount": 9,
+            "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+            "extractionInputPacketCount": 1,
+            "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+          },
+          "w5": {
+            "executionStatus": "hidden_evidence_item_extraction_completed",
+            "extractionStatus": "evidence_extracted",
+            "evidenceItemCount": 4,
+            "sourceContentPacketCount": 9,
+            "parentPacketByteLength": 13435
+          },
+          "reportWriter": {
+            "status": "internal_report_writer_draft_created",
+            "citedEvidenceItemRefCount": 4,
+            "reportMarkdownHash": "7942b78d7f46d19b3709d30355b524aafa3f39af7081904c6bbad5aca1a6eb82",
+            "reportMarkdownByteLength": 8917
+          }
+        },
+        "sourceMaterialRefs": [
+          {
+            "ordinal": 1,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_FBD70B39672F7F27",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "fbd70b39672f7f27b115ab83d366f1a5c0f6afaebe19b8ce2478c25c73d00ccd",
+            "textByteLength": 4096,
+            "textCharLength": 4064,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 2,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_1B0ED4D8973C24DC",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "1b0ed4d8973c24dc0e5f9f17db70dad237d91e52f6f83b853cebcc0042a169cc",
+            "textByteLength": 1204,
+            "textCharLength": 1203,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 3,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_542A92D035272C92",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "542a92d035272c92b40e5942f653938645c9d9bb4d2e81d972afd8f292e8e730",
+            "textByteLength": 1480,
+            "textCharLength": 1476,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 4,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_23AC12D234CBE46C",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "23ac12d234cbe46c5c861fd9bfd3bfdbdb58676165fa15e3a02bc15330863bef",
+            "textByteLength": 210,
+            "textCharLength": 208,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 5,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_0DD4F1886601A873",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "0dd4f1886601a873af53756bceee32b2094d55c185b69b104fd76e150b322226",
+            "textByteLength": 4096,
+            "textCharLength": 4096,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 6,
+            "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_6D68583C6AF08DB4",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+            "textHash": "6d68583c6af08db4578666a9b4d11f492b33659abdf93feaae9ec3b5858a65c0",
+            "textByteLength": 1191,
+            "textCharLength": 1191,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 7,
+            "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_834E3E09008CC8B0",
+            "providerId": "openalex",
+            "sourceMaterialKind": "openalex_work_abstract_text",
+            "textHash": "834e3e09008cc8b0e56d51be2005e04d991adff8d6dda3c61459510768316076",
+            "textByteLength": 702,
+            "textCharLength": 702,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 8,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_CE20773955B2BEF1",
+            "providerId": "wikimedia_core",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "ce20773955b2bef19f116cce72987a876ee1b70704d0c2ab28084927874dab2e",
+            "textByteLength": 243,
+            "textCharLength": 241,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 9,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_4D1CA99FC0CAEA5A",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "4d1ca99fc0caea5aa6696af4ff7caf82faf931b90e1810a9628fd1456e96e07d",
+            "textByteLength": 197,
+            "textCharLength": 195,
+            "truncationApplied": false
+          }
+        ],
+        "redaction": {
+          "sourceTextReturned": false,
+          "snippetsReturned": false,
+          "summariesReturned": false,
+          "titlesReturned": false,
+          "urlsReturned": false,
+          "pageKeysReturned": false,
+          "providerPayloadsReturned": false,
+          "rawQueryTextReturned": false,
+          "promptTextReturned": false,
+          "hiddenLedgerIdsReturned": false,
+          "stackTracesReturned": false,
+          "modelOutputReturned": false
+        },
+        "lossPointCandidate": "unknown"
+      },
+      "publicContainment": {
+        "publicSchema": "4.0.0-cb-precutover",
+        "publicPipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "reportMarkdownValueReturned": false,
+        "adminDiagnosticsReturned": false,
+        "verdictOrConfidenceValuePatternReturned": false,
+        "publicResultKeys": [
+          "input",
+          "meta",
+          "warnings",
+          "_schemaVersion"
+        ],
+        "precisePublicLeakCheck": {
+          "reportMarkdownAbsent": true,
+          "topLevelVerdictLabelAbsent": true,
+          "topLevelTruthPercentageAbsent": true,
+          "topLevelConfidenceAbsent": true,
+          "resultJsonHasOnlyPublicKeys": true,
+          "adminDiagnosticsAbsent": true
+        }
+      }
+    },
+    {
+      "slug": "asylum-wwii-de",
+      "jobId": "6f4fb7f9c5ce41579f53c657e3c07528",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "gitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+      "promptContentHash": null,
+      "reportMarkdownLength": 1211,
+      "expected": "false-side WWII endpoint-stock comparison",
+      "observedOutcome": "STOP: W5 hidden_no_extractable_evidence, no EvidenceItems, structural stop report only",
+      "uniqueEvidenceRefs": null,
+      "uniqueEvidenceRefCount": 0,
+      "resultMeta": {
+        "schemaVersion": "4.0.0-cb-precutover",
+        "pipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "resultContractVersion": 1,
+        "runId": "6f4fb7f9c5ce41579f53c657e3c07528",
+        "generatedUtc": "2026-05-23T18:24:43.139Z",
+        "currentDate": "2026-05-23",
+        "executedWebGitCommitHash": "1090e7db0bbf079fc8d7339c49d5654e36815aaa+e3b0c442",
+        "promptContentHash": null,
+        "pipelineConfigHash": null,
+        "searchConfigHash": null,
+        "calcConfigHash": null,
+        "modelPolicyHash": null
+      },
+      "sourceChainAttribution": {
+        "version": "v2.highjump.source-chain-attribution.hj73",
+        "visibility": "internal_admin_only",
+        "defaultProjection": "redacted_hash_length_provenance_only",
+        "runId": "6f4fb7f9c5ce41579f53c657e3c07528",
+        "createdUtc": "2026-05-23T18:24:43.139Z",
+        "publicCutoverStatus": "blocked_precutover",
+        "stages": {
+          "claimUnderstanding": {
+            "status": "accepted",
+            "selectedAtomicClaimCount": 0
+          },
+          "queryPlanning": {
+            "status": "inspected",
+            "runtimeStatus": "completed",
+            "resultStatus": "accepted",
+            "queryEntryCount": 5
+          },
+          "candidateProviderNetwork": {
+            "status": "candidate_provider_network_completed",
+            "providerAttemptCount": 10,
+            "candidateCount": 0,
+            "totalCandidateCount": 0,
+            "totalBytes": 1596
+          },
+          "sourceCandidatePreview": {
+            "status": "source_candidate_preview_materialized",
+            "previewRecordCount": 9
+          },
+          "sourceMaterial": {
+            "status": "source_material_page_summary_completed",
+            "recordCount": 6,
+            "materializedPreviewRecordCount": 9,
+            "attemptedFetchCount": 0,
+            "fetchDiagnosticCount": 0,
+            "totalBoundedTextBytes": 12894,
+            "truncationCount": 2,
+            "sourceMaterialKindCounts": {
+              "provider_search_result_preview_text": 3,
+              "provider_search_result_page_text_bounded": 3
+            },
+            "providerIdCounts": {
+              "serper_web_search": 6
+            }
+          },
+          "w4": {
+            "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+            "boundedTextSidecarCount": 6,
+            "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+            "extractionInputPacketCount": 1,
+            "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+          },
+          "w5": {
+            "executionStatus": "hidden_no_extractable_evidence",
+            "extractionStatus": "no_extractable_evidence",
+            "evidenceItemCount": 0,
+            "sourceContentPacketCount": 6,
+            "parentPacketByteLength": 12904
+          },
+          "reportWriter": {
+            "status": null,
+            "citedEvidenceItemRefCount": null,
+            "reportMarkdownHash": null,
+            "reportMarkdownByteLength": null
+          }
+        },
+        "sourceMaterialRefs": [
+          {
+            "ordinal": 1,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_D2EE0A6267ADA775",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "d2ee0a6267ada7752256223ea776bdcd671ecc41f102b51a6400a82334a1a9d7",
+            "textByteLength": 211,
+            "textCharLength": 210,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 2,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_24A9F9AEB052CBED",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "24a9f9aeb052cbed09be0bef7711ed2edfd7d0af760971d757f3df09ba8ffaad",
+            "textByteLength": 4095,
+            "textCharLength": 3995,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 3,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_2FF7F7442B43EB40",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "2ff7f7442b43eb40d9e4f9990f07f03cb03baa67b6fd30922df6baa1c8f47b42",
+            "textByteLength": 4096,
+            "textCharLength": 4001,
+            "truncationApplied": true
+          },
+          {
+            "ordinal": 4,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_95A0A6E22D544EB3",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "95a0a6e22d544eb3eb114df66e231312c8213f1561c486cd74115ca8a82ac788",
+            "textByteLength": 172,
+            "textCharLength": 172,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 5,
+            "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_FEF5AEBC80622BC4",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_preview_text",
+            "textHash": "fef5aebc80622bc4e1c73d1455353a06d3f702413d1b7916501a1c8e947a7770",
+            "textByteLength": 245,
+            "textCharLength": 238,
+            "truncationApplied": false
+          },
+          {
+            "ordinal": 6,
+            "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_0CCE08BB95CE0125",
+            "providerId": "serper_web_search",
+            "sourceMaterialKind": "provider_search_result_page_text_bounded",
+            "textHash": "0cce08bb95ce012557a4ac2e2b941429c2edc95d3ca1d90927984fa93af0b745",
+            "textByteLength": 4075,
+            "textCharLength": 4014,
+            "truncationApplied": false
+          }
+        ],
+        "redaction": {
+          "sourceTextReturned": false,
+          "snippetsReturned": false,
+          "summariesReturned": false,
+          "titlesReturned": false,
+          "urlsReturned": false,
+          "pageKeysReturned": false,
+          "providerPayloadsReturned": false,
+          "rawQueryTextReturned": false,
+          "promptTextReturned": false,
+          "hiddenLedgerIdsReturned": false,
+          "stackTracesReturned": false,
+          "modelOutputReturned": false
+        },
+        "lossPointCandidate": "candidate_provider_network"
+      },
+      "publicContainment": {
+        "publicSchema": "4.0.0-cb-precutover",
+        "publicPipeline": "claimboundary-v2",
+        "publicCutoverStatus": "blocked_precutover",
+        "reportMarkdownValueReturned": false,
+        "adminDiagnosticsReturned": false,
+        "verdictOrConfidenceValuePatternReturned": false,
+        "publicResultKeys": [
+          "input",
+          "meta",
+          "warnings",
+          "_schemaVersion"
+        ],
+        "precisePublicLeakCheck": {
+          "reportMarkdownAbsent": true,
+          "topLevelVerdictLabelAbsent": true,
+          "topLevelTruthPercentageAbsent": true,
+          "topLevelConfidenceAbsent": true,
+          "resultJsonHasOnlyPublicKeys": true,
+          "adminDiagnosticsAbsent": true
+        }
+      }
+    }
+  ]
+}
