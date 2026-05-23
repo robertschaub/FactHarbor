@@ -231,11 +231,20 @@ public sealed class ResultCompatibilityTests
         verdict["label"] = "TRUE";
         verdict["truthPercentage"] = 90;
         verdict["confidence"] = 80;
+        root["adminDiagnostics"] = new JsonObject
+        {
+            ["sourceChainAttribution"] = new JsonObject
+            {
+                ["version"] = "v2.highjump.source-chain-attribution.hj73",
+                ["visibility"] = "internal_admin_only",
+            },
+        };
 
         var publicJson = ResultCompatibility.BuildPublicResultJson(root.ToJsonString(), isAdmin: false)!.AsObject();
         var meta = publicJson["meta"]!.AsObject();
 
         Assert.Equal("blocked_precutover", meta["publicCutoverStatus"]!.GetValue<string>());
+        Assert.False(publicJson.ContainsKey("adminDiagnostics"));
         Assert.False(publicJson.ContainsKey("verdict"));
         Assert.False(publicJson.ContainsKey("evidence"));
         Assert.False(publicJson.ContainsKey("sources"));
@@ -246,13 +255,25 @@ public sealed class ResultCompatibilityTests
     [Fact]
     public void BuildPublicResultJson_AdminKeepsRawBlockedV2ForDiagnostics()
     {
-        var json = FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json");
+        var root = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        root["adminDiagnostics"] = new JsonObject
+        {
+            ["sourceChainAttribution"] = new JsonObject
+            {
+                ["version"] = "v2.highjump.source-chain-attribution.hj73",
+                ["visibility"] = "internal_admin_only",
+            },
+        };
 
-        var adminJson = ResultCompatibility.BuildPublicResultJson(json, isAdmin: true)!.AsObject();
+        var adminJson = ResultCompatibility.BuildPublicResultJson(root.ToJsonString(), isAdmin: true)!.AsObject();
 
         Assert.True(adminJson.ContainsKey("verdict"));
         Assert.True(adminJson.ContainsKey("evidence"));
         Assert.True(adminJson.ContainsKey("narrative"));
+        Assert.True(adminJson.ContainsKey("adminDiagnostics"));
+        Assert.Equal(
+            "v2.highjump.source-chain-attribution.hj73",
+            adminJson["adminDiagnostics"]!["sourceChainAttribution"]!["version"]!.GetValue<string>());
     }
 
     [Fact]

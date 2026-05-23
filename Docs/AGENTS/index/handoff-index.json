@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T11:49:52.202Z",
-  "count": 440,
+  "generatedAt": "2026-05-23T14:38:57.551Z",
+  "count": 441,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9661,6 +9661,40 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Takeover Checkpoint - V2 W6-C HighJump"
+    },
+    {
+      "file": "2026-05-23_Lead_Developer_HJ73_Source_Chain_Attribution.md",
+      "date": "2026-05-23",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "hj73",
+        "source",
+        "chain",
+        "attribution"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-23 - Lead Developer - HJ73 Durable Source-Chain Attribution",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism",
+            "chosen_option": "amend existing result-envelope/admin diagnostics",
+            "rejected_path_and_why": "live canary, source/provider strategy, cap/retry/parser/cache/SR/storage expansion, new hidden route/sink/table, public/API/UI/report/export behavior, prompt/model/config/schema changes, raw artifact dumps, and deterministic semantic source ranking all exceeded the HJ73 attribution-only package or added higher net complexity",
+            "what_was_removed_simplified": "quarantined generated .next/dev cache after build failure; removed generated hj73-test dotnet output from the failed isolated-output retry",
+            "what_was_added": "one redacted structural source-chain attribution helper, one adminDiagnostics result-envelope attachment, orchestrator projection wiring from existing decisions, focused web tests, and API compatibility assertions",
+            "net_mechanism_count": "small bounded increase in persisted admin diagnostics; no new route, sink, table, provider, cache, parser, retry, or public surface",
+            "budget_reconciliation": "actual diff stayed within the allowed helper/orchestrator/result-envelope/tests/API-compatibility surface; no live job or source-strategy change occurred",
+            "verification": "focused helper/result-envelope tests, required V2 shell/orchestrator tests, boundary guard, API compatibility tests with locked-service workaround, web build, debt sensors, index, and diff checks",
+            "debt_accepted_and_removal_trigger": "temporary admin diagnostic shape accepted until stable persisted run-ledger/report-result diagnostics exist or accepted internal reports directly expose source-chain ownership; then merge or retire HJ73 fields",
+            "residual_debt": "known advisory_warn V2 footprint, boundary guard size, docs footprint, debt-guard telemetry, and V2 consolidation-marker warnings remain"
+          }
+        }
+      }
     },
     {
       "file": "2026-05-23_Product_Strategist_Filip_W_Agent_Architecture_Fit_Assessment.md",

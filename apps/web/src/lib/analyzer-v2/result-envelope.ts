@@ -1,5 +1,6 @@
 import { CLAIM_UNDERSTANDING_SHELL_ONLY_PLACEHOLDER_CLAIM_IDS } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
+import type { SourceChainAttributionSnapshot } from "@/lib/analyzer-v2/source-chain-attribution";
 
 export const CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION = "4.0.0-cb-precutover";
 export const CLAIMBOUNDARY_V2_PIPELINE = "claimboundary-v2";
@@ -15,6 +16,7 @@ export type ClaimBoundaryV2Envelope = {
 
 type DamagedClaimBoundaryV2EnvelopeOptions = {
   adminReportMarkdown?: string | null;
+  sourceChainAttribution?: SourceChainAttributionSnapshot | null;
 };
 
 export type ClaimPreparationEnvelopeDiagnostic = {
@@ -142,6 +144,14 @@ function buildCompatibilityQualityGates(context: ClaimBoundaryV2RunContext) {
   };
 }
 
+function buildAdminDiagnostics(options: DamagedClaimBoundaryV2EnvelopeOptions) {
+  return options.sourceChainAttribution
+    ? {
+        sourceChainAttribution: options.sourceChainAttribution,
+      }
+    : null;
+}
+
 export function buildDamagedClaimBoundaryV2Envelope(
   context: ClaimBoundaryV2RunContext,
   preparationDiagnostics: readonly ClaimPreparationEnvelopeDiagnostic[] = [],
@@ -162,6 +172,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
     options.adminReportMarkdown.trim().length > 0
     ? options.adminReportMarkdown
     : null;
+  const adminDiagnostics = buildAdminDiagnostics(options);
 
   return {
     reportMarkdown: adminReportMarkdown ?? publicDamagedReportMarkdown,
@@ -223,6 +234,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
         damagedReport: true,
       },
       warnings: [warning, ...diagnostics],
+      ...(adminDiagnostics ? { adminDiagnostics } : {}),
       narrative: {
         markdown: publicDamagedReportMarkdown,
         sections: {

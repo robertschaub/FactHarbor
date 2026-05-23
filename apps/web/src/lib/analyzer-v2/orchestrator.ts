@@ -14,6 +14,7 @@ import { buildSourceAcquisitionIntakeBoundaryDecision } from "@/lib/analyzer-v2/
 import { buildSourceAcquisitionRequest } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
+import { buildSourceChainAttributionSnapshot } from "@/lib/analyzer-v2/source-chain-attribution";
 import { buildEvidenceLifecycleSourceCandidatePreviewDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-candidate-preview-owner";
 import { runEvidenceLifecycleSourceMaterialPageSummaryDecision } from "@/lib/analyzer-v2-runtime/evidence-lifecycle-source-material-page-summary-owner";
 import {
@@ -226,6 +227,15 @@ export async function runClaimBoundaryPipelineV2(
 
   const context = buildClaimBoundaryV2RunContext(input, options);
   let adminReportMarkdown: string | null = null;
+  let queryPlanningInspectionForAttribution: unknown = null;
+  let candidateProviderNetworkForAttribution: unknown = null;
+  let sourceCandidatePreviewForAttribution: unknown = null;
+  let sourceMaterialPageSummaryForAttribution: unknown = null;
+  let boundedTextAuthorizationForAttribution: unknown = null;
+  let extractionInputAuthorizationForAttribution: unknown = null;
+  let executionReadinessDenialForAttribution: unknown = null;
+  let boundedEvidenceExtractionForAttribution: unknown = null;
+  let internalReportWriterForAttribution: unknown = null;
   const setAdminStopSummary = (summary: AdminStopSummary): void => {
     adminReportMarkdown = buildAdminStopReportMarkdown(summary);
   };
@@ -309,6 +319,7 @@ export async function runClaimBoundaryPipelineV2(
           selectedAtomicClaimIds,
           selectedAtomicClaimSnapshotSource: "7l1_input_envelope",
         });
+        queryPlanningInspectionForAttribution = inspection;
         setAdminStopSummary({
           stage: "Query Planning",
           outcome: "Query Planning completed; source acquisition did not yet produce report material.",
@@ -374,6 +385,7 @@ export async function runClaimBoundaryPipelineV2(
           webSearchPreviewSourceMaterialRecordSink: (record) =>
             webSearchPreviewSourceMaterialRecords.push(record),
         });
+        candidateProviderNetworkForAttribution = candidateProviderNetwork;
         recordEvidenceLifecycleSourceAcquisitionCandidateProviderNetworkRuntimeArtifact({
           context,
           networkDecision: candidateProviderNetwork,
@@ -393,6 +405,7 @@ export async function runClaimBoundaryPipelineV2(
           networkDecision: candidateProviderNetwork,
           previewProjections: sourceCandidatePreviewProjections,
         });
+        sourceCandidatePreviewForAttribution = sourceCandidatePreview;
         recordEvidenceLifecycleSourceCandidatePreviewRuntimeArtifact({
           context,
           previewDecision: sourceCandidatePreview,
@@ -404,6 +417,7 @@ export async function runClaimBoundaryPipelineV2(
           openAlexSourceMaterialRecords,
           webSearchPreviewSourceMaterialRecords,
         });
+        sourceMaterialPageSummaryForAttribution = sourceMaterialPageSummary;
         recordEvidenceLifecycleSourceMaterialPageSummaryRuntimeArtifact({
           context,
           decision: sourceMaterialPageSummary,
@@ -455,6 +469,7 @@ export async function runClaimBoundaryPipelineV2(
             evidenceCorpusShell,
             extractionReadinessDenial: evidenceCorpusExtractionReadinessDenial,
           });
+        boundedTextAuthorizationForAttribution = evidenceCorpusBoundedTextAuthorization;
         recordEvidenceLifecycleEvidenceCorpusBoundedTextRuntimeArtifact({
           context,
           boundedTextAuthorization: evidenceCorpusBoundedTextAuthorization,
@@ -462,6 +477,7 @@ export async function runClaimBoundaryPipelineV2(
         const extractionInputAuthorization = buildEvidenceLifecycleExtractionInputAuthorizationDecision({
           boundedTextAuthorization: evidenceCorpusBoundedTextAuthorization,
         });
+        extractionInputAuthorizationForAttribution = extractionInputAuthorization;
         recordEvidenceLifecycleExtractionInputRuntimeArtifact({
           context,
           extractionInputAuthorization,
@@ -469,6 +485,7 @@ export async function runClaimBoundaryPipelineV2(
         const executionReadinessDenial = buildEvidenceLifecycleExecutionReadinessDenialDecision({
           extractionInputAuthorization,
         });
+        executionReadinessDenialForAttribution = executionReadinessDenial;
         recordEvidenceLifecycleExecutionReadinessRuntimeArtifact({
           context,
           executionReadinessDenial,
@@ -479,6 +496,7 @@ export async function runClaimBoundaryPipelineV2(
           extractionInputAuthorization,
           executionReadinessDenial,
         });
+        boundedEvidenceExtractionForAttribution = boundedEvidenceExtraction;
         const boundedEvidenceExtractionArtifact = recordBoundedEvidenceExtractionRuntimeArtifact({
           context,
           boundedEvidenceExtraction,
@@ -577,6 +595,7 @@ export async function runClaimBoundaryPipelineV2(
                 internalAlphaReportResult: reportResultArtifact.artifact.internalAlphaReportResult,
                 boundaryVerdictExecution,
               });
+              internalReportWriterForAttribution = internalReportWriter;
               recordInternalReportWriterRuntimeArtifact({
                 context,
                 decision: internalReportWriter,
@@ -598,7 +617,25 @@ export async function runClaimBoundaryPipelineV2(
   const envelope = buildDamagedClaimBoundaryV2Envelope(
     context,
     claimPreparationEnvelopeDiagnosticsFromHandoff(claimUnderstandingHandoff),
-    { adminReportMarkdown },
+    {
+      adminReportMarkdown,
+      sourceChainAttribution: buildSourceChainAttributionSnapshot({
+        runId: context.runId,
+        createdUtc: context.generatedUtc,
+        publicCutoverStatus: "blocked_precutover",
+        claimUnderstandingStatus: claimUnderstandingHandoff.status,
+        selectedAtomicClaimCount: context.selectedAtomicClaimIds.length,
+        queryPlanningInspection: queryPlanningInspectionForAttribution,
+        candidateProviderNetwork: candidateProviderNetworkForAttribution,
+        sourceCandidatePreview: sourceCandidatePreviewForAttribution,
+        sourceMaterialPageSummary: sourceMaterialPageSummaryForAttribution,
+        boundedTextAuthorization: boundedTextAuthorizationForAttribution,
+        extractionInputAuthorization: extractionInputAuthorizationForAttribution,
+        executionReadinessDenial: executionReadinessDenialForAttribution,
+        boundedEvidenceExtraction: boundedEvidenceExtractionForAttribution,
+        internalReportWriter: internalReportWriterForAttribution,
+      }),
+    },
   );
 
   await emit(input, "Analyzer V2 damaged structural envelope generated.", 90);

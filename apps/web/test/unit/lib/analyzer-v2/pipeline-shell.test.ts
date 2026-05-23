@@ -67,6 +67,61 @@ describe("analyzer-v2 shell", () => {
     expect(onEvent).toHaveBeenCalledWith("Analyzer V2 damaged structural envelope generated.", 90);
   });
 
+  it("attaches a redacted admin-only source-chain attribution snapshot to the raw V2 envelope", async () => {
+    const result = await runClaimBoundaryV2Shell({
+      jobId: "job-v2-shell-hj73",
+      inputType: "text",
+      inputValue: "Structural shell HJ73 input",
+    });
+
+    expect(result.resultJson).toMatchObject({
+      adminDiagnostics: {
+        sourceChainAttribution: {
+          version: "v2.highjump.source-chain-attribution.hj73",
+          visibility: "internal_admin_only",
+          defaultProjection: "redacted_hash_length_provenance_only",
+          runId: "job-v2-shell-hj73",
+          publicCutoverStatus: "blocked_precutover",
+          stages: {
+            claimUnderstanding: {
+              status: "blocked",
+            },
+            queryPlanning: {
+              status: null,
+              queryEntryCount: null,
+            },
+          },
+          redaction: {
+            sourceTextReturned: false,
+            snippetsReturned: false,
+            summariesReturned: false,
+            titlesReturned: false,
+            urlsReturned: false,
+            pageKeysReturned: false,
+            providerPayloadsReturned: false,
+            rawQueryTextReturned: false,
+            promptTextReturned: false,
+            hiddenLedgerIdsReturned: false,
+            stackTracesReturned: false,
+            modelOutputReturned: false,
+          },
+          lossPointCandidate: "query_planning",
+        },
+      },
+    });
+    expect(result.resultJson.meta).toEqual(expect.objectContaining({
+      runId: "job-v2-shell-hj73",
+    }));
+    expect(result.resultJson.input).toEqual(expect.objectContaining({
+      inputValue: "Structural shell HJ73 input",
+    }));
+    expect(result.resultJson.warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: "report_damaged",
+      }),
+    ]));
+  });
+
   it("exposes the damaged envelope through the compatibility view", async () => {
     const result = await runClaimBoundaryV2Shell({
       inputType: "text",

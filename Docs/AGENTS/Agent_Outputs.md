@@ -4842,3 +4842,37 @@ Budget reconciliation: 1 live job spent; active 18-job tranche is exhausted
 Verification: runtime/source freshness, job status, pipelineVariant, admin report inspection, event history, public/default containment, unauthenticated hidden-route probe, debt sensors, and docs/index checks
 Debt accepted and removal trigger: process-local hidden artifact 404 remains an observability gap; next owner requires Steer-Co direction before new live spend
 ```
+
+## 2026-05-23 - Lead Developer - HJ73 Durable Source-Chain Attribution
+
+**Task:** Implement no-live HJ73 from
+`Docs/WIP/2026-05-23_V2_HighJump_HJ73_Durable_Source_Chain_Attribution_Package.md`.
+
+**Result:** Added redacted `adminDiagnostics.sourceChainAttribution` to the V2
+raw result envelope via a small structural helper and orchestrator projection
+from already-owned decisions. Public/default blocked V2 projection remains
+unchanged; no route, sink, provider, retry, parser, cache/SR/storage, prompt,
+model, config, schema, UCM, UI, export, live job, or V1 work was added.
+
+**Validation:** Focused source-chain/result-envelope tests passed; required
+pipeline-shell/orchestrator tests passed; boundary guard passed; API
+ResultCompatibility tests passed with `BuildProjectReferences=false` because a
+running local `FactHarbor.Api` process locked the API executable; web build
+passed after quarantining generated `.next/dev`; debt sensors returned known
+`advisory_warn`; index and diff checks recorded in the handoff.
+
+**Handoff:** `Docs/AGENTS/Handoffs/2026-05-23_Lead_Developer_HJ73_Source_Chain_Attribution.md`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing result-envelope/admin diagnostics
+Rejected path and why: live canary, source/provider strategy, cap/retry/parser/cache/SR/storage expansion, new hidden route/sink/table, public/API/UI/report/export behavior, prompt/model/config/schema changes, raw artifact dumps, and deterministic semantic source ranking exceeded the HJ73 attribution-only package
+What was removed/simplified: quarantined generated .next/dev cache after build failure; removed generated hj73-test dotnet output from the failed isolated-output retry
+What was added: one redacted structural source-chain attribution helper, one adminDiagnostics result-envelope attachment, orchestrator projection wiring from existing decisions, focused web tests, and API compatibility assertions
+Net mechanism count: small bounded increase in persisted admin diagnostics; no new route, sink, table, provider, cache, parser, retry, or public surface
+Budget reconciliation: diff stayed within the allowed helper/orchestrator/result-envelope/tests/API-compatibility surface; no live job or source-strategy change occurred
+Verification: focused helper/result-envelope tests, required V2 shell/orchestrator tests, boundary guard, API compatibility tests with locked-service workaround, web build, debt sensors, index, and diff checks
+Debt accepted and removal trigger: temporary admin diagnostic shape accepted until stable persisted run-ledger/report-result diagnostics exist or accepted internal reports directly expose source-chain ownership; then merge or retire HJ73 fields
+Residual debt: known advisory_warn V2 footprint, boundary guard size, docs footprint, debt-guard telemetry, and V2 consolidation-marker warnings remain
+```

@@ -51,4 +51,23 @@ describe("Analyzer V2 W8-B/W8-G product chain integration", () => {
     expect(envelopeBlock).not.toContain("internalAlphaReportResult");
     expect(envelopeBlock).not.toContain("internalAlphaReportDraft");
   });
+
+  it("projects HJ73 source-chain attribution through the existing result envelope", () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), "src/lib/analyzer-v2/orchestrator.ts"),
+      "utf8",
+    );
+    const envelopeStart = source.indexOf("const envelope = buildDamagedClaimBoundaryV2Envelope(");
+    const envelopeBlock = source.slice(envelopeStart);
+
+    expect(source).toContain("@/lib/analyzer-v2/source-chain-attribution");
+    expect(envelopeBlock).toContain("sourceChainAttribution: buildSourceChainAttributionSnapshot({");
+    expect(envelopeBlock).toContain("queryPlanningInspection: queryPlanningInspectionForAttribution");
+    expect(envelopeBlock).toContain("sourceMaterialPageSummary: sourceMaterialPageSummaryForAttribution");
+    expect(envelopeBlock).toContain("boundedEvidenceExtraction: boundedEvidenceExtractionForAttribution");
+    expect(envelopeBlock).toContain("internalReportWriter: internalReportWriterForAttribution");
+    expect(envelopeBlock).not.toContain("sourceMaterialText");
+    expect(envelopeBlock).not.toContain("rawQueryText");
+    expect(envelopeBlock).not.toContain("reportMarkdown:");
+  });
 });
