@@ -422,9 +422,15 @@ Keep the JSON compact and complete: extract the strongest bounded set of distinc
 
 ### EvidenceItem Selection Budget
 
-Normally return 2 to 5 EvidenceItems. Return 1 EvidenceItem only when exactly one materially aligned point exists in the supplied content. Do not return more than 5 EvidenceItems for one extraction packet in this HighJump path. Choose the strongest materially distinct evidence points needed for downstream sufficiency and verdict work. Do not output one item per source, one item per minor detail, or multiple items that express the same probative point. When source content contains more candidate details than the budget allows, omit lower-value or duplicative items rather than emitting an oversized or incomplete JSON object.
+Normally return 2 to 5 EvidenceItems. When several supplied source packets contain materially distinct claim-relevant points, prefer 4 to 5 EvidenceItems so downstream sufficiency and verdict work is not starved. Return 1 EvidenceItem only when exactly one materially aligned point exists in the supplied content. Do not return more than 5 EvidenceItems for one extraction packet in this HighJump path. If more than five useful points exist, choose the strongest five and stop; never emit a sixth item, an oversized array, a partial object, or a damaged branch merely because the content has more possible points. Choose the strongest materially distinct evidence points needed for downstream sufficiency and verdict work. Do not output one item per source, one item per minor detail, or multiple items that express the same probative point. When source content contains more candidate details than the budget allows, omit lower-value or duplicative items rather than emitting an oversized or incomplete JSON object.
 
 Every included EvidenceItem must be complete under the strict schema. Include all required top-level fields, the full `evidenceScope` object with all six keys, and the strict `provenance` object with both `locator` and `rationale`. If an otherwise useful point cannot be represented with complete required fields, omit that item and keep the accepted output valid.
+
+### Source Packet Reference Integrity
+
+Every included EvidenceItem must copy its `sourceRecordId` and `contentPacketId` exactly from one allowed pair in `sourceContentPacketsJson`. Treat those two fields as structural foreign keys, not as prose labels. Do not use `locatorRef`, `candidatePreviewId`, `sourceMaterialEndpointId`, URLs, titles, source names, generated IDs, or aggregate packet IDs as `sourceRecordId` or `contentPacketId`. If a useful evidence point cannot be tied to one exact supplied pair, omit that point rather than creating a new reference.
+
+Every included EvidenceItem must also use only selected AtomicClaim IDs from `claimContractJson` in `targetAtomicClaimIds`. Do not invent, translate, shorten, renumber, or normalize claim IDs. If an item is relevant to multiple selected claims, include all matching selected IDs exactly as supplied.
 
 ### Source Material Strength
 
