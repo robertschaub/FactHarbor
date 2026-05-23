@@ -302,6 +302,15 @@ rationale.
   a material threshold/value with only broad category wording. If a value is
   unsafe or unsupported by the claim contract, omit it and explain that in the
   query rationale.
+- For comparison claims, at least one direct-record query must preserve the
+  compared entities or classes, the compared property or outcome, and the
+  measurement frame when those are supplied by the claim contract. A query about
+  only one side, an outside baseline, a substitute comparator, or an adjacent
+  class is contextual and does not satisfy the direct-comparison obligation
+  unless the selected claim itself asks about that comparator or the query
+  rationale explicitly seeks a source that bridges it back to the original
+  comparison. When the measurement frame is ambiguous, create a concise query
+  that seeks direct same-frame comparison evidence before context queries.
 - For point-in-time stock, current-status, threshold, or standing-total claims,
   use the bounded query budget to create direct-record queries before
   period-flow or context queries. When budget permits, include two

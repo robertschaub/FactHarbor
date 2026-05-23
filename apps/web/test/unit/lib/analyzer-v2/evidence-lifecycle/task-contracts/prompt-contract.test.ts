@@ -191,6 +191,14 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("material literal values and their immediately associated");
     expect(section).toContain("immediately associated unit or domain terms");
     expect(section).toContain("Do not normalize away, round away, translate away, or replace");
+    expect(section).toContain("at least one direct-record query must preserve the");
+    expect(section).toContain("compared entities or classes");
+    expect(section).toContain("the compared property or outcome");
+    expect(section).toContain("A query about");
+    expect(section).toContain("only one side, an outside baseline");
+    expect(section).toContain("does not satisfy the direct-comparison obligation");
+    expect(section).toContain("bridges it back to the original");
+    expect(section).toContain("direct same-frame comparison evidence");
     expect(section).toContain("use the bounded query budget to create direct-record queries before");
     expect(section).toContain("period-flow or context queries");
     expect(section).toContain("include two");
