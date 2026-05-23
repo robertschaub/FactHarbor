@@ -174,6 +174,13 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("do not use it solely because Source Acquisition, provider search, fetch, or parser execution is not currently executable");
     expect(section).toContain("### Retrieval Intent Coverage");
     expect(section).toContain("not only broad background");
+    expect(section).toContain("use the available bounded");
+    expect(section).toContain("distinct investigative angles");
+    expect(section).toContain("Normally create four to");
+    expect(section).toContain("six concise queries");
+    expect(section).toContain("benefit, limitation, comparative, scope, quantitative, or counter-evidence");
+    expect(section).toContain("Do not pad with");
+    expect(section).toContain("near-duplicate wording");
     expect(section).toContain("current aggregate, legal/procedural event, official status");
     expect(section).toContain("direct public record, primary-source statement");
     expect(section).toContain("Do not let academic, encyclopedic, or contextual source intent crowd out");

@@ -274,6 +274,17 @@ official/authoritative release, or directly measured comparison available under
 the supplied retrieval policies. Also include context queries only when they
 help interpret or caveat the direct evidence.
 
+For concise, broad, or evaluative direct assertions that are externally
+assessable but may have several material dimensions, use the available bounded
+query budget to cover distinct investigative angles rather than stopping after
+one generic direct query and one generic counter-query. Normally create four to
+six concise queries when the selected claim's truth could depend on separate
+benefit, limitation, comparative, scope, quantitative, or counter-evidence
+angles. Use fewer queries only when the selected claim is narrow enough that the
+remaining query budget would duplicate the same evidence need. Do not pad with
+near-duplicate wording; every query should state a distinct evidence need in its
+rationale.
+
 - Do not let academic, encyclopedic, or contextual source intent crowd out the
   direct-record intent needed by the claim.
 - Preserve the selected claim's measurement frame in at least one direct-record
