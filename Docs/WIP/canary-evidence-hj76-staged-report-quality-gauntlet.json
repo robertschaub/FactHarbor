@@ -1,0 +1,1047 @@
+{
+  "schemaVersion": "v2.hj76.result.v1",
+  "createdUtc": "2026-05-23T17:43:29.146Z",
+  "package": "Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md",
+  "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+  "tranche": {
+    "resetTotal": 12,
+    "jobsSubmitted": 4,
+    "remainingAfter": 8
+  },
+  "classification": "STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED",
+  "informationYield": "new_failure_with_cross_family_quality_signal",
+  "wave1": [
+    {
+      "slug": "hydrogen-en",
+      "jobId": "8bcbb1f4ffdf4924b4d75e87c3543916",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+      "reportMarkdownByteLength": 8719,
+      "adminResultKeys": [
+        "_schemaVersion",
+        "adminDiagnostics",
+        "boundaries",
+        "claims",
+        "compatibility",
+        "evidence",
+        "input",
+        "meta",
+        "narrative",
+        "qualityGates",
+        "reportGeneration",
+        "sources",
+        "verdict",
+        "warnings"
+      ],
+      "publicContainment": {
+        "apiStatus": 200,
+        "webStatus": 200,
+        "apiReportMarkdownReturned": false,
+        "webReportMarkdownReturned": false,
+        "apiVerdictLabel": null,
+        "apiTruthPercentage": null,
+        "apiConfidence": null,
+        "apiResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "webResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "adminDiagnosticsReturnedPublicly": false
+      },
+      "sourceChainStageSummary": {
+        "claimUnderstanding": {
+          "status": "accepted",
+          "selectedAtomicClaimCount": 0
+        },
+        "queryPlanning": {
+          "status": "inspected",
+          "runtimeStatus": "completed",
+          "resultStatus": "accepted",
+          "queryEntryCount": 5
+        },
+        "candidateProviderNetwork": {
+          "status": "candidate_provider_network_completed",
+          "providerAttemptCount": 8,
+          "candidateCount": 15,
+          "totalCandidateCount": 24,
+          "totalBytes": 52026
+        },
+        "sourceCandidatePreview": {
+          "status": "source_candidate_preview_partial",
+          "previewRecordCount": 9
+        },
+        "sourceMaterial": {
+          "status": "source_material_page_summary_completed",
+          "recordCount": 9,
+          "materializedPreviewRecordCount": 8,
+          "attemptedFetchCount": 6,
+          "fetchDiagnosticCount": 6,
+          "totalBoundedTextBytes": 18157,
+          "truncationCount": 3,
+          "sourceMaterialKindCounts": {
+            "provider_search_result_page_text_bounded": 3,
+            "wikimedia_page_summary_extract_text": 2,
+            "openalex_work_abstract_text": 2,
+            "provider_search_result_preview_text": 2
+          },
+          "providerIdCounts": {
+            "serper_web_search": 3,
+            "wikimedia_core": 4,
+            "openalex": 2
+          }
+        },
+        "w4": {
+          "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+          "boundedTextSidecarCount": 8,
+          "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+          "extractionInputPacketCount": 1,
+          "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+        },
+        "w5": {
+          "executionStatus": "hidden_evidence_item_extraction_completed",
+          "extractionStatus": "evidence_extracted",
+          "evidenceItemCount": 4,
+          "sourceContentPacketCount": 8,
+          "parentPacketByteLength": 14075
+        },
+        "reportWriter": {
+          "status": "internal_report_writer_draft_created",
+          "citedEvidenceItemRefCount": 4,
+          "reportMarkdownHash": "354a35c321c16066287f90abae2164302d933df745f6f970828b23d934d583ab",
+          "reportMarkdownByteLength": 8719
+        }
+      },
+      "sourceMaterialRefs": [
+        {
+          "ordinal": 1,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_F926063894F06DCC",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "f926063894f06dcc07b3d66ae048c44265dac5e91b1737ba0ae894cd7ae12fe4",
+          "textByteLength": 4095,
+          "textCharLength": 4095,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 2,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_D76D80837FD520E4",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "d76d80837fd520e475acf4745faeb72c01d3ea824c1b062c57d0e2dc91ebdeef",
+          "textByteLength": 1215,
+          "textCharLength": 1211,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 3,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_8BF7FD2FFE44699E",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "8bf7fd2ffe44699e856c72e978653b2c360973d2b6f27b6886ac4e721f879cb9",
+          "textByteLength": 2027,
+          "textCharLength": 2027,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 4,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_8E6CDF1A87A4304F",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "8e6cdf1a87a4304f1122143c60a23c9a3d084a4278ab81e98aaf53c043bbfafd",
+          "textByteLength": 219,
+          "textCharLength": 219,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 5,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_27808B06A14DD5B2",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "27808b06a14dd5b2809174e458c2a25a33dd050f45d90a8b2fb49ccf635572e7",
+          "textByteLength": 4096,
+          "textCharLength": 4084,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 6,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_45F7EBF18A0B9853",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "45f7ebf18a0b98531d4fdf6090cdde0f20c266c0a04d94def3bf60aa60c5b127",
+          "textByteLength": 1209,
+          "textCharLength": 1205,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 7,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_0E99E5A3A75551D3",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "0e99e5a3a75551d3d5d968898ee48a76161dfb4acd1701b650431d2289258cdc",
+          "textByteLength": 970,
+          "textCharLength": 968,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 8,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_550A0B9D659A0A18",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "550a0b9d659a0a181903aece4ee4b494c245f7e43b8513cf50aaf27d8a08ed19",
+          "textByteLength": 230,
+          "textCharLength": 230,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 9,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_CB64C49827B9623F",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "cb64c49827b9623ffafb044f5b217c59e420d71242a6365bcedc0245539eac48",
+          "textByteLength": 4096,
+          "textCharLength": 4084,
+          "truncationApplied": true
+        }
+      ],
+      "reportExtract": {
+        "topLines": [
+          "# Internal Alpha Report: Hydrogen Fuel Cell Vehicle Efficiency versus Electric Power",
+          "## Executive Summary",
+          "Direct measured and simulated evidence supports that hydrogen fuel cell vehicles achieve significantly higher efficiency than hybrid electric vehicles and conventional vehicles, with the Toyota Mirai demonstrating 62% average vehicle efficiency versus 45% for hybrids and 23% for conventional engines. However, the evidence primarily compares hydrogen to hybrid systems rather than pure battery electric vehicles, and market adoption data shows hydrogen vehicles have been outsold by battery electric vehicles despite efficiency claims, indicating other factors influence practical competitiveness.",
+          "## Verdict: Direct Efficiency Evidence (MOSTLY-TRUE, 74% truth, 72% confidence)",
+          "Direct measured and simulated data demonstrate hydrogen fuel cell vehicles achieving substantially higher efficiency than both hybrid electric and conventional vehicles [EVI_003_ARGONNE_MIRAI_MEASURED_EFFICIENCY]. The Toyota Mirai measured 62% average vehicle efficiency compared to 45% for hybrid electric vehicles and 23% for conventional vehicles. Simulation results indicate fuel cell vehicles achieve 2–3 times higher equivalent fuel economy than gasoline vehicles and 1.66–2.0 times higher than hybrid electric vehicles [EVI_002_OPENALEX_FCEV_HEV_COMPARISON]. This direct comparison addresses the same measurement frame and comparable vehicle classes, supporting the claim that hydrogen fuel is more efficient than electric power as represented by hybrid systems.",
+          "### Caveats",
+          "- The direct comparison to battery electric vehicles is limited; evidence primarily compares hydrogen fuel cells to hybrid electric vehicles, which are not pure electric power but a hybrid of conventional and electric systems.",
+          "- Measured efficiency data is from a single vehicle model (Toyota Mirai) under specific test conditions, which may not represent all hydrogen fuel cell vehicle designs or real-world driving conditions across all scenarios.",
+          "- Simulation results are model-dependent and subject to embedded assumptions and parameters; actual field performance may vary.",
+          "- The sufficiency assessment indicates caveated status, suggesting material gaps or limitations in the evidence base that affect confidence in the full categorical claim.",
+          "### Material Uncertainty Signals",
+          "- Comparison is primarily to hybrid electric vehicles rather than pure battery electric vehicles; the claim's reference to 'electric power' may encompass both hybrid and pure electric systems, but evidence does not provide direct measured comparison to modern pure battery electric vehicles.",
+          "- Temporal scope of evidence is not fully specified; efficiency standards and vehicle technology have evolved, and applicability of these measurements to current or future vehicle generations is not explicitly addressed.",
+          "- Evidence does not address full lifecycle or well-to-wheel efficiency including hydrogen production and distribution; only vehicle-level efficiency is measured."
+        ],
+        "verdictLines": [
+          "## Verdict: Direct Efficiency Evidence (MOSTLY-TRUE, 74% truth, 72% confidence)",
+          "- The sufficiency assessment indicates caveated status, suggesting material gaps or limitations in the evidence base that affect confidence in the full categorical claim.",
+          "## Verdict: General Efficiency Claims with Market Context (LEANING-TRUE, 62% truth, 58% confidence)",
+          "General claims that hydrogen fuel cell vehicles are more efficient than conventional internal combustion engine vehicles are supported by evidence [EVI_001_AFDC_FCEV_EFFICIENCY]. However, this evidence does not directly compare hydrogen to electric power or battery electric vehicles. Market context evidence indicates that hydrogen vehicles have been sold in small numbers as of the 2020s due to competition with battery electric vehicles [EVI_004_WIKIMEDIA_HYDROGEN_BEV_COMPETITION], suggesting that efficiency alone may not determine practical superiority of hydrogen over electric power in the automotive market. This verdict represents a weaker, more caveated assessment based on one-sided efficiency claims and market dynamics that do not directly establish the selected claim."
+        ],
+        "evidenceLines": [
+          "Direct measured and simulated evidence supports that hydrogen fuel cell vehicles achieve significantly higher efficiency than hybrid electric vehicles and conventional vehicles, with the Toyota Mirai demonstrating 62% average vehicle efficiency versus 45% for hybrids and 23% for conventional engines. However, the evidence primarily compares hydrogen to hybrid systems rather than pure battery electric vehicles, and market adoption data shows hydrogen vehicles have been outsold by battery electric vehicles despite efficiency claims, indicating other factors influence practical competitiveness.",
+          "## Verdict: Direct Efficiency Evidence (MOSTLY-TRUE, 74% truth, 72% confidence)",
+          "Direct measured and simulated data demonstrate hydrogen fuel cell vehicles achieving substantially higher efficiency than both hybrid electric and conventional vehicles [EVI_003_ARGONNE_MIRAI_MEASURED_EFFICIENCY]. The Toyota Mirai measured 62% average vehicle efficiency compared to 45% for hybrid electric vehicles and 23% for conventional vehicles. Simulation results indicate fuel cell vehicles achieve 2–3 times higher equivalent fuel economy than gasoline vehicles and 1.66–2.0 times higher than hybrid electric vehicles [EVI_002_OPENALEX_FCEV_HEV_COMPARISON]. This direct comparison addresses the same measurement frame and comparable vehicle classes, supporting the claim that hydrogen fuel is more efficient than electric power as represented by hybrid systems.",
+          "- The direct comparison to battery electric vehicles is limited; evidence primarily compares hydrogen fuel cells to hybrid electric vehicles, which are not pure electric power but a hybrid of conventional and electric systems.",
+          "- The sufficiency assessment indicates caveated status, suggesting material gaps or limitations in the evidence base that affect confidence in the full categorical claim.",
+          "- Comparison is primarily to hybrid electric vehicles rather than pure battery electric vehicles; the claim's reference to 'electric power' may encompass both hybrid and pure electric systems, but evidence does not provide direct measured comparison to modern pure battery electric vehicles.",
+          "- Temporal scope of evidence is not fully specified; efficiency standards and vehicle technology have evolved, and applicability of these measurements to current or future vehicle generations is not explicitly addressed.",
+          "- Evidence does not address full lifecycle or well-to-wheel efficiency including hydrogen production and distribution; only vehicle-level efficiency is measured.",
+          "General claims that hydrogen fuel cell vehicles are more efficient than conventional internal combustion engine vehicles are supported by evidence [EVI_001_AFDC_FCEV_EFFICIENCY]. However, this evidence does not directly compare hydrogen to electric power or battery electric vehicles. Market context evidence indicates that hydrogen vehicles have been sold in small numbers as of the 2020s due to competition with battery electric vehicles [EVI_004_WIKIMEDIA_HYDROGEN_BEV_COMPETITION], suggesting that efficiency alone may not determine practical superiority of hydrogen over electric power in the automotive market. This verdict represents a weaker, more caveated assessment based on one-sided efficiency claims and market dynamics that do not directly establish the selected claim.",
+          "- Evidence compares hydrogen fuel cells only to conventional internal combustion engine vehicles, not to electric vehicles, and thus does not directly address the selected claim's comparison.",
+          "- Evidence does not provide quantitative efficiency metrics for battery electric vehicles, making it impossible to establish a direct numerical comparison on the same measurement scale.",
+          "- The claim's reference to 'electric power' is ambiguous and could mean hybrid electric vehicles, pure battery electric vehicles, or both; supplied evidence does not clarify which comparison is intended.",
+          "This boundary encompasses direct quantitative comparisons of hydrogen fuel cell vehicle efficiency against both hybrid electric and conventional powertrains using the same measurement frame and comparable vehicle classes [EVI_003_ARGONNE_MIRAI_MEASURED_EFFICIENCY, EVI_002_OPENALEX_FCEV_HEV_COMPARISON]. Both evidence items address the core claim relation by providing measured peak and system efficiency data alongside simulation results showing fuel cell vehicles achieving 2–3 times higher equivalent fuel economy than gasoline vehicles and 1.66–2.0 times higher than hybrid electric vehicles.",
+          "This boundary covers general assertions that fuel cell electric vehicles are more efficient than conventional internal combustion engine vehicles and produce no harmful tailpipe pollutants [EVI_001_AFDC_FCEV_EFFICIENCY]. The comparison is one-sided, addressing only hydrogen versus internal combustion engines rather than versus battery electric vehicles. This evidence provides context and partial support for hydrogen efficiency claims but does not directly address the selected claim's comparison between hydrogen and electric power.",
+          "This boundary describes market dynamics and competitive positioning rather than technical efficiency measurement [EVI_004_WIKIMEDIA_HYDROGEN_BEV_COMPETITION]. The evidence observes that hydrogen light-duty vehicles have been sold in small numbers as of the 2020s due to competition with battery electric vehicles. This provides contextual information about relative market success but is not directly probative of the efficiency claim itself.",
+          "- Direct comparison to pure battery electric vehicles is absent; evidence primarily compares hydrogen to hybrid electric vehicles.",
+          "## Evidence References",
+          "- **EVI_003_ARGONNE_MIRAI_MEASURED_EFFICIENCY**: Measured vehicle efficiency data for Toyota Mirai hydrogen fuel cell vehicle (62% average) versus hybrid electric vehicles (45%) and conventional vehicles (23%).",
+          "- **EVI_002_OPENALEX_FCEV_HEV_COMPARISON**: Simulation results showing fuel cell vehicles achieving 2–3 times higher equivalent fuel economy than gasoline vehicles and 1.66–2.0 times higher than hybrid electric vehicles.",
+          "- **EVI_001_AFDC_FCEV_EFFICIENCY**: General efficiency and environmental benefit claims for hydrogen fuel cell vehicles compared to conventional internal combustion engine vehicles.",
+          "- **EVI_004_WIKIMEDIA_HYDROGEN_BEV_COMPETITION**: Market adoption context: hydrogen light-duty vehicles sold in small numbers as of 2020s due to competition with battery electric vehicles."
+        ],
+        "firstVerdictSection": [
+          "## Verdict: Direct Efficiency Evidence (MOSTLY-TRUE, 74% truth, 72% confidence)",
+          "",
+          "Direct measured and simulated data demonstrate hydrogen fuel cell vehicles achieving substantially higher efficiency than both hybrid electric and conventional vehicles [EVI_003_ARGONNE_MIRAI_MEASURED_EFFICIENCY]. The Toyota Mirai measured 62% average vehicle efficiency compared to 45% for hybrid electric vehicles and 23% for conventional vehicles. Simulation results indicate fuel cell vehicles achieve 2–3 times higher equivalent fuel economy than gasoline vehicles and 1.66–2.0 times higher than hybrid electric vehicles [EVI_002_OPENALEX_FCEV_HEV_COMPARISON]. This direct comparison addresses the same measurement frame and comparable vehicle classes, supporting the claim that hydrogen fuel is more efficient than electric power as represented by hybrid systems.",
+          ""
+        ]
+      },
+      "durableClassification": "wrong_direction_target_frame_drift_hydrogen_vs_hybrid_conventional_not_battery_electric"
+    },
+    {
+      "slug": "plastic-en",
+      "jobId": "f6c391bb682345d4afba808f99e58958",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+      "reportMarkdownByteLength": 8065,
+      "adminResultKeys": [
+        "_schemaVersion",
+        "adminDiagnostics",
+        "boundaries",
+        "claims",
+        "compatibility",
+        "evidence",
+        "input",
+        "meta",
+        "narrative",
+        "qualityGates",
+        "reportGeneration",
+        "sources",
+        "verdict",
+        "warnings"
+      ],
+      "publicContainment": {
+        "apiStatus": 200,
+        "webStatus": 200,
+        "apiReportMarkdownReturned": false,
+        "webReportMarkdownReturned": false,
+        "apiVerdictLabel": null,
+        "apiTruthPercentage": null,
+        "apiConfidence": null,
+        "apiResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "webResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "adminDiagnosticsReturnedPublicly": false
+      },
+      "sourceChainStageSummary": {
+        "claimUnderstanding": {
+          "status": "accepted",
+          "selectedAtomicClaimCount": 0
+        },
+        "queryPlanning": {
+          "status": "inspected",
+          "runtimeStatus": "completed",
+          "resultStatus": "accepted",
+          "queryEntryCount": 5
+        },
+        "candidateProviderNetwork": {
+          "status": "candidate_provider_network_completed",
+          "providerAttemptCount": 8,
+          "candidateCount": 14,
+          "totalCandidateCount": 23,
+          "totalBytes": 60248
+        },
+        "sourceCandidatePreview": {
+          "status": "source_candidate_preview_partial",
+          "previewRecordCount": 9
+        },
+        "sourceMaterial": {
+          "status": "source_material_page_summary_completed",
+          "recordCount": 9,
+          "materializedPreviewRecordCount": 8,
+          "attemptedFetchCount": 3,
+          "fetchDiagnosticCount": 3,
+          "totalBoundedTextBytes": 18451,
+          "truncationCount": 2,
+          "sourceMaterialKindCounts": {
+            "provider_search_result_page_text_bounded": 3,
+            "wikimedia_page_summary_extract_text": 2,
+            "openalex_work_abstract_text": 2,
+            "provider_search_result_preview_text": 2
+          },
+          "providerIdCounts": {
+            "serper_web_search": 3,
+            "wikimedia_core": 4,
+            "openalex": 2
+          }
+        },
+        "w4": {
+          "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+          "boundedTextSidecarCount": 8,
+          "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+          "extractionInputPacketCount": 1,
+          "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+        },
+        "w5": {
+          "executionStatus": "hidden_evidence_item_extraction_completed",
+          "extractionStatus": "evidence_extracted",
+          "evidenceItemCount": 4,
+          "sourceContentPacketCount": 8,
+          "parentPacketByteLength": 14369
+        },
+        "reportWriter": {
+          "status": "internal_report_writer_draft_created",
+          "citedEvidenceItemRefCount": 4,
+          "reportMarkdownHash": "8d90f9f6e1d1fbc847059f81c2e20f8b6921b714958a3e579f36020a46c8ffb4",
+          "reportMarkdownByteLength": 8065
+        }
+      },
+      "sourceMaterialRefs": [
+        {
+          "ordinal": 1,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_9C74C07431659D52",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "9c74c07431659d52caeed54aaa6761e01a48c4e881077c87fee9660eecfb79e9",
+          "textByteLength": 4096,
+          "textCharLength": 4074,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 2,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_44A9A19F76BB2DB5",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "44a9a19f76bb2db5c86ace797ba10977bd0bde162937444be9d552413928c0bc",
+          "textByteLength": 1208,
+          "textCharLength": 1208,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 3,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_E26243086321A7C4",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "e26243086321a7c419d06922f0befd85969a07e0d602671a61d4a3cb4e06e3c1",
+          "textByteLength": 1114,
+          "textCharLength": 1114,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 4,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_C9710E5459B1ACE5",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "c9710e5459b1ace5b7f1f092acadde325deeedbe23fdcd4feb8812349e2be8be",
+          "textByteLength": 210,
+          "textCharLength": 210,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 5,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_BFA3A6AFC1EFCF59",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "bfa3a6afc1efcf592c561a209d923cd43ea8df454440615e6ea16a7c8712f702",
+          "textByteLength": 4078,
+          "textCharLength": 4063,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 6,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_426E33F69BA53B4B",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "426e33f69ba53b4b7cc617a3ce809e67c1a5156442dcd131776c9d2b1ae15c04",
+          "textByteLength": 1203,
+          "textCharLength": 1203,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 7,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_C629F8B994D7EF7C",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "c629f8b994d7ef7cad0b97a382b9854952050f066b3ea4e7bee137131eb27627",
+          "textByteLength": 2219,
+          "textCharLength": 2219,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 8,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_D63BA3B44892676C",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "d63ba3b44892676cc3020b15fec0a906dbeb99db0852f9cd673d73f41db5b276",
+          "textByteLength": 227,
+          "textCharLength": 227,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 9,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_439B07C21F113018",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "439b07c21f113018bc6d42947a3db7846deb59db0bb8e815a6c8213337f27b6f",
+          "textByteLength": 4096,
+          "textCharLength": 4094,
+          "truncationApplied": true
+        }
+      ],
+      "reportExtract": {
+        "topLines": [
+          "# Internal Alpha: Plastic Recycling Effectiveness and Pointlessness Assessment",
+          "## Executive Summary",
+          "Two verdict candidates assess whether plastic recycling is pointless. Both reach MOSTLY-TRUE verdicts (76% and 74% truth, 72% and 70% confidence) supported by empirical recycling-rate decline, low global recovery outcomes, and technical process limitations. Evidence converges on ineffective recovery: U.S. rates fell from 9.5% (2014) to 5–6% (2021); globally, only 9% of 6.3 billion tonnes recycled, with 79% landfilled or released. Caveats note temporal scope limits (through 2015–2021), geographic gaps, and categorical claim language stronger than evidence alone establishes.",
+          "## Verdict 1: Empirical Support with Narrative Critique",
+          "**Verdict Label:** MOSTLY-TRUE  ",
+          "**Truth Percentage:** 76%  ",
+          "**Confidence:** 72%",
+          "The claim that plastic recycling is pointless receives strong direct support from three converging evidence items. U.S. recycling rates have declined from a peak of 9.5% in 2014 to 5–6% by 2021, confirmed by NREL authority [EVI_002_RECYCLING_RATE_DECLINE]. Globally, only 9% of 6.3 billion tonnes of plastic waste has been recycled, with only ~1% recycled more than once and 79% landfilled or released to the environment [EVI_004_RECYCLING_WASTE_FATE]. Recycling is characterized as a false solution promoted by the plastic industry [EVI_001_RECYCLING_FALSE_SOLUTION]. Together, these items establish that recycling has failed to achieve meaningful recovery or environmental benefit.",
+          "### Caveats",
+          "- Sufficiency assessment is caveated; material gaps or retrieval refinement may affect evidence completeness.",
+          "- EVI_002 limited to U.S. data (2014–2021); does not address all geographic regions or trends beyond 2021.",
+          "- EVI_004 provides cumulative data through 2015; does not reflect potential improvements in recycling technology or policy changes after that date.",
+          "- Claim uses categorical language ('pointless') stronger than 'ineffective' or 'limited'; evidence establishes low effectiveness but does not rule out all marginal or emerging applications.",
+          "- EVI_001 is narrative critique and does not independently verify empirical claims; relies on same underlying data as EVI_002 and EVI_004."
+        ],
+        "verdictLines": [
+          "Two verdict candidates assess whether plastic recycling is pointless. Both reach MOSTLY-TRUE verdicts (76% and 74% truth, 72% and 70% confidence) supported by empirical recycling-rate decline, low global recovery outcomes, and technical process limitations. Evidence converges on ineffective recovery: U.S. rates fell from 9.5% (2014) to 5–6% (2021); globally, only 9% of 6.3 billion tonnes recycled, with 79% landfilled or released. Caveats note temporal scope limits (through 2015–2021), geographic gaps, and categorical claim language stronger than evidence alone establishes.",
+          "## Verdict 1: Empirical Support with Narrative Critique",
+          "**Verdict Label:** MOSTLY-TRUE  ",
+          "**Truth Percentage:** 76%  ",
+          "**Confidence:** 72%",
+          "The claim that plastic recycling is pointless receives strong direct support from three converging evidence items. U.S. recycling rates have declined from a peak of 9.5% in 2014 to 5–6% by 2021, confirmed by NREL authority [EVI_002_RECYCLING_RATE_DECLINE]. Globally, only 9% of 6.3 billion tonnes of plastic waste has been recycled, with only ~1% recycled more than once and 79% landfilled or released to the environment [EVI_004_RECYCLING_WASTE_FATE]. Recycling is characterized as a false solution promoted by the plastic industry [EVI_001_RECYCLING_FALSE_SOLUTION]. Together, these items establish that recycling has failed to achieve meaningful recovery or environmental benefit.",
+          "## Verdict 2: Empirical Support with Technical Context",
+          "**Verdict Label:** MOSTLY-TRUE  ",
+          "**Truth Percentage:** 74%  ",
+          "**Confidence:** 70%",
+          "This verdict combines empirical effectiveness with technical process limitations to assess the pointlessness claim. Empirical data show low recovery: U.S. rates declined from 9.5% (2014) to 5–6% (2021) [EVI_002_RECYCLING_RATE_DECLINE], and globally only 9% of 6.3 billion tonnes recycled with 79% landfilled or released [EVI_004_RECYCLING_WASTE_FATE]. Technical context reveals that mechanical recycling causes polymer degradation at the molecular level and requires complex sorting by colour and polymer type, creating process barriers that limit scalability [EVI_003_MECHANICAL_RECYCLING_DEGRADATION]. Together, these establish both that recycling fails in practice and that inherent technical constraints explain why it is pointless as a solution.",
+          "This boundary isolates the narrative and systemic critique dimension from quantitative empirical data. The evidence directly characterizes recycling as a false solution promoted by the plastic industry and asserts that recycling has never worked [EVI_001_RECYCLING_FALSE_SOLUTION]. This framing addresses the same claim relation as the empirical boundary but emphasizes systemic narrative failure and industry responsibility rather than technical outcome alone.",
+          "- **EVI_001_RECYCLING_FALSE_SOLUTION:** Narrative critique framing recycling as false solution promoted by plastic industry; supports systemic failure dimension of pointlessness claim."
+        ],
+        "evidenceLines": [
+          "Two verdict candidates assess whether plastic recycling is pointless. Both reach MOSTLY-TRUE verdicts (76% and 74% truth, 72% and 70% confidence) supported by empirical recycling-rate decline, low global recovery outcomes, and technical process limitations. Evidence converges on ineffective recovery: U.S. rates fell from 9.5% (2014) to 5–6% (2021); globally, only 9% of 6.3 billion tonnes recycled, with 79% landfilled or released. Caveats note temporal scope limits (through 2015–2021), geographic gaps, and categorical claim language stronger than evidence alone establishes.",
+          "The claim that plastic recycling is pointless receives strong direct support from three converging evidence items. U.S. recycling rates have declined from a peak of 9.5% in 2014 to 5–6% by 2021, confirmed by NREL authority [EVI_002_RECYCLING_RATE_DECLINE]. Globally, only 9% of 6.3 billion tonnes of plastic waste has been recycled, with only ~1% recycled more than once and 79% landfilled or released to the environment [EVI_004_RECYCLING_WASTE_FATE]. Recycling is characterized as a false solution promoted by the plastic industry [EVI_001_RECYCLING_FALSE_SOLUTION]. Together, these items establish that recycling has failed to achieve meaningful recovery or environmental benefit.",
+          "- Sufficiency assessment is caveated; material gaps or retrieval refinement may affect evidence completeness.",
+          "- EVI_002 limited to U.S. data (2014–2021); does not address all geographic regions or trends beyond 2021.",
+          "- EVI_004 provides cumulative data through 2015; does not reflect potential improvements in recycling technology or policy changes after that date.",
+          "- Claim uses categorical language ('pointless') stronger than 'ineffective' or 'limited'; evidence establishes low effectiveness but does not rule out all marginal or emerging applications.",
+          "- EVI_001 is narrative critique and does not independently verify empirical claims; relies on same underlying data as EVI_002 and EVI_004.",
+          "- Upstream sufficiency status is caveated; evidence base may be incomplete or subject to retrieval refinement.",
+          "- No evidence addresses potential future improvements in chemical or advanced recycling technologies.",
+          "- No evidence addresses regional variation in recycling effectiveness; U.S. and global data may not represent all contexts.",
+          "This verdict combines empirical effectiveness with technical process limitations to assess the pointlessness claim. Empirical data show low recovery: U.S. rates declined from 9.5% (2014) to 5–6% (2021) [EVI_002_RECYCLING_RATE_DECLINE], and globally only 9% of 6.3 billion tonnes recycled with 79% landfilled or released [EVI_004_RECYCLING_WASTE_FATE]. Technical context reveals that mechanical recycling causes polymer degradation at the molecular level and requires complex sorting by colour and polymer type, creating process barriers that limit scalability [EVI_003_MECHANICAL_RECYCLING_DEGRADATION]. Together, these establish both that recycling fails in practice and that inherent technical constraints explain why it is pointless as a solution.",
+          "- EVI_003 is contextual in claim direction and does not independently establish low recycling rates; provides process-level explanation but depends on empirical data to establish outcome.",
+          "- Technical limitations in EVI_003 apply to mechanical recycling specifically; evidence does not address chemical or advanced recycling methods that may avoid polymer degradation.",
+          "- Claim 'pointless' is categorical; evidence establishes current mechanical recycling is ineffective and technically limited but does not rule out potential future improvements or niche applications.",
+          "- Temporal scope of evidence does not cover recent advances in recycling technology or policy changes after 2021.",
+          "- Upstream sufficiency status is caveated; evidence base may be incomplete.",
+          "- No evidence addresses emerging chemical or advanced recycling technologies that may overcome mechanical recycling limitations.",
+          "- No evidence addresses whether technical limitations apply equally to all plastic types or only certain polymers.",
+          "This boundary isolates the quantified empirical dimension of recycling effectiveness. U.S. recycling rates declined from 9.5% in 2014 to 5–6% by 2021, with NREL authority confirmation [EVI_002_RECYCLING_RATE_DECLINE]. Global cumulative data through 2015 show only 9% of 6.3 billion tonnes recycled, with only ~1% recycled more than once and 79% landfilled or released to environment [EVI_004_RECYCLING_WASTE_FATE]. Both items measure the same claim relation—whether recycling achieves meaningful recovery—and converge on the conclusion that recycling has failed to achieve significant recovery or environmental benefit.",
+          "This boundary isolates the narrative and systemic critique dimension from quantitative empirical data. The evidence directly characterizes recycling as a false solution promoted by the plastic industry and asserts that recycling has never worked [EVI_001_RECYCLING_FALSE_SOLUTION]. This framing addresses the same claim relation as the empirical boundary but emphasizes systemic narrative failure and industry responsibility rather than technical outcome alone.",
+          "This boundary isolates the technical and process dimension of recycling viability. Mechanical recycling causes polymer degradation at the molecular level and requires complex sorting by colour and polymer type, creating inherent process barriers [EVI_003_MECHANICAL_RECYCLING_DEGRADATION]. This evidence supports the broader pointlessness claim by establishing technical constraints that limit the viability of recycling as a scalable solution, distinct from narrative or empirical outcome dimensions.",
+          "- Sufficiency assessment is caveated; evidence base may be incomplete or subject to retrieval refinement.",
+          "- Temporal scope of evidence (through 2015–2021) does not cover recent policy, technology, or infrastructure developments.",
+          "- No evidence addresses emerging chemical or advanced recycling technologies that may overcome mechanical recycling limitations."
+        ],
+        "firstVerdictSection": [
+          "## Verdict 1: Empirical Support with Narrative Critique",
+          "",
+          "**Verdict Label:** MOSTLY-TRUE  ",
+          "**Truth Percentage:** 76%  ",
+          "**Confidence:** 72%",
+          "",
+          "The claim that plastic recycling is pointless receives strong direct support from three converging evidence items. U.S. recycling rates have declined from a peak of 9.5% in 2014 to 5–6% by 2021, confirmed by NREL authority [EVI_002_RECYCLING_RATE_DECLINE]. Globally, only 9% of 6.3 billion tonnes of plastic waste has been recycled, with only ~1% recycled more than once and 79% landfilled or released to the environment [EVI_004_RECYCLING_WASTE_FATE]. Recycling is characterized as a false solution promoted by the plastic industry [EVI_001_RECYCLING_FALSE_SOLUTION]. Together, these items establish that recycling has failed to achieve meaningful recovery or environmental benefit.",
+          ""
+        ]
+      },
+      "durableClassification": "wrong_direction_selected_claim_polarity_or_target_frame_drift_recycling_pointless_answered_as_has_purpose"
+    },
+    {
+      "slug": "bolsonaro-en",
+      "jobId": "999e99260839451c9274b9f3194bd58b",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+      "reportMarkdownByteLength": 9054,
+      "adminResultKeys": [
+        "_schemaVersion",
+        "adminDiagnostics",
+        "boundaries",
+        "claims",
+        "compatibility",
+        "evidence",
+        "input",
+        "meta",
+        "narrative",
+        "qualityGates",
+        "reportGeneration",
+        "sources",
+        "verdict",
+        "warnings"
+      ],
+      "publicContainment": {
+        "apiStatus": 200,
+        "webStatus": 200,
+        "apiReportMarkdownReturned": false,
+        "webReportMarkdownReturned": false,
+        "apiVerdictLabel": null,
+        "apiTruthPercentage": null,
+        "apiConfidence": null,
+        "apiResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "webResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "adminDiagnosticsReturnedPublicly": false
+      },
+      "sourceChainStageSummary": {
+        "claimUnderstanding": {
+          "status": "accepted",
+          "selectedAtomicClaimCount": 0
+        },
+        "queryPlanning": {
+          "status": "inspected",
+          "runtimeStatus": "completed",
+          "resultStatus": "accepted",
+          "queryEntryCount": 6
+        },
+        "candidateProviderNetwork": {
+          "status": "candidate_provider_network_completed",
+          "providerAttemptCount": 7,
+          "candidateCount": 18,
+          "totalCandidateCount": 21,
+          "totalBytes": 40494
+        },
+        "sourceCandidatePreview": {
+          "status": "source_candidate_preview_partial",
+          "previewRecordCount": 9
+        },
+        "sourceMaterial": {
+          "status": "source_material_page_summary_completed",
+          "recordCount": 9,
+          "materializedPreviewRecordCount": 6,
+          "attemptedFetchCount": 5,
+          "fetchDiagnosticCount": 5,
+          "totalBoundedTextBytes": 13435,
+          "truncationCount": 2,
+          "sourceMaterialKindCounts": {
+            "provider_search_result_page_text_bounded": 2,
+            "wikimedia_page_summary_extract_text": 2,
+            "openalex_work_abstract_text": 2,
+            "provider_search_result_preview_text": 3
+          },
+          "providerIdCounts": {
+            "serper_web_search": 3,
+            "wikimedia_core": 4,
+            "openalex": 2
+          }
+        },
+        "w4": {
+          "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+          "boundedTextSidecarCount": 9,
+          "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+          "extractionInputPacketCount": 1,
+          "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+        },
+        "w5": {
+          "executionStatus": "hidden_evidence_item_extraction_completed",
+          "extractionStatus": "evidence_extracted",
+          "evidenceItemCount": 4,
+          "sourceContentPacketCount": 9,
+          "parentPacketByteLength": 13451
+        },
+        "reportWriter": {
+          "status": "internal_report_writer_draft_created",
+          "citedEvidenceItemRefCount": 4,
+          "reportMarkdownHash": "b0c3d29ac8cf8a5efd4edfbaadf1781ed6d1c3e24adf2bb7f4f5f34827feb1e7",
+          "reportMarkdownByteLength": 9054
+        }
+      },
+      "sourceMaterialRefs": [
+        {
+          "ordinal": 1,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_FBD70B39672F7F27",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "fbd70b39672f7f27b115ab83d366f1a5c0f6afaebe19b8ce2478c25c73d00ccd",
+          "textByteLength": 4096,
+          "textCharLength": 4064,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 2,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_1B0ED4D8973C24DC",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "1b0ed4d8973c24dc0e5f9f17db70dad237d91e52f6f83b853cebcc0042a169cc",
+          "textByteLength": 1204,
+          "textCharLength": 1203,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 3,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_542A92D035272C92",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "542a92d035272c92b40e5942f653938645c9d9bb4d2e81d972afd8f292e8e730",
+          "textByteLength": 1480,
+          "textCharLength": 1476,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 4,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_23AC12D234CBE46C",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "23ac12d234cbe46c5c861fd9bfd3bfdbdb58676165fa15e3a02bc15330863bef",
+          "textByteLength": 210,
+          "textCharLength": 208,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 5,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_0DD4F1886601A873",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "0dd4f1886601a873af53756bceee32b2094d55c185b69b104fd76e150b322226",
+          "textByteLength": 4096,
+          "textCharLength": 4096,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 6,
+          "sourceMaterialRef": "SOURCE_MATERIAL_PAGE_SUMMARY_9EED910826281A1A",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "wikimedia_page_summary_extract_text",
+          "textHash": "9eed910826281a1a5830f687fc5ec232da6910940795017c018300b5940e0c54",
+          "textByteLength": 1207,
+          "textCharLength": 1203,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 7,
+          "sourceMaterialRef": "SOURCE_MATERIAL_OPENALEX_834E3E09008CC8B0",
+          "providerId": "openalex",
+          "sourceMaterialKind": "openalex_work_abstract_text",
+          "textHash": "834e3e09008cc8b0e56d51be2005e04d991adff8d6dda3c61459510768316076",
+          "textByteLength": 702,
+          "textCharLength": 702,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 8,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_CE20773955B2BEF1",
+          "providerId": "wikimedia_core",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "ce20773955b2bef19f116cce72987a876ee1b70704d0c2ab28084927874dab2e",
+          "textByteLength": 243,
+          "textCharLength": 241,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 9,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_4D1CA99FC0CAEA5A",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "4d1ca99fc0caea5aa6696af4ff7caf82faf931b90e1810a9628fd1456e96e07d",
+          "textByteLength": 197,
+          "textCharLength": 195,
+          "truncationApplied": false
+        }
+      ],
+      "reportExtract": {
+        "topLines": [
+          "# Internal Alpha Review: Bolsonaro Conviction Proceedings and Fair Trial Assessment",
+          "## Executive Summary",
+          "Brazil's Supreme Court convicted Jair Bolsonaro on September 11 on charges including armed criminal conspiracy and attempted coup d'état, sentencing him to 27 years and three months. Evidence establishes the conviction and investigative procedures but does not directly address compliance with Brazilian law or international fair trial standards. Historical context of Bolsonaro's disputes with the judiciary creates ambiguity about tribunal impartiality. Material gaps remain in evidence of procedural safeguards, defense representation, and appellate review.",
+          "## Verdict: Compliance with Brazilian Law",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 35",
+          "### Narrative",
+          "The supplied evidence establishes that Brazil's Supreme Court convicted Bolsonaro and that Federal Police conducted investigative procedures including evidence collection from digital communications and plea bargain testimony [EVI_001_BOLSONARO_CONVICTION_VERDICT, EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE]. However, the evidence does not directly cite Brazilian legal standards, procedural requirements, or any explicit determination of compliance with Brazilian law. The conviction itself may imply procedural regularity, but this is inference rather than direct evidence. No judicial review findings, appeal outcomes, or legal compliance determinations are supplied.",
+          "### Caveats",
+          "- Evidence describes proceedings and outcome but does not explicitly address compliance with Brazilian law or cite applicable legal standards.",
+          "- No evidence of judicial review, appeal outcomes, or explicit legal compliance determinations is supplied.",
+          "- The conviction by the Supreme Court may imply procedural regularity but does not directly establish that all procedural requirements of Brazilian law were met.",
+          "- Upstream sufficiency assessment is 'caveated,' indicating material gaps in the evidence base."
+        ],
+        "verdictLines": [
+          "## Verdict: Compliance with Brazilian Law",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 35",
+          "The supplied evidence establishes that Brazil's Supreme Court convicted Bolsonaro and that Federal Police conducted investigative procedures including evidence collection from digital communications and plea bargain testimony [EVI_001_BOLSONARO_CONVICTION_VERDICT, EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE]. However, the evidence does not directly cite Brazilian legal standards, procedural requirements, or any explicit determination of compliance with Brazilian law. The conviction itself may imply procedural regularity, but this is inference rather than direct evidence. No judicial review findings, appeal outcomes, or legal compliance determinations are supplied.",
+          "## Verdict: International Fair Trial Standards",
+          "**Verdict Label:** MIXED  ",
+          "**Truth Percentage:** 48  ",
+          "**Confidence:** 40",
+          "Evidence presents conflicting signals on international fair trial standards. The Supreme Court conviction and Brazil's functioning democratic institutions suggest institutional capacity for fair proceedings [EVI_001_BOLSONARO_CONVICTION_VERDICT, EVI_004_ELECTORAL_SYSTEM_INTEGRITY]. However, documented historical hostility between Bolsonaro and the STF, including disputes over the Lula case, raises concerns about potential bias before the same tribunal [EVI_003_JUDICIAL_INDEPENDENCE_CONTEXT]. The evidence does not directly address international fair trial standards (due process, counsel, impartiality, appeal rights) or actual trial procedures in Bolsonaro's case. Historical context creates ambiguity about tribunal impartiality but is not direct evidence of unfairness in his own proceedings.",
+          "Brazil's Supreme Court issued a conviction on September 11 against Jair Bolsonaro on charges of armed criminal conspiracy, attempted abolition of democratic rule of law, attempted coup d'état, violent destruction of public property, and damage to protected national heritage [EVI_001_BOLSONARO_CONVICTION_VERDICT]. The sentence imposed was 27 years and three months. This boundary establishes the factual foundation that legal proceedings occurred and resulted in a specific conviction with named charges and sentence.",
+          "- **EVI_001_BOLSONARO_CONVICTION_VERDICT:** Establishes Supreme Court conviction on September 11, specific charges (armed criminal conspiracy, attempted coup d'état, and others), and sentence of 27 years and three months; supports both verdicts and conviction/sentencing boundary.",
+          "- **EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE:** Documents investigative origins (2023 inquiry), plea bargain agreement, Federal Police evidence collection (digital communications), and characterization of evidence strength; supports Brazilian law compliance verdict and investigative process boundary.",
+          "- **EVI_003_JUDICIAL_INDEPENDENCE_CONTEXT:** Provides historical context of Bolsonaro's documented hostility toward the STF and prior disputes over Lula case; supports fair trial standards verdict and judicial independence boundary; raises ambiguity about tribunal impartiality.",
+          "- **EVI_004_ELECTORAL_SYSTEM_INTEGRITY:** Describes Brazil's functioning democratic institutions, electoral courts, electronic voting system, and international observation; supports fair trial standards verdict as contextual evidence of institutional capacity; addresses electoral system rather than criminal trial procedures."
+        ],
+        "evidenceLines": [
+          "Brazil's Supreme Court convicted Jair Bolsonaro on September 11 on charges including armed criminal conspiracy and attempted coup d'état, sentencing him to 27 years and three months. Evidence establishes the conviction and investigative procedures but does not directly address compliance with Brazilian law or international fair trial standards. Historical context of Bolsonaro's disputes with the judiciary creates ambiguity about tribunal impartiality. Material gaps remain in evidence of procedural safeguards, defense representation, and appellate review.",
+          "The supplied evidence establishes that Brazil's Supreme Court convicted Bolsonaro and that Federal Police conducted investigative procedures including evidence collection from digital communications and plea bargain testimony [EVI_001_BOLSONARO_CONVICTION_VERDICT, EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE]. However, the evidence does not directly cite Brazilian legal standards, procedural requirements, or any explicit determination of compliance with Brazilian law. The conviction itself may imply procedural regularity, but this is inference rather than direct evidence. No judicial review findings, appeal outcomes, or legal compliance determinations are supplied.",
+          "- Evidence describes proceedings and outcome but does not explicitly address compliance with Brazilian law or cite applicable legal standards.",
+          "- No evidence of judicial review, appeal outcomes, or explicit legal compliance determinations is supplied.",
+          "- Upstream sufficiency assessment is 'caveated,' indicating material gaps in the evidence base.",
+          "- Whether investigative procedures (plea bargain, digital evidence collection) complied with Brazilian criminal procedure law is not addressed.",
+          "- Whether any procedural defects or legal violations occurred during the proceedings is not addressed by the supplied evidence.",
+          "Evidence presents conflicting signals on international fair trial standards. The Supreme Court conviction and Brazil's functioning democratic institutions suggest institutional capacity for fair proceedings [EVI_001_BOLSONARO_CONVICTION_VERDICT, EVI_004_ELECTORAL_SYSTEM_INTEGRITY]. However, documented historical hostility between Bolsonaro and the STF, including disputes over the Lula case, raises concerns about potential bias before the same tribunal [EVI_003_JUDICIAL_INDEPENDENCE_CONTEXT]. The evidence does not directly address international fair trial standards (due process, counsel, impartiality, appeal rights) or actual trial procedures in Bolsonaro's case. Historical context creates ambiguity about tribunal impartiality but is not direct evidence of unfairness in his own proceedings.",
+          "- Evidence does not directly address international fair trial standards or specific procedural safeguards (due process, right to counsel, impartiality, appeal rights).",
+          "- Evidence about electoral system integrity and democratic institutions is contextual but does not address criminal trial procedures or fair trial standards.",
+          "- No evidence of trial procedures, defense representation, appellate review, or judicial impartiality determinations is supplied.",
+          "- Whether trial procedures, evidence presentation, and sentencing complied with international fair trial standards is not established.",
+          "Brazil's Supreme Court issued a conviction on September 11 against Jair Bolsonaro on charges of armed criminal conspiracy, attempted abolition of democratic rule of law, attempted coup d'état, violent destruction of public property, and damage to protected national heritage [EVI_001_BOLSONARO_CONVICTION_VERDICT]. The sentence imposed was 27 years and three months. This boundary establishes the factual foundation that legal proceedings occurred and resulted in a specific conviction with named charges and sentence.",
+          "## Boundary: Investigation Process, Evidence Collection, and Procedural Foundation",
+          "Investigation into Bolsonaro originated in 2023 from an inquiry into misappropriation of gifts and falsification of vaccination cards [EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE]. A former aide-de-camp entered a plea bargain agreement. Federal Police collected evidence including WhatsApp conversations and messages, characterized as building a strong case. This boundary documents the investigative methodology and evidence collection practices underlying the conviction.",
+          "Bolsonaro has a documented history of hostility toward Brazil's Supreme Federal Court (STF), including reactions to STF decisions affecting Lula da Silva's case: Lula's 2018 imprisonment and the 2019 nullification of his conviction [EVI_003_JUDICIAL_INDEPENDENCE_CONTEXT]. This boundary provides institutional context relevant to assessing potential bias or independence concerns in proceedings before the same tribunal, though the evidence addresses a different defendant and historical disputes rather than direct procedural safeguards in Bolsonaro's own trial.",
+          "Brazil maintains functioning democratic institutions including the Superior Electoral Court and regional electoral courts, an electronic voting system operational since 2000, real-time result reporting, and international observation of the 2022 presidential runoff by organizations including WOLA [EVI_004_ELECTORAL_SYSTEM_INTEGRITY]. This boundary establishes broader institutional context about Brazil's democratic and electoral governance structures, though it addresses electoral system integrity rather than criminal trial procedures or fair trial standards.",
+          "- Evidence does not directly address compliance with Brazilian criminal procedure law or cite applicable legal standards.",
+          "- International fair trial standards (due process, counsel, impartiality, appeal rights) are not directly addressed by supplied evidence.",
+          "- Upstream sufficiency assessment is 'caveated,' indicating material gaps in the evidence base.",
+          "## Evidence References",
+          "- **EVI_001_BOLSONARO_CONVICTION_VERDICT:** Establishes Supreme Court conviction on September 11, specific charges (armed criminal conspiracy, attempted coup d'état, and others), and sentence of 27 years and three months; supports both verdicts and conviction/sentencing boundary.",
+          "- **EVI_002_PROCEDURAL_INVESTIGATION_EVIDENCE:** Documents investigative origins (2023 inquiry), plea bargain agreement, Federal Police evidence collection (digital communications), and characterization of evidence strength; supports Brazilian law compliance verdict and investigative process boundary.",
+          "- **EVI_003_JUDICIAL_INDEPENDENCE_CONTEXT:** Provides historical context of Bolsonaro's documented hostility toward the STF and prior disputes over Lula case; supports fair trial standards verdict and judicial independence boundary; raises ambiguity about tribunal impartiality."
+        ],
+        "firstVerdictSection": [
+          "## Verdict: Compliance with Brazilian Law",
+          "",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 35",
+          ""
+        ]
+      },
+      "durableClassification": "unverified_due_direct_legal_fair_trial_evidence_yield_gap"
+    },
+    {
+      "slug": "asylum-wwii-de",
+      "jobId": "629e9b2c5df542c1be7a3a4cb45760bc",
+      "status": "SUCCEEDED",
+      "pipelineVariant": "claimboundary-v2",
+      "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+      "reportMarkdownByteLength": 6531,
+      "adminResultKeys": [
+        "_schemaVersion",
+        "adminDiagnostics",
+        "boundaries",
+        "claims",
+        "compatibility",
+        "evidence",
+        "input",
+        "meta",
+        "narrative",
+        "qualityGates",
+        "reportGeneration",
+        "sources",
+        "verdict",
+        "warnings"
+      ],
+      "publicContainment": {
+        "apiStatus": 200,
+        "webStatus": 200,
+        "apiReportMarkdownReturned": false,
+        "webReportMarkdownReturned": false,
+        "apiVerdictLabel": null,
+        "apiTruthPercentage": null,
+        "apiConfidence": null,
+        "apiResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "webResultKeys": [
+          "_schemaVersion",
+          "input",
+          "meta",
+          "warnings"
+        ],
+        "adminDiagnosticsReturnedPublicly": false
+      },
+      "sourceChainStageSummary": {
+        "claimUnderstanding": {
+          "status": "accepted",
+          "selectedAtomicClaimCount": 0
+        },
+        "queryPlanning": {
+          "status": "inspected",
+          "runtimeStatus": "completed",
+          "resultStatus": "accepted",
+          "queryEntryCount": 5
+        },
+        "candidateProviderNetwork": {
+          "status": "candidate_provider_network_completed",
+          "providerAttemptCount": 10,
+          "candidateCount": 0,
+          "totalCandidateCount": 0,
+          "totalBytes": 1598
+        },
+        "sourceCandidatePreview": {
+          "status": "source_candidate_preview_materialized",
+          "previewRecordCount": 9
+        },
+        "sourceMaterial": {
+          "status": "source_material_page_summary_completed",
+          "recordCount": 6,
+          "materializedPreviewRecordCount": 9,
+          "attemptedFetchCount": 0,
+          "fetchDiagnosticCount": 0,
+          "totalBoundedTextBytes": 16553,
+          "truncationCount": 4,
+          "sourceMaterialKindCounts": {
+            "provider_search_result_page_text_bounded": 4,
+            "provider_search_result_preview_text": 2
+          },
+          "providerIdCounts": {
+            "serper_web_search": 6
+          }
+        },
+        "w4": {
+          "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+          "boundedTextSidecarCount": 5,
+          "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+          "extractionInputPacketCount": 1,
+          "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+        },
+        "w5": {
+          "executionStatus": "hidden_evidence_item_extraction_completed",
+          "extractionStatus": "evidence_extracted",
+          "evidenceItemCount": 2,
+          "sourceContentPacketCount": 5,
+          "parentPacketByteLength": 12465
+        },
+        "reportWriter": {
+          "status": "internal_report_writer_draft_created",
+          "citedEvidenceItemRefCount": 2,
+          "reportMarkdownHash": "8e9200c458a4b456116077dd2807348f5a0c249dbf8c552f7440c2245d7133ae",
+          "reportMarkdownByteLength": 6531
+        }
+      },
+      "sourceMaterialRefs": [
+        {
+          "ordinal": 1,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_CFBFFBC5898E3BA7",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "cfbffbc5898e3ba7ff29d4bd73c1b4b09aa6bc7efa55820ad65029ac250fcf6e",
+          "textByteLength": 3938,
+          "textCharLength": 3882,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 2,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_90A4442264EA5E6F",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "90a4442264ea5e6f141cdc787844c095d08f5f9f896a4fa8b210436e43805c9f",
+          "textByteLength": 4095,
+          "textCharLength": 3996,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 3,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_2FF7F7442B43EB40",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "2ff7f7442b43eb40d9e4f9990f07f03cb03baa67b6fd30922df6baa1c8f47b42",
+          "textByteLength": 4096,
+          "textCharLength": 4001,
+          "truncationApplied": true
+        },
+        {
+          "ordinal": 4,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_867FAD26E03A26DA",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "867fad26e03a26da2a8fa4c9980115cef9c9410eebc8f495491aa713355293cc",
+          "textByteLength": 156,
+          "textCharLength": 156,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 5,
+          "sourceMaterialRef": "SOURCE_MATERIAL_SEARCH_PREVIEW_593421AF8FE96362",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_preview_text",
+          "textHash": "593421af8fe96362779ebc8816ddac9ddd58fc5a119d6d0d5b84656f8df372ac",
+          "textByteLength": 172,
+          "textCharLength": 171,
+          "truncationApplied": false
+        },
+        {
+          "ordinal": 6,
+          "sourceMaterialRef": "SOURCE_MATERIAL_LINKED_PAGE_2D1919B29BAD86FE",
+          "providerId": "serper_web_search",
+          "sourceMaterialKind": "provider_search_result_page_text_bounded",
+          "textHash": "2d1919b29bad86fef064945768b0b6018edfc9fd95405c30553e0919e037b326",
+          "textByteLength": 4096,
+          "textCharLength": 4084,
+          "truncationApplied": true
+        }
+      ],
+      "reportExtract": {
+        "topLines": [
+          "# Internal Alpha Narrative: Refugee Population Claims in Switzerland",
+          "## Executive Summary",
+          "Two claims about refugee populations in Switzerland are assessed as **UNVERIFIED**. The first asserts that 235,000 refugees currently live in Switzerland; supplied evidence provides legal status framework context but not the specific numerical figure. The second claims current refugee numbers resemble end-of-WWII levels; neither current aggregate counts nor WWII-era refugee figures appear in supplied evidence. Both verdicts reflect caveated sufficiency and material gaps in direct numerical verification.",
+          "## Verdict: Current Refugee Population (235,000)",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 25",
+          "The claim asserts that 235,000 refugees live in Switzerland. EVI_001 establishes the legal status framework distinguishing asylum seekers from refugees based on procedure outcomes [EVI_001], but does not state, reference, or verify the specific 235,000 figure. The evidence scope explicitly excludes current aggregate refugee population counts. No supplied evidence directly confirms or contradicts the numerical assertion.",
+          "### Caveats",
+          "- Supplied evidence provides legal status framework context but does not contain the specific numerical claim (235,000 refugees).",
+          "- Evidence scope does not include current aggregate refugee population counts.",
+          "- Sufficiency assessment status is 'caveated', indicating material gaps in direct numerical verification.",
+          "- Evidence probative value is marked 'low' for this claim direction.",
+          "### Material Uncertainty Signals"
+        ],
+        "verdictLines": [
+          "Two claims about refugee populations in Switzerland are assessed as **UNVERIFIED**. The first asserts that 235,000 refugees currently live in Switzerland; supplied evidence provides legal status framework context but not the specific numerical figure. The second claims current refugee numbers resemble end-of-WWII levels; neither current aggregate counts nor WWII-era refugee figures appear in supplied evidence. Both verdicts reflect caveated sufficiency and material gaps in direct numerical verification.",
+          "## Verdict: Current Refugee Population (235,000)",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 25",
+          "## Verdict: Historical Comparison (Current vs. WWII-Era Refugee Numbers)",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 48  ",
+          "**Confidence:** 20"
+        ],
+        "evidenceLines": [
+          "Two claims about refugee populations in Switzerland are assessed as **UNVERIFIED**. The first asserts that 235,000 refugees currently live in Switzerland; supplied evidence provides legal status framework context but not the specific numerical figure. The second claims current refugee numbers resemble end-of-WWII levels; neither current aggregate counts nor WWII-era refugee figures appear in supplied evidence. Both verdicts reflect caveated sufficiency and material gaps in direct numerical verification.",
+          "The claim asserts that 235,000 refugees live in Switzerland. EVI_001 establishes the legal status framework distinguishing asylum seekers from refugees based on procedure outcomes [EVI_001], but does not state, reference, or verify the specific 235,000 figure. The evidence scope explicitly excludes current aggregate refugee population counts. No supplied evidence directly confirms or contradicts the numerical assertion.",
+          "- Supplied evidence provides legal status framework context but does not contain the specific numerical claim (235,000 refugees).",
+          "- Evidence scope does not include current aggregate refugee population counts.",
+          "- Evidence probative value is marked 'low' for this claim direction.",
+          "- No supplied evidence directly states or verifies the 235,000 figure.",
+          "- The distinction between 'Flüchtlinge' (refugees with formal status) and 'Asylsuchende' (asylum seekers) is not resolved in supplied evidence.",
+          "- Current population status and temporal reference point for the 235,000 figure are not established by supplied evidence.",
+          "- Source reliability and data currency for the numerical claim are not provided in supplied evidence.",
+          "The claim asserts that current refugee numbers in Switzerland resemble end-of-WWII levels. Verification requires two comparable data points: current refugee population and WWII-era refugee population. EVI_001 provides institutional context for current asylum status differentiation but no aggregate count [EVI_001]. EVI_002 addresses Switzerland's wartime neutrality and post-war political context but contains no specific refugee population figures from WWII's end [EVI_002]. Neither evidence item supplies the numerical baselines necessary to establish or refute the similarity comparison.",
+          "- Supplied evidence does not contain current refugee population figures needed for the comparison.",
+          "- Supplied evidence does not contain refugee population figures from the end of World War II.",
+          "- EVI_002 addresses wartime neutrality and post-war political context, not refugee demographics.",
+          "- The definition of 'ähnlich' (similar) and the acceptable range for comparison are not specified in supplied evidence.",
+          "- Both evidence items are marked with 'low' probative value for this claim.",
+          "- No supplied evidence provides refugee population count from end of WWII.",
+          "- No supplied evidence provides current aggregate refugee population count.",
+          "- The temporal reference point 'am Ende des Zweiten Weltkrieges' (end of WWII) is not precisely defined in supplied evidence.",
+          "- No supplied evidence explicitly compares current and WWII-era refugee populations.",
+          "- The basis for determining similarity (absolute numbers, percentage of population, per-capita rates) is not established in supplied evidence.",
+          "EVI_001 establishes the institutional and legal framework within which refugee and asylum seeker populations in Switzerland are categorized and tracked [EVI_001]. The evidence clarifies how legal status differentiation occurs based on asylum procedure outcomes. This boundary provides essential context for understanding how refugee populations are defined and counted, but does not directly establish numerical claims or historical comparisons. Evidence scope is limited to legal status differentiation without providing aggregate population figures or temporal historical data.",
+          "EVI_002 provides historical context about Switzerland during and after World War II, establishing that the country was economically and socially affected by the war despite not being invaded [EVI_002]. The evidence addresses wartime neutrality and post-war political accusations. However, it does not contain specific refugee population figures from the end of WWII, nor does it establish direct numerical or demographic comparison to current refugee populations. This boundary supplies necessary historical context for assessing comparative claims but does not independently verify similarity assertions.",
+          "- Supplied evidence provides legal and historical context but does not contain the specific numerical figures required to verify either claim.",
+          "- Current aggregate refugee population counts are not present in supplied evidence."
+        ],
+        "firstVerdictSection": [
+          "## Verdict: Current Refugee Population (235,000)",
+          "",
+          "**Verdict Label:** UNVERIFIED  ",
+          "**Truth Percentage:** 50  ",
+          "**Confidence:** 25",
+          "",
+          "The claim asserts that 235,000 refugees live in Switzerland. EVI_001 establishes the legal status framework distinguishing asylum seekers from refugees based on procedure outcomes [EVI_001], but does not state, reference, or verify the specific 235,000 figure. The evidence scope explicitly excludes current aggregate refugee population counts. No supplied evidence directly confirms or contradicts the numerical assertion.",
+          ""
+        ]
+      },
+      "durableClassification": "unverified_due_missing_current_count_and_wwii_endpoint_stock_evidence"
+    }
+  ],
+  "stopReason": "Wave 1 consumed four jobs. Public/default containment held, but report quality stop criteria fired: hydrogen and plastic produced confident wrong-side report drafts versus accepted expectations; Bolsonaro EN and asylum-WWII produced UNVERIFIED/MIXED or UNVERIFIED drafts versus accepted true-side/false-side expectations. Wave 2 is held pending no-live owner classification and HJ77 repair package.",
+  "artifactRouteProbe": "Process-local hidden artifact routes returned 404 for all four HJ76 job IDs; classification uses persisted admin resultJson/source-chain attribution and reportMarkdown."
+}

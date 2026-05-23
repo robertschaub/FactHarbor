@@ -19,29 +19,29 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ75 produced a true-side internal current-asylum
-report and Captain approved a fresh 12-job tranche. Older HJ history below is kept as context, but
-the active anchor and budget are:
+This projection is synced after HJ76 Wave 1 produced a cross-family
+report-quality stop under the fresh Captain-approved 12-job tranche. Older HJ
+history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ75 source-material source-native selection repair at
-  `522beebb9fe36c89e011777118e6fcde6ece0c50`;
+  HJ76 no-code staged gauntlet package at
+  `f49866b403a1a3e06400bdfe9e5a53b739e143b2`;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
-- next prepared package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md`;
 - latest canary result:
-  HJ75 replacement canary `ad76c64ca5eb46c7904043975e0c483c`,
-  classified
-  `PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`;
+  HJ76 Wave 1 jobs `8bcbb1f4ffdf4924b4d75e87c3543916`,
+  `f6c391bb682345d4afba808f99e58958`,
+  `999e99260839451c9274b9f3194bd58b`, and
+  `629e9b2c5df542c1be7a3a4cb45760bc`, classified
+  `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ75;
-  HJ76 starts with `12` remaining and no jobs consumed in the new tranche;
+  HJ76 Wave 1 consumed `4`; `8` remain;
 - next action:
-  run the HJ76 staged report-quality gauntlet. HJ75 counts as the
-  `asylum-235000-de` datapoint. Wave 1 submits hydrogen, plastic, Bolsonaro EN,
-  and asylum-WWII; Wave 2 proceeds only if no hard stop appears. Do not add more
-  source-material plumbing by default and do not run a second HJ75 canary;
+  do not run HJ76 Wave 2. Prepare HJ77 as a no-live owner classification and
+  target-frame/directness repair package before spending more jobs. Priority is
+  the confident wrong-direction reports for hydrogen and plastic; the
+  Bolsonaro/asylum-WWII UNVERIFIED reports are the second mode to classify;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
@@ -86,11 +86,17 @@ report writer created a `4268` byte draft. The observed internal report top
 line is `MOSTLY-TRUE`, truth `78`, confidence `72`, improving the current
 asylum input from HJ74 `UNVERIFIED`. No second HJ75 canary is authorized.
 
-HJ76 is prepared as a no-code staged report-quality gauntlet. It uses HJ75 as
-the `asylum-235000-de` datapoint and spends the fresh 12-job tranche only on
-fresh cross-family signals. Wave 1 is hydrogen, plastic, Bolsonaro EN, and
-asylum-WWII. Wave 2 is Bundesrat simple, Bundesrat rechtskräftig, and
-Bolsonaro PT if Wave 1 has no hard stop.
+HJ76 Wave 1 is complete and stopped by package criteria. It ran hydrogen,
+plastic, Bolsonaro EN, and asylum-WWII on runtime
+`f49866b403a1a3e06400bdfe9e5a53b739e143b2`. All four jobs stayed on
+`claimboundary-v2`, reached `SUCCEEDED`, and public/default containment held.
+The information yield is `new_failure_with_cross_family_quality_signal`:
+hydrogen and plastic produced confident wrong-side internal drafts versus
+accepted expectations, while Bolsonaro EN and asylum-WWII produced
+UNVERIFIED/MIXED or UNVERIFIED drafts where expectations require usable
+true-side/false-side reports. HJ76 Wave 2 is held. Next owner is HJ77 no-live
+target-frame/directness owner classification and repair planning, not another
+blind source-material or report-writer tweak.
 
 HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
@@ -124,13 +130,43 @@ exhausted.
 
 Latest validation:
 
-`X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY`
+`X7-HJ-76-STAGED-REPORT-QUALITY-GAUNTLET-WAVE1`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj75-source-native-selection-replacement.json`
+`Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json`
 
 Important evidence:
+
+- HJ76 Wave 1 ran four Captain-defined inputs on runtime/docs commit
+  `f49866b403a1a3e06400bdfe9e5a53b739e143b2`: hydrogen job
+  `8bcbb1f4ffdf4924b4d75e87c3543916`, plastic job
+  `f6c391bb682345d4afba808f99e58958`, Bolsonaro EN job
+  `999e99260839451c9274b9f3194bd58b`, and asylum-WWII job
+  `629e9b2c5df542c1be7a3a4cb45760bc`. All stayed on `claimboundary-v2`,
+  reached `SUCCEEDED`, and public/default containment held: public result keys
+  stayed limited to `_schemaVersion`, `input`, `meta`, and `warnings`, with no
+  public report markdown, verdict label, truth percentage, confidence, or
+  `adminDiagnostics`.
+
+- Result classification:
+  `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`.
+  Hydrogen and plastic produced confident wrong-side internal report drafts
+  relative to accepted expectations. Bolsonaro EN produced `UNVERIFIED` /
+  `MIXED` drafts despite true-side comparator expectations. Asylum-WWII
+  produced two `UNVERIFIED` drafts despite needing a false-side assessment for
+  the WWII endpoint-stock comparison. Process-local hidden artifact routes
+  returned `404`, so classification uses persisted admin result JSON,
+  source-chain attribution, and report markdown.
+
+- Steer-Co/reviewer consensus after Wave 1: do not spend Wave 2 yet. The next
+  move should classify owner with no more live jobs, then prepare HJ77 around
+  target-frame/directness. Priority mode A is wrong-direction confidence
+  (hydrogen/plastic); mode B is evidence-yield collapse
+  (Bolsonaro/asylum-WWII). Do not add family-specific terms, deterministic
+  semantic filters, new hidden routes, citation quotas, broad Source
+  Acquisition rewrites, public behavior, provider expansion, parser/cache/SR
+  storage, ACS/direct URL, or V1 work as part of HJ77.
 
 - HJ75 first submission job `bdde6d4ad58544bcbf07576c7cf89968` used the
   Captain-defined `asylum-235000-de` input and explicit `claimboundary-v2` on
@@ -767,8 +803,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `12`;
-- consumed after latest reset: `0`;
-- remaining: `12`;
+- consumed after latest reset: `4`;
+- remaining: `8`;
 - latest reset starts after HJ75 replacement canary
   `ad76c64ca5eb46c7904043975e0c483c`;
 - every live job still requires clean git status, committed source, runtime
@@ -798,9 +834,14 @@ Current active tranche:
    true-side internal Alpha report with stronger Source Material. Do not run a
    second HJ75 canary. Next, review report quality and raise one targeted bar
    from observed report defects.
-9. Treat HJ76 as the active validation lane: staged report-quality gauntlet over
-   Captain-defined inputs, no code change, no prompt/config/schema change, and
-   no second asylum-current rerun by default.
+9. Treat HJ76 as stopped after Wave 1:
+   `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`.
+   Do not run Wave 2 until HJ77 classifies the owner and proposes the smallest
+   repair.
+10. Prepare HJ77 as the next no-live target-frame/directness owner
+    classification and repair package. It may inspect existing persisted HJ76
+    reports, source-chain attribution, prompt/config provenance, and code paths.
+    Spend more jobs only after a committed repair package and runtime refresh.
 
 ## Stop Conditions
 

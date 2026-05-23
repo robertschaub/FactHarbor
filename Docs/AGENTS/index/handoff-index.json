@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T16:27:22.292Z",
-  "count": 443,
+  "generatedAt": "2026-05-23T17:51:48.863Z",
+  "count": 444,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9661,6 +9661,26 @@
       ],
       "files_touched": [],
       "summary": "Captain Deputy Takeover Checkpoint - V2 W6-C HighJump"
+    },
+    {
+      "file": "2026-05-23_Captain_Deputy_V2_HighJump_HJ76_Wave1_Result.md",
+      "date": "2026-05-23",
+      "roles": [
+        "captain_deputy"
+      ],
+      "topics": [
+        "captain",
+        "deputy",
+        "v2",
+        "highjump",
+        "hj76",
+        "wave1",
+        "result"
+      ],
+      "files_touched": [
+        "Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json"
+      ],
+      "summary": "Use `Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json` as the primary evidence bundle. Do not run HJ76 Wave 2. Inspect prompt/config provenance and the W5/W7/W8 target-frame handoff before editing. Avoid family-specific wording, deterministic semantic filters, new hidden routes, cit"
     },
     {
       "file": "2026-05-23_Lead_Developer_HJ73_Source_Chain_Attribution.md",

@@ -5062,3 +5062,7 @@ changed.
 **Next:** Commit this no-code package, refresh runtime to the package commit,
 preflight API/Web health, commit match, runner auth, admin auth, and default
 pipeline, then run HJ76 Wave 1 sequentially unless a hard stop appears.
+
+### 2026-05-23 | Captain Deputy | Codex | V2 HighJump HJ76 Wave 1 Result — [Significant] [open-items: yes]
+**For next agent:** HJ76 Wave 1 stopped as `STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED`; hold Wave 2 and prepare HJ77 no-live target-frame/directness owner classification before more jobs. Primary artifact: `Docs/WIP/canary-evidence-hj76-staged-report-quality-gauntlet.json`.
+→ Docs/AGENTS/Handoffs/2026-05-23_Captain_Deputy_V2_HighJump_HJ76_Wave1_Result.md

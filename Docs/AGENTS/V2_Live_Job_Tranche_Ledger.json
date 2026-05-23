@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj76-report-quality-gauntlet-2026-05-23-reset-12-after-hj75",
     "resetTotal": 12,
-    "currentRemaining": 12,
+    "currentRemaining": 8,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY",
       "startsAfterJobId": "ad76c64ca5eb46c7904043975e0c483c",
       "startingRemaining": 12,
-      "currentRemaining": 12,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "Fresh post-HJ75 tranche. HJ75 remains recorded in the previous tranche as the current-asylum datapoint. HJ76 may use HJ75 as the asylum-current family datapoint unless a fresh same-input rerun is explicitly needed. No HJ76 jobs have been submitted yet.",
+      "currentRemaining": 8,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "HJ76 Wave 1 consumed four jobs and stopped by report-quality criteria. Wave 2 is held. Next action is HJ77 no-live owner classification / target-frame-directness repair planning before spending more jobs.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1983,14 +1983,36 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_quality_improved",
         "note": "HJ75 replacement ran one current-asylum rerun after invalid-attempt docs commit 395d0cb3, clean provenance, runtime refresh, and runner/admin auth preflight. It stayed on claimboundary-v2, finished SUCCEEDED, and stamped git/executedWeb hashes as 395d0cb3. Public/default containment held: no public report markdown, verdict label, truth percentage, confidence, or adminDiagnostics. Admin raw source-chain attribution showed Source Material completed with 7 records, 14332 bounded text bytes, 3 linked-page text records, 1 OpenAlex abstract, and 3 preview records; W5 extracted 2 EvidenceItems; report writer created a 4268-byte internal Alpha draft. The observed internal report top line is MOSTLY-TRUE 78 truth / 72 confidence, a true-side quality improvement over HJ74 UNVERIFIED. No second HJ75 canary is authorized; next action should review report quality and decide the next single bar to raise."
+      },
+      {
+        "sliceId": "X7-HJ-76-STAGED-REPORT-QUALITY-GAUNTLET-WAVE1",
+        "jobId": "multiple_hj76_wave1_jobs_see_result_artifact",
+        "jobIds": [
+          "8bcbb1f4ffdf4924b4d75e87c3543916",
+          "f6c391bb682345d4afba808f99e58958",
+          "999e99260839451c9274b9f3194bd58b",
+          "629e9b2c5df542c1be7a3a4cb45760bc"
+        ],
+        "classification": "STOP_X7_HJ76_WAVE1_REPORT_QUALITY_GAUNTLET_TWO_WRONG_DIRECTION_TWO_UNVERIFIED",
+        "note": "HJ76 Wave 1 ran four Captain-defined high-signal inputs on runtime f49866b. All jobs stayed on claimboundary-v2, succeeded, and public/default containment held. Report-quality stop fired: hydrogen and plastic produced confident wrong-side internal drafts versus accepted expectations, while Bolsonaro EN and asylum-WWII produced UNVERIFIED/MIXED or UNVERIFIED drafts where expectations require true-side/false-side usable reports. Wave 2 is held; next action is no-live owner classification and an HJ77 target-frame/directness repair package before more jobs.",
+        "implementationCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+        "runtimeCommit": "f49866b403a1a3e06400bdfe9e5a53b739e143b2",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 4,
+        "remainingAfter": 8,
+        "approvalPointer": "Captain message in current Codex thread: \"Budget of 12 Jobs approved. Continue.\" plus HJ76 package Docs/WIP/2026-05-23_V2_HighJump_HJ76_Staged_Report_Quality_Gauntlet.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure_with_cross_family_quality_signal",
+        "stopReason": "Wave 1 consumed four jobs. Public/default containment held, but report quality stop criteria fired: hydrogen and plastic produced confident wrong-side report drafts versus accepted expectations; Bolsonaro EN and asylum-WWII produced UNVERIFIED/MIXED or UNVERIFIED drafts versus accepted true-side/false-side expectations. Wave 2 is held pending no-live owner classification and HJ77 repair package.",
+        "artifactRouteProbe": "Process-local hidden artifact routes returned 404 for all four HJ76 job IDs; classification uses persisted admin resultJson/source-chain attribution and reportMarkdown."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "Fresh 12-job tranche; no HJ76 consumption yet.",
-      "nextLiveJobRequirement": "Commit HJ76 package first, refresh runtime to the package commit, verify clean git status and API/Web runtime commit match, then run staged Captain-defined inputs with public containment checks."
+      "reason": "HJ76 Wave 1 stayed inside the 12-job tranche and consumed 4 jobs; 8 remain.",
+      "nextLiveJobRequirement": "Do not run HJ76 Wave 2. Prepare and commit the HJ76 result closeout, then perform HJ77 no-live owner classification and reviewed repair planning before another canary."
     },
     "pendingExceptionAuthorization": null
   }
