@@ -342,6 +342,10 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("Each accepted verdict candidate must answer a materially distinct assessment");
     expect(section).toContain("context-only boundary, residual procedural milestone, expected downstream step");
     expect(section).toContain("not as an equal second verdict candidate");
+    expect(section).toContain("Frame each verdict candidate around the truth of the selected AtomicClaim as written");
+    expect(section).toContain("Do not silently replace the selected claim with its inverse");
+    expect(section).toContain("Evidence that establishes an opposite proposition must be translated into lower truth for the selected AtomicClaim");
+    expect(section).toContain("must still answer the selected AtomicClaim itself");
     expect(section).toContain("categorical or absolute wording");
     expect(section).toContain("calibrate the verdict against the whole categorical assertion");
     expect(section).toContain("material countervailing value, benefit, compliance, support, or unresolved scope");
