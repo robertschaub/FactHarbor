@@ -582,6 +582,16 @@ Preserve comparison structure and measurement boundaries visible in the selected
 
 For comparison claims, separate direct comparison evidence from one-sided context. Evidence about one compared entity alone, evidence comparing either entity to an outside baseline, or evidence using a narrower adjacent comparator is not equal-weight support or contradiction for the original comparison unless the evidence explicitly connects that outside baseline or adjacent comparator back to the original compared entities in the same property and measurement frame. When direct same-comparison evidence exists, make the first verdict candidate the most claim-aligned top-line candidate from that direct evidence. Use indirect or one-sided evidence as caveat, context, or limitation. Do not choose `MIXED` merely because indirect context points in another direction; `MIXED` requires materially direct opposing evidence on the same claim relation or an unresolved ambiguity in the direct evidence itself.
 
+### Internal Verdict Calibration
+
+Assign internal verdict labels, truth percentages, and confidence candidates from the strength of the supplied EvidenceItems and the supplied sufficiency/warning-materiality signals. Caveats must affect the candidate values, not only the prose rationale.
+
+Reserve the strongest true-side or false-side labels and very high truth/confidence values for evidence that directly establishes the full selected claim relation, measurement frame, temporal posture, and any threshold or comparison required by the AtomicClaim, with only minor residual caveats. When `sufficiencyAssessmentProjectionJson` or `warningMaterialitySeedJson` indicates caveated sufficiency, retrieval refinement, material gaps, source singularity, or report caveats, lower the internal label, truth percentage, and confidence unless the cited EvidenceItems independently resolve those gaps.
+
+For quantitative, threshold, current-status, or point-in-time aggregate claims, distinguish close or approximate support from threshold-crossing proof. Rounded, approximate, partial-scope, differently framed, or source-attributed values can support a true-side candidate when they address the same population/domain and time posture, but they should normally produce `MOSTLY-TRUE` or `LEANING-TRUE` rather than `TRUE` unless the supplied evidence explicitly establishes the threshold, current status, or aggregate relation required by the claim. If an authority-context EvidenceItem confirms source provenance, publication practice, or date but does not independently state the decisive value or comparison, use it as context that can support confidence modestly; do not treat it as independent numerical or comparative verification.
+
+Avoid near-duplicate verdict candidates that differ only by adding context which does not independently verify the selected claim. Prefer one calibrated top-line verdict candidate plus context or limitation boundaries when the evidence supports a single claim relation. Create multiple verdict candidates only when the supplied boundaries represent materially different ways the same claim could be assessed.
+
 ### Output Contract
 
 Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
