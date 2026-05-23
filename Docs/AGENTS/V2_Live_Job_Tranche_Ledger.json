@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj52",
+    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj53",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ52/HJ53 source commit and before the HJ53 focused Claim Understanding rerun."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after the HJ53 focused Claim Understanding rerun and before HJ54."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 13,
+      "previousRemaining": 17,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can use stronger HighJump validation toward visible, complete, useful V2 reports without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump validation toward visible, complete, useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-52-STRONGER-INTERNAL-REPORT-VALIDATION-GAUNTLET",
-      "startsAfterJobId": "7321d207499f416193e12d6c2e854bc3",
+      "startsAfterSliceId": "X7-HJ-53-CU-SHORT-BROAD-CLAIM-BAR-RERUN",
+      "startsAfterJobId": "dfa9bd1bdb0749b095d1dd647444d86e",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ52 is the last completed canary set before this reset. HJ53 consumed one focused job and proved the committed prompt repair was active but did not clear the Claim Understanding no_valid_claim stop for the plastic input.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ53 is the last completed live job before this reset. HJ53 proved the committed prompt repair was active but did not clear the Claim Understanding no_valid_claim stop for the plastic input.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {

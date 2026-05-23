@@ -122,6 +122,10 @@ const captainCanaryTopicTerms = [
   "Schweiz",
   "Bundesrat",
   "EU-Vertrag",
+  "Plastic",
+  "recycling",
+  "hydrogen",
+  "electricity",
 ] as const;
 
 describe("V2 Claim Understanding prompt contract", () => {
@@ -300,6 +304,8 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(section).toContain("original language");
     expect(section).toContain("Do not decide truth, fairness, legality, compliance, or confidence");
     expect(section).toContain('Return `blockedReason: "no_valid_claim"` only when no externally assessable assertion can be formed');
+    expect(section).toContain("after applying the Claim Selection guidance");
+    expect(section).toContain("no externally assessable proposition can be formed");
 
     for (const term of captainCanaryTopicTerms) {
       expect(section).not.toContain(term);
@@ -312,6 +318,11 @@ describe("V2 Claim Understanding prompt contract", () => {
 
     expect(abstractBroadAssertion).not.toMatch(/Plastic|recycling|Asylbereich|Schweiz|Bolsonaro|hydrogen/i);
     expect(section).toContain("Concise or broad direct assertions can also contain verifiable AtomicClaims");
+    expect(section).toContain("researched at its submitted level of generality");
+    expect(section).toContain("does not already name a metric, benchmark, facet, location, source, or proof standard");
+    expect(section).toContain("Reserve `no_valid_claim`");
+    expect(section).toContain("names no assessable subject");
+    expect(section).toContain("only a greeting, command, or preference");
     expect(section).toContain("Do not block only because the assertion is short, colloquial, value-laden, or broad");
     expect(section).toContain("has material benefit");
     expect(section).toContain("meets an observable goal");
