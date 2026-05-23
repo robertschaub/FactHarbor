@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-hj58-w4g-prefix-repair-2026-05-23-reset-18-after-hj57",
+    "trancheId": "v2-highjump-hj61-w7b-candidate-coherence-2026-05-23-reset-18-after-hj60",
     "resetTotal": 18,
-    "currentRemaining": 8,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ57 exposed the repeated W4-G oversized Source Material blocker."
+      "summary": "Captain reset the V2 HighJump live-job budget to 18 after HJ60 mapped the cross-input internal-report quality picture."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 16,
+      "previousRemaining": 8,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump validation toward complete, useful V2 reports after HJ57 cleared one W5 blocker and exposed W4-G oversized Source Material as the next recurring upstream blocker."
+      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump report-quality repair and validation after HJ60 produced seven internal reports, one multilingual W5 stop, and concrete quality gaps."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-57-W5-CONTRACT-REPAIR-BUNDESRAT-SIMPLE",
-      "startsAfterJobId": "b1356da1f72f4f27a6fafb3bc5418746",
+      "startsAfterSliceId": "X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET",
+      "startsAfterJobId": "71ab493bd64640f5957acd4e59e1c362",
       "startingRemaining": 18,
-      "currentRemaining": 8,
-      "consumptionEntriesInThisTranche": 10,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ58 cleared the repeated W4-G source_material_text_oversized blocker and produced an internal admin-only report. HJ59 then moved the same Bundesrat-simple input from the weak HJ58 UNVERIFIED shape to an authenticated admin-only TRUE 88/85 internal Alpha report while public/default containment held. HJ60 spent eight jobs on a stronger cross-input gauntlet: seven internal reports were produced, one multilingual W5 no-evidence stop remained, and public/default containment held for all jobs.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ60 remains the latest completed gauntlet and is the evidence base for HJ61 W7-B candidate-coherence repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1662,7 +1662,7 @@
       {
         "sliceId": "X7-HJ-60-STRONGER-INTERNAL-REPORT-GAUNTLET-PLASTIC-EN",
         "jobId": "71ab493bd64640f5957acd4e59e1c362",
-        "classification": "PASS_X7_HJ60_PLASTIC_INTERNAL_REPORT_EXPECTED_MOSTLY_TRUE_SIDE",
+        "classification": "PASS_WITH_QUALITY_GAP_X7_HJ60_PLASTIC_INTERNAL_REPORT_FALSE_SIDE_EXPECTATION_MISSED",
         "implementationCommit": "58fa06a2db7182c4d879e5d96af0e654bf48bb46",
         "runtimeCommit": "58fa06a2db7182c4d879e5d96af0e654bf48bb46",
         "docsCommit": "same_commit_as_this_ledger_update",
@@ -1670,8 +1670,8 @@
         "remainingAfter": 8,
         "approvalPointer": "Docs/WIP/2026-05-23_V2_HighJump_HJ60_Stronger_Internal_Report_Gauntlet.md plus Captain message in current Codex thread: \"New job budget: 18\"",
         "canaryRunner": "Captain Deputy / Lead Developer",
-        "informationYield": "report_produced",
-        "note": "Plastic produced an 8055-character internal report with MOSTLY-TRUE 72/78 primary verdict and a clear caveat for the absolute wording. Public/default containment held."
+        "informationYield": "report_produced_with_quality_gap",
+        "note": "Plastic produced an 8055-character internal report with MOSTLY-TRUE 72/78 primary verdict and a caveat for the absolute wording, but the Captain benchmark expects a false-side or at most MIXED result. This is a W7-B candidate-coherence/calibration quality gap. Public/default containment held."
       }
     ],
     "blockedPending": [],

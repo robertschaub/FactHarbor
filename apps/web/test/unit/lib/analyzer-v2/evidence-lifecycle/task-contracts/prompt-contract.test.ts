@@ -338,6 +338,15 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("outside baseline or adjacent comparator");
     expect(section).toContain("make the first verdict candidate the most claim-aligned top-line candidate");
     expect(section).toContain("Do not choose `MIXED` merely because indirect context points in another direction");
+    expect(section).toContain("Selected Claim Coherence and Candidate Economy");
+    expect(section).toContain("Each accepted verdict candidate must answer a materially distinct assessment");
+    expect(section).toContain("context-only boundary, residual procedural milestone, expected downstream step");
+    expect(section).toContain("not as an equal second verdict candidate");
+    expect(section).toContain("categorical or absolute wording");
+    expect(section).toContain("calibrate the verdict against the whole categorical assertion");
+    expect(section).toContain("material countervailing value, benefit, compliance, support, or unresolved scope");
+    expect(section).toContain("do not create a separate `UNVERIFIED` verdict candidate merely because the later decision");
+    expect(section).toContain("Keep that pending posture as a caveat or material uncertainty");
     expect(section).toContain("Internal Verdict Calibration");
     expect(section).toContain("Caveats must affect the candidate values, not only the prose rationale");
     expect(section).toContain("caveated sufficiency, retrieval refinement, material gaps, source singularity");

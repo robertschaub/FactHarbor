@@ -19,22 +19,24 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ60 stronger internal report gauntlet.
-Older HJ history below is kept as context, but the active anchor and budget are:
+This projection is synced for HJ61 after the HJ60 stronger internal report
+gauntlet and the Captain's 18-job budget reset. Older HJ history below is kept
+as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `f8d1a818 docs(v2): record hj59 temporal relation result` plus the HJ59 W5 prompt repair at
-  `05194d37 fix(v2): guide w5 temporal relation extraction`;
+  `9576896a docs(v2): record hj60 report gauntlet`;
+- active repair package:
+  HJ61 W7-B candidate-coherence prompt repair in
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ61_W7B_Candidate_Coherence_Repair.md`;
 - latest canary result:
   HJ60 eight-input gauntlet, classified
   `MIXED_PASS_X7_HJ60_STRONGER_GAUNTLET_7_OF_8_INTERNAL_REPORTS_PRODUCED_QUALITY_GAPS_MAPPED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ57;
-  HJ58, HJ59, and HJ60 consumed `10`, so `8` remain;
+  Captain reset to `18` on 2026-05-23 after HJ60;
+  `18` remain before HJ61 live validation;
 - next action:
-  perform report-quality review on the HJ60 reports and prepare one targeted
-  repair package from the strongest observed defect, without adding another
-  reachability/proof layer;
+  commit HJ61, import/activate the revised `claimboundary-v2` prompt, refresh
+  runtime, then run the bounded HJ61 canary set;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -45,17 +47,16 @@ Older HJ history below is kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`f8d1a818 docs(v2): record hj59 temporal relation result`
+`9576896a docs(v2): record hj60 report gauntlet`
 
-Latest implementation repair:
+Active implementation repair:
 
-`05194d37 fix(v2): guide w5 temporal relation extraction`
-
-HJ59 amends only the existing `V2_EVIDENCE_EXTRACTION` prompt section so W5
-extracts generic temporal/procedural relation components when supplied content
-states them. It adds no code-side semantic rule, schema relaxation, source or
-provider widening, parser, retry/repair loop, public surface, cache/SR/storage,
-direct URL/ACS support, or V1 work.
+HJ61 amends only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section so
+W7-B forms fewer, more claim-aligned top-line verdict candidates and keeps
+context-only caveats as caveats, limitations, or material uncertainties. It
+adds no code-side semantic rule, report-writer mutation, schema relaxation,
+source or provider widening, parser, retry/repair loop, public surface,
+cache/SR/storage, direct URL/ACS support, or V1 work.
 
 ## Latest Result
 
@@ -125,11 +126,13 @@ Important evidence:
   (`71ab493bd64640f5957acd4e59e1c362`). `bolsonaro-pt`
   (`5f026f1c4915455a88ba96f712790015`) stopped with W5
   `hidden_no_extractable_evidence` and `0` EvidenceItems. Public/default
-  containment held for all jobs. The quality picture is mixed: hydrogen and
-  plastic are comparatively strong; Bolsonaro EN is caveated but useful;
-  asylum-family reports still lack decisive stock/comparison evidence; and
-  Bundesrat-simple did not reproduce the HJ59 high result, exposing report
-  consolidation/stability as a real next owner.
+  containment held for all jobs. The quality picture is mixed: hydrogen is in
+  the expected false-side band; plastic is a real false-side/MIXED expectation
+  miss because it promoted a `MOSTLY-TRUE` primary verdict; Bolsonaro EN is
+  caveated but useful; asylum-family reports still lack decisive
+  stock/comparison evidence; and Bundesrat-simple did not reproduce the HJ59
+  high result, exposing W7-B candidate coherence/stability as a real next
+  owner.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -477,22 +480,23 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `10`;
-- remaining: `8`;
-- latest reset starts after the HJ57 Bundesrat-simple focused rerun
-  `b1356da1f72f4f27a6fafb3bc5418746`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after the HJ60 stronger internal report gauntlet, latest
+  job `71ab493bd64640f5957acd4e59e1c362`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Close out HJ60 in the ledger/status/docs and commit the provenance update.
-2. Run a report-quality review of the HJ60 reports against Captain expectations
-   and comparator guidance. Do not judge the reports in isolation.
-3. Prepare one targeted repair package. The current leading candidates are:
-   report consolidation/stability for split verdicts, direct source-material
-   usefulness for stock/comparison claims, and multilingual W5 extraction
-   robustness for the Portuguese Bolsonaro variant.
+1. Commit the HJ61 W7-B candidate-coherence prompt repair and lane/ledger
+   sync.
+2. Import and activate the revised `claimboundary-v2` prompt in UCM.
+3. Refresh runtime, verify Web/API/proxy commit and active prompt hash, then run
+   the bounded HJ61 canary set.
+4. If HJ61 improves candidate coherence but numeric stock/comparison reports
+   remain weak, move next to source-material usefulness rather than adding a
+   downstream report-consolidation layer.
 
 ## Stop Conditions
 
