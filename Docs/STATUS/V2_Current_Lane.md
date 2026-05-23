@@ -19,22 +19,22 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ66. Older HJ history below is kept as context,
+This projection is synced after HJ67. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `4dbafbba fix(v2): require w7b verdict caveats arrays`;
+  `a64db294 docs(v2): prepare hj67 report quality gauntlet`;
 - active repair package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ66_W7B_Caveats_Array_Contract_Repair.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ67_Stronger_Report_Quality_Gauntlet.md`;
 - latest canary result:
-  HJ66 focused plastic canary, classified
-  `PASS_X7_HJ66_W7B_CAVEATS_ARRAY_CONTRACT_REPAIRED_SELECTED_CLAIM_MIXED_REPORT_CREATED`;
+  HJ67 eight-input gauntlet, classified
+  `PARTIAL_PASS_X7_HJ67_STRONGER_GAUNTLET_6_OF_8_REPORTS_PUBLIC_CONTAINMENT_HELD`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ66 consumed `3`, so `15` remain;
+  HJ64 through HJ67 consumed `11`, so `7` remain;
 - next action:
-  pivot from single-input repair to report-quality validation over a stronger
-  Captain-defined input set, using the HJ66 prompt as the current anchor;
+  use HJ67 report evidence to choose one bounded source usefulness / W5
+  extraction-recall quality bar; do not add another report-layer mechanism;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -45,32 +45,45 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`4dbafbba fix(v2): require w7b verdict caveats arrays`
+`a64db294 docs(v2): prepare hj67 report quality gauntlet`
 
 Active implementation repair:
 
-HJ66 kept the HJ65 selected-claim polarity wording and amended the same
-`V2_BOUNDARY_VERDICT_EXECUTION` prompt output contract so `caveats` and
-`materialUncertaintySignals` must be arrays of strings. The focused plastic
-canary cleared the HJ65 schema blocker and produced a complete hidden/admin
-internal report. The top-line verdict now answers the selected claim as
-`MIXED`, truth `50`, confidence `72`, which satisfies the HJ66 pass condition
-of false-side or at most `MIXED` for this input. No runtime coercion, schema
-relaxation, retry, fallback, parallel report path, source/provider/parser/
-cache/SR/storage change, public behavior, ACS/direct URL, or V1 work was added.
+HJ67 ran all eight Captain-defined inputs on the HJ66 prompt/runtime anchor.
+Six produced hidden/admin internal reports and all eight preserved public/
+default containment. Four families are useful or near expected
+(`bundesrat-simple`, `bolsonaro-en`, `hydrogen-en`, `plastic-en`). Two reports
+expose quality gaps (`bundesrat-rechtskraftig`, `asylum-235000-de`). Two inputs
+did not produce reports because W5 returned `hidden_no_extractable_evidence`
+(`asylum-wwii-de`, `bolsonaro-pt`). The next quality owner is therefore source
+usefulness / W5 extraction recall, not another downstream report-writer layer.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-66-W7B-CAVEATS-ARRAY-CONTRACT-REPAIR`
+`X7-HJ-67-STRONGER-REPORT-QUALITY-GAUNTLET`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj66-w7b-caveats-array-contract.json`
+`Docs/WIP/canary-evidence-hj67-stronger-report-quality-gauntlet.json`
 
 Important evidence:
 
+- HJ67 ran eight Captain-defined inputs sequentially on execution anchor
+  `a64db2942167ca4abb7bf1f1e6c0e79ca3b2fcdd` with active `claimboundary-v2`
+  prompt hash `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
+  All eight stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved
+  public/default containment. Six hidden/admin internal reports were produced:
+  `bundesrat-rechtskraftig` (`52178147ec5f4f7389406483f9b257ab`),
+  `bundesrat-simple` (`0aaa6c9820f6407993d5a24781a5eba8`),
+  `asylum-235000-de` (`b78e1cd21e9644dea270f892ef0ec0b5`),
+  `bolsonaro-en` (`a042983968e34371b568e065c70e1efa`), `hydrogen-en`
+  (`df118e4b8fd64635bd3ed185c9c976c8`), and `plastic-en`
+  (`e92c8ac6215049e687887edc6003700d`). `asylum-wwii-de`
+  (`e4858e2fb9c343ab9fbaae5dd156d23d`) and `bolsonaro-pt`
+  (`e9aacccdcc5947edaa2d7f08685b7952`) reached W5 but returned
+  `hidden_no_extractable_evidence`.
 - HJ66 ran one focused plastic canary on runtime/source commit
   `4dbafbba96c889f844d5b03ef1f5ca5863c4d63d` after importing and activating
   `claimboundary-v2` prompt hash
@@ -573,8 +586,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `3`;
-- remaining: `15`;
+- consumed after latest reset: `11`;
+- remaining: `7`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -582,12 +595,12 @@ Current active tranche:
 
 ## Next Action
 
-1. Keep HJ66 as the active prompt/report-quality anchor.
-2. Run a stronger, bounded report-quality validation step on Captain-defined
-   inputs before adding more plumbing.
-3. Use the next observed report defect to raise one bar at a time; do not add
-   retries, schema relaxation, source/provider widening, public behavior, or V1
-   work unless a new package and hard-stop authority support it.
+1. Treat HJ67 as the current report-quality baseline.
+2. Pick the next single bar from observed defects: source usefulness / W5
+   extraction recall for asylum-family and Portuguese Bolsonaro gaps.
+3. Avoid report-writer, verdict-calibration, retry, schema-relaxation, or
+   public-surface work until the missing/weak evidence path is addressed or
+   Steer-Co identifies a better owner.
 
 ## Stop Conditions
 

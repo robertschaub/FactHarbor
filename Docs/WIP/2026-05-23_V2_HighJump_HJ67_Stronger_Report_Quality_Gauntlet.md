@@ -1,6 +1,6 @@
 # V2 HighJump HJ67 Stronger Report-Quality Gauntlet
 
-**Status:** execution package in preparation
+**Status:** closed after live gauntlet
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction, current `18`-job tranche reset after
@@ -155,3 +155,66 @@ package for that owner.
 If source usefulness dominates failures, choose one bounded source-material or
 query-planning quality repair rather than another downstream report-layer
 mechanism.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj67-stronger-report-quality-gauntlet.json`
+
+Runtime/source:
+
+- execution anchor:
+  `a64db2942167ca4abb7bf1f1e6c0e79ca3b2fcdd`;
+- active `claimboundary-v2` prompt label/hash:
+  `hj66-w7b-caveats-array-contract` /
+  `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
+
+Result summary:
+
+| Input family | Job | Result | Main observation |
+|---|---|---|---|
+| `bundesrat-rechtskraftig` | `52178147ec5f4f7389406483f9b257ab` | report produced | Report split temporal support (`MOSTLY-TRUE` 76/72) from legal-binding uncertainty (`UNVERIFIED` 50/45); quality gap versus expected caveated/mixed band remains. |
+| `bundesrat-simple` | `0aaa6c9820f6407993d5a24781a5eba8` | report produced | `TRUE` 92/88; in expected high-true chronology band. |
+| `asylum-235000-de` | `b78e1cd21e9644dea270f892ef0ec0b5` | report produced with quality gap | `UNVERIFIED` 50/25; expected true-side. Direct SEM stock aggregate still missing. |
+| `asylum-wwii-de` | `e4858e2fb9c343ab9fbaae5dd156d23d` | no report | W5 reached but returned `hidden_no_extractable_evidence` with `0` EvidenceItems. |
+| `bolsonaro-en` | `a042983968e34371b568e065c70e1efa` | report produced | `LEANING-TRUE` 62/58; in expected true-side/caveated band. |
+| `bolsonaro-pt` | `e9aacccdcc5947edaa2d7f08685b7952` | no report | W5 reached but returned `hidden_no_extractable_evidence` with `0` EvidenceItems. |
+| `hydrogen-en` | `df118e4b8fd64635bd3ed185c9c976c8` | report produced | `FALSE` 8/85; in expected false-side band. |
+| `plastic-en` | `e92c8ac6215049e687887edc6003700d` | report produced | `MOSTLY-FALSE` 22/72 plus `LEANING-FALSE` secondary; in expected false-side/MIXED-allowed band. |
+
+Classification:
+
+`PARTIAL_PASS_X7_HJ67_STRONGER_GAUNTLET_6_OF_8_REPORTS_PUBLIC_CONTAINMENT_HELD`
+
+Information yield:
+
+`report_quality_baseline_with_gaps`.
+
+Containment:
+
+All eight jobs stayed on `claimboundary-v2`, terminally `SUCCEEDED`, and
+preserved public/default containment. Public/default V2 remained
+`4.0.0-cb-precutover` / `blocked_precutover`; public/default report markdown,
+verdict, truth percentage, and confidence were absent for all jobs.
+
+Budget:
+
+HJ67 consumed `8` jobs from the current `18`-job tranche. `7` remain.
+
+## Quality Read
+
+Against the current benchmark expectations, HJ67 gives a useful but not
+release-ready baseline:
+
+- Clearly useful / near expected: `bundesrat-simple`, `bolsonaro-en`,
+  `hydrogen-en`, `plastic-en`.
+- Report produced but quality gap: `bundesrat-rechtskraftig` and
+  `asylum-235000-de`.
+- No report: `asylum-wwii-de` and `bolsonaro-pt`, both stopped at W5
+  `hidden_no_extractable_evidence`.
+
+The dominant next owner is source usefulness / W5 extraction recall for
+Captain-defined inputs where V2 either misses decisive direct evidence or
+extracts no EvidenceItems. This should be addressed as one balanced quality bar,
+not by adding another report-layer mechanism.

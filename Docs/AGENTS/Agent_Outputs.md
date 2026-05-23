@@ -4536,3 +4536,33 @@ Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain u
 ### 2026-05-23 | Product Strategist | Codex (GPT-5) | Filip W. Agent Architecture Fit Assessment — [Standard] [open-items: yes]
 **For next agent:** Use Filip's StrathWeb/AgentGuard work as an external architecture input for guardrails, SLM/LLM cost split, Chain-of-Agents long-context handling, HyPE retrieval, OpenAPI tools, and Roslyn-style static checks; LinkedIn was not directly accessible.
 → Docs/AGENTS/Handoffs/2026-05-23_Product_Strategist_Filip_W_Agent_Architecture_Fit_Assessment.md
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ67 Stronger Report-Quality Gauntlet
+
+**Task:** Restore the Captain Deputy lane after reboot, keep subagent orchestration available, close out HJ67, and preserve the stronger eight-input report-quality evidence without mixing unrelated strategy artifacts.
+
+**Execution anchor:** `a64db2942167ca4abb7bf1f1e6c0e79ca3b2fcdd`; active `claimboundary-v2` prompt label/hash: `hj66-w7b-caveats-array-contract` / `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
+
+**Live jobs:** HJ67 spent eight jobs: `52178147ec5f4f7389406483f9b257ab`, `0aaa6c9820f6407993d5a24781a5eba8`, `b78e1cd21e9644dea270f892ef0ec0b5`, `e4858e2fb9c343ab9fbaae5dd156d23d`, `a042983968e34371b568e065c70e1efa`, `e9aacccdcc5947edaa2d7f08685b7952`, `df118e4b8fd64635bd3ed185c9c976c8`, and `e92c8ac6215049e687887edc6003700d`.
+
+**Result:** `PARTIAL_PASS_X7_HJ67_STRONGER_GAUNTLET_6_OF_8_REPORTS_PUBLIC_CONTAINMENT_HELD`. All eight jobs stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default containment. Six hidden/admin internal reports were produced. `asylum-wwii-de` and `bolsonaro-pt` reached W5 but returned `hidden_no_extractable_evidence`.
+
+**Quality read:** Useful or near expected: `bundesrat-simple`, `bolsonaro-en`, `hydrogen-en`, and `plastic-en`. Reports with quality gaps: `bundesrat-rechtskraftig` and `asylum-235000-de`. No-report stops: `asylum-wwii-de` and `bolsonaro-pt`. The next dominant owner is source usefulness / W5 extraction recall, not report writer, verdict calibration, schema relaxation, retries, public surface, or V1 work.
+
+**Budget:** HJ67 consumed `8` jobs from the current `18`-job tranche; `7` remain.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj67-stronger-report-quality-gauntlet.json`; package closeout in `Docs/WIP/2026-05-23_V2_HighJump_HJ67_Stronger_Report_Quality_Gauntlet.md`; active lane projection synced in `Docs/STATUS/V2_Current_Lane.md`; live-job ledger synced in `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+```text
+DEBT-GUARD RESULT
+Classification: validation-only, no source/prompt/config edit
+Chosen option: keep HJ66 prompt/runtime unchanged and measure cross-input report-quality baseline
+Rejected path and why: patching after one plastic success would have been premature; adding report-layer mechanisms would not address the observed no-evidence/source-usefulness stops
+What was removed/simplified: none
+What was added: one bounded result artifact and status/ledger closeout only
+Net mechanism count: unchanged
+Budget reconciliation: 8 jobs spent for one stronger benchmark signal; 7 remain
+Verification: committed package, clean/runtime preflight before execution, per-job terminal status, public/default containment checks, result artifact, debt sensors at reboot intake
+Debt accepted and removal trigger: no new mechanism debt; next package must target one observed quality bar and avoid accumulating hidden readiness/proof layers
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```
