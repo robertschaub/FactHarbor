@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 3,
+    "currentRemaining": 2,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 3,
-      "consumptionEntriesInThisTranche": 9,
-      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations. HJ80 consumed one hydrogen job after query-planning direct-comparison prompt repair; it produced a complete internal report with stronger direct-comparison source material, but the primary verdict remained too weak at LEANING-FALSE 35/62. HJ81 consumed one hydrogen job after W7 categorical-comparison prompt calibration and regressed to a strong true-side verdict on an adjacent comparator; the HJ81 prompt paragraph was reverted. HJ82 consumed one hydrogen job after Claim Understanding and Evidence Extraction comparator-identity prompt repair; it produced a complete report and no longer made the selected hydrogen-vs-electricity claim true, but still foregrounded an outside-baseline hydrogen-vs-gasoline leaning-true verdict before the selected comparison. HJ83 consumed one hydrogen job after report-primary selected-claim prompt repair; it produced a complete report that correctly foregrounded the selected EV-vs-HFCV comparison as LEANING-FALSE 35/62, while adjacent-baseline material moved to contextual status.",
+      "currentRemaining": 2,
+      "consumptionEntriesInThisTranche": 10,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations. HJ80 consumed one hydrogen job after query-planning direct-comparison prompt repair; it produced a complete internal report with stronger direct-comparison source material, but the primary verdict remained too weak at LEANING-FALSE 35/62. HJ81 consumed one hydrogen job after W7 categorical-comparison prompt calibration and regressed to a strong true-side verdict on an adjacent comparator; the HJ81 prompt paragraph was reverted. HJ82 consumed one hydrogen job after Claim Understanding and Evidence Extraction comparator-identity prompt repair; it produced a complete report and no longer made the selected hydrogen-vs-electricity claim true, but still foregrounded an outside-baseline hydrogen-vs-gasoline leaning-true verdict before the selected comparison. HJ83 consumed one hydrogen job after report-primary selected-claim prompt repair; it produced a complete report that correctly foregrounded the selected EV-vs-HFCV comparison as LEANING-FALSE 35/62, while adjacent-baseline material moved to contextual status. HJ84 consumed one hydrogen job after a narrow W7 selected-endpoint opposition calibration attempt; the run regressed to an internal report-writer damaged stop summary after W5 extracted 5 EvidenceItems, so the HJ84 prompt paragraph was reverted and HJ83 remains the active full-report baseline.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2155,14 +2155,29 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_quality_improved_selected_claim_primary",
         "note": "HJ83 amended the existing Aggregation Narrative prompt so report title, executive summary, first verdict section, and opening markdown foreground the supplied verdict candidate that best answers the selected AtomicClaim as written. Local prompt-contract, internal-report-writer, boundary guard, build, debt sensors, index, and whitespace checks passed before commit. Runtime was refreshed with explicit API executable launch to ensure API/Web both reported 259b6eef. The hydrogen job stayed on claimboundary-v2, succeeded, produced a complete 6211-character internal report, and public/default containment held. The report now starts with the selected EV-vs-HFCV comparison and primary LEANING-FALSE 35/62 verdict; adjacent gasoline/hybrid material is contextual. Remaining quality gap: selected-claim verdict is still too weak versus accepted hydrogen FALSE/MOSTLY-FALSE expectation."
+      },
+      {
+        "sliceId": "X7-HJ-84-SELECTED-ENDPOINT-OPPOSITION-CALIBRATION",
+        "jobId": "b0d3334b948f4495989543e95995e5c9",
+        "classification": "REGRESSION_X7_HJ84_W7_CALIBRATION_REPORT_WRITER_DAMAGED_REVERTED",
+        "implementationCommit": "f766419e905315ffe9b98195d3608f3a724a3113",
+        "runtimeCommit": "f766419e905315ffe9b98195d3608f3a724a3113",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "repairCommit": "same_commit_as_this_ledger_update_reverts_hj84_prompt_paragraph",
+        "count": 1,
+        "remainingAfter": 2,
+        "approvalPointer": "Captain message in current Codex thread approving prompt edits, schema changes, live jobs, and continued HighJump work plus HJ84 narrow W7 calibration direction after HJ83",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "new_failure_report_writer_damaged_after_w7_calibration",
+        "note": "HJ84 attempted a narrow W7 selected-endpoint opposition calibration to strengthen the HJ83 selected-claim false-side verdict. Local prompt-contract, boundary-verdict, boundary guard, build, debt sensors, and whitespace checks passed before live execution. The hydrogen job stayed on claimboundary-v2 and succeeded structurally, but produced only a 1253-character internal stop summary: Source Material records 9, W5 extracted 5 EvidenceItems, and the durable source-chain attribution identified internal_report_writer_damaged with reportMarkdown byte length 0. Public/default containment held. Failed-attempt recovery classified the prompt paragraph as introduced-regression and reverted it; HJ83 remains the latest accepted complete full-report baseline."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ78 consumed three jobs, HJ79 consumed two jobs, HJ80 consumed one job, HJ81 consumed one job, HJ82 consumed one job, and HJ83 consumed one job from the reset 12-job tranche; 3 remain.",
-      "nextLiveJobRequirement": "Do not spend another hydrogen job until the next single-bar quality owner is repaired or no-live inspection proves a lower-complexity owner. HJ83 narrowed the defect: the report is selected-claim-primary, but the primary verdict remains LEANING-FALSE 35/62 instead of the accepted hydrogen FALSE/MOSTLY-FALSE range."
+      "reason": "HJ78 consumed three jobs, HJ79 consumed two jobs, HJ80 consumed one job, HJ81 consumed one job, HJ82 consumed one job, HJ83 consumed one job, and HJ84 consumed one job from the reset 12-job tranche; 2 remain.",
+      "nextLiveJobRequirement": "Do not spend another hydrogen job on W7 prompt-only calibration without durable report-writer damage diagnostics or a different lower-risk report-quality strategy. HJ83 remains the latest accepted full V2 report baseline; HJ84 showed W7 calibration can damage internal report writing even when W5 extracts EvidenceItems."
     },
     "pendingExceptionAuthorization": null
   }

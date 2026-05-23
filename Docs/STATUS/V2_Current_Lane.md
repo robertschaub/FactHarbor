@@ -19,9 +19,10 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ83 produced a complete hydrogen report that
-passes the selected-claim-primary report-composition repair but still needs
-verdict-strength improvement.
+This projection is synced after HJ84 attempted a narrow W7 selected-endpoint
+opposition calibration and regressed from HJ83's complete report to a
+report-writer damaged stop summary. The HJ84 paragraph is reverted; HJ83
+remains the latest accepted complete V2 report baseline.
 Older HJ history below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
@@ -35,8 +36,14 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   `978e7839fa676706dd953fb2d6213f668fa1f7e6`;
   HJ83 report-primary selected-claim prompt repair commit
   `259b6eef52195fc3589a234e1b0289bf6d451ddd`;
+  HJ84 attempted W7 calibration commit
+  `f766419e905315ffe9b98195d3608f3a724a3113` is reverted in the active source
+  state by the current closeout commit;
 - active result package:
-  `Docs/WIP/2026-05-23_V2_HighJump_HJ83_Report_Primary_Selected_Claim_Result.md`;
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ83_Report_Primary_Selected_Claim_Result.md`
+  remains the latest complete-report proof;
+  HJ84 regression is recorded at
+  `Docs/WIP/2026-05-23_V2_HighJump_HJ84_Selected_Endpoint_Opposition_Calibration_Result.md`;
 - latest validation result:
   plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
@@ -61,17 +68,21 @@ Older HJ history below is kept as context, but the active anchor and budget are:
   character internal report, and fixed report composition: the title, executive
   summary, and primary verdict now answer the selected EV-vs-HFCV comparison as
   `LEANING-FALSE` `35/62`, with gasoline/hybrid material moved to contextual
-  status;
+  status; HJ84 job `b0d3334b948f4495989543e95995e5c9` ran on runtime
+  `f766419e905315ffe9b98195d3608f3a724a3113` and reached W5 with `5`
+  EvidenceItems, but produced only a `1253` character internal stop summary
+  because the report writer was damaged (`reportMarkdownByteLength 0`);
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
   consumed `2`, HJ80 consumed `1`, HJ81 consumed `1`, HJ82 consumed `1`, HJ83
-  consumed `1`; `3` remain;
+  consumed `1`, HJ84 consumed `1`; `2` remain;
 - next action:
-  use the HJ83 full report as evidence for the next single-bar quality repair.
-  The report is now coherent and selected-claim-primary, but the verdict remains
-  too weak (`LEANING-FALSE 35/62`) versus the accepted hydrogen expectation.
-  Inspect W7 calibration and evidence-strength handling for direct selected-
-  endpoint opposition without repeating HJ81's adjacent-comparator overreach;
+  keep HJ83 as the proof report and avoid another W7 prompt-only calibration
+  until no-live inspection gives durable report-writer damage evidence or a
+  different lower-risk report-quality owner. With only `2` jobs left, the next
+  live run should either validate HJ83 generalization on a different
+  Captain-defined family or follow a committed diagnostic/repair with clear
+  pass-stop criteria;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak
