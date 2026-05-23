@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T14:38:57.551Z",
-  "count": 441,
+  "generatedAt": "2026-05-23T16:09:40.150Z",
+  "count": 442,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9732,6 +9732,24 @@
       ],
       "files_touched": [],
       "summary": "2026-05-23 - Product Strategy - Filip W. Cost/Speed Research"
+    },
+    {
+      "file": "2026-05-23_Product_Strategy_Minions_Low_Cost_FactHarbor_Modal_Investigation.md",
+      "date": "2026-05-23",
+      "roles": [
+        "product"
+      ],
+      "topics": [
+        "strategy",
+        "minions",
+        "low",
+        "cost",
+        "factharbor",
+        "modal",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-23 - Product Strategy - Minions-Style Low-Cost FactHarbor / Modal Investigation"
     },
     {
       "file": "2026-05-23_Senior_Architect_Candidate_Pipeline_Ranking_Review.md",

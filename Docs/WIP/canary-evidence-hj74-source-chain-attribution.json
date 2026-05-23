@@ -1,0 +1,122 @@
+{
+  "sliceId": "X7-HJ-74-HJ73-ATTRIBUTION-CANARY",
+  "classification": "PARTIAL_PASS_X7_HJ74_ATTRIBUTION_CAPTURED_SOURCE_MATERIAL_GAP_REMAINS",
+  "informationYield": "new_stage_attribution_captured_with_quality_gap",
+  "jobId": "b5dc2c0d4f3e47a6aa2bd82ff3c617e5",
+  "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "pipelineVariant": "claimboundary-v2",
+  "createdGitCommitHash": "7f24b11905bf9e945934ee634fd5aa7d0c6f7520",
+  "executedWebGitCommitHash": "7f24b11905bf9e945934ee634fd5aa7d0c6f7520",
+  "publicContainment": {
+    "schemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "reportMarkdownPresent": false,
+    "verdictLabelPresent": false,
+    "truthPercentagePresent": false,
+    "confidencePresent": false,
+    "adminDiagnosticsPresent": false
+  },
+  "adminAttribution": {
+    "present": true,
+    "version": "v2.highjump.source-chain-attribution.hj73",
+    "visibility": "internal_admin_only",
+    "defaultProjection": "redacted_hash_length_provenance_only",
+    "lossPointCandidate": "unknown",
+    "stages": {
+      "claimUnderstanding": {
+        "status": "accepted",
+        "selectedAtomicClaimCount": 0
+      },
+      "queryPlanning": {
+        "status": "inspected",
+        "runtimeStatus": "completed",
+        "resultStatus": "accepted",
+        "queryEntryCount": 4
+      },
+      "candidateProviderNetwork": {
+        "status": "candidate_provider_network_completed",
+        "providerAttemptCount": 8,
+        "candidateCount": 0,
+        "totalCandidateCount": 1,
+        "totalBytes": 3492
+      },
+      "sourceCandidatePreview": {
+        "status": "source_candidate_preview_materialized",
+        "previewRecordCount": 9
+      },
+      "sourceMaterial": {
+        "status": "source_material_page_summary_completed",
+        "recordCount": 7,
+        "materializedPreviewRecordCount": 9,
+        "attemptedFetchCount": 0,
+        "fetchDiagnosticCount": 0,
+        "totalBoundedTextBytes": 5753,
+        "truncationCount": 1,
+        "sourceMaterialKindCounts": {
+          "provider_search_result_page_text_bounded": 2,
+          "openalex_work_abstract_text": 1,
+          "provider_search_result_preview_text": 4
+        },
+        "providerIdCounts": {
+          "serper_web_search": 6,
+          "openalex": 1
+        }
+      },
+      "w4": {
+        "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+        "boundedTextSidecarCount": 7,
+        "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+        "extractionInputPacketCount": 1,
+        "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+      },
+      "w5": {
+        "executionStatus": "hidden_evidence_item_extraction_completed",
+        "extractionStatus": "evidence_extracted",
+        "evidenceItemCount": 4,
+        "sourceContentPacketCount": 7,
+        "parentPacketByteLength": 5765
+      },
+      "reportWriter": {
+        "status": "internal_report_writer_draft_created",
+        "citedEvidenceItemRefCount": 4,
+        "reportMarkdownHash": "ee306ca72051ee79cc27f8165919a3297ca5add89eeccecc6b2fe17e3ac60ad9",
+        "reportMarkdownByteLength": 5809
+      }
+    },
+    "sourceMaterialRefs": {
+      "count": 7,
+      "providerIds": [
+        "serper_web_search",
+        "openalex"
+      ],
+      "sourceTextReturned": false,
+      "urlsReturned": false,
+      "titlesReturned": false,
+      "rawQueryTextReturned": false,
+      "providerPayloadsReturned": false
+    }
+  },
+  "adminReportObservation": {
+    "reportMarkdownLength": 5801,
+    "topLine": "UNVERIFIED",
+    "truthPercentage": 50,
+    "confidence": 35,
+    "observedGap": "The internal report says supplied evidence contains flow measures and does not provide a comprehensive current stock count for the 235000 threshold."
+  },
+  "decision": {
+    "hj73AttributionWorked": true,
+    "reportWriterReached": true,
+    "w5ExtractionReached": true,
+    "w5EvidenceItemCount": 4,
+    "nextOwnerRecommendation": "source_material_or_candidate_provider_network",
+    "reason": "The chain reached W5 and report writer with EvidenceItems, but the report still lacked direct current stock evidence. The next owner is upstream source acquisition/materialization, not W5 execution or report writing."
+  },
+  "budget": {
+    "trancheTotalBeforeRun": 12,
+    "consumed": 1,
+    "remainingAfterRun": 11
+  },
+  "capturedUtc": "2026-05-23T16:08:00.0000000Z"
+}

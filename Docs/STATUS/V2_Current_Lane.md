@@ -32,17 +32,16 @@ the active anchor and budget are:
 - next prepared package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
 - latest canary result:
-  HJ72 focused current-asylum Serper ordinal fallback rerun, classified
-  `STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`;
+  HJ74 HJ73-attribution canary, classified
+  `PARTIAL_PASS_X7_HJ74_ATTRIBUTION_CAPTURED_SOURCE_MATERIAL_GAP_REMAINS`;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ73;
-  `12` remains before HJ74;
+  HJ74 consumed `1`, so `11` remain;
 - next action:
-  run exactly one HJ74 attribution canary after clean provenance, runtime
-  refresh, API/Web runtime commit verification, and public/default containment
-  preflight. The canary should rerun the HJ72 current-asylum input on committed
-  HJ73 source and use `adminDiagnostics.sourceChainAttribution` to select
-  exactly one next owner;
+  reconvene Steer-Co for HJ75 and choose one bounded source
+  acquisition/materialization package. HJ74 showed the chain reaches W5 and
+  report writer with `4` EvidenceItems, but the report still lacks direct
+  current-stock source material;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -89,13 +88,29 @@ exhausted.
 
 Latest validation:
 
-`X7-HJ-72-SOURCE-MATERIAL-SERPER-ORDINAL-FALLBACK`
+`X7-HJ-74-HJ73-ATTRIBUTION-CANARY`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj72-serper-ordinal-fallback.json`
+`Docs/WIP/canary-evidence-hj74-source-chain-attribution.json`
 
 Important evidence:
+
+- HJ74 ran one focused `asylum-235000-de` rerun on runtime/source commit
+  `7f24b11905bf9e945934ee634fd5aa7d0c6f7520`, a docs-only successor containing
+  HJ73 source commit `9267685f`. Job `b5dc2c0d4f3e47a6aa2bd82ff3c617e5` stayed
+  on `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default
+  containment: public report markdown, public verdict label, public truth
+  percentage, public confidence, and public `adminDiagnostics` remained absent.
+  Admin raw output included HJ73 `sourceChainAttribution`: Query Planning
+  accepted `4` entries, candidate provider network completed, Source Material
+  produced `7` records with `5753` bounded text bytes, W5 extracted `4`
+  EvidenceItems, and the internal report writer created a draft. The report
+  stayed `UNVERIFIED` because the evidence still lacked a comprehensive current
+  asylum-domain stock count for the `235000` threshold. Information yield is
+  `new_stage_attribution_captured_with_quality_gap`. The next owner is upstream
+  source acquisition/materialization strategy, not W5 execution or report
+  writing.
 
 - HJ72 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `30e70b6d721b53d513e24a52322c7be59db39186` after clean provenance and Web/API
@@ -692,8 +707,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `12`;
-- consumed after latest reset: `0`;
-- remaining: `12`;
+- consumed after latest reset: `1`;
+- remaining: `11`;
 - latest reset starts after the HJ73 durable source-chain attribution no-live
   package, latest live job remains HJ72 `e2730cb5795e441cbf10831edd18047c`;
 - every live job still requires clean git status, committed source, runtime
@@ -714,14 +729,14 @@ Current active tranche:
 6. Treat HJ73 as complete: durable redacted admin-only source-chain attribution
    is now available in the existing V2 raw/admin result envelope for future
    canaries, while the public/default projection remains blocked and omits it.
-7. HJ74 is the Steer-Co-consented next direction and the Captain has approved a
-   fresh 12-job tranche. Run exactly one HJ73 attribution canary before
-   source-strategy work. Rerun the HJ72 current-asylum input on committed HJ73
-   source and classify the loss owner from
-   `adminDiagnostics.sourceChainAttribution`. Avoid W4-I readiness work, cap
-   increases, source/provider widening, report-writer changes,
-   verdict-calibration, retries, schema relaxation, public behavior, or a
-   second HJ74 job.
+7. Treat HJ74 as partial pass: durable attribution worked, public containment
+   held, and the chain reached W5/report writer, but direct current-stock source
+   material was still absent. Do not run a second HJ74 job.
+8. Reconvene Steer-Co before HJ75. The next package should choose one bounded
+   source acquisition/materialization strategy for current aggregate stock
+   evidence, while avoiding W4-I readiness work, W5/report-writer changes,
+   cap increases without source-owner evidence, retries, schema relaxation,
+   public behavior, ACS/direct URL, parser/cache/SR/storage, or V1 work.
 
 ## Stop Conditions
 

@@ -195,6 +195,60 @@ Stop:
 - `unknown`: reconvene Steer-Co; do not spend another live job without a better
   hypothesis and a new approval.
 
+## Live Canary Result
+
+Result artifact:
+`Docs/WIP/canary-evidence-hj74-source-chain-attribution.json`
+
+Live job:
+
+- job id: `b5dc2c0d4f3e47a6aa2bd82ff3c617e5`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- runtime/source commit: `7f24b11905bf9e945934ee634fd5aa7d0c6f7520`
+  (docs-only successor containing HJ73 source commit `9267685f`);
+- pipeline variant: `claimboundary-v2`;
+- status: `SUCCEEDED`;
+- classification:
+  `PARTIAL_PASS_X7_HJ74_ATTRIBUTION_CAPTURED_SOURCE_MATERIAL_GAP_REMAINS`;
+- information yield: `new_stage_attribution_captured_with_quality_gap`.
+
+Outcome:
+
+- public/default containment held: public report markdown, verdict label, truth
+  percentage, confidence, and `adminDiagnostics` were absent; public schema
+  stayed `4.0.0-cb-precutover`; public cutover stayed `blocked_precutover`;
+- admin raw result included
+  `adminDiagnostics.sourceChainAttribution.version =
+  v2.highjump.source-chain-attribution.hj73`;
+- HJ73 attribution captured the durable chain: Query Planning accepted `4`
+  entries, candidate provider network completed, Source Material produced `7`
+  records (`5753` bounded text bytes), W5 extracted `4` EvidenceItems, and the
+  internal report writer created a draft;
+- the internal report remained `UNVERIFIED` with truth `50` and confidence `35`
+  because supplied evidence still contained flow measures but no comprehensive
+  current asylum-domain stock count for the `235000` threshold.
+
+Decision:
+
+HJ74 confirms the next owner is upstream source acquisition/materialization
+strategy, not W5 execution or report writing. Although HJ73's structural
+`lossPointCandidate` remained `unknown`, the durable stage counts show W5 and
+the internal report writer both reached completion with the material supplied;
+the missing report value is the absence of direct current-stock source material.
+
+Budget:
+
+- remaining before HJ74 canary: `12`;
+- consumed: `1`;
+- remaining after HJ74 canary: `11`.
+
+Stop:
+
+Do not run a second HJ74 canary. Reconvene Steer-Co before HJ75 to choose one
+bounded source acquisition/materialization package. Do not add W5/report-writer
+repairs, source/provider widening, cap increases, retries, parser/cache/SR/
+storage, public behavior, ACS/direct URL, or V1 work inside the HJ74 result.
+
 ## Verifier / Closeout Plan
 
 Before live submission:

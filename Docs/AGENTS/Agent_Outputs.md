@@ -4880,3 +4880,52 @@ Verification: focused helper/result-envelope tests, required V2 shell/orchestrat
 Debt accepted and removal trigger: temporary admin diagnostic shape accepted until stable persisted run-ledger/report-result diagnostics exist or accepted internal reports directly expose source-chain ownership; then merge or retire HJ73 fields
 Residual debt: known advisory_warn V2 footprint, boundary guard size, docs footprint, debt-guard telemetry, and V2 consolidation-marker warnings remain
 ```
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ74 Attribution Canary Result
+
+**Task:** Run the Steer-Co-consented HJ74 canary after Captain approved a fresh
+12-job tranche, then document the durable source-chain attribution result.
+
+**Package/docs commit:** `7f24b11905bf9e945934ee634fd5aa7d0c6f7520`
+(`docs(v2): prepare hj74 attribution canary`), a docs-only successor containing
+HJ73 source commit `9267685f`.
+
+**Runtime/provenance:** Unrelated workspace dirt was stashed as
+`pre-hj74-unrelated-workspace-dirt`; working tree was clean before submission.
+API and Web runtime version endpoints reported
+`7f24b11905bf9e945934ee634fd5aa7d0c6f7520`. Prompts/configs were reseeded and
+health checks passed. Initial anonymous submission was rejected before job
+creation by the invite gate and did not consume a live job; the successful run
+used the existing admin header through the same `/api/fh/analyze` route.
+
+**Live job:** HJ74 spent exactly one job:
+`b5dc2c0d4f3e47a6aa2bd82ff3c617e5`, input `Mehr als 235 000 Personen aus dem
+Asylbereich sind zurzeit in der Schweiz`. The request did not specify
+`pipelineVariant`; default routing selected `claimboundary-v2`. The job reached
+`SUCCEEDED`.
+
+**Result classification:**
+`PARTIAL_PASS_X7_HJ74_ATTRIBUTION_CAPTURED_SOURCE_MATERIAL_GAP_REMAINS`.
+Public/default containment held: public report markdown, verdict label, truth
+percentage, confidence, and `adminDiagnostics` were absent; public schema stayed
+`4.0.0-cb-precutover`; public cutover stayed `blocked_precutover`.
+
+**Attribution evidence:** Admin raw output included HJ73
+`adminDiagnostics.sourceChainAttribution`. The chain reached Query Planning
+accepted with `4` entries, candidate provider network completed, Source
+Material completed with `7` records and `5753` bounded text bytes, W5 extracted
+`4` EvidenceItems, and the internal report writer created a draft. The report
+remained `UNVERIFIED` because the evidence still lacked a comprehensive current
+asylum-domain stock count for the `235000` threshold.
+
+**Budget:** Fresh tranche was `12`; HJ74 consumed `1`; `11` remain.
+
+**Next owner:** Upstream source acquisition/materialization strategy. Do not run
+a second HJ74 canary and do not start W5/report-writer repair for this stop.
+Reconvene Steer-Co for one bounded HJ75 source acquisition/materialization
+package.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj74-source-chain-attribution.json`;
+`Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
+`Docs/STATUS/V2_Current_Lane.md`;
+`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
