@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T10:58:39.221Z",
-  "count": 438,
+  "generatedAt": "2026-05-23T11:25:01.974Z",
+  "count": 439,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9681,6 +9681,23 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "If following up, prepare a short call agenda around: (1) .NET/TS guardrail middleware design, (2) local worker/cloud manager cost split for W5/source extraction, (3) OpenAPI/MCP tool contracts for internal admin/source routes, (4) HyPE-style retrieval tests for source-material usefulness, and (5) Ro"
+    },
+    {
+      "file": "2026-05-23_Product_Strategy_Filip_W_Cost_Speed_Research.md",
+      "date": "2026-05-23",
+      "roles": [
+        "product"
+      ],
+      "topics": [
+        "strategy",
+        "filip",
+        "w",
+        "cost",
+        "speed",
+        "research"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-23 - Product Strategy - Filip W. Cost/Speed Research"
     },
     {
       "file": "2026-05-23_Senior_Developer_Candidate_Pipeline_Ranking.md",

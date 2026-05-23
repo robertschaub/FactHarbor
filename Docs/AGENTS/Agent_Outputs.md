@@ -4487,6 +4487,10 @@ Debt accepted and removal trigger: no accepted mechanism debt; remaining report-
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
 
+### 2026-05-23 | Product Strategy | Codex (GPT-5) | Filip W. Cost/Speed Research — [Standard] [open-items: yes]
+**For next agent:** Highest-value path is shadow-mode local/cheap pre-extraction and HyPE-style source-material indexing for W4/W5 before any model downgrade or runtime fallback. CoA is promising for cross-chunk source synthesis but may trade cost for latency; AgentGuard ideas are useful for structural source/tool/token guardrails only, not semantic analysis decisions.
+→ Docs/AGENTS/Handoffs/2026-05-23_Product_Strategy_Filip_W_Cost_Speed_Research.md
+
 ## 2026-05-23 - Senior Developer - Candidate Pipeline Ranking
 
 **Task:** Rank seven candidate commits by Captain-expectation report quality and assess extractability for side-by-side legacy pipeline integration.
