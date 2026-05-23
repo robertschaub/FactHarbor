@@ -1,12 +1,12 @@
 # V2 HighJump HJ54 - Claim Understanding no_valid_claim Definition Repair
 
-**Status:** local implementation verifier-clean; pending commit, UCM activation,
-runtime refresh, and one focused live rerun
+**Status:** closed as
+`PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED`
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ53 job `dfa9bd1bdb0749b095d1dd647444d86e`
-**Active live-job budget:** reset by Captain to 18 after HJ53; this slice may
-consume exactly one job after clean provenance and runtime refresh.
+**Active live-job budget:** reset by Captain to 18 after HJ53; this slice
+consumed 1 job and leaves 17.
 
 ## Why This Slice Exists
 
@@ -130,3 +130,59 @@ Completed before commit on 2026-05-23:
   - passed
 - `git diff --check`
   - passed
+
+## Live Result
+
+Implementation commit:
+
+- `5d4569572e8f6f024ea3a17a49747d3b32a586ba`
+
+Runtime and UCM preflight:
+
+- Web, API, and Web proxy version endpoints all reported
+  `5d4569572e8f6f024ea3a17a49747d3b32a586ba`.
+- UCM default pipeline remained `claimboundary-v2`.
+- Active `claimboundary-v2` prompt was imported/activated with version label
+  `hj54-cu-no-valid-claim-definition-repair` and content hash
+  `e7439543e965261bed0a9c78b7ed64737ccbdfeb3133769d3dfa20da27f582ce`.
+- Git status was clean before submission.
+
+Live job:
+
+- Job ID: `c3718a3e383442c29361e058ef4f16ad`
+- Input: `Plastic recycling is pointless`
+- Pipeline: `claimboundary-v2`
+- Status: `SUCCEEDED`
+
+Hidden-chain evidence:
+
+- Claim Understanding: `accepted`
+- selected AtomicClaims: `1`
+- Query Planning entries: `3`
+- Candidate Provider Network: `candidate_provider_network_completed`
+- retained candidates: `9` (`18` total before structural drops)
+- W5 EvidenceItems: `3`
+- Sufficiency assessment: `sufficiency_assessment_completed`
+- Internal Alpha first incomplete stage: `none`
+- Internal report writer: `internal_report_writer_draft_created`
+- Internal report markdown length: `5757` bytes
+
+Containment:
+
+- Public/default schema remained `4.0.0-cb-precutover`.
+- Public/default cutover status remained `blocked_precutover`.
+- Public/default issue remained `report_damaged`.
+- Public/default report markdown, verdict, truth percentage, and confidence
+  remained absent.
+- Unauthenticated hidden Claim Understanding artifact access returned `401`.
+
+Result evidence:
+
+- `Docs/WIP/canary-evidence-hj54-cu-no-valid-claim-definition-repair.json`
+
+## Outcome
+
+HJ54 clears the repeated HJ52/HJ53 Claim Understanding stop for the
+Captain-defined plastic input. The next useful step is report-quality review of
+the produced internal Alpha report and cross-input report defects, not another
+Claim Understanding admission repair for this input.

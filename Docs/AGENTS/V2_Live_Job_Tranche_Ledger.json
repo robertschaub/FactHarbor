@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj53",
     "resetTotal": 18,
-    "currentRemaining": 18,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-53-CU-SHORT-BROAD-CLAIM-BAR-RERUN",
       "startsAfterJobId": "dfa9bd1bdb0749b095d1dd647444d86e",
       "startingRemaining": 18,
-      "currentRemaining": 18,
-      "consumptionEntriesInThisTranche": 0,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ53 is the last completed live job before this reset. HJ53 proved the committed prompt repair was active but did not clear the Claim Understanding no_valid_claim stop for the plastic input.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ53 is the last completed live job before this reset. HJ53 proved the committed prompt repair was active but did not clear the Claim Understanding no_valid_claim stop for the plastic input. HJ54 consumed one job and produced a complete internal Alpha report for the plastic input after the no_valid_claim definition repair.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1364,6 +1364,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "same_stop_repeated_with_new_evidence",
         "note": "HJ53 reran the Captain-defined plastic input after importing and activating the `claimboundary-v2` prompt repair. Runtime and active prompt hash matched the committed repair path. The model call completed through executable Claim Understanding, but schema outcome remained blocked/no_valid_claim, selected AtomicClaims stayed 0, and Query Planning did not execute. Public/default containment held with no public report markdown, verdict, truth percentage, or confidence."
+      },
+      {
+        "sliceId": "X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN",
+        "jobId": "c3718a3e383442c29361e058ef4f16ad",
+        "classification": "PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED",
+        "implementationCommit": "5d4569572e8f6f024ea3a17a49747d3b32a586ba",
+        "runtimeCommit": "5d4569572e8f6f024ea3a17a49747d3b32a586ba",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ54 package `Docs/WIP/2026-05-23_V2_HighJump_HJ54_CU_NoValidClaim_Definition_Repair.md`",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ54 reran the Captain-defined plastic input after importing and activating the no_valid_claim definition repair. Claim Understanding accepted one selected AtomicClaim, Query Planning created three queries, Candidate Provider Network completed with nine retained candidates, W5 extracted three EvidenceItems, sufficiency assessment completed, and the internal report writer produced a 5757-byte internal Alpha report. Public/default containment held with schema 4.0.0-cb-precutover, blocked_precutover, report_damaged, no public/default report markdown, and no public verdict/truth/confidence."
       }
     ],
     "blockedPending": [],

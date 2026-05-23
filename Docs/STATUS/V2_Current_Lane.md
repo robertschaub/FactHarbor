@@ -19,23 +19,22 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ52 live validation. Older HJ history below is
+This projection is synced after HJ54 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `5f608219 fix(v2): admit short broad claim understanding inputs`;
+  `5d456957 fix(v2): narrow no valid claim definition`;
 - latest canary result:
-  HJ53 focused rerun, classified
-  `STOP_X7_HJ53_CLAIM_UNDERSTANDING_STILL_NO_VALID_CLAIM`;
+  HJ54 focused rerun, classified
+  `PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ52/HJ53 source commit;
-  HJ53 consumed one job, and `17` remain;
+  Captain reset to `18` on 2026-05-23 after HJ53;
+  HJ54 consumed one job, and `17` remain;
 - next action:
-  apply failed-attempt recovery for the HJ53 prompt-only Claim Understanding
-  repair before spending another job: the active prompt was used, the model call
-  completed, and the semantic admission decision still returned
-  `no_valid_claim`; choose the next lowest-complexity Claim Understanding repair
-  path before touching the separate W4-G oversized-text defect;
+  review the produced HJ54 internal Alpha report and the current multi-input
+  quality defects. The plastic input now reaches complete internal Alpha report
+  generation, so do not spend another job on Claim Understanding admission for
+  that input unless a new defect appears;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,31 +45,43 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`7319ada8 fix(v2): preserve literal values in query planning`
+`5d456957 fix(v2): narrow no valid claim definition`
 
 Latest implementation repair:
 
-`7319ada8 fix(v2): preserve literal values in query planning`
+`5d456957 fix(v2): narrow no valid claim definition`
 
-HJ49 amends only the existing `V2_EVIDENCE_QUERY_PLANNING` prompt section so
-material claim-supplied literal values, units, dates, thresholds, or comparison
-values are preserved in at least one direct-record query when needed to find
-decisive evidence. It adds no source/provider/parser route, schema, public
-surface, cache/SR/storage behavior, direct URL/ACS support, V1 work, or
-deterministic code-side query rewriting.
+HJ54 amends only the existing `V2_CLAIM_UNDERSTANDING_GATE1` prompt section so
+`no_valid_claim` is reserved for inputs from which no externally assessable
+proposition can be formed after Claim Selection guidance. It adds no code-side
+semantic admission rule, model/provider change, schema relaxation,
+source/provider/parser route, public surface, cache/SR/storage behavior,
+direct URL/ACS support, or V1 work.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-49-ASYLUM-235000-DE-QUERY-LITERAL-VALUE-PRESERVATION-RERUN`
+`X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-910b9892ae3345a2a72ca1ca14b14990.json`
+`Docs/WIP/canary-evidence-hj54-cu-no-valid-claim-definition-repair.json`
 
 Important evidence:
 
+- `c3718a3e383442c29361e058ef4f16ad` (plastic recycling) ran on HJ54 after the
+  no_valid_claim definition repair. It stayed on `claimboundary-v2`; public/
+  default containment held (`4.0.0-cb-precutover`, `blocked_precutover`,
+  `report_damaged`, public/default reportMarkdown `null`) and unauthenticated
+  hidden artifact access returned `401`. Claim Understanding accepted one
+  selected AtomicClaim, Query Planning produced `3` queries, Candidate Provider
+  Network completed with `9` retained candidates, W5 extracted `3`
+  EvidenceItems, sufficiency assessment completed, the Alpha result first
+  incomplete stage was `none`, and the internal report writer produced a
+  `5757` byte internal Alpha report. HJ54's information yield is
+  `report_produced`; the next useful step is report-quality review, not another
+  Claim Understanding admission repair for this input.
 - `910b9892ae3345a2a72ca1ca14b14990` (German asylum aggregate) ran on HJ49
   after importing and activating the literal-value query-planning prompt profile
   (`1bf6f9bb7d2216bcf6a72a531244e4cb5790f671ae4c197021f6bb57bbd44318`) on
@@ -368,28 +379,27 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `3`;
-- remaining: `15`;
-- latest reset starts after HJ46 job `4208458670644489a07db2536d7c7332`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
+- latest reset starts after HJ53 job `dfa9bd1bdb0749b095d1dd647444d86e`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Target the observed HJ49 report-quality defect: Source Material and W5 are
-   live again, but the selected/extracted evidence is annual application-flow
-   material rather than current stock/threshold evidence. The next repair should
-   improve direct-stock source material selection/materialization before another
-   verdict-calibration job.
-2. Prefer amending the existing source-selection/source-material mechanism over
-   adding a new provider, crawler, parser, or public/report path. Use live
-   evidence from HJ47/HJ49 to preserve the direct current-stock route while
-   filtering or deprioritizing flow-only material only through LLM/prompt-owned
-   intent, not deterministic semantic code.
-3. Keep the next HighJump step scoped to this one defect. Do not add provider
-   expansion, recursive crawling, public exposure, cache/SR/storage, direct
-   URL/ACS, V1 work, or another hidden mechanism unless the source-usefulness
-   evidence proves that specific gap is blocking quality.
+1. Review the HJ54 plastic internal Alpha report against Captain quality
+   expectations and the recent HJ52/HJ54 multi-input evidence. The immediate
+   defect is now report quality and cross-input consistency, not reachability
+   for the plastic input.
+2. Prefer raising one observed quality bar at a time from report evidence.
+   Candidate targets are source usefulness, EvidenceItem selectivity, boundary
+   separation, verdict calibration, and warning/materiality clarity. Do not add
+   new hidden plumbing unless it directly retires or replaces an older stop
+   mechanism or closes an observed report-quality defect.
+3. Keep the next HighJump step scoped to one concrete report-quality defect. Do
+   not add provider expansion, recursive crawling, public exposure,
+   cache/SR/storage, direct URL/ACS, V1 work, or another hidden mechanism unless
+   the report-quality evidence proves that specific gap is blocking progress.
 
 ## Stop Conditions
 

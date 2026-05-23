@@ -4188,3 +4188,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the tranche to `18` before this focused rerun. HJ53 consumed `1`; `17` remain.
 
 **Next:** Do not run a second HJ53 rerun. Apply failed-attempt recovery: keep only the generic prompt wording still justified by evidence, then choose the next lowest-complexity Claim Understanding repair path before spending another job. The separate HJ52 W4-G oversized-text stop remains deferred.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ54 CU no_valid_claim Definition Repair Result
+
+**Task:** Repair the repeated HJ52/HJ53 Claim Understanding `no_valid_claim` stop for the Captain-defined input `Plastic recycling is pointless`.
+
+**Repair:** HJ54 commit `5d456957` amends only `V2_CLAIM_UNDERSTANDING_GATE1` so `no_valid_claim` is reserved for input from which no externally assessable proposition can be formed after Claim Selection guidance. It keeps semantic admission LLM-owned and adds no deterministic code-side admission rule, model/provider change, schema relaxation, source/provider/parser route, public surface, cache/SR/storage behavior, direct URL/ACS support, or V1 work.
+
+**Verification before live job:** Focused prompt-contract test passed (`12` tests); focused Claim Understanding prompt/model/runtime tests passed (`37` tests across `3` files); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2 footprint/docs/consolidation warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. The updated prompt was imported and activated in UCM as `hj54-cu-no-valid-claim-definition-repair` with content hash `e7439543e965261bed0a9c78b7ed64737ccbdfeb3133769d3dfa20da27f582ce`. Runtime was refreshed and Web/API/proxy version endpoints reported `5d4569572e8f6f024ea3a17a49747d3b32a586ba`.
+
+**Live result:** HJ54 job `c3718a3e383442c29361e058ef4f16ad` ran the exact Captain-defined input `Plastic recycling is pointless`. It stayed on `claimboundary-v2`, finished `SUCCEEDED`, and public/default output remained `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged` with public/default report markdown, verdict, truth percentage, and confidence absent.
+
+**Hidden-chain evidence:** Claim Understanding accepted the input with `1` selected AtomicClaim. Query Planning produced `3` queries. Candidate Provider Network completed with `9` retained candidates (`18` total before structural drops). W5 extracted `3` EvidenceItems. Sufficiency assessment completed. Internal Alpha first incomplete stage was `none`. The internal report writer created a `5757` byte internal Alpha report.
+
+**Classification:** `PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED`.
+
+**Information yield:** `report_produced`. The focused CU admission blocker is cleared for this input. The next useful step is report-quality review of the produced internal Alpha report and current cross-input quality defects, not another Claim Understanding admission repair for this input.
+
+**Budget:** Captain reset the tranche to `18` after HJ53. HJ54 consumed `1`; `17` remain.

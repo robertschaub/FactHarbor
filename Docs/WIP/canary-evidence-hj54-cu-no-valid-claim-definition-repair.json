@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN",
+  "classification": "PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED",
+  "informationYield": "report_produced",
+  "jobId": "c3718a3e383442c29361e058ef4f16ad",
+  "input": "Plastic recycling is pointless",
+  "implementationCommit": "5d4569572e8f6f024ea3a17a49747d3b32a586ba",
+  "runtimeCommit": "5d4569572e8f6f024ea3a17a49747d3b32a586ba",
+  "promptProfile": "claimboundary-v2",
+  "promptVersionLabel": "hj54-cu-no-valid-claim-definition-repair",
+  "promptContentHash": "e7439543e965261bed0a9c78b7ed64737ccbdfeb3133769d3dfa20da27f582ce",
+  "pipelineVariant": "claimboundary-v2",
+  "jobStatus": "SUCCEEDED",
+  "hiddenChainEvidence": {
+    "ledgerId": "c3718a3e383442c29361e058ef4f16ad:precutover-observability",
+    "claimUnderstandingStatus": "accepted",
+    "selectedAtomicClaimCount": 1,
+    "queryEntryCount": 3,
+    "candidateProviderStatus": "candidate_provider_network_completed",
+    "candidateCount": 9,
+    "totalCandidateCount": 18,
+    "evidenceExtractionStatus": "evidence_extracted",
+    "evidenceItemCount": 3,
+    "sufficiencyStatus": "sufficiency_assessment_completed",
+    "alphaFirstIncompleteStage": "none",
+    "reportWriterStatus": "internal_report_writer_draft_created",
+    "reportMarkdownByteLength": 5757
+  },
+  "publicContainment": {
+    "publicSchema": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicIssue": "report_damaged",
+    "publicReportMarkdownIsNull": true,
+    "publicVerdictIsNull": true,
+    "publicTruthIsNull": true,
+    "hiddenRouteUnauthStatus": 401
+  },
+  "budget": {
+    "resetRemainingBeforeRun": 18,
+    "count": 1,
+    "remainingAfter": 17
+  },
+  "notes": [
+    "HJ54 clears the repeated HJ52/HJ53 Claim Understanding no_valid_claim stop for the Captain-defined plastic input.",
+    "The report remains internal Alpha and pre-cutover only; public/default V2 still returns the damaged shell contract.",
+    "The next useful step is report-quality review of the produced plastic internal Alpha report and cross-input quality defects, not another Claim Understanding admission repair for this input."
+  ]
+}
