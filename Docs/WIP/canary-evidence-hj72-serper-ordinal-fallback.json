@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "factharbor.v2.highjump.canary-evidence.v1",
+  "sliceId": "X7-HJ-72-SOURCE-MATERIAL-SERPER-ORDINAL-FALLBACK",
+  "classification": "STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED",
+  "informationYield": "same_stop_repeated_without_useful_new_information",
+  "job": {
+    "jobId": "e2730cb5795e441cbf10831edd18047c",
+    "inputKey": "asylum-235000-de",
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+    "status": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "createdUtc": "2026-05-23T13:48:30.6721809",
+    "updatedUtc": "2026-05-23T13:50:33.5964748",
+    "createdGitCommitHash": "30e70b6d721b53d513e24a52322c7be59db39186",
+    "executedWebGitCommitHash": "30e70b6d721b53d513e24a52322c7be59db39186"
+  },
+  "runtime": {
+    "implementationCommit": "bcefe3bf9976f11dd1860e23885acbb23893eb88",
+    "runtimeCommit": "30e70b6d721b53d513e24a52322c7be59db39186",
+    "docsProjectionCommit": "30e70b6d721b53d513e24a52322c7be59db39186",
+    "defaultPipelineVariant": "claimboundary-v2",
+    "preSubmissionGitStatus": "clean"
+  },
+  "publicContainment": {
+    "publicReportMarkdownReturned": false,
+    "publicVerdictReturned": false,
+    "publicTruthReturned": false,
+    "publicConfidenceReturned": false,
+    "publicSchemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicAnalysisIssueCode": "report_damaged",
+    "unauthenticatedHiddenRouteStatus": 401,
+    "classification": "held"
+  },
+  "adminReport": {
+    "reportMarkdownChars": 6129,
+    "topLevelVerdict": "UNVERIFIED",
+    "topLevelTruthPercentages": [50, 48],
+    "topLevelConfidencePercentages": [35, 25],
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 2,
+    "evidenceReferenceCount": 2,
+    "observedEvidenceShape": [
+      {
+        "kind": "official_current_statistics_authority_without_count",
+        "status": "still_present",
+        "description": "The report says SEM maintains current asylum-domain statistics as of 30 April 2026, but the supplied evidence still does not state the asserted 235000-plus count."
+      },
+      {
+        "kind": "annual_application_flow_context",
+        "status": "still_present",
+        "description": "The report again uses 2024 asylum application flow context, which is not a current population-stock measurement."
+      }
+    ],
+    "decisiveEvidenceGap": "No supplied source material provided a comprehensive current aggregate count for all asylum-related statuses in Switzerland against the 235000 threshold."
+  },
+  "hiddenArtifactRoutes": {
+    "authenticatedDefaultRouteProbes": "not_found",
+    "routesChecked": 16,
+    "note": "Process-local hidden artifact routes returned 404 for the expected ledger id. Closeout uses persisted admin job metadata/report markdown, event history, and public containment checks. This repeats the HJ71 observability gap."
+  },
+  "eventHistory": {
+    "events": [
+      "Job created",
+      "Triggering runner",
+      "Runner started",
+      "Preparing input (pipeline: claimboundary-v2)",
+      "Analyzer V2 orchestrator initialized.",
+      "Analyzer V2 damaged structural envelope generated.",
+      "Storing result",
+      "Result stored",
+      "Done"
+    ]
+  },
+  "comparisonToHJ71": {
+    "improved": [],
+    "notImproved": [
+      "The decisive comprehensive current asylum-domain stock aggregate is still absent.",
+      "The report remains UNVERIFIED and below Captain quality expectations for this claim family.",
+      "Hidden process-local artifact routes still returned 404, limiting durable stage-level attribution."
+    ],
+    "regressedOrNarrowed": [
+      "The admin report is shorter than HJ71 and cites fewer evidence references; it does not preserve HJ71's broader partial direct-stock shape."
+    ]
+  },
+  "budget": {
+    "activeTrancheResetTotal": 18,
+    "remainingBefore": 1,
+    "consumed": 1,
+    "remainingAfter": 0
+  },
+  "nextOwnerSignal": {
+    "currentAssessment": "The structural Serper ordinal fallback did not move the current-asylum quality gap. With the live tranche exhausted and hidden artifacts unavailable, the next step should be Steer-Co-guided source strategy or durable attribution, not another immediate canary.",
+    "rejectedImmediatePaths": [
+      "second HJ72 canary without budget reset",
+      "another query-planning nudge",
+      "W5/report-writer repair without proof the aggregate reached W5",
+      "provider expansion, cap increase, retry, parser, cache/SR/storage, public surface, ACS/direct URL, or V1 work inside HJ72"
+    ]
+  }
+}

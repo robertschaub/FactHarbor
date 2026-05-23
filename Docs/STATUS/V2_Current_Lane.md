@@ -20,25 +20,24 @@ from observed report defects.
 ## Current Lane Override
 
 This projection is synced after the HJ72 source-material ordinal fallback
-implementation. Older HJ history below is kept as context, but the active
-anchor and budget are:
+canary. Older HJ history below is kept as context, but the active anchor and
+budget are:
 
 - committed implementation anchor:
   `bcefe3bf fix(v2): preserve serper source material ordinal fallback`;
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
 - latest canary result:
-  HJ71 focused current-asylum query-planning/direct-record rerun, classified
-  `PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED`;
+  HJ72 focused current-asylum Serper ordinal fallback rerun, classified
+  `STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ71 consumed `17`, so `1` remains;
+  HJ64 through HJ72 consumed `18`, so `0` remains;
 - next action:
   keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
   output-contract repair; keep the HJ71 partial query-planning improvement and
-  run exactly one HJ72 focused canary after clean provenance, runtime refresh,
-  and API/Web commit verification against `bcefe3bf` or a later docs-only lane
-  projection commit;
+  keep the HJ72 Serper ordinal fallback invariant, but do not run another live
+  job until a new tranche/approval exists;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -67,20 +66,37 @@ V1 behavior.
 
 Focused owner tests, Serper preview tests, boundary guard, build, debt sensors,
 index, and diff checks passed before the HJ72 implementation commit. The final
-live job is now reserved for one focused HJ72 canary after runtime freshness
-checks.
+live job has now been spent on the HJ72 canary and the active tranche is
+exhausted.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-71-QUERY-PLANNING-CURRENT-STOCK-DIRECT-RECORD`
+`X7-HJ-72-SOURCE-MATERIAL-SERPER-ORDINAL-FALLBACK`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj71-query-current-stock-direct-record.json`
+`Docs/WIP/canary-evidence-hj72-serper-ordinal-fallback.json`
 
 Important evidence:
+
+- HJ72 ran one focused `asylum-235000-de` rerun on runtime/source commit
+  `30e70b6d721b53d513e24a52322c7be59db39186` after clean provenance and Web/API
+  runtime commit verification. Job `e2730cb5795e441cbf10831edd18047c` stayed on
+  `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default
+  containment: public report markdown, public verdict label, public truth
+  percentage, and public confidence remained absent; public schema stayed
+  `4.0.0-cb-precutover`; public cutover stayed `blocked_precutover`; an
+  unauthenticated hidden-route probe returned `401`. The admin-only internal
+  report was produced (`6129` characters) but stayed `UNVERIFIED`, citing SEM
+  current-statistics authority context and 2024 application-flow context without
+  the decisive comprehensive current asylum-domain aggregate for the `235000`
+  threshold. Authenticated process-local hidden artifact routes again returned
+  `404`, so closeout uses persisted admin job metadata/report markdown, event
+  history, and public containment checks. Information yield is
+  `same_stop_repeated_without_useful_new_information`. The active live-job
+  tranche is now exhausted.
 
 - HJ71 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `8fe4c3c9092fcc058b69bc060998f1563b45cea2` after importing and activating
@@ -660,8 +676,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `17`;
-- remaining: `1`;
+- consumed after latest reset: `18`;
+- remaining: `0`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -677,14 +693,14 @@ Current active tranche:
 4. Treat HJ71 as a partial query-planning/source-coverage improvement: direct
    stock-like evidence appeared, but the decisive aggregate current stock
    record is still missing.
-5. Perform HJ72 no-live attribution/local inspection before spending the final
-   live job. Use persisted HJ70/HJ71 results, available logs, and existing
-   source-acquisition/source-material code to identify whether a narrow repair
-   exists.
-6. Avoid W4-I readiness work, cap increases, source/provider widening,
-   report-writer, verdict-calibration, retry, schema relaxation, or public
-   behavior unless HJ72 local evidence and sidecar/Steer-Co review identify
-   that owner from HJ71 evidence.
+5. Treat HJ72 as stopped: the structural Serper ordinal fallback repair did not
+   surface the decisive aggregate, and the final tranche job is consumed.
+6. Reconvene Steer-Co before the next technical direction. The next lane should
+   choose between durable attribution/observability and a broader source
+   strategy package, while avoiding W4-I readiness work, cap increases,
+   source/provider widening, report-writer changes, verdict-calibration,
+   retries, schema relaxation, public behavior, or more live jobs without a new
+   tranche/approval.
 
 ## Stop Conditions
 

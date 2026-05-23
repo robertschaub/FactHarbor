@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 1,
+    "currentRemaining": 0,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 1,
-      "consumptionEntriesInThisTranche": 8,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric. HJ71 spent one focused job, improved partial direct stock evidence coverage, but still lacked the decisive current aggregate stock metric; 1 remains.",
+      "currentRemaining": 0,
+      "consumptionEntriesInThisTranche": 9,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric. HJ71 spent one focused job, improved partial direct stock evidence coverage, but still lacked the decisive current aggregate stock metric. HJ72 spent the final focused job; the Serper ordinal fallback repair did not surface the decisive aggregate and the tranche is exhausted.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1927,6 +1927,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_new_partial_direct_stock_evidence",
         "note": "HJ71 ran one focused current-asylum rerun after prompt import/runtime refresh. The internal report remained complete and added one partial direct protection-status stock snapshot, but still lacked the decisive comprehensive current asylum-domain stock aggregate for the 235000 threshold. Public/default containment held; authenticated process-local hidden artifact probes returned 404, so closeout uses persisted admin job metadata/report markdown plus public containment checks."
+      },
+      {
+        "sliceId": "X7-HJ-72-SOURCE-MATERIAL-SERPER-ORDINAL-FALLBACK",
+        "jobId": "e2730cb5795e441cbf10831edd18047c",
+        "classification": "STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED",
+        "implementationCommit": "bcefe3bf9976f11dd1860e23885acbb23893eb88",
+        "runtimeCommit": "30e70b6d721b53d513e24a52322c7be59db39186",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 0,
+        "approvalPointer": "Captain HighJump direction, Captain authorization for live jobs/prompt edits/schema changes, active lane discipline, and HJ72 package Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "same_stop_repeated_without_useful_new_information",
+        "note": "HJ72 ran one focused current-asylum rerun after the Serper ordinal fallback implementation and runtime refresh. It stayed on claimboundary-v2, finished SUCCEEDED, and public/default containment held. The admin-only internal report remained UNVERIFIED and still lacked the decisive comprehensive current asylum-domain stock aggregate for the 235000 threshold; hidden process artifact routes again returned 404. The active 18-job tranche is now exhausted."
       }
     ],
     "blockedPending": [],

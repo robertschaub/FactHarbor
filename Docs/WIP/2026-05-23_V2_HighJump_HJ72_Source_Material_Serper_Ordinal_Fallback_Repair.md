@@ -1,6 +1,6 @@
 # V2 HighJump HJ72 - Source Material Serper Ordinal Fallback Repair
 
-Status: implementation committed; focused canary pending after runtime refresh
+Status: canary complete; stopped on repeated source-material quality gap
 
 ## Objective
 
@@ -281,3 +281,49 @@ the Captain-defined input:
 
 Do not run a second HJ72 canary without a new tranche or Captain-approved
 follow-up package.
+
+## Live Canary Result
+
+Result artifact:
+`Docs/WIP/canary-evidence-hj72-serper-ordinal-fallback.json`
+
+Live job:
+
+- job id: `e2730cb5795e441cbf10831edd18047c`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- runtime/source commit: `30e70b6d721b53d513e24a52322c7be59db39186`;
+- pipeline variant: `claimboundary-v2`;
+- status: `SUCCEEDED`;
+- classification:
+  `STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`;
+- information yield: `same_stop_repeated_without_useful_new_information`.
+
+Outcome:
+
+- public/default containment held: public report markdown, verdict label, truth
+  percentage, and confidence remained absent; public schema stayed
+  `4.0.0-cb-precutover`; public cutover stayed `blocked_precutover`;
+- unauthenticated hidden route probe returned `401`;
+- authenticated process-local artifact routes returned `404` for the expected
+  ledger id, repeating the HJ71 observability gap;
+- the admin-only internal report was produced (`6129` characters) but stayed
+  `UNVERIFIED` and still did not surface the decisive comprehensive current
+  asylum-domain aggregate for the `235000` threshold;
+- the report used official SEM current-statistics authority context and 2024
+  application-flow context, but still did not include the current population
+  stock count required by the claim.
+
+Budget:
+
+- remaining before HJ72 canary: `1`;
+- consumed: `1`;
+- remaining after HJ72 canary: `0`.
+
+Stop decision:
+
+The structural Serper ordinal fallback repair is kept because it preserves an
+existing generic Source Material balancing invariant, but it did not improve
+the live current-asylum report enough to pass HJ72. With the live tranche
+exhausted and process-local artifact routes still unavailable, the next step
+must be Steer-Co-guided source strategy or durable attribution. Do not run
+another live job until a new tranche/approval exists.

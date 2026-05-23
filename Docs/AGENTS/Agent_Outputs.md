@@ -4784,3 +4784,61 @@ Verification: focused tests, boundary guard, build, debt sensors, index, and dif
 Debt accepted and removal trigger: no accepted mechanism debt
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain; HJ71 hidden process artifact 404 remains an observability gap but was not expanded in HJ72
 ```
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ72 Canary Result
+
+**Task:** Resume after reboot, verify sub-agent orchestration and runtime
+freshness, spend the single remaining HJ72 canary only if provenance was clean,
+then document the result.
+
+**Sub-agent orchestration:** Existing sidecars Sagan, Noether, and Russell
+resumed and their prior consensus remained applicable: HJ72 should be the
+bounded Source Material owner repair already implemented, and the final job
+should not be followed by another canary without new budget/approval.
+
+**Runtime/provenance:** Preflight was clean. Working tree was clean, Web and API
+reported runtime commit `30e70b6d721b53d513e24a52322c7be59db39186`, health
+checks passed, and `npm run debt:sensors` returned known advisory warnings only.
+
+**Live job:** HJ72 spent exactly one job:
+`e2730cb5795e441cbf10831edd18047c`, input `Mehr als 235 000 Personen aus dem
+Asylbereich sind zurzeit in der Schweiz`, submitted through the normal
+`/api/fh/analyze` default-pipeline route without an explicit `pipelineVariant`.
+The created job recorded `claimboundary-v2`, finished `SUCCEEDED`, and used
+runtime/source commit `30e70b6d721b53d513e24a52322c7be59db39186`.
+
+**Result classification:**
+`STOP_X7_HJ72_SOURCE_MATERIAL_ORDINAL_FALLBACK_NO_AGGREGATE_EVIDENCE_INTERNAL_REPORT_UNVERIFIED`.
+The admin-only internal report was produced (`6129` characters), but it still
+lacked the decisive comprehensive current asylum-domain aggregate for the
+`235000` threshold. It cited SEM current-statistics authority context and 2024
+application-flow context, while explicitly not providing the current population
+stock count. Information yield:
+`same_stop_repeated_without_useful_new_information`.
+
+**Containment:** Public/default containment held. Public report markdown,
+verdict label, truth percentage, and confidence were absent; public schema
+stayed `4.0.0-cb-precutover`; public cutover stayed `blocked_precutover`;
+unauthenticated hidden route returned `401`. Authenticated process-local hidden
+artifact routes returned `404`, repeating the HJ71 observability gap.
+
+**Budget:** HJ72 consumed `1`; current HighJump tranche remaining is `0`.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj72-serper-ordinal-fallback.json`;
+package
+`Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
+active lane projection `Docs/STATUS/V2_Current_Lane.md`; live-job ledger
+`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: keep the HJ72 Source Material ordinal fallback repair because it preserves an existing generic HJ50 balancing invariant
+Rejected path and why: a second HJ72 canary, another query nudge, W5/report-writer repair, provider expansion, cap increase, retry, parser/cache/SR/storage, public behavior, ACS/direct URL, and V1 work are not justified by the canary evidence and would need a new package/budget
+What was removed/simplified: none
+What was added: documentation of the failed canary and tranche exhaustion
+Net mechanism count: unchanged
+Budget reconciliation: 1 live job spent; active 18-job tranche is exhausted
+Verification: runtime/source freshness, job status, pipelineVariant, admin report inspection, event history, public/default containment, unauthenticated hidden-route probe, debt sensors, and docs/index checks
+Debt accepted and removal trigger: process-local hidden artifact 404 remains an observability gap; next owner requires Steer-Co direction before new live spend
+```
