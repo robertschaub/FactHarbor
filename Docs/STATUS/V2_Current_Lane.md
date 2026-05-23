@@ -30,19 +30,23 @@ Older HJ history below is kept as context, but the active anchor and budget are:
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ79_Categorical_Verdict_Calibration_Result.md`;
 - latest validation result:
+  plastic passed HJ79 as
   `PASS_X7_HJ79_CATEGORICAL_VERDICT_CALIBRATION_PLASTIC_FULL_REPORT`;
-  job `a4a7aa1973e04721a9ee7192d382f732` ran
-  `Plastic recycling is pointless` on `claimboundary-v2` and runtime
-  `981b7c4eac901f13e149d1d1bae2a1582d8b47b7`, produced a `10403`
-  character internal report, moved the verdict candidates to `MIXED` `45/72`
-  and `LEANING-FALSE` `38/58`, and preserved public/default
-  blocked-precutover containment;
+  hydrogen then produced a complete internal report but stopped quality review as
+  `PARTIAL_X7_HJ79_HYDROGEN_FULL_REPORT_FALSE_SIDE_BUT_TOO_WEAK`: job
+  `54131f5e03e643aea97fa060886633ca` ran
+  `Using hydrogen for cars is more efficient than using electricity` on
+  `claimboundary-v2` and runtime
+  `1fa884c515f0baa7d3836daf5ebcfbedd8061461`, produced an `8997`
+  character internal report, moved direction to `LEANING-FALSE` `35/62`, and
+  preserved public/default blocked-precutover containment;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ77; HJ78 consumed `3`, HJ79
-  consumed `1`; `8` remain;
+  consumed `2`; `7` remain;
 - next action:
-  use the corrected full-report path on one different high-signal family to
-  check generalization, then raise the next observed report-quality bar;
+  repair the existing query-planning/source-material direct-comparator yield
+  for comparison claims; do not add report-writer recomputation or another
+  hidden proof layer;
 - stop conditions:
   stop on stale runtime/source, missing provenance, unexpected V1 submission,
   public/default leak

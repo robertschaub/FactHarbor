@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj78-full-report-validation-2026-05-23-reset-12-after-hj77",
     "resetTotal": 12,
-    "currentRemaining": 8,
+    "currentRemaining": 7,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-77-TARGET-FRAME-DIRECTNESS-PROMPT-REPAIR-WAVE",
       "startsAfterJobId": "multiple_hj77_jobs_see_result_artifact",
       "startingRemaining": 12,
-      "currentRemaining": 8,
-      "consumptionEntriesInThisTranche": 4,
-      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed one job and improved the categorical verdict calibration on the same plastic report path.",
+      "currentRemaining": 7,
+      "consumptionEntriesInThisTranche": 5,
+      "note": "HJ78 consumed three jobs. The first two exposed the hard-gated applicability-precheck regression; the third produced a full internal V2 report after the fallback repair. HJ79 consumed two jobs: plastic passed categorical calibration, hydrogen produced a full false-side report but stayed too weak versus accepted expectations.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -2084,14 +2084,28 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_quality_improved",
         "note": "After HJ79 W7 categorical-calibration prompt repair, the same plastic input produced a complete 10403-character internal V2 report with verdict candidates MIXED 45/72 and LEANING-FALSE 38/58, replacing HJ78's strong true-side primary calibration defect. Public/default containment held: no public report markdown, verdict, truth, confidence, or admin diagnostics."
+      },
+      {
+        "sliceId": "X7-HJ-79-HYDROGEN-GENERALIZATION",
+        "jobId": "54131f5e03e643aea97fa060886633ca",
+        "classification": "PARTIAL_X7_HJ79_HYDROGEN_FULL_REPORT_FALSE_SIDE_BUT_TOO_WEAK",
+        "implementationCommit": "981b7c4eac901f13e149d1d1bae2a1582d8b47b7",
+        "runtimeCommit": "1fa884c515f0baa7d3836daf5ebcfbedd8061461",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 7,
+        "approvalPointer": "Captain message in current Codex thread approving prompt edits, schema changes, and live jobs as naturally needed to complete the plan plus HJ79 package/result direction.",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved_but_next_failure_visible",
+        "note": "Hydrogen produced a complete 8997-character internal V2 report with public/default containment closed. The top verdict moved to false-side LEANING-FALSE 35/62, but accepted hydrogen expectation is FALSE/MOSTLY-FALSE with truth 5-25 plus tolerance. The report exposes a direct-comparator source-material gap: evidence still relies partly on hydrogen-vs-hybrid and adjacent comparator material instead of direct hydrogen-vs-BEV same-frame efficiency evidence."
       }
     ],
     "blockedPending": [],
     "exceptionAccounting": {
       "status": "none_for_current_tranche",
       "overrunCount": 0,
-      "reason": "HJ78 consumed three jobs and HJ79 consumed one job from the reset 12-job tranche; 8 remain.",
-      "nextLiveJobRequirement": "Use the corrected full-report path on one different high-signal family or stop for report-quality review if the team cannot agree on the next single bar to raise."
+      "reason": "HJ78 consumed three jobs and HJ79 consumed two jobs from the reset 12-job tranche; 7 remain.",
+      "nextLiveJobRequirement": "Repair existing comparison-query/source-material directness before another hydrogen rerun. Do not add report-writer recomputation or hidden proof machinery."
     },
     "pendingExceptionAuthorization": null
   }
