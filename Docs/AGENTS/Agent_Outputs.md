@@ -4224,3 +4224,25 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Information yield:** `report_produced`. Query-planning underuse is repaired for this input: HJ55 increased from HJ54's `3` queries and `9` retained candidates to `5` queries and `15` retained candidates. W5 still emitted only `3` EvidenceItems, so the next report-quality bar should be chosen from direct report review: EvidenceItem breadth/admission, report roll-up/calibration, or source-usefulness quality.
 
 **Budget:** Captain reset the tranche to `18` after HJ54. HJ55 consumed `1`; `17` remain.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ56 Full Internal Report Gauntlet
+
+**Task:** Run a stronger validation pass across all eight Captain-defined benchmark inputs after HJ55, without changing source, prompt, config, schema, model, provider, parser, public behavior, cache/SR/storage, ACS/direct URL, or V1 code.
+
+**Package:** `Docs/WIP/2026-05-23_V2_HighJump_HJ56_Full_Internal_Report_Gauntlet.md` committed at `88b41c5a`. The package authorized sequential execution to avoid concurrency noise and required public/default V2 containment for every job.
+
+**Preflight:** Git status was clean; Web/API/proxy version endpoints reported `88b41c5a214e54a96aec730aca4d087708083760`; UCM effective pipeline default was `claimboundary-v2`; active `claimboundary-v2` prompt was `hj55-query-planning-angle-breadth` with hash `3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`.
+
+**Live jobs:** `bundesrat-rechtskraftig` `0e102e087d224affac9cd95e34887516`; `bundesrat-simple` `57fedbd7f4bd44d88290f43ffe4a6e5c`; `asylum-235000-de` `7a46b7f8d7a24e5aaf82c395043e5a11`; `asylum-wwii-de` `d859c11d18a84542a0e188725aba44ee`; `bolsonaro-en` `421f2028ece1460f8782fa721dab3fb7`; `bolsonaro-pt` `dbcf916966de4d15a7798547b0d05003`; `hydrogen-en` `6435be9eda01462da01c0f6d344d25ec`; `plastic-en` `328b65a37a2b431a802f8aea5df7d988`.
+
+**Results:** All eight jobs ran `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default containment. Five produced internal report-writer drafts: Bundesrat rechtskräftig (`3` EvidenceItems), asylum-current (`3` EvidenceItems, but still `UNVERIFIED`), asylum-WWII (`2` EvidenceItems), Bolsonaro EN (`3` EvidenceItems, only `2` selected claims and UNVERIFIED/MIXED lines), and plastic (`4` EvidenceItems, large multi-verdict report). Three produced admin stop summaries before report writer: Bundesrat-simple stopped at W5 `task_contract_validation_failed` / `approved_packet_mismatch`; Bolsonaro PT stopped at W4-G `source_material_text_oversized`; hydrogen stopped at W5 `schema_validation_failed` with `evidenceItems` too big.
+
+**Classification:** `MIXED_PASS_X7_HJ56_FULL_INTERNAL_REPORT_GAUNTLET_REACHABILITY_BROAD_W5_AND_QUALITY_DEFECTS_MAPPED`.
+
+**Information yield:** `report_produced_and_new_failures_mapped`. HJ56 confirms broad internal V2 reachability but makes the next repeated bottleneck clear: W5 extraction contract/schema robustness and EvidenceItem breadth. Report roll-up/calibration is also weak, but fixing it before W5 can reliably produce bounded useful EvidenceItems would be premature.
+
+**Containment:** Public/default API output stayed `4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged` with public/default report markdown, verdict, truth percentage, and confidence absent for every job. Checked unauthenticated hidden routes returned `401`.
+
+**Budget:** HJ56 consumed `8` jobs from the tranche. HJ55 plus HJ56 consumed `9` after the reset; `9` remain.
+
+**Next:** Prepare a bounded W5 repair focused on schema/task-contract robustness and EvidenceItem breadth. Use the HJ56 diagnostics as the defect source. Do not move to public cutover, source/provider expansion, or report-writer roll-up before W5 is stable enough to feed downstream stages.

@@ -1,6 +1,7 @@
 # V2 HighJump HJ56 - Full Internal Report Gauntlet
 
-**Status:** package prepared for immediate execution under HighJump authority
+**Status:** live gauntlet complete; broad reachability proven, W5/report-quality
+defects mapped
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ55 job `8e7375f8d29e4d5b8fe453ebcfe6c295`
@@ -145,3 +146,57 @@ the expected signal. Do not start a repair during HJ56.
 
 Captain reset the live-job budget to `18` after HJ54. HJ55 consumed `1`; `17`
 remain. HJ56 may spend up to `8` jobs and should leave at least `9`.
+
+## Live Result
+
+Completed on 2026-05-23 on runtime commit
+`88b41c5a214e54a96aec730aca4d087708083760`.
+
+Result evidence:
+
+`Docs/WIP/canary-evidence-hj56-full-internal-report-gauntlet.json`
+
+Classification:
+
+`MIXED_PASS_X7_HJ56_FULL_INTERNAL_REPORT_GAUNTLET_REACHABILITY_BROAD_W5_AND_QUALITY_DEFECTS_MAPPED`
+
+Summary:
+
+| Slug | Job | Result |
+|---|---|---|
+| `bundesrat-rechtskraftig` | `0e102e087d224affac9cd95e34887516` | Internal report produced; `3` EvidenceItems; `5832` admin markdown chars |
+| `bundesrat-simple` | `57fedbd7f4bd44d88290f43ffe4a6e5c` | Admin stop summary; W5 `task_contract_validation_failed` / `approved_packet_mismatch` |
+| `asylum-235000-de` | `7a46b7f8d7a24e5aaf82c395043e5a11` | Internal report produced; `3` EvidenceItems; verdict line still `UNVERIFIED` |
+| `asylum-wwii-de` | `d859c11d18a84542a0e188725aba44ee` | Internal report produced; `2` EvidenceItems; separate current/WWII sections |
+| `bolsonaro-en` | `421f2028ece1460f8782fa721dab3fb7` | Internal report produced; `3` EvidenceItems; only `2` selected claims and UNVERIFIED/MIXED lines |
+| `bolsonaro-pt` | `dbcf916966de4d15a7798547b0d05003` | Admin stop summary; W4-G `source_material_text_oversized` before W5 |
+| `hydrogen-en` | `6435be9eda01462da01c0f6d344d25ec` | Admin stop summary; W5 `schema_validation_failed` with `evidenceItems` too big |
+| `plastic-en` | `328b65a37a2b431a802f8aea5df7d988` | Internal report produced; `4` EvidenceItems; large multi-verdict report |
+
+Containment held for every job:
+
+- all jobs ran `claimboundary-v2`;
+- public/default schema stayed `4.0.0-cb-precutover`;
+- public cutover stayed `blocked_precutover`;
+- public issue stayed `report_damaged`;
+- public/default report markdown, verdict, truth percentage, and confidence
+  remained absent;
+- checked unauthenticated hidden artifact routes returned `401`.
+
+Information yield:
+
+- `5/8` jobs produced internal report-writer drafts.
+- `3/8` jobs produced admin stop summaries before report writer.
+- Report reachability is now broad enough that the next useful work should not
+  be route/UI/plumbing reachability.
+- The repeated blockers are W5 extraction contract/schema robustness,
+  EvidenceItem breadth, W4-G oversized-text handling for PT, and report
+  roll-up/calibration.
+
+Next direction:
+
+The next implementation bar should target W5 extraction contract/schema repair
+and EvidenceItem breadth first. This is the broadest repeated failure:
+Bundesrat-simple and hydrogen stopped at W5 damage, and produced reports still
+carry only `2` to `4` EvidenceItems. Do not start source/provider expansion or
+public cutover before that bar is raised.

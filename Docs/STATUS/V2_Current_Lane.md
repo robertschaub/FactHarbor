@@ -25,15 +25,15 @@ kept as context, but the active anchor and budget are:
 - committed implementation anchor:
   `9466a71b fix(v2): broaden query planning angles`;
 - latest canary result:
-  HJ55 focused rerun, classified
-  `PASS_X7_HJ55_QUERY_PLANNING_BREADTH_REPAIR_VERIFIED_REPORT_CONVERGED_EVIDENCE_ITEM_COUNT_STILL_THIN`;
+  HJ56 full internal-report gauntlet, classified
+  `MIXED_PASS_X7_HJ56_FULL_INTERNAL_REPORT_GAUNTLET_REACHABILITY_BROAD_W5_AND_QUALITY_DEFECTS_MAPPED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ54;
-  HJ55 consumed one job, and `17` remain;
+  HJ55 consumed one job, HJ56 consumed eight jobs, and `9` remain;
 - next action:
-  run HJ56, a sequential full internal-report gauntlet across all eight
-  Captain-defined benchmark inputs, to identify the next repeated
-  report-quality bar before changing more code or prompts;
+  raise the next repeated report-quality bar: W5 extraction contract/schema
+  robustness and EvidenceItem breadth. Do not spend the next job on source/
+  provider expansion or public cutover before this W5 bar is addressed;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -62,14 +62,37 @@ or V1 work.
 
 Latest validation:
 
-`X7-HJ-55-QUERY-PLANNING-BREADTH-REPAIR-RERUN`
+`X7-HJ-56-FULL-INTERNAL-REPORT-GAUNTLET`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj55-query-planning-breadth-repair.json`
+`Docs/WIP/canary-evidence-hj56-full-internal-report-gauntlet.json`
 
 Important evidence:
 
+- HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
+  commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
+  query-planning prompt hash
+  `3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`.
+  All jobs stayed on `claimboundary-v2`; public/default containment held for
+  every job (`4.0.0-cb-precutover`, `blocked_precutover`,
+  `report_damaged`, no public/default reportMarkdown, no public verdict/truth/
+  confidence, unauthenticated hidden routes `401`). Five jobs produced internal
+  report-writer drafts: `bundesrat-rechtskraftig`
+  (`0e102e087d224affac9cd95e34887516`), `asylum-235000-de`
+  (`7a46b7f8d7a24e5aaf82c395043e5a11`), `asylum-wwii-de`
+  (`d859c11d18a84542a0e188725aba44ee`), `bolsonaro-en`
+  (`421f2028ece1460f8782fa721dab3fb7`), and `plastic-en`
+  (`328b65a37a2b431a802f8aea5df7d988`). Three jobs produced admin stop
+  summaries before report writer: `bundesrat-simple`
+  (`57fedbd7f4bd44d88290f43ffe4a6e5c`) with W5
+  `task_contract_validation_failed` / `approved_packet_mismatch`,
+  `bolsonaro-pt` (`dbcf916966de4d15a7798547b0d05003`) with W4-G
+  `source_material_text_oversized`, and `hydrogen-en`
+  (`6435be9eda01462da01c0f6d344d25ec`) with W5
+  `schema_validation_failed` and `evidenceItems` too big. HJ56 proves broad
+  internal-report reachability while showing the next repeated bar is W5
+  contract/schema robustness plus EvidenceItem breadth.
 - `8e7375f8d29e4d5b8fe453ebcfe6c295` (plastic recycling) ran on HJ55 after
   importing and activating the query-planning angle-breadth prompt profile
   (`3ab12da1646b9b4bb5bef83c5ef827e643bc9343b9cc9fa8eb0b3b95bc917be1`) on
@@ -394,28 +417,26 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `9`;
+- remaining: `9`;
 - latest reset starts after HJ54 job `c3718a3e383442c29361e058ef4f16ad`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Run the HJ56 full internal-report gauntlet across all eight Captain-defined
-   benchmark inputs. The immediate need is a cross-family defect map, not
-   another isolated canary or speculative repair.
+1. Prepare and implement the next bounded W5 repair. The gauntlet shows broad
+   internal-report reachability, but W5 damaged execution and thin EvidenceItem
+   output are the repeated quality bottleneck.
 2. Prefer raising one observed quality bar at a time from report evidence.
    Candidate targets are source usefulness, EvidenceItem selectivity, boundary
    separation, verdict calibration, and warning/materiality clarity. Do not add
    new hidden plumbing unless it directly retires or replaces an older stop
    mechanism or closes an observed report-quality defect.
-3. Keep the next HighJump step scoped to one concrete report-quality defect.
-   Given HJ55, likely candidates are W5 EvidenceItem breadth/admission,
-   report roll-up/calibration, or source-usefulness quality. Do not add provider
-   expansion, recursive crawling, public exposure, cache/SR/storage, direct
-   URL/ACS, V1 work, or another hidden mechanism unless the report-quality
-   evidence proves that specific gap is blocking progress.
+3. Keep the next HighJump step scoped to one concrete W5 defect:
+   schema/task-contract robustness and EvidenceItem breadth. Defer report
+   roll-up/calibration and source/provider expansion until W5 can reliably pass
+   bounded, useful EvidenceItems to downstream report stages.
 
 ## Stop Conditions
 
