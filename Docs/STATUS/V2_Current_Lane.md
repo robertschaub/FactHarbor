@@ -17,6 +17,28 @@ admin job UI can display V2 report markdown. Lower only report-blocking bars
 that are shown by live evidence, then raise quality, safety, and completeness
 from observed report defects.
 
+## Current Lane Override
+
+This projection is synced for HJ51 live validation. Older HJ history below is
+kept as context, but the active anchor and budget are:
+
+- committed implementation anchor:
+  `1d10da26 fix(v2): submit manual analyses directly to default pipeline`;
+- latest canary result:
+  HJ50 job `2d7402c4dc8947438b2f0ff74e5c8ce6`, classified
+  `PASS_X7_HJ50_SOURCE_MATERIAL_QUERY_DIVERSITY_REPORT_QUALITY_IMPROVED`;
+- current live-job tranche:
+  Captain reset to `18` on 2026-05-23 after HJ50; HJ51 has not consumed a job;
+- next action:
+  refresh runtime to `1d10da26`, confirm Web/API/proxy hashes and UCM
+  `defaultPipelineVariant = claimboundary-v2`, then run exactly one HJ51
+  direct manual V2 submission validation if provenance is clean;
+- stop conditions:
+  stop on stale runtime/source, unexpected V1 submission, public/default leak
+  of report/source/prompt/provider/hidden data or verdict/truth/confidence,
+  prompt/model/config/schema work beyond the approved state, provider/parser/
+  cache/SR/storage/ACS/direct-URL/V1 scope, or unclear verifier/runtime failure.
+
 ## Current Implementation Anchor
 
 Latest committed source/docs anchor:

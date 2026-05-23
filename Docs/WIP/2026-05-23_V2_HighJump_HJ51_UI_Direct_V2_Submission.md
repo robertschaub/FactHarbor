@@ -93,7 +93,7 @@ consolidation pass, not inside this slice.
 - commit;
 - refresh runtime and verify Web/API/proxy commit match;
 - one UI/direct-submission live job may be used as a stronger functional
-  validation step, consuming one job from the 17 remaining budget.
+  validation step, consuming one job from the Captain-reset 18-job tranche.
 
 Local verifier result, 2026-05-23:
 

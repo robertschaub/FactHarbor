@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-before-hj47",
+    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj50",
     "resetTotal": 18,
-    "currentRemaining": 15,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
-      "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 before the HJ47 one-hop locator-expansion validation."
+      "date": "2026-05-23",
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after HJ50 and before HJ51 direct manual V2 submission validation."
     },
     "latestReset": {
-      "date": "2026-05-22",
-      "previousRemaining": 16,
+      "date": "2026-05-23",
+      "previousRemaining": 17,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ46 so the team can run stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget so the team can use stronger HighJump validation toward visible, complete, useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN",
-      "startsAfterJobId": "4208458670644489a07db2536d7c7332",
+      "startsAfterSliceId": "X7-HJ-50-SOURCE-MATERIAL-QUERY-DIVERSITY-RERUN",
+      "startsAfterJobId": "2d7402c4dc8947438b2f0ff74e5c8ce6",
       "startingRemaining": 18,
-      "currentRemaining": 15,
-      "consumptionEntriesInThisTranche": 3,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ46. HJ47 produced a complete internal Alpha report with direct current-stock evidence and public/default containment held. HJ48 imported the boundary/verdict calibration prompt but stopped at W5 hidden_no_extractable_evidence before report drafting. HJ49 repaired the query-planning literal-value loss: the direct query preserved 235000, W5 produced one EvidenceItem, and the internal report path reopened, but report quality remains poor because the evidence supports annual application flow rather than current asylum-domain population stock.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ50 is the last completed canary before this reset: it produced an improved internal Alpha report with current-stock evidence, public/default containment held, and the next lane is manual V2 UI/direct submission validation plus stronger multi-job report validation.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
