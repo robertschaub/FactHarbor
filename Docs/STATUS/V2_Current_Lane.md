@@ -19,21 +19,21 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ55 live validation. Older HJ history below is
+This projection is synced after the HJ57 verifier-clean prompt repair commit. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `9466a71b fix(v2): broaden query planning angles`;
+  `f4c3357b fix(v2): repair w5 extraction contract prompt`;
 - latest canary result:
   HJ56 full internal-report gauntlet, classified
   `MIXED_PASS_X7_HJ56_FULL_INTERNAL_REPORT_GAUNTLET_REACHABILITY_BROAD_W5_AND_QUALITY_DEFECTS_MAPPED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ54;
-  HJ55 consumed one job, HJ56 consumed eight jobs, and `9` remain;
+  Captain reset to `18` on 2026-05-23 after HJ56;
+  HJ57 has not consumed from the fresh tranche yet, so `18` remain;
 - next action:
-  raise the next repeated report-quality bar: W5 extraction contract/schema
-  robustness and EvidenceItem breadth. Do not spend the next job on source/
-  provider expansion or public cutover before this W5 bar is addressed;
+  import and activate the HJ57 W5 extraction-contract prompt repair in UCM,
+  refresh runtime to the committed state, then run the two focused HJ57 reruns
+  for hydrogen and Bundesrat-simple to verify the observed W5 stops are cleared;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -44,17 +44,18 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`9466a71b fix(v2): broaden query planning angles`
+`f4c3357b fix(v2): repair w5 extraction contract prompt`
 
 Latest implementation repair:
 
-`9466a71b fix(v2): broaden query planning angles`
+`f4c3357b fix(v2): repair w5 extraction contract prompt`
 
-HJ55 amends only the existing `V2_EVIDENCE_QUERY_PLANNING` prompt section so
-concise, broad, or evaluative direct assertions use the available bounded query
-budget for distinct investigative angles instead of stopping after one generic
-direct query and one generic counter-query. It adds no code-side semantic
-query-selection rule, model/provider change, schema relaxation, source/provider/
+HJ57 amends only the existing `V2_EVIDENCE_EXTRACTION` prompt section so W5
+keeps EvidenceItems inside the strict five-item cap, prefers fuller but bounded
+EvidenceItem breadth when distinct material points exist, and copies
+`sourceRecordId` / `contentPacketId` plus selected AtomicClaim IDs exactly from
+the supplied structural inputs. It adds no code-side semantic extraction rule,
+model/provider change, schema relaxation, retry/repair loop, source/provider/
 parser route, public surface, cache/SR/storage behavior, direct URL/ACS support,
 or V1 work.
 
@@ -417,9 +418,10 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `9`;
-- remaining: `9`;
-- latest reset starts after HJ54 job `c3718a3e383442c29361e058ef4f16ad`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after the HJ56 gauntlet job
+  `328b65a37a2b431a802f8aea5df7d988`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 

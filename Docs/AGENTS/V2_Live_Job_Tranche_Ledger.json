@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-ui-report-validation-2026-05-23-reset-18-after-hj54",
+    "trancheId": "v2-highjump-hj57-w5-repair-2026-05-23-reset-18-after-hj56",
     "resetTotal": 18,
-    "currentRemaining": 9,
+    "currentRemaining": 18,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after the HJ54 focused Claim Understanding pass and before HJ55."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 after the HJ56 full internal-report gauntlet and before HJ57 focused W5 repair reruns."
     },
     "latestReset": {
       "date": "2026-05-23",
-      "previousRemaining": 17,
+      "previousRemaining": 9,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump validation toward visible, complete, useful V2 reports without artificial budget friction after HJ54 produced a complete internal Alpha report."
+      "reason": "Captain provided a fresh 18-job budget so the team can continue HighJump validation toward complete, useful V2 reports after HJ56 mapped broad reachability and repeated W5 extraction defects."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-54-CU-NO-VALID-CLAIM-DEFINITION-REPAIR-RERUN",
-      "startsAfterJobId": "c3718a3e383442c29361e058ef4f16ad",
+      "startsAfterSliceId": "X7-HJ-56-FULL-INTERNAL-REPORT-GAUNTLET",
+      "startsAfterJobId": "328b65a37a2b431a802f8aea5df7d988",
       "startingRemaining": 18,
-      "currentRemaining": 9,
-      "consumptionEntriesInThisTranche": 9,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ54 is the last completed live job before this reset and produced a complete internal Alpha report for the plastic input after the no_valid_claim definition repair. HJ55 consumed one job from this tranche and verified the query-planning breadth repair. HJ56 consumed eight jobs and mapped broad report reachability plus repeated W5/report-quality defects.",
+      "currentRemaining": 18,
+      "consumptionEntriesInThisTranche": 0,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ56 is the last completed live validation before this reset and mapped broad internal-report reachability plus repeated W5 extraction contract/schema and EvidenceItem-breadth defects. HJ57 will spend from this fresh tranche only after committed prompt repair, UCM activation, runtime refresh, and clean provenance.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
