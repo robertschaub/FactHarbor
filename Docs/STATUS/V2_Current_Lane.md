@@ -31,11 +31,9 @@ kept as context, but the active anchor and budget are:
   Captain reset to `18` on 2026-05-23 after HJ54;
   HJ55 consumed one job, and `17` remain;
 - next action:
-  review the HJ55 internal Alpha report and choose the next single
-  report-quality bar. HJ55 cleared query-planning underuse for the plastic
-  input, but W5 still emitted only three EvidenceItems, so the next bar should
-  be EvidenceItem breadth/admission, report roll-up/calibration, or
-  source-usefulness quality based on direct report review;
+  run HJ56, a sequential full internal-report gauntlet across all eight
+  Captain-defined benchmark inputs, to identify the next repeated
+  report-quality bar before changing more code or prompts;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -404,10 +402,9 @@ Current active tranche:
 
 ## Next Action
 
-1. Review the HJ55 plastic internal Alpha report against Captain quality
-   expectations and the recent HJ52/HJ55 multi-input evidence. The immediate
-   defect is now report quality and cross-input consistency, not reachability
-   or query-planning underuse for the plastic input.
+1. Run the HJ56 full internal-report gauntlet across all eight Captain-defined
+   benchmark inputs. The immediate need is a cross-family defect map, not
+   another isolated canary or speculative repair.
 2. Prefer raising one observed quality bar at a time from report evidence.
    Candidate targets are source usefulness, EvidenceItem selectivity, boundary
    separation, verdict calibration, and warning/materiality clarity. Do not add
