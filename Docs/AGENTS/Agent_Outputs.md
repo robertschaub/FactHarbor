@@ -4602,3 +4602,7 @@ Verification: focused prompt-contract test, boundary guard, build, debt sensors,
 Debt accepted and removal trigger: no new mechanism debt; stop further W5 recall lowering for the current-asylum aggregate because the live blocker moved to W4-I packet-size/readiness
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
+
+### 2026-05-23 | Senior Architect | Claude Agent | Candidate Pipeline Ranking Review — [Significant] [open-items: yes]
+**For next agent:** Do not rely on the earlier composite quality ranking for legacy candidate pipelines; the review found legacy candidate scores were not backed by accessible exact-SHA job provenance. Deployed 22.4 may still be a pragmatic extraction spike on architecture/extractability grounds, but not because its quality score is proven by current local data.
+→ Docs/AGENTS/Handoffs/2026-05-23_Senior_Architect_Candidate_Pipeline_Ranking_Review.md

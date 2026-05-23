@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T11:25:01.974Z",
-  "count": 439,
+  "generatedAt": "2026-05-23T11:49:52.202Z",
+  "count": 440,
   "entries": [
     {
       "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
@@ -9698,6 +9698,22 @@
       ],
       "files_touched": [],
       "summary": "2026-05-23 - Product Strategy - Filip W. Cost/Speed Research"
+    },
+    {
+      "file": "2026-05-23_Senior_Architect_Candidate_Pipeline_Ranking_Review.md",
+      "date": "2026-05-23",
+      "roles": [
+        "senior"
+      ],
+      "topics": [
+        "architect",
+        "candidate",
+        "pipeline",
+        "ranking",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-23 - Senior Architect - Candidate Pipeline Ranking Review"
     },
     {
       "file": "2026-05-23_Senior_Developer_Candidate_Pipeline_Ranking.md",
