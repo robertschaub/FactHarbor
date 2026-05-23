@@ -1,6 +1,6 @@
 # V2 Slice HJ47 - One-Hop Source Material Locator Expansion
 
-**Status:** locally implemented and verifier-clean; one HJ47 live job pending committed runtime refresh
+**Status:** live canary completed; report produced; XLSX locator path not exercised
 **Date:** 2026-05-22
 **Owner:** Captain Deputy / Lead Developer
 **Preceded by:** HJ45 bounded XLSX Source Material and HJ46 downloadable query intent
@@ -123,6 +123,25 @@ Live validation:
   `provider_search_result_xlsx_text_bounded` / `ep_serper_linked_xlsx_fetch`;
 - record whether W5 receives XLSX-derived source-content packets;
 - preserve public/default containment checks.
+
+Live result:
+
+- Job `b6498cbb050641ff91f5bdcd5886590c` ran on runtime commit
+  `81e9f0f749c88aa577e352d0819e6817c58cb672`.
+- Public/default containment held: unauthenticated job access returned
+  `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged` with
+  `reportMarkdown: null`; unauthenticated hidden artifact access returned
+  `401`.
+- Source Material completed with `5` records: `2` bounded linked-page records
+  and `3` search-preview records.
+- Source Material contained `0` `provider_search_result_xlsx_text_bounded`
+  records and `0` `ep_serper_linked_xlsx_fetch` records, so the HJ47 XLSX
+  locator path was not exercised live.
+- W5 completed with `2` EvidenceItems, the internal report writer created `2`
+  verdict sections and `2` boundary sections, and authenticated admin
+  reportMarkdown was `6163` characters.
+- Information yield: `report_produced`. The next step should be report-quality
+  review of the produced report before adding more locator/crawler machinery.
 
 ## Stop Conditions
 

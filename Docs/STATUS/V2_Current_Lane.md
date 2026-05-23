@@ -21,31 +21,52 @@ from observed report defects.
 
 Latest committed source/docs anchor:
 
-`fcb8a0b7 docs(v2): sync hj45 lane budget`
+`81e9f0f7 fix(v2): add one-hop xlsx locator expansion`
 
 Latest implementation repair:
 
-`3f5d8733 fix(v2): add bounded xlsx source material`
+`81e9f0f7 fix(v2): add one-hop xlsx locator expansion`
 
-HJ45 adds one bounded source-quality repair: XLSX attachments discovered from
-already fetched safe linked pages can become hidden/admin-only Source Material
-records. This targets official record/spreadsheet evidence without adding a
-provider, public surface, retry path, cache/SR/storage behavior, semantic
-deterministic row selection, direct URL/ACS support, V1 work, or a broad parser
-framework. W5 still owns semantic EvidenceItem extraction.
+HJ47 amends the existing Serper linked-page/XLSX Source Material seam with
+bounded one-hop same-host HTML locator expansion. Expansion runs only after
+direct same-page XLSX discovery yields no records, stays same-host/HTTPS, uses
+structural document order, is capped at two expansion pages per landing page
+and four per run, and does not recurse. It adds no provider, public surface,
+retry path, cache/SR/storage behavior, semantic deterministic link ranking,
+direct URL/ACS support, V1 work, or broad crawler/parser framework. W5 still
+owns semantic EvidenceItem extraction.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN`
+`X7-HJ-47-ASYLUM-235000-DE-ONE-HOP-LOCATOR-EXPANSION-RERUN`
 
 Result document:
 
-`Docs/WIP/canary-evidence-4208458670644489a07db2536d7c7332.json`
+`Docs/WIP/canary-evidence-b6498cbb050641ff91f5bdcd5886590c.json`
 
 Important evidence:
 
+- `b6498cbb050641ff91f5bdcd5886590c` (German asylum aggregate) ran on HJ47
+  after bounded one-hop same-host Source Material locator expansion. It stayed
+  on `claimboundary-v2`; public/default containment held
+  (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`,
+  public/default reportMarkdown `null`) and unauthenticated hidden artifact
+  access returned `401`. Authenticated admin reportMarkdown was `6163`
+  characters. Hidden artifacts showed Source Material completed with `5`
+  records (`2` linked-page, `3` search-preview), W5 extracted `2`
+  EvidenceItems, the internal report writer created `2` verdict sections and
+  `2` boundary sections, and the alpha result's first incomplete stage was
+  `none`.
+- HJ47's information yield is `report_produced`. It is a meaningful progress
+  step: unlike HJ44-HJ46, the internal report now has direct current-stock
+  evidence plus SEM authority context. However, the specific XLSX locator path
+  was not exercised: Source Material still had `0`
+  `provider_search_result_xlsx_text_bounded` records and `0`
+  `ep_serper_linked_xlsx_fetch` records. The next useful move is therefore
+  report-quality review against Captain expectations and comparator evidence
+  before adding more locator/crawler machinery.
 - `4208458670644489a07db2536d7c7332` (German asylum aggregate) ran on HJ46
   after the source-native downloadable-record query prompt repair. It stayed on
   `claimboundary-v2`, public/default containment held, and authenticated admin
@@ -284,22 +305,22 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
-- latest reset starts after HJ44 job `cb3b78c16fef4a43bc88e330695c906a`;
+- consumed after latest reset: `1`;
+- remaining: `17`;
+- latest reset starts after HJ46 job `4208458670644489a07db2536d7c7332`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
 ## Next Action
 
-1. Convene a compact Steer-Co decision for HJ47. Default candidate: bounded
-   source-material locator expansion from already fetched landing pages to
-   same-host downloadable/archive/detail pages, because HJ46 reached the SEM
-   statistics landing page but did not reach its downloadable material.
-2. Keep HJ47 HighJump-scoped: no public exposure, no provider expansion, no
-   cache/SR/storage, no direct URL/ACS, no V1 work, and no downstream report
-   layer unless the next live evidence shows source-native material is present
-   but not used.
+1. Review the HJ47 internal Alpha report quality against Captain expectations
+   and comparator evidence. The report path is now complete for this input and
+   direct current-stock evidence is present, so the next bar should be an
+   observed report-quality bar, not another source locator layer by default.
+2. Keep the next HighJump step scoped to one concrete report defect. Do not add
+   provider expansion, recursive crawling, public exposure, cache/SR/storage,
+   direct URL/ACS, V1 work, or another hidden mechanism unless the report review
+   shows that specific gap is blocking quality.
 
 ## Stop Conditions
 

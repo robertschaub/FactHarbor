@@ -5,27 +5,27 @@
   "runtimeAuthority": false,
   "purpose": "Machine-readable governance ledger for V2 live-job tranche accounting. This file does not authorize live jobs by itself.",
   "activeTranche": {
-    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-after-hj44",
+    "trancheId": "v2-highjump-report-quality-2026-05-22-reset-18-before-hj47",
     "resetTotal": 18,
-    "currentRemaining": 16,
+    "currentRemaining": 17,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-22",
-      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 before the HJ45 bounded XLSX source-material validation."
+      "summary": "Captain reset/extended the V2 HighJump live-job budget to 18 before the HJ47 one-hop locator-expansion validation."
     },
     "latestReset": {
       "date": "2026-05-22",
-      "previousRemaining": 12,
+      "previousRemaining": 16,
       "resetRemaining": 18,
-      "reason": "Captain provided a fresh 18-job budget after HJ44 so the team can use stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
+      "reason": "Captain provided a fresh 18-job budget after HJ46 so the team can run stronger HighJump validation toward complete and useful V2 reports without artificial budget friction."
     },
     "currentTrancheAccounting": {
-      "startsAfterSliceId": "X7-HJ-44-ASYLUM-235000-DE-SOURCE-NATIVE-PREVIEW-CONTEXT-RERUN",
-      "startsAfterJobId": "cb3b78c16fef4a43bc88e330695c906a",
+      "startsAfterSliceId": "X7-HJ-46-ASYLUM-235000-DE-DOWNLOADABLE-QUERY-INTENT-RERUN",
+      "startsAfterJobId": "4208458670644489a07db2536d7c7332",
       "startingRemaining": 18,
-      "currentRemaining": 16,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "Captain reset the HighJump continuation budget to 18 after HJ44. HJ45 produced another complete internal Alpha report but no XLSX Source Material record. HJ46 sharpened downloadable-record query guidance, but the live query still omitted downloadable/file-format intent, Source Material again had zero XLSX records, and W5 stopped with no extractable evidence. The next move should be Steer-Co-guided and stronger than another prompt-only nudge.",
+      "currentRemaining": 17,
+      "consumptionEntriesInThisTranche": 1,
+      "note": "Captain reset the HighJump continuation budget to 18 after HJ46. HJ47 produced a complete internal Alpha report with direct current-stock evidence and public/default containment held. The intended XLSX Source Material path was not exercised (0 XLSX records), so the next move should pivot to report-quality review and observed report defects rather than adding another locator/crawler layer by default.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1238,6 +1238,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "new_failure",
         "note": "HJ46 reran the German asylum aggregate input after the downloadable-record query-intent prompt repair. Public/default containment held. Query planning returned two queries, neither with downloadable/file-format intent; Source Material records were four Serper previews and two bounded linked pages, with zero XLSX records; W5 received six source-content packets and returned hidden_no_extractable_evidence. The next move should be Steer-Co-guided and likely source-material locator expansion from already fetched landing pages, not another prompt-only nudge."
+      },
+      {
+        "sliceId": "X7-HJ-47-ASYLUM-235000-DE-ONE-HOP-LOCATOR-EXPANSION-RERUN",
+        "jobId": "b6498cbb050641ff91f5bdcd5886590c",
+        "classification": "PASS_X7_HJ47_INTERNAL_ALPHA_REPORT_CREATED_DIRECT_STOCK_EVIDENCE_XLSX_NOT_EXERCISED",
+        "implementationCommit": "81e9f0f749c88aa577e352d0819e6817c58cb672",
+        "runtimeCommit": "81e9f0f749c88aa577e352d0819e6817c58cb672",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 17,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HighJump standing authorization for meaningful V2 live jobs",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced",
+        "note": "HJ47 reran the German asylum aggregate input after bounded one-hop same-host Source Material locator expansion. Public/default containment held: unauthenticated job access returned 4.0.0-cb-precutover / blocked_precutover / report_damaged with reportMarkdown null, and unauthenticated hidden artifact route returned 401. Authenticated admin reportMarkdown was 6163 characters. Hidden chain showed Source Material completed with 5 records (2 linked-page, 3 search-preview), W5 extracted 2 EvidenceItems, internal report writer created 2 verdict sections and 2 boundary sections, and the alpha result firstIncompleteStage was none. Source Material still contained 0 provider_search_result_xlsx_text_bounded / ep_serper_linked_xlsx_fetch records, so the HJ47 XLSX locator path was not exercised. The next step should review the produced report quality before adding more locator machinery."
       }
     ],
     "blockedPending": [],

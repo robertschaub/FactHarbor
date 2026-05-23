@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-47-ASYLUM-235000-DE-ONE-HOP-LOCATOR-EXPANSION-RERUN",
+  "jobId": "b6498cbb050641ff91f5bdcd5886590c",
+  "captainDefinedInput": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "pipelineVariant": "claimboundary-v2",
+  "implementationCommit": "81e9f0f749c88aa577e352d0819e6817c58cb672",
+  "runtimeCommit": "81e9f0f749c88aa577e352d0819e6817c58cb672",
+  "submittedUtc": "2026-05-22T23:35:28Z",
+  "completedUtc": "2026-05-22T23:37:45Z",
+  "classification": "PASS_X7_HJ47_INTERNAL_ALPHA_REPORT_CREATED_DIRECT_STOCK_EVIDENCE_XLSX_NOT_EXERCISED",
+  "informationYield": "report_produced",
+  "liveBudget": {
+    "resetTotalBeforeRun": 18,
+    "consumedByThisRun": 1,
+    "remainingAfterRun": 17
+  },
+  "preflight": {
+    "cleanGitStatusBeforeSubmission": true,
+    "runtimeRefreshedBeforeSubmission": true,
+    "webApiProxyCommitMatchedHead": true,
+    "healthChecksPassed": true
+  },
+  "publicContainment": {
+    "publicSchemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicIssueCode": "report_damaged",
+    "publicReportMarkdown": null,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "unauthenticatedHiddenArtifactRouteStatus": 401
+  },
+  "queryPlanning": {
+    "status": "completed",
+    "queryCount": 2,
+    "queries": [
+      "Asylbereich Schweiz aktuelle Personenzahl Statistik 235000",
+      "Asylsuchende Schweiz Bestand gegenwärtig"
+    ],
+    "tokenUsage": {
+      "inputTokens": 3032,
+      "outputTokens": 504,
+      "totalTokens": 3536,
+      "durationMs": 6252
+    }
+  },
+  "sourceMaterial": {
+    "status": "source_material_page_summary_completed",
+    "recordCount": 5,
+    "recordKinds": {
+      "provider_search_result_page_text_bounded": 2,
+      "provider_search_result_preview_text": 3,
+      "provider_search_result_xlsx_text_bounded": 0
+    },
+    "endpointCounts": {
+      "ep_serper_linked_page_fetch": 2,
+      "ep_serper_google_search": 3,
+      "ep_serper_linked_xlsx_fetch": 0
+    },
+    "sourceMaterialTextByteLengths": [
+      4059,
+      183,
+      4096,
+      177,
+      156
+    ],
+    "xlsxLocatorPathExercised": false
+  },
+  "hiddenChain": {
+    "w5Status": "hidden_evidence_item_extraction_completed",
+    "evidenceItemCount": 2,
+    "evidenceItemIds": [
+      "EVI_001_NZZ_ASYLUM_COUNT_2026",
+      "EVI_002_SEM_OFFICIAL_STATISTICS_AUTHORITY"
+    ],
+    "evidenceItemAdmissionStatus": "bounded_evidence_items_admitted_internal_consumption_pending",
+    "internalReportWriterStatus": "internal_report_writer_draft_created",
+    "internalAlphaResultStatus": "internal_alpha_report_result_candidate_created",
+    "firstIncompleteStage": "none"
+  },
+  "internalAdminReport": {
+    "reportMarkdownCharLength": 6163,
+    "reportMarkdownByteLength": 6164,
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 2,
+    "citedEvidenceItemRefCount": 2,
+    "adminOnly": true
+  },
+  "canaryInterpretation": {
+    "positive": [
+      "Complete hidden/internal Alpha report was produced.",
+      "The report path reached W5 extraction, evidence handoff, sufficiency, boundary/verdict execution, and report writer.",
+      "The report uses direct current-stock evidence and SEM authority context, unlike the preceding HJ44-HJ46 stops/defects.",
+      "Public/default containment held."
+    ],
+    "negative": [
+      "No XLSX Source Material record was materialized, so the HJ47 one-hop XLSX locator path was not proven live.",
+      "The next decision should come from report-quality review of the produced report, not from adding another locator/crawler layer by default."
+    ],
+    "recommendedNext": "Pivot to compact report-quality review against Captain expectations and comparator evidence before adding more source-material machinery."
+  }
+}

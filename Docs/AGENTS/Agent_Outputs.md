@@ -4047,3 +4047,23 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Budget:** Captain reset the live-job tranche to `18` after HJ44. HJ45-HJ46 consumed `2`; `16` remain.
 
 **Next:** Commit this HJ46 result sync, then run compact Steer-Co for HJ47. Do not spend another live job until HJ47 has a committed repair and clean runtime preflight.
+
+## 2026-05-22 - Captain Deputy / Lead Developer - V2 HighJump HJ47 One-Hop Locator Expansion Result
+
+**Task:** Validate HJ47 after adding bounded one-hop same-host HTML locator expansion to the existing Serper linked-page/XLSX Source Material seam.
+
+**Repair:** HJ47 commit `81e9f0f7` adds structural one-hop same-host HTML expansion only after direct same-page XLSX discovery yields zero records. It is capped at two expansion pages per landing page and four per run, does not recurse, uses document order rather than semantic link ranking, and preserves public/default containment, no cache/SR/storage, no direct URL/ACS, no provider expansion, no V1 work, and no broad parser/crawler framework.
+
+**Verification before live job:** Focused XLSX/Serper/source-material tests passed (`3` files / `19` tests); downstream handoff tests passed (`4` files / `29` tests); boundary guard passed (`96` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` remained `advisory_warn` for known V2/test/boundary-guard/docs/consolidation warnings; `npm -w apps/web run build` passed; `npm run index` passed; `git diff --check` passed. Runtime was refreshed and Web/API/proxy version endpoints reported `81e9f0f749c88aa577e352d0819e6817c58cb672` before submission.
+
+**Live result:** HJ47 job `b6498cbb050641ff91f5bdcd5886590c` ran through the V2 route for `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`. It stayed on `claimboundary-v2`; public/default containment held (`4.0.0-cb-precutover`, `blocked_precutover`, `report_damaged`, public/default reportMarkdown `null`) and unauthenticated internal artifact access returned `401`. Authenticated admin reportMarkdown was `6163` characters.
+
+**Hidden-chain evidence:** Query Planning completed with `2` queries. Source Material completed with `5` records: `2` bounded linked-page records and `3` search-preview records. W5 completed with `2` EvidenceItems (`EVI_001_NZZ_ASYLUM_COUNT_2026`, `EVI_002_SEM_OFFICIAL_STATISTICS_AUTHORITY`). The internal report writer created `2` verdict sections and `2` boundary sections; the alpha result's first incomplete stage was `none`.
+
+**Observed result:** This is meaningful report progress: the internal report now contains direct current-stock evidence and SEM authority context. The specific HJ47 XLSX path was not exercised: Source Material still had `0` `provider_search_result_xlsx_text_bounded` records and `0` `ep_serper_linked_xlsx_fetch` records. Do not add another locator/crawler layer by default; the next step should review the produced report quality against Captain expectations and comparator evidence.
+
+**Budget:** Captain reset the live-job tranche to `18` after HJ46. HJ47 consumed `1`; `17` remain.
+
+**DEBT-GUARD RESULT:** Classification: `incomplete-existing-mechanism` after HJ45/HJ46 live evidence. Chosen option: amend the existing Serper/XLSX Source Material seam with one-hop same-host locator expansion. Rejected path: semantic link ranking, source-specific rules, provider expansion, recursive crawling, public behavior, cache/SR/storage, W5 loosening, or another prompt-only nudge. What was added: one bounded structural helper and one existing-seam expansion path. Net mechanism count: slight bounded increase inside an existing mechanism; no new route/provider/artifact family. Verification: listed above. Debt accepted and removal trigger: consolidate HJ45/HJ47 into a general Source Material locator policy before public cutover or remove it if report-quality evidence shows it is not materially useful.
+
+**Next:** Commit this HJ47 result sync, then pivot to report-quality review of job `b6498cbb050641ff91f5bdcd5886590c` before spending more live jobs or adding more source-material reachability machinery.
