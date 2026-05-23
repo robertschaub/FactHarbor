@@ -19,13 +19,9 @@ import {
   normalizeAnalyzeInputValue,
 } from "@/lib/analyze-input-client";
 import {
-  buildStoredClaimSelectionSessionLabel,
   getLocalStorageItemSafely,
   getSessionStorageItemSafely,
   setLocalStorageItemSafely,
-  setStoredClaimSelectionMode,
-  storeDraftAccessToken,
-  upsertStoredActiveClaimSelectionSession,
 } from "@/lib/claim-selection-client";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 import { ActiveClaimSelectionSessions } from "./ActiveClaimSelectionSessions";
@@ -145,7 +141,7 @@ export default function AnalyzePage() {
         headers["x-admin-key"] = adminKey;
       }
 
-      const res = await fetch("/api/fh/claim-selection-drafts", {
+      const res = await fetch("/api/fh/analyze", {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -162,28 +158,11 @@ export default function AnalyzePage() {
       }
 
       const data = await res.json();
-      if (typeof data?.draftId !== "string" || typeof data?.draftAccessToken !== "string") {
-                    throw new Error("Session creation response was incomplete");
+      if (typeof data?.jobId !== "string" || !data.jobId) {
+        throw new Error("Job creation response was incomplete");
       }
 
-      const effectiveSelectionMode =
-        data?.selectionMode === "automatic" ? "automatic" : "interactive";
-
-      storeDraftAccessToken(data.draftId, data.draftAccessToken);
-      setStoredClaimSelectionMode(effectiveSelectionMode);
-      upsertStoredActiveClaimSelectionSession({
-        draftId: data.draftId,
-        createdUtc: typeof data?.createdUtc === "string" ? data.createdUtc : new Date().toISOString(),
-        inputType,
-        inputPreview: buildStoredClaimSelectionSessionLabel(inputType),
-        selectionMode: effectiveSelectionMode,
-        lastKnownStatus: typeof data?.status === "string" ? data.status : "QUEUED",
-        lastKnownFinalJobId: null,
-        lastKnownUpdatedUtc: null,
-        hidden: false,
-      });
-
-      router.push(`/analyze/select/${data.draftId}`);
+      router.push(`/jobs/${data.jobId}`);
     } catch (err: any) {
       const msg =
         err?.name === "AbortError"
@@ -319,7 +298,7 @@ export default function AnalyzePage() {
             className={`${styles.submitButton} ${isSubmitting || !hasInput || (!adminKey && !inviteCode.trim()) ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
-              <>⏳ Preparing Atomic Claims...</>
+              <>⏳ Starting analysis...</>
             ) : (
               <>🔍 Check</>
             )}
