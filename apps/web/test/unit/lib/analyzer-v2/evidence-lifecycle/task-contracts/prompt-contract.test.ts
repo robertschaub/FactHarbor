@@ -380,6 +380,12 @@ describe("analyzer-v2 Evidence Lifecycle prompt task contracts", () => {
     expect(section).toContain("outside baseline or adjacent comparator");
     expect(section).toContain("make the first verdict candidate the most claim-aligned top-line candidate");
     expect(section).toContain("Do not choose `MIXED` merely because indirect context points in another direction");
+    expect(section).toContain("For selected endpoint comparisons");
+    expect(section).toContain("direct EvidenceItems that explicitly preserve both specific compared endpoints");
+    expect(section).toContain("may support a stronger opposite-side label and lower truth percentage");
+    expect(section).toContain("it does not mean a broader category, adjacent alternative, default baseline, inverse frame, or substitute comparator");
+    expect(section).toContain("remains contextual under the adjacent-comparator rule");
+    expect(section).toContain("must not drive selected-claim truth calibration unless the evidence itself explicitly bridges the mismatch");
     expect(section).toContain("Selected Claim Coherence and Candidate Economy");
     expect(section).toContain("Each accepted verdict candidate must answer a materially distinct assessment");
     expect(section).toContain("context-only boundary, residual procedural milestone, expected downstream step");
