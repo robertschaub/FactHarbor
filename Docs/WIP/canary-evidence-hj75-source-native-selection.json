@@ -1,0 +1,69 @@
+{
+  "slice": "HJ75",
+  "capturedUtc": "2026-05-23T16:47:04.139Z",
+  "classification": "INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS",
+  "informationYield": "invalid_runtime_trigger_miss_no_analyzer_execution",
+  "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "implementationCommit": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+  "runtimePreflightBeforeSubmission": {
+    "apiAndWebVersionReportedCommit": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+    "limitation": "The Web internal runner route auth was not independently probed before this first HJ75 submission."
+  },
+  "job": {
+    "jobId": "bdde6d4ad58544bcbf07576c7cf89968",
+    "status": "FAILED",
+    "progress": 100,
+    "pipelineVariant": "claimboundary-v2",
+    "submissionPath": "direct-api",
+    "createdUtc": "2026-05-23T16:34:32.1833372",
+    "updatedUtc": "2026-05-23T16:34:37.0352011",
+    "gitCommitHash": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+    "createdGitCommitHash": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+    "executedWebGitCommitHash": null,
+    "promptContentHash": null,
+    "reportMarkdownLength": 0,
+    "resultJsonPresent": false,
+    "truthPercentage": null,
+    "confidence": null,
+    "verdictLabel": null
+  },
+  "failure": {
+    "stage": "runtime_trigger_before_analyzer_execution",
+    "cause": "API accepted the job, then RunnerClient received HTTP 401 from Web /api/internal/run-job because the local Web runtime did not accept the configured runner key.",
+    "evidence": [
+      "Web log recorded POST /api/internal/run-job 401 during the failed job trigger window.",
+      "Persisted API job record has gitCommitHash/createdGitCommitHash but executedWebGitCommitHash, promptContentHash, resultJson, and reportMarkdown are null.",
+      "No adminDiagnostics.sourceChainAttribution exists because analyzer execution never started."
+    ],
+    "sourceMaterialEvaluation": "not_evaluated",
+    "reportQualityEvaluation": "not_evaluated"
+  },
+  "postFailureRuntimeAuthRepair": {
+    "action": "Runtime restart hygiene only; no source behavior change.",
+    "runnerKeyPreflight": "/api/internal/run-job with configured runner key now returns 400 Missing jobId instead of 401 Unauthorized.",
+    "adminKeyPreflight": "/api/admin/test-config with configured admin key now returns 200.",
+    "apiWebHealth": "healthy after Web restart with inherited .env.local values"
+  },
+  "replacementCanaryDecision": {
+    "steerCoConsent": true,
+    "consentSummary": "Steer-Co reviewer consented to one replacement HJ75 canary after committing this failure/provenance record because the failed job did not execute the analyzer and treating it as HJ75 evidence would corrupt provenance.",
+    "conditions": [
+      "Commit failure/provenance documentation first.",
+      "Count the failed job as budget-consuming but analytically invalid.",
+      "Re-verify Web/API health, runner auth, admin auth, clean git status, and runtime commit before replacement submission.",
+      "Run exactly one replacement canary; if it fails before analyzer execution again or provenance is missing, stop for Captain."
+    ]
+  },
+  "publicEnvelope": {
+    "resultJsonPresent": false,
+    "publicReportMarkdownPresent": false,
+    "publicVerdictPresent": false,
+    "adminDiagnosticsPresent": false
+  },
+  "sourceChainSummary": {
+    "hasSourceChain": false,
+    "sourceMaterial": null,
+    "w5EvidenceExtraction": null,
+    "reportWriter": null
+  }
+}

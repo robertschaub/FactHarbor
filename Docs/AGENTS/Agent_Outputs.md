@@ -4962,3 +4962,36 @@ Budget reconciliation: actual source diff stayed in one existing runtime owner a
 Verification: focused owner, Serper preview, XLSX materializer, boundary guard, build, V2 gate validation, and gate-register self-test passed
 Debt accepted and removal trigger: none
 ```
+
+## 2026-05-23 - Captain Deputy - HJ75 Runtime Auth Trigger Miss
+
+**Task:** Run the HJ75 live canary after implementation commit `522beebb` and
+document the result before any replacement submission.
+
+**Result:** First HJ75 submission `bdde6d4ad58544bcbf07576c7cf89968` is
+classified `INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS`. The API accepted the
+Captain-defined current-asylum input on `claimboundary-v2` and stamped
+`gitCommitHash` / `createdGitCommitHash` as
+`522beebb9fe36c89e011777118e6fcde6ece0c50`, but the Web internal runner
+trigger returned `401` before analyzer execution. The persisted job has
+`executedWebGitCommitHash = null`, `promptContentHash = null`,
+`resultJson = null`, and `reportMarkdown = null`, so it provides no Source
+Material, W5, or report-quality evidence.
+
+**Budget:** The job is budget-consuming but analytically invalid. The active
+12-job tranche now has `10` remaining after HJ74 and this invalid HJ75 trigger
+miss.
+
+**Runtime correction:** Restart hygiene fixed the local Web auth environment.
+`/api/internal/run-job` with the configured runner key now returns
+`400 Missing jobId`, and `/api/admin/test-config` with the configured admin key
+returns `200`. No source behavior changed.
+
+**Steer-Co consent:** A reviewer consented to exactly one replacement HJ75
+canary after this failure/provenance documentation commit and fresh health,
+auth, clean-git, and runtime-provenance preflight. If the replacement also fails
+before analyzer execution or lacks provenance, stop for Captain.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj75-source-native-selection.json`;
+`Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
+`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.

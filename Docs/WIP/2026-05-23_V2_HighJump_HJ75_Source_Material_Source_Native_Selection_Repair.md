@@ -1,6 +1,6 @@
 # V2 HighJump HJ75 - Source Material Source-Native Selection Repair
 
-Status: implementation in progress; no live job run yet
+Status: implementation committed; first live submission invalidated by runtime-auth trigger miss; one replacement canary pending after docs commit and fresh preflight
 
 ## Objective
 
@@ -23,7 +23,10 @@ than Query Planning, W5, report writing, provider expansion, cap increases,
 retries, parser/cache/SR/storage, public behavior, ACS/direct URL, or V1 work.
 
 One HJ75 canary may be run only after implementation commit, runtime refresh,
-clean git status, and verifier pass.
+clean git status, and verifier pass. The first HJ75 submission consumed a live
+job but did not execute the analyzer because the local API-to-Web runner trigger
+returned `401`. That job is recorded as analytically invalid; it must not be
+used as Source Material or report-quality evidence.
 
 ## HJ74 Evidence
 
@@ -268,12 +271,48 @@ DEBT-GUARD RESULT
   debt sensors, index, and diff checks are run at closeout.
 - Debt accepted and removal trigger: none.
 
-## Canary Readiness
+## First Canary Attempt - Invalid Runtime Trigger
 
-After this implementation is committed, runtime is refreshed, Web/API runtime
-commit hashes match the commit, and provenance is clean, HJ75 may spend exactly
-one live job from the active tranche on:
+First HJ75 submission:
+
+- job: `bdde6d4ad58544bcbf07576c7cf89968`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- status: `FAILED`;
+- classification: `INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS`;
+- implementation/source commit: `522beebb9fe36c89e011777118e6fcde6ece0c50`;
+- `gitCommitHash` and `createdGitCommitHash` were stamped as `522beebb`, but
+  `executedWebGitCommitHash`, `promptContentHash`, `resultJson`, and
+  `reportMarkdown` are null;
+- Web log showed `POST /api/internal/run-job 401` during the trigger window.
+
+This is a runtime setup miss, not an HJ75 source-material result. The analyzer
+never started, so no source-chain attribution, Source Material composition, W5
+evidence, or report-quality conclusion can be drawn from this job.
+
+Post-failure runtime auth preflight now passes:
+
+- `/api/internal/run-job` with the configured runner key returns
+  `400 Missing jobId`, proving the key is accepted;
+- `/api/admin/test-config` with the configured admin key returns `200`;
+- API and Web health checks pass.
+
+Steer-Co consented to one replacement HJ75 canary under these conditions:
+
+- commit this failure/provenance record first;
+- count the failed job as budget-consuming but analytically invalid;
+- re-verify Web/API health, runner auth, admin auth, clean git status, and
+  runtime commit before replacement submission;
+- run exactly one replacement canary;
+- if the replacement fails before analyzer execution again or provenance is
+  missing, stop for Captain.
+
+## Replacement Canary Readiness
+
+After this invalid-attempt documentation is committed, runtime is refreshed,
+Web/API runtime commit hashes match the committed source, runner/admin auth
+preflight passes, and provenance is clean, HJ75 may spend exactly one
+replacement live job from the active tranche on:
 
 `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
 
-Do not run a second HJ75 canary without a separate package/approval.
+Do not run a second replacement HJ75 canary without a separate package/approval.

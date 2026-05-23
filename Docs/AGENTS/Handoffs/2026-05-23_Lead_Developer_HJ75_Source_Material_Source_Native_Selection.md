@@ -49,7 +49,8 @@ Passed before closeout:
 - `npm run validate:v2-gates`.
 - `node scripts/validate-v2-gate-register.mjs --self-test`.
 
-Final closeout still needs debt sensors, index, diff checks, and commit.
+Final closeout checks passed and the implementation was committed at
+`522beebb9fe36c89e011777118e6fcde6ece0c50`.
 
 ## V2 Scorecard Impact
 
@@ -109,14 +110,41 @@ Debt accepted and removal trigger: none.
 Residual debt: advisory V2 footprint, boundary guard size, docs footprint, and
 consolidation-marker warnings remain.
 
+## Runtime Canary Attempt
+
+The first HJ75 submission after commit was invalidated by runtime-auth setup,
+not by analyzer behavior:
+
+- job: `bdde6d4ad58544bcbf07576c7cf89968`;
+- status: `FAILED`;
+- classification: `INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- job `gitCommitHash` / `createdGitCommitHash`: `522beebb`;
+- `executedWebGitCommitHash`, `promptContentHash`, `resultJson`, and
+  `reportMarkdown`: null.
+
+The API accepted the job, then the Web internal runner trigger returned
+`401 Unauthorized`, so analyzer execution never started. This job consumed one
+live-job slot but is analytically invalid and must not be used as Source
+Material/report evidence.
+
+Runtime auth was corrected by restart hygiene only; no source behavior changed.
+`/api/internal/run-job` with the configured runner key now returns
+`400 Missing jobId`, and `/api/admin/test-config` with the configured admin key
+returns `200`.
+
+Steer-Co consented to one replacement HJ75 canary after this failure/provenance
+record is committed and fresh health/auth/provenance preflight passes. If that
+replacement fails before analyzer execution again or lacks provenance, stop for
+Captain.
+
 ## Next Step
 
-After implementation commit and runtime refresh, run exactly one HJ75 canary
-with the Captain-defined input:
+Run exactly one replacement HJ75 canary with the Captain-defined input:
 
 `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
 
 Pass requires public containment, HJ73 attribution, and stronger source-native
 Source Material composition than HJ74 or a clear attribution-based pivot to
-provider/query strategy. Do not run a second HJ75 canary without separate
-package/approval.
+provider/query strategy. Do not run a second replacement HJ75 canary without
+separate package/approval.

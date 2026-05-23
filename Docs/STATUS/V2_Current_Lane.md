@@ -24,8 +24,8 @@ implementation was committed. Older HJ history below is kept as context, but
 the active anchor and budget are:
 
 - committed implementation anchor:
-  HJ75 source-material source-native selection repair (pending closeout commit
-  in the current implementation cycle);
+  HJ75 source-material source-native selection repair at
+  `522beebb9fe36c89e011777118e6fcde6ece0c50`;
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ72_Source_Material_Serper_Ordinal_Fallback_Repair.md`;
 - latest no-live package:
@@ -33,19 +33,23 @@ the active anchor and budget are:
 - next prepared package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
 - latest canary result:
-  HJ74 HJ73-attribution canary, classified
-  `PARTIAL_PASS_X7_HJ74_ATTRIBUTION_CAPTURED_SOURCE_MATERIAL_GAP_REMAINS`;
+  HJ75 first submission `bdde6d4ad58544bcbf07576c7cf89968`, classified
+  `INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS`, budget-consuming but
+  analytically invalid because analyzer execution never started;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ73;
-  HJ74 consumed `1`, so `11` remain;
+  HJ74 consumed `1`; the invalid HJ75 runtime-auth trigger miss consumed `1`;
+  `10` remain;
 - next action:
-  commit HJ75 after final closeout checks, refresh runtime, then run exactly
-  one HJ75 canary on the Captain-defined current-asylum input if provenance is
-  clean. HJ75 keeps the source-material owner narrow: existing Serper
-  source-native records (XLSX, linked-page text) are preferred over preview
-  fallback under existing caps;
+  commit the invalid-attempt documentation, re-verify clean git status,
+  Web/API health, accepted runner/admin auth, and runtime commit provenance,
+  then run exactly one replacement HJ75 canary on the Captain-defined
+  current-asylum input. HJ75 keeps the source-material owner narrow: existing
+  Serper source-native records (XLSX, linked-page text) are preferred over
+  preview fallback under existing caps;
 - stop conditions:
-  stop on stale runtime/source, unexpected V1 submission, public/default leak
+  stop on stale runtime/source, replacement canary failing before analyzer
+  execution, missing provenance, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
   prompt/model/config/schema work beyond the approved state, provider/parser/
   cache/SR/storage/ACS/direct-URL/V1 scope, or unclear verifier/runtime failure.
@@ -54,7 +58,7 @@ the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`9267685f feat(v2): add hj73 source-chain attribution`
+`522beebb feat(v2): prioritize source-native source material`
 
 Latest implementation repair:
 
@@ -64,6 +68,17 @@ already-materialized source-native Serper records are selected before
 preview-only fallback records while preserving provider-attempt balancing,
 dedupe, byte caps, record caps, no public surface, no provider/cap/retry
 expansion, and no prompt/model/config/schema change.
+
+First HJ75 submission `bdde6d4ad58544bcbf07576c7cf89968` is not HJ75 source
+evidence. It failed before analyzer execution when the API-to-Web
+`/api/internal/run-job` trigger returned `401` due local Web runtime auth setup.
+The persisted job has `gitCommitHash` / `createdGitCommitHash` at `522beebb`,
+but no `executedWebGitCommitHash`, prompt hash, result JSON, report markdown,
+or source-chain attribution. Runtime auth was corrected by restart hygiene:
+the internal runner route now accepts the configured key and returns
+`400 Missing jobId`, while admin auth returns `200`. Steer-Co consented to one
+replacement HJ75 canary after the invalid-attempt documentation commit and
+fresh health/auth/provenance preflight.
 
 HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
@@ -97,13 +112,23 @@ exhausted.
 
 Latest validation:
 
-`X7-HJ-74-HJ73-ATTRIBUTION-CANARY`
+`X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-RUNTIME-AUTH-MISS`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj74-source-chain-attribution.json`
+`Docs/WIP/canary-evidence-hj75-source-native-selection.json`
 
 Important evidence:
+
+- HJ75 first submission job `bdde6d4ad58544bcbf07576c7cf89968` used the
+  Captain-defined `asylum-235000-de` input and explicit `claimboundary-v2` on
+  implementation commit `522beebb`. The API accepted the job and stamped
+  `gitCommitHash` / `createdGitCommitHash`, then failed the trigger before
+  Web analyzer execution because `/api/internal/run-job` returned `401`. The
+  job has no `executedWebGitCommitHash`, prompt hash, result JSON, report
+  markdown, or source-chain attribution. It is budget-consuming but
+  analytically invalid. Runtime auth is now repaired by restart hygiene and
+  preflighted; one replacement HJ75 canary remains the next action.
 
 - HJ74 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `7f24b11905bf9e945934ee634fd5aa7d0c6f7520`, a docs-only successor containing
@@ -741,10 +766,12 @@ Current active tranche:
 7. Treat HJ74 as partial pass: durable attribution worked, public containment
    held, and the chain reached W5/report writer, but direct current-stock source
    material was still absent. Do not run a second HJ74 job.
-8. Treat HJ75 as the active source-material selector repair: commit after
-   verifiers, refresh runtime, and run exactly one canary if provenance is
-   clean. If the canary repeats the missing current-stock aggregate with no
-   useful source-native improvement, stop and steer toward provider/query
+8. Treat HJ75 as the active source-material selector repair: implementation is
+   committed at `522beebb`. First submission `bdde6d4...` is invalid because
+   runtime auth failed before analyzer execution. Commit the invalid-attempt
+   record, then run exactly one replacement canary if health/auth/provenance is
+   clean. If the replacement repeats the missing current-stock aggregate with
+   no useful source-native improvement, stop and steer toward provider/query
    strategy rather than another selector tweak.
 
 ## Stop Conditions
