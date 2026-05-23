@@ -1,6 +1,6 @@
 # V2 HighJump HJ66 W7-B Caveats Array Contract Repair
 
-**Status:** local implementation verifier-clean; live validation pending
+**Status:** live validation passed; docs closeout pending
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
 **Authority:** Captain HighJump direction; prompt edits, schema changes, and live
@@ -170,3 +170,67 @@ Stop signals:
   after the HJ65 polarity wording;
 - W8 or upstream stages regress to a different blocker that prevents evaluating
   W7-B selected-claim polarity.
+
+## Live Result
+
+Result artifact:
+
+`Docs/WIP/canary-evidence-hj66-w7b-caveats-array-contract.json`
+
+Runtime/source:
+
+- implementation commit:
+  `4dbafbba96c889f844d5b03ef1f5ca5863c4d63d`;
+- active `claimboundary-v2` prompt label/hash:
+  `hj66-w7b-caveats-array-contract` /
+  `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`;
+- job:
+  `152538f779274a8db48b43bfbf963898`;
+- job executed web git hash:
+  `4dbafbba96c889f844d5b03ef1f5ca5863c4d63d`.
+
+Result:
+
+- The job stayed on `claimboundary-v2` and finished `SUCCEEDED`.
+- Public/default containment held: public/default V2 stayed
+  `4.0.0-cb-precutover` / `blocked_precutover`; public/default report
+  markdown, verdict, truth percentage, and confidence were absent; default W8
+  writer projection remained hash/length/provenance-only; unauthenticated W8
+  writer route access returned `401`.
+- The hidden chain reached W5 with `4` EvidenceItems.
+- W7-B accepted without caveats/material-uncertainty schema damage; W8-B
+  internal Alpha result recorded `firstIncompleteStage = none`.
+- W8 internal report writer returned `internal_report_writer_draft_created`
+  with accepted aggregation narrative output, `6705` report bytes, `1` verdict
+  section, `3` boundary sections, and `4` cited EvidenceItem refs.
+- The top-line report verdict now answers the selected claim as `MIXED`, truth
+  `50`, confidence `72`, satisfying the HJ66 pass condition of false-side or at
+  most `MIXED` for this input.
+
+Classification:
+
+`PASS_X7_HJ66_W7B_CAVEATS_ARRAY_CONTRACT_REPAIRED_SELECTED_CLAIM_MIXED_REPORT_CREATED`
+
+Information yield:
+
+`report_quality_improved`.
+
+Budget:
+
+HJ66 consumed `1` job from the current `18`-job tranche. `15` remain.
+
+## Debt-Guard Result
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_BOUNDARY_VERDICT_EXECUTION prompt output contract
+Rejected path and why: runtime coercion, schema relaxation, retries, and report-writer mutation would add mechanisms or hide the W7-B contract defect
+What was removed/simplified: none
+What was added: generic array-type prompt contract wording plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in prompt/test/status/package/ledger docs; no runtime path, schema, retry, fallback, public behavior, source/provider/parser/cache/SR/storage, ACS/direct URL, or V1 behavior changed
+Verification: prompt-contract and boundary-verdict tests, boundary guard, build, debt sensors, index, diff check, sidecar review, prompt import, runtime preflight, and one committed/refreshed live canary
+Debt accepted and removal trigger: no accepted mechanism debt; keep the array contract as stable W7-B prompt contract unless repeated failures prove prompt-only enforcement insufficient
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```

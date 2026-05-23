@@ -4498,3 +4498,37 @@ Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain u
 **Debate:** Advocate favored `quality_before_decline` + `deployed_22.4` for maximum quality. Challenger preferred `deployed_22.4` + `best_reports_19.4` due lower extraction cost. Reconciler selected `quality_before_decline` + `deployed_22.4`, treating extraction cost as a risk constraint rather than a replacement for quality ranking.
 
 **Handoff:** `Docs/AGENTS/Handoffs/2026-05-23_Senior_Developer_Candidate_Pipeline_Ranking.md`.
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ66 W7-B Caveats Array Contract
+
+**Task:** Resume after reboot, keep sub-agent orchestration alive, close the HJ66 repair, and run the authorized focused plastic canary if provenance was clean.
+
+**Repair:** Commit `4dbafbba` amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt output contract so `caveats` and `materialUncertaintySignals` must be arrays of strings, using `[]` when empty. Focused prompt-contract assertions were added. No runtime coercion, schema relaxation, retry/fallback, report-writer mutation, source/provider/parser/cache/SR/storage change, public behavior, ACS/direct URL, or V1 work was added. UCM `claimboundary-v2` was imported and activated as `hj66-w7b-caveats-array-contract` with hash `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
+
+**Verification before live job:** Prompt-contract plus boundary-verdict tests passed (`21` tests); boundary guard passed (`96` tests); web build passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/boundary-guard/consolidation signals; sidecar reviewer `Noether` passed the diff as generic/topic-neutral and lowest-net-complexity; runtime preflight confirmed Web/API commit `4dbafbba96c889f844d5b03ef1f5ca5863c4d63d`, default pipeline `claimboundary-v2`, active prompt hash `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`, and clean git status.
+
+**Live job:** `plastic-en` `152538f779274a8db48b43bfbf963898`.
+
+**Result:** HJ66 passed. The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, W7-B accepted without caveats/material-uncertainty schema damage, and the hidden W8 internal report writer returned `internal_report_writer_draft_created` with accepted aggregation narrative output, `6705` report bytes, `1` verdict section, `3` boundary sections, and `4` cited EvidenceItem refs. Public/default containment held: public/default V2 stayed `4.0.0-cb-precutover` / `blocked_precutover`; public/default report markdown, verdict, truth percentage, and confidence were absent; default W8 route stayed hash/length/provenance-only; unauthenticated W8 route access returned `401`.
+
+**Classification:** `PASS_X7_HJ66_W7B_CAVEATS_ARRAY_CONTRACT_REPAIRED_SELECTED_CLAIM_MIXED_REPORT_CREATED`.
+
+**Information yield:** `report_quality_improved`.
+
+**Quality note:** The top-line report verdict now answers the selected claim as `MIXED`, truth `50`, confidence `72`, satisfying the HJ66 pass signal of false-side or at most `MIXED` for the plastic input. Next useful step is a stronger bounded report-quality validation step on Captain-defined inputs, not another single-field contract repair.
+
+**Budget:** HJ66 consumed `1`; current tranche remaining is `15`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_BOUNDARY_VERDICT_EXECUTION prompt output contract
+Rejected path and why: runtime coercion, schema relaxation, retries, and report-writer mutation would add mechanisms or hide the W7-B contract defect
+What was removed/simplified: none
+What was added: generic array-type prompt contract wording plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Budget reconciliation: actual diff stayed in prompt/test/status/package/ledger docs; no runtime path, schema, retry, fallback, public behavior, source/provider/parser/cache/SR/storage, ACS/direct URL, or V1 behavior changed
+Verification: prompt-contract and boundary-verdict tests, boundary guard, build, debt sensors, index, diff check, sidecar review, prompt import, runtime preflight, and one committed/refreshed live canary
+Debt accepted and removal trigger: no accepted mechanism debt; keep the array contract as stable W7-B prompt contract unless repeated failures prove prompt-only enforcement insufficient
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
+```

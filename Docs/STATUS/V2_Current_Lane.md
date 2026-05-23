@@ -19,23 +19,22 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for HJ66. Older HJ history below is kept as context,
+This projection is synced after HJ66. Older HJ history below is kept as context,
 but the active anchor and budget are:
 
 - committed implementation anchor:
-  `4891d73f fix(v2): keep w7b verdicts oriented to selected claim`;
+  `4dbafbba fix(v2): require w7b verdict caveats arrays`;
 - active repair package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ66_W7B_Caveats_Array_Contract_Repair.md`;
 - latest canary result:
-  HJ65 focused plastic canary, classified
-  `STOP_X7_HJ65_W7B_SCHEMA_VALIDATION_CAVEATS_TYPE_AFTER_POLARITY_PROMPT`;
+  HJ66 focused plastic canary, classified
+  `PASS_X7_HJ66_W7B_CAVEATS_ARRAY_CONTRACT_REPAIRED_SELECTED_CLAIM_MIXED_REPORT_CREATED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 and HJ65 consumed `2`, so `16` remain before HJ66;
+  HJ64 through HJ66 consumed `3`, so `15` remain;
 - next action:
-  keep HJ65 selected-claim polarity wording and finish the narrow HJ66 W7-B
-  output-contract repair requiring `caveats` and
-  `materialUncertaintySignals` arrays before one focused plastic canary;
+  pivot from single-input repair to report-quality validation over a stronger
+  Captain-defined input set, using the HJ66 prompt as the current anchor;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -46,33 +45,45 @@ but the active anchor and budget are:
 
 Latest source/docs anchor:
 
-`4891d73f fix(v2): keep w7b verdicts oriented to selected claim`
+`4dbafbba fix(v2): require w7b verdict caveats arrays`
 
 Active implementation repair:
 
-HJ65 amended only the existing `V2_BOUNDARY_VERDICT_EXECUTION` prompt section
-so W7-B must answer the selected AtomicClaim as written rather than silently
-replacing it with an inverse or counter-proposition. The focused plastic
-canary kept the V2 chain contained and reached W5 with `4` EvidenceItems plus
-accepted W6-C sufficiency, but W7-B returned schema damage because both verdict
-candidate `caveats` fields had invalid type. HJ66 keeps the polarity wording
-and amends the same W7-B output contract to require `caveats` and
-`materialUncertaintySignals` as arrays of strings. This remains prompt/test
-calibration only; no runtime coercion, schema relaxation, retry, fallback, or
-parallel report path is authorized.
+HJ66 kept the HJ65 selected-claim polarity wording and amended the same
+`V2_BOUNDARY_VERDICT_EXECUTION` prompt output contract so `caveats` and
+`materialUncertaintySignals` must be arrays of strings. The focused plastic
+canary cleared the HJ65 schema blocker and produced a complete hidden/admin
+internal report. The top-line verdict now answers the selected claim as
+`MIXED`, truth `50`, confidence `72`, which satisfies the HJ66 pass condition
+of false-side or at most `MIXED` for this input. No runtime coercion, schema
+relaxation, retry, fallback, parallel report path, source/provider/parser/
+cache/SR/storage change, public behavior, ACS/direct URL, or V1 work was added.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-65-W7B-SELECTED-CLAIM-POLARITY-REPAIR`
+`X7-HJ-66-W7B-CAVEATS-ARRAY-CONTRACT-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj65-w7b-selected-claim-polarity.json`
+`Docs/WIP/canary-evidence-hj66-w7b-caveats-array-contract.json`
 
 Important evidence:
 
+- HJ66 ran one focused plastic canary on runtime/source commit
+  `4dbafbba96c889f844d5b03ef1f5ca5863c4d63d` after importing and activating
+  `claimboundary-v2` prompt hash
+  `18182d27945de17dd62b3c89d0e816d09b1b25cb7ee6c3ffb065aef937574786`.
+  Job `152538f779274a8db48b43bfbf963898` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. W7-B
+  accepted without caveats/material-uncertainty schema damage; W8-B recorded
+  `firstIncompleteStage = none`; W8 internal report writer returned
+  `internal_report_writer_draft_created`, accepted aggregation narrative
+  output, `6705` report bytes, `1` verdict section, `3` boundary sections, and
+  `4` cited EvidenceItem refs. The top-line report verdict was `MIXED`, truth
+  `50`, confidence `72`, answering the selected claim and clearing the HJ64/HJ65
+  plastic orientation/schema repair path.
 - HJ65 ran one focused plastic canary on runtime/source commit
   `4891d73f8ebf2ba8084975970dac9e58b8294739` after importing and activating
   `claimboundary-v2` prompt hash
@@ -562,8 +573,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `2`;
-- remaining: `16`;
+- consumed after latest reset: `3`;
+- remaining: `15`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -571,12 +582,12 @@ Current active tranche:
 
 ## Next Action
 
-1. Keep HJ65 selected-claim polarity wording; the live stop was a narrow W7-B
-   schema contract failure, not evidence against the polarity repair.
-2. Finish HJ66 by amending the existing W7-B output contract so `caveats` and
-   `materialUncertaintySignals` must be arrays of strings.
-3. After verifier-clean repair, commit, prompt import, and runtime refresh,
-   rerun one focused plastic canary before spending broader gauntlet budget.
+1. Keep HJ66 as the active prompt/report-quality anchor.
+2. Run a stronger, bounded report-quality validation step on Captain-defined
+   inputs before adding more plumbing.
+3. Use the next observed report defect to raise one bar at a time; do not add
+   retries, schema relaxation, source/provider widening, public behavior, or V1
+   work unless a new package and hard-stop authority support it.
 
 ## Stop Conditions
 
