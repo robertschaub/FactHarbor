@@ -4995,3 +4995,46 @@ before analyzer execution or lacks provenance, stop for Captain.
 **Evidence:** `Docs/WIP/canary-evidence-hj75-source-native-selection.json`;
 `Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
 `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+## 2026-05-23 - Captain Deputy - HJ75 Replacement Canary Result
+
+**Task:** Run exactly one replacement HJ75 canary after documenting the
+runtime-auth trigger miss, refreshing runtime, and verifying clean provenance.
+
+**Runtime/provenance:** Working tree was clean before submission after the
+unrelated candidate-pipeline WIP file was stashed as
+`pre-hj75-replacement-unrelated-candidate-reanalysis`. API and Web health
+passed. API and Web version endpoints reported
+`395d0cb3e5b2e7efe5088f41ab0a863476230a5b`. Runner-key preflight returned
+`400 Missing jobId`; admin-key preflight returned `200`.
+
+**Live job:** `ad76c64ca5eb46c7904043975e0c483c`, input
+`Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`,
+explicit `claimboundary-v2`. It reached `SUCCEEDED`. `gitCommitHash`,
+`createdGitCommitHash`, and `executedWebGitCommitHash` all matched
+`395d0cb3e5b2e7efe5088f41ab0a863476230a5b`.
+
+**Result classification:**
+`PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`.
+Public/default containment held: no public report markdown, verdict label,
+truth percentage, confidence, or `adminDiagnostics`; public schema stayed
+`4.0.0-cb-precutover` and cutover stayed `blocked_precutover`.
+
+**Attribution evidence:** Admin-only HJ73 source-chain attribution showed
+Source Material completed with `7` records and `14332` bounded text bytes:
+`3` linked-page text, `1` OpenAlex abstract, and `3` preview-only records. W5
+extracted `2` EvidenceItems. The internal report writer created a `4268` byte
+draft with observed top line `MOSTLY-TRUE`, truth `78`, confidence `72`.
+
+**Budget:** HJ74 consumed `1`, invalid HJ75 trigger miss consumed `1`, and the
+valid HJ75 replacement consumed `1`; active 12-job tranche has `9` remaining.
+No second HJ75 canary is authorized.
+
+**Next owner:** Report-quality review of the HJ75 internal report, then one
+targeted bar raise from observed defects. Do not default to more
+source-material plumbing.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj75-source-native-selection-replacement.json`;
+`Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md`;
+`Docs/STATUS/V2_Current_Lane.md`;
+`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.

@@ -33,23 +33,20 @@ the active anchor and budget are:
 - next prepared package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ74_HJ73_Attribution_Canary_Package.md`;
 - latest canary result:
-  HJ75 first submission `bdde6d4ad58544bcbf07576c7cf89968`, classified
-  `INVALID_X7_HJ75_RUNTIME_AUTH_TRIGGER_MISS`, budget-consuming but
-  analytically invalid because analyzer execution never started;
+  HJ75 replacement canary `ad76c64ca5eb46c7904043975e0c483c`,
+  classified
+  `PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`;
 - current live-job tranche:
   Captain reset to `12` on 2026-05-23 after HJ73;
   HJ74 consumed `1`; the invalid HJ75 runtime-auth trigger miss consumed `1`;
-  `10` remain;
+  the valid HJ75 replacement consumed `1`; `9` remain;
 - next action:
-  commit the invalid-attempt documentation, re-verify clean git status,
-  Web/API health, accepted runner/admin auth, and runtime commit provenance,
-  then run exactly one replacement HJ75 canary on the Captain-defined
-  current-asylum input. HJ75 keeps the source-material owner narrow: existing
-  Serper source-native records (XLSX, linked-page text) are preferred over
-  preview fallback under existing caps;
+  review the HJ75 internal current-asylum report quality against expectations,
+  then raise one targeted bar from observed report defects. Do not add more
+  source-material plumbing by default and do not run a second HJ75 canary;
 - stop conditions:
-  stop on stale runtime/source, replacement canary failing before analyzer
-  execution, missing provenance, unexpected V1 submission, public/default leak
+  stop on stale runtime/source, missing provenance, unexpected V1 submission,
+  public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
   prompt/model/config/schema work beyond the approved state, provider/parser/
   cache/SR/storage/ACS/direct-URL/V1 scope, or unclear verifier/runtime failure.
@@ -79,6 +76,17 @@ the internal runner route now accepts the configured key and returns
 `400 Missing jobId`, while admin auth returns `200`. Steer-Co consented to one
 replacement HJ75 canary after the invalid-attempt documentation commit and
 fresh health/auth/provenance preflight.
+
+Replacement HJ75 canary `ad76c64ca5eb46c7904043975e0c483c` ran after docs
+commit/runtime refresh and passed. It stayed on `claimboundary-v2`, finished
+`SUCCEEDED`, and stamped `gitCommitHash`, `createdGitCommitHash`, and
+`executedWebGitCommitHash` as `395d0cb3`. Public/default containment held. HJ73
+admin source-chain attribution showed Source Material completed with `7`
+records / `14332` bounded text bytes (`3` linked-page text, `1` OpenAlex
+abstract, `3` preview-only), W5 extracted `2` EvidenceItems, and the internal
+report writer created a `4268` byte draft. The observed internal report top
+line is `MOSTLY-TRUE`, truth `78`, confidence `72`, improving the current
+asylum input from HJ74 `UNVERIFIED`. No second HJ75 canary is authorized.
 
 HJ73 is complete and committed as a no-live coordination package. It follows HJ72's repeated
 `same_stop_repeated_without_useful_new_information` result and the repeated
@@ -112,11 +120,11 @@ exhausted.
 
 Latest validation:
 
-`X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-RUNTIME-AUTH-MISS`
+`X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj75-source-native-selection.json`
+`Docs/WIP/canary-evidence-hj75-source-native-selection-replacement.json`
 
 Important evidence:
 
@@ -128,7 +136,21 @@ Important evidence:
   job has no `executedWebGitCommitHash`, prompt hash, result JSON, report
   markdown, or source-chain attribution. It is budget-consuming but
   analytically invalid. Runtime auth is now repaired by restart hygiene and
-  preflighted; one replacement HJ75 canary remains the next action.
+  preflighted; the replacement canary has now passed and no second HJ75 canary
+  is authorized.
+
+- HJ75 replacement canary job `ad76c64ca5eb46c7904043975e0c483c` ran on
+  runtime/docs commit `395d0cb3e5b2e7efe5088f41ab0a863476230a5b`, stayed on
+  `claimboundary-v2`, finished `SUCCEEDED`, and preserved public/default
+  containment: no public report markdown, verdict label, truth percentage,
+  confidence, or `adminDiagnostics`; public schema stayed
+  `4.0.0-cb-precutover` and cutover stayed `blocked_precutover`. Admin
+  source-chain attribution showed Source Material completed with `7` records,
+  `14332` bounded text bytes, `3` linked-page text records, `1` OpenAlex
+  abstract, and `3` preview-only records. W5 extracted `2` EvidenceItems and
+  the internal report writer created a `4268` byte draft. The internal report
+  top line is `MOSTLY-TRUE`, truth `78`, confidence `72`; information yield is
+  `report_quality_improved`. No second HJ75 canary is authorized.
 
 - HJ74 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `7f24b11905bf9e945934ee634fd5aa7d0c6f7520`, a docs-only successor containing
@@ -766,13 +788,12 @@ Current active tranche:
 7. Treat HJ74 as partial pass: durable attribution worked, public containment
    held, and the chain reached W5/report writer, but direct current-stock source
    material was still absent. Do not run a second HJ74 job.
-8. Treat HJ75 as the active source-material selector repair: implementation is
-   committed at `522beebb`. First submission `bdde6d4...` is invalid because
-   runtime auth failed before analyzer execution. Commit the invalid-attempt
-   record, then run exactly one replacement canary if health/auth/provenance is
-   clean. If the replacement repeats the missing current-stock aggregate with
-   no useful source-native improvement, stop and steer toward provider/query
-   strategy rather than another selector tweak.
+8. Treat HJ75 as passed for the current-asylum source-native selection repair:
+   implementation is committed at `522beebb`; invalid trigger miss
+   `bdde6d4...` is documented; replacement canary `ad76c64...` produced a
+   true-side internal Alpha report with stronger Source Material. Do not run a
+   second HJ75 canary. Next, review report quality and raise one targeted bar
+   from observed report defects.
 
 ## Stop Conditions
 

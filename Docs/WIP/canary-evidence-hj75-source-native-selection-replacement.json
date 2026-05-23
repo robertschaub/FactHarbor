@@ -1,0 +1,204 @@
+{
+  "slice": "HJ75",
+  "capturedUtc": "2026-05-23T16:56:54.282Z",
+  "classification": "PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT",
+  "informationYield": "report_quality_improved",
+  "input": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "implementationCommit": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+  "docsCommit": "395d0cb3e5b2e7efe5088f41ab0a863476230a5b",
+  "invalidFirstAttemptJobId": "bdde6d4ad58544bcbf07576c7cf89968",
+  "replacementJob": {
+    "jobId": "ad76c64ca5eb46c7904043975e0c483c",
+    "status": "SUCCEEDED",
+    "progress": 100,
+    "pipelineVariant": "claimboundary-v2",
+    "gitCommitHash": "395d0cb3e5b2e7efe5088f41ab0a863476230a5b",
+    "createdGitCommitHash": "395d0cb3e5b2e7efe5088f41ab0a863476230a5b",
+    "executedWebGitCommitHash": "395d0cb3e5b2e7efe5088f41ab0a863476230a5b",
+    "promptContentHash": null,
+    "adminReportMarkdownLength": 4268,
+    "publicReportMarkdownLength": 0,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null
+  },
+  "publicContainment": {
+    "checkedViaWebPublicAndApiPublic": true,
+    "publicResultKeys": [
+      "_schemaVersion",
+      "meta",
+      "input",
+      "warnings"
+    ],
+    "schemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "publicReportMarkdownLength": 0,
+    "publicVerdictLabel": null,
+    "publicTruthPercentage": null,
+    "publicConfidence": null,
+    "publicAdminDiagnosticsPresent": false,
+    "publicSourceChainAttributionPresent": false
+  },
+  "adminSourceChainAttribution": {
+    "present": true,
+    "version": "v2.highjump.source-chain-attribution.hj73",
+    "defaultProjection": "redacted_hash_length_provenance_only",
+    "redaction": {
+      "sourceTextReturned": false,
+      "snippetsReturned": false,
+      "summariesReturned": false,
+      "titlesReturned": false,
+      "urlsReturned": false,
+      "pageKeysReturned": false,
+      "providerPayloadsReturned": false,
+      "rawQueryTextReturned": false,
+      "promptTextReturned": false,
+      "hiddenLedgerIdsReturned": false,
+      "stackTracesReturned": false,
+      "modelOutputReturned": false
+    },
+    "stages": {
+      "claimUnderstanding": {
+        "status": "accepted",
+        "selectedAtomicClaimCount": 0
+      },
+      "queryPlanning": {
+        "status": "inspected",
+        "runtimeStatus": "completed",
+        "resultStatus": "accepted",
+        "queryEntryCount": 4
+      },
+      "candidateProviderNetwork": {
+        "status": "candidate_provider_network_completed",
+        "providerAttemptCount": 8,
+        "candidateCount": 0,
+        "totalCandidateCount": 3,
+        "totalBytes": 9000
+      },
+      "sourceCandidatePreview": {
+        "status": "source_candidate_preview_materialized",
+        "previewRecordCount": 9
+      },
+      "sourceMaterial": {
+        "status": "source_material_page_summary_completed",
+        "recordCount": 7,
+        "materializedPreviewRecordCount": 9,
+        "attemptedFetchCount": 0,
+        "fetchDiagnosticCount": 0,
+        "totalBoundedTextBytes": 14332,
+        "truncationCount": 2,
+        "sourceMaterialKindCounts": {
+          "provider_search_result_page_text_bounded": 3,
+          "openalex_work_abstract_text": 1,
+          "provider_search_result_preview_text": 3
+        },
+        "providerIdCounts": {
+          "serper_web_search": 6,
+          "openalex": 1
+        }
+      },
+      "w4": {
+        "boundedTextStatus": "bounded_corpus_text_sidecar_created_extraction_gate_closed",
+        "boundedTextSidecarCount": 7,
+        "extractionInputStatus": "bounded_extraction_input_packet_created_extraction_execution_closed",
+        "extractionInputPacketCount": 1,
+        "executionReadinessStatus": "extraction_input_structurally_eligible_execution_denied"
+      },
+      "w5": {
+        "executionStatus": "hidden_evidence_item_extraction_completed",
+        "extractionStatus": "evidence_extracted",
+        "evidenceItemCount": 2,
+        "sourceContentPacketCount": 7,
+        "parentPacketByteLength": 14344
+      },
+      "reportWriter": {
+        "status": "internal_report_writer_draft_created",
+        "citedEvidenceItemRefCount": 2,
+        "reportMarkdownHash": "934cbaf5a4e9ad76f8c1aadb587f25e61adb56e468829d35a29049241e26ca25",
+        "reportMarkdownByteLength": 4268
+      }
+    },
+    "sourceMaterialRefs": [
+      {
+        "ordinal": 1,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_page_text_bounded",
+        "textByteLength": 3938,
+        "truncationApplied": true
+      },
+      {
+        "ordinal": 2,
+        "providerId": "openalex",
+        "sourceMaterialKind": "openalex_work_abstract_text",
+        "textByteLength": 1727,
+        "truncationApplied": false
+      },
+      {
+        "ordinal": 3,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_page_text_bounded",
+        "textByteLength": 4075,
+        "truncationApplied": false
+      },
+      {
+        "ordinal": 4,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_page_text_bounded",
+        "textByteLength": 4096,
+        "truncationApplied": true
+      },
+      {
+        "ordinal": 5,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_preview_text",
+        "textByteLength": 161,
+        "truncationApplied": false
+      },
+      {
+        "ordinal": 6,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_preview_text",
+        "textByteLength": 177,
+        "truncationApplied": false
+      },
+      {
+        "ordinal": 7,
+        "providerId": "serper_web_search",
+        "sourceMaterialKind": "provider_search_result_preview_text",
+        "textByteLength": 158,
+        "truncationApplied": false
+      }
+    ]
+  },
+  "internalReportObservation": {
+    "reportWriterStatus": "internal_report_writer_draft_created",
+    "reportMarkdownByteLength": 4268,
+    "reportMarkdownHash": "934cbaf5a4e9ad76f8c1aadb587f25e61adb56e468829d35a29049241e26ca25",
+    "observedTopLineVerdict": "MOSTLY-TRUE",
+    "observedTruthPercentage": 78,
+    "observedConfidence": 72,
+    "observedEvidenceItemRefs": 2,
+    "qualityNote": "HJ75 improved the current-asylum internal Alpha report from HJ74 UNVERIFIED to a true-side MOSTLY-TRUE draft. This is report-quality progress, but still an internal/admin-only Alpha report; public V2 remains blocked/precutover."
+  },
+  "hj74Comparison": {
+    "hj74SourceMaterialRecordCount": 7,
+    "hj74TotalBoundedTextBytes": 5753,
+    "hj74KindCounts": {
+      "provider_search_result_page_text_bounded": 2,
+      "openalex_work_abstract_text": 1,
+      "provider_search_result_preview_text": 4
+    },
+    "hj75SourceMaterialRecordCount": 7,
+    "hj75TotalBoundedTextBytes": 14332,
+    "hj75KindCounts": {
+      "provider_search_result_page_text_bounded": 3,
+      "openalex_work_abstract_text": 1,
+      "provider_search_result_preview_text": 3
+    },
+    "summary": "HJ75 selected a stronger source-native mix than HJ74: one more linked-page text record, one fewer preview-only record, and substantially more bounded text bytes. No XLSX record appeared in this run."
+  },
+  "nextDirection": {
+    "noSecondHJ75CanaryAuthorized": true,
+    "recommendation": "Pivot to report-quality review of the HJ75 current-asylum internal report before adding more plumbing. Use observed report defects to decide the next single bar to raise."
+  }
+}

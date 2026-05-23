@@ -138,13 +138,37 @@ record is committed and fresh health/auth/provenance preflight passes. If that
 replacement fails before analyzer execution again or lacks provenance, stop for
 Captain.
 
-## Next Step
+## Replacement Canary Result
 
-Run exactly one replacement HJ75 canary with the Captain-defined input:
+The replacement HJ75 canary ran after the invalid-attempt docs commit, runtime
+refresh, clean git status, and runner/admin auth preflight.
 
-`Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+- job: `ad76c64ca5eb46c7904043975e0c483c`;
+- classification:
+  `PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`;
+- status: `SUCCEEDED`;
+- pipeline: `claimboundary-v2`;
+- runtime/docs commit:
+  `395d0cb3e5b2e7efe5088f41ab0a863476230a5b`;
+- `gitCommitHash`, `createdGitCommitHash`, and `executedWebGitCommitHash`
+  matched `395d0cb3`.
 
-Pass requires public containment, HJ73 attribution, and stronger source-native
-Source Material composition than HJ74 or a clear attribution-based pivot to
-provider/query strategy. Do not run a second replacement HJ75 canary without
-separate package/approval.
+Public/default containment held: no public report markdown, verdict label,
+truth percentage, confidence, or `adminDiagnostics`; public schema stayed
+`4.0.0-cb-precutover` and cutover stayed `blocked_precutover`.
+
+Admin-only HJ73 source-chain attribution showed:
+
+- Source Material completed with `7` records and `14332` bounded text bytes;
+- kind mix: `3` linked-page text, `1` OpenAlex abstract, `3` preview-only;
+- W5 extracted `2` EvidenceItems;
+- internal report writer created a `4268` byte draft.
+
+Compared with HJ74, Source Material became stronger: linked-page text increased
+from `2` to `3`, preview-only fallback decreased from `4` to `3`, and bounded
+bytes increased from `5753` to `14332`. The observed internal report moved from
+HJ74 `UNVERIFIED` to HJ75 `MOSTLY-TRUE` with truth `78` and confidence `72`.
+
+No second HJ75 canary is authorized. Next action should be report-quality
+review of this internal Alpha report and then one targeted bar raise from the
+observed defects.

@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj74-attribution-2026-05-23-reset-12-after-hj73",
     "resetTotal": 12,
-    "currentRemaining": 10,
+    "currentRemaining": 9,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-73-DURABLE-SOURCE-CHAIN-ATTRIBUTION",
       "startsAfterJobId": "none_no_live_hj73",
       "startingRemaining": 12,
-      "currentRemaining": 10,
-      "consumptionEntriesInThisTranche": 2,
-      "note": "HJ64 through HJ72 are fully recorded below against the prior 18-job tranche. HJ72 spent the final job in that tranche and repeated the current-asylum aggregate evidence gap. HJ73 then ran no live job and added durable redacted source-chain attribution to the V2 raw/admin result envelope. Captain approved a fresh 12-job budget for continuation. HJ74 spent the first job after committed-package provenance, runtime refresh, and public/default containment preflight; it captured durable attribution and kept public containment, but the report still lacked direct current stock evidence. HJ75 first submission spent one job but is analytically invalid because API-to-Web runner auth failed before analyzer execution; it is recorded transparently and leaves 10 jobs.",
+      "currentRemaining": 9,
+      "consumptionEntriesInThisTranche": 3,
+      "note": "HJ64 through HJ72 are fully recorded below against the prior 18-job tranche. HJ72 spent the final job in that tranche and repeated the current-asylum aggregate evidence gap. HJ73 then ran no live job and added durable redacted source-chain attribution to the V2 raw/admin result envelope. Captain approved a fresh 12-job budget for continuation. HJ74 spent the first job after committed-package provenance, runtime refresh, and public/default containment preflight; it captured durable attribution and kept public containment, but the report still lacked direct current stock evidence. HJ75 first submission spent one job but is analytically invalid because API-to-Web runner auth failed before analyzer execution. HJ75 replacement spent one job after auth/provenance preflight and produced a true-side internal Alpha report. 9 jobs remain.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1969,6 +1969,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "invalid_runtime_trigger_miss_no_analyzer_execution",
         "note": "HJ75 first submission used the Captain-defined current-asylum input and explicit claimboundary-v2, but failed before analyzer execution. The API job record has gitCommitHash/createdGitCommitHash 522beebb, but executedWebGitCommitHash, promptContentHash, resultJson, reportMarkdown, and source-chain attribution are null. Web logs showed API -> Web /api/internal/run-job returned 401 because the local Web runtime did not accept the configured runner key. This job is budget-consuming but analytically invalid and must not be used as Source Material/report evidence. Runtime auth was repaired by restart hygiene; one replacement HJ75 canary may run only after this failure documentation commit and fresh health/auth/provenance preflight."
+      },
+      {
+        "sliceId": "X7-HJ-75-SOURCE-MATERIAL-SOURCE-NATIVE-SELECTION-REPLACEMENT-CANARY",
+        "jobId": "ad76c64ca5eb46c7904043975e0c483c",
+        "classification": "PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT",
+        "implementationCommit": "522beebb9fe36c89e011777118e6fcde6ece0c50",
+        "runtimeCommit": "395d0cb3e5b2e7efe5088f41ab0a863476230a5b",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 9,
+        "approvalPointer": "Steer-Co replacement consent after HJ75 runtime-auth miss plus Captain message in current Codex thread: \"Butget of 12 Jobs approved. Continue.\" and HJ75 package Docs/WIP/2026-05-23_V2_HighJump_HJ75_Source_Material_Source_Native_Selection_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved",
+        "note": "HJ75 replacement ran one current-asylum rerun after invalid-attempt docs commit 395d0cb3, clean provenance, runtime refresh, and runner/admin auth preflight. It stayed on claimboundary-v2, finished SUCCEEDED, and stamped git/executedWeb hashes as 395d0cb3. Public/default containment held: no public report markdown, verdict label, truth percentage, confidence, or adminDiagnostics. Admin raw source-chain attribution showed Source Material completed with 7 records, 14332 bounded text bytes, 3 linked-page text records, 1 OpenAlex abstract, and 3 preview records; W5 extracted 2 EvidenceItems; report writer created a 4268-byte internal Alpha draft. The observed internal report top line is MOSTLY-TRUE 78 truth / 72 confidence, a true-side quality improvement over HJ74 UNVERIFIED. No second HJ75 canary is authorized; next action should review report quality and decide the next single bar to raise."
       }
     ],
     "blockedPending": [],

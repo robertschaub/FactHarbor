@@ -1,6 +1,6 @@
 # V2 HighJump HJ75 - Source Material Source-Native Selection Repair
 
-Status: implementation committed; first live submission invalidated by runtime-auth trigger miss; one replacement canary pending after docs commit and fresh preflight
+Status: replacement canary passed; no second HJ75 canary authorized
 
 ## Objective
 
@@ -306,13 +306,57 @@ Steer-Co consented to one replacement HJ75 canary under these conditions:
 - if the replacement fails before analyzer execution again or provenance is
   missing, stop for Captain.
 
-## Replacement Canary Readiness
+## Replacement Canary Result
 
-After this invalid-attempt documentation is committed, runtime is refreshed,
-Web/API runtime commit hashes match the committed source, runner/admin auth
-preflight passes, and provenance is clean, HJ75 may spend exactly one
-replacement live job from the active tranche on:
+Replacement HJ75 canary:
 
-`Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+- job: `ad76c64ca5eb46c7904043975e0c483c`;
+- input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- runtime/docs commit: `395d0cb3e5b2e7efe5088f41ab0a863476230a5b`;
+- implementation commit under test: `522beebb9fe36c89e011777118e6fcde6ece0c50`;
+- status: `SUCCEEDED`;
+- classification:
+  `PASS_X7_HJ75_SOURCE_NATIVE_SELECTION_REPLACEMENT_TRUE_SIDE_INTERNAL_REPORT`.
 
-Do not run a second replacement HJ75 canary without a separate package/approval.
+Provenance and containment:
+
+- `gitCommitHash`, `createdGitCommitHash`, and `executedWebGitCommitHash` all
+  matched `395d0cb3`;
+- public/default result stayed `4.0.0-cb-precutover` /
+  `blocked_precutover`;
+- unauthenticated/public job views returned no report markdown, no verdict
+  label, no truth percentage, no confidence, and no `adminDiagnostics`;
+- admin raw result carried HJ73 `sourceChainAttribution` only behind admin
+  access.
+
+Source-chain evidence:
+
+- Claim Understanding accepted;
+- Query Planning inspected/accepted `4` query entries;
+- candidate provider network completed with `8` provider attempts, `3`
+  total candidates, and `9000` total bytes;
+- Source Candidate Preview materialized `9` preview records;
+- Source Material completed with `7` records, `14332` bounded text bytes, and
+  `2` truncations;
+- Source Material kinds: `3` linked-page text, `1` OpenAlex abstract, `3`
+  preview-only;
+- providers: `6` Serper, `1` OpenAlex;
+- W5 completed with `2` EvidenceItems;
+- internal report writer created a `4268` byte internal Alpha draft.
+
+Compared with HJ74, HJ75 selected stronger source-native material: linked-page
+records increased from `2` to `3`, preview-only records decreased from `4` to
+`3`, and bounded Source Material bytes increased from `5753` to `14332`. No
+XLSX record appeared in this run.
+
+Report observation:
+
+- HJ74 report was `UNVERIFIED`;
+- HJ75 replacement internal report top line is `MOSTLY-TRUE`, truth `78`,
+  confidence `72`;
+- this is report-quality progress for the current-asylum input, while still
+  remaining internal/admin-only Alpha output.
+
+No second HJ75 canary is authorized. The next step should be a report-quality
+review of this internal report and then one targeted bar raise from the
+observed report defects, not more source-material plumbing by default.
