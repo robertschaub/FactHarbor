@@ -19,22 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after HJ54 live validation. Older HJ history below is
+This projection is synced before the HJ55 live validation. Older HJ history below is
 kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
-  `5d456957 fix(v2): narrow no valid claim definition`;
+  `9466a71b fix(v2): broaden query planning angles`;
 - latest canary result:
   HJ54 focused rerun, classified
   `PASS_X7_HJ54_CLAIM_UNDERSTANDING_ADMITTED_PLASTIC_INTERNAL_REPORT_PRODUCED`;
 - current live-job tranche:
-  Captain reset to `18` on 2026-05-23 after HJ53;
-  HJ54 consumed one job, and `17` remain;
+  Captain reset to `18` on 2026-05-23 after HJ54;
+  HJ55 has not yet consumed a job, and `18` remain;
 - next action:
-  review the produced HJ54 internal Alpha report and the current multi-input
-  quality defects. The plastic input now reaches complete internal Alpha report
-  generation, so do not spend another job on Claim Understanding admission for
-  that input unless a new defect appears;
+  run exactly one HJ55 focused rerun for `Plastic recycling is pointless` after
+  clean runtime provenance. HJ55 tests whether the query-planning prompt repair
+  uses the existing bounded query budget for distinct investigative angles so
+  the plastic report has better evidence breadth before any downstream verdict
+  or report-writer change;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -45,18 +46,19 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`5d456957 fix(v2): narrow no valid claim definition`
+`9466a71b fix(v2): broaden query planning angles`
 
 Latest implementation repair:
 
-`5d456957 fix(v2): narrow no valid claim definition`
+`9466a71b fix(v2): broaden query planning angles`
 
-HJ54 amends only the existing `V2_CLAIM_UNDERSTANDING_GATE1` prompt section so
-`no_valid_claim` is reserved for inputs from which no externally assessable
-proposition can be formed after Claim Selection guidance. It adds no code-side
-semantic admission rule, model/provider change, schema relaxation,
-source/provider/parser route, public surface, cache/SR/storage behavior,
-direct URL/ACS support, or V1 work.
+HJ55 amends only the existing `V2_EVIDENCE_QUERY_PLANNING` prompt section so
+concise, broad, or evaluative direct assertions use the available bounded query
+budget for distinct investigative angles instead of stopping after one generic
+direct query and one generic counter-query. It adds no code-side semantic
+query-selection rule, model/provider change, schema relaxation, source/provider/
+parser route, public surface, cache/SR/storage behavior, direct URL/ACS support,
+or V1 work.
 
 ## Latest Result
 
@@ -379,9 +381,9 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
-- latest reset starts after HJ53 job `dfa9bd1bdb0749b095d1dd647444d86e`;
+- consumed after latest reset: `0`;
+- remaining: `18`;
+- latest reset starts after HJ54 job `c3718a3e383442c29361e058ef4f16ad`;
 - every live job still requires clean git status, committed source, runtime
   refresh when needed, Web/API runtime commit match, and result documentation.
 
