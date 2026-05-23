@@ -4670,3 +4670,64 @@ Verification: focused tests, build, debt sensors, index, diff checks, sidecar re
 Debt accepted and removal trigger: no accepted mechanism debt; next owner is W5 evidence_extraction output contract, not W4-I readiness
 Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged
 ```
+
+## 2026-05-23 - Captain Deputy - V2 HighJump HJ71 Query Planning Direct-Record Repair
+
+**Task:** Resume after reboot, restore sub-agent orchestration, verify the HJ71
+runtime/prompt lane, run the focused current-asylum canary, and document the
+result without starting a broader source/provider repair.
+
+**Implementation anchor:** `472d8c4eeeff0b7e7c6cebff3aa55c5af8185d7c`;
+runtime/docs projection commit after lane refresh:
+`8fe4c3c9092fcc058b69bc060998f1563b45cea2`. Active
+`claimboundary-v2` prompt label/hash:
+`hj71-query-current-stock-direct-record` /
+`c45621b27f3fb09a4716cc1e09ca7ddcdf1a9b6c1fd6748984a0010766e1903a`.
+
+**Sub-agent orchestration:** Existing sidecars were reachable after reboot.
+Noether and Russell had previously consented that HJ71 should target
+query/source-material coverage rather than W5/report-writer. After the live
+result, both were asked for a narrow next-owner recommendation. Consolidated
+result: do not spend the final live job immediately; HJ72 should first run
+no-live attribution/local inspection and prepare a narrow
+source-acquisition/source-material package only if local evidence identifies a
+concrete owner. Provider expansion or source strategy widening remains a
+separate reviewed package.
+
+**Live job:** HJ71 spent one job:
+`8e33c2e4dbd748648b947b71dd45503e`.
+
+**Result:**
+`PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED`.
+The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, and preserved
+public/default containment. The internal Alpha report remained complete at
+approximately `7889` markdown bytes and added one partial direct
+protection-status stock snapshot, but still did not include the decisive
+comprehensive current asylum-domain stock aggregate for the `235000`
+threshold. Verdict candidates remained `UNVERIFIED` (`50` / `45` truth,
+`35` / `25` confidence). Authenticated process-local hidden artifact route
+probes returned `404`, so closeout uses persisted admin job metadata/report
+markdown plus public containment checks; unauthenticated hidden route returned
+`401`.
+
+**Budget:** HJ71 consumed `1`; current HighJump tranche remaining is `1`.
+
+**Evidence:** `Docs/WIP/canary-evidence-hj71-query-current-stock-direct-record.json`;
+package
+`Docs/WIP/2026-05-23_V2_HighJump_HJ71_Query_Planning_Current_Stock_Direct_Record_Repair.md`;
+active lane projection `Docs/STATUS/V2_Current_Lane.md`; live-job ledger
+`Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
+
+```text
+DEBT-GUARD RESULT
+Classification: incomplete-existing-mechanism
+Chosen option: amend existing V2_EVIDENCE_QUERY_PLANNING prompt contract
+Rejected path and why: source/provider widening, parser work, deterministic semantic filtering, W5/report-writer edits, cap increases, and retries would add mechanisms or change the wrong owner before the existing query contract was tightened
+What was removed/simplified: none
+What was added: generic Query Planning direct-record wording plus focused prompt-contract assertions
+Net mechanism count: unchanged
+Budget reconciliation: 1 live job spent from the HJ71 package; 1 remains in the active tranche
+Verification: focused prompt-contract test, boundary guard, build, debt sensors, index, diff checks, prompt import, runtime preflight, terminal job status, admin report inspection, and public/default containment checks
+Debt accepted and removal trigger: no new mechanism debt; next owner should be source-acquisition/source-material coverage only if HJ72 local attribution confirms this from HJ70/HJ71 evidence
+Residual debt: known V2 footprint/boundary-guard/docs advisory warnings remain unchanged; hidden process artifact routes returned 404 for HJ71 and remain an observability gap
+```

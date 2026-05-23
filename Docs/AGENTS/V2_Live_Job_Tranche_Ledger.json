@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj64-w7b-label-truth-2026-05-23-reset-18-after-hj63",
     "resetTotal": 18,
-    "currentRemaining": 2,
+    "currentRemaining": 1,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-63-W8-REPORT-WRITER-ACCEPTED-BRANCH-REPAIR",
       "startsAfterJobId": "d866675bcabf468aa4450b83ee7d87af",
       "startingRemaining": 18,
-      "currentRemaining": 2,
-      "consumptionEntriesInThisTranche": 7,
-      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric; 2 remain.",
+      "currentRemaining": 1,
+      "consumptionEntriesInThisTranche": 8,
+      "note": "HJ61 through HJ63 are fully recorded below against prior accounting. HJ63 spent one job after the previous reset, repaired the W8 report-writer roadblock for plastic, and exposed W7-B label/truth inconsistency. Captain then reset the next HighJump tranche to 18 jobs. HJ64 spent the first job from this reset and repaired numeric label/truth coupling for plastic. HJ65 spent the second job and exposed a narrow W7-B caveats array schema contract failure after preserving the hidden chain through W5/W6-C. HJ66 spent the third job and repaired that W7-B array contract failure. HJ67 spent eight jobs on the stronger Captain-defined report-quality gauntlet. HJ68 spent three focused jobs. HJ69 spent one focused job, repaired the W4-I Unicode/code-point readiness stop, and exposed a W5 schema/output contract stop. HJ70 spent one focused job, repaired the W5 output contract stop, produced an internal Alpha report, and exposed a source-material evidence-coverage quality gap for the current asylum stock metric. HJ71 spent one focused job, improved partial direct stock evidence coverage, but still lacked the decisive current aggregate stock metric; 1 remains.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1912,6 +1912,21 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced_with_quality_gap",
         "note": "HJ70 ran one focused current-asylum rerun after prompt import/runtime refresh. W5 accepted with 3 EvidenceItems and schemaDiagnostics null; W8 reached firstIncompleteStage none and report writer created a 4731-byte internal report draft. The report remained UNVERIFIED because the source chain lacked the actual current stock count needed to assess the 235000 threshold. Public/default containment held."
+      },
+      {
+        "sliceId": "X7-HJ-71-QUERY-PLANNING-CURRENT-STOCK-DIRECT-RECORD",
+        "jobId": "8e33c2e4dbd748648b947b71dd45503e",
+        "classification": "PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED",
+        "implementationCommit": "472d8c4eeeff0b7e7c6cebff3aa55c5af8185d7c",
+        "runtimeCommit": "8fe4c3c9092fcc058b69bc060998f1563b45cea2",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "promptHash": "c45621b27f3fb09a4716cc1e09ca7ddcdf1a9b6c1fd6748984a0010766e1903a",
+        "count": 1,
+        "remainingAfter": 1,
+        "approvalPointer": "Captain HighJump direction, Captain authorization for prompt edits/live jobs/schema changes, and HJ71 package Docs/WIP/2026-05-23_V2_HighJump_HJ71_Query_Planning_Current_Stock_Direct_Record_Repair.md",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_produced_with_new_partial_direct_stock_evidence",
+        "note": "HJ71 ran one focused current-asylum rerun after prompt import/runtime refresh. The internal report remained complete and added one partial direct protection-status stock snapshot, but still lacked the decisive comprehensive current asylum-domain stock aggregate for the 235000 threshold. Public/default containment held; authenticated process-local hidden artifact probes returned 404, so closeout uses persisted admin job metadata/report markdown plus public containment checks."
       }
     ],
     "blockedPending": [],

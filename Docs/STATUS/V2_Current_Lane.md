@@ -19,26 +19,25 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced after the HJ71 implementation commit and before the
-HJ71 focused live rerun. Older HJ history below is kept as context, but the
-active anchor and budget are:
+This projection is synced after the HJ71 focused live rerun. Older HJ history
+below is kept as context, but the active anchor and budget are:
 
 - committed implementation anchor:
   `472d8c4e fix(v2): strengthen query planning current-stock intent`;
 - active result package:
   `Docs/WIP/2026-05-23_V2_HighJump_HJ71_Query_Planning_Current_Stock_Direct_Record_Repair.md`;
 - latest canary result:
-  HJ70 focused current-asylum W5 output-contract rerun, classified
-  `PASS_WITH_QUALITY_GAP_X7_HJ70_W5_OUTPUT_CONTRACT_REPAIR_INTERNAL_REPORT_UNVERIFIED`;
+  HJ71 focused current-asylum query-planning/direct-record rerun, classified
+  `PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ63;
-  HJ64 through HJ70 consumed `16`, so `2` remain;
+  HJ64 through HJ71 consumed `17`, so `1` remains;
 - next action:
   keep the HJ68 W5 recall improvement, HJ69 W4-I length repair, and HJ70 W5
-  output-contract repair; run exactly one HJ71 focused rerun from committed and
-  refreshed runtime `472d8c4e` with the active
-  `hj71-query-current-stock-direct-record` prompt to test whether source
-  coverage reaches source-native current population stock evidence;
+  output-contract repair; keep the HJ71 partial query-planning improvement and
+  perform HJ72 no-live attribution/local inspection before deciding whether a
+  narrow source-acquisition/source-material repair is justified; preserve the
+  final live job until a tight HJ72 package exists;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -53,24 +52,51 @@ Latest source/docs anchor:
 
 Active implementation repair:
 
-HJ71 amends the existing `V2_EVIDENCE_QUERY_PLANNING` prompt contract and
+HJ71 amended the existing `V2_EVIDENCE_QUERY_PLANNING` prompt contract and
 focused prompt-contract tests so point-in-time stock/current-status/threshold
-claims request direct-record queries before flow/context queries. The active
-canary owner remains query/source-material evidence coverage for the
-source-native current population stock metric, not W5 schema, W4-I readiness,
-another cap increase, report-writer plumbing, or public-surface work.
+claims request direct-record queries before flow/context queries. The live
+rerun produced a complete internal Alpha report with one new partial direct
+protection-status stock snapshot, but it still lacked the decisive current
+aggregate asylum-domain stock metric. The active canary owner therefore moves
+from query-planning wording toward source-acquisition/source-material evidence
+coverage for source-native current aggregate stock records, not W5 schema,
+W4-I readiness, another cap increase, report-writer plumbing, or public-surface
+work.
+
+Post-HJ71 sidecar review agreed not to spend the final live job immediately.
+HJ72 should attribute the missing aggregate current-stock record without live
+execution first, then prepare a narrow source-acquisition/source-material
+repair package only if local evidence identifies a concrete owner. Provider
+expansion or source strategy widening remains a separate reviewed package.
 
 ## Latest Result
 
 Latest validation:
 
-`X7-HJ-70-W5-OUTPUT-CONTRACT-REPAIR`
+`X7-HJ-71-QUERY-PLANNING-CURRENT-STOCK-DIRECT-RECORD`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj70-w5-output-contract-repair.json`
+`Docs/WIP/canary-evidence-hj71-query-current-stock-direct-record.json`
 
 Important evidence:
+
+- HJ71 ran one focused `asylum-235000-de` rerun on runtime/source commit
+  `8fe4c3c9092fcc058b69bc060998f1563b45cea2` after importing and activating
+  `claimboundary-v2` prompt label/hash
+  `hj71-query-current-stock-direct-record` /
+  `c45621b27f3fb09a4716cc1e09ca7ddcdf1a9b6c1fd6748984a0010766e1903a`.
+  Job `8e33c2e4dbd748648b947b71dd45503e` stayed on `claimboundary-v2`,
+  finished `SUCCEEDED`, and preserved public/default containment. The internal
+  report remained complete at approximately `7889` markdown bytes and now
+  included one partial direct protection-status stock snapshot. It still lacked
+  the decisive comprehensive current asylum-domain stock aggregate needed for
+  the `235000` threshold, so the report remained `UNVERIFIED` with truth
+  candidates `50` / `45` and confidence `35` / `25`. Authenticated
+  process-local hidden artifact routes returned `404`, so persisted admin job
+  metadata/report markdown and public containment checks are the closeout
+  evidence. Information yield is
+  `report_produced_with_new_partial_direct_stock_evidence`.
 
 - HJ70 ran one focused `asylum-235000-de` rerun on runtime/source commit
   `b800c8bc1609f6e7075ef497cfba342fa1444b31` with active
@@ -633,8 +659,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `16`;
-- remaining: `2`;
+- consumed after latest reset: `17`;
+- remaining: `1`;
 - latest reset starts after the HJ63 W8 report-writer accepted-branch repair,
   latest job `d866675bcabf468aa4450b83ee7d87af`;
 - every live job still requires clean git status, committed source, runtime
@@ -647,12 +673,17 @@ Current active tranche:
    reaches W5 execution.
 3. Treat HJ70 as the W5 output-contract repair: W5 can now produce accepted
    EvidenceItems and an internal report can be written.
-4. Run the HJ71 focused current-asylum rerun from clean, committed, refreshed
-   runtime and active HJ71 prompt; classify whether direct current-stock source
-   coverage is improved, unchanged, or moved to a downstream owner.
-5. Avoid W4-I readiness work, cap increases, source/provider widening,
+4. Treat HJ71 as a partial query-planning/source-coverage improvement: direct
+   stock-like evidence appeared, but the decisive aggregate current stock
+   record is still missing.
+5. Perform HJ72 no-live attribution/local inspection before spending the final
+   live job. Use persisted HJ70/HJ71 results, available logs, and existing
+   source-acquisition/source-material code to identify whether a narrow repair
+   exists.
+6. Avoid W4-I readiness work, cap increases, source/provider widening,
    report-writer, verdict-calibration, retry, schema relaxation, or public
-   behavior unless HJ71 evidence identifies that owner.
+   behavior unless HJ72 local evidence and sidecar/Steer-Co review identify
+   that owner from HJ71 evidence.
 
 ## Stop Conditions
 

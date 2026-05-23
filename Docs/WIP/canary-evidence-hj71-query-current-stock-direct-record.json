@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "factharbor.v2.highjump.canary-evidence.v1",
+  "sliceId": "X7-HJ-71-QUERY-PLANNING-CURRENT-STOCK-DIRECT-RECORD",
+  "classification": "PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED",
+  "informationYield": "report_produced_with_new_partial_direct_stock_evidence",
+  "job": {
+    "jobId": "8e33c2e4dbd748648b947b71dd45503e",
+    "inputKey": "asylum-235000-de",
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+    "status": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "createdUtc": "2026-05-23T13:03:29.1503869",
+    "updatedUtc": "2026-05-23T13:05:42.1391835",
+    "createdGitCommitHash": "8fe4c3c9092fcc058b69bc060998f1563b45cea2",
+    "executedWebGitCommitHash": "8fe4c3c9092fcc058b69bc060998f1563b45cea2"
+  },
+  "runtime": {
+    "implementationCommit": "472d8c4eeeff0b7e7c6cebff3aa55c5af8185d7c",
+    "runtimeCommit": "8fe4c3c9092fcc058b69bc060998f1563b45cea2",
+    "docsProjectionCommit": "8fe4c3c9092fcc058b69bc060998f1563b45cea2",
+    "activePromptLabel": "hj71-query-current-stock-direct-record",
+    "activePromptHash": "c45621b27f3fb09a4716cc1e09ca7ddcdf1a9b6c1fd6748984a0010766e1903a",
+    "defaultPipelineVariant": "claimboundary-v2",
+    "preSubmissionGitStatus": "clean"
+  },
+  "publicContainment": {
+    "unauthenticatedJobStatusVisible": "SUCCEEDED",
+    "publicReportMarkdownReturned": false,
+    "publicVerdictReturned": false,
+    "publicTruthReturned": false,
+    "publicConfidenceReturned": false,
+    "unauthenticatedHiddenRouteStatus": 401,
+    "classification": "held"
+  },
+  "adminReport": {
+    "reportMarkdownBytesApprox": 7889,
+    "topLevelVerdict": "UNVERIFIED",
+    "topLevelTruthPercentages": [50, 45],
+    "topLevelConfidencePercentages": [35, 25],
+    "verdictSectionCount": 2,
+    "boundarySectionCount": 4,
+    "evidenceReferenceCount": 5,
+    "observedEvidenceShape": [
+      {
+        "kind": "partial_direct_stock_snapshot",
+        "status": "new_relative_to_hj70",
+        "description": "One direct protection-status stock snapshot was used, but it covered only a specific status category and an older temporal point."
+      },
+      {
+        "kind": "flow_context",
+        "status": "still_present",
+        "description": "Annual application-flow records were still used only as context for the current-stock claim."
+      },
+      {
+        "kind": "framework_context",
+        "status": "still_present",
+        "description": "Legal-status framework and out-of-scope global context remained contextual rather than decisive."
+      }
+    ],
+    "decisiveEvidenceGap": "No supplied source material provided a comprehensive current aggregate count for all asylum-related statuses in Switzerland against the 235000 threshold."
+  },
+  "hiddenArtifactRoutes": {
+    "authenticatedDefaultRouteProbes": "not_found",
+    "note": "Process-local hidden artifact route probes returned 404 for the expected ledger ids. Closeout uses persisted admin job metadata and report markdown plus public containment checks. This is an observability gap, not evidence of public leakage."
+  },
+  "comparisonToHJ70": {
+    "improved": [
+      "Internal report length increased from the HJ70 draft and added a partial direct stock snapshot.",
+      "The report remained complete enough for W8/report-writer output instead of stopping earlier."
+    ],
+    "notImprovedEnough": [
+      "The decisive aggregate current stock evidence was still absent.",
+      "The report stayed UNVERIFIED and below Captain quality expectations for this claim family."
+    ]
+  },
+  "budget": {
+    "activeTrancheResetTotal": 18,
+    "remainingBefore": 2,
+    "consumed": 1,
+    "remainingAfter": 1
+  },
+  "nextOwnerSignal": {
+    "currentAssessment": "The next likely owner is source-acquisition/source-material coverage for source-native current aggregate stock records. Another report-writer or W5 schema repair is not justified by this canary.",
+    "sidecarReview": {
+      "status": "complete",
+      "consensus": "Do not spend the final live job immediately. HJ72 should first do no-live attribution/local inspection and prepare a narrow source-acquisition/source-material repair package only if local evidence supports it.",
+      "rejectedImmediatePaths": [
+        "another query-planning prompt nudge",
+        "W5/report-writer repair",
+        "provider expansion without a reviewed package",
+        "cap/retry/parser/cache/SR/storage/public-surface work"
+      ]
+    }
+  }
+}

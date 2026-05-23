@@ -1,6 +1,6 @@
 # V2 HighJump HJ71 - Query Planning Current-Stock Direct-Record Repair
 
-Status: local implementation in progress
+Status: live canary complete - partial pass with quality gap
 
 ## Objective
 
@@ -226,3 +226,90 @@ DEBT-GUARD RESULT
 - Verification: focused test, boundary guard, build, debt sensors, index, and
   diff check.
 - Debt accepted and removal trigger: no accepted mechanism debt.
+
+## Live Canary Result
+
+Execution:
+
+- runtime/docs projection commit:
+  `8fe4c3c9092fcc058b69bc060998f1563b45cea2`;
+- implementation commit:
+  `472d8c4eeeff0b7e7c6cebff3aa55c5af8185d7c`;
+- active `claimboundary-v2` prompt label/hash:
+  `hj71-query-current-stock-direct-record` /
+  `c45621b27f3fb09a4716cc1e09ca7ddcdf1a9b6c1fd6748984a0010766e1903a`;
+- job:
+  `8e33c2e4dbd748648b947b71dd45503e`;
+- input:
+  `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`;
+- terminal status:
+  `SUCCEEDED`;
+- public/default containment:
+  held. Unauthenticated job projection did not return report markdown,
+  verdict, truth, or confidence; unauthenticated hidden artifact route probe
+  returned `401`.
+
+Classification:
+
+`PARTIAL_PASS_WITH_QUALITY_GAP_X7_HJ71_QUERY_PLANNING_DIRECT_STOCK_REPAIR_PARTIAL_STOCK_SNAPSHOT_INTERNAL_REPORT_UNVERIFIED`
+
+Information yield:
+
+`report_produced_with_new_partial_direct_stock_evidence`
+
+Observed result:
+
+- The internal report remained complete and grew to approximately `7889`
+  markdown bytes.
+- It now included one partial direct protection-status stock snapshot, which is
+  useful progress relative to HJ70's flow/context-only evidence picture.
+- The decisive source material is still missing: no supplied record aggregates
+  the current asylum-domain stock across all relevant statuses against the
+  `235000` threshold.
+- The report therefore remains `UNVERIFIED` with verdict candidates at `50` /
+  `45` truth and `35` / `25` confidence.
+- Authenticated hidden process-local artifact route probes returned `404` for
+  the expected ledger ids. Closeout uses persisted admin job metadata/report
+  markdown and public containment checks; this is recorded as an observability
+  gap, not a public leakage signal.
+
+Pass/stop assessment:
+
+- HJ71 did not fully pass because the source chain still did not surface the
+  decisive aggregate current stock metric.
+- HJ71 is not a useless repeat: it produced a new partial direct stock signal,
+  so the source coverage improved but remains insufficient.
+- The next likely owner is source-acquisition/source-material coverage for
+  source-native current aggregate stock records. W5 schema/output and report
+  writer are not current owners unless later evidence shows the aggregate
+  record is present upstream and lost downstream.
+
+Evidence artifact:
+
+`Docs/WIP/canary-evidence-hj71-query-current-stock-direct-record.json`
+
+## Sidecar Follow-Up
+
+Post-canary sidecar review was restored and completed:
+
+- Noether: next owner should be Source Acquisition / Source Material candidate
+  selection and fetching using the existing provider path. Keep the HJ71
+  prompt, avoid provider/cap/retry/parser/cache/SR/storage/public/V1 work, and
+  spend the final live job only after local evidence supports a concrete
+  source-material repair.
+- Russell: preserve the final live job and do a no-live Steering attribution
+  package first, because hidden artifact route `404` makes the exact loss point
+  less well-attributed than the report-quality symptom.
+
+Consolidated HJ72 direction:
+
+- Do not spend the final live job immediately.
+- Do not apply another query-planning prompt nudge by default.
+- Do a no-live attribution/local-inspection pass over persisted HJ70/HJ71
+  result evidence, available logs, and existing source-material code to decide
+  whether the missing aggregate was lost at provider availability,
+  source-material selection/materialization, or acquisition coverage.
+- Prepare a narrow source-acquisition/source-material repair package only if
+  local evidence gives a concrete owner and verifier.
+- Provider expansion or source strategy widening requires a separate reviewed
+  package.
