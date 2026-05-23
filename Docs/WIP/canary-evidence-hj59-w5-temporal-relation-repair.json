@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "v2-highjump-canary-evidence.v1",
+  "sliceId": "X7-HJ-59-W5-TEMPORAL-RELATION-EXTRACTION-REPAIR",
+  "classification": "PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED",
+  "date": "2026-05-23",
+  "implementationCommit": "05194d3721444a8611c313319f8dcb3d839bc982",
+  "runtimeCommit": "e5654ea78f683e675d28b481ed1dfbd3d85bd48a",
+  "prompt": {
+    "profile": "claimboundary-v2",
+    "versionLabel": "hj59-w5-temporal-relation-extraction",
+    "contentHash": "8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20",
+    "activatedBy": "captain-deputy",
+    "activatedUtc": "2026-05-23T05:30:40.625Z"
+  },
+  "captainInput": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+  "job": {
+    "id": "769142306fab4af0ae46130bd5dcdda2",
+    "status": "SUCCEEDED",
+    "pipelineVariant": "claimboundary-v2",
+    "submissionPath": "direct-api",
+    "createdGitCommitHash": "e5654ea78f683e675d28b481ed1dfbd3d85bd48a",
+    "executedWebGitCommitHash": "e5654ea78f683e675d28b481ed1dfbd3d85bd48a"
+  },
+  "publicDefaultContainment": {
+    "httpStatus": 200,
+    "schemaVersion": "4.0.0-cb-precutover",
+    "publicCutoverStatus": "blocked_precutover",
+    "analysisIssueCode": "report_damaged",
+    "publicReportMarkdownIsNull": true,
+    "publicVerdictIsNull": true,
+    "publicTruthPercentageIsNull": true,
+    "publicConfidenceIsNull": true,
+    "resultVerdictLabelReturnedByDefault": null,
+    "resultVerdictTruthReturnedByDefault": null,
+    "resultVerdictConfidenceReturnedByDefault": null,
+    "unauthenticatedHiddenRouteStatus": 401
+  },
+  "authenticatedAdminResult": {
+    "reportMarkdownLength": 4368,
+    "reportHeadline": "# Internal Alpha Review: Temporal Inversion in EU Treaty Executive Action and Parliamentary Decision",
+    "internalReportVerdictLabel": "TRUE",
+    "internalReportTruthPercentage": 88,
+    "internalReportConfidence": 85,
+    "benchmarkFamily": "bundesrat-simple",
+    "expectedVerdictLabels": [
+      "TRUE",
+      "MOSTLY-TRUE"
+    ],
+    "expectedTruthBand": {
+      "min": 85,
+      "max": 100
+    },
+    "expectedConfidenceBand": {
+      "min": 75,
+      "max": 95
+    },
+    "bandResult": "inside_expected_label_truth_and_confidence_bands",
+    "qualityCaveat": "The internal Alpha report still needs human report-quality review: it improved the temporal relation judgment, but the cited signature/procedural stage wording remains caveated and should be compared with exact V1/current-stack comparator reports before release confidence."
+  },
+  "observedImprovement": {
+    "previousHj58JobId": "b6ac7b2a8ad646c0897cce8cddd8e37c",
+    "previousInternalShape": "UNVERIFIED / low-confidence because pending parliamentary/popular decision evidence was treated as unverifiability",
+    "hj59InternalShape": "TRUE 88/85 with pending parliamentary decision status treated as evidence for the temporal relation",
+    "informationYield": "report_quality_improved"
+  },
+  "hiddenArtifactDurability": {
+    "ledgerId": "769142306fab4af0ae46130bd5dcdda2:precutover-observability",
+    "postRunAuthenticatedRouteStatus": 404,
+    "note": "Hidden artifacts are process-local and were unavailable by direct route at capture time. Durable closeout relies on the authenticated job record and admin-only report markdown."
+  },
+  "liveBudget": {
+    "resetTotal": 18,
+    "consumedAfterResetBeforeThis": 1,
+    "consumedByThisCanary": 1,
+    "remainingAfter": 16
+  },
+  "nextRecommendedAction": "Use a stronger HighJump validation pass before more prompt edits: rerun a compact multi-input internal report gauntlet on selected Captain-defined inputs or all eight if budget allows, then pick the next quality defect from observed report evidence."
+}

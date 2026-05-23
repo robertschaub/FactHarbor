@@ -19,21 +19,23 @@ from observed report defects.
 
 ## Current Lane Override
 
-This projection is synced for the HJ59 W5 temporal relation extraction repair. Older HJ history below is
-kept as context, but the active anchor and budget are:
+This projection is synced after the HJ59 W5 temporal relation extraction live
+result. Older HJ history below is kept as context, but the active anchor and
+budget are:
 
 - committed implementation anchor:
+  `e5654ea7 docs(v2): sync hj59 lane` plus the HJ59 W5 prompt repair at
   `05194d37 fix(v2): guide w5 temporal relation extraction`;
 - latest canary result:
-  HJ58 Bundesrat-simple rerun, classified
-  `PASS_X7_HJ58_W4G_BOUNDED_PREFIX_REPAIR_VERIFIED_INTERNAL_REPORT_PRODUCED`;
+  HJ59 Bundesrat-simple rerun, classified
+  `PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED`;
 - current live-job tranche:
   Captain reset to `18` on 2026-05-23 after HJ57;
-  HJ58 consumed `1`, so `17` remain;
+  HJ58 and HJ59 consumed `2`, so `16` remain;
 - next action:
-  import/activate the HJ59 prompt profile in UCM, refresh runtime, and run one
-  Bundesrat-simple rerun to test whether W5 now preserves temporal/procedural
-  relation evidence better;
+  record the HJ59 closeout, then run a stronger HighJump validation pass before
+  any further prompt edit so the next repair is chosen from cross-input report
+  evidence rather than one successful Bundesrat-only run;
 - stop conditions:
   stop on stale runtime/source, unexpected V1 submission, public/default leak
   of report/source/prompt/provider/hidden data or verdict/truth/confidence,
@@ -44,7 +46,7 @@ kept as context, but the active anchor and budget are:
 
 Latest committed source/docs anchor:
 
-`05194d37 fix(v2): guide w5 temporal relation extraction`
+`e5654ea7 docs(v2): sync hj59 lane`
 
 Latest implementation repair:
 
@@ -60,11 +62,11 @@ direct URL/ACS support, or V1 work.
 
 Latest validation:
 
-`X7-HJ-58-W4G-BOUNDED-SIDECAR-PREFIX-REPAIR`
+`X7-HJ-59-W5-TEMPORAL-RELATION-EXTRACTION-REPAIR`
 
 Result document:
 
-`Docs/WIP/canary-evidence-hj58-w4g-bounded-prefix-repair.json`
+`Docs/WIP/canary-evidence-hj59-w5-temporal-relation-repair.json`
 
 Important evidence:
 
@@ -102,7 +104,16 @@ Important evidence:
   generic W5 guidance for temporal/procedural relation claims so pending,
   not-yet-completed, later, or procedurally unresolved comparator milestones can
   become EvidenceItems when source-attributed content supports them, rather than
-  being treated as absence of evidence. Live validation is still pending.
+  being treated as absence of evidence. Job
+  `769142306fab4af0ae46130bd5dcdda2` ran on runtime commit
+  `e5654ea78f683e675d28b481ed1dfbd3d85bd48a` with active prompt hash
+  `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`.
+  It stayed on `claimboundary-v2`, finished `SUCCEEDED`, preserved
+  public/default containment, and produced an authenticated admin-only internal
+  Alpha report with verdict `TRUE`, truth `88`, and confidence `85`, inside the
+  current `bundesrat-simple` benchmark band. The result is a real report-quality
+  improvement over HJ58, but it still needs cross-input validation and report
+  review before release confidence.
 - HJ56 ran all eight Captain-defined benchmark inputs sequentially on runtime
   commit `88b41c5a214e54a96aec730aca4d087708083760` with the active HJ55
   query-planning prompt hash
@@ -450,8 +461,8 @@ The machine ledger is `Docs/AGENTS/V2_Live_Job_Tranche_Ledger.json`.
 Current active tranche:
 
 - reset total: `18`;
-- consumed after latest reset: `1`;
-- remaining: `17`;
+- consumed after latest reset: `2`;
+- remaining: `16`;
 - latest reset starts after the HJ57 Bundesrat-simple focused rerun
   `b1356da1f72f4f27a6fafb3bc5418746`;
 - every live job still requires clean git status, committed source, runtime
@@ -459,13 +470,14 @@ Current active tranche:
 
 ## Next Action
 
-1. Import and activate the HJ59 `claimboundary-v2` prompt profile in UCM.
-2. Refresh runtime from the committed HJ59 source/docs state and verify Web/API
-   runtime commit match before submission.
-3. Run one Bundesrat-simple rerun. Pass means the report materially improves
-   toward the high-true chronology expectation or at least exposes a clearer
-   next owner with richer relation evidence. Stop if the same `UNVERIFIED`
-   shape repeats without useful new evidence.
+1. Close out HJ59 in the ledger/status/docs and commit the provenance update.
+2. Prepare a stronger HighJump validation pass using Captain-defined inputs
+   before another repair. The validation should test whether HJ59's W5 relation
+   repair generalizes and should identify the next highest-value report-quality
+   defect from live evidence.
+3. Spend the next jobs deliberately from the `16` remaining budget: prefer a
+   compact multi-input gauntlet over another single-input canary unless the
+   gauntlet package identifies a hard containment or provenance risk.
 
 ## Stop Conditions
 

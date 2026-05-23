@@ -4284,3 +4284,21 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 **Information yield:** `report_produced`. The repeated W4-G oversized reachability blocker is cleared for Bundesrat-simple. Next should be report-quality review of the successful internal Alpha reports and one targeted quality-bar repair, not another reachability/proof layer.
 
 **Budget:** Captain reset the tranche to `18` before HJ58. HJ58 consumed `1`; `17` remain.
+
+## 2026-05-23 - Captain Deputy / Lead Developer - V2 HighJump HJ59 W5 Temporal Relation Extraction Repair Result
+
+**Task:** Validate the committed HJ59 `claimboundary-v2` prompt repair for temporal/procedural relation extraction on the Captain-defined Bundesrat-simple input.
+
+**Repair:** HJ59 commit `05194d37` amends only `V2_EVIDENCE_EXTRACTION` in `claimboundary-v2.prompt.md` and its prompt-contract test. The prompt now tells W5 to extract source-attributed temporal/procedural relation components when supplied content states event dates, compared milestones, pending/not-yet-completed statuses, or stage distinctions. It adds no code-side semantic rule, schema relaxation, retries, source/provider/parser expansion, public behavior, cache/SR/storage, direct URL/ACS, or V1 work.
+
+**Verification before live job:** Focused prompt-contract and bounded extraction tests passed (`2` files / `17` tests); `npm run validate:v2-gates` passed; `npm run debt:sensors` returned advisory warnings only for known V2 footprint/docs/consolidation signals; `npm -w apps/web run build` passed; focused boundary guard passed (`96` tests); `npm run index` passed; `git diff --check` passed. UCM `claimboundary-v2` was imported and activated as `hj59-w5-temporal-relation-extraction` with hash `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`. Runtime was refreshed and Web/API/proxy endpoints reported `e5654ea78f683e675d28b481ed1dfbd3d85bd48a`.
+
+**Live result:** HJ59 job `769142306fab4af0ae46130bd5dcdda2` ran the exact Captain-defined input `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`. It stayed on `claimboundary-v2`, finished `SUCCEEDED`, and produced an authenticated admin-only internal Alpha report of `4368` markdown characters. The internal report headline was `Internal Alpha Review: Temporal Inversion in EU Treaty Executive Action and Parliamentary Decision`; it reported `TRUE`, truth `88`, confidence `85`, inside the current `bundesrat-simple` benchmark band.
+
+**Containment:** Public/default V2 remained `4.0.0-cb-precutover` / `blocked_precutover` / `report_damaged`; public/default report markdown, verdict, truth percentage, and confidence were absent. Unauthenticated hidden route access returned `401`.
+
+**Classification:** `PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED`.
+
+**Information yield:** `report_quality_improved`. HJ59 is the first focused post-HJ58 quality repair that moves this input from a weak/UNVERIFIED internal Alpha shape to a true-side benchmark-band report. It is not release-quality proof by itself; the next useful step is stronger cross-input validation and report-quality review before another prompt edit.
+
+**Budget:** Captain reset the tranche to `18` before HJ58. HJ58 and HJ59 consumed `2`; `16` remain.

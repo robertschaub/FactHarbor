@@ -7,7 +7,7 @@
   "activeTranche": {
     "trancheId": "v2-highjump-hj58-w4g-prefix-repair-2026-05-23-reset-18-after-hj57",
     "resetTotal": 18,
-    "currentRemaining": 17,
+    "currentRemaining": 16,
     "approvalPointer": {
       "source": "Captain message in current Codex thread: \"New job budget: 18\"",
       "date": "2026-05-23",
@@ -23,9 +23,9 @@
       "startsAfterSliceId": "X7-HJ-57-W5-CONTRACT-REPAIR-BUNDESRAT-SIMPLE",
       "startsAfterJobId": "b1356da1f72f4f27a6fafb3bc5418746",
       "startingRemaining": 18,
-      "currentRemaining": 17,
-      "consumptionEntriesInThisTranche": 1,
-      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ58 is the first completed live validation after this reset: Bundesrat-simple cleared the repeated W4-G source_material_text_oversized blocker and produced an internal admin-only report.",
+      "currentRemaining": 16,
+      "consumptionEntriesInThisTranche": 2,
+      "note": "This reset supersedes prior remaining-balance accounting for future jobs only. HJ58 cleared the repeated W4-G source_material_text_oversized blocker and produced an internal admin-only report. HJ59 then moved the same Bundesrat-simple input from the weak HJ58 UNVERIFIED shape to an authenticated admin-only TRUE 88/85 internal Alpha report while public/default containment held.",
       "exceptionOverrunCount": 0
     },
     "unreconciledHistoricalNote": {
@@ -1546,6 +1546,20 @@
         "canaryRunner": "Captain Deputy / Lead Developer",
         "informationYield": "report_produced",
         "note": "Bundesrat-simple reran after W4-G aggregate-cap prefix admission. The run stayed on claimboundary-v2, did not repeat W4-G source_material_text_oversized, reached W5 with 8 source-content packets and a 14176-byte W4-H parent packet, extracted 4 EvidenceItems, and produced an authenticated admin-only internal report. Public/default containment held; unauthenticated hidden route access returned 401. An initial invite-code-missing submit attempt was rejected before job creation and did not consume a live job."
+      },
+      {
+        "sliceId": "X7-HJ-59-W5-TEMPORAL-RELATION-EXTRACTION-REPAIR",
+        "jobId": "769142306fab4af0ae46130bd5dcdda2",
+        "classification": "PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED",
+        "implementationCommit": "05194d3721444a8611c313319f8dcb3d839bc982",
+        "runtimeCommit": "e5654ea78f683e675d28b481ed1dfbd3d85bd48a",
+        "docsCommit": "same_commit_as_this_ledger_update",
+        "count": 1,
+        "remainingAfter": 16,
+        "approvalPointer": "Captain message in current Codex thread: \"New job budget: 18\" plus HJ59 package `Docs/WIP/2026-05-23_V2_HighJump_HJ59_W5_Temporal_Relation_Extraction_Repair.md`",
+        "canaryRunner": "Captain Deputy / Lead Developer",
+        "informationYield": "report_quality_improved",
+        "note": "Bundesrat-simple reran after the HJ59 W5 temporal/procedural relation prompt repair. The run stayed on claimboundary-v2, finished SUCCEEDED, used active claimboundary-v2 prompt hash 8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20, and produced an authenticated admin-only internal Alpha report with TRUE, truth 88, confidence 85, inside the current bundesrat-simple benchmark band. Public/default containment held: 4.0.0-cb-precutover, blocked_precutover, report_damaged, no public/default report markdown, verdict, truth percentage, or confidence, and unauthenticated hidden route access returned 401."
       }
     ],
     "blockedPending": [],

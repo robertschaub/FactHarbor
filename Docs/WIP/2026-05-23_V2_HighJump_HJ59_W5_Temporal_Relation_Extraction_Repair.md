@@ -1,9 +1,9 @@
 # V2 HighJump HJ59 W5 Temporal Relation Extraction Repair
 
-**Status:** implementation/verifier package
+**Status:** closed as live-validated PASS
 **Date:** 2026-05-23
 **Owner:** Captain Deputy / Lead Developer
-**Captain input:** HighJump continues toward useful internal V2 reports; prompt edits and live jobs are approved when naturally needed; current live-job budget is `17` after HJ58.
+**Captain input:** HighJump continues toward useful internal V2 reports; prompt edits and live jobs are approved when naturally needed; current live-job budget is reset to `18` after HJ57. HJ58 and HJ59 consumed one job each; `16` remain after this closeout.
 
 ## Observed Defect
 
@@ -111,3 +111,56 @@ Stop and reconvene Steer-Co if:
 - the repair would require domain terms, deterministic semantic code, schema/model/config changes, source/provider widening, report-writer verdict forcing, public behavior, or V1 work;
 - the live rerun still produces the same `UNVERIFIED` shape with no new useful evidence, which would indicate Source Material or downstream sufficiency/verdict ownership rather than W5 prompt ownership;
 - public/default route leaks hidden source/report/prompt/verdict/truth/confidence data.
+
+## Local Verification
+
+Pre-live verifier set passed:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/task-contracts/prompt-contract.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/evidence-items/bounded-evidence-extraction.test.ts`
+- `npm run validate:v2-gates`
+- `npm run debt:sensors` (`advisory_warn` only for known V2 footprint/docs/consolidation signals)
+- `npm -w apps/web run build`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+- `npm run index`
+- `git diff --check`
+
+The prompt was imported and activated in UCM as `hj59-w5-temporal-relation-extraction` with content hash `8e50a65fe61c1961d3d0e6e5eb7dc0b9075e870a5ffe64e688c08ba6aff1bf20`. Runtime was refreshed and Web/API/proxy version endpoints reported `e5654ea78f683e675d28b481ed1dfbd3d85bd48a` before submission.
+
+## Live Validation
+
+HJ59 job `769142306fab4af0ae46130bd5dcdda2` ran the exact Captain-defined input:
+
+`Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
+
+The job stayed on `claimboundary-v2`, finished `SUCCEEDED`, and used runtime commit `e5654ea78f683e675d28b481ed1dfbd3d85bd48a`.
+
+Public/default containment held:
+
+- schema `4.0.0-cb-precutover`;
+- cutover `blocked_precutover`;
+- `analysisIssueCode` `report_damaged`;
+- public/default report markdown absent;
+- public/default verdict, truth percentage, and confidence absent;
+- unauthenticated hidden route access returned `401`.
+
+Authenticated admin-only report output improved materially from HJ58:
+
+- report markdown length: `4368`;
+- headline: `Internal Alpha Review: Temporal Inversion in EU Treaty Executive Action and Parliamentary Decision`;
+- internal Alpha verdict: `TRUE`;
+- truth percentage: `88`;
+- confidence: `85`.
+
+This is inside the current `bundesrat-simple` benchmark band (`TRUE` / `MOSTLY-TRUE`, truth `85..100`, confidence `75..95`). It is not final release-quality evidence by itself: the report still needs human report-quality review for exact procedural wording and source fit, but HJ59 proves that the W5 temporal/procedural relation repair moved the internal report from the HJ58 weak/UNVERIFIED shape to a true-side report with usable confidence.
+
+Classification:
+
+`PASS_X7_HJ59_W5_TEMPORAL_RELATION_REPAIR_INTERNAL_TRUE_BAND_PRODUCED`
+
+Information yield:
+
+`report_quality_improved`
+
+## Next Direction
+
+Do not stack another Bundesrat-only prompt edit. The next HighJump step should use stronger validation across selected Captain-defined inputs, then choose the next quality bar from observed report defects. HJ59 makes single-input progress credible, but cross-input robustness and report-quality review are now more valuable than another one-job reachability canary.
