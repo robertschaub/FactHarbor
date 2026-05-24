@@ -1,0 +1,59 @@
+= Pipeline V2 =
+
+{{info}}
+**Target Architecture Reference** - This space describes the planned V2 replacement for the current AKEL / ClaimAssessmentBoundary pipeline.
+
+These pages describe target architecture, not current implementation state.
+{{/info}}
+
+== Purpose ==
+
+Pipeline V2 replaces the current AKEL / ClaimAssessmentBoundary pipeline with a cleaner architecture that keeps FactHarbor's trust safeguards while reducing control-flow complexity, scattered compatibility logic, and duplicate policy decisions.
+
+The governing intent is:
+
+> Replace the current analysis pipeline with a cleaner, maintainable architecture. Start from a reverse-engineered current-state specification, clean and redesign it, then implement directly in small reviewed increments. The UI should remain unchanged unless a concrete product, trust, or compatibility need is approved.
+
+V1 is not the V2 quality target. V2 preserves only explicitly justified concepts, contracts, and safeguards. V1 analysis code is removed after V2 owns the equivalent contract and passes its verifier; historical reports remain readable through adapters and fixtures, not through a live V1 analysis path.
+
+The full architectural narrative lives in [[AKEL Pipeline V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline V2.WebHome]].
+
+== Content ==
+
+This space collects all V2-specific documentation. Each page describes target architecture only; nothing here is current runtime behavior.
+
+=== Architectural Views ===
+
+|= Page |= Summary
+| [[AKEL Pipeline V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline V2.WebHome]] | Top-level V2 architecture: stage sequence, key design shifts, input capability roadmap, cost/latency targets, recovery policy, V1 protection rules.
+| [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]] | Detailed lifecycle: how preparation, draft, and job execution interact behind a unified Analysis Session UI.
+| [[Data Model V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Data Model V2.WebHome]] | Target V2 contract model: ##PipelineRunContext##, ##ClaimContract##, ##EvidenceCorpus##, ##BoundarySet##, ##VerdictSet##, ##ReportResult##.
+| [[Quality and Trust V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Quality and Trust V2.WebHome]] | Centralized trust architecture: one claim-integrity gate, one sufficiency gate, one verdict gate, shared warning policy.
+
+=== Deep Dives ===
+
+|= Page |= Summary
+| [[Pipeline Variants V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]] | Temporary dual-variant posture for the V1-to-V2 cutover and the cleanup conditions that follow.
+| [[Quality Gates V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]] | Gate 1 (claim contract integrity), Sufficiency Gate, Gate 4 (verdict), and their typed outputs.
+| [[Evidence Lifecycle V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]] | Evidence as a lifecycle: query planning, acquisition, multilingual extraction, scope-aware corpus building.
+| [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]] | Structured adjudication - Advocate, Challenger, Reconciler, validation, confidence gating - never collapsed into a one-shot prompt.
+| [[Calculations and Verdicts V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]] | One canonical verdict authority in ##ReportResult##; 7-point verdict scale and the MIXED/UNVERIFIED distinction preserved.
+| [[Prompt Architecture V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]] | Prompt, model, config, and cache governance; required attributes for every V2 analysis prompt section.
+| [[Source Reliability V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]] | Integration boundary for source reliability; no hidden coupling between reliability scores and public truth percentages.
+
+=== Diagrams ===
+
+|= Page |= Summary
+| [[V2 Pipeline Overview>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Pipeline Overview.WebHome]] | High-level diagram: input through run context, stages, and ##ReportResult##.
+| [[V2 Pipeline Detail>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Pipeline Detail.WebHome]] | Detailed flowchart of entry, run state, stage transitions, and adapters.
+| [[V2 Request Lifecycle>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Request Lifecycle.WebHome]] | Sequence diagram of a controlled V2 replacement path from User/UI through services.
+| [[V2 Analysis Session UX>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Analysis Session UX.WebHome]] | Product flow for focus preparation, mode selection, analysis execution, and report provenance.
+| [[V2 Entity Model ERD>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Entity Model ERD.WebHome]] | ER diagram of V2 contract entities and their relationships.
+| [[V2 Quality Gates Flow>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Quality Gates Flow.WebHome]] | Trust flow: Gate 1, sufficiency, Gate 4, report integrity, shared warning materiality.
+| [[V2 Verdict Debate Pattern>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Verdict Debate Pattern.WebHome]] | Diagram of structured verdict adjudication and gateway routing.
+| [[V2 Prompt Architecture>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Prompt Architecture.WebHome]] | UCM prompt profiles, sections, variables, output schemas, and cache governance.
+| [[V2 Report Regression Control>>FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Report Regression Control.WebHome]] | Promotion and rollback loop for V2 report-generation changes via versioned candidate profiles.
+
+----
+
+**Navigation:** [[Product Development>>FactHarbor.Product Development.WebHome]] | [[Current Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]]
