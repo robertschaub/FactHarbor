@@ -782,14 +782,13 @@ For each assessment, also assign:
 
 ### Rules
 
-- Preserve the original language of each claim in its `recommendationRationale`.
-- Do not translate rationales unless the claim itself is already in that language.
 - Do not use topic-specific examples, keyword rules, or fixed domain assumptions.
 - `rankedClaimIds` must contain every evaluated candidate ID exactly once.
 - `recommendedClaimIds` must be a subset of `rankedClaimIds`, in the same order, and contain no more than ${maxRecommendedClaims} IDs.
 - `assessments` must contain exactly one assessment for every evaluated candidate.
-- Each `recommendationRationale` must be non-empty and at most 160 characters.
-- Overall `rationale` must be non-empty and at most 240 characters.
+- `recommendationRationale` and overall `rationale` are optional transparency fields. If you include them, keep them concise.
+- Preserve the original language of each claim in its `recommendationRationale` when that field is included.
+- Do not translate rationales unless the claim itself is already in that language.
 - Output only the JSON object.
 
 ### Output
@@ -807,10 +806,10 @@ Return a JSON object:
       "expectedEvidenceYield": "high",
       "coversDistinctRelevantDimension": "high",
       "redundancyWithClaimIds": [],
-      "recommendationRationale": "Short rationale in the claim's language."
+      "recommendationRationale": "Optional concise rationale in the claim's language."
     }
   ],
-  "rationale": "Short overall rationale."
+  "rationale": "Optional concise overall rationale."
 }
 ```
 

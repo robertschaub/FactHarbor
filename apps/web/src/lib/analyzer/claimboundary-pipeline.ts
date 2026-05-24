@@ -366,6 +366,33 @@ export function buildClaimBoundaryResultJson(params: {
 const CANDIDATE_CAP_EXCLUDED_RATIONALE =
   "Not evaluated because the candidate set exceeded the configured claim auto-selection candidate cap.";
 
+function buildDroppedClaimRationale(
+  assessment: ClaimSelectionRecommendationAssessment | undefined,
+  rankedClaimIds: string[],
+): string {
+  if (assessment?.recommendationRationale?.trim()) {
+    return assessment.recommendationRationale.trim();
+  }
+  const rank = assessment ? rankedClaimIds.indexOf(assessment.claimId) + 1 : 0;
+  const rankText = rank > 0 ? ` ranked #${rank}` : "";
+  const redundancyText = assessment?.redundancyWithClaimIds.length
+    ? ` Covered by stronger candidate IDs: ${assessment.redundancyWithClaimIds.join(", ")}.`
+    : "";
+
+  switch (assessment?.triageLabel) {
+    case "fact_check_worthy":
+      return `Selector${rankText} this as fact-check-worthy, but selected higher-priority candidates for this run.${redundancyText}`;
+    case "fact_non_check_worthy":
+      return `Selector${rankText} this as lower priority for fact-checking in this run.${redundancyText}`;
+    case "opinion_or_subjective":
+      return `Selector classified this as not evidence-resolvable enough for research in this run.${redundancyText}`;
+    case "unclear":
+      return `Selector classified this as too unclear after extraction for research in this run.${redundancyText}`;
+    default:
+      return "The selector did not choose this claim for research in this run.";
+  }
+}
+
 function buildClaimSelectionMetadata(args: {
   understanding: CBClaimUnderstanding;
   selectionCap: number;
@@ -392,7 +419,7 @@ function buildClaimSelectionMetadata(args: {
       statement: claim.statement,
       reasonType: "selector_dropped",
       triageLabel: assessment?.triageLabel,
-      rationale: assessment?.recommendationRationale ?? "The selector did not choose this claim for research in this run.",
+      rationale: buildDroppedClaimRationale(assessment, args.rankedClaimIds),
     });
   }
 
@@ -780,8 +807,8 @@ export async function runClaimBoundaryAnalysis(
       });
     }
 
-    // Stage 1.5: Optional automatic check-worthy claim selection.
-    // Disabled by default. When enabled, only selected claims proceed to research;
+    // Stage 1.5: Automatic check-worthy claim selection when enabled in UCM.
+    // When enabled, only selected claims proceed to research;
     // dropped claims stay transparent in resultJson.claimSelection.
     if (initialPipelineConfig.claimAutoSelectionEnabled) {
       checkAbortSignal(input.jobId);
@@ -930,14 +957,14 @@ export async function runClaimBoundaryAnalysis(
           25,
         );
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error("[Pipeline] Automatic claim selection failed:", error);
+        const errorType = error instanceof Error ? error.name : typeof error;
+        console.error("[Pipeline] Automatic claim selection failed:", errorType);
         state.warnings.push({
           type: "report_damaged",
           severity: "error",
           message: "Automatic claim selection failed before research. Research and verdict stages were skipped to avoid analyzing an unsafe claim set.",
           details: {
-            error: errorMessage,
+            errorType,
             candidateClaimCount: candidateClaims.length,
             evaluatedCandidateClaimCount: evaluatedClaims.length,
             candidateCap,

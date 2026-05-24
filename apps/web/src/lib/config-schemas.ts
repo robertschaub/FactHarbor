@@ -505,7 +505,7 @@ export const PipelineConfigSchema = z.object({
   claimAutoSelectionCap: z.number().int().min(1).max(5).optional()
     .describe("Maximum auto-selected claims to research (default: 5)"),
   claimAutoSelectionCandidateCap: z.number().int().min(1).max(25).optional()
-    .describe("Maximum post-Gate-1 candidates evaluated by automatic claim selection (default: 25)"),
+    .describe("Maximum post-Gate-1 candidates evaluated by automatic claim selection (default: 12)"),
   claimAnnotationMode: z.enum(["off", "verifiability", "verifiability_and_misleadingness"]).optional()
     .describe("Claim annotation mode: off (default), verifiability (adds verifiability field at Stage 1), verifiability_and_misleadingness (adds both)"),
   explanationQualityMode: z.enum(["off", "structural", "rubric"]).optional()
@@ -874,7 +874,7 @@ export const PipelineConfigSchema = z.object({
     data.claimAutoSelectionCap = 5;
   }
   if (data.claimAutoSelectionCandidateCap === undefined) {
-    data.claimAutoSelectionCandidateCap = 25;
+    data.claimAutoSelectionCandidateCap = 12;
   }
   if (data.gate1GroundingRetryThreshold === undefined) {
     data.gate1GroundingRetryThreshold = 0.5;
@@ -1164,7 +1164,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   preliminaryMaxSources: 5,
   claimAutoSelectionEnabled: true,
   claimAutoSelectionCap: 5,
-  claimAutoSelectionCandidateCap: 25,
+  claimAutoSelectionCandidateCap: 12,
   gate1GroundingRetryThreshold: 0.5,
 
   // Research Depth defaults (UCM-1) — "quick" mode values; deep mode uses analysisMode toggle

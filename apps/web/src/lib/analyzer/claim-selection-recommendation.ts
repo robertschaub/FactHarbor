@@ -19,8 +19,11 @@ import { loadAndRenderSection } from "./prompt-loader";
 
 export const CLAIM_AUTO_SELECTION_DEFAULT_CAP = 5;
 export const CLAIM_AUTO_SELECTION_MAX = 5;
-export const CLAIM_AUTO_SELECTION_DEFAULT_CANDIDATE_CAP = 25;
+export const CLAIM_AUTO_SELECTION_DEFAULT_CANDIDATE_CAP = 12;
 export const CLAIM_AUTO_SELECTION_MAX_CANDIDATES = 25;
+const ASSESSMENT_RATIONALE_DISPLAY_MAX = 160;
+const OVERALL_RATIONALE_DISPLAY_MAX = 240;
+const DIAGNOSTIC_PREVIEW_MAX = 300;
 
 const TRIAGE_LABELS = [
   "fact_check_worthy",
@@ -31,22 +34,40 @@ const TRIAGE_LABELS = [
 
 const LEVEL_LABELS = ["high", "medium", "low"] as const satisfies readonly ClaimSelectionLevelLabel[];
 
-const ClaimSelectionAssessmentSchema = z.object({
-  claimId: z.string().min(1),
-  triageLabel: z.enum(TRIAGE_LABELS),
-  thesisDirectness: z.enum(LEVEL_LABELS),
-  expectedEvidenceYield: z.enum(LEVEL_LABELS),
-  coversDistinctRelevantDimension: z.enum(LEVEL_LABELS),
-  redundancyWithClaimIds: z.array(z.string()).default([]),
-  recommendationRationale: z.string().min(1).max(160),
-}).strict();
+const OptionalStringSchema = z.preprocess(
+  (value) => value ?? undefined,
+  z.string().optional(),
+).catch(undefined);
 
-const ClaimSelectionRecommendationSchema = z.object({
-  rankedClaimIds: z.array(z.string()).min(0).max(CLAIM_AUTO_SELECTION_MAX_CANDIDATES),
-  recommendedClaimIds: z.array(z.string()).min(0).max(CLAIM_AUTO_SELECTION_MAX),
-  assessments: z.array(ClaimSelectionAssessmentSchema).min(0).max(CLAIM_AUTO_SELECTION_MAX_CANDIDATES),
-  rationale: z.string().min(1).max(240),
-}).strict();
+const OptionalStringArraySchema = z.preprocess(
+  (value) => value ?? undefined,
+  z.array(z.string()).optional(),
+).catch(undefined);
+
+const RedundancyArraySchema = z.preprocess(
+  (value) => value ?? [],
+  z.array(z.string()).default([]),
+).catch([]);
+
+const ClaimSelectionAssessmentWireSchema = z.object({
+  claimId: OptionalStringSchema,
+  triageLabel: OptionalStringSchema,
+  thesisDirectness: OptionalStringSchema,
+  expectedEvidenceYield: OptionalStringSchema,
+  coversDistinctRelevantDimension: OptionalStringSchema,
+  redundancyWithClaimIds: RedundancyArraySchema,
+  recommendationRationale: OptionalStringSchema,
+}).passthrough();
+
+const ClaimSelectionRecommendationWireSchema = z.object({
+  rankedClaimIds: OptionalStringArraySchema,
+  recommendedClaimIds: OptionalStringArraySchema,
+  assessments: z.preprocess(
+    (value) => value ?? undefined,
+    z.array(ClaimSelectionAssessmentWireSchema).optional(),
+  ).catch(undefined),
+  rationale: OptionalStringSchema,
+}).passthrough();
 
 export class ClaimSelectionRecommendationError extends Error {
   constructor(message: string) {
@@ -125,41 +146,123 @@ function assertSelectedOrder(selectedIds: string[], rankedIds: string[]): void {
   }
 }
 
+function truncateForDisplay(text: string, max: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  if (max <= 3) return trimmed.slice(0, max);
+  return `${trimmed.slice(0, max - 3).trimEnd()}...`;
+}
+
+function normalizeContractLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const withCamelBoundaries = raw.trim().replace(/([a-z0-9])([A-Z])/g, "$1_$2");
+  const normalized = withCamelBoundaries
+    .replace(/[\s-]+/g, "_")
+    .replace(/_+/g, "_")
+    .toLowerCase()
+    .replace(/^_+|_+$/g, "");
+  return normalized || null;
+}
+
+function normalizeEnumLabel<T extends string>(raw: unknown, allowed: readonly T[], fieldName: string): T {
+  const normalized = normalizeContractLabel(raw);
+  if (!normalized) {
+    throw new ClaimSelectionRecommendationError(`${fieldName} must be a non-empty contract label`);
+  }
+  if ((allowed as readonly string[]).includes(normalized)) {
+    return normalized as T;
+  }
+  throw new ClaimSelectionRecommendationError(`${fieldName} contains unsupported label ${String(raw)}`);
+}
+
+function requireStringArray(raw: string[] | undefined, fieldName: string): string[] {
+  if (!Array.isArray(raw)) {
+    throw new ClaimSelectionRecommendationError(`${fieldName} must be an array of claim IDs`);
+  }
+  return raw;
+}
+
+function requireAssessments(
+  raw: z.infer<typeof ClaimSelectionRecommendationWireSchema>["assessments"],
+): Array<z.infer<typeof ClaimSelectionAssessmentWireSchema>> {
+  if (!Array.isArray(raw)) {
+    throw new ClaimSelectionRecommendationError("assessments must be an array");
+  }
+  return raw;
+}
+
+function requireNonEmptyString(raw: unknown, fieldName: string): string {
+  if (typeof raw !== "string" || raw.trim().length === 0) {
+    throw new ClaimSelectionRecommendationError(`${fieldName} must be a non-empty string`);
+  }
+  return raw.trim();
+}
+
+function normalizeOptionalRationale(raw: unknown, max: number): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  return truncateForDisplay(trimmed, max);
+}
+
 export function validateClaimSelectionRecommendation(
   raw: unknown,
   atomicClaims: AtomicClaim[],
   selectionCap: number,
 ): ClaimSelectionRecommendation {
-  const parsed = ClaimSelectionRecommendationSchema.parse(raw);
+  const parsed = ClaimSelectionRecommendationWireSchema.parse(raw);
   const candidateIds = atomicClaims.map((claim) => claim.id);
   const candidateSet = toUniqueSet(candidateIds, "atomicClaims");
   const normalizedSelectionCap = getClaimAutoSelectionCap(candidateIds.length, selectionCap);
+  const rankedClaimIds = requireStringArray(parsed.rankedClaimIds, "rankedClaimIds");
+  const recommendedClaimIds = requireStringArray(parsed.recommendedClaimIds, "recommendedClaimIds");
+  const assessments = requireAssessments(parsed.assessments).map((assessment, index): ClaimSelectionRecommendationAssessment => {
+    const claimId = requireNonEmptyString(assessment.claimId, `assessments[${index}].claimId`);
+    const recommendationRationale = normalizeOptionalRationale(
+      assessment.recommendationRationale,
+      ASSESSMENT_RATIONALE_DISPLAY_MAX,
+    );
+    return {
+      claimId,
+      triageLabel: normalizeEnumLabel(assessment.triageLabel, TRIAGE_LABELS, `assessments[${index}].triageLabel`),
+      thesisDirectness: normalizeEnumLabel(
+        assessment.thesisDirectness,
+        LEVEL_LABELS,
+        `assessments[${index}].thesisDirectness`,
+      ),
+      expectedEvidenceYield: normalizeEnumLabel(
+        assessment.expectedEvidenceYield,
+        LEVEL_LABELS,
+        `assessments[${index}].expectedEvidenceYield`,
+      ),
+      coversDistinctRelevantDimension: normalizeEnumLabel(
+        assessment.coversDistinctRelevantDimension,
+        LEVEL_LABELS,
+        `assessments[${index}].coversDistinctRelevantDimension`,
+      ),
+      redundancyWithClaimIds: [...new Set(assessment.redundancyWithClaimIds)],
+      ...(recommendationRationale ? { recommendationRationale } : {}),
+    };
+  });
 
-  assertSameIdSet(parsed.rankedClaimIds, candidateIds, "rankedClaimIds");
+  assertSameIdSet(rankedClaimIds, candidateIds, "rankedClaimIds");
 
-  if (parsed.recommendedClaimIds.length > normalizedSelectionCap) {
+  if (recommendedClaimIds.length > normalizedSelectionCap) {
     throw new ClaimSelectionRecommendationError(
       `recommendedClaimIds exceeds selection cap ${normalizedSelectionCap}`,
     );
   }
-  toUniqueSet(parsed.recommendedClaimIds, "recommendedClaimIds");
-  for (const id of parsed.recommendedClaimIds) {
+  toUniqueSet(recommendedClaimIds, "recommendedClaimIds");
+  for (const id of recommendedClaimIds) {
     if (!candidateSet.has(id)) {
       throw new ClaimSelectionRecommendationError(`recommendedClaimIds contains unknown claim ID ${id}`);
     }
   }
-  assertSelectedOrder(parsed.recommendedClaimIds, parsed.rankedClaimIds);
+  assertSelectedOrder(recommendedClaimIds, rankedClaimIds);
 
-  const assessmentIds = parsed.assessments.map((assessment) => assessment.claimId);
+  const assessmentIds = assessments.map((assessment) => assessment.claimId);
   assertSameIdSet(assessmentIds, candidateIds, "assessments");
-  for (const assessment of parsed.assessments) {
-    const rationale = assessment.recommendationRationale.trim();
-    if (!rationale) {
-      throw new ClaimSelectionRecommendationError(`assessment ${assessment.claimId} has an empty rationale`);
-    }
-    if (rationale.length > 160) {
-      throw new ClaimSelectionRecommendationError(`assessment ${assessment.claimId} rationale exceeds 160 chars`);
-    }
+  for (const assessment of assessments) {
     for (const redundantId of assessment.redundancyWithClaimIds) {
       if (!candidateSet.has(redundantId)) {
         throw new ClaimSelectionRecommendationError(
@@ -174,22 +277,13 @@ export function validateClaimSelectionRecommendation(
     }
   }
 
-  const rationale = parsed.rationale.trim();
-  if (!rationale) {
-    throw new ClaimSelectionRecommendationError("rationale must not be empty");
-  }
-  if (rationale.length > 240) {
-    throw new ClaimSelectionRecommendationError("rationale exceeds 240 chars");
-  }
+  const rationale = normalizeOptionalRationale(parsed.rationale, OVERALL_RATIONALE_DISPLAY_MAX)
+    ?? "Automatic claim selection ranked candidates by check-worthiness.";
 
   return {
-    rankedClaimIds: parsed.rankedClaimIds,
-    recommendedClaimIds: parsed.recommendedClaimIds,
-    assessments: parsed.assessments.map((assessment): ClaimSelectionRecommendationAssessment => ({
-      ...assessment,
-      recommendationRationale: assessment.recommendationRationale.trim(),
-      redundancyWithClaimIds: [...new Set(assessment.redundancyWithClaimIds)],
-    })),
+    rankedClaimIds,
+    recommendedClaimIds,
+    assessments,
     rationale,
   };
 }
@@ -209,20 +303,105 @@ function isExplicitRefusalOrSafetyBlock(result: unknown): boolean {
   return reason === "content-filter" || reason === "safety";
 }
 
+function stringifyDiagnosticValue(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string") return value;
+  if (value instanceof Error) {
+    const cause = stringifyDiagnosticValue((value as Error & { cause?: unknown }).cause);
+    return cause ? `${value.name}: ${value.message}; cause: ${cause}` : `${value.name}: ${value.message}`;
+  }
+  try {
+    const seen = new WeakSet<object>();
+    return JSON.stringify(value, (_key, nested) => {
+      if (typeof nested === "bigint") return nested.toString();
+      if (typeof nested === "object" && nested !== null) {
+        if (seen.has(nested)) return "[Circular]";
+        seen.add(nested);
+      }
+      return nested;
+    });
+  } catch {
+    return String(value);
+  }
+}
+
+function redactDiagnosticText(text: string): string {
+  return text
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [REDACTED]")
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, "sk-[REDACTED]")
+    .replace(/\b(authorization|api[_-]?key|token)\s*[:=]\s*["']?[^"',\s}]+/gi, "$1=[REDACTED]");
+}
+
+function truncateDiagnosticPreview(text: string): string {
+  return truncateForDisplay(redactDiagnosticText(text), DIAGNOSTIC_PREVIEW_MAX);
+}
+
+function getResultText(result: unknown): unknown {
+  return (result as { text?: unknown } | undefined)?.text;
+}
+
+function getErrorPayload(error: unknown): unknown {
+  const errorObj = error as {
+    value?: unknown;
+    responseBody?: unknown;
+    response?: { body?: unknown; text?: unknown };
+    cause?: unknown;
+  };
+  return errorObj?.value ?? errorObj?.responseBody ?? errorObj?.response?.body ?? errorObj?.response?.text ?? errorObj?.cause;
+}
+
+function buildDiagnosticPreview(args: {
+  structuredOutput?: unknown;
+  result?: unknown;
+  error?: unknown;
+}): string | undefined {
+  const candidates = [
+    args.structuredOutput,
+    getResultText(args.result),
+    getErrorPayload(args.error),
+    args.error,
+  ];
+  for (const candidate of candidates) {
+    const text = stringifyDiagnosticValue(candidate);
+    if (text?.trim()) {
+      return truncateDiagnosticPreview(text.trim());
+    }
+  }
+  return undefined;
+}
+
 function recordClaimSelectionCall(args: {
   model: { provider: string; modelName: string };
   result?: any;
+  structuredOutput?: unknown;
   startedAt: number;
   success: boolean;
   schemaCompliant: boolean;
   retries: number;
   error?: unknown;
 }): void {
-  const errorMessage = args.error instanceof Error
+  const baseErrorMessage = args.error instanceof Error
     ? args.error.message
     : args.error === undefined
       ? undefined
       : String(args.error);
+  const diagnosticPreview = args.success
+    ? undefined
+    : buildDiagnosticPreview({
+        structuredOutput: args.structuredOutput,
+        result: args.result,
+        error: args.error,
+      });
+  const safeBaseErrorMessage = baseErrorMessage
+    ? truncateDiagnosticPreview(baseErrorMessage)
+    : undefined;
+  const errorMessage = baseErrorMessage
+    ? diagnosticPreview
+      ? `${safeBaseErrorMessage} | diagnosticPreview=${diagnosticPreview}`
+      : safeBaseErrorMessage
+    : diagnosticPreview
+      ? `diagnosticPreview=${diagnosticPreview}`
+      : undefined;
   recordLLMCall({
     taskType: "claim_selection",
     provider: args.model.provider,
@@ -268,6 +447,7 @@ export async function generateClaimSelectionRecommendation(args: {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const startedAt = Date.now();
     let result: Awaited<ReturnType<typeof generateText>> | undefined;
+    let structured: unknown;
     try {
       result = await generateText({
         model: model.model,
@@ -283,7 +463,7 @@ export async function generateClaimSelectionRecommendation(args: {
           },
         ],
         temperature: 0,
-        output: Output.object({ schema: ClaimSelectionRecommendationSchema }),
+        output: Output.object({ schema: ClaimSelectionRecommendationWireSchema }),
         providerOptions: getStructuredOutputProviderOptions(model.provider),
       });
 
@@ -293,7 +473,7 @@ export async function generateClaimSelectionRecommendation(args: {
         );
       }
 
-      const structured = extractStructuredOutput(result);
+      structured = extractStructuredOutput(result);
       if (!structured) {
         throw new ClaimSelectionRecommendationError("Stage 1.5: LLM returned no structured claim-selection output");
       }
@@ -302,6 +482,7 @@ export async function generateClaimSelectionRecommendation(args: {
       recordClaimSelectionCall({
         model,
         result,
+        structuredOutput: structured,
         startedAt,
         success: true,
         schemaCompliant: true,
@@ -313,6 +494,7 @@ export async function generateClaimSelectionRecommendation(args: {
       recordClaimSelectionCall({
         model,
         result,
+        structuredOutput: structured,
         startedAt,
         success: false,
         schemaCompliant: false,

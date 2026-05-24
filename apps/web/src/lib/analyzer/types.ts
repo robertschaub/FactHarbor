@@ -881,7 +881,7 @@ export interface ClaimSelectionRecommendationAssessment {
   expectedEvidenceYield: ClaimSelectionLevelLabel;
   coversDistinctRelevantDimension: ClaimSelectionLevelLabel;
   redundancyWithClaimIds: string[];
-  recommendationRationale: string;
+  recommendationRationale?: string;
 }
 
 export interface ClaimSelectionRecommendation {

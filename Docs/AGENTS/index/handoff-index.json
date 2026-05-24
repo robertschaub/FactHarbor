@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-24T21:54:33.739Z",
-  "count": 273,
+  "generatedAt": "2026-05-24T23:32:40.988Z",
+  "count": 275,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5677,6 +5677,41 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Verification passed with `node --check` on all four agent scripts, dry runs for GPT/Gemini, a temp-fixture loader test confirming search order and env precedence, and `git diff --check`."
+    },
+    {
+      "file": "2026-05-25_Lead_Architect_Claim_Auto_Selection_Root_Cause_Fix_Proposal.md",
+      "date": "2026-05-25",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "claim",
+        "auto",
+        "selection",
+        "root",
+        "cause",
+        "fix",
+        "proposal"
+      ],
+      "files_touched": [],
+      "summary": "Claim Auto-Selection Root-Cause Fix Proposal"
+    },
+    {
+      "file": "2026-05-25_Senior_Developer_Claim_Auto_Selection_Root_Cause_Fix.md",
+      "date": "2026-05-25",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "claim",
+        "auto",
+        "selection",
+        "root",
+        "cause",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Claim Auto-Selection Root-Cause Fix Implementation"
     }
   ]
 }

@@ -132,7 +132,7 @@
   "preliminaryMaxSources": 5,
   "claimAutoSelectionEnabled": true,
   "claimAutoSelectionCap": 5,
-  "claimAutoSelectionCandidateCap": 25,
+  "claimAutoSelectionCandidateCap": 12,
   "gate1GroundingRetryThreshold": 0.5,
   "maxResearchIterations": 4,
   "maxSourcesPerIteration": 8,

@@ -116,6 +116,7 @@ describe("claim-selection recommendation", () => {
     expect(normalizeClaimAutoSelectionCap(undefined)).toBe(5);
     expect(normalizeClaimAutoSelectionCap(99)).toBe(5);
     expect(normalizeClaimAutoSelectionCap(0)).toBe(1);
+    expect(normalizeClaimAutoSelectionCandidateCap(undefined)).toBe(12);
     expect(normalizeClaimAutoSelectionCandidateCap(99)).toBe(25);
     expect(normalizeClaimAutoSelectionCandidateCap(0)).toBe(1);
   });
@@ -144,6 +145,72 @@ describe("claim-selection recommendation", () => {
 
     expect(zero.recommendedClaimIds).toEqual([]);
     expect(zero.assessments[0].recommendationRationale).toContain("Nicht");
+  });
+
+  it("accepts optional rationale fields, harmless extra fields, null redundancy, and enum label drift", () => {
+    const longRationale = "x".repeat(220);
+    const parsed = validateClaimSelectionRecommendation(
+      {
+        rankedClaimIds: ["AC_01", "AC_02"],
+        recommendedClaimIds: ["AC_01"],
+        assessments: [
+          {
+            claimId: "AC_01",
+            triageLabel: "factCheckWorthy",
+            thesisDirectness: "High",
+            expectedEvidenceYield: "high",
+            coversDistinctRelevantDimension: "high",
+            redundancyWithClaimIds: null,
+            recommendationRationale: null,
+            extraField: "ignored",
+          },
+          {
+            claimId: "AC_02",
+            triageLabel: "fact-non-check-worthy",
+            thesisDirectness: "medium",
+            expectedEvidenceYield: "LOW",
+            coversDistinctRelevantDimension: "low",
+            redundancyWithClaimIds: ["AC_01", "AC_01"],
+            recommendationRationale: longRationale,
+          },
+        ],
+        rationale: null,
+        extraRootField: true,
+      },
+      [claim("AC_01"), claim("AC_02")],
+      2,
+    );
+
+    expect(parsed.assessments[0]).toMatchObject({
+      triageLabel: "fact_check_worthy",
+      thesisDirectness: "high",
+      redundancyWithClaimIds: [],
+    });
+    expect(parsed.assessments[0].recommendationRationale).toBeUndefined();
+    expect(parsed.assessments[1]).toMatchObject({
+      triageLabel: "fact_non_check_worthy",
+      expectedEvidenceYield: "low",
+      redundancyWithClaimIds: ["AC_01"],
+    });
+    expect(parsed.assessments[1].recommendationRationale).toHaveLength(160);
+    expect(parsed.assessments[1].recommendationRationale?.endsWith("...")).toBe(true);
+    expect(parsed.rationale).toBe("Automatic claim selection ranked candidates by check-worthiness.");
+  });
+
+  it("rejects enum labels that do not normalize to the selector contract", () => {
+    expect(() => validateClaimSelectionRecommendation(
+      recommendation({
+        assessments: [
+          {
+            ...recommendation().assessments[0],
+            triageLabel: "mostly_check_worthy",
+          },
+          recommendation().assessments[1],
+        ],
+      }),
+      [claim("AC_01"), claim("AC_02")],
+      2,
+    )).toThrow(/unsupported label/);
   });
 
   it("rejects missing coverage, unknown IDs, excessive selection, and order drift", () => {
@@ -220,7 +287,31 @@ describe("claim-selection recommendation", () => {
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
     expect(mockRecordLLMCall).toHaveBeenCalledTimes(2);
     expect(mockRecordLLMCall.mock.calls[0][0]).toMatchObject({ success: false, taskType: "claim_selection" });
+    expect(mockRecordLLMCall.mock.calls[0][0].errorMessage).toContain("diagnosticPreview=");
     expect(mockRecordLLMCall.mock.calls[1][0]).toMatchObject({ success: true, retries: 1 });
+  });
+
+  it("records a bounded redacted diagnostic preview on selector call failure", async () => {
+    mockGenerateText.mockRejectedValue(
+      new Error(`No object generated for sk-${"a".repeat(24)} with Bearer ${"b".repeat(32)} ${"x".repeat(500)}`),
+    );
+
+    await expect(generateClaimSelectionRecommendation({
+      originalInput: "Input",
+      impliedClaim: "Implied",
+      articleThesis: "Thesis",
+      atomicClaims: [claim("AC_01"), claim("AC_02")],
+      selectionCap: 2,
+      pipelineConfig: DEFAULT_PIPELINE_CONFIG,
+    })).rejects.toThrow(/No object generated/);
+
+    const message = mockRecordLLMCall.mock.calls[0][0].errorMessage ?? "";
+    expect(message).toContain("diagnosticPreview=");
+    expect(message).toContain("sk-[REDACTED]");
+    expect(message).toContain("Bearer [REDACTED]");
+    expect(message).not.toContain("sk-aaaaaaaa");
+    expect(message).not.toContain("Bearer bbbbbbbb");
+    expect(message.length).toBeLessThan(700);
   });
 
   it("does not retry explicit provider safety blocks", async () => {
@@ -250,6 +341,8 @@ describe("claim-selection recommendation", () => {
     expect(section).toContain("automatic claim-selection");
     expect(section).toContain("rankedClaimIds");
     expect(section).toContain("recommendedClaimIds");
+    expect(section).toContain("optional transparency fields");
+    expect(section).not.toContain("must be non-empty and at most 160");
     expect(section).not.toMatch(/\bchooser\b|\bdraft\b|\bpreselection\b|\bACS\b/i);
   });
 });

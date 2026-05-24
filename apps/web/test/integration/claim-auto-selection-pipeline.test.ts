@@ -339,7 +339,7 @@ function configurePipeline(enabled: boolean): void {
     config: {
       claimAutoSelectionEnabled: enabled,
       claimAutoSelectionCap: 5,
-      claimAutoSelectionCandidateCap: 25,
+      claimAutoSelectionCandidateCap: 12,
       applicabilityFilterEnabled: true,
       sourceReliabilityCalibrationMode: "off",
       evidenceWeightingEnabled: false,
@@ -502,7 +502,12 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
 
   it("routes only selector-ranked selected claims into Stage 2 and result verdicts", async () => {
     configurePipeline(true);
-    mocks.generateClaimSelectionRecommendation.mockResolvedValue(recommendation(["AC_03", "AC_01"]));
+    const selectorRecommendation = recommendation(["AC_03", "AC_01"]);
+    selectorRecommendation.assessments = selectorRecommendation.assessments.map((assessment) => {
+      const { recommendationRationale: _recommendationRationale, ...rest } = assessment;
+      return rest;
+    });
+    mocks.generateClaimSelectionRecommendation.mockResolvedValue(selectorRecommendation);
     const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
 
     const result = await runClaimBoundaryAnalysis({
@@ -519,6 +524,7 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
     expect(result.resultJson.claimSelection.droppedClaims).toEqual([
       expect.objectContaining({ id: "AC_02", reasonType: "selector_dropped" }),
     ]);
+    expect(result.resultJson.claimSelection.droppedClaims[0].rationale).toContain("Selector");
   });
 
   it("returns a non-damaged terminal result when the selector selects zero claims", async () => {
@@ -562,7 +568,12 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
       expect.objectContaining({ id: "AC_03", reasonType: "selector_failed" }),
     ]);
     expect(result.resultJson.analysisWarnings).toEqual([
-      expect.objectContaining({ type: "report_damaged", severity: "error" }),
+      expect.objectContaining({
+        type: "report_damaged",
+        severity: "error",
+        details: expect.not.objectContaining({ error: expect.anything() }),
+      }),
     ]);
+    expect(result.resultJson.analysisWarnings[0].details).toMatchObject({ errorType: "Error" });
   });
 });

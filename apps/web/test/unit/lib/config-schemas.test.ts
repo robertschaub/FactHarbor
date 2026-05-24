@@ -795,7 +795,7 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.preliminaryMaxSources).toBe(5);
       expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionEnabled).toBe(true);
       expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionCap).toBe(5);
-      expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionCandidateCap).toBe(25);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionCandidateCap).toBe(12);
       expect(DEFAULT_PIPELINE_CONFIG.gate1GroundingRetryThreshold).toBe(0.5);
       expect(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold).toBe(3);
       expect(DEFAULT_PIPELINE_CONFIG.sufficiencyMinMainIterations).toBe(1);
@@ -819,7 +819,7 @@ describe("Default Config Values", () => {
 
       expect(parsed.claimAutoSelectionEnabled).toBe(true);
       expect(parsed.claimAutoSelectionCap).toBe(5);
-      expect(parsed.claimAutoSelectionCandidateCap).toBe(25);
+      expect(parsed.claimAutoSelectionCandidateCap).toBe(12);
 
       expect(() => PipelineConfigSchema.parse({
         ...DEFAULT_PIPELINE_CONFIG,
