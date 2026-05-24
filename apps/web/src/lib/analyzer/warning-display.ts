@@ -66,6 +66,8 @@ const WARNING_CLASSIFICATION = {
   source_reliability_unknown_dominance: { bucket: "analysis", impact: "informational" },
   source_reliability_calibration_skipped: { bucket: "analysis", impact: "informational" },
   gate1_thesis_direct_rescue: { bucket: "analysis", impact: "informational" },
+  no_checkworthy_claims: { bucket: "analysis", impact: "degrading" },
+  claim_selection_truncated: { bucket: "analysis", impact: "degrading" },
   per_source_evidence_cap: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 

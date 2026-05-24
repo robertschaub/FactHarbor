@@ -14,6 +14,7 @@
 
 export type LLMTaskType =
   | 'understand'
+  | 'claim_selection'
   | 'research'
   | 'cluster'
   | 'verdict'

@@ -793,6 +793,9 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.claimAtomicityLevel).toBe(3);
       expect(DEFAULT_PIPELINE_CONFIG.preliminarySearchQueriesPerClaim).toBe(2);
       expect(DEFAULT_PIPELINE_CONFIG.preliminaryMaxSources).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionEnabled).toBe(true);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionCap).toBe(5);
+      expect(DEFAULT_PIPELINE_CONFIG.claimAutoSelectionCandidateCap).toBe(25);
       expect(DEFAULT_PIPELINE_CONFIG.gate1GroundingRetryThreshold).toBe(0.5);
       expect(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold).toBe(3);
       expect(DEFAULT_PIPELINE_CONFIG.sufficiencyMinMainIterations).toBe(1);
@@ -804,6 +807,28 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.scopeNormalizationEnabled).toBe(true);
       expect(DEFAULT_PIPELINE_CONFIG.scopeNormalizationMinScopes).toBe(5);
       expect(DEFAULT_PIPELINE_CONFIG.selfConsistencyMode).toBe("full");
+    });
+
+    it("applies automatic claim-selection defaults and bounds", () => {
+      const parsed = PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        claimAutoSelectionEnabled: undefined,
+        claimAutoSelectionCap: undefined,
+        claimAutoSelectionCandidateCap: undefined,
+      });
+
+      expect(parsed.claimAutoSelectionEnabled).toBe(true);
+      expect(parsed.claimAutoSelectionCap).toBe(5);
+      expect(parsed.claimAutoSelectionCandidateCap).toBe(25);
+
+      expect(() => PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        claimAutoSelectionCap: 6,
+      })).toThrow();
+      expect(() => PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        claimAutoSelectionCandidateCap: 26,
+      })).toThrow();
     });
   });
 

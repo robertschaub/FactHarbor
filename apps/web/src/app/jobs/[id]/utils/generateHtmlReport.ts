@@ -8,6 +8,7 @@
 
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
 import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
+import type { ClaimAutoSelectionDroppedClaim } from "@/lib/analyzer/types";
 import {
   getBoundaryDescriptionSegments,
   getBoundaryDisplayHeadline,
@@ -525,6 +526,39 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
   }).join("\n");
 }
 
+function buildDroppedClaimsSection(result: any): string {
+  const droppedClaims = Array.isArray(result?.claimSelection?.droppedClaims)
+    ? result.claimSelection.droppedClaims
+    : [];
+  if (!droppedClaims.length) return "";
+
+  return `<!-- DROPPED CLAIMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#8856;</span>
+    <span class="section-title">Not analyzed in this run</span>
+    <span class="section-badge">${droppedClaims.length}</span>
+  </div>
+  <div class="section-body">
+    <p style="color:#a0aec0;font-size:13px;line-height:1.5;margin-bottom:12px">
+      These atomic claims were not researched and did not affect the verdict. Start a new analysis with any of them if you want them checked separately.
+    </p>
+    <details>
+      <summary style="cursor:pointer;color:#cbd5e0;font-size:13px;margin-bottom:10px">Show dropped atomic claims</summary>
+      <ul style="margin:10px 0 0 18px;color:#cbd5e0;font-size:13px;line-height:1.5">
+        ${droppedClaims.map((claim: ClaimAutoSelectionDroppedClaim) => `
+          <li style="margin-bottom:8px">
+            <code style="color:#90cdf4">${esc(claim.id)}</code>
+            ${esc(claim.statement)}
+            ${claim.rationale ? `<span style="color:#718096"> — ${esc(claim.rationale)}</span>` : ""}
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  </div>
+</div>`;
+}
+
 function buildBoundaryFindingsGrid(findings: any[]): string {
   return `<div style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
@@ -918,6 +952,7 @@ ${buildVerdictBanner(input)}
 ${buildVerdictNarrative(narrative)}
 ${buildTigerScore(result?.tigerScore)}
 ${buildClaimVerdicts(input)}
+${buildDroppedClaimsSection(result)}
 ${buildClaimBoundariesSection(input)}
 ${buildEvidenceSection(input.evidenceItems, input.claimVerdicts)}
 ${buildSourcesSection(input.sources)}

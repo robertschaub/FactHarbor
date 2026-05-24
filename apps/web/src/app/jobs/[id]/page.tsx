@@ -53,7 +53,7 @@ import {
   classifyWarningForDisplay,
 } from "@/lib/analyzer/warning-display";
 import { useReportNavigation } from "./hooks/useReportNavigation";
-import type { AnalysisWarning, TIGERScore } from "@/lib/analyzer/types";
+import type { AnalysisWarning, ClaimAutoSelectionDroppedClaim, TIGERScore } from "@/lib/analyzer/types";
 import { resolveEvidenceSourceLabel } from "@/lib/evidence-source-label";
 import {
   getBoundaryDescriptionSegments,
@@ -987,6 +987,9 @@ export default function JobPage() {
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
+  const droppedClaimsForDisplay = Array.isArray(result?.claimSelection?.droppedClaims)
+    ? result.claimSelection.droppedClaims
+    : [];
   const verdictSummary = result?.verdictSummary;
   const classificationFallbacks = result?.classificationFallbacks;
   const allAnalysisWarnings: AnalysisWarning[] = Array.isArray(result?.analysisWarnings)
@@ -1966,6 +1969,32 @@ export default function JobPage() {
                       </details>
                     )}
                   </section>
+                </ReportSection>
+              )}
+
+              {isCBSchema && droppedClaimsForDisplay.length > 0 && (
+                <ReportSection
+                  title="Not analyzed in this run"
+                  className={`${styles.reportSurfaceCard} ${styles.inputSection}`}
+                  collapsible
+                  defaultOpen={false}
+                >
+                  <div className={styles.claimsSectionList}>
+                    <p className={styles.evidenceSectionNote}>
+                      These atomic claims were not researched and did not affect the verdict. Start a new analysis with any of them if you want them checked separately.
+                    </p>
+                    <ul className={styles.tangentialList}>
+                      {droppedClaimsForDisplay.map((claim: ClaimAutoSelectionDroppedClaim) => (
+                        <li key={claim.id} className={styles.tangentialItem}>
+                          <code className={styles.tangentialClaimId}>{claim.id}</code>{" "}
+                          {claim.statement}
+                          {claim.rationale ? (
+                            <span className={styles.tangentialClaimId}> — {claim.rationale}</span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </ReportSection>
               )}
 

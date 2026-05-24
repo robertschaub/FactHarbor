@@ -500,6 +500,12 @@ export const PipelineConfigSchema = z.object({
     .describe("Search queries per claim in Stage 1 preliminary search (default: 2)"),
   preliminaryMaxSources: z.number().int().min(1).max(10).optional()
     .describe("Max sources to fetch in Stage 1 preliminary search (default: 5)"),
+  claimAutoSelectionEnabled: z.boolean().optional()
+    .describe("Enable automatic post-Gate-1 claim selection before research (default: true)"),
+  claimAutoSelectionCap: z.number().int().min(1).max(5).optional()
+    .describe("Maximum auto-selected claims to research (default: 5)"),
+  claimAutoSelectionCandidateCap: z.number().int().min(1).max(25).optional()
+    .describe("Maximum post-Gate-1 candidates evaluated by automatic claim selection (default: 25)"),
   claimAnnotationMode: z.enum(["off", "verifiability", "verifiability_and_misleadingness"]).optional()
     .describe("Claim annotation mode: off (default), verifiability (adds verifiability field at Stage 1), verifiability_and_misleadingness (adds both)"),
   explanationQualityMode: z.enum(["off", "structural", "rubric"]).optional()
@@ -861,6 +867,15 @@ export const PipelineConfigSchema = z.object({
   if (data.preliminaryMaxSources === undefined) {
     data.preliminaryMaxSources = 5;
   }
+  if (data.claimAutoSelectionEnabled === undefined) {
+    data.claimAutoSelectionEnabled = true;
+  }
+  if (data.claimAutoSelectionCap === undefined) {
+    data.claimAutoSelectionCap = 5;
+  }
+  if (data.claimAutoSelectionCandidateCap === undefined) {
+    data.claimAutoSelectionCandidateCap = 25;
+  }
   if (data.gate1GroundingRetryThreshold === undefined) {
     data.gate1GroundingRetryThreshold = 0.5;
   }
@@ -1147,6 +1162,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   claimAtomicityLevel: 3,
   preliminarySearchQueriesPerClaim: 2,
   preliminaryMaxSources: 5,
+  claimAutoSelectionEnabled: true,
+  claimAutoSelectionCap: 5,
+  claimAutoSelectionCandidateCap: 25,
   gate1GroundingRetryThreshold: 0.5,
 
   // Research Depth defaults (UCM-1) — "quick" mode values; deep mode uses analysisMode toggle

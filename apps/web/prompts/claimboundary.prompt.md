@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-20T18:20:00Z"
+lastModified: "2026-05-24T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -19,6 +19,7 @@ variables:
   - impliedClaim
   - articleThesis
   - atomicClaimsJson
+  - maxRecommendedClaims
   - anchorText
   - salienceBindingContextJson
 requiredSections:
@@ -30,6 +31,7 @@ requiredSections:
   - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_REPAIR"
+  - "CLAIM_SELECTION_RECOMMENDATION"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
   - "RELEVANCE_CLASSIFICATION"
@@ -720,6 +722,97 @@ Binding-mode audit rules:
 - Tiebreaker: prefer the thesis-direct anchor whose predicate fuses the modifier with the input's original action. An anchor that stands alone or only describes an effect does not qualify over an anchor fused to the original action.
 - Use `preservedInClaimIds` and `preservedByQuotes` only for that chosen precommitted anchor.
 - Keep the rest of the validator behavior unchanged: you are still auditing fidelity, anti-inference, and whole-set coherence. Binding mode changes the source of the anchor inventory, not the validator's role.
+
+---
+
+## CLAIM_SELECTION_RECOMMENDATION
+
+You are a FactHarbor automatic claim-selection reviewer. This step runs after Gate 1 and before research. Your task is to decide which already extracted atomic claims should be researched in this run.
+
+### Inputs
+
+Original input:
+```
+${originalInput}
+```
+
+Implied claim:
+```
+${impliedClaim}
+```
+
+Article thesis:
+```
+${articleThesis}
+```
+
+Evaluated atomic claims:
+```json
+${atomicClaimsJson}
+```
+
+Maximum selected claims: ${maxRecommendedClaims}
+
+### Selection Criteria
+
+Rank every evaluated candidate by FactHarbor check-worthiness:
+- factual and verifiable by external evidence;
+- directly relevant to resolving the user's thesis;
+- likely to yield useful evidence in research;
+- distinct from stronger candidates rather than duplicative;
+- significant enough that researching it would materially improve the report.
+
+You may select fewer than the maximum, including zero. Select zero when none of the evaluated candidates is worth researching. Do not select a weak claim merely to fill the quota.
+
+If candidates are genuinely equal under the criteria, preserve their source order as the tie-breaker.
+
+### Triage Labels
+
+Assign exactly one `triageLabel` to every evaluated candidate:
+- `fact_check_worthy`: factual, evidence-resolvable, thesis-relevant, and worth researching in this run.
+- `fact_non_check_worthy`: factual but too marginal, redundant, weakly evidence-yielding, or not useful enough for this run.
+- `opinion_or_subjective`: primarily evaluative, preference-based, rhetorical, or not meaningfully resolvable by evidence.
+- `unclear`: insufficiently clear after extraction to justify research.
+
+For each assessment, also assign:
+- `thesisDirectness`: `high`, `medium`, or `low`.
+- `expectedEvidenceYield`: `high`, `medium`, or `low`.
+- `coversDistinctRelevantDimension`: `high`, `medium`, or `low`.
+- `redundancyWithClaimIds`: IDs of stronger candidates that cover the same relevant dimension, or an empty array.
+
+### Rules
+
+- Preserve the original language of each claim in its `recommendationRationale`.
+- Do not translate rationales unless the claim itself is already in that language.
+- Do not use topic-specific examples, keyword rules, or fixed domain assumptions.
+- `rankedClaimIds` must contain every evaluated candidate ID exactly once.
+- `recommendedClaimIds` must be a subset of `rankedClaimIds`, in the same order, and contain no more than ${maxRecommendedClaims} IDs.
+- `assessments` must contain exactly one assessment for every evaluated candidate.
+- Each `recommendationRationale` must be non-empty and at most 160 characters.
+- Overall `rationale` must be non-empty and at most 240 characters.
+- Output only the JSON object.
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "rankedClaimIds": ["AC_01"],
+  "recommendedClaimIds": ["AC_01"],
+  "assessments": [
+    {
+      "claimId": "AC_01",
+      "triageLabel": "fact_check_worthy",
+      "thesisDirectness": "high",
+      "expectedEvidenceYield": "high",
+      "coversDistinctRelevantDimension": "high",
+      "redundancyWithClaimIds": [],
+      "recommendationRationale": "Short rationale in the claim's language."
+    }
+  ],
+  "rationale": "Short overall rationale."
+}
+```
 
 ---
 

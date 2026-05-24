@@ -203,6 +203,8 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "verdict_partial_recovery",
   "verdict_batch_retry",
   "analysis_generation_failed",
+  "no_checkworthy_claims",
+  "claim_selection_truncated",
   "debate_provider_fallback",
 ]);
 

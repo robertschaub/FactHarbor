@@ -193,6 +193,24 @@ describe("warning-display classification", () => {
     expect(generation.displaySeverity).toBe("error");
   });
 
+  it("treats automatic claim-selection warnings as degrading analysis warnings", () => {
+    const noCheckworthy = classifyWarningForDisplay(warning({
+      type: "no_checkworthy_claims",
+      severity: "info",
+    }));
+    const truncated = classifyWarningForDisplay(warning({
+      type: "claim_selection_truncated",
+      severity: "warning",
+    }));
+
+    expect(noCheckworthy.isProviderIssue).toBe(false);
+    expect(noCheckworthy.isReportDegrading).toBe(true);
+    expect(noCheckworthy.displaySeverity).toBe("warning");
+    expect(truncated.isProviderIssue).toBe(false);
+    expect(truncated.isReportDegrading).toBe(true);
+    expect(truncated.displaySeverity).toBe("warning");
+  });
+
   it("forces rubric fallback provider warning to info", () => {
     const result = classifyWarningForDisplay(warning({
       type: "explanation_quality_rubric_failed",

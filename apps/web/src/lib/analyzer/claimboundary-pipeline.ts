@@ -24,6 +24,8 @@ import type {
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
+  ClaimAutoSelectionMetadata,
+  ClaimSelectionRecommendationAssessment,
   ClaimVerdict7Point,
   ClaimAssessmentBoundary,
   CoverageMatrix,
@@ -137,6 +139,12 @@ import {
 import {
   generateResearchQueries,
 } from "./research-query-stage";
+import {
+  generateClaimSelectionRecommendation,
+  getClaimAutoSelectionCap,
+  normalizeClaimAutoSelectionCandidateCap,
+} from "./claim-selection-recommendation";
+import { filterClaimUnderstandingForSelectedClaims } from "./claim-selection-filter";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig, loadPromptConfig } from "@/lib/config-loader";
@@ -244,6 +252,7 @@ export function buildClaimBoundaryResultJson(params: {
     CBResearchState,
     | "languageIntent"
     | "understanding"
+    | "claimSelection"
     | "evidenceItems"
     | "sources"
     | "searchQueries"
@@ -334,6 +343,7 @@ export function buildClaimBoundaryResultJson(params: {
     claimVerdicts: assessment.claimVerdicts,
     coverageMatrix: assessment.coverageMatrix,
     understanding: state.understanding,
+    claimSelection: state.claimSelection,
     evidenceItems: state.evidenceItems,
     sources: state.sources.map((s: FetchedSource) => ({
       id: s.id,
@@ -351,6 +361,158 @@ export function buildClaimBoundaryResultJson(params: {
     qualityGates: assessment.qualityGates,
     analysisWarnings: state.warnings,
   };
+}
+
+const CANDIDATE_CAP_EXCLUDED_RATIONALE =
+  "Not evaluated because the candidate set exceeded the configured claim auto-selection candidate cap.";
+
+function buildClaimSelectionMetadata(args: {
+  understanding: CBClaimUnderstanding;
+  selectionCap: number;
+  candidateCap: number;
+  evaluatedClaims: AtomicClaim[];
+  selectedClaimIds: string[];
+  rankedClaimIds: string[];
+  rationale: string;
+  assessments: ClaimSelectionRecommendationAssessment[];
+}): ClaimAutoSelectionMetadata {
+  const candidateClaimIds = args.understanding.atomicClaims.map((claim) => claim.id);
+  const evaluatedCandidateClaimIds = args.evaluatedClaims.map((claim) => claim.id);
+  const selectedSet = new Set(args.selectedClaimIds);
+  const assessmentById = new Map(
+    args.assessments.map((assessment) => [assessment.claimId, assessment] as const),
+  );
+
+  const droppedClaims: ClaimAutoSelectionMetadata["droppedClaims"] = [];
+  for (const claim of args.evaluatedClaims) {
+    if (selectedSet.has(claim.id)) continue;
+    const assessment = assessmentById.get(claim.id);
+    droppedClaims.push({
+      id: claim.id,
+      statement: claim.statement,
+      reasonType: "selector_dropped",
+      triageLabel: assessment?.triageLabel,
+      rationale: assessment?.recommendationRationale ?? "The selector did not choose this claim for research in this run.",
+    });
+  }
+
+  const evaluatedSet = new Set(evaluatedCandidateClaimIds);
+  for (const claim of args.understanding.atomicClaims) {
+    if (evaluatedSet.has(claim.id)) continue;
+    droppedClaims.push({
+      id: claim.id,
+      statement: claim.statement,
+      reasonType: "candidate_cap_excluded",
+      rationale: CANDIDATE_CAP_EXCLUDED_RATIONALE,
+    });
+  }
+
+  return {
+    enabled: true,
+    mode: "automatic",
+    selectionCap: args.selectionCap,
+    candidateCap: args.candidateCap,
+    candidateClaimIds,
+    evaluatedCandidateClaimIds,
+    selectedClaimIds: args.selectedClaimIds,
+    droppedClaims,
+    rankedClaimIds: args.rankedClaimIds,
+    rationale: args.rationale,
+  };
+}
+
+function buildClaimSelectionFailureMetadata(args: {
+  understanding: CBClaimUnderstanding;
+  selectionCap: number;
+  candidateCap: number;
+  evaluatedClaims: AtomicClaim[];
+  rationale: string;
+}): ClaimAutoSelectionMetadata {
+  return {
+    enabled: true,
+    mode: "automatic",
+    selectionCap: args.selectionCap,
+    candidateCap: args.candidateCap,
+    candidateClaimIds: args.understanding.atomicClaims.map((claim) => claim.id),
+    evaluatedCandidateClaimIds: args.evaluatedClaims.map((claim) => claim.id),
+    selectedClaimIds: [],
+    droppedClaims: args.understanding.atomicClaims.map((claim) => ({
+      id: claim.id,
+      statement: claim.statement,
+      reasonType: args.evaluatedClaims.some((evaluated) => evaluated.id === claim.id)
+        ? "selector_failed"
+        : "candidate_cap_excluded",
+      rationale: args.evaluatedClaims.some((evaluated) => evaluated.id === claim.id)
+        ? args.rationale
+        : CANDIDATE_CAP_EXCLUDED_RATIONALE,
+    })),
+    rankedClaimIds: args.evaluatedClaims.map((claim) => claim.id),
+    rationale: args.rationale,
+  };
+}
+
+function buildNoResearchAssessment(args: {
+  understanding: CBClaimUnderstanding;
+  headline: string;
+  keyFinding: string;
+  limitations: string;
+}): OverallAssessment {
+  return {
+    truthPercentage: 50,
+    verdict: "UNVERIFIED",
+    confidence: 0,
+    verdictNarrative: {
+      headline: args.headline,
+      evidenceBaseSummary: "No evidence was gathered because no atomic claims were selected for research.",
+      keyFinding: args.keyFinding,
+      limitations: args.limitations,
+    },
+    hasMultipleBoundaries: false,
+    claimBoundaries: [],
+    claimVerdicts: [],
+    coverageMatrix: buildCoverageMatrix(args.understanding.atomicClaims, [], []),
+    qualityGates: {
+      passed: false,
+      gate1Stats: {
+        total: args.understanding.gate1Stats?.totalClaims ?? args.understanding.atomicClaims.length,
+        passed: args.understanding.gate1Stats
+          ? args.understanding.gate1Stats.totalClaims - args.understanding.gate1Stats.filteredCount
+          : args.understanding.atomicClaims.length,
+        filtered: args.understanding.gate1Stats?.filteredCount ?? 0,
+        centralKept: args.understanding.atomicClaims.length,
+      },
+      gate4Stats: {
+        total: 0,
+        publishable: 0,
+        highConfidence: 0,
+        mediumConfidence: 0,
+        lowConfidence: 0,
+        insufficient: 0,
+        centralKept: 0,
+      },
+      summary: {
+        totalEvidenceItems: 0,
+        totalSources: 0,
+        searchesPerformed: 0,
+        contradictionSearchPerformed: false,
+      },
+    },
+  };
+}
+
+function buildClaimSelectionTerminalMarkdown(args: {
+  damaged: boolean;
+  message: string;
+  droppedCount: number;
+}): string {
+  const title = args.damaged
+    ? "# ClaimAssessmentBoundary Analysis Report (Damaged)\n\n"
+    : "# ClaimAssessmentBoundary Analysis Report\n\n";
+  return title
+    + args.message
+    + "\n\nNo research or verdict stages were run. "
+    + `${args.droppedCount} atomic claim${args.droppedCount === 1 ? "" : "s"} `
+    + "were recorded under \"Not analyzed in this run\" for later resubmission.";
 }
 
 // ============================================================================
@@ -618,6 +780,196 @@ export async function runClaimBoundaryAnalysis(
       });
     }
 
+    // Stage 1.5: Optional automatic check-worthy claim selection.
+    // Disabled by default. When enabled, only selected claims proceed to research;
+    // dropped claims stay transparent in resultJson.claimSelection.
+    if (initialPipelineConfig.claimAutoSelectionEnabled) {
+      checkAbortSignal(input.jobId);
+      const candidateCap = normalizeClaimAutoSelectionCandidateCap(initialPipelineConfig.claimAutoSelectionCandidateCap);
+      const candidateClaims = understanding.atomicClaims;
+      const evaluatedClaims = candidateClaims.slice(0, candidateCap);
+      const selectionCap = getClaimAutoSelectionCap(
+        evaluatedClaims.length,
+        initialPipelineConfig.claimAutoSelectionCap,
+      );
+
+      if (candidateClaims.length > evaluatedClaims.length) {
+        state.warnings.push({
+          type: "claim_selection_truncated",
+          severity: "warning",
+          message: `Automatic claim selection evaluated ${evaluatedClaims.length} of ${candidateClaims.length} candidate claims because the configured candidate cap is ${candidateCap}.`,
+          details: {
+            candidateClaimCount: candidateClaims.length,
+            evaluatedCandidateClaimCount: evaluatedClaims.length,
+            candidateCap,
+          },
+        });
+      }
+
+      const buildTerminalReturn = (assessment: OverallAssessment, damaged: boolean, message: string) => {
+        const resultJson = buildClaimBoundaryResultJson({
+          assessment,
+          input,
+          state,
+          detectedUrl,
+          llmProvider: initialPipelineConfig.llmProvider,
+          verdictModelName: getModelForTask("verdict", undefined, initialPipelineConfig).modelName,
+          understandModelName: getModelForTask("understand", undefined, initialPipelineConfig).modelName,
+          extractModelName: getModelForTask("extract_evidence", undefined, initialPipelineConfig).modelName,
+          runtimeModelsUsed,
+          runtimeRoleModels: {},
+          searchProvider: initialSearchConfig.provider,
+          evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0, isSkewed: false },
+          boundaryCount: 0,
+        });
+        recordOutputQuality(resultJson);
+        return {
+          resultJson,
+          reportMarkdown: buildClaimSelectionTerminalMarkdown({
+            damaged,
+            message,
+            droppedCount: state.claimSelection?.droppedClaims.length ?? 0,
+          }),
+        };
+      };
+
+      if (evaluatedClaims.length === 0) {
+        state.claimSelection = {
+          enabled: true,
+          mode: "automatic",
+          selectionCap,
+          candidateCap,
+          candidateClaimIds: [],
+          evaluatedCandidateClaimIds: [],
+          selectedClaimIds: [],
+          droppedClaims: [],
+          rankedClaimIds: [],
+          rationale: "No post-Gate-1 candidate claims were available for automatic selection.",
+        };
+        state.warnings.push({
+          type: "no_checkworthy_claims",
+          severity: "warning",
+          message: "Automatic claim selection found no candidate claims to research.",
+        });
+        state.understanding = filterClaimUnderstandingForSelectedClaims(understanding, []);
+        startPhase("aggregate");
+        const assessment = buildNoResearchAssessment({
+          understanding: state.understanding,
+          headline: "No check-worthy claims were selected for research.",
+          keyFinding: "The analysis stopped before research because no post-Gate-1 atomic claims were available for selection.",
+          limitations: "No evidence was gathered and no verdict was generated.",
+        });
+        endPhase("aggregate");
+        return buildTerminalReturn(
+          assessment,
+          false,
+          "Automatic claim selection found no candidate claims worth researching in this run.",
+        );
+      }
+
+      try {
+        onEvent("Selecting check-worthy claims for research...", 20);
+        const selectorModel = getModelForTask("context_refinement", undefined, initialPipelineConfig);
+        recordRuntimeModelUsage(selectorModel.provider, selectorModel.modelName);
+        onEvent(`LLM: ${selectorModel.modelName} — claim selection`, -1);
+
+        const recommendation = await generateClaimSelectionRecommendation({
+          originalInput: analysisText,
+          impliedClaim: understanding.impliedClaim,
+          articleThesis: understanding.articleThesis,
+          atomicClaims: evaluatedClaims,
+          selectionCap,
+          pipelineConfig: initialPipelineConfig,
+        });
+
+        state.claimSelection = buildClaimSelectionMetadata({
+          understanding,
+          selectionCap,
+          candidateCap,
+          evaluatedClaims,
+          selectedClaimIds: recommendation.recommendedClaimIds,
+          rankedClaimIds: recommendation.rankedClaimIds,
+          rationale: recommendation.rationale,
+          assessments: recommendation.assessments,
+        });
+
+        state.understanding = filterClaimUnderstandingForSelectedClaims(
+          understanding,
+          recommendation.recommendedClaimIds,
+        );
+
+        if (recommendation.recommendedClaimIds.length === 0) {
+          state.warnings.push({
+            type: "no_checkworthy_claims",
+            severity: "warning",
+            message: "Automatic claim selection did not select any claims for research.",
+            details: {
+              candidateClaimCount: candidateClaims.length,
+              evaluatedCandidateClaimCount: evaluatedClaims.length,
+              candidateCap,
+              selectionCap,
+            },
+          });
+          startPhase("aggregate");
+          const assessment = buildNoResearchAssessment({
+            understanding: state.understanding,
+            headline: "No check-worthy claims were selected for research.",
+            keyFinding: "The analysis stopped before research because automatic claim selection did not select any atomic claims.",
+            limitations: "Dropped atomic claims were not researched and did not affect the verdict.",
+          });
+          endPhase("aggregate");
+          return buildTerminalReturn(
+            assessment,
+            false,
+            "Automatic claim selection did not select any claims for research.",
+          );
+        }
+
+        onEvent(
+          `Selected ${recommendation.recommendedClaimIds.length} of ${candidateClaims.length} claims for research.`,
+          25,
+        );
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("[Pipeline] Automatic claim selection failed:", error);
+        state.warnings.push({
+          type: "report_damaged",
+          severity: "error",
+          message: "Automatic claim selection failed before research. Research and verdict stages were skipped to avoid analyzing an unsafe claim set.",
+          details: {
+            error: errorMessage,
+            candidateClaimCount: candidateClaims.length,
+            evaluatedCandidateClaimCount: evaluatedClaims.length,
+            candidateCap,
+            selectionCap,
+          },
+        });
+        state.claimSelection = buildClaimSelectionFailureMetadata({
+          understanding,
+          selectionCap,
+          candidateCap,
+          evaluatedClaims,
+          rationale: "Automatic claim selection failed before research; this claim was not researched.",
+        });
+        state.understanding = filterClaimUnderstandingForSelectedClaims(understanding, []);
+        startPhase("aggregate");
+        const assessment = buildNoResearchAssessment({
+          understanding: state.understanding,
+          headline: "Automatic claim selection failed.",
+          keyFinding: "The analysis stopped before research because the selector did not return a valid claim set.",
+          limitations: "No evidence was gathered and no verdict was generated. Dropped atomic claims were preserved for possible separate resubmission.",
+        });
+        endPhase("aggregate");
+        return buildTerminalReturn(
+          assessment,
+          true,
+          "Automatic claim selection failed before research. Research and verdict stages were skipped to avoid analyzing an unsafe claim set.",
+        );
+      }
+    }
+
+    const researchUnderstanding = state.understanding ?? understanding;
+
     // Stage 2: Research
     checkAbortSignal(input.jobId);
     onEvent("Researching evidence for claims...", 30);
@@ -664,7 +1016,7 @@ export async function runClaimBoundaryAnalysis(
           const beforeCount = state.evidenceItems.length;
           try {
             // Run contrarian iteration for each claim (limited by contrarianMaxQueries per claim)
-            for (const claim of understanding.atomicClaims) {
+            for (const claim of researchUnderstanding.atomicClaims) {
               await runResearchIteration(
                 claim,
                 "contrarian",
@@ -712,13 +1064,13 @@ export async function runClaimBoundaryAnalysis(
       onEvent(`LLM call: evidence applicability — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
       const beforeApplicability = state.evidenceItems.length;
       const assessed = await assessEvidenceApplicability(
-        understanding.atomicClaims,
+        researchUnderstanding.atomicClaims,
         state.evidenceItems,
-        understanding.inferredGeography ?? null,
+        researchUnderstanding.inferredGeography ?? null,
         initialPipelineConfig,
         getClaimsRelevantGeographies(
-          understanding.atomicClaims,
-          understanding.inferredGeography ?? null,
+          researchUnderstanding.atomicClaims,
+          researchUnderstanding.inferredGeography ?? null,
         ),
       );
       const removedItems = assessed.filter(
@@ -760,7 +1112,7 @@ export async function runClaimBoundaryAnalysis(
       initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? ["government_report", "legal_document"],
     );
     const insufficientClaimIds = new Set<string>();
-    for (const claim of understanding.atomicClaims) {
+    for (const claim of researchUnderstanding.atomicClaims) {
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
@@ -799,8 +1151,8 @@ export async function runClaimBoundaryAnalysis(
         });
       }
     }
-    const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
-    const insufficientClaims = understanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
+    const sufficientClaims = researchUnderstanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
+    const insufficientClaims = researchUnderstanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
 
     // Explicit assessable-claims path: only D5-sufficient claims proceed to Stage 4.
     // Insufficient claims receive D5 fallback verdicts (UNVERIFIED) without entering
@@ -949,7 +1301,7 @@ export async function runClaimBoundaryAnalysis(
     // honestly representing the assessment coverage gap.
     const allFinalClaimIds = claimVerdicts.map((v) => v.claimId);
     const reportCoverageMatrix = buildCoverageMatrix(
-      understanding.atomicClaims.filter((c) => allFinalClaimIds.includes(c.id)),
+      researchUnderstanding.atomicClaims.filter((c) => allFinalClaimIds.includes(c.id)),
       boundaries,
       state.evidenceItems,
     );
@@ -985,7 +1337,7 @@ export async function runClaimBoundaryAnalysis(
           );
           qualityCheck.rubricScores = await evaluateExplanationRubric(
             assessment.verdictNarrative,
-            understanding.atomicClaims.length,
+            researchUnderstanding.atomicClaims.length,
             state.evidenceItems.length,
             llmCallFn,
           );

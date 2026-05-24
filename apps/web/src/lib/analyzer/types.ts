@@ -777,6 +777,8 @@ export type AnalysisWarningType =
   | "source_reliability_unknown_dominance"    // Stage 4.5: Too much of a source portfolio is unknown/unrated
   | "source_reliability_calibration_skipped" // Stage 4.5: Calibration enabled but skipped or returned no adjustment
   | "gate1_thesis_direct_rescue"             // Gate 1: thesis-direct claim rescued from opinion+specificity filter
+  | "no_checkworthy_claims"                  // Stage 1.5: automatic claim selection found no claims worth researching
+  | "claim_selection_truncated"              // Stage 1.5: candidate set exceeded configured auto-selection candidate cap
   | "per_source_evidence_cap";              // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
 
 /**
@@ -848,7 +850,7 @@ export interface AtomicClaim {
    *  Comparative claims may require evidence from multiple jurisdictions even when the
    *  overall input has a single dominant geography. */
   relevantGeographies?: string[];
-  checkWorthiness: "high" | "medium";
+  checkWorthiness: "high" | "medium" | "low";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
   /** True when this claim is one dimension of an ambiguous_single_claim decomposition.
@@ -862,6 +864,52 @@ export interface AtomicClaim {
     primaryMetric?: string;      // Direct decisive metric for current aggregate / threshold claims
     componentMetrics?: string[]; // Secondary sub-metrics used only when official sources publish compositionally
   };
+}
+
+export type ClaimSelectionTriageLabel =
+  | "fact_check_worthy"
+  | "fact_non_check_worthy"
+  | "opinion_or_subjective"
+  | "unclear";
+
+export type ClaimSelectionLevelLabel = "high" | "medium" | "low";
+
+export interface ClaimSelectionRecommendationAssessment {
+  claimId: string;
+  triageLabel: ClaimSelectionTriageLabel;
+  thesisDirectness: ClaimSelectionLevelLabel;
+  expectedEvidenceYield: ClaimSelectionLevelLabel;
+  coversDistinctRelevantDimension: ClaimSelectionLevelLabel;
+  redundancyWithClaimIds: string[];
+  recommendationRationale: string;
+}
+
+export interface ClaimSelectionRecommendation {
+  rankedClaimIds: string[];
+  recommendedClaimIds: string[];
+  assessments: ClaimSelectionRecommendationAssessment[];
+  rationale: string;
+}
+
+export interface ClaimAutoSelectionDroppedClaim {
+  id: string;
+  statement: string;
+  reasonType: "selector_dropped" | "selector_failed" | "candidate_cap_excluded";
+  triageLabel?: ClaimSelectionTriageLabel;
+  rationale: string;
+}
+
+export interface ClaimAutoSelectionMetadata {
+  enabled: boolean;
+  mode: "automatic";
+  selectionCap: number;
+  candidateCap: number;
+  candidateClaimIds: string[];
+  evaluatedCandidateClaimIds: string[];
+  selectedClaimIds: string[];
+  droppedClaims: ClaimAutoSelectionDroppedClaim[];
+  rankedClaimIds: string[];
+  rationale: string;
 }
 
 /**
@@ -1271,6 +1319,7 @@ export interface CBResearchState {
   /** Cross-stage language contract (Proposal 2) */
   languageIntent: LanguageIntent | null;
   understanding: CBClaimUnderstanding | null;
+  claimSelection?: ClaimAutoSelectionMetadata;
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   searchQueries: SearchQuery[];
