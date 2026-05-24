@@ -1,0 +1,111 @@
+= Evidence Lifecycle V2 =
+
+{{info}}
+**Target Evidence Reference** - This page replaces V1 evidence-quality-filter thinking with the V2 evidence lifecycle: query planning, acquisition, applicability, extraction, sufficiency, and evidence transparency.
+
+This page describes target architecture, not current implementation state.
+{{/info}}
+
+== Purpose ==
+
+V2 treats evidence as a lifecycle, not as a late deterministic cleanup pass. The evidence stage must build a source-backed, multilingual, topic-neutral corpus that can support evidence-emergent ClaimAssessmentBoundaries and evidence-cited verdicts.
+
+== Lifecycle Flow ==
+
+{{mermaid}}
+flowchart TB
+  CC["ClaimContract\nselected AtomicClaims"] --> QP["Query plan\nLLM semantic planning"]
+  QP --> SEARCH["Search providers\nstructural provider calls"]
+  SEARCH --> FETCH["Source fetch and extraction\nstatus, retries, trace"]
+  FETCH --> APP["Relevance and applicability\nLLM judgment"]
+  APP --> EXTRACT["Evidence extraction\nEvidenceItem + EvidenceScope"]
+  EXTRACT --> SR["Source reliability signal\nLLM-owned where semantic;\ncached and versioned"]
+  EXTRACT --> EC["EvidenceCorpus"]
+  SR --> EC
+  EC --> SUFF["SufficiencyAssessment\ncontinue, refine, caveat, damage"]
+  SUFF --> BS["BoundarySet input"]
+
+  WARN["Warning policy"] --> FETCH
+  WARN --> SUFF
+
+  classDef semantic fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef structural fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  class QP,APP,EXTRACT,SR semantic
+  class SEARCH,FETCH,EC structural
+  class SUFF,WARN gate
+{{/mermaid}}
+
+== Stage Responsibilities ==
+
+|= Step |= Semantic owner |= Structural owner |= Output
+| Query planning | LLM proposes search intent for selected AtomicClaims and possible evidence dimensions. | Prompt/model gateway validates variables, model policy, cache dimensions, and budget. | QueryPlan
+| Source acquisition | Search strings are provider-facing; provider ranking is not treated as verdict truth. | Provider calls, retries, rate limits, fetch status, source IDs, trace events. | SourceCandidate list
+| Content dereference and parser intake | None; fetched bytes and parser output are structural custody material only. | Fetch target envelope, byte packet custody, parser-worker profile, content-type policy, isolation proof, parsed-material packet lifecycle. | Hidden parsed-material packet, or blocked structural status
+| Applicability | LLM decides whether a source or excerpt is relevant and applicable to the claim and evidence need. | URL/source identity, fetch status, content availability, dedupe by structural identity. | ApplicabilityResult
+| Evidence extraction | LLM extracts EvidenceItems, EvidenceScopes, claim direction, probativeValue, and source-type rationale. | Schema validation, stable IDs, citation/source reference checks. | EvidenceItem list
+| Sufficiency | LLM-owned where adequacy is semantic; policy records continue/refine/caveat/damage. | Gate status, warning events, missing-dimension list, run ledger entry. | SufficiencyAssessment
+
+== Input-Type Readiness ==
+
+Direct text is the first V2 production target and does not need parser-worker isolation.
+
+Simple web page text/HTML analysis is a later capability. It requires source acquisition, content dereference, parser worker, passive text/HTML parser package, isolation proof, parsed-material lifecycle, and an Evidence Lifecycle intake gate. Parser output is hidden custody material, not evidence.
+
+PDF analysis is later and higher risk. It requires a separate PDF parser package, stronger isolation, parser-library review, malformed/adversarial PDF tests, and resource-exhaustion limits.
+
+== EvidenceCorpus Contract ==
+
+The EvidenceCorpus should contain:
+
+* selected AtomicClaim IDs it was built for;
+* source records with provider, fetch status, source identity, and retrieval trace;
+* EvidenceItems with source reference, statement, category, claimDirection, EvidenceScope, probativeValue, and sourceType;
+* source reliability signals when available;
+* applicability and extraction decisions with model/prompt/config trace;
+* warnings and scarcity indicators classified by the shared warning policy;
+* structural validation status for citations, source references, and schema integrity.
+
+== Quality Boundary ==
+
+V2 allows deterministic structural checks, but not deterministic semantic evidence decisions.
+
+|= Allowed deterministic checks |= Must be LLM-owned or approved semantic policy
+| Empty/null input, schema validation, source URL presence, source ID consistency, citation ID matching, fetch status, duplicate source identity, budget accounting | Relevance, applicability, probative value, source meaning, claim direction, EvidenceScope compatibility, evidence strength, multilingual semantic equivalence
+
+== Rejected V1 Carry-Forward ==
+
+The following V1 evidence-quality-filter mechanisms are not V2 target design:
+
+* vague phrase counts;
+* keyword or regex evidence classification;
+* Jaccard/text-overlap semantic dedupe;
+* language-specific wording rules;
+* deterministic category-specific meaning requirements;
+* late silent dropping of evidence without traceable warning/gate state.
+
+If V2 needs an evidence-quality rule that affects meaning, it must be modeled as an LLM task or an approved configurable semantic policy, with caching and validation.
+
+== Warning And Scarcity Handling ==
+
+Evidence scarcity is an analytical reality, not automatically a system error. V2 must distinguish:
+
+* recovered routine provider issues: silent or admin-only;
+* partial acquisition degradation that materially limits evidence: user-visible warning;
+* source scarcity or inaccessible evidence: caveat or UNVERIFIED path depending on sufficiency;
+* system failure that prevents trustworthy analysis: damaged/non-analytical result.
+
+== Multilingual Requirement ==
+
+Evidence lifecycle behavior must work across languages. V2 may preserve original-language source material and must not force translation as a prerequisite unless an approved stage contract requires it. Semantic applicability, extraction, and scope compatibility remain LLM-owned.
+
+== Links ==
+
+* [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]]
+* [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]]

@@ -1,0 +1,113 @@
+= Prompt Architecture V2 =
+
+{{info}}
+**Target Governance Reference** - V2 treats prompts, model routing, config, cache keys, and structured outputs as first-class architecture.
+
+This page describes target architecture, not current implementation state. It does not approve prompt text changes.
+{{/info}}
+
+== Overview ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Prompt Architecture.WebHome"/}}
+
+== Prompt Registry ==
+
+Every V2 analysis prompt section must have:
+
+* registered owner
+* semantic task
+* required variables
+* output schema
+* model task id
+* test coverage
+* prompt/content hash visibility where needed for reproducibility
+
+Prompt frontmatter variables must match rendered variables. Required-section render warnings should fail contract tests. Orphan sections remain quarantined until a real V2 caller is proven.
+
+V2 prompts must be newly specified. Existing V1 prompt files, profiles, and sections may be read as historical design input during review, but they must not be reused, copied, or loaded by V2 execution. Any prompt-backed V2 task needs its own V2 profile, section id, required-variable contract, output schema, approval record, and tests.
+
+== V1 Prompt Cleanup Conditions ==
+
+V1 analysis prompt files, prompt profiles, prompt sections, and active UCM prompt entries are removal debt once V2 owns the corresponding prompt-backed task. They must be removed from runtime selection when:
+
+* the V2 task has its own prompt profile, section id, required-variable contract, output schema, review record, and tests;
+* no runtime code, prompt registry, config profile, or model-task route can load the V1 prompt/profile/section;
+* historical report readability uses stored report data, fixtures, and adapters, not prompt reloads;
+* static prompt-boundary guards and prompt/config/model contract tests pass;
+* a review record states whether any V1 prompt material is archived for historical reading only or deleted from the forward tree.
+
+V1 prompt material must not remain active as a fallback or comparator after V2 cutover. Old prompt behavior can be investigated through old commits/worktrees.
+
+== Model Policy ==
+
+One model task registry owns:
+
+* provider preference
+* model tier
+* temperature profile
+* token budget
+* timeout
+* retry and fallback policy
+* output schema version
+
+Provider fallback is structural resilience. It must not silently change prompt/task semantics.
+
+The registry is also the cost/latency governor for prompt-backed V2 execution. Each task must declare max calls, token budget, timeout, retry/fallback policy, cache policy, and escalation policy. Lower-cost models may be used where fit, but not when they reduce Gate 1 fidelity, Gate 4 integrity, evidence transparency, warning honesty, multilingual robustness, or comparator quality.
+
+Normal analysis targets 6-10 minutes active runtime and $0.50-$1.25 cost. Complex analysis targets 10-18 minutes and $1.25-$3.25. Stronger models, extra retrieval, fuller debate, or repair loops require a recorded quality-protection reason.
+
+== Prevention-First Prompt Contracts ==
+
+V2 prompts should make retries and repairs exceptional. Each prompt-backed task has one semantic responsibility, required variables, stable input IDs, allowed output states, output schema, model task, and contract tests. The prompt must support honest structured outcomes such as insufficient evidence, cannot determine, caveat, blocked, or damaged where appropriate.
+
+Prompt design must not rely on cheap-first semantic attempts followed by repair. For high-leverage tasks, the first model choice and evidence packet must be good enough for the quality bar. Any meaning-changing correction must be explicit, LLM-owned, typed, ledgered, and quality-gated.
+
+== Config Snapshot ==
+
+Analysis-affecting tunables belong in UCM/JSON defaults unless explicitly classified as structural constants. TypeScript schemas and JSON defaults must stay synchronized. Dead or weakly wired knobs should fail a config contract test.
+
+Hardcoded analysis-affecting temperatures, thresholds, token budgets, and timeouts are not allowed unless approved as fixed structural constants.
+
+== Cache Governance ==
+
+Any cache key that can affect analysis output must include:
+
+* prompt section name and prompt content hash
+* model task id, provider, model, temperature profile, and output schema version
+* config snapshot hash and result schema version
+* source/evidence identity when evidence is part of the task
+* language/search context where it affects retrieval or interpretation
+* current-date bucket when the task reasons about current facts
+* compatibility adapter version when cached output feeds public projection
+
+Cache reuse for structurally identical inputs is allowed. Cache reuse for semantically equivalent but textually different inputs is allowed only if equivalence is LLM-owned or structurally proven by stable IDs.
+
+== Prompt Genericity and Multilingual Gate ==
+
+Before any V2 prompt migration or cutover:
+
+* no analysis prompt may include approved validation input terms as examples;
+* no prompt may steer by concrete date periods, regions, people, or topic vocabulary unless it is an input variable or provider-facing search query;
+* prompt variable rendering must be warning-free for every required section;
+* multilingual behavior must be source-language-first and must not force English analysis fallback;
+* prompt text edits require current prompt review and explicit approval.
+
+== Quarantine Before Execution ==
+
+The implementation plan must classify these surfaces before prompt-backed V2 execution:
+
+|= Surface |= Required disposition
+| ##CLAIM_GROUPING## prompt section | Quarantine or assign real V2 caller with tests.
+| ##model-tiering.ts## vs active model resolver behavior | Decide one authority.
+| legacy model tier aliases and ##orchestrated## profile usage | Remove, quarantine, or map explicitly.
+| V1 ClaimAssessmentBoundary prompt files/profiles/sections | Remove from runtime selection once V2-owned task contracts and tests exist; archive only for historical reading if approved.
+| duplicate or weakly wired config knobs | Fail contract tests until resolved.
+| hardcoded call-site temperatures and budgets | Move to model policy or classify as structural constants.
+
+== Prompt Execution Boundary ==
+
+Prompt-backed V2 execution requires a current prompt/model contract, tests, and review. Boundary enforcement should fail tests if analyzer-v2 source imports V1 analyzer modules, references legacy prompt profiles/files in prompt-loading contexts, or exposes V1-shaped contracts as V2 internals.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]]

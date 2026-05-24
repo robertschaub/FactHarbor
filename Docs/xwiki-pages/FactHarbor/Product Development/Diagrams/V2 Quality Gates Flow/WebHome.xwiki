@@ -1,0 +1,47 @@
+= V2 Quality Gates Flow =
+
+{{info}}
+Target V2 trust flow: Gate 1, sufficiency, Gate 4, report integrity, and shared warning materiality. This diagram describes target architecture, not current implementation state.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+  INPUT["Input / ACS prepared snapshot"] --> G1{{"Gate 1<br/>Claim contract integrity"}}
+  G1 -->|"pass"| RESEARCH["Evidence lifecycle"]
+  G1 -->|"blocked or fail"| DAMAGE1["Damaged or blocked result<br/>no semantic repair by adapter"]
+
+  RESEARCH --> SUFF{{"Sufficiency gate"}}
+  SUFF -->|"sufficient"| BOUNDARY["Boundary formation"]
+  SUFF -->|"scarce but usable"| SCARCE["Analytical reality warning<br/>visible only if materially useful"]
+  SUFF -->|"not usable"| DAMAGE2["Damaged or low-confidence result"]
+  SCARCE --> BOUNDARY
+
+  BOUNDARY --> VERDICT["Verdict adjudication"]
+  VERDICT --> G4{{"Gate 4<br/>confidence and citation integrity"}}
+  G4 -->|"pass"| RESULT["Canonical ReportResult"]
+  G4 -->|"caveat"| WARNED["ReportResult with user-visible caveat"]
+  G4 -->|"no trustworthy verdict"| DAMAGE3["Damaged report"]
+
+  DAMAGE1 --> POLICY["Warning/Event Policy"]
+  DAMAGE2 --> POLICY
+  DAMAGE3 --> POLICY
+  WARNED --> POLICY
+  RESULT --> POLICY
+
+  POLICY --> MAT{{"Would verdict be materially different<br/>without this event?"}}
+  MAT -->|"No"| INFO["silent or admin-only info"]
+  MAT -->|"Maybe"| WARNING["user-visible warning"]
+  MAT -->|"Yes"| ERROR["error or damaged report"]
+  INFO --> ADAPTERS["API / UI / markdown / HTML / validation adapters"]
+  WARNING --> ADAPTERS
+  ERROR --> ADAPTERS
+
+  classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef ok fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef warn fill:#fff0cc,stroke:#9a6700,color:#3a2600
+  classDef error fill:#fde2e2,stroke:#a33a3a,color:#3b0d0d
+  class G1,SUFF,G4,MAT gate
+  class RESEARCH,BOUNDARY,VERDICT,RESULT,INFO,ADAPTERS ok
+  class SCARCE,WARNED,WARNING warn
+  class DAMAGE1,DAMAGE2,DAMAGE3,ERROR error
+{{/mermaid}}

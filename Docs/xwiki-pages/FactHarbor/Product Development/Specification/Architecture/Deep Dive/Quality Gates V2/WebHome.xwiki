@@ -1,0 +1,122 @@
+= Quality Gates V2 =
+
+{{info}}
+**Target Trust Reference** - V2 keeps Gate 1 and Gate 4, adds an explicit sufficiency gate, and makes warning materiality a shared product policy. This page describes target architecture, not current implementation state.
+{{/info}}
+
+== Gate Flow ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome"/}}
+
+== Gate Summary ==
+
+|= Gate |= Purpose |= Output
+| **Gate 1: Claim Contract Integrity** | Ensure the pipeline has valid, selected, analyzable AtomicClaims and that ACS prepared-state selections remain intact. | Gate 1 status in ##ClaimContract##
+| **Sufficiency Gate** | Decide whether the evidence corpus is adequate to continue, should be refined, should proceed with caveat, or cannot support a trustworthy result. | ##SufficiencyAssessment##
+| **Gate 4: Verdict Integrity** | Ensure verdicts have citation integrity, grounding, direction consistency, and confidence status before publication. | Gate 4 status in ##VerdictSet##
+| **Report Integrity** | Ensure the canonical result can be serialized and projected without adapter reinterpretation. | ##ReportResult## integrity status
+| **Warning Integrity** | Ensure all warnings use the shared materiality policy. | Canonical ##WarningEvent## list
+
+== Gate 1: Claim Contract Integrity ==
+
+Gate 1 is the authority for claim fidelity, analyzability, selected-claim preservation, and prepared ACS snapshot compatibility.
+
+=== Inputs ===
+
+* ##PipelineRunContext##
+* raw user input or URL/PDF-derived text
+* optional ##InputGroundingSeed##
+* optional V1 ##PreparedStage1Snapshot##
+* optional selected AtomicClaim IDs
+
+=== Failure Modes ===
+
+|= Failure |= V2 behavior
+| No valid AtomicClaim | Damaged report.
+| Contract validation fails after allowed repair | Damaged report.
+| Selected claim missing from prepared snapshot | Damaged report or explicit ACS retry path.
+| Prompt/model unavailable | Provider failure warning or damaged report depending on recovery.
+
+V2 must preserve draft id, job association, selected AtomicClaim IDs, original selected claim statements, prepared evidence/source seed data when present, and runner reuse semantics.
+
+== Sufficiency Gate ==
+
+The sufficiency gate makes evidence adequacy explicit. It replaces hidden research-loop decisions with a typed outcome:
+
+|= Outcome |= Meaning
+| Continue | Evidence is adequate for boundary and verdict work.
+| Refine | Retrieval should perform a named refinement policy.
+| Caveat | Evidence is scarce but usable; warning materiality decides visibility.
+| Damage / low-confidence path | Corpus cannot support a trustworthy verdict.
+
+Evidence scarcity is normally an analytical reality, not a system error. Search provider collapse, budget exhaustion, or source acquisition failure is a system issue and must be surfaced according to verdict impact.
+
+== Gate 4: Verdict Integrity ==
+
+Gate 4 belongs to verdict adjudication. It checks:
+
+* citation ID existence and phantom citation stripping
+* grounding to provided evidence
+* direction consistency
+* confidence status from the canonical confidence policy
+* repair and safe-downgrade ledger
+* evidence-backed challenge handling
+
+Opinion-only or unsupported challenge material cannot reduce truth percentage or confidence. Only evidence-backed counter-arguments may affect verdicts.
+
+== Quality-Constrained Budget Gate ==
+
+V2 cost and latency targets are subordinate to quality gates. Normal analysis targets 6-10 minutes active runtime and $0.50-$1.25 cost; complex analysis targets 10-18 minutes and $1.25-$3.25. These targets are accepted only when Gate 1, sufficiency, Gate 4, warning integrity, report clarity, multilingual/input-neutral behavior, and approved comparator expectations remain preserved or improved.
+
+If a budget is exceeded, the run must record why: more than 3 selected AtomicClaims, evidence-backed contestation, source scarcity, provider degradation, citation/direction risk, or approved deep-review mode. If a budget limit prevents adequate analysis, the result must surface a sufficiency, scarcity, budget-exit, warning, or damaged-report outcome instead of hiding the limitation.
+
+== Prevention-First Recovery Gate ==
+
+Retries and repairs are not quality mechanisms. V2 should prevent them through contract-first prompts, structural preflight validation, stable IDs, right-model-first policy for high-leverage stages, and sufficiency-before-verdict gating.
+
+Allowed recovery is bounded and visible:
+
+|= Situation |= Allowed V2 behavior
+| Structural preflight failure | No LLM call; typed validation failure, approved retry path, or damaged result.
+| Provider/network failure | Bounded same-task retry or provider fallback through the gateway.
+| Structured-output parse/schema failure | Bounded same-task/schema retry; otherwise typed failure or damaged result.
+| Analytical insufficiency | Refine, caveat, low-confidence, insufficient, or damaged state.
+| Meaning-changing correction | Only explicit, LLM-owned, typed, ledgered recovery with gate status.
+| Trying again for a preferred answer | Forbidden.
+
+High retry or repair rates are design failures. They block cutover until the relevant contract, prompt, model policy, evidence packet, or quality gate is improved.
+
+== Report Generation Promotion Gate ==
+
+Report-generation changes can regress trust even when verdict math is unchanged. V2 therefore requires a promotion gate for narrative, article adjudication, markdown/HTML rendering, warning presentation, and report writer profile changes.
+
+|= Gate input |= Required check
+| Versioned candidate profile | Prompt/model/config/rendering defaults can be compared and rolled back.
+| Golden corpus | Candidate is compared against approved inputs, pinned deployed comparator reports, and stored fixtures.
+| Stored canonical packets | Replay is used when upstream contracts are unchanged; full pipeline validation is required when they change.
+| Difference classification | Material differences are marked ##improvement##, ##neutral##, ##accepted_tradeoff##, or ##regression##.
+| Promotion decision | No unresolved regression; accepted tradeoffs have explicit review signoff.
+| Provenance | ##ReportResult## records report profile, prompt/model/config, source commit, renderer, and evidence/replay identifiers.
+
+== Warning Materiality ==
+
+Before any warning becomes user-visible, V2 applies:
+
+> Would the verdict be materially different if this event had not occurred?
+
+|= Answer |= Display decision
+| No | silent or admin-only info
+| Maybe | user-visible warning at most
+| Yes | error or damaged report
+
+Adapters must use the same policy for UI, API summaries, markdown, static HTML export, metrics, and validation.
+
+== Deterministic Boundary ==
+
+Structural checks are allowed: schema validation, ID existence, citation ID matching, null/empty validation, serialization, and adapter field presence.
+
+Semantic decisions are LLM-owned or UCM-owned: claim analyzability, evidence relevance, scope compatibility, sufficiency, challenge substance, direction meaning, and confidence reasoning. V2 must not introduce keyword, regex, text-overlap, or language-specific rules that decide what text means.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]

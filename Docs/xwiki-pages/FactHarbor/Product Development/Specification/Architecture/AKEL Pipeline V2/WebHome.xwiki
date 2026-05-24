@@ -1,0 +1,136 @@
+= AKEL Pipeline V2 =
+
+{{info}}
+**Target Architecture Reference** - This page describes the planned V2 replacement for the current AKEL / ClaimAssessmentBoundary pipeline.
+
+This page describes target architecture, not current implementation state.
+{{/info}}
+
+== Purpose ==
+
+V2 replaces the current pipeline with a cleaner architecture that keeps FactHarbor's trust safeguards while reducing control-flow complexity, scattered compatibility logic, and duplicate policy decisions.
+
+The final redesign should remove the V1 pipeline implementation after V2 proves the equivalent contracts. Historical reports remain readable through adapters and fixtures, not through a live V1 analysis path. Investigation of old V1 behavior uses old commits/worktrees, not retained forward-code paths.
+
+Design rationale: V1 is not the quality target for V2. V2 preserves only explicitly justified concepts, contracts, and safeguards while aiming for better report quality and lower implementation complexity.
+
+The governing intent is:
+
+> Replace the current analysis pipeline with a cleaner, maintainable architecture. Start from a reverse-engineered current-state specification, clean and redesign it, then implement directly in small reviewed increments. The UI should remain unchanged unless a concrete product, trust, or compatibility need is approved.
+
+== Overview ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Overview.WebHome"/}}
+
+The V2 pipeline keeps the required analytical sequence:
+
+1. Claim Understanding and Gate 1
+1. Evidence Lifecycle
+1. Sufficiency Gate
+1. Boundary Formation
+1. Verdict Adjudication and Gate 4
+1. Aggregation and Report Result Writer
+1. External Compatibility Adapters
+
+The simplification is architectural, not analytical. V2 does not remove claim decomposition, research, evidence-emergent ClaimAssessmentBoundaries, structured verdict adjudication, confidence gates, evidence citations, or warning visibility.
+
+== Analysis Session UX ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome"/}}
+
+The approved V2 product model is one continuous Analysis Session. The current preparation/selection/job split remains an internal lifecycle, but users should not experience separate products for Atomic Claim preparation, claim selection, and analysis execution.
+
+User-facing wording is "analysis focus", "preparing analysis focus", "confirm focus", "continue analysis", and "revise input". ##AtomicClaim##, draft, prepared snapshot, Stage 1, and "real job" remain implementation language.
+
+For now, users choose mode before each submission:
+
+|= Mode |= Default |= Behavior
+| Unattended | Yes | Select a small recommended focus and continue automatically when safe.
+| Attended | No | Pause for user focus selection and allow a broader configured focus.
+| Deep review | No | Explicit admin/internal or expert mode with explicit cap and review policy.
+
+Server-side policy is authoritative for allowed modes, caps, and forced-review conditions. Future logged-in product policy may restrict modes by entitlement or profile. V2's first implementation supports selection only; users revise the input instead of editing generated claim wording.
+
+== Key Design Shift ==
+
+V1 mixes stage behavior with prompt/model calls, retries, warning interpretation, result projection, and legacy compatibility in too many places. V2 separates these concerns:
+
+|= Boundary |= V2 owner
+| Prompt/model/provider mechanics | Prompt / Model / LLM Gateway
+| Warning severity, display, and primary issue selection | Warning and Event Policy
+| Run metadata, config, prompt profile, model policy | PipelineRunContext and ConfigSnapshot
+| Evidence retrieval and source acquisition | Evidence Lifecycle
+| Evidence adequacy decision | SufficiencyAssessment
+| Public interpretation | Canonical ReportResult
+| UI/API/export/validation shape | CompatibilityView adapters
+
+The orchestrator controls sequence and typed handoff only. It does not own prompt text, semantic decisions, warning display policy, result interpretation, or UI/export compatibility behavior.
+
+== Stage Summary ==
+
+|= Stage |= Purpose |= Primary output
+| **Claim Understanding + Gate 1** | Convert input or ACS prepared state into selected AtomicClaims with contract integrity. | ##ClaimContract##
+| **Evidence Lifecycle** | Build a source-backed corpus for selected claims. | ##EvidenceCorpus##
+| **Sufficiency Gate** | Decide whether evidence is adequate, needs refinement, needs caveat, or cannot support a trustworthy report. | ##SufficiencyAssessment##
+| **Boundary Formation** | Cluster compatible EvidenceScopes into ClaimAssessmentBoundaries and coverage views. | ##BoundarySet##
+| **Verdict Adjudication + Gate 4** | Produce evidence-cited verdicts with debate, citation integrity, grounding, direction, and confidence checks. | ##VerdictSet##
+| **Aggregation + Result Writer** | Create the one canonical public result. | ##ReportResult##
+| **External Adapters** | Preserve UI/API/export/validation behavior without reinterpreting verdicts. | ##CompatibilityView##
+
+== Input Capability Roadmap ==
+
+V2 production readiness is staged by input type. A ready V2 pipeline does not automatically mean every input surface is ready.
+
+|= Capability |= Earliest readiness |= Required gates
+| Direct text analysis | First production target | Core V2 analytical sequence, cutover guards, report-quality gates
+| Simple web page text/HTML analysis | Later | Source acquisition, content dereference, parser worker, passive text/HTML parser package, isolation proof, parsed-material lifecycle, Evidence Lifecycle intake gate
+| PDF analysis | Later high-risk package | Stronger isolation, separate PDF parser package, parser-library approval, malformed/adversarial PDF tests, resource-exhaustion limits
+
+The first V2 production path should be direct text. Simple web pages may follow once the parser-worker and Evidence Lifecycle gates are accepted. PDF parsing must not be bundled into first web-page support.
+
+== Quality-Constrained Cost And Latency Targets ==
+
+Cost and latency are V2 design constraints, not permission to weaken analysis quality. Faster or cheaper output is acceptable only when Gate 1, Gate 4, evidence transparency, warning honesty, report clarity, multilingual/input-neutral behavior, and approved comparator expectations remain preserved or improved.
+
+|= Class |= Active runtime target |= Cost target |= Review threshold
+| Simple | 2-5 min | $0.10-$0.75 | unchanged unless quality regresses
+| Normal | 6-10 min | $0.50-$1.25 | above 12 min or above $1.75
+| Complex | 10-18 min | $1.25-$3.25 | above 22 min or above $4.00
+| Deep-review exception | explicit per-run cap | explicit per-run cap | explicit review required
+
+Budget exits must be visible through sufficiency, scarcity, warning, or damaged-report behavior. They must not produce fake confidence or hidden quality loss.
+
+== Prevention-First Recovery Policy ==
+
+V2 should prevent retries and repairs by design. The first attempt should have the right contract, prompt variables, stable IDs, evidence packet, schema, model tier, and quality gate. Quality remains the priority; V2 must not choose a cheap first pass when the likely result is later semantic repair.
+
+Allowed recovery is narrow and observable: bounded provider/network retry, bounded structured-output retry, explicit model escalation with a quality reason, or typed insufficiency/caveat/damaged output. Hidden semantic repair and repeated attempts to get a preferred answer are forbidden.
+
+== V1 Protection Rules ==
+
+* V1 ClaimAssessmentBoundary remains the default runtime until a current cutover decision.
+* V2 can run only through explicit replacement or verification routing before cutover.
+* V2 must not replace public ##resultJson## or ##reportMarkdown## before a current cutover decision.
+* External adapters may read ##ReportResult## and compatibility fixtures, but they may not call V2 stage internals.
+* V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types.
+* The runner/storage seam may translate current job data into V2-owned contracts, but V2 internals must use V2-specified DTOs only.
+* V1 cleanup happens after V2 owns the equivalent contract and passes its verifier; it is required before the redesign is considered complete.
+* V1 analysis prompt files, prompt profiles, prompt sections, and active prompt entries are removed from runtime selection once V2 owns and verifies the corresponding prompt-backed task.
+* Final naming normalization happens after V1 deletion; temporary rebuild labels must not remain in final runtime code.
+
+== Deep Dives ==
+
+* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
+* [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]]
+* [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]]
+* [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
+* [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]]
+* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
+* [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]]
+* [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Current AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]]
