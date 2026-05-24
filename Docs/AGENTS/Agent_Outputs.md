@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-05-24 | Senior Developer | Codex (GPT-5) | Agent Wrapper Local Env Loading -- [Standard] [open-items: no]
+**For next agent:** `scripts/agents/load-local-env.cjs` now lets `invoke-gemini.cjs` and `invoke-gpt.cjs` fill missing provider keys from `apps/web/.env.local`, root `.env.local`, then root `.env`, without overriding shell env. Dry runs return before loading keys. Verification passed via Node syntax checks, GPT/Gemini dry runs, temp-fixture loader assertions, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-24_Senior_Developer_Agent_Wrapper_Local_Env_Loading.md
+
+---
 ### 2026-04-22 | Senior Developer | GitHub Copilot (GPT-5.4) | Article Gate1 Contract Preservation And Iran URL Rerun -- [Standard] [open-items: yes]
 **For next agent:** Stage 1 now uses `selectClaimsForGate1(...)` in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` to keep clean contract-approved article claim sets intact for Gate 1; commit `424b9652` is live and rerun `9164bcf79cb04df2a0f308d933aed8ac` is running on that commit for the Iran URL.
 → Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_Article_Gate1_Contract_Preservation_And_Iran_URL_Rerun.md
