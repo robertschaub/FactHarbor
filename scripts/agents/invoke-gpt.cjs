@@ -17,11 +17,14 @@ const API_URL = 'https://api.openai.com/v1/chat/completions';
 function findRepoRoot(startDir) {
   let current = path.resolve(startDir);
   while (true) {
-    if (fs.existsSync(path.join(current, 'AGENTS.md'))) {
+    if (
+      fs.existsSync(path.join(current, 'FactHarbor.sln')) &&
+      fs.existsSync(path.join(current, 'AGENTS.md'))
+    ) {
       return current;
     }
     const parent = path.dirname(current);
-    if (parent === current) throw new Error('Could not locate FactHarbor repo root (AGENTS.md not found).');
+    if (parent === current) throw new Error('Could not locate FactHarbor repo root (FactHarbor.sln not found).');
     current = parent;
   }
 }
