@@ -8,7 +8,7 @@ This page describes target architecture, not current implementation state. It do
 
 == Overview ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Prompt Architecture.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Prompt Architecture.WebHome"/}}
 
 == Prompt Registry ==
 

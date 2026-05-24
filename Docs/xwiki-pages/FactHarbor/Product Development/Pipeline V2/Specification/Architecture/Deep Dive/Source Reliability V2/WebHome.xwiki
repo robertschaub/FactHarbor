@@ -82,9 +82,9 @@ Source reliability events follow the shared warning materiality test:
 
 == Links ==
 
-* [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]]
-* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
-* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
+* [[Quality and Trust V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Quality and Trust V2.WebHome]]
+* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
+* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
 * [[External Dependencies>>FactHarbor.Product Development.Specification.Architecture.External Dependencies.WebHome]]
 
 ----

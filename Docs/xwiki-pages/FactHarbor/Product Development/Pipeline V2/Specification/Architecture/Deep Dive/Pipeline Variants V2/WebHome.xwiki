@@ -14,7 +14,7 @@ Design rationale: the current V1 pipeline is not the V2 quality target. V2 shoul
 
 == Variant Lifecycle ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Request Lifecycle.WebHome"/}}
 
 |= State |= Runtime role |= Public result authority |= Exit condition
 | V1 default | Current ClaimAssessmentBoundary pipeline remains production runtime. | V1 result JSON and report remain public. | V2 contracts, adapters, and pre-cutover checks are ready.

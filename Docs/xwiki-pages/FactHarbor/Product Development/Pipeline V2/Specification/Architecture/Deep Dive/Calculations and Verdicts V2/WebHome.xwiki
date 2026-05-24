@@ -69,7 +69,7 @@ V2 aggregation is responsible for structural and mathematical composition only a
 
 == Report Generation Regression Control ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Report Regression Control.WebHome"/}}
 
 Report generation and narrative improvements must be rollback-safe:
 

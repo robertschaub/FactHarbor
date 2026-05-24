@@ -21,11 +21,11 @@ This is a simplification of ownership, not a reduction of analytical rigor.
 
 == V2 Trust Flow ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Quality Gates Flow.WebHome"/}}
 
 == Report Regression Control ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Report Regression Control.WebHome"/}}
 
 V2 treats report generation as a quality-bearing surface. Narrative, markdown, HTML/export, article adjudication, warning presentation, and report writer profile changes require candidate-vs-approved comparison before promotion.
 
@@ -72,7 +72,7 @@ The accepted V2 posture is:
 * direct source-reliability verdict weighting requires later architecture review and comparator validation;
 * cached source-reliability records must remain traceable to model/prompt/config versions.
 
-See [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]].
+See [[Source Reliability V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]].
 
 == Confidence And Warning Authority ==
 
@@ -98,12 +98,12 @@ Before V2 can replace V1, quality and trust review must verify:
 
 == Related V2 Pages ==
 
-* [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]]
-* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
-* [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
-* [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
-* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
-* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
+* [[AKEL Pipeline V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline V2.WebHome]]
+* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
+* [[Data Model V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality Gates V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
+* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
 
 ----
 

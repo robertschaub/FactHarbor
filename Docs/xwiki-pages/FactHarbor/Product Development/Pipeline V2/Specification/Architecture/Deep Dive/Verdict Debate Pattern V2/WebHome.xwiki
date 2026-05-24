@@ -6,7 +6,7 @@
 
 == Overview ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Verdict Debate Pattern.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Verdict Debate Pattern.WebHome"/}}
 
 V2 must not collapse verdict generation into a one-shot prompt. The verdict stage remains a structured adjudication process that separates a baseline evidence-backed case, adversarial challenge, reconciliation, validation, and confidence gating.
 

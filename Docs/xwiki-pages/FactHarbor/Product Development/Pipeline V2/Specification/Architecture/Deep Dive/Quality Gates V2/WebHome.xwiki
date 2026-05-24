@@ -6,7 +6,7 @@
 
 == Gate Flow ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Quality Gates Flow.WebHome"/}}
 
 == Gate Summary ==
 

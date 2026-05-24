@@ -8,7 +8,7 @@ This page describes target architecture, not current implementation state.
 
 == Entity Overview ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Entity Model ERD.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Entity Model ERD.WebHome"/}}
 
 == Contract Groups ==
 
@@ -82,4 +82,4 @@ V2 preserves the core domain concepts: AtomicClaim, EvidenceItem, EvidenceScope,
 
 ----
 
-**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]
+**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]

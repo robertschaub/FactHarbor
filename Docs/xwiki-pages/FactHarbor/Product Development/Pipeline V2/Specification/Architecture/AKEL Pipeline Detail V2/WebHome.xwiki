@@ -8,15 +8,15 @@ This page describes target architecture, not current implementation state.
 
 == Detailed Pipeline Flow ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Detail.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Pipeline Detail.WebHome"/}}
 
 == Request Lifecycle ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Request Lifecycle.WebHome"/}}
 
 == Analysis Session Product Lifecycle ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Analysis Session UX.WebHome"/}}
 
 The product lifecycle is intentionally smoother than the persistence lifecycle. V2 may use existing draft/preparation endpoints and existing job execution endpoints behind a unified UI shell. A later formal ##AnalysisSession## API facade may normalize UI state, but it must internally map to preparation/draft and execution/job records rather than merging them.
 
@@ -69,7 +69,7 @@ The provisional parser profile ##P0_PROVISIONAL_LOCAL_INERT## is for fixture/con
 
 == Report Generation Regression Control ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Report Regression Control.WebHome"/}}
 
 Stage 5 report-generation changes are promoted through versioned profiles, not ad hoc edits. Every public report records report-generation profile id/version, report writer version, prompt section/hash where applicable, model task version, config snapshot hash, source commit, renderer/export adapter version, and stored evidence/replay packet id/hash when used.
 
@@ -118,4 +118,4 @@ After V2 cutover stabilizes and V1 analysis code is deleted, a naming-normalizat
 
 ----
 
-**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]]
+**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]]

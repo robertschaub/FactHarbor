@@ -20,7 +20,7 @@ The governing intent is:
 
 == Overview ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Overview.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Pipeline Overview.WebHome"/}}
 
 The V2 pipeline keeps the required analytical sequence:
 
@@ -36,7 +36,7 @@ The simplification is architectural, not analytical. V2 does not remove claim de
 
 == Analysis Session UX ==
 
-{{include reference="FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome"/}}
+{{include reference="FactHarbor.Product Development.Pipeline V2.Diagrams.V2 Analysis Session UX.WebHome"/}}
 
 The approved V2 product model is one continuous Analysis Session. The current preparation/selection/job split remains an internal lifecycle, but users should not experience separate products for Atomic Claim preparation, claim selection, and analysis execution.
 
@@ -120,16 +120,16 @@ Allowed recovery is narrow and observable: bounded provider/network retry, bound
 
 == Deep Dives ==
 
-* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
-* [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
-* [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]]
-* [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]]
-* [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
-* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
-* [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]]
-* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
-* [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]]
-* [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
+* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
+* [[Data Model V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality and Trust V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Quality and Trust V2.WebHome]]
+* [[Pipeline Variants V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]]
+* [[Quality Gates V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
+* [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]]
+* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
+* [[Prompt Architecture V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]]
+* [[Source Reliability V2>>FactHarbor.Product Development.Pipeline V2.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
 
 ----
 
