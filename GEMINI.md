@@ -34,7 +34,7 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
-*   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first for role-activated or ambiguous tasks. Otherwise use `npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`; if unavailable, fall back to the generated indexes.
+*   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first for role-activated or ambiguous tasks. Otherwise use `npm run fh-knowledge -- preflight-task -- --task "..." [--role ...] [--skill ...]`; if unavailable, fall back to the generated indexes.
 
 ## Report Quality Reviews
 
