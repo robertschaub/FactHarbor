@@ -359,6 +359,14 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 
 Default to one accountable implementer. Add an independent reviewer only for high-risk, cross-stage, prompt/config, live-job, or public-surface decisions; repeated failed validation; unclear root cause; or explicit user request. Do not create standing deputy or committee layers unless the Captain explicitly asks.
 
+Pipeline_V2 coordination lessons are retained as principles only, not as restored workflow machinery:
+- Route reasoning effort by concrete task state, verifier results, reversibility, and reviewer disagreement; do not escalate model effort by preference.
+- Use premium Claude/Gemini sidecars only when they have a distinct written question to answer.
+- Use Steer-Co or committee-style review only for high-impact steering, unresolved material dissent, or decisions whose wrong answer would be expensive to undo.
+- Keep Captain Deputy out of the default path unless the Captain explicitly requests that front-door role.
+- Treat debt sensors as advisory-first if they are ever restored; they should inform steering, not block routine work by default.
+- Do not treat session functions or model-pinned helper invocations as durable role aliases.
+
 | Slash command | Workflow file | When to use |
 |---|---|---|
 | `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |

@@ -78,6 +78,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** The abandoned `Pipeline_V2` branch preserved useful target architecture, but the implementation workstream became dominated by Captain-Deputy orchestration, slice/tranche paperwork, HighJump status packets, and hidden readiness machinery. Future pipeline rebuild attempts should start from the May 12 target specification and factual baselines, then use small direct implementation increments with targeted review. Do not recreate the old Captain-Deputy/HighJump process unless a concrete current risk truly requires it.
 **Files:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`, `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`, `Pipeline_V2` branch
 
+### 2026-05-24 — Preserve Pipeline V2 coordination lessons as principles, not workflows
+**Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5) + Claude Opus 4.6 review
+**Category:** useful-pattern
+**Learning:** The useful agent-operating lessons from `Pipeline_V2` should be retained as compact principles rather than re-imported as mandatory workflows: route reasoning effort by concrete state, require a distinct written question before using premium Claude/Gemini sidecars, reserve Steer-Co or committee-style review for high-impact steering or unresolved material dissent, keep Captain Deputy out unless explicitly requested, keep any restored debt sensors advisory-first, and do not treat session functions as durable role aliases.
+**Files:** `AGENTS.md`, `Pipeline_V2` branch
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
