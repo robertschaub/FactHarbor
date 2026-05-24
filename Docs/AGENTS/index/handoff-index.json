@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-24T07:40:15.161Z",
-  "count": 272,
+  "generatedAt": "2026-05-24T18:24:03.061Z",
+  "count": 273,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5637,6 +5637,24 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start with `Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Comparison.json`. The most important examples are `deeplearning.ai` (old unsupported `educational_platform`, now jumps to `collaborative_reference` with a large score increase), `siemens.com` (old `corporate_publis"
+    },
+    {
+      "file": "2026-05-24_Lead_Architect_Lightweight_Checkworthiness_Auto_Selection.md",
+      "date": "2026-05-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "lightweight",
+        "checkworthiness",
+        "auto",
+        "selection"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-24_Lead_Architect_Lightweight_Checkworthiness_Auto_Selection.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement as a small feature-flagged Stage 1.5 selection slice with dropped-claim transparency as the recovery mechanism. Start with `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/metrics.ts`, then port"
     },
     {
       "file": "2026-05-24_Senior_Developer_Agent_Wrapper_Local_Env_Loading.md",
