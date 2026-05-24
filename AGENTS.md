@@ -141,11 +141,31 @@ When a code or prompt change fails its first focused validation (for example: `n
 
 This is **bounded backtracking**, not blanket rollback-first behavior.
 
+### Bugfix Complexity Heuristic
+
+For bugfixes, regressions, failing tests/builds, runtime defects, review findings, and failed-validation recovery, keep the repair path explicit but lightweight before editing:
+- Identify the existing mechanism that should carry the behavior.
+- Prefer amending, deleting, or quarantining obsolete or contradicted code before adding a parallel path.
+- If adding a mechanism, state why existing mechanisms cannot carry it and what removes or merges it later.
+- State the verifier and expected net mechanism impact.
+
+Trivial single-site fixes can satisfy this as a short note. Unclear root cause, cross-stage behavior, prompt/config changes, or repeated failed validation need a written comparison and reviewer/debate only when that could change the implementation path.
+
 ### Pipeline Integrity
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 - **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
+
+### Report Quality Baseline Comparison
+
+When judging analysis report quality — including `/report-review`, manual job review, regression diagnosis, "best report" selection, or release readiness — compare the target report against:
+- `Docs/AGENTS/Captain_Quality_Expectations.md` for Captain intent and best comparator report IDs.
+- `Docs/AGENTS/benchmark-expectations.json` for canonical inputs, accepted verdict/truth/confidence bands, latest verified observations, and rerun priority.
+- `Docs/AGENTS/report-quality-expectations.json` for Q-code structural checks.
+- The best usable exact/family comparator reports listed in `Captain_Quality_Expectations.md`, when available.
+
+State whether each comparator is exact vs. variant, local vs. deployed, and current-stack vs. historical. If no best comparator exists, state that explicitly and do not invent one from nearby jobs.
 
 ### Report Quality & Event Communication
 
@@ -336,6 +356,8 @@ If these files do not exist yet, run `npm run index` to seed them.
 ## Named Workflows
 
 Documented workflows for recurring tasks. **Claude Code** users invoke them as slash commands. **All other tools** (Gemini, GPT, Copilot, Cline, etc.) read the file directly and follow its instructions — the content is plain markdown.
+
+Default to one accountable implementer. Add an independent reviewer only for high-risk, cross-stage, prompt/config, live-job, or public-surface decisions; repeated failed validation; unclear root cause; or explicit user request. Do not create standing deputy or committee layers unless the Captain explicitly asks.
 
 | Slash command | Workflow file | When to use |
 |---|---|---|

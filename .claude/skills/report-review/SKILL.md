@@ -29,6 +29,8 @@ These constraints bind both this skill's analysis AND the fixes it proposes. If 
 
 9. **Inspect user-provided jobs first (HARD RULE)** — if the Captain/user supplied one or more specific job URLs or job IDs, those exact jobs are the primary evidence base and MUST be inspected before diagnosis, comparison, or fix proposals. Do not substitute nearby jobs, same-commit jobs, or same-input jobs as if they were equivalent. If a provided job cannot be read (missing, hidden, deleted, permission-blocked, or payload unavailable), state that explicitly and treat any subsequent recommendation as provisional hardening only — NOT as a confirmed root-cause fix for that job.
 
+   **Report-quality baseline comparison extension:** after exact requested jobs are inspected, quality judgments MUST compare them with `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, and the best usable exact/family comparator reports listed in the Captain expectations file. State exact vs. variant, local vs. deployed, and current-stack vs. historical for every comparator used. If no best comparator exists, say so explicitly rather than promoting a weak nearby job.
+
 10. **Prompt-change justification gate (HARD RULE)** — do not propose or apply prompt changes merely because a report is bad or because nearby jobs suggest a plausible prompt issue. Every prompt change must be justified by concrete evidence from the inspected in-scope jobs showing why prompt behavior is implicated rather than code, config, rollout state, or runtime variance. If the provided job was not inspectable, prompt edits may only be surfaced as speculative/provisional options and must be labeled as such.
 
 11. **No speculative prompt piling** — when multiple plausible failure layers exist, prefer the narrowest confirmed mechanism from inspected job evidence. Do not stack prompt edits on top of code/config/runtime uncertainty. If causality is unclear, escalate that uncertainty instead of accumulating prompt changes.
@@ -209,7 +211,7 @@ Build `TARGET-REPORTS[...]`.
 
 0. `Docs/AGENTS/report-quality-expectations.json` — the **authoritative Q-code check catalog** (HF / S1 / EV / V / ST / BE / IN / WS / INF / REG categories). Load the `checks` object and the `dimensionMap`. The skill describes HOW to run each Phase; this file describes WHAT each Phase checks. For each Phase 3 dimension (and the new pre-3a / post-3a / 3j gates), the dimensionMap lists the Q-codes to run. For each Q-code, run its `structuralCheck` and apply its `onFail` guidance if the check fails. Annotation-dependent checks (those listing `annotationRequired`) are skipped silently when the corresponding `families[slug]` annotation in `benchmark-expectations.json` is absent — absence is NOT a failure. `notIncludedInSkill` documents why some canonical Q-codes (Q-AH1, Q-AH2, Q-EV3, Q-S1.2, Q-S1.4, Q-S1.5, Q-S1.7, Q-EV8) were deliberately excluded and what escalation path replaces them. If `report-quality-expectations.json` is missing, the skill falls back to the inline checks described in each Phase 3 dimension below — it remains functional but cannot pick up newly-added Q-codes.
 
-   **Human-readable companion:** `Docs/AGENTS/Captain_Quality_Expectations.md` is Captain's one-page narrative summary of the quality bar. It is **onboarding/context only** for agents — no skill phase consumes it operationally. The JSONs (`report-quality-expectations.json` + `benchmark-expectations.json`) are the runtime authority for bands, Q-codes, and `structuralCheck` definitions. The MD is authoritative only in the narrative sense: for a human reader (Captain) deciding direction and priority. When the MD's prose disagrees with a JSON value on a band or check, update the MD to match (it is the derived view). Read the MD first for context on what families matter and what remains open; read the JSONs to run the skill.
+   **Human-readable companion and comparator index:** `Docs/AGENTS/Captain_Quality_Expectations.md` is Captain's one-page narrative summary of the quality bar and the operational lookup for best usable comparator reports. The JSONs (`report-quality-expectations.json` + `benchmark-expectations.json`) remain the mechanical authority for bands, Q-codes, and `structuralCheck` definitions. The MD is authoritative for Captain intent, rationale, open-status wording, and which reports are accepted as comparators. When the MD's band prose disagrees with a JSON value, update the MD to match the JSON unless Captain explicitly approved a band correction; when comparator status is unclear, treat the MD's "best usable" table as the source of truth and state uncertainty in Phase 7a.
 
    **Annotation-absence detection** — for annotation-dependent Q-codes (Q-S1.1, Q-S1.3, Q-V6, Q-ST5), "annotation absent" means: the key is missing from the family object OR the value is exactly `null` OR (for array-typed annotations like `anchorTokens`) the array has length 0. Empty arrays are treated as "no tokens to check" = skip silently = NOT a failure. For cross-family annotations like `crossLanguageVariantOf`, if the referenced slug is not itself in the current scope, skip the check silently (the cross-language pair cannot be evaluated from one side alone).
 
@@ -270,11 +272,13 @@ Pre-3a failures skip Phase 4 entirely (same short-circuit as 3h INFRASTRUCTURE) 
 - **Q-HF6 Confidence publication floor.** If `confidence < 40` AND the report was published (or would be), flag MEDIUM finding. The root cause is usually visible in pre-3a (Q-HF4 failure) or 3d (clustering collapse). This gate exists to surface presentation-contract violations that lower-tier findings would otherwise obscure.
 
 **3a. Expectation check** — using the bands from `benchmark-expectations.json` (Phase 2a source 1):
-- **If the family is STALE (Phase 2a staleness gate):** emit `RERUN-NEEDED` and STOP — do not file a regression. The stored observation predates too many analyzer/prompt-touching commits to be a valid comparison.
+- **If the family is STALE (Phase 2a staleness gate):** emit `RERUN-NEEDED` and do not file a regression from band deltas. Still run the comparator-shape review below as `ADVISORY` so stale mechanical bands do not cause the skill to skip Captain's best-report comparison.
 - verdict direction inverted vs. `expectedVerdictLabels`
 - `truthPercentage` outside the `truthPercentageBand` by more than `noiseTolerancePct`
 - `confidence` outside the `confidenceBand` by more than `noiseTolerancePct`
 - `boundaryCount` below `minBoundaryCount` (skip if `minBoundaryCount: null`)
+- compare report shape against the best usable comparator(s) in `Captain_Quality_Expectations.md` when available: claim decomposition, evidence/source health, verdict direction, caveat placement, warning posture, and known contamination notes
+- if no best usable comparator exists for an in-scope family, emit `NO-COMPARATOR-AVAILABLE` for that family in Phase 7b with the reason from `Captain_Quality_Expectations.md` rather than silently omitting the comparison
 - If `qualityStatus` is `IMPROVED-NOT-CLOSED` or `INFERENTIAL`, note the known open issue before flagging — do not file a regression for a known-open pattern
 - If `expectedVerdictLabels: null`, emit `RERUN-NEEDED` rather than a regression finding
 
@@ -609,6 +613,7 @@ Active prompt:     <active_hash[:16] — activated_utc>  (for claimboundary prof
 One block per target report. Structure mirrors `/prompt-diagnosis §5a`, with these additional lines:
 ```
 EXPECTATION-DELTA: verdictLabel <observed vs expected>, truthPct <observed vs band>, confidence <observed vs band>, boundaries <observed vs minBoundaryCount>
+COMPARATOR:        <best comparator jobIds used + exact/variant, local/deployed, current-stack/historical> OR NO-COMPARATOR-AVAILABLE — <reason>
 KNOWN-OPEN:        <knownOpenIssues from expectations file if any>
 REGRESSION:        <if 3i fired>
   last-good:       <jobId> at commit <sha[:8]> — verdict <label>/<truth>/<conf>, bench-score <n>

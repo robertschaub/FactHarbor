@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-05-24 -->
 
 # GEMINI.md
 
@@ -29,9 +29,16 @@ You are an expert software engineer working on **FactHarbor**.
 
 ## Behavior
 *   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
+*   **Bugfixing:** For bugfixes, regressions, failing tests/builds, review findings, runtime defects, and failed-validation recovery, apply the compact `AGENTS.md` bugfix complexity heuristic: identify the existing mechanism, prefer amend/delete/quarantine before adding parallel paths, name the verifier, and state expected net mechanism impact.
+*   **Agent balance:** Default to one accountable implementer. Add an independent reviewer for high-risk, cross-stage, prompt/config, live-job, public-surface, repeated-failure, unclear-root-cause, or explicitly requested work.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
+*   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first for role-activated or ambiguous tasks. Otherwise use `npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`; if unavailable, fall back to the generated indexes.
+
+## Report Quality Reviews
+
+When judging report quality, compare the target report with `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, and the best usable comparator reports listed in the Captain expectations file. State whether comparators are exact or variants, local or deployed, and current-stack or historical. If no best comparator exists, say so explicitly.
 
 ## Index-First Lookup
 

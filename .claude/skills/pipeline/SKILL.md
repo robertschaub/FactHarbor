@@ -8,6 +8,8 @@ ultrathink
 
 Analyze the FactHarbor ClaimAssessmentBoundary pipeline for: $ARGUMENTS
 
+For pipeline fix decisions, isolate root cause before patches, prioritize quality over speed over cost, and use review/debate when the issue crosses stage boundaries or affects prompt/config behavior.
+
 **Before forming any conclusion**, read every file relevant to the concern. Key files by area:
 
 | Area | Files |
