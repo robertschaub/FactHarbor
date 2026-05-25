@@ -1479,7 +1479,12 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
-          const normalizedPlausible = normalizedDirection.valid !== false
+          const normalizedStructuralIssues = getDirectionalCitationIntegrityIssues(repairSeedVerdict);
+          const normalizedMergedIssues = Array.from(new Set([
+            ...(normalizedDirection.valid === false ? normalizedDirection.issues : []),
+            ...normalizedStructuralIssues,
+          ]));
+          const normalizedPlausible = normalizedMergedIssues.length === 0
             || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
 
           if (normalizedPlausible) {
@@ -1531,14 +1536,19 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
-          const repairedPlausible = retryDirection.valid !== false
+          const repairedStructuralIssues = getDirectionalCitationIntegrityIssues(normalizedRepaired);
+          const repairedMergedIssues = Array.from(new Set([
+            ...(retryDirection.valid === false ? retryDirection.issues : []),
+            ...repairedStructuralIssues,
+          ]));
+          const repairedPlausible = repairedMergedIssues.length === 0
             || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(
               normalizedRepaired,
               "direction",
-              retryDirection.issues,
+              repairedMergedIssues,
               warnings,
               config.mixedConfidenceThreshold,
             );
@@ -1600,7 +1610,7 @@ export async function validateVerdicts(
     validated.push(current);
   }
 
-  return validated;
+  return validated.map((v) => normalizeVerdictLabelAndTier(v, config.mixedConfidenceThreshold));
 }
 
 type NormalizedValidationEntry = {
@@ -1819,7 +1829,8 @@ export function isVerdictDirectionPlausible(
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
 
   if (
-    summary.misbucketedSupportingIds.length > 0
+    hasMissingDirectionalCitationIntegrity(verdict)
+    || summary.misbucketedSupportingIds.length > 0
     || summary.misbucketedContradictingIds.length > 0
     || summary.nonDirectSupportingIds.length > 0
     || summary.nonDirectContradictingIds.length > 0
@@ -1837,6 +1848,37 @@ export function isVerdictDirectionPlausible(
   }
 
   return true;
+}
+
+function hasMissingDirectionalCitationIntegrity(verdict: CBClaimVerdict): boolean {
+  const directionalCitationCount =
+    (verdict.supportingEvidenceIds?.length ?? 0)
+    + (verdict.contradictingEvidenceIds?.length ?? 0);
+  if (directionalCitationCount > 0) return false;
+  return verdict.verdictReason !== "verdict_integrity_failure"
+    && confidenceToTier(verdict.confidence) !== "INSUFFICIENT";
+}
+
+function getDirectionalCitationIntegrityIssues(verdict: CBClaimVerdict): string[] {
+  return hasMissingDirectionalCitationIntegrity(verdict)
+    ? ["Verdict has no supporting or contradicting evidence citations; published verdicts must either cite direct directional evidence or be explicitly downgraded as insufficient."]
+    : [];
+}
+
+function normalizeVerdictLabelAndTier(
+  verdict: CBClaimVerdict,
+  mixedConfidenceThreshold: number,
+): CBClaimVerdict {
+  return {
+    ...verdict,
+    verdict: percentageToClaimVerdict(
+      verdict.truthPercentage,
+      verdict.confidence,
+      undefined,
+      mixedConfidenceThreshold,
+    ),
+    confidenceTier: confidenceToTier(verdict.confidence),
+  };
 }
 
 function summarizeBucketWeightedEvidenceDirection(
@@ -1907,6 +1949,8 @@ function getDeterministicDirectionIssues(
 ): string[] {
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
   const issues: string[] = [];
+
+  issues.push(...getDirectionalCitationIntegrityIssues(verdict));
 
   if (summary.misbucketedSupportingIds.length > 0) {
     issues.push(
@@ -2530,6 +2574,10 @@ export function runStructuralConsistencyCheck(
       if (!evidenceIds.has(eid)) {
         warnings.push(`Verdict ${verdict.claimId}: contradicting evidence ID "${eid}" not in evidence pool`);
       }
+    }
+
+    for (const issue of getDirectionalCitationIntegrityIssues(verdict)) {
+      warnings.push(`Verdict ${verdict.claimId}: ${issue}`);
     }
 
     // Check: All boundary IDs in boundaryFindings are valid

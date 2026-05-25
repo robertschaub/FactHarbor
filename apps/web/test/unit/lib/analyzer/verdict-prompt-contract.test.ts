@@ -306,6 +306,8 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Treat `applicability` as binding for directional citation arrays");
       expect(section).toContain("Only evidence items marked `direct` may appear");
       expect(section).toContain("`contextual` or `foreign_reaction`");
+      expect(section).toContain("A non-fallback verdict must cite at least one direct evidence item");
+      expect(section).toContain("explicit insufficient-evidence outcome with low confidence");
     });
 
     it("direction validation rejects non-direct directional citations", () => {
@@ -754,7 +756,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
       expect(section).toContain("earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy");
       expect(section).toContain("directly documents the target path");
+      expect(section).toContain("Directness requires the same target object AND the same evaluated dimension");
+      expect(section).toContain("different episode, actor relationship, institutional controversy, remedy path, or outcome");
       expect(section).toContain("Overlap in actors or institutions alone is insufficient");
+      expect(section).toContain("Shared standards, shared adjudicators, shared institutions, or shared political/legal background");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {

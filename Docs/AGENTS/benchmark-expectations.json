@@ -81,17 +81,21 @@
       "slug": "bolsonaro-en",
       "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
       "language": "en",
-      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
-      "truthPercentageBand": { "min": 55, "max": 75 },
-      "confidenceBand": { "min": 45, "max": 65 },
+      "expectedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE", "TRUE"],
+      "truthPercentageBand": { "min": 58, "max": 100 },
+      "confidenceBand": { "min": 65, "max": 85 },
       "minBoundaryCount": 3,
-      "qualityStatus": "SOLVED-VISIBLE-CONTAMINATION",
-      "qualityStatusNote": "U.S. government (state.gov) citation contamination fixed on the stronger backstop (ec9840ff). Intermediate fix run still ended MIXED 50.5/54 with visible contamination. Residual uncited state.gov items may remain in evidence pool.",
-      "latestVerifiedJobId": "ec9840ff97994392a7ea9784beb5d79a",
-      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 64.2, "confidence": 50 },
+      "qualityStatus": "WATCH-CORRECTED-EXPECTATION",
+      "qualityStatusNote": "Captain-corrected expectation removes MIXED as acceptable. The family should produce a true-side result with confidence >=65 while preserving no visible U.S. government/state.gov final citations. Job 3dab7adc is the best verdict/confidence/structure comparator but still has visible state.gov citation contamination; ec9840ff is the later no-visible-contamination comparator but confidence is only 50.",
+      "latestVerifiedJobId": "3dab7adc2d514c2fae2e2a5003adc97e",
+      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 60.1, "confidence": 65 },
+      "_note_corrected_expectation_2026-05-25": "Corrected from LEANING-TRUE/MIXED; truth 55-75; confidence 45-65 to true-side-only with confidence >=65. Strict full target combines 3dab7adc's verdict/confidence/structure behavior with ec9840ff's no visible state.gov final-citation behavior.",
       "_note_rerun_2026-04-16": "Rerun da3580fe (PT variant, not EN) confirmed LEANING-TRUE 58/61 at HEAD 35a22fba — see bolsonaro-pt entry for EN twin confirmation.",
       "knownOpenIssues": [
-        "residual uncited state.gov-domain items still in evidence pool (not cited in final report but present in intermediary evidence set)"
+        "recent current-stack runs can regress to MIXED or UNVERIFIED",
+        "fair-trial proceedings and verdicts can collapse into one bundled AtomicClaim",
+        "collateral same-system material can still over-shape fair-trial claims",
+        "residual uncited state.gov-domain items may remain in evidence pool and must not be cited in final verdict arrays"
       ]
     },
     {
@@ -158,6 +162,10 @@
     {
       "slug": "asylum-235000-de",
       "reason": "2026-04-16 rerun MOSTLY-TRUE 78/68 is positive but slightly above band — isolated rerun with source inspection confirms whether official SEM aggregate is now consistently surfaced"
+    },
+    {
+      "slug": "bolsonaro-en",
+      "reason": "Captain-corrected expectation is true-side-only with confidence >=65; recent current-stack jobs can still land MIXED/UNVERIFIED or lose fair-trial decomposition."
     }
   ]
 }

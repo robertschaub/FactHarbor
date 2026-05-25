@@ -6,8 +6,8 @@
 
 ## Release Summary (as of 2026-04-16)
 
-- **Good (5/8):** `bundesrat-rechtskraftig`, `bundesrat-simple`, `bolsonaro-en`, `bolsonaro-pt`, `hydrogen-en`
-- **Watch (2/8):** `asylum-235000-de`, `plastic-en` — main old issue fixed, residual variance open
+- **Good (4/8):** `bundesrat-rechtskraftig`, `bundesrat-simple`, `bolsonaro-pt`, `hydrogen-en`
+- **Watch (3/8):** `bolsonaro-en`, `asylum-235000-de`, `plastic-en` — main old issue fixed for some families, residual variance or corrected expectation open
 - **Not validated (1/8):** `asylum-wwii-de` — no current-stack rerun yet
 - **Release-blockers:** none of these families currently block release; one isolated rerun each for Bundesrat + Plastic would clear the last open-item noise from the 2026-04-16 concurrent-submission anomaly.
 
@@ -21,7 +21,7 @@ Each row leads with Captain's intent — what the family is actually testing. Ba
 | `bundesrat-simple` | Same as above without the anchor-preservation concern. Expected to track the harder variant. | `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben` | MIXED / LEANING-TRUE / LEANING-FALSE; truth 35–60; conf 55–85; min 2 boundaries |
 | `asylum-235000-de` | Must surface ONE clean official SEM aggregate total, not stitch from components. Improved, not closed. | `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz` | LEANING-TRUE / MIXED; truth 55–75; conf 40–70; min 1 boundary |
 | `asylum-wwii-de` | Historical-comparison variant; not yet validated on the current stack. No official band yet. | `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.` | No bands until first current-stack rerun |
-| `bolsonaro-en` | No visible U.S.-government contamination in final citations. Watching for small uncited `state.gov` residue. | `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?` | LEANING-TRUE / MIXED; truth 55–75; conf 45–65; min 3 boundaries |
+| `bolsonaro-en` | Must stay on the true side with adequate confidence, preserve the multi-proceeding / verdict structure, and keep visible U.S.-government contamination out of final citations. | `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?` | LEANING-TRUE+; truth ≥58 (target 68–80); conf 65–85; min 3 boundaries |
 | `bolsonaro-pt` | Language-agnostic transfer of EN fixes. Confirmed on current HEAD. | `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas` | LEANING-TRUE / MIXED; truth 50–75; conf 40–65; min 3 boundaries |
 | `hydrogen-en` | Tank-to-wheel and full-pathway analyses stay structurally distinct — do not get conflated. Solved. | `Using hydrogen for cars is more efficient than using electricity` | FALSE / MOSTLY-FALSE; truth 5–25; conf 65–85; min 2 boundaries |
 | `plastic-en` | No fallback UNVERIFIED collapse from the old Stage 4 parse failure. Parse-failure fixed; evidence variance remains. | `Plastic recycling is pointless` | MOSTLY-FALSE / FALSE / MIXED; truth 10–35; conf 55–80; min 2 boundaries |
@@ -55,7 +55,8 @@ Each item has a concrete next step, owner expectation, and whether it blocks rel
 | `asylum-wwii-de` | Single isolated rerun on current stack to produce a first verdict band. | No — but keeps the family permanently "not validated" until run |
 | `bundesrat-rechtskraftig` + `plastic-en` | One isolated (non-concurrent) rerun each to clear the 2026-04-16 concurrent-submission collapse from the record. | No — the collapse was ruled infrastructure; reruns just remove ambiguity |
 | `asylum-235000-de` | Rerun with explicit source-inspection to confirm one clean official SEM aggregate surfaces, not a stitched component total. | No — current family behavior is usable, cleanup-tier |
-| `bolsonaro-en` evidence-pool residue | Ongoing monitoring of whether uncited `state.gov` items remain in the evidence pool across runs. | No — citations are clean |
+| `bolsonaro-en` corrected verdict/confidence bar | Fresh current-stack rerun after the generic claim-splitting, target-path, and verdict-citation fixes. | No — but `MIXED` is no longer acceptable for this family |
+| `bolsonaro-en` evidence-pool residue | Ongoing monitoring of whether uncited `state.gov` items remain in the evidence pool across runs. | No — final citations must stay clean |
 | Q-S1.3 / Q-S1.1 / Q-V6 / Q-ST5 check activation | Add per-family annotations (`anchorTokens`, `minDistinctEvents`, `trueButMisleading`, `crossLanguageVariantOf`) to `benchmark-expectations.json` as data becomes available. | No — the checks are dormant until then |
 
 ## Reading Order

@@ -1078,7 +1078,7 @@ describe("validateVerdicts (Step 5)", () => {
   it("should call grounding and direction validation LLMs", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
-      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      confidence: 80, confidenceTier: "HIGH", reasoning: "test", harmPotential: "medium", isContested: false,
       supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
       boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
       challengeResponses: [],
@@ -1547,6 +1547,96 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].truthPercentage).toBe(50);
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
+  });
+
+  it("safe-downgrades when normalization and repair leave zero directional citations", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 64,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_01",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_02"],
+        claimDirection: "supports",
+        applicability: "contextual",
+      }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Non-direct directional citation"] }];
+        }
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return {
+          claimId: "AC_02",
+          truthPercentage: 64,
+          reasoning: "No direct citation remains after repair.",
+          supportingEvidenceIds: [],
+          contradictingEvidenceIds: [],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
+  });
+
+  it("normalizes stale verdict labels after validation", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 28,
+      verdict: "UNVERIFIED",
+      confidence: 42,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: ["EV_01"],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, []);
+
+    expect(result[0].verdict).toBe("MOSTLY-FALSE");
+    expect(result[0].confidenceTier).toBe("LOW");
   });
 
   it("derives repaired citation arrays from claim-local direct evidence when repair omits them", async () => {
@@ -4119,13 +4209,37 @@ describe("isVerdictDirectionPlausible", () => {
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(true);
   });
 
-  it("returns true when evidence IDs are empty", () => {
+  it("returns false when a publishable verdict has no directional citation IDs", () => {
     const verdict = createCBVerdict({
       truthPercentage: 50,
       supportingEvidenceIds: [],
       contradictingEvidenceIds: [],
     });
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(false);
+  });
+
+  it("allows zero directional citations only after an explicit integrity downgrade", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      confidence: 24,
+      confidenceTier: "INSUFFICIENT",
+      verdictReason: "verdict_integrity_failure",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
     expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
+  });
+
+  it("does not let a stale insufficient confidence tier bypass zero-citation integrity", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 64,
+      confidence: 80,
+      confidenceTier: "INSUFFICIENT",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(false);
   });
 
   it("returns false when directional citations rely on explicitly contextual evidence", () => {
