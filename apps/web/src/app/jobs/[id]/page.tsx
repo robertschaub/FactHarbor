@@ -1745,6 +1745,29 @@ export default function JobPage() {
       {/* Report Tab — merged Summary + Sources + (admin) Dev Diagnostics */}
       {tab === "report" && hasV22Data && (
         <div className={styles.reportStack}>
+          {hasAdminKey && job && (
+            <div className={`${styles.reportAnnotationPanel} ${styles.reportSurfaceCard}`}>
+              <div className={styles.reportAnnotationHeader}>
+                <div>
+                  <div className={styles.reportAnnotationLabel}>Admin note</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={openAnnotationModal}
+                  className={styles.reportAnnotationButton}
+                  aria-label={job.adminAnnotation ? "Edit admin note" : "Add admin note"}
+                >
+                  <span aria-hidden="true">{job.adminAnnotation ? "✎" : "＋"}</span>
+                  {job.adminAnnotation ? "Edit" : "Add"}
+                </button>
+              </div>
+              {job.adminAnnotation ? (
+                <div className={styles.reportAnnotationText}>{job.adminAnnotation}</div>
+              ) : (
+                <div className={styles.reportAnnotationEmpty}>No admin note yet.</div>
+              )}
+            </div>
+          )}
           {pipelineVariant === "monolithic_dynamic" ? (
             <ReportSection title="Report" className={styles.reportSurfaceCard}>
               <DynamicResultViewer

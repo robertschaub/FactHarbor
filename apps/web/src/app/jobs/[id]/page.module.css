@@ -594,6 +594,69 @@
   white-space: pre-wrap;
 }
 
+.reportAnnotationPanel {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid #2563eb;
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+}
+
+.reportAnnotationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reportAnnotationLabel {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reportAnnotationButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reportAnnotationButton:hover {
+  background: var(--bg-surface2);
+}
+
+.reportAnnotationText,
+.reportAnnotationEmpty {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.reportAnnotationText {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.reportAnnotationEmpty {
+  color: var(--text-muted);
+}
+
 /* Applied to any long text block (>1000 chars) to add a bounded, resizable container */
 .resizableLong {
   overflow-y: auto;
