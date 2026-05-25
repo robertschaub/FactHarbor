@@ -48,6 +48,7 @@ import { scoreToFactualRating } from "../../../lib/source-reliability-config";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+import { normalizeDynamicCitationSources, normalizeReportSources } from "./utils/reportSources";
 import FallbackReport from "@/components/FallbackReport";
 import {
   classifyWarningForDisplay,
@@ -1169,20 +1170,15 @@ export default function JobPage() {
     : (result?.meta?.pipelineVariant || requestedPipelineVariant);
   const pipelineVariant = executedPipelineVariant;
 
-  // v2.8.2: For dynamic pipeline, use citations array; for claimboundary, use sources array
-  // Dynamic pipeline stores fetched sources as citations with different structure
-  const sources = pipelineVariant === "monolithic_dynamic"
-    ? (result?.citations || []).map((c: any) => ({
-        url: c.url,
-        title: c.title,
-        fetchSuccess: true, // Citations are only added if successfully fetched
-        trackRecordScore: c.trackRecordScore,
-        trackRecordConfidence: c.trackRecordConfidence,
-        trackRecordConsensus: c.trackRecordConsensus,
-        excerpt: c.excerpt,
-        category: c.sourceType || 'citation',
-      }))
-    : result?.sources || [];
+  // v2.8.2: For dynamic pipeline, use citations array; for claimboundary, use sources array.
+  // Legacy stored reports may wrap source arrays as { items: [...] }, so normalize before render/export.
+  const sources = useMemo(
+    () =>
+      pipelineVariant === "monolithic_dynamic"
+        ? normalizeDynamicCitationSources(result?.citations)
+        : normalizeReportSources(result?.sources),
+    [pipelineVariant, result?.citations, result?.sources],
+  );
   const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
   const sourceUrlToTitle = useMemo(() => new Map<string, string>(sources.map((s: any) => [s.url as string, (s.title as string) || ""])), [sources]);
   const usedModels = collectUsedModels(result);
