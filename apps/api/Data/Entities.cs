@@ -93,6 +93,12 @@ public sealed class JobEntity
     /// Only admins can see and toggle hidden jobs.
     /// </summary>
     public bool IsHidden { get; set; } = false;
+
+    /// <summary>
+    /// Admin-only operator note for triage, review, or follow-up context.
+    /// </summary>
+    [MaxLength(2000)]
+    public string? AdminAnnotation { get; set; }
 }
 
 public sealed class JobEventEntity

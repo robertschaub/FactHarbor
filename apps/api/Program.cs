@@ -146,6 +146,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
     EnsureJobsColumn(db, "GitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
+    EnsureJobsColumn(db, "AdminAnnotation", "TEXT");
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
     // QUEUED jobs are left as-is — they were never started and the runner will pick

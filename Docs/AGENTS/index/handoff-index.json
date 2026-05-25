@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-24T23:32:40.988Z",
-  "count": 275,
+  "generatedAt": "2026-05-25T09:20:01.012Z",
+  "count": 276,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5712,6 +5712,39 @@
       ],
       "files_touched": [],
       "summary": "Claim Auto-Selection Root-Cause Fix Implementation"
+    },
+    {
+      "file": "2026-05-25_Senior_Developer_Job_Annotations_And_Jobs_Search.md",
+      "date": "2026-05-25",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "job",
+        "annotations",
+        "and",
+        "jobs",
+        "search"
+      ],
+      "files_touched": [
+        "apps/api/Data/Entities.cs",
+        "apps/api/Data/FhDbContext.cs",
+        "apps/api/Program.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/JobsController.cs",
+        "apps/api/migrations/005_add_admin_annotation.sql",
+        "apps/web/src/app/api/fh/jobs/[id]/annotation/route.ts",
+        "apps/web/src/app/jobs/page.tsx",
+        "apps/web/src/app/jobs/page.module.css",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/app/jobs/[id]/page.module.css",
+        "Docs/AGENTS/Handoffs/2026-05-25_Senior_Developer_Job_Annotations_And_Jobs_Search.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json",
+        "Docs/AGENTS/index/stage-map.json",
+        "Docs/AGENTS/index/stage-manifest.json"
+      ],
+      "summary": "If validating manually, restart API/Web before testing because backend search and the annotation endpoint require the updated API process. Use `/jobs`, search for an existing job prefix such as `e2fee7bc`, and use an admin session to open the card action menu or job detail annotation button. The new"
     }
   ]
 }

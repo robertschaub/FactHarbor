@@ -27,6 +27,8 @@ type JobSummary = {
   truthPercentage?: number;
   confidence?: number;
   isHidden?: boolean;
+  adminAnnotation?: string | null;
+  gitCommitHash?: string | null;
   analysisIssueCode?: string | null;
   analysisIssueMessage?: string | null;
 };
@@ -46,6 +48,12 @@ type JobsResponse = {
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const RATE_LIMIT_BACKOFF_MS = 60_000;
+const MAX_ANNOTATION_LENGTH = 2000;
+
+type AnnotationEditorState = {
+  jobId: string;
+  value: string;
+};
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -63,6 +71,8 @@ export default function JobsPage() {
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [togglingHide, setTogglingHide] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [editingAnnotation, setEditingAnnotation] = useState<AnnotationEditorState | null>(null);
+  const [savingAnnotation, setSavingAnnotation] = useState(false);
 
   // Close card menu on any outside click
   useEffect(() => {
@@ -260,6 +270,50 @@ export default function JobsPage() {
     }
   };
 
+  const openAnnotationEditor = (job: JobSummary) => {
+    setEditingAnnotation({ jobId: job.jobId, value: job.adminAnnotation || "" });
+    setMenuOpenId(null);
+  };
+
+  const saveAnnotation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAnnotation) return;
+    const key = sessionStorage.getItem("fh_admin_key");
+    if (!key) return;
+
+    setSavingAnnotation(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${editingAnnotation.jobId}/annotation`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": key,
+        },
+        body: JSON.stringify({ annotation: editingAnnotation.value }),
+      });
+      const data = await res.json().catch(() => null) as null | {
+        error?: unknown;
+        adminAnnotation?: unknown;
+      };
+      if (!res.ok) {
+        const message = typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+        throw new Error(message);
+      }
+      const nextAnnotation = typeof data?.adminAnnotation === "string" ? data.adminAnnotation : null;
+      setJobs((prev) => prev.map((job) =>
+        job.jobId === editingAnnotation.jobId
+          ? { ...job, adminAnnotation: nextAnnotation }
+          : job
+      ));
+      setEditingAnnotation(null);
+      toast.success(nextAnnotation ? "Annotation saved" : "Annotation cleared");
+    } catch (err: any) {
+      toast.error(`Annotation failed: ${err.message}`);
+    } finally {
+      setSavingAnnotation(false);
+    }
+  };
+
   const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
     return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
   };
@@ -308,7 +362,7 @@ export default function JobsPage() {
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search reports..."
+          placeholder={adminKey ? "Search reports, Job ID, or commit" : "Search reports or Job ID"}
           className={styles.searchInput}
           aria-label="Search reports"
         />
@@ -383,6 +437,12 @@ export default function JobsPage() {
                   <div className={styles.jobPreview}>
                     {job.inputPreview || "No preview available"}
                   </div>
+                  {adminKey && job.adminAnnotation && (
+                    <div className={styles.adminAnnotation}>
+                      <span className={styles.adminAnnotationLabel}>Admin note</span>
+                      <span className={styles.adminAnnotationText}>{job.adminAnnotation}</span>
+                    </div>
+                  )}
                   {job.verdictLabel && isCompleteStatus(job.status) && (() => {
                     const vBadge = getVerdictBadge(job.verdictLabel);
                     if (!vBadge) return null;
@@ -411,6 +471,9 @@ export default function JobsPage() {
                   </div>
                   <div>
                     <code className={styles.jobIdCode}>{job.jobId.slice(0, 8)}...</code>
+                    {adminKey && job.gitCommitHash && (
+                      <code className={styles.commitCode}>commit {job.gitCommitHash.slice(0, 8)}</code>
+                    )}
                   </div>
                 </div>
 
@@ -448,6 +511,12 @@ export default function JobsPage() {
                         <div className={styles.cardMenuDropdown}>
                           <button
                             className={styles.cardMenuItem}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); openAnnotationEditor(job); }}
+                          >
+                            {job.adminAnnotation ? "✎ Edit annotation" : "✎ Add annotation"}
+                          </button>
+                          <button
+                            className={styles.cardMenuItem}
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(null); toggleHide(e, job); }}
                           >
                             {job.isHidden ? "👁 Unhide report" : "🙈 Hide report"}
@@ -462,6 +531,62 @@ export default function JobsPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {editingAnnotation && (
+        <div
+          className={styles.annotationModalBackdrop}
+          onClick={() => !savingAnnotation && setEditingAnnotation(null)}
+        >
+          <form
+            className={styles.annotationModal}
+            onSubmit={saveAnnotation}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.annotationModalHeader}>
+              <h2 className={styles.annotationModalTitle}>Job annotation</h2>
+              <code className={styles.annotationModalJobId}>{editingAnnotation.jobId.slice(0, 10)}...</code>
+            </div>
+            <textarea
+              value={editingAnnotation.value}
+              onChange={(e) => setEditingAnnotation((prev) => prev ? { ...prev, value: e.target.value } : prev)}
+              maxLength={MAX_ANNOTATION_LENGTH}
+              className={styles.annotationTextarea}
+              placeholder="Add an admin-only note"
+              autoFocus
+            />
+            <div className={styles.annotationModalFooter}>
+              <span className={styles.annotationCount}>
+                {editingAnnotation.value.length}/{MAX_ANNOTATION_LENGTH}
+              </span>
+              <div className={styles.annotationActions}>
+                <button
+                  type="button"
+                  className={styles.annotationSecondaryButton}
+                  onClick={() => setEditingAnnotation((prev) => prev ? { ...prev, value: "" } : prev)}
+                  disabled={savingAnnotation || editingAnnotation.value.length === 0}
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  className={styles.annotationSecondaryButton}
+                  onClick={() => setEditingAnnotation(null)}
+                  disabled={savingAnnotation}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.annotationPrimaryButton}
+                  disabled={savingAnnotation}
+                >
+                  {savingAnnotation ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       )}
 

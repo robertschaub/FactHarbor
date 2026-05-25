@@ -85,6 +85,24 @@ public sealed class JobService
         return job;
     }
 
+    public async Task<JobEntity?> SetAdminAnnotationAsync(string jobId, string? annotation)
+    {
+        var job = await _db.Jobs.FindAsync(jobId);
+        if (job is null) return null;
+
+        var normalized = string.IsNullOrWhiteSpace(annotation) ? null : annotation.Trim();
+        job.AdminAnnotation = normalized;
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = jobId,
+            Level = "info",
+            Message = normalized is null ? "Admin annotation cleared" : "Admin annotation updated",
+            TsUtc = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+        return job;
+    }
+
     public async Task AddEventAsync(string jobId, string level, string message)
     {
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });
@@ -337,16 +355,23 @@ public sealed class JobService
     }
 
     /// <summary>
-    /// Case-insensitive LIKE search across InputValue and InputPreview.
-    /// Acceptable at POC scale (~10k jobs); revisit with FTS5 at larger scale.
+    /// Case-insensitive LIKE search across input text, plus structural prefix search
+    /// across job IDs and admin-only commit hashes. Acceptable at POC scale (~10k jobs);
+    /// revisit with FTS5 at larger scale.
     /// </summary>
     public async Task<(List<JobEntity> items, int totalCount)> SearchJobsAsync(
-        string query, int skip = 0, int take = 50, bool includeHidden = false)
+        string query, int skip = 0, int take = 50, bool includeHidden = false, bool includeAdminFields = false)
     {
-        var q = $"%{query.Trim()}%";
+        var trimmed = query.Trim();
+        var q = $"%{trimmed}%";
+        var prefix = trimmed.ToLowerInvariant();
         var baseQuery = _db.Jobs.Where(j =>
             EF.Functions.Like(j.InputValue, q) ||
-            EF.Functions.Like(j.InputPreview ?? "", q));
+            EF.Functions.Like(j.InputPreview ?? "", q) ||
+            j.JobId.StartsWith(prefix) ||
+            (includeAdminFields &&
+                ((j.GitCommitHash != null && j.GitCommitHash.StartsWith(prefix)) ||
+                 (j.ExecutedWebGitCommitHash != null && j.ExecutedWebGitCommitHash.StartsWith(prefix)))));
 
         if (!includeHidden) baseQuery = baseQuery.Where(j => !j.IsHidden);
 

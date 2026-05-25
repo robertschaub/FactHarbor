@@ -83,6 +83,7 @@ type Job = {
   reportMarkdown: string | null;
   pipelineVariant?: string;
   isHidden?: boolean;
+  adminAnnotation?: string | null;
   analysisIssueCode?: string | null;
   analysisIssueMessage?: string | null;
   /** Admin-only: execution-time git commit hash, with legacy fallback for old jobs */
@@ -171,6 +172,7 @@ const CLAIM_VERDICT_MIDPOINTS: Record<string, number> = {
 
 const DETAIL_POLL_INTERVAL_MS = 10_000;
 const DETAIL_RATE_LIMIT_BACKOFF_MS = 60_000;
+const MAX_ADMIN_ANNOTATION_LENGTH = 2000;
 
 const ARTICLE_VERDICT_MIDPOINTS: Record<string, number> = {
   // Statement verdicts
@@ -668,6 +670,9 @@ export default function JobPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingHide, setIsTogglingHide] = useState(false);
   const [hasAdminKey, setHasAdminKey] = useState(false);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [annotationDraft, setAnnotationDraft] = useState("");
+  const [isSavingAnnotation, setIsSavingAnnotation] = useState(false);
 
   // Login-modal state (shown when cancel is attempted without an admin key)
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -852,6 +857,46 @@ export default function JobPage() {
       toast.error(`Failed: ${err.message}`);
     } finally {
       setIsTogglingHide(false);
+    }
+  };
+
+  const openAnnotationModal = () => {
+    if (!job) return;
+    setAnnotationDraft(job?.adminAnnotation || "");
+    setShowAnnotationModal(true);
+  };
+
+  const handleSaveAnnotation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const adminKey = sessionStorage.getItem("fh_admin_key");
+    if (!adminKey) return;
+
+    setIsSavingAnnotation(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${jobId}/annotation`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": adminKey,
+        },
+        body: JSON.stringify({ annotation: annotationDraft }),
+      });
+      const data = await res.json().catch(() => null) as null | {
+        error?: unknown;
+        adminAnnotation?: unknown;
+      };
+      if (!res.ok) {
+        const message = typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+        throw new Error(message);
+      }
+      const nextAnnotation = typeof data?.adminAnnotation === "string" ? data.adminAnnotation : null;
+      setJob((prev) => (prev ? { ...prev, adminAnnotation: nextAnnotation } : prev));
+      setShowAnnotationModal(false);
+      toast.success(nextAnnotation ? "Annotation saved" : "Annotation cleared");
+    } catch (err: any) {
+      toast.error(`Annotation failed: ${err.message}`);
+    } finally {
+      setIsSavingAnnotation(false);
     }
   };
 
@@ -1276,6 +1321,12 @@ export default function JobPage() {
           </Badge>
         )}
       </div>
+      {hasAdminKey && job.adminAnnotation && (
+        <div className={styles.adminAnnotationBlock}>
+          <div className={styles.adminAnnotationLabel}>Admin note</div>
+          <div className={styles.adminAnnotationText}>{job.adminAnnotation}</div>
+        </div>
+      )}
       {job.status !== "SUCCEEDED" && (
         <div><b>Status:</b> <code className={getStatusClass(job.status)}>{job.status}</code> ({job.progress}%)</div>
       )}
@@ -1552,6 +1603,15 @@ export default function JobPage() {
               <div className={styles.exportButtons}>
                 {hasAdminKey && (
                   <>
+                  <button
+                    onClick={openAnnotationModal}
+                    disabled={!job}
+                    className={`${styles.tab} ${styles.annotationTab}`}
+                    title={job?.adminAnnotation ? "Edit admin annotation" : "Add admin annotation"}
+                    aria-label={job?.adminAnnotation ? "Edit admin annotation" : "Add admin annotation"}
+                  >
+                    {job?.adminAnnotation ? "✎" : "＋"}
+                  </button>
                   <button
                     onClick={handleToggleHide}
                     disabled={isTogglingHide}
@@ -2252,6 +2312,56 @@ export default function JobPage() {
       {tab === "events" && (
         <div className={styles.contentCard}>
           <PhaseTimeline events={events} />
+        </div>
+      )}
+
+      {showAnnotationModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h2 className={styles.modalTitle}>Job annotation</h2>
+            <p className={styles.modalSubtitle}>Admin-only note for this job.</p>
+            <form onSubmit={handleSaveAnnotation}>
+              <textarea
+                value={annotationDraft}
+                onChange={(e) => setAnnotationDraft(e.target.value)}
+                maxLength={MAX_ADMIN_ANNOTATION_LENGTH}
+                placeholder="Add an admin-only note"
+                autoFocus
+                disabled={isSavingAnnotation}
+                className={styles.modalTextarea}
+              />
+              <div className={styles.annotationEditorFooter}>
+                <span className={styles.annotationCount}>
+                  {annotationDraft.length}/{MAX_ADMIN_ANNOTATION_LENGTH}
+                </span>
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    disabled={isSavingAnnotation || annotationDraft.length === 0}
+                    onClick={() => setAnnotationDraft("")}
+                    className={styles.modalCancelBtn}
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSavingAnnotation}
+                    onClick={() => setShowAnnotationModal(false)}
+                    className={styles.modalCancelBtn}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingAnnotation}
+                    className={styles.modalSubmitBtn}
+                  >
+                    {isSavingAnnotation ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

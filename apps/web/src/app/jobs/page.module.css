@@ -428,9 +428,46 @@
   margin-bottom: 4px;
 }
 
+.adminAnnotation {
+  display: grid;
+  gap: 3px;
+  margin: 7px 0 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-left: 3px solid #2563eb;
+  border-radius: 6px;
+  background: var(--bg-surface);
+}
+
+.adminAnnotationLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adminAnnotationText {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .jobTimestamp {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.commitCode {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: 5px;
+  padding: 1px 5px;
 }
 
 .jobProgress {
@@ -582,6 +619,112 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.annotationModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.annotationModal {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.annotationModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.annotationModalTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.annotationModalJobId {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.annotationTextarea {
+  width: 100%;
+  min-height: 132px;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.annotationTextarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.annotationModalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.annotationCount {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.annotationActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.annotationPrimaryButton,
+.annotationSecondaryButton {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.annotationPrimaryButton {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.annotationSecondaryButton {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.annotationPrimaryButton:disabled,
+.annotationSecondaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 12px 0;
@@ -720,6 +863,26 @@
 
   .jobTimestamp {
     font-size: 10px;
+  }
+
+  .commitCode {
+    display: inline-block;
+    margin: 4px 0 0;
+  }
+
+  .annotationModal {
+    padding: 14px;
+  }
+
+  .annotationModalHeader,
+  .annotationModalFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .annotationActions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
   .pageButton {

@@ -39,6 +39,7 @@ public sealed class FhDbContext : DbContext
             e.Property(x => x.JobId).ValueGeneratedNever();
             e.Property(x => x.Status).HasMaxLength(32);
             e.Property(x => x.InputType).HasMaxLength(16);
+            e.Property(x => x.AdminAnnotation).HasMaxLength(2000);
         });
 
         modelBuilder.Entity<JobEventEntity>(e =>

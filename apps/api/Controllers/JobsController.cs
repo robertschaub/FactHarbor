@@ -44,7 +44,12 @@ public sealed class JobsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(q))
         {
-            (items, totalCount) = await _jobs.SearchJobsAsync(q, (actualPage - 1) * actualPageSize, actualPageSize, includeHidden: isAdmin);
+            (items, totalCount) = await _jobs.SearchJobsAsync(
+                q,
+                (actualPage - 1) * actualPageSize,
+                actualPageSize,
+                includeHidden: isAdmin,
+                includeAdminFields: isAdmin);
         }
         else
         {
@@ -72,6 +77,7 @@ public sealed class JobsController : ControllerBase
                 truthPercentage = j.TruthPercentage,
                 confidence = j.Confidence,
                 isHidden = j.IsHidden,
+                adminAnnotation = isAdmin ? j.AdminAnnotation : null,
                 analysisIssueCode = analysisIssue.code,
                 analysisIssueMessage = analysisIssue.message,
                 // Admin-only: execution-time commit hash when available, with legacy fallback.
@@ -123,6 +129,7 @@ public sealed class JobsController : ControllerBase
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
             isHidden = j.IsHidden,
+            adminAnnotation = isAdmin ? j.AdminAnnotation : null,
             analysisIssueCode = analysisIssue.code,
             analysisIssueMessage = analysisIssue.message,
             // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
@@ -152,6 +159,30 @@ public sealed class JobsController : ControllerBase
         var job = await _jobs.SetHiddenAsync(jobId, false);
         if (job is null) return NotFound();
         return Ok(new { ok = true, isHidden = job.IsHidden });
+    }
+
+    public sealed record UpdateAnnotationRequest(string? annotation);
+
+    [HttpPatch("{jobId}/annotation")]
+    public async Task<IActionResult> UpdateAnnotation(string jobId, [FromBody] UpdateAnnotationRequest? req)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        if (!IsValidJobId(jobId))
+            return BadRequest(new { error = "Invalid job ID" });
+
+        if (req is null)
+            return BadRequest(new { error = "Request body required" });
+
+        var annotation = req.annotation;
+        if (annotation is { Length: > 2000 })
+            return BadRequest(new { error = "Annotation must be 2000 characters or fewer" });
+
+        var job = await _jobs.SetAdminAnnotationAsync(jobId, annotation);
+        if (job is null) return NotFound(new { error = "Job not found" });
+
+        return Ok(new { ok = true, adminAnnotation = job.AdminAnnotation });
     }
 
     [HttpPost("{jobId}/cancel")]
