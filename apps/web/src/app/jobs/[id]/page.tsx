@@ -646,6 +646,34 @@ function ReportSection({
   );
 }
 
+function DroppedClaimReason({ claimId, rationale }: { claimId: string; rationale: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const text = rationale.trim();
+  const canExpand = text.length > 120 || text.endsWith("...") || text.endsWith("…");
+
+  if (!text) return null;
+
+  return (
+    <div className={styles.droppedClaimRationale}>
+      <span className={styles.droppedClaimRationaleLabel}>Reason</span>
+      <span className={`${styles.droppedClaimRationaleText} ${canExpand && !expanded ? styles.droppedClaimRationaleCollapsed : ""}`}>
+        {text}
+      </span>
+      {canExpand ? (
+        <button
+          type="button"
+          className={styles.droppedClaimRationaleToggle}
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? "Collapse" : "Expand"} reason for ${claimId}`}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function JobPage() {
   const params = useParams();
   const router = useRouter();
@@ -2054,18 +2082,20 @@ export default function JobPage() {
                   collapsible
                   defaultOpen={false}
                 >
-                  <div className={styles.claimsSectionList}>
-                    <p className={styles.evidenceSectionNote}>
-                      These atomic claims were not researched and did not affect the verdict. Start a new analysis with any of them if you want them checked separately.
+                  <div className={styles.droppedClaimsPanel}>
+                    <p className={styles.droppedClaimsIntro}>
+                      These atomic claims were not researched and did not affect the verdict.
                     </p>
-                    <ul className={styles.tangentialList}>
+                    <ul className={styles.droppedClaimsList} aria-label="Not analyzed atomic claims">
                       {droppedClaimsForDisplay.map((claim: ClaimAutoSelectionDroppedClaim) => (
-                        <li key={claim.id} className={styles.tangentialItem}>
-                          <code className={styles.tangentialClaimId}>{claim.id}</code>{" "}
-                          {claim.statement}
-                          {claim.rationale ? (
-                            <span className={styles.tangentialClaimId}> — {claim.rationale}</span>
-                          ) : null}
+                        <li key={claim.id} className={styles.droppedClaimItem}>
+                          <code className={styles.droppedClaimId}>{claim.id}</code>
+                          <div className={styles.droppedClaimContent}>
+                            <div className={styles.droppedClaimStatement}>{claim.statement}</div>
+                            {claim.rationale ? (
+                              <DroppedClaimReason claimId={claim.id} rationale={claim.rationale} />
+                            ) : null}
+                          </div>
                         </li>
                       ))}
                     </ul>

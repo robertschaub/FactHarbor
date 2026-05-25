@@ -2648,6 +2648,129 @@ details[open] > .devWarningSummary::before {
   gap: 10px;
 }
 
+.droppedClaimsPanel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.droppedClaimsIntro {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-left: 3px solid #64748b;
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.droppedClaimsList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.droppedClaimItem {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle, var(--border));
+}
+
+.droppedClaimsList .droppedClaimItem:first-child {
+  border-top: 0;
+  padding-top: 4px;
+}
+
+.droppedClaimId {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.reportSurfaceCard .droppedClaimId {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+.droppedClaimContent {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.droppedClaimStatement {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.droppedClaimRationale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.droppedClaimRationaleLabel {
+  display: inline-flex;
+  margin-right: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.droppedClaimRationaleText {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.droppedClaimRationaleCollapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.droppedClaimRationaleToggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.droppedClaimRationaleToggle:hover {
+  text-decoration: underline;
+}
+
 .claimsSectionTitle {
   margin: 0 0 12px;
 }
@@ -4111,6 +4234,12 @@ details[open] > .devWarningSummary::before {
     box-shadow: 0 14px 28px rgba(0,0,0,0.35);
   }
 
+  .reportSurfaceCard .droppedClaimId {
+    background: #10294a;
+    border-color: #2563eb;
+    color: #bfdbfe;
+  }
+
   /* Tangential details */
   .tangentialDetails {
     background-color: var(--bg-surface2);
@@ -4293,6 +4422,16 @@ details[open] > .devWarningSummary::before {
   }
   .boundarySummaryMeta {
     width: 100%;
+  }
+
+  .droppedClaimItem {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .droppedClaimId {
+    justify-self: start;
   }
 
   /* Stats grid: 2 columns on mobile */
