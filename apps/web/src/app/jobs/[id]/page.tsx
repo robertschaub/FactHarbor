@@ -2726,25 +2726,39 @@ interface SRSourceEntry {
 function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
   // Filter to sources that have SR data (a category other than empty, and a domain)
   const scoredSources = useMemo(() => {
-    const filtered = sources.filter((s) => {
-      if (!s.url) return false;
-      // Show only SR-evaluated sources (confidence is set even when score is null due to low confidence)
-      if (s.trackRecordScore == null && s.trackRecordConfidence == null) return false;
-      return true;
-    });
-
-    // Sort: reliable → insufficient_data → unreliable
-    filtered.sort((a, b) => {
+    const compareSources = (a: SRSourceEntry, b: SRSourceEntry) => {
       const orderA = SR_CATEGORY_ORDER[scoreToFactualRating(a.trackRecordScore)] ?? 4;
       const orderB = SR_CATEGORY_ORDER[scoreToFactualRating(b.trackRecordScore)] ?? 4;
       if (orderA !== orderB) return orderA - orderB;
-      // Within same category, sort by score descending (nulls last)
       const scoreA = a.trackRecordScore ?? -1;
       const scoreB = b.trackRecordScore ?? -1;
       return scoreB - scoreA;
+    };
+    const sourcesByDomain = new Map<string, SRSourceEntry & { domain: string; domainKey: string }>();
+
+    for (const s of sources) {
+      if (!s.url) continue;
+      // Show only SR-evaluated sources (confidence is set even when score is null due to low confidence)
+      if (s.trackRecordScore == null && s.trackRecordConfidence == null) continue;
+      const domain = extractDomain(s.url).trim();
+      if (!domain) continue;
+      const domainKey = domain.toLowerCase();
+      const current = sourcesByDomain.get(domainKey);
+      const next = { ...s, domain, domainKey };
+      if (!current || compareSources(next, current) < 0) {
+        sourcesByDomain.set(domainKey, next);
+      }
+    }
+
+    // Sort: reliable → insufficient_data → unreliable
+    const uniqueSources = Array.from(sourcesByDomain.values());
+    uniqueSources.sort((a, b) => {
+      const scoreOrder = compareSources(a, b);
+      if (scoreOrder !== 0) return scoreOrder;
+      return a.domain.localeCompare(b.domain);
     });
 
-    return filtered;
+    return uniqueSources;
   }, [sources]);
 
   // Don't render if no scored sources
@@ -2771,8 +2785,8 @@ function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
           </tr>
         </thead>
         <tbody>
-          {scoredSources.map((s, i) => {
-            const domain = extractDomain(s.url);
+          {scoredSources.map((s) => {
+            const domain = s.domain;
             const category = scoreToFactualRating(s.trackRecordScore);
             const label = SR_CATEGORY_LABELS[category] || category.replace(/_/g, " ");
             const colorClass = getSRCategoryColorClass(category);
@@ -2781,7 +2795,7 @@ function SourceReliabilityPanel({ sources }: { sources: SRSourceEntry[] }) {
                 ? `${(s.trackRecordScore * 100).toFixed(0)}%`
                 : "\u2014";
             return (
-              <tr key={`${s.url}-${i}`}>
+              <tr key={s.domainKey}>
                 <td className={styles.srDomain} title={domain}>{domain}</td>
                 <td>
                   <span className={`${styles.srCategoryBadge} ${colorClass}`}>
