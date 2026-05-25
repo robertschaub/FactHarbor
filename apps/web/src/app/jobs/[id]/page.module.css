@@ -118,22 +118,38 @@
   list-style: none;
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .reportSectionToggle::-webkit-details-marker {
   display: none;
 }
 
-.reportSectionToggle::after {
+.reportSectionToggle::before {
   content: "▸";
   color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
   font-size: 12px;
-  margin-left: auto;
-  padding-left: 8px;
+  line-height: 1;
 }
 
-.reportSection[open] > .reportSectionToggle::after {
+.reportSection[open] > .reportSectionToggle::before {
   content: "▾";
+}
+
+.reportSectionToggle:hover::before,
+.reportSectionToggle:hover .reportSectionTitle {
+  color: var(--link);
+}
+
+.reportSectionToggle:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
 }
 
 .reportSectionTitleRow {
@@ -641,20 +657,12 @@
   background: var(--bg-surface2);
 }
 
-.reportAnnotationText,
-.reportAnnotationEmpty {
+.reportAnnotationText {
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.55;
-}
-
-.reportAnnotationText {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
-
-.reportAnnotationEmpty {
-  color: var(--text-muted);
 }
 
 /* Applied to any long text block (>1000 chars) to add a bounded, resizable container */

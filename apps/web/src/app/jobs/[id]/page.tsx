@@ -1745,7 +1745,7 @@ export default function JobPage() {
       {/* Report Tab — merged Summary + Sources + (admin) Dev Diagnostics */}
       {tab === "report" && hasV22Data && (
         <div className={styles.reportStack}>
-          {hasAdminKey && job && (
+          {hasAdminKey && job?.adminAnnotation && (
             <div className={`${styles.reportAnnotationPanel} ${styles.reportSurfaceCard}`}>
               <div className={styles.reportAnnotationHeader}>
                 <div>
@@ -1761,11 +1761,7 @@ export default function JobPage() {
                   {job.adminAnnotation ? "Edit" : "Add"}
                 </button>
               </div>
-              {job.adminAnnotation ? (
-                <div className={styles.reportAnnotationText}>{job.adminAnnotation}</div>
-              ) : (
-                <div className={styles.reportAnnotationEmpty}>No admin note yet.</div>
-              )}
+              <div className={styles.reportAnnotationText}>{job.adminAnnotation}</div>
             </div>
           )}
           {pipelineVariant === "monolithic_dynamic" ? (
