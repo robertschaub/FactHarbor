@@ -148,7 +148,7 @@ describe("claim-selection recommendation", () => {
   });
 
   it("accepts optional rationale fields, harmless extra fields, null redundancy, and enum label drift", () => {
-    const longRationale = "x".repeat(220);
+    const longRationale = "x".repeat(720);
     const parsed = validateClaimSelectionRecommendation(
       {
         rankedClaimIds: ["AC_01", "AC_02"],
@@ -192,7 +192,7 @@ describe("claim-selection recommendation", () => {
       expectedEvidenceYield: "low",
       redundancyWithClaimIds: ["AC_01"],
     });
-    expect(parsed.assessments[1].recommendationRationale).toHaveLength(160);
+    expect(parsed.assessments[1].recommendationRationale).toHaveLength(600);
     expect(parsed.assessments[1].recommendationRationale?.endsWith("...")).toBe(true);
     expect(parsed.rationale).toBe("Automatic claim selection ranked candidates by check-worthiness.");
   });
