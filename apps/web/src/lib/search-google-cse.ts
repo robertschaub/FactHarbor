@@ -1,5 +1,6 @@
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
 import { extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
+import { acquireGoogleCseSlot } from "./search-throttle";
 
 type GoogleCseItem = {
   title?: string;
@@ -49,6 +50,10 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
 
   const urlForLog = `${GOOGLE_CSE_BASE}?key=***&cx=${cx}&q=${encodeURIComponent(options.query)}&num=${Math.min(options.maxResults, 10)}`;
   console.log(`[Search] Google CSE: Fetching URL: ${urlForLog}`);
+
+  // Stay under Google-CSE "queries per minute per user": space concurrent calls apart
+  // so bursts don't 429 into mid-run provider fallback (a verdict-variance driver).
+  await acquireGoogleCseSlot();
 
   try {
     const startTime = Date.now();
