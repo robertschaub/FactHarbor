@@ -1366,6 +1366,7 @@ export async function validateVerdicts(
         current = safeDowngradeVerdict(
           current,
           "grounding",
+          "grounding_validation_unresolved",
           grounding.issues,
           warnings,
           config.mixedConfidenceThreshold,
@@ -1541,6 +1542,7 @@ export async function validateVerdicts(
             current = safeDowngradeVerdict(
               current,
               "direction",
+              "direction_unresolved_no_repair_candidate",
               mergedDirectionIssues,
               warnings,
               config.mixedConfidenceThreshold,
@@ -1569,6 +1571,7 @@ export async function validateVerdicts(
             current = safeDowngradeVerdict(
               normalizedRepaired,
               "direction",
+              "direction_unresolved_repair_implausible",
               repairedMergedIssues,
               warnings,
               config.mixedConfidenceThreshold,
@@ -1620,6 +1623,7 @@ export async function validateVerdicts(
           current = safeDowngradeVerdict(
             fallbackReasoningVerdict,
             "grounding",
+            "grounding_acceptance_failed_post_repair",
             fallbackAccepted.grounding.issues,
             warnings,
             config.mixedConfidenceThreshold,
@@ -2059,20 +2063,45 @@ function normalizeVerdictCitationDirections(
   };
 }
 
+/**
+ * Authorize a safe-downgrade of a verdict to UNVERIFIED (truth=50, confidence
+ * capped at INSUFFICIENT). Telemetry separates *which policy authorized* the
+ * downgrade (`triggerPolicy`) from *what the terminal failure was*
+ * (`terminalReason`), so log readers can distinguish between e.g. a direction
+ * downgrade whose terminal step was a repair-rejection vs a direct grounding
+ * policy downgrade. Use the legacy `integrityFailureType` alias of
+ * `triggerPolicy` to keep existing consumers (calibration metrics, paired-job
+ * audit, benchmark `.partial.json` snapshots) working during deprecation.
+ *
+ * `contributingFailures` is optional structured context — e.g. when the
+ * direction-policy path entered a repair pass and the repair candidate was
+ * rejected by a downstream check, that downstream check appears here, not as
+ * the trigger.
+ */
 function safeDowngradeVerdict(
   verdict: CBClaimVerdict,
-  reason: "grounding" | "direction",
+  triggerPolicy: "grounding" | "direction",
+  terminalReason: string,
   issues: string[],
   warnings: AnalysisWarning[] | undefined,
   mixedConfidenceThreshold: number,
+  contributingFailures?: Array<{ check: string; details?: Record<string, unknown> }>,
 ): CBClaimVerdict {
   warnings?.push({
     type: "verdict_integrity_failure",
     severity: "error",
-    message: `Claim ${verdict.claimId}: ${reason} integrity policy triggered safe downgrade (${joinIssues(issues)}).`,
+    message: `Claim ${verdict.claimId}: ${triggerPolicy} integrity policy triggered safe downgrade (${joinIssues(issues)}).`,
     details: {
       claimId: verdict.claimId,
-      integrityFailureType: reason,
+      // Legacy alias of triggerPolicy — kept for one release. Existing
+      // consumers (calibration/metrics, paired-job-audit, benchmark
+      // snapshots) read this field. Migrate to triggerPolicy then remove.
+      integrityFailureType: triggerPolicy,
+      triggerPolicy,
+      terminalReason,
+      ...(contributingFailures && contributingFailures.length > 0
+        ? { contributingFailures }
+        : {}),
       originalTruthPercentage: verdict.truthPercentage,
       downgradedTruthPercentage: 50,
     },
