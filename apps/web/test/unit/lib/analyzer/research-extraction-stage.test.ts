@@ -649,6 +649,90 @@ describe("Research Extraction Stage", () => {
         expect.anything(),
       );
     });
+
+    // ------------------------------------------------------------------
+    // Evidence ID monotonic continuity (regression guard for the Phase A
+    // unification of the EV_NNN mint scheme). Prevents anyone from
+    // re-introducing a local Date.now() / length-based counter that would
+    // collide with the per-analysis state.nextEvidenceId.
+    // ------------------------------------------------------------------
+    it("continues the EV_NNN sequence across multiple calls when state is shared", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: "text" }];
+      const state = {
+        nextEvidenceId: 1,
+        evidenceItems: [],
+        warnings: [],
+      } as any;
+
+      mockLoadSection.mockResolvedValue({ content: "extraction prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValueOnce({
+        evidenceItems: [
+          { statement: "first call evidence 1", category: "factual", claimDirection: "supports",
+            evidenceScope: { methodology: "Study", temporal: "2024" }, probativeValue: "high",
+            relevantClaimIds: ["AC_01"] },
+          { statement: "first call evidence 2", category: "factual", claimDirection: "supports",
+            evidenceScope: { methodology: "Study", temporal: "2024" }, probativeValue: "medium",
+            relevantClaimIds: ["AC_01"] },
+        ],
+      });
+
+      const firstCall = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23", state);
+
+      expect(firstCall).toHaveLength(2);
+      expect(firstCall[0].id).toBe("EV_001");
+      expect(firstCall[1].id).toBe("EV_002");
+      expect(state.nextEvidenceId).toBe(3);
+
+      mockExtractOutput.mockReturnValueOnce({
+        evidenceItems: [
+          { statement: "second call evidence 1", category: "factual", claimDirection: "contradicts",
+            evidenceScope: { methodology: "Study", temporal: "2025" }, probativeValue: "high",
+            relevantClaimIds: ["AC_01"] },
+          { statement: "second call evidence 2", category: "factual", claimDirection: "supports",
+            evidenceScope: { methodology: "Study", temporal: "2025" }, probativeValue: "low",
+            relevantClaimIds: ["AC_01"] },
+        ],
+      });
+
+      const secondCall = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23", state);
+
+      // Critical assertion: second call continues from where the first left off — no collision.
+      expect(secondCall).toHaveLength(2);
+      expect(secondCall[0].id).toBe("EV_003");
+      expect(secondCall[1].id).toBe("EV_004");
+      expect(state.nextEvidenceId).toBe(5);
+
+      const allIds = [...firstCall, ...secondCall].map((e) => e.id);
+      expect(new Set(allIds).size).toBe(allIds.length); // no duplicates
+    });
+
+    it("falls back to a local counter starting at EV_001 when state is omitted", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: "text" }];
+
+      mockLoadSection.mockResolvedValue({ content: "extraction prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        evidenceItems: [
+          { statement: "first item", category: "factual", claimDirection: "supports",
+            evidenceScope: { methodology: "Study", temporal: "2024" }, probativeValue: "high",
+            relevantClaimIds: ["AC_01"] },
+          { statement: "second item", category: "factual", claimDirection: "supports",
+            evidenceScope: { methodology: "Study", temporal: "2024" }, probativeValue: "medium",
+            relevantClaimIds: ["AC_01"] },
+        ],
+      });
+
+      // No state passed — should not throw, and should mint well-formed sequential IDs
+      // scoped to this single invocation (legacy test path).
+      const result = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe("EV_001");
+      expect(result[1].id).toBe("EV_002");
+    });
   });
 
   // ============================================================================
