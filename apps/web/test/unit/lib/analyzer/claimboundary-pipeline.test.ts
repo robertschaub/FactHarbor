@@ -7065,6 +7065,77 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     expect(range!.min).toBeGreaterThanOrEqual(0);
     expect(range!.max).toBeLessThanOrEqual(100);
   });
+
+  it("one claim with verdict_integrity_failure does not cap article confidence to INSUFFICIENT when other claims are healthy", async () => {
+    await setupConfigMocks(false);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+      createAtomicClaim({ id: "AC_03", statement: "Claim 3" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 50,
+        confidence: 24,
+        confidenceTier: "INSUFFICIENT",
+        verdictReason: "verdict_integrity_failure",
+      }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 60, confidence: 60, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_03", truthPercentage: 65, confidence: 70, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    expect(result.adjudicationPath!.path).toBe("baseline_same_direction");
+    // Article confidence must reflect the weighted average, not be capped at INSUFFICIENT (24).
+    // With healthy claims at 60 and 70 and one downgraded at 24, the weighted average must exceed 24.
+    expect(result.confidence).toBeGreaterThan(24);
+    // And the offending claim's downgrade must still pull the average below the healthy claims' levels.
+    expect(result.confidence).toBeLessThan(70);
+  });
+
+  it("when ALL direct claims have verdict_integrity_failure, weighted confidence is naturally low without an extra cap", async () => {
+    await setupConfigMocks(false);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 50,
+        confidence: 24,
+        confidenceTier: "INSUFFICIENT",
+        verdictReason: "verdict_integrity_failure",
+      }),
+      createCBClaimVerdict({
+        claimId: "AC_02",
+        truthPercentage: 50,
+        confidence: 24,
+        confidenceTier: "INSUFFICIENT",
+        verdictReason: "verdict_integrity_failure",
+      }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    expect(result.adjudicationPath!.path).toBe("baseline_same_direction");
+    // Both claims downgraded to 24 → weighted average is at or near 24, with no cap needed.
+    expect(result.confidence).toBeLessThanOrEqual(25);
+  });
 });
 
 // ============================================================================

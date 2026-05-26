@@ -84,6 +84,9 @@ apps/api/*.db
 apps/api/*.db-shm
 apps/api/*.db-wal
 
+# Local DB backup snapshots
+/backups/
+
 /apps/web/tsconfig.tsbuildinfo
 
 apps/web/prompts/promptfoo-results/

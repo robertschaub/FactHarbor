@@ -307,7 +307,9 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Only evidence items marked `direct` may appear");
       expect(section).toContain("`contextual` or `foreign_reaction`");
       expect(section).toContain("A non-fallback verdict must cite at least one direct evidence item");
-      expect(section).toContain("explicit insufficient-evidence outcome with low confidence");
+      expect(section).toContain("explicit insufficient-evidence outcome");
+      expect(section).toContain("confidence` strictly below 25 (INSUFFICIENT tier");
+      expect(section).toContain("do NOT emit a LOW-confidence-or-higher verdict with empty directional arrays");
     });
 
     it("direction validation rejects non-direct directional citations", () => {
@@ -756,10 +758,24 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
       expect(section).toContain("earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy");
       expect(section).toContain("directly documents the target path");
-      expect(section).toContain("Directness requires the same target object AND the same evaluated dimension");
       expect(section).toContain("different episode, actor relationship, institutional controversy, remedy path, or outcome");
       expect(section).toContain("Overlap in actors or institutions alone is insufficient");
-      expect(section).toContain("Shared standards, shared adjudicators, shared institutions, or shared political/legal background");
+    });
+
+    it("offers a dimensional bridge so authoritative external evaluators of the same adjudicator can be direct on the same integrity dimension", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      // The bridge framing must mention both forms
+      expect(section).toContain("target-bridge");
+      expect(section).toContain("adjudicator-bridge");
+      // Form (a) preserves the strict same-target-AND-same-dimension path
+      expect(section).toContain("same target object on the same evaluated dimension");
+      // Form (b) lets authoritative independent monitoring bodies evaluate the same adjudicator on the same procedural dimension
+      expect(section).toContain("authoritative external evaluator");
+      expect(section).toContain("recurring practice");
+      expect(section).toContain("same procedural or substantive integrity dimension");
+      // The bridge must explicitly exclude advocacy/foreign-government to avoid loophole abuse
+      expect(section).toContain("does NOT apply to advocacy organizations");
+      expect(section).toContain("foreign-government assessments");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {

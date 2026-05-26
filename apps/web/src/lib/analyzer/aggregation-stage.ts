@@ -30,7 +30,6 @@ import type {
   TriangulationScore,
   VerdictNarrative,
 } from "./types";
-import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 import type { CalcConfig, PipelineConfig } from "@/lib/config-schemas";
 import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
@@ -256,12 +255,12 @@ export async function aggregateAssessment(
     totalWeight > 0
       ? weightsData.reduce((sum, item) => sum + item.confidence * item.weight, 0) / totalWeight
       : 0;
-  const hasIntegrityDowngrade = claimVerdicts.some(
-    (verdict) => verdict.verdictReason === "verdict_integrity_failure",
-  );
-  const effectiveWeightedConfidence = hasIntegrityDowngrade
-    ? Math.min(weightedConfidence, INSUFFICIENT_CONFIDENCE_MAX)
-    : weightedConfidence;
+  // A single claim's verdict_integrity_failure already caps that claim's
+  // confidence at INSUFFICIENT via safeDowngradeVerdict, so its low confidence
+  // flows into the weighted average proportionally. Re-capping the article-wide
+  // weighted confidence here would double-penalize multi-claim reports where
+  // other claims have legitimate evidence-backed verdicts.
+  const effectiveWeightedConfidence = weightedConfidence;
 
   const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? DEFAULT_CALC_CONFIG.mixedConfidenceThreshold ?? 45;
 
@@ -348,11 +347,10 @@ export async function aggregateAssessment(
         confidenceCeiled = true;
       }
 
-      // Guard 4: Integrity downgrade
-      if (hasIntegrityDowngrade && guardedConfidence > INSUFFICIENT_CONFIDENCE_MAX) {
-        guardedConfidence = INSUFFICIENT_CONFIDENCE_MAX;
-        integrityDowngraded = true;
-      }
+      // Guard 4 removed: per-claim integrity_failure already caps that claim's
+      // confidence via safeDowngradeVerdict and flows into Guard 3's max-claim
+      // ceiling. Article-wide INSUFFICIENT cap previously overrode LLM
+      // adjudication on otherwise-healthy reports.
 
       finalTruthPercentage = guardedTruth;
       finalConfidence = guardedConfidence;
@@ -364,10 +362,9 @@ export async function aggregateAssessment(
     }
   }
 
-  // Apply integrity downgrade to baseline path if needed
-  if (adjudicationPathType === "baseline_same_direction" && hasIntegrityDowngrade) {
-    finalConfidence = Math.min(finalConfidence, INSUFFICIENT_CONFIDENCE_MAX);
-  }
+  // Article-wide integrity downgrade cap removed: per-claim safeDowngradeVerdict
+  // already lowers the offending claim's confidence, so the weighted baseline
+  // already reflects the integrity penalty proportionally.
 
   const preNarrativeTruth = finalTruthPercentage;
   const preNarrativeConfidence = finalConfidence;
