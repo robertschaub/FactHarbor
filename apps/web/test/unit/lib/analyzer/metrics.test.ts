@@ -72,7 +72,7 @@ describe("MetricsCollector cost estimation", () => {
   it.each([
     { strength: "budget", expectedCostUSD: 6 },
     { strength: "standard", expectedCostUSD: 18 },
-    { strength: "premium", expectedCostUSD: 90 },
+    { strength: "premium", expectedCostUSD: 30 },
   ] as const)(
     "prices the current Anthropic %s model ID without fallback pricing",
     ({ strength, expectedCostUSD }) => {
