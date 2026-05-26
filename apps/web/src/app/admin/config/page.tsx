@@ -150,6 +150,7 @@ interface CalcConfig {
     contextMergeThreshold: number;
   };
   mixedConfidenceThreshold: number;
+  narrativeConfidenceMaxDownwardDelta?: number;
   // Evidence Quality Weighting (v2.6.41+)
   probativeValueWeights?: {
     high: number;     // Default: 1.0
@@ -776,6 +777,27 @@ function CalcConfigForm({
           />
           <div className={styles.formHelp}>
             Below this, MIXED becomes UNVERIFIED (0-100)
+          </div>
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Narrative Confidence Max Downward Delta (pp)</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.narrativeConfidenceMaxDownwardDelta ?? 5}
+            min={0}
+            max={50}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              onChange({
+                ...config,
+                narrativeConfidenceMaxDownwardDelta: isNaN(v) ? 5 : v,
+              });
+            }}
+          />
+          <div className={styles.formHelp}>
+            Stage 5 narrative may lower the deterministic article confidence by at most this many percentage points (downgrade-only; cannot raise). Default 5. Range 0-50.
           </div>
         </div>
       </div>
