@@ -185,6 +185,18 @@ public sealed class JobService
                 job.VerdictLabel = MapPercentageToVerdict(truthPct.Value, confidence ?? 0);
             }
             job.Confidence = confidence;
+
+            // Lift prompt provenance into the indexed column so prompt-diagnosis can
+            // correlate failures by prompt version. The pipeline emits it under meta;
+            // the dedicated column was never populated before.
+            if (root.TryGetProperty("meta", out var metaProp) &&
+                metaProp.TryGetProperty("promptContentHash", out var pchProp) &&
+                pchProp.ValueKind == JsonValueKind.String)
+            {
+                var pch = pchProp.GetString();
+                if (!string.IsNullOrWhiteSpace(pch))
+                    job.PromptContentHash = pch;
+            }
         }
         catch (Exception ex)
         {
