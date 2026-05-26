@@ -44,6 +44,7 @@ import {
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
+import { debugLogFileOnly } from "./debug";
 import type { CalcConfig } from "@/lib/config-schemas";
 import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
@@ -1524,6 +1525,42 @@ export async function validateVerdicts(
             });
           }
 
+          // Pre-repair trace: admin-only diagnostic dump capturing everything
+          // needed to disambiguate "direction-initiated chain" from "grounding-
+          // initiated chain" if the downstream repair-then-grounding-fallback
+          // path fires. Without this trace, the only way to attribute the
+          // policy that initiated a downgrade was code archaeology against the
+          // call site of safeDowngradeVerdict. See:
+          // Docs/WIP/2026-05-26_Telemetry_Observation_Plan_First_4_Jobs.md
+          // and the Eiffel-job retrospective for context.
+          debugLogFileOnly(`[VerdictStage] Direction repair entered for claim ${verdict.claimId}`, {
+            claimId: verdict.claimId,
+            preRepair: {
+              truthPercentage: preRepairVerdict.truthPercentage,
+              confidence: preRepairVerdict.confidence,
+              supportingEvidenceIds: preRepairVerdict.supportingEvidenceIds,
+              contradictingEvidenceIds: preRepairVerdict.contradictingEvidenceIds,
+              reasoningLength: preRepairVerdict.reasoning?.length ?? 0,
+            },
+            directionIssues: {
+              merged: mergedDirectionIssues,
+              fromLLMValidator: direction?.valid === false ? direction.issues : [],
+              fromDeterministicCheck: deterministicDirectionIssues,
+            },
+            seedAfterNormalization: {
+              supportingEvidenceIds: repairSeedVerdict.supportingEvidenceIds,
+              contradictingEvidenceIds: repairSeedVerdict.contradictingEvidenceIds,
+            },
+            effectivePolicies: {
+              verdictGroundingPolicy: config.verdictGroundingPolicy,
+              verdictDirectionPolicy: config.verdictDirectionPolicy,
+            },
+            validation: {
+              provider: validationProvider,
+              tier: validationTier,
+            },
+          });
+
           const repaired = await attemptDirectionRepair(
             repairSeedVerdict,
             mergedDirectionIssues,
@@ -1608,15 +1645,36 @@ export async function validateVerdicts(
           warnings?.push({
             type: "verdict_grounding_issue",
             severity: "info",
-            message: `Claim ${verdict.claimId}: repaired verdict grounding fallback failed: ${joinIssues(fallbackAccepted.grounding.issues)}`,
+            message: `Claim ${verdict.claimId}: repair candidate rejected by grounded-acceptance check; reverting to pre-repair state under direction policy.`,
           });
+          // Option E: repair candidate rejected. Revert to pre-repair state
+          // and resume policy evaluation. Direction was already non-plausible
+          // at the entry to this block (the deterministic safety net at the
+          // start of the mergedDirectionIssues handler did NOT rescue), so
+          // verdictDirectionPolicy independently authorises the downgrade —
+          // the grounded-acceptance failure on the repaired candidate just
+          // means the repair did not save us. Attribute the downgrade to
+          // direction policy; record the grounding-acceptance failure as a
+          // contributing factor.
+          //
+          // This closes the historical policy leak where
+          // verdictGroundingPolicy: "disabled" could still cause downgrades
+          // tagged as "grounding integrity" through this back door.
           current = safeDowngradeVerdict(
-            fallbackReasoningVerdict,
-            "grounding",
-            "grounding_acceptance_failed_post_repair",
-            fallbackAccepted.grounding.issues,
+            preRepairVerdict,
+            "direction",
+            "direction_unresolved_post_repair_rejected",
+            mergedDirectionIssues,
             warnings,
             config.mixedConfidenceThreshold,
+            [{
+              check: "repair_grounding_acceptance",
+              details: {
+                groundingIssues: fallbackAccepted.grounding.issues,
+                rejectedRepairTruth: fallbackReasoningVerdict.truthPercentage,
+                rejectedRepairConfidence: fallbackReasoningVerdict.confidence,
+              },
+            }],
           );
         }
       }
