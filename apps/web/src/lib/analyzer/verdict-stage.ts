@@ -1118,15 +1118,24 @@ interface GroundingChallengeContextEntry {
 /**
  * Validator-local evidence ID aliasing for grounding validation.
  *
- * Problem: Evidence IDs use two formats — short sequential (EV_001) from
- * preliminary extraction and long timestamp-based (EV_1775405xxxxxx) from
- * main research extraction. The grounding validator LLM cannot reliably
- * cross-reference 13-digit numeric IDs, producing false-positive failures
- * on IDs that actually exist in the registry.
+ * Historical problem: evidence IDs were produced in two formats — short
+ * sequential (EV_001) from preliminary extraction and long timestamp-based
+ * (EV_1775405xxxxxx) from main research extraction. The grounding validator
+ * LLM could not reliably cross-reference 13-digit numeric IDs, producing
+ * false-positive grounding failures on IDs that actually existed in the
+ * registry.
  *
- * Solution: Build short stable aliases (EVG_001, EVG_002, ...) scoped to
- * each grounding validation call. Canonical IDs remain untouched in the
- * pipeline — only the validator prompt input/output uses aliases.
+ * Resolved: both mint sites now share a single per-analysis monotonic
+ * counter (CBResearchState.nextEvidenceId), producing uniform EV_001-style
+ * IDs across the whole pipeline. The grounding validator can compare IDs
+ * directly without aliasing.
+ *
+ * Why the alias map is retained: it remains a defensive scaffold for one
+ * release while we verify the unified format end-to-end. After production
+ * traffic confirms zero long-ID emissions, the aliasing path can be
+ * collapsed in a follow-up. In the current state the map is effectively a
+ * no-op (EV_001 → EVG_001 is a trivial renaming) but its presence costs
+ * essentially nothing and protects against any new ID-mint site we miss.
  */
 interface GroundingAliasMap {
   /** Canonical evidence ID → short validator alias */

@@ -677,6 +677,7 @@ export async function runClaimBoundaryAnalysis(
       llmCalls: 0,
       onEvent: input.onEvent, // Thread progress callback through to research stage
       warnings: [],
+      nextEvidenceId: 1, // Per-analysis monotonic counter; see types.ts CBResearchState.
     };
     const runtimeModelsUsed = new Set<string>();
     const recordRuntimeModelUsage = (provider?: string, modelName?: string): void => {
