@@ -2314,6 +2314,36 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[2].id).toBe("EV_003");
   });
 
+  // Regression guard for the Phase A unification of EV_NNN ID minting:
+  // seedEvidenceFromPreliminarySearch must advance state.nextEvidenceId so
+  // downstream mint sites (extractResearchEvidence in research-extraction-stage)
+  // continue the same monotonic sequence without colliding. The "should start
+  // IDs after existing evidence items" test above exercises the defensive
+  // fallback when state.nextEvidenceId is missing; this test exercises the
+  // production path where state was constructed at the pipeline entry with
+  // nextEvidenceId pre-initialised.
+  it("advances state.nextEvidenceId after seeding so downstream mint sites continue the sequence", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }],
+        preliminaryEvidence: [
+          { sourceUrl: "https://example.com/1", snippet: "Evidence A", claimId: "AC_01" },
+          { sourceUrl: "https://example.com/2", snippet: "Evidence B", claimId: "AC_01" },
+        ],
+      },
+      evidenceItems: [],
+      nextEvidenceId: 5, // simulate two prior callers already minted EV_001..EV_004
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(2);
+    expect(state.evidenceItems[0].id).toBe("EV_005");
+    expect(state.evidenceItems[1].id).toBe("EV_006");
+    // Counter must have advanced so the next mint site picks up at EV_007.
+    expect(state.nextEvidenceId).toBe(7);
+  });
+
   it("should preserve multi-claim relevantClaimIds through seeding", () => {
     const state = {
       understanding: {
