@@ -415,8 +415,14 @@ export class MetricsCollector {
   private getCostPer1MTokens(provider: string, modelName: string): { input: number; output: number } {
     // Pricing per 1M tokens (updated 2026-03)
     const pricing: Record<string, { input: number; output: number }> = {
-      // Anthropic
-      'claude-opus-4-6': { input: 15, output: 75 },
+      // Anthropic (May 2026 — Opus family $5/$25; Sonnet $3/$15; Haiku $1/$5)
+      'claude-opus-4-7': { input: 5, output: 25 },
+      'claude-opus-4-6': { input: 5, output: 25 },
+      'claude-opus-4-5': { input: 5, output: 25 },
+      'claude-opus-4-5-20251101': { input: 5, output: 25 },
+      'claude-opus-4-1': { input: 15, output: 75 },
+      'claude-opus-4-1-20250805': { input: 15, output: 75 },
+      'claude-opus-4-20250514': { input: 15, output: 75 },
       'claude-sonnet-4-6': { input: 3, output: 15 },
       'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
       'claude-sonnet-4-20250514': { input: 3, output: 15 },
