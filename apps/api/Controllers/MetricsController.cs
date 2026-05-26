@@ -208,14 +208,24 @@ public class MetricsController : ControllerBase
                         totalTokens += total.GetDouble();
                     }
 
-                    // Schema compliance
-                    if (root.TryGetProperty("schemaCompliance", out var compliance))
+                    // Schema compliance: job is compliant iff every llmCall has schemaCompliant === true.
+                    // The top-level `schemaCompliance` field is not populated by the runner in current
+                    // builds; per-call `llmCalls[].schemaCompliant` is the authoritative signal.
+                    if (root.TryGetProperty("llmCalls", out var llmCalls) &&
+                        llmCalls.ValueKind == JsonValueKind.Array &&
+                        llmCalls.GetArrayLength() > 0)
                     {
-                        var understandSuccess = compliance.TryGetProperty("understand", out var u) &&
-                                              u.TryGetProperty("success", out var us) && us.GetBoolean();
-                        var verdictSuccess = compliance.TryGetProperty("verdict", out var v) &&
-                                           v.TryGetProperty("success", out var vs) && vs.GetBoolean();
-                        if (understandSuccess && verdictSuccess)
+                        var allCompliant = true;
+                        foreach (var call in llmCalls.EnumerateArray())
+                        {
+                            if (!call.TryGetProperty("schemaCompliant", out var sc) ||
+                                sc.ValueKind != JsonValueKind.True)
+                            {
+                                allCompliant = false;
+                                break;
+                            }
+                        }
+                        if (allCompliant)
                         {
                             schemaCompliantCount++;
                         }

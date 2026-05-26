@@ -537,9 +537,11 @@ export function calculateSummaryStats(metricsArray: AnalysisMetrics[]): {
   const avgCost = metricsArray.reduce((sum, m) => sum + m.estimatedCostUSD, 0) / metricsArray.length;
   const avgTokens = metricsArray.reduce((sum, m) => sum + m.tokenCounts.totalTokens, 0) / metricsArray.length;
 
-  // Schema compliance rate (understand + verdict must succeed)
-  const compliantCount = metricsArray.filter(m => 
-    m.schemaCompliance.understand.success && m.schemaCompliance.verdict.success
+  // Schema compliance rate: a job is compliant iff every LLM call has schemaCompliant === true.
+  // The top-level `schemaCompliance` field is not populated by the runner in current builds;
+  // per-call `llmCalls[].schemaCompliant` is the authoritative signal.
+  const compliantCount = metricsArray.filter(m =>
+    m.llmCalls.length > 0 && m.llmCalls.every(c => c.schemaCompliant === true)
   ).length;
   const schemaComplianceRate = (compliantCount / metricsArray.length) * 100;
 

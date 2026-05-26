@@ -27,7 +27,7 @@ import type {
   SourceType,
 } from "./types";
 
-import { generateText, Output } from "ai";
+import { generateText, Output, APICallError } from "ai";
 import { z } from "zod";
 import {
   getModelForTask,
@@ -1245,6 +1245,24 @@ export async function runPass1(
     return validated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorType = error instanceof Error ? error.name : undefined;
+    // On a provider API error (e.g. the intermittent "Not Found" 404 from Anthropic),
+    // capture the full envelope — resolved model, URL, status, retryability, body slice —
+    // so the root cause is visible on recurrence. Fires only on failure.
+    if (APICallError.isInstance(error)) {
+      const resolvedModel = (error.requestBodyValues as { model?: unknown } | undefined)?.model;
+      console.error("[Stage1 Pass1] Provider API error envelope", {
+        configuredModel: model.modelName,
+        resolvedModel: resolvedModel ?? "(unknown)",
+        url: error.url,
+        statusCode: error.statusCode,
+        isRetryable: error.isRetryable,
+        responseBody:
+          typeof error.responseBody === "string"
+            ? error.responseBody.slice(0, 2000)
+            : "(none)",
+      });
+    }
     recordLLMCall({
       taskType: "understand",
       provider: model.provider,
@@ -1257,6 +1275,7 @@ export async function runPass1(
       schemaCompliant: false,
       retries: 0,
       errorMessage,
+      errorType,
       timestamp: new Date(),
     });
     throw error;
