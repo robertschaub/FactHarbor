@@ -6361,8 +6361,9 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
 
     // Truth stays at baseline 75% — narrative cannot override it
     expect(result.truthPercentage).toBe(75);
-    // Confidence IS capped by narrative (40 < 68)
-    expect(result.confidence).toBe(40);
+    // Confidence IS capped by narrative but bounded by narrativeConfidenceMaxDownwardDelta (default 5pp):
+    // baseline weighted confidence 68 → narrative wants 40 (drop of 28pp), bounded to baseline-5 = 63.
+    expect(result.confidence).toBe(63);
   });
 
   it("falls back to deterministic aggregation when narrative adjustments are absent", async () => {
@@ -6471,8 +6472,9 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
 
     // Truth stays at baseline — narrative is explanatory-only
     expect(result.truthPercentage).toBe(75);
-    // Confidence capped from 68 to 40 by narrative's adjustedConfidence
-    expect(result.confidence).toBe(40);
+    // Confidence capped downward but bounded by narrativeConfidenceMaxDownwardDelta (default 5pp):
+    // baseline 68 → narrative wants 40, bounded to baseline-5 = 63.
+    expect(result.confidence).toBe(63);
   });
 
   it("should use fallback narrative when LLM fails", async () => {
@@ -7235,6 +7237,82 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     // AC_02 is weighted; its low truth pulls the article away from AC_01's 80.
     expect(result.truthPercentage).toBeLessThan(80);
     expect(result.truthPercentage).toBeGreaterThan(40);
+  });
+
+  it("narrative confidence cap is bounded by narrativeConfidenceMaxDownwardDelta (default 5pp)", async () => {
+    await setupConfigMocks(false);
+    // Narrative wants to drop confidence by 30pp (from baseline 60 to 30) — must be bounded to baseline-5 = 55.
+    const aggressiveNarrative = { ...narrativeOutput, adjustedConfidence: 30 };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(aggressiveNarrative) } as any);
+    mockExtractOutput.mockReturnValue(aggressiveNarrative);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    // Baseline weighted conf is ~60; narrative wants 30 (drop of 30pp); default max delta 5pp → floor at 55.
+    expect(result.confidence).toBeGreaterThanOrEqual(55);
+    expect(result.confidence).toBeLessThanOrEqual(60);
+  });
+
+  it("narrative confidence cap applies a small drop unchanged when within the bound", async () => {
+    await setupConfigMocks(false);
+    // Narrative wants only a 3pp drop (baseline 60 → 57). Bound is 5pp, so 57 is fully honored.
+    const mildNarrative = { ...narrativeOutput, adjustedConfidence: 57 };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(mildNarrative) } as any);
+    mockExtractOutput.mockReturnValue(mildNarrative);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    // Narrative's modest drop is allowed: confidence at 57 (within 5pp of baseline 60).
+    expect(result.confidence).toBe(57);
+  });
+
+  it("narrative confidence cap is one-directional: narrative cannot raise above baseline", async () => {
+    await setupConfigMocks(false);
+    // Narrative tries to raise confidence to 95 (above baseline 60). Must NOT raise — narrative is downgrade-only.
+    const boostNarrative = { ...narrativeOutput, adjustedConfidence: 95 };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(boostNarrative) } as any);
+    mockExtractOutput.mockReturnValue(boostNarrative);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 70, confidence: 60, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    // Cannot exceed baseline — narrative is explanatory and downgrade-only.
+    expect(result.confidence).toBeLessThanOrEqual(60);
   });
 });
 

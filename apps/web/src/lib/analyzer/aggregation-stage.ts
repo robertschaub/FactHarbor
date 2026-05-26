@@ -428,9 +428,20 @@ export async function aggregateAssessment(
   // For same-direction unresolved-claim jobs, this means truth stays at the
   // baseline even when INSUFFICIENT claims exist. The confidence ceiling
   // is the correct uncertainty signal (accepted regression R3, 2026-04-09).
+  //
+  // Bound the narrative's downward influence: the LLM may have legitimate
+  // reasons to lower confidence (calibration safety) but should not be able
+  // to collapse the deterministic baseline by an arbitrary amount.
+  // narrativeConfidenceMaxDownwardDelta (default 5pp) floors how far below
+  // the deterministic baseline the final confidence can land.
   const adjConf = verdictNarrative.adjustedConfidence;
   if (typeof adjConf === "number" && Number.isFinite(adjConf)) {
-    finalConfidence = Math.min(adjConf, finalConfidence);
+    const maxDownwardDelta = calcConfig.narrativeConfidenceMaxDownwardDelta
+      ?? DEFAULT_CALC_CONFIG.narrativeConfidenceMaxDownwardDelta
+      ?? 5;
+    const minAllowedConfidence = Math.max(0, finalConfidence - maxDownwardDelta);
+    const boundedAdjConf = Math.max(minAllowedConfidence, adjConf);
+    finalConfidence = Math.min(boundedAdjConf, finalConfidence);
     finalConfidence = Math.max(0, Math.min(100, finalConfidence));
   }
 
