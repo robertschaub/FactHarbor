@@ -474,5 +474,43 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
       expect(contract).toContain("one shared predicate applied to multiple separable target objects");
     });
+
+    it("PASS2 and CONTRACT_VALIDATION mechanically reject bundled shared-predicate evaluative claims via surface-pattern recognition", () => {
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      const contract = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+      expect(pass2).not.toBeNull();
+      expect(contract).not.toBeNull();
+
+      // PASS2 must carry the mechanical surface-pattern recognition
+      expect(pass2).toContain("Surface-pattern recognition (MANDATORY for evaluative/rule-governed predicates)");
+      expect(pass2).toContain("[coordinated noun phrase] [verb] [evaluative predicate or standard]");
+      expect(pass2).toContain("two or more separable target-object units");
+      expect(pass2).toContain("enumerate each unit inside the coordinated subject");
+      expect(pass2).toContain("resolve to a different truth value against the predicate");
+      expect(pass2).toContain("one thesis-direct claim per unit");
+
+      // Both PASS2 and CONTRACT must explicitly reject the rationalizations used to wave bundling through
+      const rationalizations = [
+        "they share the same standard",
+        "they cover one assessment dimension",
+        "they preserve expanded scope",
+        "they are part of one process",
+        "they form one institutional whole",
+      ];
+      for (const r of rationalizations) {
+        expect(pass2, `PASS2 must reject rationalization: "${r}"`).toContain(r);
+        expect(contract, `CONTRACT must reject rationalization: "${r}"`).toContain(r);
+      }
+
+      // CONTRACT must add a mechanical surface-pattern audit on top of its rationale-based audit
+      expect(contract).toContain("Surface-pattern audit (MANDATORY, applies in addition to the rationale-based audit above)");
+      expect(contract).toContain("Independently of any rationale you might form");
+      expect(contract).toContain("`rePromptRequired` MUST be true");
+      expect(contract).toContain("The shared predicate is what gets PRESERVED across the split claims; it is not what justifies bundling them");
+
+      // Composite-not-split exception must remain (otherwise we'd over-split rank/order phrases)
+      expect(pass2).toContain("ordinals of one occasion");
+      expect(contract).toContain("ordinals of one occasion");
+    });
   });
 });
