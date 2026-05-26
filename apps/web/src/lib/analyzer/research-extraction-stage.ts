@@ -19,9 +19,10 @@ import {
   mapSourceType, 
   normalizeExtractedSourceType 
 } from "./pipeline-utils";
-import { 
-  AtomicClaim, 
-  EvidenceItem, 
+import {
+  AtomicClaim,
+  CBResearchState,
+  EvidenceItem,
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
 
@@ -260,7 +261,18 @@ export async function extractResearchEvidence(
   sources: Array<{ url: string; title: string; text: string }>,
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  state?: CBResearchState,
 ): Promise<EvidenceItem[]> {
+  // Evidence-ID scope: when called from the orchestrator (production), the
+  // shared per-analysis counter (state.nextEvidenceId) ensures IDs are unique
+  // across this call and the preliminary-seeding call. When called without
+  // state (tests, standalone scripts) we fall back to a local counter
+  // starting at 1 — IDs are still well-formed (EV_001, EV_002, ...) but
+  // scoped to this invocation only.
+  const idScope: Pick<CBResearchState, "nextEvidenceId"> = state ?? { nextEvidenceId: 1 };
+  if (typeof idScope.nextEvidenceId !== "number" || !Number.isFinite(idScope.nextEvidenceId)) {
+    idScope.nextEvidenceId = 1;
+  }
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
     claim: targetClaim.statement,
@@ -317,8 +329,11 @@ export async function extractResearchEvidence(
 
     const validated = Stage2ExtractEvidenceOutputSchema.parse(parsed);
 
-    // Map to full EvidenceItem format
-    let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
+    // Map to full EvidenceItem format.
+    // Evidence IDs are minted from the per-analysis counter on state so they
+    // stay short, sortable, and unique across both this mint site and the
+    // preliminary-seeding mint site in research-orchestrator.ts. See
+    // types.ts CBResearchState.nextEvidenceId for the rationale.
     let claimIdMismatchCount = 0;
     let categoryNormalizationCount = 0;
     let categoryFallbackToEvidenceCount = 0;
@@ -359,7 +374,7 @@ export async function extractResearchEvidence(
       }
 
       return {
-        id: `EV_${String(idCounter++)}`,
+        id: `EV_${String(idScope.nextEvidenceId++).padStart(3, "0")}`,
         statement: ei.statement,
         category: mappedCategory,
         specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,

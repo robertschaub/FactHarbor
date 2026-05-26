@@ -1341,6 +1341,15 @@ export interface CBResearchState {
   onEvent?: (message: string, progress: number) => void;
   // Quality warnings accumulated during pipeline execution
   warnings: AnalysisWarning[];
+  /**
+   * Per-analysis monotonic counter for evidence IDs. Initialized to 1 at the
+   * pipeline entry; every EvidenceItem mint site (preliminary seeding and main
+   * research extraction) reads `state.nextEvidenceId++` to produce IDs of the
+   * form `EV_001`, `EV_002`, ... — short, sortable, sequential, scoped per
+   * analysis, and consistent across both mint sites so the grounding
+   * validator does not need its alias-map workaround to compare IDs.
+   */
+  nextEvidenceId: number;
 }
 
 /**

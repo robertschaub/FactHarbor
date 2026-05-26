@@ -995,7 +995,16 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   const fallbackClaimId = knownClaimIds.size === 1
     ? [...knownClaimIds][0]
     : undefined;
-  let idCounter = state.evidenceItems.length + 1;
+  // Mint preliminary evidence IDs from the per-analysis counter on state so
+  // they share a single monotonic sequence with main-research extraction IDs.
+  // See types.ts CBResearchState.nextEvidenceId for the rationale.
+  //
+  // Defensive init: if a caller constructed state without nextEvidenceId
+  // (legacy tests, partial fixtures), derive the next value from the current
+  // evidenceItems length so we still mint unique IDs.
+  if (typeof state.nextEvidenceId !== "number" || !Number.isFinite(state.nextEvidenceId)) {
+    state.nextEvidenceId = state.evidenceItems.length + 1;
+  }
   let remappedCount = 0;
   const seededItems: EvidenceItem[] = [];
 
@@ -1036,7 +1045,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
     }
 
     const seededItem: EvidenceItem = {
-      id: `EV_${String(idCounter++).padStart(3, "0")}`,
+      id: `EV_${String(state.nextEvidenceId++).padStart(3, "0")}`,
       statement: pe.snippet,
       category: "evidence",
       specificity: "medium",
@@ -1268,6 +1277,7 @@ export async function runResearchIteration(
           fetchedSources,
           pipelineConfig,
           currentDate,
+          state,
         );
         state.llmCalls++;
         telemetry.rawEvidenceItems += rawEvidence.length;
@@ -1669,7 +1679,7 @@ export async function maybeRunSupplementaryEnglishLane(
     }
 
     const rawEvidence = await extractResearchEvidence(
-      targetClaim, fetchedSources, pipelineConfig, currentDate,
+      targetClaim, fetchedSources, pipelineConfig, currentDate, state,
     );
     state.llmCalls++;
     enTelemetry.rawEvidenceItems += rawEvidence.length;
