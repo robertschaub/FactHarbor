@@ -388,6 +388,13 @@ function extractStage(type: string, details: Record<string, unknown>): string {
       return "research_sr";
     case "llm_provider_error":
       return "research_llm";
+    case "evidence_filter_degradation":
+      return "research_filter";
+    case "no_checkworthy_claims":
+    case "claim_selection_truncated":
+      return "claim_selection";
+    case "analysis_generation_failed":
+      return "report";
     case "report_damaged":
       return "report";
     case "debate_provider_fallback":
