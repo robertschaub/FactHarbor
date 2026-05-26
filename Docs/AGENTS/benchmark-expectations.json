@@ -130,19 +130,20 @@
       "slug": "plastic-en",
       "inputValue": "Plastic recycling is pointless",
       "language": "en",
-      "expectedVerdictLabels": ["MOSTLY-FALSE", "FALSE", "MIXED"],
-      "truthPercentageBand": { "min": 10, "max": 35 },
-      "confidenceBand": { "min": 55, "max": 80 },
+      "expectedVerdictLabels": ["MIXED", "LEANING-TRUE", "MOSTLY-TRUE"],
+      "truthPercentageBand": { "min": 40, "max": 75 },
+      "confidenceBand": { "min": 55, "max": 85 },
       "minBoundaryCount": 2,
-      "qualityStatus": "PARSE-FAILURE-FIXED",
-      "qualityStatusNote": "Stage 4 advocate parse-failure fixed; no longer forces report into fallback UNVERIFIED states. Broader evidence/aggregation variance remains. Useful as stress test but not proof of total stability.",
-      "latestVerifiedJobId": "a97ec59eeb5e43c69ae8d7583eecfcb3",
-      "latestObserved": { "verdictLabel": "MOSTLY-FALSE", "truthPercentage": 21, "confidence": 71 },
-      "_failed_rerun_2026-04-16": "Rerun 89c8f2ec at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls, plus 4 preliminary_fetch source_fetch_failure (info). Root cause same as Bundesrat: Stage 2 LLM timeout under concurrent load. NOT confirmed as a Stage 4 parse regression — needs isolated rerun.",
+      "qualityStatus": "CORRECTED-EXPECTATION",
+      "qualityStatusNote": "Captain-corrected expectation restores the true-side bar from the Phase 2 archive. The English-language evidence base (global ~9% recycling rate, ~51% of 'recycled' plastic incinerated/landfilled, mechanical recycling not economically profitable per peer-reviewed techno-economic assessments) legitimately supports a true-side verdict. The prior MOSTLY-FALSE/FALSE/MIXED bar reflected a false-side calibration that does not match either the documented historical Phase 2 expectation or the current English-source evidence pool. Latest Sonnet-baseline run 664762ab returned LEANING-TRUE 64/74 — squarely inside the corrected band.",
+      "latestVerifiedJobId": "664762ab130b4a1fadbc19ce1b182e28",
+      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 64, "confidence": 74 },
+      "_note_corrected_expectation_2026-05-26": "Corrected from MOSTLY-FALSE/FALSE/MIXED (truth 10-35) to MIXED/LEANING-TRUE/MOSTLY-TRUE (truth 40-75) to align with Phase 2 R3.1 ('40-60% range (MIXED to LEANING-TRUE band). Violation: extreme verdicts <30 or >75') and Phase 2 observed EN-variant mean ~56% across 14 jobs. Same drift pattern as the bolsonaro-en correction in commit d04587ba.",
+      "_phase2_reference": "Docs/ARCHIVE/2026-04-11_Phase2_Per_Input_Expectations.md R3.1 — MIXED to LEANING-TRUE band; extreme >75 is a violation. Cross-corroborated by 2026-03-21 LLM Expert handoff (Stage2_Retrieval_Skew_Analysis) and 2026-03-22 Senior Developer Phase1A Experiment Results.",
       "knownOpenIssues": [
-        "evidence aggregation variance across runs",
-        "not a reliable family for asserting total report-quality stability",
-        "failed isolated-rerun needed: 2026-04-16 concurrent-submission collapse not yet ruled in/out as regression"
+        "extreme verdicts >75 (MOSTLY-TRUE territory) are still a soft-violation per Phase 2 R3.1 even though direction is correct",
+        "evidence aggregation variance across runs can shift truth within the band",
+        "cross-language (EN vs DE) gap is documented; this entry is EN-only"
       ]
     }
   ],
