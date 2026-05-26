@@ -1408,10 +1408,22 @@ export async function validateVerdicts(
         });
       } else {
         console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, mergedDirectionIssues);
+        // Counter B telemetry: capture the pre-rescue/repair state so we can
+        // join this "flagged" event with downstream `direction_rescue_plausible`
+        // or `verdict_integrity_failure` (integrityFailureType === "direction")
+        // events by claimId. Rate of (flagged − rescued) / flagged gives the
+        // direction-validation downgrade rate that gates the validation-tier
+        // routing decision.
         warnings?.push({
           type: "verdict_direction_issue",
           severity: "info",
           message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(mergedDirectionIssues)}`,
+          details: {
+            claimId: verdict.claimId,
+            originalTruthPercentage: current.truthPercentage,
+            originalConfidence: current.confidence,
+            issueCount: mergedDirectionIssues.length,
+          },
         });
 
         if (

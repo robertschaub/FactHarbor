@@ -779,7 +779,9 @@ export type AnalysisWarningType =
   | "gate1_thesis_direct_rescue"             // Gate 1: thesis-direct claim rescued from opinion+specificity filter
   | "no_checkworthy_claims"                  // Stage 1.5: automatic claim selection found no claims worth researching
   | "claim_selection_truncated"              // Stage 1.5: candidate set exceeded configured auto-selection candidate cap
-  | "per_source_evidence_cap";              // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
+  | "per_source_evidence_cap"                // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
+  | "contract_validation_retry_triggered"   // Stage 1: claim-contract validation flagged drift and triggered a Pass 2 retry
+  | "contract_repair_pass_fired";           // Stage 1: anchor-gated targeted repair pass was invoked after contract retry
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.

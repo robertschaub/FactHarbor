@@ -428,6 +428,22 @@ export async function extractClaims(
         .map((c) => `${c.claimId}: ${c.reasoning}`)
         .join("; ");
 
+      // Telemetry (Counter A): observe how often contract validation actually
+      // triggers a Pass 2 retry. This rate gates the "should Pass 2 default to
+      // standard tier?" decision parked from the routing review.
+      state.warnings.push({
+        type: "contract_validation_retry_triggered",
+        severity: "info",
+        message: `Stage 1: contract validation triggered Pass 2 retry (${failingClaims.length} failing claim(s)).`,
+        details: {
+          stage: "stage1_pass2",
+          failingClaimCount: failingClaims.length,
+          contractResultAvailable: !!contractResult,
+          anchorRetryReason: anchorRetryReason ?? null,
+          atomicityRetryReason: atomicityRetryReason ?? null,
+        },
+      });
+
       // Dynamic anchor-specific guidance when the retry is triggered by anchor omission
       const anchorText = contractResult?.truthConditionAnchor?.anchorText;
       const anchorGuidance = anchorRetryReason && anchorText
@@ -599,6 +615,17 @@ export async function extractClaims(
         }
 
         state.onEvent?.(`Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`, 25);
+        // Telemetry (Counter A): observe how often the anchor-gated repair
+        // pass actually fires. Sub-rate within the contract-retry set.
+        state.warnings.push({
+          type: "contract_repair_pass_fired",
+          severity: "info",
+          message: `Stage 1: contract repair invoked to fuse anchor "${repairAnchorText}" into the thesis-direct claim.`,
+          details: {
+            stage: "stage1_repair",
+            repairAnchorText,
+          },
+        });
         try {
           const repairedPass2 = await runContractRepair(
             currentClaims,
