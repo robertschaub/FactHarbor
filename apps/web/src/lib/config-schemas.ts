@@ -1527,6 +1527,18 @@ export const CalcConfigSchema = z.object({
 
   mixedConfidenceThreshold: z.number().int().min(0).max(100),
 
+  /**
+   * ClaimBoundary Stage 5: maximum percentage points the narrative
+   * `adjustedConfidence` may lower the article confidence below the
+   * deterministic baseline. The narrative remains one-directional
+   * (downgrade-only) and explanatory; this bound prevents an
+   * over-conservative narrative LLM from collapsing article confidence by
+   * more than the configured number of points. Range 0-50.
+   * Default 5: lets the narrative flag honest degradation without dominating
+   * the deterministic aggregation.
+   */
+  narrativeConfidenceMaxDownwardDelta: z.number().int().min(0).max(50).optional(),
+
   // ClaimBoundary Stage 5: probative value multipliers for claim influence weighting
   probativeValueWeights: z
     .object({
@@ -1891,6 +1903,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     contextMergeThreshold: 0.7,
   },
   mixedConfidenceThreshold: 45,
+  narrativeConfidenceMaxDownwardDelta: 5,
   probativeValueWeights: {
     high: 1.0,
     medium: 0.9,

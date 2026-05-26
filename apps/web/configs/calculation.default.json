@@ -65,6 +65,7 @@
     "contextMergeThreshold": 0.7
   },
   "mixedConfidenceThreshold": 45,
+  "narrativeConfidenceMaxDownwardDelta": 5,
   "probativeValueWeights": {
     "high": 1.0,
     "medium": 0.9,
