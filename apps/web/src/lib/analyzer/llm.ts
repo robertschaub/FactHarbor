@@ -374,27 +374,31 @@ export function getProviderType(modelInfo: ModelInfo): ProviderType {
 }
 
 // ============================================================================
-// PROMPT CACHING
+// PROMPT CACHING (DISABLED)
 // ============================================================================
 
 /**
- * Get providerOptions to enable Anthropic prompt caching on a system message.
+ * Get providerOptions for Anthropic prompt caching on a system message.
  *
- * Returns `{ anthropic: { cacheControl: { type: 'ephemeral' } } }` for
- * Anthropic providers, enabling the 5-min prompt cache (90% discount on
- * cached input tokens). Returns undefined for non-Anthropic providers.
+ * Currently DISABLED on main. Observed behavior (job cf40490e, 65 LLM calls,
+ * 366k input tokens): zero cacheReadInputTokens and zero cacheCreationInputTokens
+ * across the entire pipeline, even on the four Sonnet verdict calls that each
+ * sent exactly 15,277 identical-sized inputs. The cache-write premium did not
+ * outweigh the ~zero hit rate, matching the cost-optimization rationale that
+ * led Pipeline_V2 to opt the full-source extraction stage out.
  *
- * Usage: Add to system messages in generateText() calls:
- *   { role: "system", content: prompt, providerOptions: getPromptCachingOptions(provider) }
+ * Returning undefined globally turns the wiring at every call site into a no-op
+ * while preserving the imports and call signatures, so re-enabling later (after
+ * any root-cause work on why prefixes don't share) is a single-line change.
+ *
+ * To re-enable temporarily for diagnostics:
+ *   if (p !== "anthropic" && p !== "claude") return undefined;
+ *   return { anthropic: { cacheControl: { type: "ephemeral" } } };
  */
 export function getPromptCachingOptions(
-  provider?: string,
+  _provider?: string,
 ): { anthropic: { cacheControl: { type: string } } } | undefined {
-  const p = (provider || "anthropic").toLowerCase();
-  if (p !== "anthropic" && p !== "claude") return undefined;
-  return {
-    anthropic: { cacheControl: { type: "ephemeral" } },
-  };
+  return undefined;
 }
 
 // ============================================================================
