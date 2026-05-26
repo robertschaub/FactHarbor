@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MetricsCollector, type LLMCallMetric } from "@/lib/analyzer/metrics";
+import {
+  MetricsCollector,
+  calculateSummaryStats,
+  type LLMCallMetric,
+  type AnalysisMetrics,
+} from "@/lib/analyzer/metrics";
 import { resolveModel } from "@/lib/analyzer/model-resolver";
 
 function createLLMCallMetric(overrides: Partial<LLMCallMetric> = {}): LLMCallMetric {
@@ -83,4 +88,43 @@ describe("MetricsCollector cost estimation", () => {
       expect(metrics.estimatedCostUSD).toBe(expectedCostUSD);
     },
   );
+});
+
+describe("calculateSummaryStats — schemaComplianceRate", () => {
+  function jobWith(calls: Array<Partial<LLMCallMetric>>): AnalysisMetrics {
+    return finalizeMetricsForCalls(calls);
+  }
+
+  function finalizeMetricsForCalls(callOverrides: Array<Partial<LLMCallMetric>>): AnalysisMetrics {
+    const collector = new MetricsCollector("job-summary", "claimboundary");
+    for (const o of callOverrides) collector.recordLLMCall(createLLMCallMetric(o));
+    collector.setGate1Stats({ totalClaims: 1, passedClaims: 1, filteredClaims: 0, filteredReasons: {}, centralClaimsKept: 1 });
+    collector.setGate4Stats({ totalVerdicts: 1, highConfidence: 1, mediumConfidence: 0, lowConfidence: 0, insufficient: 0, unpublishable: 0 });
+    collector.setSchemaCompliance({ understand: { success: true, retries: 0 }, extractEvidence: [], verdict: { success: true, retries: 0 } });
+    collector.setOutputQuality({ claimsExtracted: 1, claimsWithVerdicts: 1, scopesDetected: 0, sourcesFound: 0, evidenceItemsExtracted: 0, averageConfidence: 80 });
+    collector.setConfig({ llmProvider: "anthropic", searchProvider: "auto", allowModelKnowledge: false, isLLMTiering: true, isDeterministic: false });
+    return collector.finalize();
+  }
+
+  it("counts a job as compliant when every llmCall has schemaCompliant=true", () => {
+    const m = jobWith([{ schemaCompliant: true }, { schemaCompliant: true }]);
+    expect(calculateSummaryStats([m]).schemaComplianceRate).toBe(100);
+  });
+
+  it("counts a job as non-compliant when any llmCall has schemaCompliant=false", () => {
+    const m = jobWith([{ schemaCompliant: true }, { schemaCompliant: false }]);
+    expect(calculateSummaryStats([m]).schemaComplianceRate).toBe(0);
+  });
+
+  it("does not count a job with zero llmCalls as compliant", () => {
+    const m = jobWith([]);
+    expect(calculateSummaryStats([m]).schemaComplianceRate).toBe(0);
+  });
+
+  it("aggregates per-job over a mixed batch", () => {
+    const ok = jobWith([{ schemaCompliant: true }]);
+    const bad = jobWith([{ schemaCompliant: true }, { schemaCompliant: false }]);
+    const rate = calculateSummaryStats([ok, bad, ok, ok]).schemaComplianceRate;
+    expect(rate).toBe(75);
+  });
 });

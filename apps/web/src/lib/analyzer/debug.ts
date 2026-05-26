@@ -66,6 +66,46 @@ const DEBUG_LOG_CLEAR_ON_START =
 
 const DEBUG_LOG_MAX_DATA_CHARS = 8000;
 
+// Rotate when the active file exceeds this size; keep N rolled backups.
+// Default cap: 50 MB × (1 active + 2 backups) = ~150 MB total disk footprint.
+const DEBUG_LOG_MAX_SIZE_BYTES =
+  Number(process.env.FH_DEBUG_LOG_MAX_SIZE_BYTES) || 50 * 1024 * 1024;
+const DEBUG_LOG_BACKUP_COUNT =
+  Number(process.env.FH_DEBUG_LOG_BACKUP_COUNT) || 2;
+const ROTATE_CHECK_INTERVAL_MS = 5_000;
+
+let rotationInFlight = false;
+let lastRotateCheck = 0;
+
+async function rotateIfNeeded(): Promise<void> {
+  if (rotationInFlight) return;
+  const now = Date.now();
+  if (now - lastRotateCheck < ROTATE_CHECK_INTERVAL_MS) return;
+  lastRotateCheck = now;
+
+  let size: number;
+  try {
+    size = (await fs.promises.stat(DEBUG_LOG_PATH)).size;
+  } catch {
+    return;
+  }
+  if (size < DEBUG_LOG_MAX_SIZE_BYTES) return;
+
+  rotationInFlight = true;
+  try {
+    for (let i = DEBUG_LOG_BACKUP_COUNT; i >= 1; i--) {
+      const src = i === 1 ? DEBUG_LOG_PATH : `${DEBUG_LOG_PATH}.${i - 1}`;
+      const dst = `${DEBUG_LOG_PATH}.${i}`;
+      if (i === DEBUG_LOG_BACKUP_COUNT) {
+        try { await fs.promises.unlink(dst); } catch {}
+      }
+      try { await fs.promises.rename(src, dst); } catch {}
+    }
+  } finally {
+    rotationInFlight = false;
+  }
+}
+
 // Agent debug logging - only runs on local development machine
 const IS_LOCAL_DEV = process.env.NODE_ENV === "development" &&
   (process.env.HOSTNAME === "localhost" || !process.env.VERCEL);
@@ -104,9 +144,11 @@ function writeDebugLog(
 
   // Write to file (append) - async to avoid blocking the Node event loop during long analyses
   if (DEBUG_LOG_FILE_ENABLED) {
-    fs.promises.appendFile(DEBUG_LOG_PATH, logLine).catch(() => {
-      // Silently ignore file write errors
-    });
+    rotateIfNeeded()
+      .then(() => fs.promises.appendFile(DEBUG_LOG_PATH, logLine))
+      .catch(() => {
+        // Silently ignore file write errors
+      });
   }
 
   if (options.emitToConsole) {
