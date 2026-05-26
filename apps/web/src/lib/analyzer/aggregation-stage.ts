@@ -238,6 +238,23 @@ export async function aggregateAssessment(
       };
     }
 
+    // Insufficient-evidence claim: when the LLM took the explicit fallback path
+    // (INSUFFICIENT tier AND zero directional citations), the claim has nothing
+    // evidence-backed to contribute to the article-level weighted aggregate.
+    // Keep it visible in the report (it still appears as a per-claim verdict)
+    // but exclude it from weighting so it does not drag truth toward 50 or
+    // confidence toward 0 just because evidence on that dimension is sparse.
+    const supportingCount = (verdict.supportingEvidenceIds ?? []).length;
+    const contradictingCount = (verdict.contradictingEvidenceIds ?? []).length;
+    if (verdict.confidenceTier === "INSUFFICIENT" && supportingCount + contradictingCount === 0) {
+      return {
+        truthPercentage: effectiveTruth,
+        confidence: verdict.confidence,
+        truthPercentageRange: effectiveRange,
+        weight: 0,
+      };
+    }
+
     return {
       truthPercentage: effectiveTruth,
       confidence: verdict.confidence,
