@@ -1855,6 +1855,159 @@ describe("validateVerdicts (Step 5)", () => {
     expect(rescueWarning!.details?.rescueReason).toBe("stable_consistency");
     expect(rescueWarning!.details?.consistencySpread).toBe(3);
   });
+
+  // ------------------------------------------------------------------
+  // Policy-boundary regression guard (Option E)
+  //
+  // History: the post-repair grounded-acceptance fallback at the bottom of
+  // the direction-repair block historically called safeDowngradeVerdict
+  // with `reason: "grounding"`, which appeared in telemetry as
+  // `integrityFailureType: "grounding"` even when the operator had set
+  // `verdictGroundingPolicy: "disabled"`. The Eiffel-job retrospective
+  // (2026-05-26) and cross-family adversarial review surfaced this as a
+  // policy leak: "disabled" did not actually disable grounding-attributed
+  // downgrades — they could still occur via the direction-repair back door.
+  //
+  // Option E (the fix): on grounded-acceptance failure inside direction
+  // repair, reject the repair candidate, revert to the pre-repair state,
+  // and re-authorise the downgrade under verdictDirectionPolicy (which
+  // independently authorised it — the original direction violation was
+  // non-plausible by the time we entered the repair path). The grounded-
+  // acceptance failure is recorded as a contributingFailure, not as the
+  // triggering policy.
+  // ------------------------------------------------------------------
+  it("Option E: post-repair grounded-acceptance failure attributes downgrade to direction policy, never grounding policy", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 78,
+      confidence: 82,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    // Evidence is one-sided contradicts; initial truth% 78 is not plausible.
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let groundingCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls += 1;
+        // 1st call (bulk top-level): valid — grounding policy is disabled
+        // anyway, but we want to be unambiguous that the grounding-policy
+        // path is not what fires the downgrade.
+        if (groundingCalls === 1) {
+          return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+        }
+        // All subsequent grounded-acceptance attempts on repaired /
+        // fallback-reasoning candidates fail (Eiffel-shaped: citation /
+        // registry mismatch on the repair output).
+        return [{ claimId: "AC_01", groundingValid: false, issues: ["Supporting evidence ID 'EV_99' cited but not in citedEvidenceRegistry"] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        // Direction validation persistently flags the mismatch.
+        return [{ claimId: "AC_01", directionValid: false, issues: ["Truth% does not match evidence direction"] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        // Repair produces a plausible candidate (low truth%, contradicts-
+        // leaning citations) so the !repairedPlausible early-downgrade at
+        // :1568 is skipped and we reach the grounded-acceptance phase.
+        return {
+          claimId: "AC_01",
+          truthPercentage: 25,
+          reasoning: "Repaired verdict reflecting contradicts-leaning evidence",
+          supportingEvidenceIds: [],
+          contradictingEvidenceIds: ["EV_01", "EV_02", "EV_03"],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictGroundingPolicy: "disabled",
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts, evidence, mockLLM, config, warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    // Downgrade did happen (Option E preserves the outcome).
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+
+    const integrityWarning = warnings.find((w) => w.type === "verdict_integrity_failure");
+    expect(integrityWarning).toBeDefined();
+
+    // CRITICAL: triggerPolicy is "direction", not "grounding". This is the
+    // assertion that closes the policy leak. If a future refactor reintroduces
+    // a grounding-triggered downgrade through this path, this test fails.
+    expect(integrityWarning?.details?.triggerPolicy).toBe("direction");
+    expect(integrityWarning?.details?.terminalReason).toBe("direction_unresolved_post_repair_rejected");
+
+    // The grounded-acceptance failure is preserved as a contributingFailure
+    // (diagnostic context, not authorising policy).
+    const contributingFailures = integrityWarning?.details?.contributingFailures as
+      | Array<{ check: string; details?: Record<string, unknown> }>
+      | undefined;
+    expect(contributingFailures).toBeDefined();
+    expect(contributingFailures?.some((f) => f.check === "repair_grounding_acceptance")).toBe(true);
+
+    // Structural invariant: with verdictGroundingPolicy "disabled", NO emitted
+    // integrity-failure warning may claim triggerPolicy "grounding". This
+    // assertion makes the regression guard explicit independent of the path
+    // tested above.
+    const groundingTriggeredDowngrades = warnings.filter(
+      (w) => w.type === "verdict_integrity_failure" && w.details?.triggerPolicy === "grounding",
+    );
+    expect(groundingTriggeredDowngrades).toHaveLength(0);
+  });
+
+  it("safeDowngradeVerdict telemetry emits both legacy integrityFailureType and new triggerPolicy/terminalReason fields", async () => {
+    // Backward-compatibility guard: existing consumers (calibration metrics,
+    // paired-job audit, benchmark .partial.json snapshots, FallbackReport UI)
+    // read the legacy `integrityFailureType` field. The signature refactor
+    // must keep emitting it as an alias of triggerPolicy until consumers
+    // migrate. If this test starts failing because the legacy field is gone,
+    // verify all consumers have been migrated before removing the alias.
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 78,
+      confidence: 82,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: false, issues: ["Missing evidence id"] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    });
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictGroundingPolicy: "safe_downgrade",
+    };
+
+    await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
+
+    const integrityWarning = warnings.find((w) => w.type === "verdict_integrity_failure");
+    expect(integrityWarning).toBeDefined();
+    // New canonical fields.
+    expect(integrityWarning?.details?.triggerPolicy).toBe("grounding");
+    expect(integrityWarning?.details?.terminalReason).toBe("grounding_validation_unresolved");
+    // Legacy alias still present.
+    expect(integrityWarning?.details?.integrityFailureType).toBe("grounding");
+  });
 });
 
 // ============================================================================
