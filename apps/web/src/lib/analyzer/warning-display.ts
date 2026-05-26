@@ -69,6 +69,8 @@ const WARNING_CLASSIFICATION = {
   no_checkworthy_claims: { bucket: "analysis", impact: "degrading" },
   claim_selection_truncated: { bucket: "analysis", impact: "degrading" },
   per_source_evidence_cap: { bucket: "analysis", impact: "informational" },
+  contract_validation_retry_triggered: { bucket: "analysis", impact: "informational" },
+  contract_repair_pass_fired: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
 export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(
