@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-25T09:20:01.012Z",
-  "count": 276,
+  "generatedAt": "2026-05-27T20:50:25.193Z",
+  "count": 277,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5745,6 +5745,29 @@
         "Docs/AGENTS/index/stage-manifest.json"
       ],
       "summary": "If validating manually, restart API/Web before testing because backend search and the annotation endpoint require the updated API process. Use `/jobs`, search for an existing job prefix such as `e2fee7bc`, and use an admin session to open the card action menu or job detail annotation button. The new"
+    },
+    {
+      "file": "2026-05-27_Lead_Architect_Main_Stabilization_Extra_Cherry_Picks.md",
+      "date": "2026-05-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "main",
+        "stabilization",
+        "extra",
+        "cherry",
+        "picks"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-selection-recommendation.ts",
+        "apps/web/src/lib/analyzer/aggregation-stage.ts",
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/calculation.default.json",
+        "apps/web/src/app/admin/config/page.tsx"
+      ],
+      "summary": "The pushed analysis-code layer is `3e94e53e`; a documentation-only handoff commit may sit above it on `main`. Safety branch before extra picks is `codex/stabilized-main-before-extra-picks-2026-05-27` at `406393c9`. Verification before push: focused selector/verdict/config tests passed (263 tests), f"
     }
   ]
 }

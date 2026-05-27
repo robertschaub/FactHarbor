@@ -1700,3 +1700,7 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-05-25 | Senior Developer | Codex (GPT-5) | Job Annotations And Jobs Search -- [Standard] [open-items: yes]
 **For next agent:** Admin job annotations now persist as `JobEntity.AdminAnnotation`, are exposed only to admins, editable from `/jobs` cards and `/jobs/[id]`, and shown in the `/jobs` overview. `/jobs?q=...` now matches report text plus job ID prefixes for visible jobs and commit prefixes for admin callers; endpoint is `PATCH /api/fh/jobs/[id]/annotation`.
 → Docs/AGENTS/Handoffs/2026-05-25_Senior_Developer_Job_Annotations_And_Jobs_Search.md
+---
+### 2026-05-27 | Lead Architect | Codex (GPT-5) | Main Stabilization Extra Cherry Picks -- [Standard] [open-items: yes]
+**For next agent:** The pushed analysis-code layer is `3e94e53e`, adding the selected extra picks above stabilized `406393c9`: `93302844`, `48b34617`, `2d07162e`, `a131bb41`, `53423586`, and `aa1e2c31` equivalents. A documentation-only handoff commit may sit above it on `main`. Validation passed focused tests/build and 4 of 5 live jobs at report level; the one failed hydrogen run was Stage 1 F1 `report_damaged`, then two immediate hydrogen reruns passed, so F1 remains an open variance issue rather than evidence against these picks.
+→ Docs/AGENTS/Handoffs/2026-05-27_Lead_Architect_Main_Stabilization_Extra_Cherry_Picks.md
