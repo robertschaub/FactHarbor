@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-27T20:50:25.193Z",
-  "count": 277,
+  "generatedAt": "2026-05-28T06:11:50.252Z",
+  "count": 278,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5768,6 +5768,25 @@
         "apps/web/src/app/admin/config/page.tsx"
       ],
       "summary": "The pushed analysis-code layer is `3e94e53e`; a documentation-only handoff commit may sit above it on `main`. Safety branch before extra picks is `codex/stabilized-main-before-extra-picks-2026-05-27` at `406393c9`. Verification before push: focused selector/verdict/config tests passed (263 tests), f"
+    },
+    {
+      "file": "2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md",
+      "date": "2026-05-28",
+      "roles": [
+        "senior_developer",
+        "devops"
+      ],
+      "topics": [
+        "hidden",
+        "job",
+        "runner",
+        "404",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts"
+      ],
+      "summary": "Start by checking `git status --short`, then inspect `apps/web/src/lib/internal-runner-queue.ts` around `apiGet(...)` and `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts` for the hidden-job regression test. If asked to deploy, stage only the runner fix, test, and this handoff/index entry unless Captain explicitly includes unrelated changes. Use `scripts/deploy-remote.ps1` only after the desired commit is on `origin/main`, because the VPS deploy script pulls `origin/main`."
     }
   ]
 }

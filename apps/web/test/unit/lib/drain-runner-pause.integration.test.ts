@@ -321,6 +321,88 @@ describe("drainRunnerQueue pause integration", () => {
       );
     });
 
+    it("uses the admin key for internal job reads so hidden queued jobs can run", async () => {
+      process.env.FH_ADMIN_KEY = "admin-secret";
+      const hiddenJobId = "hidden-job-1";
+      const getJobReads: Array<{ url: string; adminHeader: string | null }> = [];
+      const putPayloads: Array<{ url: string; body: Record<string, unknown> }> = [];
+      let detailReadCount = 0;
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        const headers = new Headers(init?.headers as HeadersInit | undefined);
+        const adminHeader = headers.get("x-admin-key");
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          getJobReads.push({ url, adminHeader });
+          if (adminHeader !== "admin-secret") {
+            return new Response(JSON.stringify({ error: "Job not found" }), { status: 404 });
+          }
+          return new Response(JSON.stringify({
+            jobs: [],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${hiddenJobId}`)) {
+          getJobReads.push({ url, adminHeader });
+          if (adminHeader !== "admin-secret") {
+            return new Response(JSON.stringify({ error: "Job not found" }), { status: 404 });
+          }
+
+          detailReadCount++;
+          return new Response(JSON.stringify({
+            jobId: hiddenJobId,
+            status: detailReadCount === 1 ? "QUEUED" : "RUNNING",
+            updatedUtc: new Date().toISOString(),
+            pipelineVariant: "claimboundary",
+            inputType: "text",
+            inputValue: "hidden job input",
+          }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${hiddenJobId}/status`)) {
+          putPayloads.push({
+            url,
+            body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
+          });
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${hiddenJobId}/result`)) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [{ jobId: hiddenJobId, enqueuedAt: Date.now() }],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks(24);
+
+      expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledWith(
+        expect.objectContaining({ jobId: hiddenJobId }),
+      );
+      expect(putPayloads.some((p) => p.body.status === "RUNNING")).toBe(true);
+      expect(getJobReads.length).toBeGreaterThan(0);
+      for (const read of getJobReads) {
+        expect(read.adminHeader).toBe("admin-secret");
+      }
+    });
+
     it("re-queues orphaned RUNNING jobs after restart and picks them up in the same drain cycle", async () => {
       const orphanJobId = "job-orphan-1";
       const snapshotUpdatedUtc = new Date(Date.now() - 60_000).toISOString();

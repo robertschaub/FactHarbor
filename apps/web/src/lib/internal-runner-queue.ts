@@ -165,8 +165,13 @@ function ensureQueueWatchdogStarted(): void {
   }
 }
 
-async function apiGet(apiBase: string, path: string) {
-  const res = await fetch(`${apiBase}${path}`, { cache: "no-store" });
+async function apiGet(apiBase: string, path: string, adminKey: string | null = null) {
+  const headers: Record<string, string> = {};
+  if (adminKey) headers["X-Admin-Key"] = adminKey;
+  const res = await fetch(`${apiBase}${path}`, {
+    cache: "no-store",
+    headers,
+  });
   if (!res.ok) throw new Error(`API GET failed ${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -214,7 +219,7 @@ async function runJobBackground(jobId: string) {
       executedWebGitCommitHash,
     });
 
-    const job = await apiGet(apiBase, `/v1/jobs/${jobId}`);
+    const job = await apiGet(apiBase, `/v1/jobs/${jobId}`, adminKey);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
     const requestedVariant = (job.pipelineVariant || "claimboundary") as string;
@@ -244,7 +249,7 @@ async function runJobBackground(jobId: string) {
     // **P0 FIX**: Guard against late SUCCEEDED overwrite
     // If job was marked FAILED by stale recovery or cancellation, don't overwrite with SUCCEEDED
     try {
-      const currentJob = await apiGet(apiBase, `/v1/jobs/${jobId}`);
+      const currentJob = await apiGet(apiBase, `/v1/jobs/${jobId}`, adminKey);
       const currentStatus = String(currentJob?.status || "").toUpperCase();
 
       if (currentStatus === "RUNNING") {
@@ -393,7 +398,7 @@ export async function drainRunnerQueue() {
       let totalPages = 1;
 
       do {
-        const payload = await apiGet(apiBase, `/v1/jobs?page=${page}&pageSize=${pageSize}`);
+        const payload = await apiGet(apiBase, `/v1/jobs?page=${page}&pageSize=${pageSize}`, adminKey);
         const jobs = Array.isArray(payload?.jobs) ? payload.jobs : [];
 
         for (const job of jobs) {
@@ -442,7 +447,7 @@ export async function drainRunnerQueue() {
         if (!wasLocallyRunning) {
           let liveJob: any;
           try {
-            liveJob = await apiGet(apiBase, `/v1/jobs/${jobId}`);
+            liveJob = await apiGet(apiBase, `/v1/jobs/${jobId}`, adminKey);
           } catch (err) {
             console.warn(`[Runner] Skipping orphan recovery for ${jobId}: failed to refresh live status`, err);
             nonStaleRunningCount++;
@@ -561,7 +566,7 @@ export async function drainRunnerQueue() {
 
       let jobVariant: PipelineVariant | null = null;
       try {
-        const j = await apiGet(apiBase, `/v1/jobs/${next.jobId}`);
+        const j = await apiGet(apiBase, `/v1/jobs/${next.jobId}`, adminKey);
         const st = String(j?.status || "").toUpperCase();
         if (st !== "QUEUED") {
           continue;

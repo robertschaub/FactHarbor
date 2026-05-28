@@ -1704,3 +1704,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-05-27 | Lead Architect | Codex (GPT-5) | Main Stabilization Extra Cherry Picks -- [Standard] [open-items: yes]
 **For next agent:** The pushed analysis-code layer is `3e94e53e`, adding the selected extra picks above stabilized `406393c9`: `93302844`, `48b34617`, `2d07162e`, `a131bb41`, `53423586`, and `aa1e2c31` equivalents. A documentation-only handoff commit may sit above it on `main`. Validation passed focused tests/build and 4 of 5 live jobs at report level; the one failed hydrogen run was Stage 1 F1 `report_damaged`, then two immediate hydrogen reruns passed, so F1 remains an open variance issue rather than evidence against these picks.
 → Docs/AGENTS/Handoffs/2026-05-27_Lead_Architect_Main_Stabilization_Extra_Cherry_Picks.md
+
+---
+### 2026-05-28 | Senior Developer + DevOps | Codex (GPT-5) | Hidden Job Runner 404 Fix -- [Standard] [open-items: yes]
+**For next agent:** Hidden production jobs failed because `internal-runner-queue.ts` used unauthenticated `apiGet(...)` reads against `/v1/jobs...`, so hidden jobs returned `404 {"error":"Job not found"}` to the runner even though internal status/result writes already used `X-Admin-Key`. The code fix makes runner reads send the admin header and adds a regression test in `drain-runner-pause.integration.test.ts`; deployment and historical job retry/status cleanup remain open.
+→ Docs/AGENTS/Handoffs/2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md
