@@ -1700,6 +1700,12 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-05-25 | Senior Developer | Codex (GPT-5) | Job Annotations And Jobs Search -- [Standard] [open-items: yes]
 **For next agent:** Admin job annotations now persist as `JobEntity.AdminAnnotation`, are exposed only to admins, editable from `/jobs` cards and `/jobs/[id]`, and shown in the `/jobs` overview. `/jobs?q=...` now matches report text plus job ID prefixes for visible jobs and commit prefixes for admin callers; endpoint is `PATCH /api/fh/jobs/[id]/annotation`.
 → Docs/AGENTS/Handoffs/2026-05-25_Senior_Developer_Job_Annotations_And_Jobs_Search.md
+
+---
+### 2026-05-27 | Senior Developer | Codex (GPT-5) | Daily Bug Scan APICallError Mock Fix -- [Standard] [open-items: yes]
+**For next agent:** Scanned committed changes after prior reviewed HEAD `284dde1f` through `3e94e53e`. Confirmed CI failure on run `26534874275` at `406393c9`: `claimboundary-pipeline.test.ts` failed because `b9edb48f` added `APICallError` import/use in `claim-extraction-stage.ts`, while the local `vi.mock("ai")` in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` only exported `generateText` and `Output`. Fixed the mock by adding `APICallError.isInstance`. Verification passed: full `claimboundary-pipeline.test.ts` (`368 passed, 1 skipped`), isolated `claim-auto-selection-pipeline.test.ts` timeout case (`4 passed`), and `git diff --check`. Full safe `npm test` no longer fails on `APICallError`; it still hit the known suite-load timeout in `test/integration/claim-auto-selection-pipeline.test.ts:477`, which passed isolated in 1.6s.
+**Warnings:** A separate quality-policy concern remains unpatched: recent verdict changes removed prompt/test assertions that non-fallback published verdicts must have at least one directional citation, while `AGENTS.md`/Captain expectations still require every verdict to cite supporting or opposing evidence. Minimal next fix would be to restore a structural zero-directional-citation guard for publishable verdicts and re-add prompt wording only with explicit prompt-change approval.
+
 ---
 ### 2026-05-27 | Lead Architect | Codex (GPT-5) | Main Stabilization Extra Cherry Picks -- [Standard] [open-items: yes]
 **For next agent:** The pushed analysis-code layer is `3e94e53e`, adding the selected extra picks above stabilized `406393c9`: `93302844`, `48b34617`, `2d07162e`, `a131bb41`, `53423586`, and `aa1e2c31` equivalents. A documentation-only handoff commit may sit above it on `main`. Validation passed focused tests/build and 4 of 5 live jobs at report level; the one failed hydrogen run was Stage 1 F1 `report_damaged`, then two immediate hydrogen reruns passed, so F1 remains an open variance issue rather than evidence against these picks.
@@ -1709,6 +1715,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-05-28 | Senior Developer + DevOps | Codex (GPT-5) | Hidden Job Runner 404 Fix -- [Standard] [open-items: yes]
 **For next agent:** Hidden production jobs failed because `internal-runner-queue.ts` used unauthenticated `apiGet(...)` reads against `/v1/jobs...`, so hidden jobs returned `404 {"error":"Job not found"}` to the runner even though internal status/result writes already used `X-Admin-Key`. The code fix makes runner reads send the admin header and adds a regression test in `drain-runner-pause.integration.test.ts`; deployment and historical job retry/status cleanup remain open.
 → Docs/AGENTS/Handoffs/2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md
+
+---
+### 2026-05-28 | Senior Developer | Codex (GPT-5) | Zero Directional Citation Guard Review -- [Standard] [open-items: yes]
+**For next agent:** Zero-citation verdict validation was reviewed but not implemented. Add a structural guard in `apps/web/src/lib/analyzer/verdict-stage.ts` so normal publishable verdicts with empty `supportingEvidenceIds` and `contradictingEvidenceIds` cannot pass, even if the LLM direction validator returns valid. Allow only explicit fallback/insufficient verdict reasons, avoid broad-pool repair backfill, and update `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`.
+→ Docs/AGENTS/Handoffs/2026-05-28_Senior_Developer_Zero_Directional_Citation_Guard_Review.md
 
 ---
 ### 2026-05-28 | Senior Developer + DevOps | Codex (GPT-5) | Daily Bug Scan Main Guardrail Still Missing Mock Fix -- [Standard] [open-items: yes]
