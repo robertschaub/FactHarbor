@@ -916,6 +916,7 @@ describe("shouldProtectValidatedAnchorCarriers", () => {
 vi.mock("ai", () => ({
   generateText: vi.fn(),
   Output: { object: vi.fn(() => ({})) },
+  APICallError: { isInstance: vi.fn(() => false) },
 }));
 
 vi.mock("@/lib/analyzer/llm", () => ({
