@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-28T06:11:50.252Z",
-  "count": 278,
+  "generatedAt": "2026-05-28T06:27:27.726Z",
+  "count": 281,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5770,6 +5770,39 @@
       "summary": "The pushed analysis-code layer is `3e94e53e`; a documentation-only handoff commit may sit above it on `main`. Safety branch before extra picks is `codex/stabilized-main-before-extra-picks-2026-05-27` at `406393c9`. Verification before push: focused selector/verdict/config tests passed (263 tests), f"
     },
     {
+      "file": "2026-05-28_Agents_Supervisor_OpenAI_Login_Switch_Readiness.md",
+      "date": "2026-05-28",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "openai",
+        "login",
+        "switch",
+        "readiness"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-28_Agents_Supervisor_OpenAI_Login_Switch_Readiness.md"
+      ],
+      "summary": "Start with `git status --short --branch` and `git log --oneline --decorate -n 8`."
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Main_Stabilization_Analysis_Regression_Takeover.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "main",
+        "stabilization",
+        "analysis",
+        "regression",
+        "takeover"
+      ],
+      "files_touched": [],
+      "summary": "Handover for the investigation: determine whether commits added after the stabilized `406393c9` checkpoint worsen analysis quality, compare reports submitted so far, and use at most 8 new jobs."
+    },
+    {
       "file": "2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md",
       "date": "2026-05-28",
       "roles": [
@@ -5786,7 +5819,25 @@
       "files_touched": [
         "apps/web/src/lib/internal-runner-queue.ts"
       ],
-      "summary": "Start by checking `git status --short`, then inspect `apps/web/src/lib/internal-runner-queue.ts` around `apiGet(...)` and `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts` for the hidden-job regression test. If asked to deploy, stage only the runner fix, test, and this handoff/index entry unless Captain explicitly includes unrelated changes. Use `scripts/deploy-remote.ps1` only after the desired commit is on `origin/main`, because the VPS deploy script pulls `origin/main`."
+      "summary": "Start by checking `git status --short`, then inspect `apps/web/src/lib/internal-runner-queue.ts` around `apiGet(...)` and `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts` for the hidden-job regression test. If asked to deploy, stage only the runner fix, test, and this handoff/index en"
+    },
+    {
+      "file": "2026-05-28_Senior_Developer_Zero_Directional_Citation_Guard_Review.md",
+      "date": "2026-05-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "zero",
+        "directional",
+        "citation",
+        "guard",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-28_Senior_Developer_Zero_Directional_Citation_Guard_Review.md"
+      ],
+      "summary": "Start in `apps/web/src/lib/analyzer/verdict-stage.ts` around `validateVerdicts(...)`, `isVerdictDirectionPlausible(...)`, and `getDeterministicDirectionIssues(...)`."
     }
   ]
 }

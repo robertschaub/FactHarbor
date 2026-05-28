@@ -1724,3 +1724,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-05-28 | Senior Developer + DevOps | Codex (GPT-5) | Daily Bug Scan Main Guardrail Still Missing Mock Fix -- [Standard] [open-items: yes]
 **For next agent:** Scanned committed changes after prior reviewed HEAD `3e94e53e` through `fdb47ebc`. The only new commit is docs/index-only, but GitHub Actions Main Guardrail run `26538025678` failed on `fdb47ebc` with the same concrete `APICallError` mock gap from the prior scan: `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:1090` reports `No "APICallError" export is defined on the "ai" mock`. The local worktree already contains the minimal one-line fix (`APICallError: { isInstance: vi.fn(() => false) }` in the `vi.mock("ai")` object), and the focused verifier passed (`claimboundary-pipeline.test.ts`: 368 passed, 1 skipped) with `git diff --check` clean. Open item: commit/push that existing local fix so `main` CI reflects it.
+
+---
+### 2026-05-28 | Agents Supervisor | Codex (GPT-5) | OpenAI Login Switch Readiness -- [Standard] [open-items: yes]
+**For next agent:** Before the Captain switches OpenAI login, local `main` had 5 commits ahead of `origin/main`; the important resume files are `2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md`, `2026-05-28_Senior_Developer_Zero_Directional_Citation_Guard_Review.md`, `2026-05-28_Lead_Architect_Main_Stabilization_Analysis_Regression_Takeover.md`, and `Docs/WIP/2026-05-28_ClaimBoundary_Routing_Telemetry_ID_Handover.md`. Push to `origin/main` remains a Captain decision.
+→ Docs/AGENTS/Handoffs/2026-05-28_Agents_Supervisor_OpenAI_Login_Switch_Readiness.md
