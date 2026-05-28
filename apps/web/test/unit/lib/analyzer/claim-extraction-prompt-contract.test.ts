@@ -135,6 +135,62 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("CLAIM_CONTRACT_COMPLETION", () => {
+    const vars: Record<string, string> = {
+      analysisInput: "Entity A action complied with Framework B and Framework C",
+      impliedClaim: "Entity A action complied with multiple frameworks.",
+      articleThesis: "The thesis depends on each named framework.",
+      maxAddedClaims: "4",
+      currentClaimsJson: JSON.stringify([
+        {
+          id: "AC_01",
+          statement: "Entity A action complied with Framework B.",
+          category: "evaluative",
+          centrality: "high",
+          harmPotential: "medium",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          thesisRelevance: "direct",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.8,
+          groundingQuality: "strong",
+          expectedEvidenceProfile: {
+            methodologies: ["official record"],
+            expectedMetrics: [],
+            expectedSourceTypes: ["legal_document"],
+          },
+        },
+      ], null, 2),
+    };
+
+    it("section exists and renders without unresolved variables", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_COMPLETION");
+      expect(section, "Section ## CLAIM_CONTRACT_COMPLETION not found").not.toBeNull();
+      if (!section) return;
+      const { unresolved, rendered } = renderWithVars(section, vars);
+      expect(unresolved).toEqual([]);
+      expect(rendered).not.toContain("{{");
+      expect(rendered).not.toContain("}}");
+    });
+
+    it("locks completion to omitted thesis-direct propositions only", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_COMPLETION");
+      expect(section).not.toBeNull();
+      expect(section).toContain("omitted thesis-direct propositions");
+      expect(section).toContain("Do not add background, explanation, motive, prediction, implication, verdict language, or evidence-derived material");
+      expect(section).toContain("Preserve every existing claim ID");
+      expect(section).toContain('Set `thesisRelevance` to `"direct"`');
+      expect(section).toContain("Do not add more claims than the Maximum Added Claims value");
+      expect(section).toContain("must not exceed that same limit");
+      expect(section).toContain("Preserve their original `thesisRelevance` values");
+      expect(section).toContain("Keep the original language of the proposition");
+      expect(section).toContain("Preserve the original predicate and relation");
+      expect(section).toContain("completionEligible");
+      expect(section).toContain("omitted_thesis_direct_proposition");
+    });
+  });
+
   describe("CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX", () => {
     const vars: Record<string, string> = {
       salienceBindingContextJson: JSON.stringify(

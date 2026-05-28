@@ -24,6 +24,23 @@ function filterAndSortIds(ids: string[], selectedSet: Set<string>, selectedOrder
     .sort((a, b) => (selectedOrder.get(a) ?? 0) - (selectedOrder.get(b) ?? 0));
 }
 
+function uniqueIds(ids: string[]): string[] {
+  return ids.filter((id, index) => Boolean(id) && ids.indexOf(id) === index);
+}
+
+function getValidatedContractCarrierIds(
+  summary: CBClaimUnderstanding["contractValidationSummary"],
+): string[] {
+  if (!summary?.preservesContract || summary.rePromptRequired) {
+    return [];
+  }
+
+  return uniqueIds([
+    ...(summary.contractCarrierClaimIds ?? []),
+    ...(summary.truthConditionAnchor?.validPreservedIds ?? []),
+  ]);
+}
+
 function withRelevantClaimIds(
   evidence: PreliminaryEvidenceEntry,
   relevantClaimIds: string[] | undefined,
@@ -88,25 +105,47 @@ export function filterClaimUnderstandingForSelectedClaims(
     })
     .filter((evidence): evidence is PreliminaryEvidenceEntry => evidence !== null);
 
+  const originalContractCarrierIds = getValidatedContractCarrierIds(understanding.contractValidationSummary);
+  const removedContractCarrierIds = originalContractCarrierIds.filter((claimId) => !selectedSet.has(claimId));
+
   const contractValidationSummary = understanding.contractValidationSummary
-    ? {
-      ...understanding.contractValidationSummary,
-      truthConditionAnchor: understanding.contractValidationSummary.truthConditionAnchor
-        ? {
-          ...understanding.contractValidationSummary.truthConditionAnchor,
-          preservedInClaimIds: filterAndSortIds(
-            understanding.contractValidationSummary.truthConditionAnchor.preservedInClaimIds,
-            selectedSet,
-            selectedOrder,
-          ),
-          validPreservedIds: filterAndSortIds(
-            understanding.contractValidationSummary.truthConditionAnchor.validPreservedIds,
-            selectedSet,
-            selectedOrder,
-          ),
-        }
-        : undefined,
-    }
+    ? (() => {
+      const filteredSummary: NonNullable<CBClaimUnderstanding["contractValidationSummary"]> = {
+        ...understanding.contractValidationSummary,
+        contractCarrierClaimIds: filterAndSortIds(
+          understanding.contractValidationSummary.contractCarrierClaimIds ?? [],
+          selectedSet,
+          selectedOrder,
+        ),
+        truthConditionAnchor: understanding.contractValidationSummary.truthConditionAnchor
+          ? {
+            ...understanding.contractValidationSummary.truthConditionAnchor,
+            preservedInClaimIds: filterAndSortIds(
+              understanding.contractValidationSummary.truthConditionAnchor.preservedInClaimIds,
+              selectedSet,
+              selectedOrder,
+            ),
+            validPreservedIds: filterAndSortIds(
+              understanding.contractValidationSummary.truthConditionAnchor.validPreservedIds,
+              selectedSet,
+              selectedOrder,
+            ),
+          }
+          : undefined,
+      };
+
+      if (removedContractCarrierIds.length === 0) {
+        return filteredSummary;
+      }
+
+      return {
+        ...filteredSummary,
+        preservesContract: false,
+        rePromptRequired: true,
+        failureMode: "contract_violated" as const,
+        summary: `Selected claim subset removed validated contract carrier claim(s) [${removedContractCarrierIds.join(",")}]; previous contract approval no longer applies.`,
+      };
+    })()
     : undefined;
 
   return {

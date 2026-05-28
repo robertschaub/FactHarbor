@@ -114,7 +114,11 @@
   "claimContractValidation": {
     "enabled": true,
     "maxRetries": 1,
-    "repairPassEnabled": true
+    "repairPassEnabled": true,
+    "completionEnabled": true,
+    "completionMaxAttempts": 1,
+    "completionMaxAddedClaims": 4,
+    "validatorAvailabilityMaxAttempts": 1
   },
   "salienceCommitment": {
     "enabled": true,

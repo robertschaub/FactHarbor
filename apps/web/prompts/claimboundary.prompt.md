@@ -21,6 +21,8 @@ variables:
   - atomicClaimsJson
   - maxRecommendedClaims
   - anchorText
+  - currentClaimsJson
+  - maxAddedClaims
   - salienceBindingContextJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
@@ -31,6 +33,7 @@ requiredSections:
   - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_REPAIR"
+  - "CLAIM_CONTRACT_COMPLETION"
   - "CLAIM_SELECTION_RECOMMENDATION"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
@@ -2487,12 +2490,128 @@ Return a JSON object matching this schema:
       "specificityScore": 0.8,
       "groundingQuality": "strong",
       "expectedEvidenceProfile": {
+        "methodologies": [],
+        "expectedMetrics": [],
+        "expectedSourceTypes": []
+      }
+    }
+  ]
+}
+```
+
+Return only the JSON object. Do not include explanation text.
+
+## CLAIM_CONTRACT_COMPLETION
+
+You are an expert claim-contract completion analyst.
+
+The current extracted claims were already checked by a separate contract validator. That validator reported that the set does not preserve the original input's full thesis. Your task is to compare the original input against the current claims and add only omitted thesis-direct propositions that are necessary to make the claim set complete.
+
+### Input
+
+**Original Input:**
+${analysisInput}
+
+**Implied Claim:**
+${impliedClaim}
+
+**Article Thesis:**
+${articleThesis}
+
+**Maximum Added Claims:**
+${maxAddedClaims}
+
+**Current Claims:**
+${currentClaimsJson}
+
+### Rules
+
+1. Complete omissions only. Add a claim only when the original input contains a thesis-direct proposition that is not carried by any current claim.
+2. Do not add background, explanation, motive, prediction, implication, verdict language, or evidence-derived material.
+3. Do not split or add claims for side facts unless the input's truth directly depends on that proposition.
+4. Preserve every existing claim ID and return the existing claims in the output. Do not change their statements or metadata unless a schema field is missing and must be filled structurally.
+5. New claims must use fresh IDs after the existing sequence where possible.
+6. Every new claim must be thesis-direct and independently verifiable. Set `thesisRelevance` to `"direct"`.
+7. Keep the original language of the proposition when practical. Do not translate merely because these instructions are in English.
+8. Preserve the original predicate and relation. Do not replace a broad predicate with a proxy metric, a stage label, a methodology window, or a narrower subsystem unless the input itself used that framing.
+9. If the current claims already cover the original input's thesis, set `completionEligible` to `false` and do not add claims.
+10. If the missing material cannot be identified without inventing meaning beyond the input, set `completionEligible` to `false`.
+11. Do not add more claims than the Maximum Added Claims value. `omittedPropositions` must describe only the propositions that correspond to newly added claims and must not exceed that same limit.
+12. Existing claims may be direct, contextual, or tangential. Preserve their original `thesisRelevance` values; the `"direct"` requirement applies only to newly added claims.
+
+### Output Format
+
+Return a JSON object matching this schema:
+
+```json
+{
+  "completionEligible": true,
+  "failureKind": "omitted_thesis_direct_proposition",
+  "omittedPropositions": [
+    {
+      "id": "OMITTED_01",
+      "description": "Abstract description of the omitted proposition.",
+      "whyInScope": "Why the original input's truth depends on this proposition."
+    }
+  ],
+  "atomicClaims": [
+    {
+      "id": "AC_01",
+      "statement": "Existing claim repeated unchanged, or newly added thesis-direct claim...",
+      "category": "factual",
+      "verifiability": "high",
+      "centrality": "high",
+      "harmPotential": "medium",
+      "isCentral": true,
+      "claimDirection": "supports_thesis",
+      "thesisRelevance": "direct",
+      "keyEntities": ["Entity A"],
+      "relevantGeographies": [],
+      "checkWorthiness": "high",
+      "specificityScore": 0.8,
+      "groundingQuality": "strong",
+      "expectedEvidenceProfile": {
         "methodologies": ["official record"],
         "expectedMetrics": [],
         "expectedSourceTypes": ["legal_document"]
       }
     }
-  ]
+  ],
+  "rationale": "One sentence explaining why completion is or is not eligible."
+}
+```
+
+If completion is not eligible, return:
+
+```json
+{
+  "completionEligible": false,
+  "failureKind": "not_eligible",
+  "omittedPropositions": [],
+  "atomicClaims": [
+    {
+      "id": "AC_01",
+      "statement": "Repeat the current claims unchanged.",
+      "category": "factual",
+      "verifiability": "high",
+      "centrality": "high",
+      "harmPotential": "medium",
+      "isCentral": true,
+      "claimDirection": "supports_thesis",
+      "thesisRelevance": "direct",
+      "keyEntities": [],
+      "relevantGeographies": [],
+      "checkWorthiness": "high",
+      "specificityScore": 0.8,
+      "groundingQuality": "strong",
+      "expectedEvidenceProfile": {
+        "methodologies": [],
+        "expectedMetrics": [],
+        "expectedSourceTypes": []
+      }
+    }
+  ],
+  "rationale": "The current claims already cover the thesis, or the omission is unclear."
 }
 ```
 

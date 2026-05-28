@@ -1598,6 +1598,17 @@ export const CalcConfigSchema = z.object({
      * authority governs the repaired output.
      */
     repairPassEnabled: z.boolean().optional(),
+    /**
+     * Contract completion runs after the validator returns a usable
+     * contract-violated result and the ordinary retry/repair path still
+     * failed. It asks a dedicated LLM comparison prompt to add only omitted
+     * thesis-direct propositions, then the normal validator must authorize
+     * the completed claim set before it can proceed.
+     */
+    completionEnabled: z.boolean().optional(),
+    completionMaxAttempts: z.number().int().min(0).max(2).optional(),
+    completionMaxAddedClaims: z.number().int().min(0).max(10).optional(),
+    validatorAvailabilityMaxAttempts: z.number().int().min(0).max(3).optional(),
   }).optional(),
 
   /**
@@ -1957,6 +1968,10 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     enabled: true,
     maxRetries: 1,
     repairPassEnabled: true,
+    completionEnabled: true,
+    completionMaxAttempts: 1,
+    completionMaxAddedClaims: 4,
+    validatorAvailabilityMaxAttempts: 1,
   },
   salienceCommitment: {
     enabled: true,

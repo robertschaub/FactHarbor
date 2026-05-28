@@ -85,6 +85,9 @@ vi.mock("@/lib/analyzer/claim-extraction-stage", () => ({
   runGate1Validation: vi.fn(),
   filterByCentrality: vi.fn(),
   shouldProtectValidatedAnchorCarriers: vi.fn(() => false),
+  getProtectedContractCarrierIds: vi.fn((summary: CBClaimUnderstanding["contractValidationSummary"]) =>
+    summary?.contractCarrierClaimIds ?? summary?.truthConditionAnchor?.validPreservedIds ?? [],
+  ),
   getAtomicityGuidance: vi.fn(() => ""),
   generateSearchQueries: vi.fn(),
   upsertSearchProviderWarning: vi.fn(),
@@ -334,7 +337,7 @@ function makeQueries(claimIds: string[]): SearchQuery[] {
   }));
 }
 
-function configurePipeline(enabled: boolean): void {
+function configurePipeline(enabled: boolean, overrides: Record<string, unknown> = {}): void {
   mocks.loadPipelineConfig.mockResolvedValue({
     config: {
       claimAutoSelectionEnabled: enabled,
@@ -346,6 +349,7 @@ function configurePipeline(enabled: boolean): void {
       explanationQualityMode: "off",
       tigerScoreMode: "off",
       contradictionReservedIterations: 1,
+      ...overrides,
     },
     contentHash: "__PIPELINE__",
     fromDefault: false,
@@ -498,7 +502,7 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
     );
     expect(result.resultJson.claimSelection).toBeUndefined();
     expect(result.resultJson.understanding.atomicClaims.map((c: AtomicClaim) => c.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
-  });
+  }, 15_000);
 
   it("routes only selector-ranked selected claims into Stage 2 and result verdicts", async () => {
     configurePipeline(true);
@@ -525,6 +529,75 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
       expect.objectContaining({ id: "AC_02", reasonType: "selector_dropped" }),
     ]);
     expect(result.resultJson.claimSelection.droppedClaims[0].rationale).toContain("Selector");
+  });
+
+  it("keeps validated contract carriers in automatic selection even beyond the candidate cap", async () => {
+    configurePipeline(true, {
+      claimAutoSelectionCap: 2,
+      claimAutoSelectionCandidateCap: 1,
+    });
+    const contractProtectedUnderstanding = understanding();
+    contractProtectedUnderstanding.contractValidationSummary = {
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "completion preserved the contract",
+      stageAttribution: "completion",
+      contractCarrierClaimIds: ["AC_03"],
+    };
+    mocks.extractClaims.mockResolvedValue(contractProtectedUnderstanding);
+    mocks.generateClaimSelectionRecommendation.mockResolvedValue(recommendation(["AC_01"]));
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+
+    const result = await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "Input claim",
+    });
+
+    expect(mocks.generateClaimSelectionRecommendation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        atomicClaims: [
+          expect.objectContaining({ id: "AC_01" }),
+          expect.objectContaining({ id: "AC_03" }),
+        ],
+      }),
+    );
+    const researchedState = mocks.researchEvidence.mock.calls[0][0] as CBResearchState;
+    expect(researchedState.understanding?.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_03"]);
+    expect(result.resultJson.claimSelection.selectedClaimIds).toEqual(["AC_01", "AC_03"]);
+    expect(result.resultJson.understanding.contractValidationSummary.contractCarrierClaimIds).toEqual(["AC_03"]);
+  });
+
+  it("keeps contract carriers within the automatic selection cap by dropping non-carriers", async () => {
+    configurePipeline(true, {
+      claimAutoSelectionCap: 1,
+      claimAutoSelectionCandidateCap: 3,
+    });
+    const contractProtectedUnderstanding = understanding();
+    contractProtectedUnderstanding.contractValidationSummary = {
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "completion preserved the contract",
+      stageAttribution: "completion",
+      contractCarrierClaimIds: ["AC_03"],
+    };
+    mocks.extractClaims.mockResolvedValue(contractProtectedUnderstanding);
+    mocks.generateClaimSelectionRecommendation.mockResolvedValue(recommendation(["AC_01"]));
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+
+    const result = await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "Input claim",
+    });
+
+    const researchedState = mocks.researchEvidence.mock.calls[0][0] as CBResearchState;
+    expect(researchedState.understanding?.atomicClaims.map((claim) => claim.id)).toEqual(["AC_03"]);
+    expect(result.resultJson.claimSelection.selectedClaimIds).toEqual(["AC_03"]);
+    expect(result.resultJson.claimSelection.droppedClaims).toEqual([
+      expect.objectContaining({ id: "AC_01", reasonType: "selector_dropped" }),
+      expect.objectContaining({ id: "AC_02", reasonType: "selector_dropped" }),
+    ]);
   });
 
   it("returns a non-damaged terminal result when the selector selects zero claims", async () => {

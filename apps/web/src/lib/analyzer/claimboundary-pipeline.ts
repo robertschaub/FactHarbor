@@ -105,6 +105,7 @@ import {
   runGate1Validation,
   filterByCentrality,
   shouldProtectValidatedAnchorCarriers,
+  getProtectedContractCarrierIds,
   getAtomicityGuidance,
   generateSearchQueries,
   upsertSearchProviderWarning,
@@ -200,6 +201,7 @@ export {
   filterByCentrality,
   selectClaimsForGate1,
   shouldProtectValidatedAnchorCarriers,
+  getProtectedContractCarrierIds,
   getAtomicityGuidance,
   generateSearchQueries,
   type PreliminaryEvidenceItem,
@@ -365,6 +367,72 @@ export function buildClaimBoundaryResultJson(params: {
 
 const CANDIDATE_CAP_EXCLUDED_RATIONALE =
   "Not evaluated because the candidate set exceeded the configured claim auto-selection candidate cap.";
+
+function includeRequiredClaimsForEvaluation(
+  candidateClaims: AtomicClaim[],
+  candidateCap: number,
+  requiredClaimIds: string[],
+): AtomicClaim[] {
+  const evaluatedClaims = candidateClaims.slice(0, candidateCap);
+  const includedClaimIds = new Set(evaluatedClaims.map((claim) => claim.id));
+  const claimById = new Map(candidateClaims.map((claim) => [claim.id, claim] as const));
+
+  for (const claimId of requiredClaimIds) {
+    if (includedClaimIds.has(claimId)) continue;
+    const claim = claimById.get(claimId);
+    if (!claim) continue;
+    evaluatedClaims.push(claim);
+    includedClaimIds.add(claimId);
+  }
+
+  return evaluatedClaims;
+}
+
+function mergeSelectedClaimIdsWithRequired(
+  selectedClaimIds: string[],
+  requiredClaimIds: string[],
+  candidateClaims: AtomicClaim[],
+  maxSelectedIds = Number.MAX_SAFE_INTEGER,
+): string[] {
+  const candidateOrder = new Map(candidateClaims.map((claim, index) => [claim.id, index] as const));
+  const availableIds = new Set(candidateClaims.map((claim) => claim.id));
+  const requiredIds = requiredClaimIds
+    .filter((claimId, index) => availableIds.has(claimId) && requiredClaimIds.indexOf(claimId) === index)
+    .sort((left, right) =>
+      (candidateOrder.get(left) ?? Number.MAX_SAFE_INTEGER)
+      - (candidateOrder.get(right) ?? Number.MAX_SAFE_INTEGER),
+    );
+  const requiredIdSet = new Set(requiredIds);
+  const maxNonRequiredIds = Math.max(0, maxSelectedIds - requiredIds.length);
+  const selectedNonRequiredIds: string[] = [];
+  const seen = new Set<string>();
+
+  for (const claimId of selectedClaimIds) {
+    if (!availableIds.has(claimId) || seen.has(claimId) || requiredIdSet.has(claimId)) continue;
+    if (selectedNonRequiredIds.length >= maxNonRequiredIds) continue;
+    selectedNonRequiredIds.push(claimId);
+    seen.add(claimId);
+  }
+
+  const keptNonRequiredIdSet = new Set(selectedNonRequiredIds);
+  const merged: string[] = [];
+  const mergedIdSet = new Set<string>();
+
+  for (const claimId of selectedClaimIds) {
+    if (!availableIds.has(claimId) || mergedIdSet.has(claimId)) continue;
+    if (!requiredIdSet.has(claimId) && !keptNonRequiredIdSet.has(claimId)) continue;
+    merged.push(claimId);
+    mergedIdSet.add(claimId);
+  }
+
+  for (const claimId of requiredIds) {
+    if (mergedIdSet.has(claimId)) continue;
+    merged.push(claimId);
+    mergedIdSet.add(claimId);
+  }
+
+  return merged;
+}
 
 function buildDroppedClaimRationale(
   assessment: ClaimSelectionRecommendationAssessment | undefined,
@@ -815,21 +883,28 @@ export async function runClaimBoundaryAnalysis(
       checkAbortSignal(input.jobId);
       const candidateCap = normalizeClaimAutoSelectionCandidateCap(initialPipelineConfig.claimAutoSelectionCandidateCap);
       const candidateClaims = understanding.atomicClaims;
-      const evaluatedClaims = candidateClaims.slice(0, candidateCap);
-      const selectionCap = getClaimAutoSelectionCap(
+      const protectedContractCarrierIds = getProtectedContractCarrierIds(understanding.contractValidationSummary);
+      const evaluatedClaims = includeRequiredClaimsForEvaluation(
+        candidateClaims,
+        candidateCap,
+        protectedContractCarrierIds,
+      );
+      const baseSelectionCap = getClaimAutoSelectionCap(
         evaluatedClaims.length,
         initialPipelineConfig.claimAutoSelectionCap,
       );
+      const selectionCap = Math.max(baseSelectionCap, protectedContractCarrierIds.length);
 
       if (candidateClaims.length > evaluatedClaims.length) {
         state.warnings.push({
           type: "claim_selection_truncated",
           severity: "warning",
-          message: `Automatic claim selection evaluated ${evaluatedClaims.length} of ${candidateClaims.length} candidate claims because the configured candidate cap is ${candidateCap}.`,
+          message: `Automatic claim selection evaluated ${evaluatedClaims.length} of ${candidateClaims.length} candidate claims because the configured candidate cap is ${candidateCap}; validated contract carriers are always included.`,
           details: {
             candidateClaimCount: candidateClaims.length,
             evaluatedCandidateClaimCount: evaluatedClaims.length,
             candidateCap,
+            protectedContractCarrierIds,
           },
         });
       }
@@ -909,24 +984,35 @@ export async function runClaimBoundaryAnalysis(
           selectionCap,
           pipelineConfig: initialPipelineConfig,
         });
+        const selectedClaimIds = mergeSelectedClaimIdsWithRequired(
+          recommendation.recommendedClaimIds,
+          protectedContractCarrierIds,
+          candidateClaims,
+          selectionCap,
+        );
+        const rankedClaimIds = mergeSelectedClaimIdsWithRequired(
+          recommendation.rankedClaimIds,
+          protectedContractCarrierIds,
+          candidateClaims,
+        );
 
         state.claimSelection = buildClaimSelectionMetadata({
           understanding,
           selectionCap,
           candidateCap,
           evaluatedClaims,
-          selectedClaimIds: recommendation.recommendedClaimIds,
-          rankedClaimIds: recommendation.rankedClaimIds,
+          selectedClaimIds,
+          rankedClaimIds,
           rationale: recommendation.rationale,
           assessments: recommendation.assessments,
         });
 
         state.understanding = filterClaimUnderstandingForSelectedClaims(
           understanding,
-          recommendation.recommendedClaimIds,
+          selectedClaimIds,
         );
 
-        if (recommendation.recommendedClaimIds.length === 0) {
+        if (selectedClaimIds.length === 0) {
           state.warnings.push({
             type: "no_checkworthy_claims",
             severity: "warning",
@@ -936,6 +1022,7 @@ export async function runClaimBoundaryAnalysis(
               evaluatedCandidateClaimCount: evaluatedClaims.length,
               candidateCap,
               selectionCap,
+              protectedContractCarrierIds,
             },
           });
           startPhase("aggregate");
@@ -954,7 +1041,7 @@ export async function runClaimBoundaryAnalysis(
         }
 
         onEvent(
-          `Selected ${recommendation.recommendedClaimIds.length} of ${candidateClaims.length} claims for research.`,
+          `Selected ${selectedClaimIds.length} of ${candidateClaims.length} claims for research.`,
           25,
         );
       } catch (error) {

@@ -929,6 +929,13 @@ describe("claimContractValidation config defaults", () => {
   it("has maxRetries=1 by default", () => {
     expect(DEFAULT_CALC_CONFIG.claimContractValidation?.maxRetries).toBe(1);
   });
+
+  it("has contract completion enabled with bounded defaults", () => {
+    expect(DEFAULT_CALC_CONFIG.claimContractValidation?.completionEnabled).toBe(true);
+    expect(DEFAULT_CALC_CONFIG.claimContractValidation?.completionMaxAttempts).toBe(1);
+    expect(DEFAULT_CALC_CONFIG.claimContractValidation?.completionMaxAddedClaims).toBe(4);
+    expect(DEFAULT_CALC_CONFIG.claimContractValidation?.validatorAvailabilityMaxAttempts).toBe(1);
+  });
 });
 
 // ============================================================================
@@ -1794,6 +1801,7 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
 
     // Narrow repair function exists and uses context_refinement tier.
     expect(source).toContain("async function runContractRepair");
+    expect(source).toContain("async function runContractCompletion");
     expect(source).toMatch(/getModelForTask\("context_refinement"[^\n]+runContractRepair|runContractRepair[\s\S]+?getModelForTask\("context_refinement"/);
 
     // Structural gate fires only when anchor is non-empty, present-in-input,
@@ -1817,6 +1825,10 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     );
     const schema = readFileSync(schemaPath, "utf-8");
     expect(schema).toContain("repairPassEnabled");
+    expect(schema).toContain("completionEnabled");
+    expect(schema).toContain("completionMaxAttempts");
+    expect(schema).toContain("completionMaxAddedClaims");
+    expect(schema).toContain("validatorAvailabilityMaxAttempts");
 
     const jsonPath = path.resolve(
       __dirname,
@@ -1824,6 +1836,8 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     );
     const json = readFileSync(jsonPath, "utf-8");
     expect(json).toContain('"repairPassEnabled": true');
+    expect(json).toContain('"completionEnabled": true');
+    expect(json).toContain('"validatorAvailabilityMaxAttempts": 1');
   });
 
   it("source sets failureMode='validator_unavailable' on both unavailable-path summary literals", () => {

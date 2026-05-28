@@ -71,6 +71,7 @@ function understanding(): CBClaimUnderstanding {
       preservesContract: true,
       rePromptRequired: false,
       summary: "ok",
+      contractCarrierClaimIds: ["AC_02", "AC_03", "AC_01"],
       truthConditionAnchor: {
         presentInInput: true,
         anchorText: "anchor",
@@ -106,11 +107,30 @@ describe("claim-selection filter", () => {
     });
   });
 
-  it("filters contract anchor claim ID lists without changing validation outcome", () => {
-    const filtered = filterClaimUnderstandingForSelectedClaims(understanding(), ["AC_03", "AC_01"]);
+  it("filters contract anchor claim ID lists without changing validation outcome when all carriers remain", () => {
+    const input = understanding();
+    input.contractValidationSummary = {
+      ...input.contractValidationSummary!,
+      contractCarrierClaimIds: ["AC_03", "AC_01"],
+    };
+
+    const filtered = filterClaimUnderstandingForSelectedClaims(input, ["AC_03", "AC_01"]);
 
     expect(filtered.contractValidationSummary?.preservesContract).toBe(true);
+    expect(filtered.contractValidationSummary?.contractCarrierClaimIds).toEqual(["AC_03", "AC_01"]);
     expect(filtered.contractValidationSummary?.truthConditionAnchor?.preservedInClaimIds).toEqual(["AC_03", "AC_01"]);
     expect(filtered.contractValidationSummary?.truthConditionAnchor?.validPreservedIds).toEqual(["AC_03", "AC_01"]);
+  });
+
+  it("invalidates positive contract validation when selection removes a carrier", () => {
+    const filtered = filterClaimUnderstandingForSelectedClaims(understanding(), ["AC_03", "AC_01"]);
+
+    expect(filtered.contractValidationSummary).toMatchObject({
+      preservesContract: false,
+      rePromptRequired: true,
+      failureMode: "contract_violated",
+      summary: expect.stringContaining("AC_02"),
+    });
+    expect(filtered.contractValidationSummary?.contractCarrierClaimIds).toEqual(["AC_03", "AC_01"]);
   });
 });

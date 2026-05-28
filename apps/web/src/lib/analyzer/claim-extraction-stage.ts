@@ -139,6 +139,24 @@ const ContractRepairOutputSchema = z.object({
   atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
 });
 
+const ContractCompletionOmittedPropositionSchema = z.object({
+  id: z.string().catch(""),
+  description: z.string().catch(""),
+  whyInScope: z.string().catch(""),
+});
+
+const ContractCompletionOutputSchema = z.object({
+  completionEligible: z.boolean().catch(false),
+  failureKind: z.enum([
+    "omitted_thesis_direct_proposition",
+    "not_eligible",
+    "unclear",
+  ]).catch("unclear"),
+  omittedPropositions: z.array(ContractCompletionOmittedPropositionSchema).catch([]),
+  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+  rationale: z.string().catch(""),
+});
+
 // Phase 7 E2: salience commitment stage output schema. Runs between Pass 1 and
 // Pass 2. Log-only in this iteration — does NOT yet constrain Pass 2. The
 // stage emits a list of distinguishing-meaning-aspect anchors for auditability
@@ -331,7 +349,7 @@ export async function extractClaims(
   // or if validation returns no usable structured result.
   // ------------------------------------------------------------------
   let activePass2 = pass2;
-  let stageAttribution: "initial" | "retry" | "repair" = "initial";
+  let stageAttribution: "initial" | "retry" | "repair" | "completion" = "initial";
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
@@ -708,6 +726,189 @@ export async function extractClaims(
         "[Stage1] Skipping contract repair because the current claim set is already contract-approved."
       );
     }
+
+    let completionDiagnosticEmitted = false;
+    const emitCompletionDiagnostic = (
+      outcome: "rejected" | "validation_failed" | "skipped_validator_unavailable",
+      details: Record<string, unknown>,
+    ) => {
+      if (completionDiagnosticEmitted) return;
+      completionDiagnosticEmitted = true;
+      state.warnings.push({
+        type: "contract_completion_diagnostic",
+        severity: "info",
+        message: `Stage 1: contract completion ${outcome}.`,
+        details: {
+          stage: "stage1_contract_completion",
+          outcome,
+          ...details,
+        },
+      });
+    };
+
+    const validatorAvailabilityMaxAttempts =
+      calcConfig.claimContractValidation?.validatorAvailabilityMaxAttempts ?? 1;
+    if (
+      contractValidationSummary?.failureMode === "validator_unavailable" &&
+      validatorAvailabilityMaxAttempts > 0
+    ) {
+      state.onEvent?.("Retrying contract validation availability check...", 25);
+      const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+      const {
+        result: availabilityValidationResult,
+        attempts: availabilityValidationAttempts,
+      } = await runClaimContractValidationWithRetry(
+        () => validateClaimContract(
+          currentClaims,
+          state.originalInput,
+          activePass2.impliedClaim ?? "",
+          activePass2.articleThesis ?? "",
+          activePass2.inputClassification ?? "single_atomic_claim",
+          pipelineConfig,
+          salienceCommitment,
+        ),
+        validatorAvailabilityMaxAttempts,
+      );
+      state.llmCalls += availabilityValidationAttempts;
+
+      if (availabilityValidationResult) {
+        const evaluatedAvailability = await applyApprovedSingleClaimChallenges(
+          currentClaims,
+          evaluateClaimContractValidation(
+            availabilityValidationResult,
+            currentClaims,
+          ),
+          state.originalInput,
+          activePass2.impliedClaim ?? "",
+          activePass2.articleThesis ?? "",
+          activePass2.inputClassification ?? "single_atomic_claim",
+          pipelineConfig,
+          state,
+          25,
+          salienceCommitment,
+        );
+        contractValidationSummary = evaluatedAvailability.summary;
+        contractValidationSummary.stageAttribution = stageAttribution;
+        lastContractValidatedClaims = currentClaims;
+        console.info(
+          evaluatedAvailability.effectiveRePromptRequired
+            ? "[Stage1] Contract validator availability recovered and confirmed contract violation."
+            : "[Stage1] Contract validator availability recovered and approved the active claim set.",
+        );
+      } else {
+        console.warn("[Stage1] Contract validator availability recovery returned no usable result.");
+      }
+    }
+
+    const completionEnabled = calcConfig.claimContractValidation?.completionEnabled ?? true;
+    const completionMaxAttempts = calcConfig.claimContractValidation?.completionMaxAttempts ?? 1;
+    const completionMaxAddedClaims = calcConfig.claimContractValidation?.completionMaxAddedClaims ?? 4;
+    const shouldAttemptContractCompletion =
+      completionEnabled &&
+      completionMaxAttempts > 0 &&
+      contractValidationSummary?.failureMode === "contract_violated" &&
+      (
+        contractValidationSummary.preservesContract === false ||
+        contractValidationSummary.rePromptRequired === true
+      );
+
+    if (
+      completionEnabled &&
+      completionMaxAttempts > 0 &&
+      contractValidationSummary?.failureMode === "validator_unavailable"
+    ) {
+      emitCompletionDiagnostic("skipped_validator_unavailable", {
+        attemptsConfigured: completionMaxAttempts,
+      });
+    }
+
+    if (shouldAttemptContractCompletion) {
+      for (let attempt = 1; attempt <= completionMaxAttempts; attempt++) {
+        const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+        state.onEvent?.(`Completing claim contract from original input (${attempt}/${completionMaxAttempts})...`, 25);
+        const completion = await runContractCompletion(
+          currentClaims,
+          state.originalInput,
+          activePass2.impliedClaim ?? "",
+          activePass2.articleThesis ?? "",
+          completionMaxAddedClaims,
+          pipelineConfig,
+          state,
+        );
+        state.llmCalls++;
+
+        if (!completion.completed) {
+          emitCompletionDiagnostic("rejected", {
+            attempt,
+            reason: completion.rejectionReason,
+          });
+          console.info(`[Stage1] Contract completion rejected: ${completion.rejectionReason}`);
+          continue;
+        }
+
+        const completedClaims = completion.completed.atomicClaims as unknown as AtomicClaim[];
+        const {
+          result: completionValidationResult,
+          attempts: completionValidationAttempts,
+        } = await runClaimContractValidationWithRetry(() =>
+          validateClaimContract(
+            completedClaims,
+            state.originalInput,
+            activePass2.impliedClaim ?? "",
+            activePass2.articleThesis ?? "",
+            activePass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            salienceCommitment,
+          )
+        );
+        state.llmCalls += completionValidationAttempts;
+
+        if (!completionValidationResult) {
+          emitCompletionDiagnostic("validation_failed", {
+            attempt,
+            reason: "validator_unavailable_after_completion",
+            addedClaimCount: completedClaims.length - currentClaims.length,
+          });
+          console.info("[Stage1] Contract completion could not be re-validated; keeping pre-completion set.");
+          continue;
+        }
+
+        const evaluatedCompletion = await applyApprovedSingleClaimChallenges(
+          completedClaims,
+          evaluateClaimContractValidation(
+            completionValidationResult,
+            completedClaims,
+          ),
+          state.originalInput,
+          activePass2.impliedClaim ?? "",
+          activePass2.articleThesis ?? "",
+          activePass2.inputClassification ?? "single_atomic_claim",
+          pipelineConfig,
+          state,
+          25,
+          salienceCommitment,
+        );
+
+        if (!evaluatedCompletion.effectiveRePromptRequired) {
+          activePass2 = { ...activePass2, atomicClaims: completedClaims };
+          stageAttribution = "completion";
+          lastContractValidatedClaims = completedClaims;
+          contractValidationSummary = evaluatedCompletion.summary;
+          contractValidationSummary.stageAttribution = stageAttribution;
+          console.info(
+            `[Stage1] Contract completion accepted with ${completedClaims.length - currentClaims.length} added claim(s).`,
+          );
+          break;
+        }
+
+        emitCompletionDiagnostic("validation_failed", {
+          attempt,
+          reason: evaluatedCompletion.summary.summary,
+          addedClaimCount: completedClaims.length - currentClaims.length,
+        });
+        console.info("[Stage1] Contract completion did not validate cleanly; keeping pre-completion set.");
+      }
+    }
   }
 
   // ------------------------------------------------------------------
@@ -722,15 +923,14 @@ export async function extractClaims(
     base + Math.floor(state.originalInput.length / charsPerClaim),
   );
 
-  const protectedAnchorCarrierIds = shouldProtectValidatedAnchorCarriers(contractValidationSummary)
-    ? contractValidationSummary?.truthConditionAnchor?.validPreservedIds ?? []
-    : [];
+  const protectedContractCarrierIds = getProtectedContractCarrierIds(contractValidationSummary);
+  const effectiveMaxWithContractCarriers = Math.max(effectiveMax, protectedContractCarrierIds.length);
 
   const filteredClaims = filterByCentrality(
     activePass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
-    effectiveMax,
-    protectedAnchorCarrierIds,
+    effectiveMaxWithContractCarriers,
+    protectedContractCarrierIds,
   );
 
   const currentSetIsContractApproved =
@@ -740,10 +940,10 @@ export async function extractClaims(
   const gate1InputClaims = selectClaimsForGate1(
     activePass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
-    effectiveMax,
+    effectiveMaxWithContractCarriers,
     contractValidationSummary,
     activePass2.inputClassification,
-    protectedAnchorCarrierIds,
+    protectedContractCarrierIds,
   );
 
   if (currentSetIsContractApproved && gate1InputClaims.length !== filteredClaims.length) {
@@ -1091,12 +1291,12 @@ export async function extractClaims(
           ...previousContractValidationSummary!,
           summary: [
             previousContractValidationSummary?.summary ?? "",
-            "final_revalidation_unavailable: carried forward the last contract-approved summary because Gate 1 kept only previously validated claims and all validated anchor carriers remained present.",
+            "final_revalidation_unavailable: carried forward the last contract-approved summary because Gate 1 kept only previously validated claims and all validated contract carriers remained present.",
           ].filter(Boolean).join(" "),
           stageAttribution,
         };
         console.warn(
-          "[Stage1] Final accepted claims could not be re-validated; carrying forward prior contract approval because the final set retains only previously validated claims and all validated anchor carriers survived.",
+          "[Stage1] Final accepted claims could not be re-validated; carrying forward prior contract approval because the final set retains only previously validated claims and all validated contract carriers survived.",
         );
       } else {
         // Fix 3 (2026-04-10): do NOT stamp preservesContract=true on a path
@@ -2106,6 +2306,195 @@ async function runContractRepair(
   }
 }
 
+type ContractCompletionResult =
+  | { completed: z.infer<typeof ContractRepairOutputSchema>; rejectionReason?: undefined }
+  | { completed?: undefined; rejectionReason: string };
+
+function getNextAtomicClaimIdFactory(claims: AtomicClaim[]): () => string {
+  let next = 1;
+  for (const claim of claims) {
+    const match = /^AC_(\d+)$/i.exec(claim.id ?? "");
+    if (!match) continue;
+    next = Math.max(next, Number(match[1]) + 1);
+  }
+
+  const usedIds = new Set(claims.map((claim) => claim.id));
+  return () => {
+    let candidate = "";
+    do {
+      candidate = `AC_${String(next).padStart(2, "0")}`;
+      next += 1;
+    } while (usedIds.has(candidate));
+    usedIds.add(candidate);
+    return candidate;
+  };
+}
+
+function normalizeCompletedClaimSet(
+  currentClaims: AtomicClaim[],
+  completionClaims: z.infer<typeof Pass2AtomicClaimSchema>[],
+  maxAddedClaims: number,
+): ContractCompletionResult {
+  if (completionClaims.length === 0) {
+    return { rejectionReason: "completion returned no claims" };
+  }
+
+  const currentById = new Map(currentClaims.map((claim) => [claim.id, claim] as const));
+  const currentIds = new Set(currentById.keys());
+  const seenExistingIds = new Set<string>();
+  const newClaims: z.infer<typeof Pass2AtomicClaimSchema>[] = [];
+  const nextAtomicClaimId = getNextAtomicClaimIdFactory(currentClaims);
+
+  for (const claim of completionClaims) {
+    const claimId = typeof claim.id === "string" ? claim.id.trim() : "";
+    if (currentIds.has(claimId)) {
+      if (seenExistingIds.has(claimId)) {
+        return { rejectionReason: `completion duplicated existing claim id ${claimId}` };
+      }
+      seenExistingIds.add(claimId);
+      continue;
+    }
+
+    if (!claim.statement?.trim()) {
+      return { rejectionReason: "completion returned an added claim without a statement" };
+    }
+
+    newClaims.push({
+      ...claim,
+      id: claimId || nextAtomicClaimId(),
+    });
+  }
+
+  const missingExistingIds = [...currentIds].filter((claimId) => !seenExistingIds.has(claimId));
+  if (missingExistingIds.length > 0) {
+    return { rejectionReason: `completion omitted existing claim id(s) [${missingExistingIds.join(",")}]` };
+  }
+
+  if (newClaims.length === 0) {
+    return { rejectionReason: "completion added no omitted thesis-direct claims" };
+  }
+
+  if (newClaims.length > maxAddedClaims) {
+    return { rejectionReason: `completion added ${newClaims.length} claims, exceeding max ${maxAddedClaims}` };
+  }
+
+  const newClaimIds = new Set<string>();
+  for (const claim of newClaims) {
+    if (currentIds.has(claim.id) || newClaimIds.has(claim.id)) {
+      claim.id = nextAtomicClaimId();
+    }
+    newClaimIds.add(claim.id);
+  }
+
+  return {
+    completed: {
+      atomicClaims: [...currentClaims, ...newClaims],
+    },
+  };
+}
+
+/**
+ * Contract completion path: when the validator says the current claim set is
+ * incomplete, ask a dedicated comparison prompt to add omitted thesis-direct
+ * propositions. Existing claims are structurally preserved by this function;
+ * only new claims can be appended, and the ordinary validator must approve
+ * the completed set before it can reach Gate 1.
+ */
+async function runContractCompletion(
+  claims: AtomicClaim[],
+  inputText: string,
+  impliedClaim: string,
+  articleThesis: string,
+  maxAddedClaims: number,
+  pipelineConfig: PipelineConfig,
+  state: Pick<CBResearchState, "onEvent"> | undefined,
+): Promise<ContractCompletionResult> {
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  state?.onEvent?.(`LLM call: contract completion — ${model.modelName}`, -1);
+
+  const llmCallStartedAt = Date.now();
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_COMPLETION", {
+      analysisInput: inputText,
+      impliedClaim,
+      articleThesis,
+      currentClaimsJson: JSON.stringify(claims, null, 2),
+      maxAddedClaims: String(maxAddedClaims),
+    });
+
+    if (!rendered) {
+      return { rejectionReason: "CLAIM_CONTRACT_COMPLETION prompt section not found" };
+    }
+
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user" as const,
+          content: "Return the contract completion JSON for the supplied payload.",
+        },
+      ],
+      temperature: 0,
+      output: Output.object({ schema: ContractCompletionOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      return { rejectionReason: "completion returned no structured output" };
+    }
+
+    const completion = ContractCompletionOutputSchema.parse(parsed);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    if (!completion.completionEligible) {
+      return { rejectionReason: `completion ineligible: ${completion.failureKind}` };
+    }
+
+    if (completion.failureKind !== "omitted_thesis_direct_proposition") {
+      return { rejectionReason: `completion rejected failure kind ${completion.failureKind}` };
+    }
+
+    return normalizeCompletedClaimSet(claims, completion.atomicClaims, maxAddedClaims);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `Contract completion failed: ${errorMessage}`,
+      timestamp: new Date(),
+    });
+    return { rejectionReason: errorMessage };
+  }
+}
+
 /**
  * Pass 2: Evidence-grounded claim extraction using Sonnet.
  * Uses preliminary evidence to produce specific, research-ready atomic claims.
@@ -2507,6 +2896,7 @@ export function filterByCentrality(
   // Filter by centrality threshold
   const allowed = threshold === "high" ? new Set(["high"]) : new Set(["high", "medium"]);
   const requiredClaimIdSet = new Set(requiredClaimIds);
+  const effectiveMaxClaims = Math.max(maxClaims, requiredClaimIdSet.size);
   const compareEntries = (
     left: { claim: AtomicClaim; index: number },
     right: { claim: AtomicClaim; index: number },
@@ -2526,7 +2916,7 @@ export function filterByCentrality(
   // Sort: high centrality first, then medium
   filtered.sort(compareEntries);
 
-  const selected = filtered.slice(0, maxClaims);
+  const selected = filtered.slice(0, effectiveMaxClaims);
 
   if (requiredClaimIdSet.size > 0) {
     for (const requiredClaimId of requiredClaimIds) {
@@ -2539,7 +2929,7 @@ export function filterByCentrality(
         continue;
       }
 
-      if (selected.length < maxClaims) {
+      if (selected.length < effectiveMaxClaims) {
         selected.push(requiredEntry);
         continue;
       }
@@ -2729,8 +3119,8 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
     return gate1Result;
   }
 
-  const anchorCarrierIds = contractValidationSummary.truthConditionAnchor?.validPreservedIds ?? [];
-  if (anchorCarrierIds.length === 0) {
+  const protectedCarrierIds = getProtectedContractCarrierIds(contractValidationSummary);
+  if (protectedCarrierIds.length === 0) {
     return gate1Result;
   }
 
@@ -2749,12 +3139,12 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
   if (shouldProtectValidatedAnchorCarriers(contractValidationSummary)) {
     const preFilterClaims = gate1Result.preFilterClaims ?? gate1Result.filteredClaims;
     const filteredClaimIdSet = new Set(filteredClaims.map((claim) => claim.id));
-    const missingAnchorCarrierIds = anchorCarrierIds.filter((claimId) => !filteredClaimIdSet.has(claimId));
+    const missingCarrierIds = protectedCarrierIds.filter((claimId) => !filteredClaimIdSet.has(claimId));
 
-    if (missingAnchorCarrierIds.length > 0 && preFilterClaims.length > 0) {
+    if (missingCarrierIds.length > 0 && preFilterClaims.length > 0) {
       const claimById = new Map(preFilterClaims.map((claim) => [claim.id, claim] as const));
       const preFilterOrder = new Map(preFilterClaims.map((claim, index) => [claim.id, index] as const));
-      const restoredClaims = missingAnchorCarrierIds
+      const restoredClaims = missingCarrierIds
         .map((claimId) => claimById.get(claimId))
         .filter((claim): claim is AtomicClaim => Boolean(claim));
 
@@ -2767,7 +3157,7 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
           );
 
         console.info(
-          `[Stage1] Gate 1: restored ${restoredClaims.length} contract-approved anchor carrier claim(s) ` +
+          `[Stage1] Gate 1: restored ${restoredClaims.length} contract-approved carrier claim(s) ` +
           `after structural filtering. restored=[${restoredClaims.map((claim) => claim.id).join(",")}].`,
         );
       }
@@ -2787,9 +3177,9 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
     return filteredClaims === gate1Result.filteredClaims ? gate1Result : updateGate1Result(filteredClaims);
   }
 
-  const anchorCarrierIdSet = new Set(anchorCarrierIds);
+  const protectedCarrierIdSet = new Set(protectedCarrierIds);
   const prunedClaimIds = filteredClaims
-    .filter((claim) => failedFidelityIds.has(claim.id) && !anchorCarrierIdSet.has(claim.id))
+    .filter((claim) => failedFidelityIds.has(claim.id) && !protectedCarrierIdSet.has(claim.id))
     .map((claim) => claim.id);
   if (prunedClaimIds.length === 0) {
     return filteredClaims === gate1Result.filteredClaims ? gate1Result : updateGate1Result(filteredClaims);
@@ -2802,8 +3192,8 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
   }
 
   console.info(
-    `[Stage1] Gate 1: pruned ${prunedClaimIds.length} fidelity-failed non-anchor claim(s) ` +
-    `from contract-approved set. Anchor carriers kept=[${anchorCarrierIds.join(",")}], ` +
+    `[Stage1] Gate 1: pruned ${prunedClaimIds.length} fidelity-failed non-carrier claim(s) ` +
+    `from contract-approved set. Contract carriers kept=[${protectedCarrierIds.join(",")}], ` +
     `pruned=[${prunedClaimIds.join(",")}].`,
   );
 
@@ -2817,6 +3207,26 @@ export function shouldProtectValidatedAnchorCarriers(
     contractValidationSummary?.preservesContract === true
     && contractValidationSummary?.rePromptRequired === false
   );
+}
+
+export function getProtectedContractCarrierIds(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+): string[] {
+  if (!shouldProtectValidatedAnchorCarriers(contractValidationSummary)) {
+    return [];
+  }
+
+  const protectedIds: string[] = [];
+  const seen = new Set<string>();
+  for (const claimId of [
+    ...(contractValidationSummary?.contractCarrierClaimIds ?? []),
+    ...(contractValidationSummary?.truthConditionAnchor?.validPreservedIds ?? []),
+  ]) {
+    if (!claimId || seen.has(claimId)) continue;
+    seen.add(claimId);
+    protectedIds.push(claimId);
+  }
+  return protectedIds;
 }
 
 function normalizeClaimContractValidationResult(
@@ -2951,6 +3361,10 @@ export function evaluateClaimContractValidation(
   const failureMode: "contract_violated" | undefined = !preservesContract || effectiveRePromptRequired
     ? "contract_violated"
     : undefined;
+  const anchorCarrierClaimIds = validPreservedIds;
+  const contractCarrierClaimIds = preservesContract && !effectiveRePromptRequired
+    ? anchorCarrierClaimIds
+    : [];
 
   return {
     summary: {
@@ -2959,6 +3373,7 @@ export function evaluateClaimContractValidation(
       rePromptRequired: effectiveRePromptRequired,
       summary: contractResult.inputAssessment.summary ?? "",
       ...(failureMode ? { failureMode } : {}),
+      ...(contractCarrierClaimIds.length > 0 ? { contractCarrierClaimIds } : {}),
       ...(anchorRetryReason ? { anchorRetryReason } : {}),
       ...(anchor ? {
         truthConditionAnchor: {
@@ -3108,9 +3523,10 @@ export function applySingleClaimAtomicityValidation(
     return contractValidation;
   }
 
+  const { contractCarrierClaimIds: _contractCarrierClaimIds, ...summaryWithoutContractCarriers } = contractValidation.summary;
   return {
     summary: {
-      ...contractValidation.summary,
+      ...summaryWithoutContractCarriers,
       preservesContract: false,
       rePromptRequired: true,
       failureMode: "contract_violated",
@@ -3158,8 +3574,8 @@ export function canCarryForwardValidatedContractApproval(
     return false;
   }
 
-  const validatedAnchorCarrierIds = previousSummary.truthConditionAnchor?.validPreservedIds ?? [];
-  if (validatedAnchorCarrierIds.length === 0) {
+  const protectedCarrierIds = getProtectedContractCarrierIds(previousSummary);
+  if (protectedCarrierIds.length === 0) {
     return false;
   }
 
@@ -3169,7 +3585,7 @@ export function canCarryForwardValidatedContractApproval(
   }
 
   const finalAcceptedClaimIds = new Set(finalAcceptedClaims.map((claim) => claim.id));
-  if (!validatedAnchorCarrierIds.every((claimId) => finalAcceptedClaimIds.has(claimId))) {
+  if (!protectedCarrierIds.every((claimId) => finalAcceptedClaimIds.has(claimId))) {
     return false;
   }
 

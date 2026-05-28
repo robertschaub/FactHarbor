@@ -781,7 +781,8 @@ export type AnalysisWarningType =
   | "claim_selection_truncated"              // Stage 1.5: candidate set exceeded configured auto-selection candidate cap
   | "per_source_evidence_cap"                // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
   | "contract_validation_retry_triggered"   // Stage 1: claim-contract validation flagged drift and triggered a Pass 2 retry
-  | "contract_repair_pass_fired";           // Stage 1: anchor-gated targeted repair pass was invoked after contract retry
+  | "contract_repair_pass_fired"            // Stage 1: anchor-gated targeted repair pass was invoked after contract retry
+  | "contract_completion_diagnostic";       // Stage 1: contract-completion recovery attempted, rejected, or skipped
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
@@ -1280,7 +1281,7 @@ export interface CBClaimUnderstanding {
      * Phase 7: which recovery stage produced the final accepted claim set.
      * Helps distinguish raw extraction quality from recovery-mediated success.
      */
-    stageAttribution?: "initial" | "retry" | "repair";
+    stageAttribution?: "initial" | "retry" | "repair" | "completion";
     /**
      * C9 (Phase 5): diagnostic discriminant for Phase B reporting.
      * Absent when the contract is preserved (success). Set to "contract_violated"
@@ -1290,6 +1291,7 @@ export interface CBClaimUnderstanding {
      * Wave 1A safeguard path.
      */
     failureMode?: "contract_violated" | "validator_unavailable";
+    contractCarrierClaimIds?: string[];
     anchorRetryReason?: string;
     atomicityRetryReason?: string;
     truthConditionAnchor?: {

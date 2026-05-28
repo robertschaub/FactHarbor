@@ -22,6 +22,7 @@ import {
   runPreliminarySearch,
   seedEvidenceFromPreliminarySearch,
   shouldProtectValidatedAnchorCarriers,
+  getProtectedContractCarrierIds,
   wouldResolveExistingRemap,
   remapUnresolvedSeededEvidence,
   reconcileEvidenceSourceIds,
@@ -783,6 +784,12 @@ describe("filterByCentrality", () => {
     expect(result.map((claim) => claim.id)).toEqual(["AC_04", "AC_01", "AC_02"]);
   });
 
+  it("should expand the effective cap when required contract carriers exceed maxClaims", () => {
+    const claims = makeClaims(["high", "high", "high", "low", "low"]);
+    const result = filterByCentrality(claims, "high", 2, ["AC_03", "AC_04", "AC_05"]);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_03", "AC_04", "AC_05"]);
+  });
+
   it("should return empty array for empty input", () => {
     const result = filterByCentrality([], "medium", 10);
     expect(result).toHaveLength(0);
@@ -907,6 +914,26 @@ describe("shouldProtectValidatedAnchorCarriers", () => {
         validPreservedIds: ["AC_04"],
       },
     })).toBe(false);
+  });
+
+  it("returns all validated contract carriers before anchor-only carriers", () => {
+    const carrierIds = getProtectedContractCarrierIds({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "clean completion",
+      stageAttribution: "completion",
+      contractCarrierClaimIds: ["AC_01", "AC_02", "AC_03"],
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "anchor",
+        preservedInClaimIds: ["AC_03", "AC_04"],
+        preservedByQuotes: [],
+        validPreservedIds: ["AC_03", "AC_04"],
+      },
+    });
+
+    expect(carrierIds).toEqual(["AC_01", "AC_02", "AC_03", "AC_04"]);
   });
 });
 
@@ -8498,7 +8525,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
-        claimContractValidation: { enabled: true, maxRetries: 1 },
+        claimContractValidation: { enabled: true, maxRetries: 1, completionEnabled: false },
         salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
@@ -8600,7 +8627,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
-        claimContractValidation: { enabled: true, maxRetries: 1 },
+        claimContractValidation: { enabled: true, maxRetries: 1, completionEnabled: false },
         salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
@@ -9000,7 +9027,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 },
-        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false, completionEnabled: false },
         salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
@@ -9182,7 +9209,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         // The test exercises the old retry + final-revalidate path; it does not
         // model the repair call's LLM interaction. C11b is covered by its own
         // dedicated tests.
-        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false, completionEnabled: false },
         salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
@@ -9241,18 +9268,18 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         case 5:
           return {
             inputAssessment: {
-              preservesOriginalClaimContract: true,
-              rePromptRequired: false,
-              summary: "retry preserves the full contract",
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "retry still misses the full contract",
             },
             claims: [
               {
                 claimId: "AC_03",
-                preservesEvaluativeMeaning: true,
+                preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
-                proxyDriftSeverity: "none",
-                recommendedAction: "keep",
-                reasoning: "anchor preserved",
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "anchor remains incomplete",
               },
             ],
             truthConditionAnchor: {
@@ -9812,6 +9839,301 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       },
     });
     expect(llmCallIndex).toBe(4);
+  });
+
+  it("should not protect every thesis-direct claim when validation has no carrier IDs", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "high", maxAtomicClaims: 1 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: false, completionEnabled: false },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    const directHighClaim = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A action complied with Framework B.",
+      category: "evaluative",
+      centrality: "high",
+      thesisRelevance: "direct",
+    });
+    const directLowClaim = createAtomicClaim({
+      id: "AC_02",
+      statement: "Entity A action complied with Framework C.",
+      category: "evaluative",
+      centrality: "low",
+      thesisRelevance: "direct",
+    });
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(2, { inputClassification: "multi_assertion_input", statementPrefix: "Framework" }),
+            atomicClaims: [directHighClaim, directLowClaim],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "approved without explicit carrier IDs",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+            ],
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "central" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "would only appear if over-protected" },
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "final accepted central claim approved without explicit carrier IDs",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+            ],
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Entity A action complied with Framework B and Framework C",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01"]);
+    expect(result.contractValidationSummary?.contractCarrierClaimIds).toBeUndefined();
+    expect(result.contractValidationSummary).toMatchObject({
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "final accepted central claim approved without explicit carrier IDs",
+    });
+  });
+
+  it("should complete omitted thesis-direct propositions and protect all revalidated carriers", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "high", maxAtomicClaims: 2 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: {
+          enabled: true,
+          maxRetries: 0,
+          repairPassEnabled: false,
+          completionEnabled: true,
+          completionMaxAttempts: 1,
+          completionMaxAddedClaims: 2,
+          validatorAvailabilityMaxAttempts: 0,
+        },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    const claimOne = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A action complied with Framework B.",
+      category: "evaluative",
+      centrality: "high",
+      thesisRelevance: "direct",
+    });
+    const claimTwo = createAtomicClaim({
+      id: "AC_02",
+      statement: "Entity A action complied with Framework C.",
+      category: "evaluative",
+      centrality: "high",
+      thesisRelevance: "direct",
+    });
+    const completedClaim = createAtomicClaim({
+      id: "AC_03",
+      statement: "Entity A action complied with Framework D.",
+      category: "evaluative",
+      centrality: "low",
+      thesisRelevance: "direct",
+    });
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(2, { inputClassification: "multi_assertion_input", statementPrefix: "Framework" }),
+            atomicClaims: [claimOne, claimTwo],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "one thesis-direct framework proposition is omitted",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+            ],
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            completionEligible: true,
+            failureKind: "omitted_thesis_direct_proposition",
+            omittedPropositions: [
+              { id: "OMITTED_01", description: "Framework D proposition", whyInScope: "The thesis depends on it." },
+            ],
+            atomicClaims: [claimOne, claimTwo, completedClaim],
+            rationale: "Completion adds the omitted proposition.",
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "completed set preserves all thesis-direct propositions",
+              truthConditionAnchor: {
+                presentInInput: true,
+                anchorText: "Framework B, Framework C, and Framework D",
+                preservedInClaimIds: ["AC_01", "AC_02", "AC_03"],
+                preservedByQuotes: [],
+              },
+            },
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "Framework B, Framework C, and Framework D",
+              preservedInClaimIds: ["AC_01", "AC_02", "AC_03"],
+              preservedByQuotes: [],
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "completed" },
+            ],
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_03", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+            ],
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Entity A action complied with Framework B, Framework C, and Framework D",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "completion",
+      summary: "completed set preserves all thesis-direct propositions",
+      contractCarrierClaimIds: ["AC_01", "AC_02", "AC_03"],
+    });
+    const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
+    expect(renderedSections).toContain("CLAIM_CONTRACT_COMPLETION");
+    expect(llmCallIndex).toBe(6);
   });
 
   it("should persist full salience status including mode when salience commitment succeeds", async () => {
