@@ -28,7 +28,7 @@ vi.mock("@/lib/analyzer/llm", () => ({
   getModelForTask: vi.fn(() => ({ model: { id: "mock-model" }, modelName: "mock-model", provider: "anthropic" })),
   extractStructuredOutput: vi.fn((result) => result),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
-  getPromptCachingOptions: vi.fn(() => ({})),
+  getPromptCachingOptions: vi.fn(() => undefined),
 }));
 
 vi.mock("@/lib/analyzer/prompt-loader", () => ({

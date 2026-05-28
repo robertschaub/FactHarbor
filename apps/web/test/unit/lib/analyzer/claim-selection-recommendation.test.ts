@@ -18,7 +18,7 @@ vi.mock("@/lib/analyzer/llm", () => ({
     modelName: "claude-test",
     model: {},
   })),
-  getPromptCachingOptions: vi.fn(() => ({ anthropic: { cacheControl: { type: "ephemeral" } } })),
+  getPromptCachingOptions: vi.fn(() => undefined),
   getStructuredOutputProviderOptions: vi.fn(() => ({ anthropic: { structuredOutputMode: "jsonTool" } })),
 }));
 

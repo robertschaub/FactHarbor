@@ -33,12 +33,7 @@ vi.mock("ai", () => ({
 // Mock getModelForTask
 vi.mock("@/lib/analyzer/llm", () => ({
   getModelForTask: vi.fn(() => mockModelInfo),
-  getPromptCachingOptions: vi.fn((provider?: string) => {
-    if (!provider || provider === "anthropic" || provider === "claude") {
-      return { anthropic: { cacheControl: { type: "ephemeral" } } };
-    }
-    return undefined;
-  }),
+  getPromptCachingOptions: vi.fn(() => undefined),
 }));
 
 // Mock prompt-loader to return a simple rendered prompt
@@ -90,7 +85,7 @@ describe("extractKeyTerms", () => {
         messages: [
           expect.objectContaining({
             role: "user",
-            providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+            providerOptions: undefined,
           }),
         ],
       }),
@@ -177,7 +172,7 @@ describe("checkVerdictGrounding", () => {
         messages: [
           expect.objectContaining({
             role: "user",
-            providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+            providerOptions: undefined,
           }),
         ],
       }),

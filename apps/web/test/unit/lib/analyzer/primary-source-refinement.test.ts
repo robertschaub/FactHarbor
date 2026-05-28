@@ -51,7 +51,7 @@ vi.mock("@/lib/analyzer/llm", () => ({
   getModelForTask: vi.fn(),
   extractStructuredOutput: vi.fn(),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
-  getPromptCachingOptions: vi.fn(() => ({})),
+  getPromptCachingOptions: vi.fn(() => undefined),
 }));
 
 vi.mock("@/lib/analyzer/prompt-loader", () => ({

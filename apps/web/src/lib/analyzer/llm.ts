@@ -387,13 +387,9 @@ export function getProviderType(modelInfo: ModelInfo): ProviderType {
  * outweigh the ~zero hit rate, matching the cost-optimization rationale that
  * led Pipeline_V2 to opt the full-source extraction stage out.
  *
- * Returning undefined globally turns the wiring at every call site into a no-op
- * while preserving the imports and call signatures, so re-enabling later (after
- * any root-cause work on why prefixes don't share) is a single-line change.
- *
- * To re-enable temporarily for diagnostics:
- *   if (p !== "anthropic" && p !== "claude") return undefined;
- *   return { anthropic: { cacheControl: { type: "ephemeral" } } };
+ * Returning undefined globally keeps the wiring at every call site as a no-op.
+ * This is intentional policy, mirrored by the locked-off UCM default
+ * `anthropicPromptCachingEnabled: false`.
  */
 export function getPromptCachingOptions(
   _provider?: string,

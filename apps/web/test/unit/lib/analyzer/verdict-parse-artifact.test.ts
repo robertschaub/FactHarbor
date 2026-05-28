@@ -22,7 +22,7 @@ vi.mock("@/lib/analyzer/llm", () => ({
     provider: "anthropic",
   })),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
-  getPromptCachingOptions: vi.fn(() => ({})),
+  getPromptCachingOptions: vi.fn(() => undefined),
 }));
 
 vi.mock("@/lib/analyzer/prompt-loader", () => ({

@@ -1543,6 +1543,23 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
   });
+
+  it("accepts complete decomposition axes and rejects partial cross-products", () => {
+    const extractionSection = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+    const validationSection = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+    expect(extractionSection).not.toBeNull();
+    expect(validationSection).not.toBeNull();
+
+    expect(extractionSection).toContain("Coherent-axis rule for coordinated subjects and criteria");
+    expect(extractionSection).toContain("complete subject-axis split is valid");
+    expect(extractionSection).toContain("complete criteria-axis split is valid");
+    expect(extractionSection).toContain("partial cross-product");
+
+    expect(validationSection).toContain("Complete-axis coverage for coordinated subjects and criteria");
+    expect(validationSection).toContain("Do NOT require a full cross-product");
+    expect(validationSection).toContain("partial cross-product");
+    expect(validationSection).toContain("choose one complete axis or include every in-scope pair");
+  });
 });
 
 describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {

@@ -676,6 +676,18 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("standard");
     });
 
+    it("keeps Anthropic prompt caching locked off by default", () => {
+      expect(DEFAULT_PIPELINE_CONFIG.anthropicPromptCachingEnabled).toBe(false);
+      expect(PipelineConfigSchema.parse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        anthropicPromptCachingEnabled: false,
+      }).anthropicPromptCachingEnabled).toBe(false);
+      expect(PipelineConfigSchema.safeParse({
+        ...DEFAULT_PIPELINE_CONFIG,
+        anthropicPromptCachingEnabled: true,
+      }).success).toBe(false);
+    });
+
     it("has LLM text analysis enabled by default (v2.8.3)", () => {
       expect(DEFAULT_PIPELINE_CONFIG.llmInputClassification).toBe(true);
       expect(DEFAULT_PIPELINE_CONFIG.llmEvidenceQuality).toBe(true);
@@ -852,6 +864,7 @@ describe("Default Config Values", () => {
     const criticalFields = [
       "llmProvider",
       "llmTiering",
+      "anthropicPromptCachingEnabled",
       "modelUnderstand",
       "modelExtractEvidence",
       "modelVerdict",

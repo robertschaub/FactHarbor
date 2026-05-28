@@ -282,6 +282,8 @@ export const PipelineConfigSchema = z.object({
   // === Model Selection ===
   llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
   llmTiering: z.boolean().describe("Enable tiered model selection for cost optimization"),
+  anthropicPromptCachingEnabled: z.literal(false).default(false)
+    .describe("Anthropic prompt caching is locked off. The only valid value is false because measured costs exceeded benefits."),
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
   modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
   modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
@@ -1036,6 +1038,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // Model selection
   llmProvider: "anthropic",
   llmTiering: true,
+  anthropicPromptCachingEnabled: false,
   modelUnderstand: "budget",
   modelExtractEvidence: "budget",
   modelVerdict: "standard",
