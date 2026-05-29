@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-29T17:44:37.600Z",
-  "count": 292,
+  "generatedAt": "2026-05-29T21:44:03.208Z",
+  "count": 293,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6016,6 +6016,24 @@
         "Docs/AGENTS/Handoffs/2026-05-29_Lead_Architect_Bolsonaro_Live_Monitoring_After_Carrier_Fix.md"
       ],
       "summary": "Start with `apps/web/prompts/claimboundary.prompt.md` sections `RELEVANCE_CLASSIFICATION`, `VERDICT_RECONCILIATION`, `VERDICT_GROUNDING_VALIDATION`, and `VERDICT_DIRECTION_VALIDATION`; then inspect `apps/web/src/lib/analyzer/research-extraction-stage.ts` and `apps/web/src/lib/analyzer/verdict-stage."
+    },
+    {
+      "file": "2026-05-29_Lead_Architect_Bolsonaro_Live_Monitoring_After_Sufficiency_Gate_Alignment.md",
+      "date": "2026-05-29",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "bolsonaro",
+        "live",
+        "monitoring",
+        "after",
+        "sufficiency",
+        "gate",
+        "alignment"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-29 - Lead Architect - Bolsonaro Live Monitoring After Sufficiency Gate Alignment"
     },
     {
       "file": "2026-05-29_Lead_Architect_Stage1_Contract_Carrier_Preservation_Root_Fix.md",
