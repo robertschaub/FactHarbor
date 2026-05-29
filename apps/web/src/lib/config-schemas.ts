@@ -1693,12 +1693,12 @@ export const CalcConfigSchema = z.object({
   }).optional(),
 
   /**
-   * Minimum confidence required for high-harm claims before a definitive verdict
-   * is issued. Claims with harmPotential "critical" or "high" that fall below this
-   * threshold are downgraded to UNVERIFIED.
+   * Minimum confidence required before high-harm directional verdicts are publishable.
+   * Claims with harmPotential "critical" or "high" that fall below this threshold
+   * retain their truth-band verdict label but are marked not publishable.
    *
    * Addresses C8 (advisory-only validation) from political bias analysis.
-   * Default 50 — high-harm claims need at least 50% confidence for a definitive verdict.
+   * Default 50 — high-harm claims need at least 50% confidence to be publishable.
    */
   highHarmMinConfidence: z.number().int().min(0).max(100).optional(),
 
@@ -1815,7 +1815,8 @@ export const CalcConfigSchema = z.object({
   /**
    * Harm levels that trigger the high-harm confidence floor.
    * Claims with harmPotential matching any of these levels AND confidence below
-   * highHarmMinConfidence will be downgraded to UNVERIFIED.
+   * highHarmMinConfidence will be marked not publishable while retaining their
+   * truth-band verdict label.
    * Default: ["critical", "high"].
    */
   highHarmFloorLevels: z.array(z.enum(["critical", "high", "medium", "low"])).min(1).max(4).optional(),

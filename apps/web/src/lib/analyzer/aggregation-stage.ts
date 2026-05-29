@@ -30,7 +30,7 @@ import type {
   TriangulationScore,
   VerdictNarrative,
 } from "./types";
-import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
+import { CONFIDENCE_TIER_MIN, INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 import type { CalcConfig, PipelineConfig } from "@/lib/config-schemas";
 import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
@@ -1099,23 +1099,30 @@ export function buildQualityGates(
       }
     : undefined;
 
-  const highConfidence = claimVerdicts.filter((v) => v.confidence >= 70).length;
+  const highConfidence = claimVerdicts.filter((v) => v.confidence >= CONFIDENCE_TIER_MIN.HIGH).length;
   const mediumConfidence = claimVerdicts.filter(
-    (v) => v.confidence >= 40 && v.confidence < 70,
+    (v) => v.confidence >= CONFIDENCE_TIER_MIN.MEDIUM && v.confidence < CONFIDENCE_TIER_MIN.HIGH,
   ).length;
   const lowConfidence = claimVerdicts.filter(
-    (v) => v.confidence > 0 && v.confidence < 40,
+    (v) => v.confidence >= CONFIDENCE_TIER_MIN.LOW && v.confidence < CONFIDENCE_TIER_MIN.MEDIUM,
   ).length;
-  const insufficient = claimVerdicts.filter((v) => v.confidence === 0).length;
+  const insufficient = claimVerdicts.filter((v) => v.confidence < CONFIDENCE_TIER_MIN.LOW).length;
+  const publishable = claimVerdicts.filter(
+    (v) => v.publishable !== false && v.confidence >= CONFIDENCE_TIER_MIN.MEDIUM,
+  ).length;
+  const centralKept = claimVerdicts.filter((v) => {
+    const claim = state.understanding?.atomicClaims?.find((c) => c.id === v.claimId);
+    return claim?.isCentral === true && (v.publishable === false || v.confidence < CONFIDENCE_TIER_MIN.MEDIUM);
+  }).length;
 
   const gate4Stats: Gate4Stats = {
     total: claimVerdicts.length,
-    publishable: highConfidence + mediumConfidence,
+    publishable,
     highConfidence,
     mediumConfidence,
     lowConfidence,
     insufficient,
-    centralKept: claimVerdicts.length,
+    centralKept,
   };
 
   return {

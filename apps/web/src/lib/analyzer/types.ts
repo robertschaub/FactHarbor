@@ -1038,6 +1038,10 @@ export interface CBClaimVerdict {
   truthPercentage: number;       // 0-100
   verdictReason?: string;        // Optional machine-readable reason for fallback/special verdicts
   verdict: ClaimVerdict7Point;   // 7-point scale label
+  /** False when a structural safety gate allows retaining the directional signal
+   *  but prevents treating it as a publishable claim-level verdict. */
+  publishable?: boolean;
+  publishabilityReason?: string;
   confidence: number;            // 0-100 (adjusted by self-consistency spread)
   reasoning: string;             // LLM-generated explanation (includes challenge responses)
   harmPotential: "critical" | "high" | "medium" | "low";

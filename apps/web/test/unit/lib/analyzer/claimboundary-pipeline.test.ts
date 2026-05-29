@@ -6124,18 +6124,39 @@ describe("Stage 5: buildQualityGates", () => {
       createCBClaimVerdict({ confidence: 90 }),  // high
       createCBClaimVerdict({ confidence: 75 }),  // high
       createCBClaimVerdict({ confidence: 55 }),  // medium
+      createCBClaimVerdict({ confidence: 45 }),  // low
       createCBClaimVerdict({ confidence: 25 }),  // low
+      createCBClaimVerdict({ confidence: 24 }),  // insufficient
       createCBClaimVerdict({ confidence: 0 }),   // insufficient
     ];
 
     const gates = buildQualityGates(undefined, verdicts, [], { sources: [], searchQueries: [], contradictionIterationsUsed: 0 } as any);
 
-    expect(gates.gate4Stats.total).toBe(5);
+    expect(gates.gate4Stats.total).toBe(7);
     expect(gates.gate4Stats.highConfidence).toBe(2);
     expect(gates.gate4Stats.mediumConfidence).toBe(1);
-    expect(gates.gate4Stats.lowConfidence).toBe(1);
-    expect(gates.gate4Stats.insufficient).toBe(1);
+    expect(gates.gate4Stats.lowConfidence).toBe(2);
+    expect(gates.gate4Stats.insufficient).toBe(2);
     expect(gates.gate4Stats.publishable).toBe(3); // high + medium
+  });
+
+  it("should exclude structurally suppressed verdicts from Gate4 publishable count", () => {
+    const verdicts = [
+      createCBClaimVerdict({ confidence: 55, publishable: false, publishabilityReason: "low_confidence_high_harm" }),
+    ];
+    const state = {
+      sources: [],
+      searchQueries: [],
+      contradictionIterationsUsed: 0,
+      understanding: { atomicClaims: [createAtomicClaim()] },
+    } as any;
+
+    const gates = buildQualityGates(undefined, verdicts, [], state);
+
+    expect(gates.gate4Stats.mediumConfidence).toBe(1);
+    expect(gates.gate4Stats.publishable).toBe(0);
+    expect(gates.gate4Stats.centralKept).toBe(1);
+    expect(gates.passed).toBe(false);
   });
 
   it("should set passed=false when gate1 overallPass is false", () => {

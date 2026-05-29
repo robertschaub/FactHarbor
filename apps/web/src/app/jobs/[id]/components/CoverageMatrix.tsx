@@ -16,6 +16,7 @@ interface CellVerdict {
   pct: number;   // truthPercentage 0-100
   conf: number;  // confidence 0-100
   verdict?: string; // Persisted verdict label when available; totals should not re-derive it.
+  publishable?: boolean;
 }
 
 interface VerdictColorEntry {
@@ -94,7 +95,9 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
   const verdictStyle = (v: CellVerdict | null | undefined): React.CSSProperties => {
     if (!v) return {};
     const verdict = getVerdictLabel(v);
-    const c = colorMap[verdict] || colorMap["UNVERIFIED"] || fallbackColors["UNVERIFIED"];
+    const c = v.publishable === false
+      ? colorMap["UNVERIFIED"] || fallbackColors["UNVERIFIED"]
+      : colorMap[verdict] || colorMap["UNVERIFIED"] || fallbackColors["UNVERIFIED"];
     return { backgroundColor: c.bg, color: c.text };
   };
 

@@ -110,6 +110,24 @@ function verdictFromPct(pct: number, confidence?: number): string {
   return "FALSE";
 }
 
+function evidenceReferenceCount(cv: any): number {
+  const supportingCount = Array.isArray(cv?.supportingEvidenceIds) ? cv.supportingEvidenceIds.length : 0;
+  const contradictingCount = Array.isArray(cv?.contradictingEvidenceIds) ? cv.contradictingEvidenceIds.length : 0;
+  return supportingCount + contradictingCount;
+}
+
+function isPublicationSuppressed(cv: any): boolean {
+  return cv?.publishable === false || cv?.publishabilityReason === "low_confidence_high_harm";
+}
+
+function formatClaimVerdictText(cv: any, displayPct: number, verdict: string, truthPercentage: number): string {
+  if (isPublicationSuppressed(cv) || (verdict === "UNVERIFIED" && evidenceReferenceCount(cv) > 0)) {
+    const signalPct = norm(truthPercentage);
+    return signalPct === 50 ? "Limited evidence" : `${signalPct}% truth signal`;
+  }
+  return formatVerdictText(displayPct, verdict);
+}
+
 function dirFillClass(dir: string): string {
   switch (dir) {
     case "supports": return "fill-supports";
@@ -473,7 +491,8 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
     const tp = norm(cv.truthPercentage);
     const conf = norm(cv.confidence);
     const verdict = cv.verdict || verdictFromPct(tp, conf);
-    const v = vs(verdict);
+    const suppressed = isPublicationSuppressed(cv);
+    const v = suppressed ? vs("UNVERIFIED") : vs(verdict);
     const displayTp = isFalseBand(verdict) ? 100 - tp : tp;
     const displayTpWord = isFalseBand(verdict) ? "false" : "true";
     const displayTpRange = cv.truthPercentageRange
@@ -497,7 +516,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       <div class="claim-statement">${esc(ac.statement || cv.claimId || "")}</div>
       <div class="claim-meters">
         <div class="small-meter">
-          <div class="small-meter-val ${v.color}">${esc(formatVerdictText(displayTp, verdict))}</div>
+          <div class="small-meter-val ${v.color}">${esc(formatClaimVerdictText(cv, displayTp, verdict, tp))}</div>
         </div>
         <div class="small-meter small-meter-conf">
           <div class="small-meter-val" style="color:#a0aec0">${esc(getConfidenceTierLabel(conf))}</div>
@@ -515,6 +534,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       ${ac.checkWorthiness ? `<span class="chip chip-gray">Check-worthiness: ${esc(ac.checkWorthiness)}</span>` : ""}
       ${ac.verifiability ? `<span class="chip chip-gray">Verifiability: ${esc(ac.verifiability)}</span>` : ""}
       ${cv.isContested ? `<span class="chip chip-gray">Contested: yes</span>` : ""}
+      ${suppressed ? `<span class="chip chip-gray">Not publishable</span>` : ""}
       ${cv.misleadingness && cv.misleadingness !== "not_misleading" ? `<span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: ${esc(cv.misleadingness)}</span>` : ""}
       ${tri ? `<span class="chip chip-gray">Triangulation: ${esc(tri.level)} (${typeof tri.factor === "number" ? (tri.factor >= 0 ? "+" : "") + tri.factor.toFixed(1) : "—"})</span>` : ""}
       ${cv.misleadingnessReason ? `<div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ ${esc(cv.misleadingnessReason)}</div>` : ""}

@@ -2362,7 +2362,7 @@ describe("enforceHarmConfidenceFloor", () => {
     highHarmMinConfidence: 50,
   };
 
-  it("should downgrade high-harm claim with low confidence to UNVERIFIED", () => {
+  it("should mark high-harm claim with low confidence as not publishable without relabeling", () => {
     const verdicts = [createVerdict({
       harmPotential: "high",
       confidence: 30,
@@ -2371,14 +2371,15 @@ describe("enforceHarmConfidenceFloor", () => {
     })];
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");
-    expect(result[0].verdictReason).toBe("low_confidence_high_harm");
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(result[0].publishable).toBe(false);
+    expect(result[0].publishabilityReason).toBe("low_confidence_high_harm");
     // Original truthPercentage and confidence preserved for transparency
     expect(result[0].truthPercentage).toBe(72);
     expect(result[0].confidence).toBe(30);
   });
 
-  it("should downgrade critical-harm claim with low confidence to UNVERIFIED", () => {
+  it("should mark critical-harm claim with low confidence as not publishable", () => {
     const verdicts = [createVerdict({
       harmPotential: "critical",
       confidence: 45,
@@ -2387,7 +2388,8 @@ describe("enforceHarmConfidenceFloor", () => {
     })];
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(result[0].publishable).toBe(false);
   });
 
   it("should NOT downgrade high-harm claim with sufficient confidence", () => {
@@ -2400,6 +2402,7 @@ describe("enforceHarmConfidenceFloor", () => {
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
     expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(result[0].publishable).toBeUndefined();
   });
 
   it("should NOT affect medium-harm claims regardless of confidence", () => {
@@ -2426,7 +2429,7 @@ describe("enforceHarmConfidenceFloor", () => {
     expect(result[0].verdict).toBe("TRUE");
   });
 
-  it("should leave already-UNVERIFIED verdicts unchanged", () => {
+  it("should retain already-UNVERIFIED labels and still mark low-confidence high-harm claims not publishable", () => {
     const verdicts = [createVerdict({
       harmPotential: "critical",
       confidence: 20,
@@ -2436,6 +2439,7 @@ describe("enforceHarmConfidenceFloor", () => {
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
     expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(result[0].publishable).toBe(false);
   });
 
   it("should be disabled when threshold is 0", () => {
@@ -2471,7 +2475,8 @@ describe("enforceHarmConfidenceFloor", () => {
     ];
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");    // high-harm, low confidence
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");   // high-harm, low confidence signal retained
+    expect(result[0].publishable).toBe(false);
     expect(result[1].verdict).toBe("MOSTLY-TRUE");   // medium-harm, not affected
     expect(result[2].verdict).toBe("MOSTLY-TRUE");   // high-harm, sufficient confidence
   });
@@ -2489,7 +2494,9 @@ describe("enforceHarmConfidenceFloor", () => {
       harmPotential: "high", confidence: 49,
       truthPercentage: 72, verdict: "MOSTLY-TRUE",
     })];
-    expect(enforceHarmConfidenceFloor(belowThreshold, config)[0].verdict).toBe("UNVERIFIED");
+    const belowResult = enforceHarmConfidenceFloor(belowThreshold, config)[0];
+    expect(belowResult.verdict).toBe("MOSTLY-TRUE");
+    expect(belowResult.publishable).toBe(false);
   });
 
   it("should respect UCM-configured highHarmFloorLevels", () => {
@@ -2505,7 +2512,9 @@ describe("enforceHarmConfidenceFloor", () => {
       ...config,
       highHarmFloorLevels: ["critical", "high", "medium"],
     };
-    expect(enforceHarmConfidenceFloor(mediumHarm, expandedConfig)[0].verdict).toBe("UNVERIFIED");
+    const result = enforceHarmConfidenceFloor(mediumHarm, expandedConfig)[0];
+    expect(result.verdict).toBe("MOSTLY-TRUE");
+    expect(result.publishable).toBe(false);
   });
 });
 

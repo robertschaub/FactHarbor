@@ -295,8 +295,8 @@ export interface VerdictStageConfig {
 
   /**
    * Minimum confidence required for high-harm claims (harmPotential "critical" or "high")
-   * before a definitive verdict is issued. Claims below this threshold are downgraded
-   * to UNVERIFIED regardless of truth percentage.
+   * before the directional claim verdict is publishable. Claims below this threshold
+   * retain their truth-band label but are marked not publishable.
    *
    * Addresses C8 (advisory-only validation) from Stammbach/Ash political bias analysis.
    * Default 50. Set to 0 to disable.
@@ -2683,18 +2683,20 @@ export function runStructuralConsistencyCheck(
  * Enforce minimum confidence for high-harm claims.
  *
  * Claims with harmPotential "critical" or "high" that fall below the
- * configured minimum confidence are downgraded to UNVERIFIED. This prevents
- * low-evidence definitive verdicts on potentially harmful topics.
+ * configured minimum confidence are marked not publishable. The truth-band
+ * verdict remains derived from truthPercentage/confidence so the verdict field
+ * preserves its structural contract.
  *
  * Rationale: A claim like "Treatment X cures disease Y" scored at 72%
  * (MOSTLY-TRUE) with only 25% confidence is epistemically dangerous —
  * it gives a definitive-sounding verdict without sufficient evidentiary
- * backing. For high-harm claims, insufficient confidence should yield
- * UNVERIFIED rather than a misleading directional verdict.
+ * backing. For high-harm claims, insufficient confidence should prevent
+ * publication of the directional verdict rather than corrupting the verdict
+ * label itself.
  *
  * @param verdicts - Verdicts from the debate pipeline
  * @param config - Verdict stage configuration (highHarmMinConfidence threshold)
- * @returns Verdicts with high-harm low-confidence claims downgraded to UNVERIFIED
+ * @returns Verdicts with high-harm low-confidence claims marked not publishable
  */
 export function enforceHarmConfidenceFloor(
   verdicts: CBClaimVerdict[],
@@ -2709,18 +2711,21 @@ export function enforceHarmConfidenceFloor(
     const isHighHarm = (floorLevels as ReadonlyArray<string>).includes(v.harmPotential);
     if (!isHighHarm || v.confidence >= threshold) return v;
 
-    // Already UNVERIFIED — no change needed
-    if (v.verdict === "UNVERIFIED") return v;
-
     console.warn(
       `[VerdictStage] High-harm claim ${v.claimId} (harmPotential=${v.harmPotential}) ` +
-      `has confidence ${v.confidence}% < threshold ${threshold}% — downgrading to UNVERIFIED`
+      `has confidence ${v.confidence}% < threshold ${threshold}% — marking verdict not publishable`
     );
 
     return {
       ...v,
-      verdict: "UNVERIFIED" as ClaimVerdict7Point,
-      verdictReason: v.verdictReason ?? "low_confidence_high_harm",
+      verdict: percentageToClaimVerdict(
+        v.truthPercentage,
+        v.confidence,
+        undefined,
+        config.mixedConfidenceThreshold,
+      ),
+      publishable: false,
+      publishabilityReason: v.publishabilityReason ?? "low_confidence_high_harm",
     };
   });
 }

@@ -219,6 +219,10 @@ function getEvidenceReferenceCount(claim: any): number {
   return supportingCount + contradictingCount;
 }
 
+function isClaimPublicationSuppressed(claim: any): boolean {
+  return claim?.publishable === false || claim?.publishabilityReason === "low_confidence_high_harm";
+}
+
 function getClaimVerdictAssessmentDisplay(
   claim: any,
   verdictLabel: string | undefined,
@@ -228,7 +232,7 @@ function getClaimVerdictAssessmentDisplay(
 ): string {
   if (showAnalysisFailureLabel) return "Analysis generation failed";
   if (!verdictLabel || displayPct === undefined) return "";
-  if (verdictLabel === "UNVERIFIED" && getEvidenceReferenceCount(claim) > 0) {
+  if (isClaimPublicationSuppressed(claim) || (verdictLabel === "UNVERIFIED" && getEvidenceReferenceCount(claim) > 0)) {
     const signalPct = normalizePercentage(truthPercentage);
     return signalPct === 50 ? "Limited evidence" : `${signalPct}% truth signal`;
   }
@@ -1263,7 +1267,7 @@ export default function JobPage() {
     return claims.map((claimId: string) => {
       const cv = claimVerdicts.find((v: any) => v.claimId === claimId);
       if (!cv || cv.truthPercentage == null) return null;
-      return { pct: cv.truthPercentage, conf: cv.confidence ?? 0, verdict: cv.verdict };
+      return { pct: cv.truthPercentage, conf: cv.confidence ?? 0, verdict: cv.verdict, publishable: cv.publishable };
     });
   }, [result?.coverageMatrix, claimVerdicts]);
 
@@ -3793,7 +3797,10 @@ function ClaimCard({
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = getClaimVerdictLabel(claim, claimTruth, claimConfidence);
   const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(claimVerdictLabel, hasAnalysisGenerationFailure);
-  const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
+  const isPublicationSuppressed = isClaimPublicationSuppressed(claim);
+  const color = isPublicationSuppressed
+    ? CLAIM_VERDICT_COLORS["UNVERIFIED"]
+    : CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   const displayClaimPct = isFalseBand(claimVerdictLabel) ? 100 - claimTruth : claimTruth;
 
   // Only show CONTESTED label when opposition has actual counter-evidence
@@ -3829,6 +3836,9 @@ function ClaimCard({
         <span className={styles.claimVerdictConf}>
           {getConfidenceDisplayLabel(claim.confidence, showAnalysisFailureLabel)}
         </span>
+        {isPublicationSuppressed && (
+          <span className={styles.claimVerdictConf}>Not publishable</span>
+        )}
         {claim.truthPercentageRange && (
           <span className={styles.claimVerdictRange}>
             range: {isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–{isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%
