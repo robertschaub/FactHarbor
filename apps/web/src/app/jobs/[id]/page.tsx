@@ -213,6 +213,28 @@ function getVerdictAssessmentDisplay(
   return formatVerdictText(displayPct, verdictLabel);
 }
 
+function getEvidenceReferenceCount(claim: any): number {
+  const supportingCount = Array.isArray(claim?.supportingEvidenceIds) ? claim.supportingEvidenceIds.length : 0;
+  const contradictingCount = Array.isArray(claim?.contradictingEvidenceIds) ? claim.contradictingEvidenceIds.length : 0;
+  return supportingCount + contradictingCount;
+}
+
+function getClaimVerdictAssessmentDisplay(
+  claim: any,
+  verdictLabel: string | undefined,
+  displayPct: number | undefined,
+  truthPercentage: number,
+  showAnalysisFailureLabel: boolean,
+): string {
+  if (showAnalysisFailureLabel) return "Analysis generation failed";
+  if (!verdictLabel || displayPct === undefined) return "";
+  if (verdictLabel === "UNVERIFIED" && getEvidenceReferenceCount(claim) > 0) {
+    const signalPct = normalizePercentage(truthPercentage);
+    return signalPct === 50 ? "Limited evidence" : `${signalPct}% truth signal`;
+  }
+  return formatVerdictText(displayPct, verdictLabel);
+}
+
 function getConfidenceDisplayLabel(confidence: number | undefined, showAnalysisFailureLabel: boolean): string {
   if (showAnalysisFailureLabel) return "Internal analysis failure";
   return getConfidenceTierLabel(confidence ?? 0);
@@ -3796,7 +3818,13 @@ function ClaimCard({
       >
         <span className={styles.claimVerdictMain}>{color.icon} {getVerdictLabel(claimVerdictLabel)}</span>
         <span className={styles.claimVerdictPct}>
-          {getVerdictAssessmentDisplay(claimVerdictLabel, displayClaimPct, showAnalysisFailureLabel)}
+          {getClaimVerdictAssessmentDisplay(
+            claim,
+            claimVerdictLabel,
+            displayClaimPct,
+            claimTruth,
+            showAnalysisFailureLabel,
+          )}
         </span>
         <span className={styles.claimVerdictConf}>
           {getConfidenceDisplayLabel(claim.confidence, showAnalysisFailureLabel)}

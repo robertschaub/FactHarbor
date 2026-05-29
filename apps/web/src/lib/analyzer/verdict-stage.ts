@@ -2720,6 +2720,7 @@ export function enforceHarmConfidenceFloor(
     return {
       ...v,
       verdict: "UNVERIFIED" as ClaimVerdict7Point,
+      verdictReason: v.verdictReason ?? "low_confidence_high_harm",
     };
   });
 }

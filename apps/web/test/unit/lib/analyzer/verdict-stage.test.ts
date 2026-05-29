@@ -2372,6 +2372,7 @@ describe("enforceHarmConfidenceFloor", () => {
 
     const result = enforceHarmConfidenceFloor(verdicts, config);
     expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(result[0].verdictReason).toBe("low_confidence_high_harm");
     // Original truthPercentage and confidence preserved for transparency
     expect(result[0].truthPercentage).toBe(72);
     expect(result[0].confidence).toBe(30);
