@@ -197,6 +197,7 @@
   "evidenceSufficiencyMinItems": 3,
   "evidenceSufficiencyMinSourceTypes": 2,
   "evidenceSufficiencyMinDistinctDomains": 3,
+  "evidenceSufficiencyMinDirectionalItems": 1,
   "evidenceSufficiencyAuthoritativeDirectionalMinItems": 2,
   "evidenceSufficiencyAuthoritativeDirectionalSourceTypes": [
     "government_report",

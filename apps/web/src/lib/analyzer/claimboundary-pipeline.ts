@@ -119,6 +119,8 @@ import {
   runResearchIteration,
   allClaimsSufficient,
   consumeClaimQueryBudget,
+  claimNeedsMoreResearchForSufficiency,
+  evaluateEvidenceSufficiency,
   findLeastContradictedClaim,
   findLeastResearchedClaim,
   getClaimQueryBudgetRemaining,
@@ -217,6 +219,8 @@ export {
   wouldResolveExistingRemap,
   allClaimsSufficient,
   consumeClaimQueryBudget,
+  claimNeedsMoreResearchForSufficiency,
+  evaluateEvidenceSufficiency,
   findLeastContradictedClaim,
   findLeastResearchedClaim,
   getClaimQueryBudgetRemaining,
@@ -1222,46 +1226,35 @@ export async function runClaimBoundaryAnalysis(
     const sufficiencyMinItems = initialCalcConfig.evidenceSufficiencyMinItems ?? 3;
     const sufficiencyMinSourceTypes = initialCalcConfig.evidenceSufficiencyMinSourceTypes ?? 2;
     const sufficiencyMinDistinctDomains = initialCalcConfig.evidenceSufficiencyMinDistinctDomains ?? 3;
+    const sufficiencyMinDirectionalItems = initialCalcConfig.evidenceSufficiencyMinDirectionalItems ?? 1;
     const authoritativeDirectionalMinItems = initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalMinItems ?? 2;
-    const authoritativeDirectionalSourceTypes = new Set(
-      initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? ["government_report", "legal_document"],
-    );
+    const authoritativeDirectionalSourceTypes =
+      initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? [];
     const insufficientClaimIds = new Set<string>();
     for (const claim of researchUnderstanding.atomicClaims) {
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
-      const distinctSourceTypes = new Set(
-        claimEvidence.map(e => e.sourceType).filter(Boolean)
-      );
-      const distinctDomains = new Set(
-        claimEvidence
-          .map((e) => extractDomain(e.sourceUrl))
-          .filter((domain): domain is string => Boolean(domain))
-      );
-      const hasSufficientItems = claimEvidence.length >= sufficiencyMinItems;
-      const hasSufficientSourceDiversity =
-        distinctSourceTypes.size >= sufficiencyMinSourceTypes ||
-        distinctDomains.size >= sufficiencyMinDistinctDomains;
-      const directionalEvidence = claimEvidence.filter(
-        (e) => e.claimDirection === "supports" || e.claimDirection === "contradicts",
-      );
-      const hasAuthoritativeDirectionalSufficiency =
-        hasSufficientItems &&
-        directionalEvidence.length >= authoritativeDirectionalMinItems &&
-        directionalEvidence.every((e) => Boolean(e.sourceType) && authoritativeDirectionalSourceTypes.has(e.sourceType!)) &&
-        directionalEvidence.every((e) => e.probativeValue !== "low") &&
-        new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
+      const sufficiency = evaluateEvidenceSufficiency(claimEvidence, {
+        minItems: sufficiencyMinItems,
+        minSourceTypes: sufficiencyMinSourceTypes,
+        minDistinctDomains: sufficiencyMinDistinctDomains,
+        minDirectionalItems: sufficiencyMinDirectionalItems,
+        authoritativeDirectionalMinItems,
+        authoritativeDirectionalSourceTypes,
+        includeSeeded: true,
+      });
 
-      if (!hasSufficientItems || (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)) {
+      if (!sufficiency.sufficient) {
         insufficientClaimIds.add(claim.id);
         state.warnings.push({
           type: "insufficient_evidence",
           severity: "warning",
           message: `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
-            `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
-            `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}), ` +
-            `${distinctDomains.size} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
+            `${sufficiency.itemCount} items (min ${sufficiencyMinItems}), ` +
+            `${sufficiency.directionalCount} directional items (min ${sufficiencyMinDirectionalItems}), ` +
+            `${sufficiency.distinctSourceTypeCount} source types (min ${sufficiencyMinSourceTypes}), ` +
+            `${sufficiency.distinctDomainCount} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
             `Verdict set to UNVERIFIED.`,
         });
       }

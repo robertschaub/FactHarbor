@@ -1765,6 +1765,13 @@ export const CalcConfigSchema = z.object({
   evidenceSufficiencyMinDistinctDomains: z.number().int().min(1).max(20).optional(),
 
   /**
+   * D5 Control 1: Evidence Sufficiency Gate — minimum directional evidence items.
+   * Claims with only neutral/contextual evidence are not verdict-ready even when
+   * source diversity is high. Default 1.
+   */
+  evidenceSufficiencyMinDirectionalItems: z.number().int().min(0).max(20).optional(),
+
+  /**
    * D5 Control 1: authoritative directional sufficiency shortcut.
    * Minimum directional evidence items required before a claim may bypass
    * source-diversity thresholds using only authoritative same-direction evidence.
@@ -2053,6 +2060,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   evidenceSufficiencyMinItems: 3,
   evidenceSufficiencyMinSourceTypes: 2,
   evidenceSufficiencyMinDistinctDomains: 3,
+  evidenceSufficiencyMinDirectionalItems: 1,
   evidenceSufficiencyAuthoritativeDirectionalMinItems: 2,
   evidenceSufficiencyAuthoritativeDirectionalSourceTypes: ["government_report", "legal_document"],
   evidencePartitioningEnabled: true,

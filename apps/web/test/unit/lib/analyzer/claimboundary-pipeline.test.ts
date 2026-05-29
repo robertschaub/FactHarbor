@@ -29,6 +29,8 @@ import {
   findLeastResearchedClaim,
   findLeastContradictedClaim,
   allClaimsSufficient,
+  claimNeedsMoreResearchForSufficiency,
+  evaluateEvidenceSufficiency,
   type DiversitySufficiencyConfig,
   assessScopeQuality,
   generateResearchQueries,
@@ -3180,6 +3182,137 @@ describe("allClaimsSufficient with diversityConfig", () => {
   });
 });
 
+describe("D5-aligned evidence sufficiency", () => {
+  const d5Config: DiversitySufficiencyConfig = {
+    minSourceTypes: 2,
+    minDistinctDomains: 3,
+    minItems: 3,
+    minDirectionalItems: 1,
+    authoritativeDirectionalMinItems: 2,
+    authoritativeDirectionalSourceTypes: ["legal_document", "government_report"],
+    includeSeeded: true,
+  };
+
+  it("passes low-diversity same-direction authoritative evidence", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "supports", probativeValue: "medium" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
+    ] as any[];
+
+    const sufficiency = evaluateEvidenceSufficiency(evidence, d5Config);
+
+    expect(sufficiency.hasSufficientSourceDiversity).toBe(false);
+    expect(sufficiency.hasAuthoritativeDirectionalSufficiency).toBe(true);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(true);
+  });
+
+  it("fails low-diversity authoritative evidence when direction is mixed", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "contradicts", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
+    ] as any[];
+
+    expect(evaluateEvidenceSufficiency(evidence, d5Config).hasAuthoritativeDirectionalSufficiency).toBe(false);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
+  });
+
+  it("fails low-diversity authoritative evidence when any directional item is low probative", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "supports", probativeValue: "low" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
+    ] as any[];
+
+    expect(evaluateEvidenceSufficiency(evidence, d5Config).hasAuthoritativeDirectionalSufficiency).toBe(false);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
+  });
+
+  it("fails low-diversity authoritative evidence below the authoritative directional minimum", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "neutral", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "neutral", probativeValue: "high" },
+    ] as any[];
+
+    expect(evaluateEvidenceSufficiency(evidence, d5Config).hasAuthoritativeDirectionalSufficiency).toBe(false);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
+  });
+
+  it("fails diverse zero-directional evidence when directional evidence is required", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "neutral" },
+    ] as any[];
+
+    const sufficiency = evaluateEvidenceSufficiency(evidence, d5Config);
+
+    expect(sufficiency.hasSufficientSourceDiversity).toBe(true);
+    expect(sufficiency.hasMinimumDirectionalEvidence).toBe(false);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
+  });
+});
+
+describe("claimNeedsMoreResearchForSufficiency", () => {
+  const d5Config: DiversitySufficiencyConfig = {
+    minSourceTypes: 2,
+    minDistinctDomains: 3,
+    minItems: 3,
+    minDirectionalItems: 1,
+    authoritativeDirectionalMinItems: 2,
+    authoritativeDirectionalSourceTypes: ["legal_document", "government_report"],
+    includeSeeded: true,
+  };
+  const claim = createAtomicClaim({ id: "AC_01" });
+
+  it("does not require more main research for authoritative-sufficient evidence after the per-claim floor", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "supports", probativeValue: "medium" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
+    ] as any[];
+
+    expect(claimNeedsMoreResearchForSufficiency(claim, evidence, {
+      threshold: 3,
+      diversityConfig: d5Config,
+      researchedIterationsByClaim: { AC_01: 1 },
+      minResearchedIterationsPerClaim: 1,
+    })).toBe(false);
+  });
+
+  it("keeps targeting otherwise sufficient claims until the per-claim research floor is met", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "supports", probativeValue: "medium" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
+    ] as any[];
+
+    expect(claimNeedsMoreResearchForSufficiency(claim, evidence, {
+      threshold: 3,
+      diversityConfig: d5Config,
+      researchedIterationsByClaim: { AC_01: 0 },
+      minResearchedIterationsPerClaim: 1,
+    })).toBe(true);
+  });
+
+  it("still requires more research for diverse evidence with no directional support or contradiction", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "neutral" },
+    ] as any[];
+
+    expect(claimNeedsMoreResearchForSufficiency(claim, evidence, {
+      threshold: 3,
+      diversityConfig: d5Config,
+      researchedIterationsByClaim: { AC_01: 1 },
+      minResearchedIterationsPerClaim: 1,
+    })).toBe(true);
+  });
+});
+
 // --- Per-claim researched-iteration floor tests ---
 
 describe("allClaimsSufficient with per-claim researched-iteration floor", () => {
@@ -3335,6 +3468,50 @@ describe("findLeastResearchedClaim with diversityConfig", () => {
 
     // AC_02 has 1 item vs AC_01's 2 → AC_02 targeted
     expect(findLeastResearchedClaim(claims, evidence)?.id).toBe("AC_02");
+  });
+
+  it("does not target an authoritative-sufficient low-diversity claim over a count-starved claim", () => {
+    const d5Config: DiversitySufficiencyConfig = {
+      ...diversityConfig,
+      minDirectionalItems: 1,
+      authoritativeDirectionalMinItems: 2,
+      authoritativeDirectionalSourceTypes: ["legal_document"],
+    };
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "supports", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "medium" },
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "supports" },
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://b.example/1", claimDirection: "supports" },
+    ] as any[];
+
+    expect(findLeastResearchedClaim(claims, evidence, d5Config, 3)?.id).toBe("AC_02");
+  });
+
+  it("prioritizes a diverse zero-directional claim when directional evidence is required", () => {
+    const d5Config: DiversitySufficiencyConfig = {
+      ...diversityConfig,
+      minDirectionalItems: 1,
+      authoritativeDirectionalMinItems: 2,
+      authoritativeDirectionalSourceTypes: ["legal_document"],
+    };
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://a.example/2", claimDirection: "supports" },
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://b.example/2", claimDirection: "supports" },
+    ] as any[];
+
+    expect(findLeastResearchedClaim(claims, evidence, d5Config, 3)?.id).toBe("AC_01");
   });
 });
 

@@ -522,6 +522,9 @@ export async function researchEvidence(
         minSourceTypes: calcConfig.evidenceSufficiencyMinSourceTypes ?? 2,
         minDistinctDomains: calcConfig.evidenceSufficiencyMinDistinctDomains ?? 3,
         minItems: calcConfig.evidenceSufficiencyMinItems ?? 3,
+        minDirectionalItems: calcConfig.evidenceSufficiencyMinDirectionalItems ?? 1,
+        authoritativeDirectionalMinItems: calcConfig.evidenceSufficiencyAuthoritativeDirectionalMinItems ?? 2,
+        authoritativeDirectionalSourceTypes: calcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? [],
         includeSeeded: true, // D5 alignment: count all claim-mapped evidence
       }
     : undefined;
@@ -549,7 +552,7 @@ export async function researchEvidence(
 
     // MT-1 + MT-3: Pass iteration count and distinct event count so sufficiency
     // cannot fire before the minimum required iterations have completed.
-    // When diversityConfig is set, also requires D5-level source-type/domain diversity.
+    // When diversityConfig is set, also requires D5-aligned structural sufficiency.
     // Per-claim floor: each claim must have received at least N targeted research
     // iterations before seeded evidence can make it sufficient.
     if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, {
@@ -587,7 +590,58 @@ export async function researchEvidence(
       }
       break;
     }
-    const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
+    const researchTargetClaims = diversityConfig
+      ? budgetEligibleClaims.filter((claim) =>
+          claimNeedsMoreResearchForSufficiency(claim, state.evidenceItems, {
+            threshold: sufficiencyThreshold,
+            diversityConfig,
+            researchedIterationsByClaim: state.researchedIterationsByClaim,
+            minResearchedIterationsPerClaim: sufficiencyMinResearchedIterationsPerClaim,
+          }),
+        )
+      : budgetEligibleClaims;
+
+    let candidateClaims = researchTargetClaims;
+    if (diversityConfig && candidateClaims.length === 0) {
+      const unresolvedClaims = claims.filter((claim) =>
+        claimNeedsMoreResearchForSufficiency(claim, state.evidenceItems, {
+          threshold: sufficiencyThreshold,
+          diversityConfig,
+          researchedIterationsByClaim: state.researchedIterationsByClaim,
+          minResearchedIterationsPerClaim: sufficiencyMinResearchedIterationsPerClaim,
+        }),
+      );
+
+      if (unresolvedClaims.length > 0) {
+        console.info("[Stage2] Claims below sufficiency exhausted main research query budget; ending main research loop.");
+        if (!budgetExhaustionWarned) {
+          budgetExhaustionWarned = true;
+          const perClaimBudget = getPerClaimQueryBudget(pipelineConfig);
+          state.warnings.push({
+            type: "query_budget_exhausted",
+            severity: "warning",
+            message: `Stage 2 stopped early: ${unresolvedClaims.length} claim(s) remained below sufficiency after exhausting main research query budget (${perClaimBudget}).`,
+            details: {
+              stage: "research_budget",
+              perClaimQueryBudget: perClaimBudget,
+              queryBudgetUsageByClaim: { ...state.queryBudgetUsageByClaim },
+              unresolvedClaimIds: unresolvedClaims.map((claim) => claim.id),
+              budgetEligibleClaimIds: budgetEligibleClaims.map((claim) => claim.id),
+              contradictionReservedQueries,
+              mainIterationsUsed: state.mainIterationsUsed,
+              contradictionIterationsUsed: state.contradictionIterationsUsed,
+            },
+          });
+        }
+        break;
+      }
+
+      // All claims are already structurally sufficient; continue only if the
+      // global minimum-iteration floor still requires one more main iteration.
+      candidateClaims = budgetEligibleClaims;
+    }
+
+    const targetClaim = findLeastResearchedClaim(candidateClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
     if (!targetClaim) break;
 
     // Emit progress update for this iteration (30% → 55%)
@@ -1764,22 +1818,14 @@ export function findLeastResearchedClaim(
 
     let score = count;
 
-    // When diversity-aware: claims that meet count threshold but fail diversity
-    // get a large negative score so they are targeted first.
+    // When diversity-aware: claims that meet count threshold but still fail the
+    // shared D5-aligned sufficiency predicate get a large negative score so the
+    // loop targets the actual sufficiency gap instead of chasing artificial
+    // diversity for authoritative-directional evidence.
     if (diversityConfig && effectiveThreshold && count >= effectiveThreshold) {
-      const distinctSourceTypes = new Set(
-        claimEvidence.map(e => e.sourceType).filter(Boolean),
-      );
-      const distinctDomains = new Set(
-        claimEvidence
-          .map(e => extractDomain(e.sourceUrl))
-          .filter((d): d is string => Boolean(d)),
-      );
-      const meetsDiversity =
-        distinctSourceTypes.size >= diversityConfig.minSourceTypes ||
-        distinctDomains.size >= diversityConfig.minDistinctDomains;
-      if (!meetsDiversity) {
-        // Prioritize diversity-starved claims over count-starved claims
+      const sufficiency = evaluateEvidenceSufficiency(claimEvidence, diversityConfig);
+      if (!sufficiency.sufficient) {
+        // Prioritize structurally insufficient claims over count-starved claims.
         score = count - 10000;
       }
     }
@@ -1832,8 +1878,111 @@ export interface DiversitySufficiencyConfig {
   minDistinctDomains: number;
   /** D5-aligned item-count threshold. Overrides the pipeline `claimSufficiencyThreshold` when set. */
   minItems: number;
+  /** Minimum supporting/contradicting evidence items before a claim is verdict-ready. */
+  minDirectionalItems?: number;
+  /** Minimum same-direction authoritative evidence items for the diversity shortcut. */
+  authoritativeDirectionalMinItems?: number;
+  /** Source types eligible for the authoritative same-direction shortcut. */
+  authoritativeDirectionalSourceTypes?: string[];
   /** When true, count seeded evidence toward sufficiency (matching D5 behavior). */
   includeSeeded: boolean;
+}
+
+export interface EvidenceSufficiencyResult {
+  sufficient: boolean;
+  itemCount: number;
+  directionalCount: number;
+  distinctSourceTypeCount: number;
+  distinctDomainCount: number;
+  hasSufficientItems: boolean;
+  hasMinimumDirectionalEvidence: boolean;
+  hasSufficientSourceDiversity: boolean;
+  hasAuthoritativeDirectionalSufficiency: boolean;
+}
+
+export interface ClaimResearchSufficiencyOptions {
+  threshold: number;
+  diversityConfig?: DiversitySufficiencyConfig;
+  researchedIterationsByClaim?: Record<string, number>;
+  minResearchedIterationsPerClaim?: number;
+}
+
+export function evaluateEvidenceSufficiency(
+  claimEvidence: EvidenceItem[],
+  config: DiversitySufficiencyConfig,
+): EvidenceSufficiencyResult {
+  const minDirectionalItems = config.minDirectionalItems ?? 0;
+  const authoritativeDirectionalMinItems = config.authoritativeDirectionalMinItems ?? Number.POSITIVE_INFINITY;
+  const authoritativeSourceTypes = new Set(config.authoritativeDirectionalSourceTypes ?? []);
+  const distinctSourceTypes = new Set(
+    claimEvidence.map(e => e.sourceType).filter(Boolean),
+  );
+  const distinctDomains = new Set(
+    claimEvidence
+      .map(e => extractDomain(e.sourceUrl))
+      .filter((d): d is string => Boolean(d)),
+  );
+  const directionalEvidence = claimEvidence.filter(
+    (e) => e.claimDirection === "supports" || e.claimDirection === "contradicts",
+  );
+  const hasSufficientItems = claimEvidence.length >= config.minItems;
+  const hasMinimumDirectionalEvidence = directionalEvidence.length >= minDirectionalItems;
+  const hasSufficientSourceDiversity =
+    distinctSourceTypes.size >= config.minSourceTypes ||
+    distinctDomains.size >= config.minDistinctDomains;
+  const hasAuthoritativeDirectionalSufficiency =
+    authoritativeSourceTypes.size > 0 &&
+    hasSufficientItems &&
+    directionalEvidence.length >= authoritativeDirectionalMinItems &&
+    directionalEvidence.every((e) => Boolean(e.sourceType) && authoritativeSourceTypes.has(e.sourceType!)) &&
+    directionalEvidence.every((e) => e.probativeValue !== "low") &&
+    new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
+
+  return {
+    sufficient:
+      hasSufficientItems &&
+      hasMinimumDirectionalEvidence &&
+      (hasSufficientSourceDiversity || hasAuthoritativeDirectionalSufficiency),
+    itemCount: claimEvidence.length,
+    directionalCount: directionalEvidence.length,
+    distinctSourceTypeCount: distinctSourceTypes.size,
+    distinctDomainCount: distinctDomains.size,
+    hasSufficientItems,
+    hasMinimumDirectionalEvidence,
+    hasSufficientSourceDiversity,
+    hasAuthoritativeDirectionalSufficiency,
+  };
+}
+
+export function claimNeedsMoreResearchForSufficiency(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+  options: ClaimResearchSufficiencyOptions,
+): boolean {
+  const { diversityConfig, researchedIterationsByClaim } = options;
+  const effectiveThreshold = diversityConfig ? diversityConfig.minItems : options.threshold;
+  const includeSeeded = diversityConfig?.includeSeeded ?? false;
+  const minResearchedIterationsPerClaim = options.minResearchedIterationsPerClaim ?? 1;
+
+  if (includeSeeded && minResearchedIterationsPerClaim > 0 && researchedIterationsByClaim) {
+    const claimResearchedIterations = researchedIterationsByClaim[claim.id] ?? 0;
+    if (claimResearchedIterations < minResearchedIterationsPerClaim) return true;
+  }
+
+  const claimEvidence = evidenceItems.filter((e) => {
+    if (!e.relevantClaimIds?.includes(claim.id)) return false;
+    if (!e.evidenceScope) return false;
+    if (!includeSeeded && e.isSeeded) return false;
+    return true;
+  });
+
+  if (claimEvidence.length < effectiveThreshold) return true;
+
+  if (diversityConfig) {
+    return !evaluateEvidenceSufficiency(claimEvidence, diversityConfig).sufficient;
+  }
+
+  return false;
 }
 
 /**
@@ -1893,50 +2042,14 @@ export function allClaimsSufficient(
     : minMainIterations;
   if (mainIterationsCompleted < effectiveMinIterations) return false;
 
-  return claims.every((claim) => {
-    // When diversity-aware, use D5-aligned item count and seeded-evidence policy.
-    // Default path: exclude seeded evidence and use pipeline sufficiency threshold.
-    const effectiveThreshold = diversityConfig ? diversityConfig.minItems : threshold;
-    const includeSeeded = diversityConfig?.includeSeeded ?? false;
-
-    // Per-claim researched-iteration floor: when seeded evidence is counted
-    // toward sufficiency, require at least N targeted research iterations
-    // per claim before seeded items can make that claim "sufficient."
-    // This prevents heavily-seeded claims from exiting Stage 2 with zero
-    // targeted research (observed: Plastik AC_01 had 41 seeded, 0 researched).
-    if (includeSeeded && minResearchedIterationsPerClaim > 0 && researchedIterationsByClaim) {
-      const claimResearchedIterations = researchedIterationsByClaim[claim.id] ?? 0;
-      if (claimResearchedIterations < minResearchedIterationsPerClaim) return false;
-    }
-
-    const claimEvidence = evidenceItems.filter((e) => {
-      if (!e.relevantClaimIds?.includes(claim.id)) return false;
-      if (!e.evidenceScope) return false;
-      // Default path: exclude seeded to prevent skipping main research.
-      // D5-aligned path: include seeded (D5 counts all claim-mapped evidence).
-      if (!includeSeeded && e.isSeeded) return false;
-      return true;
-    });
-    if (claimEvidence.length < effectiveThreshold) return false;
-
-    // Diversity check (mirrors D5 Control 1 disjunctive OR gate)
-    if (diversityConfig) {
-      const distinctSourceTypes = new Set(
-        claimEvidence.map(e => e.sourceType).filter(Boolean),
-      );
-      const distinctDomains = new Set(
-        claimEvidence
-          .map(e => extractDomain(e.sourceUrl))
-          .filter((d): d is string => Boolean(d)),
-      );
-      const hasSufficientDiversity =
-        distinctSourceTypes.size >= diversityConfig.minSourceTypes ||
-        distinctDomains.size >= diversityConfig.minDistinctDomains;
-      if (!hasSufficientDiversity) return false;
-    }
-
-    return true;
-  });
+  return claims.every((claim) =>
+    !claimNeedsMoreResearchForSufficiency(claim, evidenceItems, {
+      threshold,
+      diversityConfig,
+      researchedIterationsByClaim,
+      minResearchedIterationsPerClaim,
+    }),
+  );
 }
 
 /**

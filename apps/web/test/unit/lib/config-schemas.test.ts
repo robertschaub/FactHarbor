@@ -485,6 +485,7 @@ describe("CalcConfigSchema", () => {
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("aggregation");
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("sourceReliability");
     expect(DEFAULT_CALC_CONFIG).toHaveProperty("qualityGates");
+    expect(DEFAULT_CALC_CONFIG.evidenceSufficiencyMinDirectionalItems).toBe(1);
   });
 });
 
