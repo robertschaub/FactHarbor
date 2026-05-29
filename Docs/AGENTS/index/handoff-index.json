@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-29T10:14:53.502Z",
-  "count": 291,
+  "generatedAt": "2026-05-29T11:40:54.984Z",
+  "count": 292,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5996,6 +5996,26 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Use the updated plan as the implementation baseline. Rates must divide by available section denominators only; do not include missing or partial telemetry in decisive rates."
+    },
+    {
+      "file": "2026-05-29_Lead_Architect_Bolsonaro_Live_Monitoring_After_Carrier_Fix.md",
+      "date": "2026-05-29",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "bolsonaro",
+        "live",
+        "monitoring",
+        "after",
+        "carrier",
+        "fix"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-29_Lead_Architect_Bolsonaro_Live_Monitoring_After_Carrier_Fix.md"
+      ],
+      "summary": "Start with `apps/web/prompts/claimboundary.prompt.md` sections `RELEVANCE_CLASSIFICATION`, `VERDICT_RECONCILIATION`, `VERDICT_GROUNDING_VALIDATION`, and `VERDICT_DIRECTION_VALIDATION`; then inspect `apps/web/src/lib/analyzer/research-extraction-stage.ts` and `apps/web/src/lib/analyzer/verdict-stage."
     },
     {
       "file": "2026-05-29_Lead_Architect_Stage1_Contract_Carrier_Preservation_Root_Fix.md",
