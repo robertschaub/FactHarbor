@@ -137,6 +137,7 @@ type DirectionValidationEvidencePoolItem = {
   statement: string;
   claimDirection?: EvidenceItem["claimDirection"];
   applicability?: EvidenceItem["applicability"];
+  relevantClaimIds?: string[];
 };
 
 function toDirectionValidationEvidencePool(
@@ -147,6 +148,7 @@ function toDirectionValidationEvidencePool(
     statement: item.statement,
     claimDirection: item.claimDirection,
     applicability: item.applicability,
+    relevantClaimIds: item.relevantClaimIds,
   }));
 }
 
@@ -506,7 +508,7 @@ export async function runVerdictStage(
   // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
   onEvent?.(`Verdict debate: reconciliation`, -1);
   const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
-    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings, fullPortfolio,
+    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings, fullPortfolio, claims,
   );
 
   // Step 4b: Baseless challenge enforcement (hybrid — revert baseless adjustments)
@@ -949,9 +951,11 @@ export async function reconcileVerdicts(
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
   sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
+  claims: AtomicClaim[] = [],
 ): Promise<ReconcileVerdictsResult> {
   // Validate challenge evidence IDs before reconciliation
   const validatedChallengeDoc = validateChallengeEvidence(challengeDoc, evidence);
+  const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
 
   const result = await llmCall("VERDICT_RECONCILIATION", {
     advocateVerdicts: advocateVerdicts.map((v) => ({
@@ -965,6 +969,8 @@ export async function reconcileVerdicts(
     })),
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
+    evidenceItems: promptEvidenceItems,
+    atomicClaims: claims,
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
     ...(config.reportLanguage ? { reportLanguage: config.reportLanguage } : {}),
   }, { tier: config.debateRoles.reconciler.strength, providerOverride: config.debateRoles.reconciler.provider, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
@@ -1014,8 +1020,8 @@ export async function reconcileVerdicts(
     });
   }
 
-  // Build a set of valid evidence IDs for phantom filtering
-  const validEvidenceIds = new Set(evidence.map((e) => e.id));
+  // Build evidence index for phantom and claim-scope filtering.
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
 
   const verdicts = advocateVerdicts.map((original) => {
     const reconciled = rawReconciled.find((r) => String(r.claimId) === original.claimId);
@@ -1035,8 +1041,8 @@ export async function reconcileVerdicts(
     // The reconciliation LLM may shift which evidence supports/contradicts the claim as it
     // incorporates challenger arguments. Without this, stale advocate arrays corrupt downstream
     // grounding and direction validation.
-    const reconciledSupporting = parseEvidenceIdArray(reconciled.supportingEvidenceIds, validEvidenceIds);
-    const reconciledContradicting = parseEvidenceIdArray(reconciled.contradictingEvidenceIds, validEvidenceIds);
+    const reconciledSupporting = parseEvidenceIdArray(reconciled.supportingEvidenceIds, evidenceById, original.claimId);
+    const reconciledContradicting = parseEvidenceIdArray(reconciled.contradictingEvidenceIds, evidenceById, original.claimId);
     const supportingEvidenceIds = reconciledSupporting ?? original.supportingEvidenceIds;
     const contradictingEvidenceIds = reconciledContradicting ?? original.contradictingEvidenceIds;
 
@@ -2437,9 +2443,17 @@ async function defaultRepairExecutor(
   const repairedReasoning = typeof parsed.reasoning === "string" && parsed.reasoning.trim().length > 0
     ? parsed.reasoning
     : request.verdict.reasoning;
-  const validEvidenceIds = new Set(request.evidencePool.map((item) => item.id));
-  const repairedSupportingEvidenceIds = parseEvidenceIdArray(parsed.supportingEvidenceIds, validEvidenceIds);
-  const repairedContradictingEvidenceIds = parseEvidenceIdArray(parsed.contradictingEvidenceIds, validEvidenceIds);
+  const evidenceById = new Map(request.evidencePool.map((item) => [item.id, item]));
+  const repairedSupportingEvidenceIds = parseEvidenceIdArray(
+    parsed.supportingEvidenceIds,
+    evidenceById,
+    request.verdict.claimId,
+  );
+  const repairedContradictingEvidenceIds = parseEvidenceIdArray(
+    parsed.contradictingEvidenceIds,
+    evidenceById,
+    request.verdict.claimId,
+  );
   const derivedDirectionalCitations = deriveDirectionalCitationsFromEvidencePool(request.evidencePool);
   return {
     ...request.verdict,
@@ -2929,7 +2943,11 @@ function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
  *   - string[]: field present with valid IDs → use filtered (phantoms removed)
  *             if all IDs were phantom → undefined (fall back to advocate)
  */
-function parseEvidenceIdArray(raw: unknown, validIds: Set<string>): string[] | undefined {
+function parseEvidenceIdArray(
+  raw: unknown,
+  evidenceById: Map<string, { relevantClaimIds?: string[] }>,
+  claimId: string,
+): string[] | undefined {
   // Field absent or not an array → fall back
   if (raw === undefined || raw === null || !Array.isArray(raw)) return undefined;
   // Intentionally empty array → the reconciler is clearing this side
@@ -2937,8 +2955,14 @@ function parseEvidenceIdArray(raw: unknown, validIds: Set<string>): string[] | u
   // Non-empty array: filter to valid string IDs, then filter phantoms
   const ids = raw.filter((id): id is string => typeof id === "string" && id.length > 0);
   if (ids.length === 0) return undefined; // contained only non-string junk
-  const filtered = ids.filter((id) => validIds.has(id));
-  // If ALL IDs were phantom, fall back to advocate arrays (LLM hallucinated all IDs)
+  const filtered = ids.filter((id) => {
+    const item = evidenceById.get(id);
+    if (!item) return false;
+    return !Array.isArray(item.relevantClaimIds)
+      || item.relevantClaimIds.length === 0
+      || item.relevantClaimIds.includes(claimId);
+  });
+  // If ALL IDs were phantom or scoped to sibling claims, fall back to advocate arrays.
   if (filtered.length === 0) return undefined;
   return filtered;
 }

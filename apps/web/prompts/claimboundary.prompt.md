@@ -1171,6 +1171,8 @@ Given a claim and source content, extract evidence items with full metadata incl
     - For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, evidence from earlier or parallel episodes, collateral inquiries, sanctions, or broader institutional controversies involving overlapping actors or institutions is comparator/precedent by default.
     - Such material may be classified as `"supports"` or `"contradicts"` only when the source explicitly documents a formal step, decision artifact, evidentiary act, remedy/safeguard, or other procedural feature of the directly evaluated target itself, or explicitly states that the criticized/supportive mechanism governed that same target.
     - Overlap in actors or institutions alone does not create that bridge.
+    - For rule-governed standards claims, extract distinct items when a source (a) identifies the directly evaluated target as part of the proceeding, measure, or decision family it examines; (b) states that it does or does not fully adjudicate allegations about that target family; or (c) states applicable standards and applies them to features of that target path. Do not collapse these into generic background.
+    - An international, regional, or oversight body's assessment can be evidence even when it is not a final adjudication. Classify the item by what it actually assessed, and preserve any limitation on scope in `evidenceScope`.
     - "A judge was found biased in a different case involving a different party" → `"contextual"`, even if it is the same court or the same jurisdiction.
     - "Similar unfairness happened in a prior case involving a different party" → `"contextual"`, not `"contradicts"`.
     - "An international body ruled on deficiencies in this specific proceeding" → may be `"supports"` or `"contradicts"` depending on the finding.
@@ -1659,6 +1661,10 @@ Produce a final verdict that:
 - Each challenge point includes a `challengeValidation` object. If `evidenceIdsValid` is false, the challenge cites non-existent evidence — treat those citations as hallucinated, do NOT give them analytical weight.
 - Challenges with ZERO valid evidence IDs are structurally baseless. You may acknowledge the concern but MUST NOT adjust truthPercentage or confidence based solely on them.
 - "missing_evidence" challenges that only say "more research could help" without specifying what's missing are NOT valid grounds for adjustment.
+- **Full-pool evidence check:** The `Evidence Items` input is the full acquired evidence pool. Before accepting a `missing_evidence` challenge, or before stating that an expected source type, assessment, ruling, measurement, or finding is absent, inspect the full pool and the source portfolio. Do not describe acquired evidence as absent merely because the advocate omitted it from its citation arrays or the challenger characterized it narrowly. If an acquired item only partially addresses the expected evidence, explain the partial match and its limits.
+- Use the `Atomic Claims` input as the authoritative claim wording. If an evidence item's `relevantClaimIds` does not include the current claim, treat it as sibling-claim or full-pool context only. It can prevent false statements that a source or assessment is absent, but it must not be placed in the current claim's directional citation arrays unless the item is unmapped or explicitly mapped to the current claim.
+- For claims about rule-governed standards, distinguish "no final case-specific adjudication" from "no independent, international, regional, oversight, or official assessment." The former can limit confidence; it must not be stated as the latter when the evidence pool contains a narrower, contextual, or umbrella assessment.
+- Treat `applicability` as binding for directional citation arrays. Only evidence items marked `direct` may appear in `supportingEvidenceIds` or `contradictingEvidenceIds`. Items marked `contextual` or `foreign_reaction` may inform confidence, limitations, or background reasoning, but they are not directional support or contradiction.
 - If the self-consistency check shows high spread (unstable), reduce confidence and note the instability in reasoning.
 - `challengeResponses`: for each challenge addressed, indicate the type, your response, whether the verdict was adjusted, and which challenge point IDs informed the adjustment (`adjustmentBasedOnChallengeIds`).
 - The reconciled verdict should represent your best assessment given ALL inputs — advocate evidence, challenges, and consistency data.
@@ -1690,6 +1696,11 @@ Produce a final verdict that:
 
 ### Input
 
+**Atomic Claims:**
+```
+${atomicClaims}
+```
+
 **Advocate Verdicts:**
 ```
 ${advocateVerdicts}
@@ -1703,6 +1714,11 @@ ${challenges}
 **Self-Consistency Results:**
 ```
 ${consistencyResults}
+```
+
+**Evidence Items (full acquired pool):**
+```
+${evidenceItems}
 ```
 
 **Source Portfolio by Claim (per-claim, per-source reliability and evidence concentration):**
@@ -1737,7 +1753,7 @@ Return a JSON array:
 ]
 ```
 
-**Citation arrays (CRITICAL):** `supportingEvidenceIds` and `contradictingEvidenceIds` must reflect your FINAL reconciled reasoning — not the advocate's original arrays. If your reconciliation shifts which evidence supports or contradicts the claim (e.g., because a challenge revealed that cited evidence actually opposes the claim, or because you now rely on contradicting evidence the advocate did not include), update these arrays accordingly. Only use evidence IDs that appear in the advocate verdicts or challenger citations above — do not invent new IDs. If the reconciled verdict has no supporting evidence, return an empty array `[]` rather than omitting the field.
+**Citation arrays (CRITICAL):** `supportingEvidenceIds` and `contradictingEvidenceIds` must reflect your FINAL reconciled reasoning — not the advocate's original arrays. If your reconciliation shifts which evidence supports or contradicts the claim (e.g., because a challenge revealed that cited evidence actually opposes the claim, or because you now rely on direct evidence the advocate did not include), update these arrays accordingly. Only use evidence IDs that appear in the Evidence Items pool above AND are either unmapped or mapped to the current claim's ID in `relevantClaimIds` — do not invent new IDs, and do not cite sibling-claim-only evidence directionally. If the reconciled verdict has no supporting evidence, return an empty array `[]` rather than omitting the field.
 **Do not place machine IDs in prose.** Keep all `EV_*`, `S_*`, `CB_*`, and `CP_*` identifiers out of `reasoning` and `challengeResponses.response`. Use the structured arrays and `adjustmentBasedOnChallengeIds` to carry citations and traceability.
 
 ---
@@ -2282,7 +2298,7 @@ For each evidence item, determine whether it was produced by actors within the c
 - For such claims, evidence about the governance, legal framework, or regulation of a broader policy problem or harm domain remains `"contextual"` unless it explicitly inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
-- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the directly evaluated target; otherwise "contextual."
+- International or regional human-rights, judicial, treaty, or oversight bodies are not foreign governments for this classification. They are "direct" when the claim invokes international or regional standards AND the finding is about the directly evaluated target; otherwise "contextual."
 - Foreign media reporting on the directly evaluated target's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
 - State media, government press offices, and official government publications are not neutral external observers — classify by the issuing authority.
 - Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain `foreign_reaction` even when they summarize local events, procedures, or institutional conditions.

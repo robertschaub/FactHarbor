@@ -949,6 +949,65 @@ describe("reconcileVerdicts (Step 4)", () => {
     expect(result[0].confidence).toBe(80);
     expect(warnings.some((w) => w.type === "verdict_fallback_partial")).toBe(true);
   });
+
+  it("should pass the full evidence pool to reconciliation but filter sibling-claim citations", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01", statement: "Claim one statement" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceExcerpt: "Bulky excerpt should not be sent" }),
+      createEvidenceItem({
+        id: "EV_02",
+        statement: "An acquired item mapped only to a sibling claim.",
+        relevantClaimIds: ["AC_02"],
+        sourceUrl: "https://example.org/report",
+      }),
+    ];
+
+    let capturedPayload: Record<string, unknown> | undefined;
+    const mockLLM = vi.fn(async (key: string, payload: Record<string, unknown>) => {
+      if (key === "VERDICT_RECONCILIATION") {
+        capturedPayload = payload;
+        return [{
+          claimId: "AC_01",
+          truthPercentage: 76,
+          confidence: 70,
+          reasoning: "Reconciled after checking the full evidence pool.",
+          supportingEvidenceIds: ["EV_02"],
+          contradictingEvidenceIds: [],
+          challengeResponses: [],
+        }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const { verdicts } = await reconcileVerdicts(
+      advocateVerdictsList,
+      { challenges: [] },
+      [],
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      undefined,
+      undefined,
+      claims,
+    );
+
+    const sentEvidence = capturedPayload?.evidenceItems as Array<Record<string, unknown>>;
+    expect(capturedPayload?.atomicClaims).toEqual(claims);
+    expect(sentEvidence.map((item) => item.id)).toEqual(["EV_01", "EV_02"]);
+    expect(sentEvidence[0]).not.toHaveProperty("sourceExcerpt");
+    expect(sentEvidence[1]).toMatchObject({
+      id: "EV_02",
+      statement: "An acquired item mapped only to a sibling claim.",
+      relevantClaimIds: ["AC_02"],
+      sourceUrl: "https://example.org/report",
+    });
+    expect(verdicts[0].supportingEvidenceIds).toEqual(["EV_01"]);
+  });
 });
 
 // ============================================================================

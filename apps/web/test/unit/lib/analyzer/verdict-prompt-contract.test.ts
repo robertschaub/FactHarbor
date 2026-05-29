@@ -96,9 +96,11 @@ const CHALLENGER_VARS: Record<string, string> = {
 
 /** reconciliation (verdict-stage.ts:928-942) */
 const RECONCILIATION_VARS: Record<string, string> = {
+  atomicClaims: '[{"id":"AC_01","statement":"Test claim"}]',
   advocateVerdicts: '[{"claimId":"AC_01","truthPercentage":72}]',
   challenges: '[{"claimId":"AC_01","challengePoints":[]}]',
   consistencyResults: '[{"claimId":"AC_01","spread":5}]',
+  evidenceItems: '[{"id":"EV_01","statement":"Test evidence","applicability":"direct","relevantClaimIds":["AC_01"]}]',
   sourcePortfolioByClaim: '{"AC_01":[]}',
   reportLanguage: "German",
   currentDate: "2026-04-02",
@@ -243,6 +245,28 @@ describe("Stage-4 prompt contract", () => {
       const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
       expect(section).toContain("Do not place machine IDs in prose");
       expect(section).toContain("adjustmentBasedOnChallengeIds");
+    });
+
+    it("reconciliation checks the full evidence pool before accepting missing-evidence challenges", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Full-pool evidence check");
+      expect(section).toContain("The `Evidence Items` input is the full acquired evidence pool");
+      expect(section).toContain("Do not describe acquired evidence as absent");
+      expect(section).toContain("no final case-specific adjudication");
+      expect(section).toContain("no independent, international, regional, oversight, or official assessment");
+      expect(section).toContain("Use the `Atomic Claims` input as the authoritative claim wording");
+    });
+
+    it("reconciliation receives full evidence items and may cite direct evidence outside initial arrays", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Atomic Claims");
+      expect(section).toContain("${atomicClaims}");
+      expect(section).toContain("Evidence Items (full acquired pool)");
+      expect(section).toContain("${evidenceItems}");
+      expect(section).toContain("Only use evidence IDs that appear in the Evidence Items pool above");
+      expect(section).toContain("mapped to the current claim's ID in `relevantClaimIds`");
+      expect(section).toContain("do not cite sibling-claim-only evidence directionally");
+      expect(section).toContain("the advocate did not include");
     });
 
     it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
@@ -669,6 +693,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
+    it("extracts oversight-body scope and limitations for rule-governed standards claims", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("identifies the directly evaluated target as part of the proceeding, measure, or decision family it examines");
+      expect(section).toContain("does or does not fully adjudicate allegations about that target family");
+      expect(section).toContain("states applicable standards and applies them to features of that target path");
+      expect(section).toContain("An international, regional, or oversight body's assessment can be evidence");
+    });
+
     it("comparator guidance uses abstract examples without domain-specific terms", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       // Must NOT contain test-case-specific terms
@@ -771,6 +803,13 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("State media, government press offices, and official government publications are not neutral external observers");
       expect(section).toContain("Neutral external observers exclude foreign governments, foreign legislative bodies, executive offices, state media, and official government publications");
+    });
+
+    it("does not treat international or regional oversight bodies as foreign governments", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("International or regional human-rights, judicial, treaty, or oversight bodies are not foreign governments");
+      expect(section).toContain("the claim invokes international or regional standards");
+      expect(section).toContain("the finding is about the directly evaluated target");
     });
 
     it("does not upgrade foreign government publications to contextual just because they summarize local material", () => {
