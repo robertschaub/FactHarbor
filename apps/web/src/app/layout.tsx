@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import styles from "./layout.module.css";
+import { Providers } from "@/components/Providers";
 import { LayoutClientShell } from "@/components/LayoutClientShell";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { Footer } from "@/components/Footer";
@@ -14,47 +15,48 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <DisclaimerBanner />
+        <Providers>
+          <DisclaimerBanner />
 
-        <div className={styles.wrapper}>
-          <header className={styles.header}>
-            <div className={styles.logo}>
-              FactHarbor{" "}
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  background: "#e5e7eb",
-                  color: "#6b7280",
-                  padding: "1px 6px",
-                  borderRadius: 4,
-                  verticalAlign: "middle",
-                  letterSpacing: "0.03em",
-                }}
-              >
-                Alpha{" "}
-                <span style={{ fontWeight: 400, opacity: 0.7 }}>
-                  {process.env.NEXT_PUBLIC_BUILD_DATE}
+          <div className={styles.wrapper}>
+            <header className={styles.header}>
+              <div className={styles.logo}>
+                FactHarbor{" "}
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    background: "#e5e7eb",
+                    color: "#6b7280",
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                    verticalAlign: "middle",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Alpha{" "}
+                  <span style={{ fontWeight: 400, opacity: 0.7 }}>
+                    {process.env.NEXT_PUBLIC_BUILD_DATE}
+                  </span>
                 </span>
-              </span>
-              <div style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginTop: 2 }}>
-                AI-powered fact-checking — every verdict backed by evidence you can inspect.
+                <div style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginTop: 2 }}>
+                  AI-powered fact-checking — every verdict backed by evidence you can inspect.
+                </div>
               </div>
-            </div>
-            <nav className={styles.nav}>
-              <a href="/analyze" className={styles.navLink}>Fact-Check</a>
-              <a href="/jobs" className={styles.navLink}>Reports</a>
-              <a href="/source-reliability" className={styles.navLink}>Sources</a>
-              <a href="/admin" className={styles.navLink}>Admin</a>
-            </nav>
-          </header>
+              <nav className={styles.nav}>
+                <a href="/analyze" className={styles.navLink}>Fact-Check</a>
+                <a href="/jobs" className={styles.navLink}>Reports</a>
+                <a href="/source-reliability" className={styles.navLink}>Sources</a>
+                <a href="/admin" className={styles.navLink}>Admin</a>
+              </nav>
+            </header>
 
-          <main className={styles.main}>{children}</main>
-        </div>
+            <main className={styles.main}>{children}</main>
+          </div>
 
-        <LayoutClientShell />
-        <Footer />
-
+          <LayoutClientShell />
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
