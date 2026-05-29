@@ -83,6 +83,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — Wikipedia shipped; deeper Semantic Scholar / Fact Check integration future scope
 
 ### Infrastructure / optimization
+- [2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md](2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md) — reviewed plan for narrow first-class pipeline telemetry separate from warnings; Phase 1 scoped to contract validation, claim-scoped verdict direction, and challenger model guard counters with explicit availability/denominator rules
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md) — residual WS-5/6/7
 - [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — residual P1-A, P2-*, P3-* (require fresh baseline)
 - [Infrastructure_and_Config_fwd.md](Infrastructure_and_Config_fwd.md) — residual infrastructure items (3 open)

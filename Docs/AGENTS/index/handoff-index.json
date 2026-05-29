@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-28T06:27:27.726Z",
-  "count": 281,
+  "generatedAt": "2026-05-29T05:48:53.224Z",
+  "count": 290,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5787,6 +5787,55 @@
       "summary": "Start with `git status --short --branch` and `git log --oneline --decorate -n 8`."
     },
     {
+      "file": "2026-05-28_Lead_Architect_2f7a_to_Current_Regression_Investigation.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "2f7a",
+        "to",
+        "current",
+        "regression",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-28 Lead Architect + LLM Expert: 2f7a to Current Regression Investigation"
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Bolsonaro_Statement_Regression_Attribution.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "bolsonaro",
+        "statement",
+        "regression",
+        "attribution"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-28 Lead Architect + LLM Expert - Bolsonaro Statement Regression Attribution"
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Current_Stabilization_Continuation_Advice.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "current",
+        "stabilization",
+        "continuation",
+        "advice"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-28_Lead_Architect_Current_Stabilization_Continuation_Advice.md"
+      ],
+      "summary": "Start from `git status --short --branch`, then poll/record any new jobs using the same metrics table: verdict, truth/confidence, evidence/source counts, claim count, unverified claim count, `report_damaged`, warning types, and `resultJson.meta.executedWebGitCommitHash`."
+    },
+    {
       "file": "2026-05-28_Lead_Architect_Main_Stabilization_Analysis_Regression_Takeover.md",
       "date": "2026-05-28",
       "roles": [
@@ -5801,6 +5850,75 @@
       ],
       "files_touched": [],
       "summary": "Handover for the investigation: determine whether commits added after the stabilized `406393c9` checkpoint worsen analysis quality, compare reports submitted so far, and use at most 8 new jobs."
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Previous_Main_Partial_Takeover_Review.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "previous",
+        "main",
+        "partial",
+        "takeover",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-28 Lead Architect + LLM Expert: Previous Main Partial Takeover Review"
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Recent_Pipeline_Orchestration_Overengineering_Findings.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "recent",
+        "pipeline",
+        "orchestration",
+        "overengineering",
+        "findings"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-28_Lead_Architect_Recent_Pipeline_Orchestration_Overengineering_Findings.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start at `Docs/WIP/2026-05-28_ClaimBoundary_Routing_Telemetry_ID_Handover.md` lines 11-19 and 117-131. Treat May 24 Pipeline_V2 lessons as governance constraints: cherry-pick small useful mechanisms, but do not revive the old orchestration/process layer."
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Stage1_Contract_Completion_Review_Packet.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "stage1",
+        "contract",
+        "completion",
+        "review",
+        "packet"
+      ],
+      "files_touched": [],
+      "summary": "Stage 1 Contract Completion Review Packet"
+    },
+    {
+      "file": "2026-05-28_Lead_Architect_Three_Approved_Input_Rerun.md",
+      "date": "2026-05-28",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "three",
+        "approved",
+        "input",
+        "rerun"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-28_Lead_Architect_Three_Approved_Input_Rerun.md"
+      ],
+      "summary": "If continuing validation, use the reserve job on `bundesrat-rechtskraftig` only if Captain wants to distinguish variance from persistent low-confidence behavior."
     },
     {
       "file": "2026-05-28_Senior_Developer_Hidden_Job_Runner_404_Fix.md",
@@ -5838,6 +5956,46 @@
         "Docs/AGENTS/Handoffs/2026-05-28_Senior_Developer_Zero_Directional_Citation_Guard_Review.md"
       ],
       "summary": "Start in `apps/web/src/lib/analyzer/verdict-stage.ts` around `validateVerdicts(...)`, `isVerdictDirectionPlausible(...)`, and `getDeterministicDirectionIssues(...)`."
+    },
+    {
+      "file": "2026-05-28_Unassigned_Pipeline_Telemetry_Concept_Review.md",
+      "date": "2026-05-28",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "pipeline",
+        "telemetry",
+        "concept",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-05-28_Unassigned_Pipeline_Telemetry_Concept_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` as the implementation baseline. Do not expand Phase 1 into D5 behavior changes, warning severity changes, live-job collection, or admin UI thresholds."
+    },
+    {
+      "file": "2026-05-28_Unassigned_Pipeline_Telemetry_Review_Followup.md",
+      "date": "2026-05-28",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "pipeline",
+        "telemetry",
+        "review",
+        "followup"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-05-28_Unassigned_Pipeline_Telemetry_Review_Followup.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the updated plan as the implementation baseline. Rates must divide by available section denominators only; do not include missing or partial telemetry in decisive rates."
     }
   ]
 }

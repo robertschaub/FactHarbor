@@ -291,10 +291,10 @@ After completing a task, if you discovered something that would help future agen
 
 **Files:** `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/AGENTS/Policies/Tool_Strengths.md`, `Docs/AGENTS/Policies/xWiki_Reading.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
 
-### 2026-04-15 — Prompt caching ROI depends more on prompt shape than on cache flags
+### 2026-04-15 — Prompt caching remains locked off after poor ROI
 **Role:** LLM Expert  **Agent/Tool:** GitHub Copilot (GPT-5.4)
 **Category:** useful-pattern
-**Learning:** In the current ClaimBoundary runtime, Anthropic prompt caching is already wired correctly through `getPromptCachingOptions()` in the main stage calls, so a proposal to "add cache breakpoints" can be directionally right but operationally redundant. The real limiter on cache payoff is prompt shape: many system prompts inline dynamic job payload (`analysisInput`, claims, evidence, verdict inputs), which collapses cache reuse across calls even though cache metadata is present. Before proposing more cache flags, first ask whether the static instructions and dynamic payload are separated cleanly enough for prompt reuse to matter.
+**Learning:** Current policy is that Anthropic prompt caching stays off. Earlier work showed the cache-control wiring was present but produced poor/no cache ROI because many prompts inline dynamic job payload (`analysisInput`, claims, evidence, verdict inputs), collapsing reuse while adding cost risk. Do not propose adding cache flags or re-enabling Anthropic prompt caching as a quality fix; `getPromptCachingOptions()` should return `undefined`, and the pipeline UCM default records `anthropicPromptCachingEnabled: false`.
 **Files:** `apps/web/src/lib/analyzer/llm.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`
 
 ### 2026-04-16 — Structural rubric before subjective evaluation in multi-agent debate skills

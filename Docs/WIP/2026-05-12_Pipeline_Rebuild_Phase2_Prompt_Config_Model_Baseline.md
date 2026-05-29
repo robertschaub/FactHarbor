@@ -191,8 +191,8 @@ Debate roles:
 
 Prompt caching:
 
-- Anthropic prompt caching is enabled by default through `getPromptCachingOptions`;
-- recent code has a targeted opt-out path for source-heavy extraction, but this baseline did not re-verify that patch in the new worktree.
+- Superseded: current policy keeps Anthropic prompt caching off. `getPromptCachingOptions` returns `undefined`, and the pipeline UCM default records `anthropicPromptCachingEnabled: false`.
+- The earlier targeted opt-out path for source-heavy extraction is no longer the controlling policy; prompt caching is globally disabled.
 
 Provider fallback:
 
