@@ -1398,6 +1398,88 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     expect(evaluated.summary.truthConditionAnchor?.validPreservedIds).toEqual(["AC_01"]);
   });
 
+  it("records all validator-approved thesis-direct carriers for multi-assertion inputs", () => {
+    const claims = [
+      makeDirectClaim("AC_01", "Entity A complied with Framework B."),
+      makeDirectClaim("AC_02", "Entity A complied with Framework C."),
+      makeTangentialClaim("AC_03", "Background context about Framework C."),
+      makeDirectClaim("AC_04", "Entity A drifted into a proxy predicate."),
+    ];
+    const result = makeResult({
+      claims: [
+        {
+          claimId: "AC_01",
+          preservesEvaluativeMeaning: true,
+          usesNeutralDimensionQualifier: true,
+          proxyDriftSeverity: "none",
+          recommendedAction: "keep",
+          reasoning: "kept",
+        },
+        {
+          claimId: "AC_02",
+          preservesEvaluativeMeaning: true,
+          usesNeutralDimensionQualifier: true,
+          proxyDriftSeverity: "none",
+          recommendedAction: "keep",
+          reasoning: "kept",
+        },
+        {
+          claimId: "AC_03",
+          preservesEvaluativeMeaning: true,
+          usesNeutralDimensionQualifier: true,
+          proxyDriftSeverity: "none",
+          recommendedAction: "keep",
+          reasoning: "context only",
+        },
+        {
+          claimId: "AC_04",
+          preservesEvaluativeMeaning: false,
+          usesNeutralDimensionQualifier: false,
+          proxyDriftSeverity: "material",
+          recommendedAction: "retry",
+          reasoning: "drifted",
+        },
+      ],
+    });
+
+    const evaluated = evaluateClaimContractValidation(result, claims, "multi_assertion_input");
+
+    expect(evaluated.summary.preservesContract).toBe(true);
+    expect(evaluated.summary.contractCarrierClaimIds).toEqual(["AC_01", "AC_02"]);
+  });
+
+  it("does not promote every clean thesis-direct claim as a carrier for single-claim inputs", () => {
+    const claims = [
+      makeDirectClaim("AC_01", "Entity A complied with Framework B."),
+      makeDirectClaim("AC_02", "Entity A complied with Framework C."),
+    ];
+    const result = makeResult({
+      claims: [
+        {
+          claimId: "AC_01",
+          preservesEvaluativeMeaning: true,
+          usesNeutralDimensionQualifier: true,
+          proxyDriftSeverity: "none",
+          recommendedAction: "keep",
+          reasoning: "kept",
+        },
+        {
+          claimId: "AC_02",
+          preservesEvaluativeMeaning: true,
+          usesNeutralDimensionQualifier: true,
+          proxyDriftSeverity: "none",
+          recommendedAction: "keep",
+          reasoning: "kept",
+        },
+      ],
+    });
+
+    const evaluated = evaluateClaimContractValidation(result, claims, "single_atomic_claim");
+
+    expect(evaluated.summary.preservesContract).toBe(true);
+    expect(evaluated.summary.contractCarrierClaimIds).toBeUndefined();
+  });
+
   it("PR 1: claims with undefined thesisRelevance default to direct (backward compat)", () => {
     // Old test fixtures use makeClaim() which does not set thesisRelevance.
     // The directness gate must default these to "direct" so existing tests

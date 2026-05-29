@@ -394,6 +394,7 @@ export async function extractClaims(
         evaluateClaimContractValidation(
           contractResult,
           pass2.atomicClaims as unknown as AtomicClaim[],
+          pass2.inputClassification,
         ),
         state.originalInput,
         pass2.impliedClaim ?? "",
@@ -564,6 +565,7 @@ export async function extractClaims(
             evaluateClaimContractValidation(
               retryContractResult,
               retryPass2.atomicClaims as unknown as AtomicClaim[],
+              retryPass2.inputClassification,
             ),
             state.originalInput,
             retryPass2.impliedClaim ?? "",
@@ -689,6 +691,7 @@ export async function extractClaims(
                 evaluateClaimContractValidation(
                   repairValidationResult,
                   repairedPass2.atomicClaims as unknown as AtomicClaim[],
+                  activePass2.inputClassification,
                 ),
                 state.originalInput,
                 activePass2.impliedClaim ?? "",
@@ -777,6 +780,7 @@ export async function extractClaims(
           evaluateClaimContractValidation(
             availabilityValidationResult,
             currentClaims,
+            activePass2.inputClassification,
           ),
           state.originalInput,
           activePass2.impliedClaim ?? "",
@@ -878,6 +882,7 @@ export async function extractClaims(
           evaluateClaimContractValidation(
             completionValidationResult,
             completedClaims,
+            activePass2.inputClassification,
           ),
           state.originalInput,
           activePass2.impliedClaim ?? "",
@@ -1269,6 +1274,7 @@ export async function extractClaims(
           evaluateClaimContractValidation(
             finalContractResult,
             finalAcceptedClaims,
+            bestPass2.inputClassification,
           ),
           state.originalInput,
           bestPass2.impliedClaim ?? "",
@@ -3255,9 +3261,50 @@ function normalizeClaimContractValidationResult(
   };
 }
 
+function uniqueOrderedIds(ids: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const id of ids) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    unique.push(id);
+  }
+  return unique;
+}
+
+function shouldPromoteValidatedThesisDirectCarriers(inputClassification?: string): boolean {
+  return inputClassification === "multi_assertion_input" || inputClassification === "article";
+}
+
+function getValidatedThesisDirectContractCarrierIds(
+  contractResult: ClaimContractValidationResult,
+  claims: AtomicClaim[],
+  inputClassification?: string,
+): string[] {
+  if (!shouldPromoteValidatedThesisDirectCarriers(inputClassification)) {
+    return [];
+  }
+
+  const approvedClaimIds = new Set(
+    (contractResult.claims ?? [])
+      .filter((assessment) =>
+        assessment.preservesEvaluativeMeaning === true
+        && assessment.recommendedAction === "keep"
+        && assessment.proxyDriftSeverity === "none"
+      )
+      .map((assessment) => assessment.claimId),
+  );
+
+  return claims
+    .filter((claim) => approvedClaimIds.has(claim.id))
+    .filter((claim) => (claim.thesisRelevance ?? "direct") === "direct")
+    .map((claim) => claim.id);
+}
+
 export function evaluateClaimContractValidation(
   contractResult: ClaimContractValidationResult,
   claims: AtomicClaim[],
+  inputClassification?: string,
 ): EvaluatedClaimContractValidation {
   const anchor = contractResult.truthConditionAnchor;
   let anchorOverrideRetry = false;
@@ -3362,8 +3409,13 @@ export function evaluateClaimContractValidation(
     ? "contract_violated"
     : undefined;
   const anchorCarrierClaimIds = validPreservedIds;
+  const validatedThesisDirectCarrierIds = getValidatedThesisDirectContractCarrierIds(
+    contractResult,
+    claims,
+    inputClassification,
+  );
   const contractCarrierClaimIds = preservesContract && !effectiveRePromptRequired
-    ? anchorCarrierClaimIds
+    ? uniqueOrderedIds([...validatedThesisDirectCarrierIds, ...anchorCarrierClaimIds])
     : [];
 
   return {
@@ -3814,7 +3866,7 @@ async function runSingleClaimBindingContractChallenge(
   state.llmCalls++;
 
   return challengerResult
-    ? evaluateClaimContractValidation(challengerResult, claims)
+    ? evaluateClaimContractValidation(challengerResult, claims, inputClassification)
     : undefined;
 }
 

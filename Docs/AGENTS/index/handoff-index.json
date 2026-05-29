@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-29T05:51:19.556Z",
-  "count": 290,
+  "generatedAt": "2026-05-29T10:14:53.502Z",
+  "count": 291,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5996,6 +5996,28 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Use the updated plan as the implementation baseline. Rates must divide by available section denominators only; do not include missing or partial telemetry in decisive rates."
+    },
+    {
+      "file": "2026-05-29_Lead_Architect_Stage1_Contract_Carrier_Preservation_Root_Fix.md",
+      "date": "2026-05-29",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "stage1",
+        "contract",
+        "carrier",
+        "preservation",
+        "root",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
+      ],
+      "summary": "Review `contractCarrierClaimIds` flow from `evaluateClaimContractValidation` through `getProtectedContractCarrierIds`, `selectClaimsForGate1`, and Gate 1 restoration. Validation already passed: focused carrier/selection suites, full safe `npm test`, web build, and `git diff --check`."
     }
   ]
 }

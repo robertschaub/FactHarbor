@@ -831,7 +831,38 @@ describe("selectClaimsForGate1", () => {
     ]);
   });
 
-  it("still applies centrality filtering when the contract is not approved", () => {
+  it("preserves explicit multi-assertion contract carriers through the centrality cap", () => {
+    const claims = makeClaims(["high", "high", "high", "low", "low"]);
+    const summary = {
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "clean multi-assertion output",
+      stageAttribution: "initial" as const,
+      contractCarrierClaimIds: ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+    };
+    const requiredClaimIds = getProtectedContractCarrierIds(summary);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      summary,
+      "multi_assertion_input",
+      requiredClaimIds,
+    );
+
+    expect(result).toHaveLength(5);
+    expect(result.map((claim) => claim.id)).toEqual([
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+    ]);
+  });
+
+  it("still applies centrality filtering for clean single-claim outputs without explicit carriers", () => {
     const claims = makeClaims(["high", "high", "high", "high", "high"]);
 
     const result = selectClaimsForGate1(
@@ -9862,7 +9893,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(llmCallIndex).toBe(4);
   });
 
-  it("should not protect every thesis-direct claim when validation has no carrier IDs", async () => {
+  it("should not protect every thesis-direct claim for single-claim validation without carrier IDs", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
 
@@ -9910,7 +9941,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
           return pass1Fixture;
         case 2:
           return {
-            ...makePass2(2, { inputClassification: "multi_assertion_input", statementPrefix: "Framework" }),
+            ...makePass2(2, { inputClassification: "single_atomic_claim", statementPrefix: "Framework" }),
             atomicClaims: [directHighClaim, directLowClaim],
           };
         case 3:
@@ -9985,6 +10016,115 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       rePromptRequired: false,
       summary: "final accepted central claim approved without explicit carrier IDs",
     });
+  });
+
+  it("should protect validator-approved multi-assertion carriers through centrality capping", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "high", maxAtomicClaims: 1 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: false, completionEnabled: false },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    const firstCarrier = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A complied with Framework B.",
+      category: "evaluative",
+      centrality: "high",
+      thesisRelevance: "direct",
+    });
+    const secondCarrier = createAtomicClaim({
+      id: "AC_02",
+      statement: "Entity A complied with Framework C.",
+      category: "evaluative",
+      centrality: "low",
+      thesisRelevance: "direct",
+    });
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(2, { inputClassification: "multi_assertion_input", statementPrefix: "Framework" }),
+            atomicClaims: [firstCarrier, secondCarrier],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "approved multi-assertion carriers",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+            ],
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "central" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "protected carrier" },
+            ],
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Entity A action complied with Framework B and Framework C",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02"]);
+    expect(result.contractValidationSummary).toMatchObject({
+      preservesContract: true,
+      rePromptRequired: false,
+      contractCarrierClaimIds: ["AC_01", "AC_02"],
+    });
+    expect(llmCallIndex).toBe(4);
   });
 
   it("should complete omitted thesis-direct propositions and protect all revalidated carriers", async () => {
