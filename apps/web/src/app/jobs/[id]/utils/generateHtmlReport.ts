@@ -110,18 +110,12 @@ function verdictFromPct(pct: number, confidence?: number): string {
   return "FALSE";
 }
 
-function evidenceReferenceCount(cv: any): number {
-  const supportingCount = Array.isArray(cv?.supportingEvidenceIds) ? cv.supportingEvidenceIds.length : 0;
-  const contradictingCount = Array.isArray(cv?.contradictingEvidenceIds) ? cv.contradictingEvidenceIds.length : 0;
-  return supportingCount + contradictingCount;
-}
-
 function isPublicationSuppressed(cv: any): boolean {
   return cv?.publishable === false || cv?.publishabilityReason === "low_confidence_high_harm";
 }
 
 function formatClaimVerdictText(cv: any, displayPct: number, verdict: string, truthPercentage: number): string {
-  if (isPublicationSuppressed(cv) || (verdict === "UNVERIFIED" && evidenceReferenceCount(cv) > 0)) {
+  if (isPublicationSuppressed(cv)) {
     const signalPct = norm(truthPercentage);
     return signalPct === 50 ? "Limited evidence" : `${signalPct}% truth signal`;
   }

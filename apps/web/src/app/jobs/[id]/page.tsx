@@ -213,12 +213,6 @@ function getVerdictAssessmentDisplay(
   return formatVerdictText(displayPct, verdictLabel);
 }
 
-function getEvidenceReferenceCount(claim: any): number {
-  const supportingCount = Array.isArray(claim?.supportingEvidenceIds) ? claim.supportingEvidenceIds.length : 0;
-  const contradictingCount = Array.isArray(claim?.contradictingEvidenceIds) ? claim.contradictingEvidenceIds.length : 0;
-  return supportingCount + contradictingCount;
-}
-
 function isClaimPublicationSuppressed(claim: any): boolean {
   return claim?.publishable === false || claim?.publishabilityReason === "low_confidence_high_harm";
 }
@@ -232,7 +226,7 @@ function getClaimVerdictAssessmentDisplay(
 ): string {
   if (showAnalysisFailureLabel) return "Analysis generation failed";
   if (!verdictLabel || displayPct === undefined) return "";
-  if (isClaimPublicationSuppressed(claim) || (verdictLabel === "UNVERIFIED" && getEvidenceReferenceCount(claim) > 0)) {
+  if (isClaimPublicationSuppressed(claim)) {
     const signalPct = normalizePercentage(truthPercentage);
     return signalPct === 50 ? "Limited evidence" : `${signalPct}% truth signal`;
   }
