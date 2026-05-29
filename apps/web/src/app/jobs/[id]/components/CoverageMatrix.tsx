@@ -15,6 +15,7 @@ import styles from "./CoverageMatrix.module.css";
 interface CellVerdict {
   pct: number;   // truthPercentage 0-100
   conf: number;  // confidence 0-100
+  verdict?: string; // Persisted verdict label when available; totals should not re-derive it.
 }
 
 interface VerdictColorEntry {
@@ -82,10 +83,17 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
   };
   const colorMap = verdictColorMap ?? fallbackColors;
 
-  /** Get inline style from a verdict percentage using the same palette as claim cards. */
+  const getVerdictLabel = (v: CellVerdict): string => {
+    const stored = typeof v.verdict === "string"
+      ? v.verdict.trim().toUpperCase().replace(/[\s_]+/g, "-")
+      : "";
+    return colorMap[stored] ? stored : percentageToClaimVerdict(v.pct, v.conf);
+  };
+
+  /** Get inline style from a verdict using the same palette as claim cards. */
   const verdictStyle = (v: CellVerdict | null | undefined): React.CSSProperties => {
     if (!v) return {};
-    const verdict = percentageToClaimVerdict(v.pct, v.conf);
+    const verdict = getVerdictLabel(v);
     const c = colorMap[verdict] || colorMap["UNVERIFIED"] || fallbackColors["UNVERIFIED"];
     return { backgroundColor: c.bg, color: c.text };
   };
@@ -107,7 +115,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
     }
     if (bestIdx < 0) return { style: {}, tooltip: "" };
     const v = verdicts[bestIdx]!;
-    const verdict = percentageToClaimVerdict(v.pct, v.conf);
+    const verdict = getVerdictLabel(v);
     return {
       style: verdictStyle(v),
       tooltip: `Dominant: ${labels[bestIdx]} (${bestWeight} items) — ${verdict} ${Math.round(v.pct)}%`,
@@ -251,7 +259,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
                 let totalStyle: React.CSSProperties | undefined;
                 let totalTooltip: string | undefined;
                 if (cv) {
-                  const verdict = percentageToClaimVerdict(cv.pct, cv.conf);
+                  const verdict = getVerdictLabel(cv);
                   totalStyle = verdictStyle(cv);
                   totalTooltip = `Claim verdict: ${verdict} ${Math.round(cv.pct)}%`;
                 } else if (hasVerdictData) {

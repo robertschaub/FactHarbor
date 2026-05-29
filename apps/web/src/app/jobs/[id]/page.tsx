@@ -238,6 +238,22 @@ function getClaimTruthPercentage(claim: any): number {
   return resolveTruthPercentage(claim?.verdict, CLAIM_VERDICT_MIDPOINTS);
 }
 
+function normalizeVerdictLabel(value: unknown, allowedLabels: Record<string, number>): string | null {
+  if (typeof value !== "string") return null;
+  const label = value.trim().toUpperCase().replace(/[\s_]+/g, "-");
+  return allowedLabels[label] !== undefined ? label : null;
+}
+
+function getClaimVerdictLabel(claim: any, truthPercentage: number, confidence: number): string {
+  return normalizeVerdictLabel(claim?.verdict, CLAIM_VERDICT_MIDPOINTS)
+    ?? percentageToClaimVerdict(truthPercentage, confidence);
+}
+
+function getArticleVerdictLabel(result: any, truthPercentage: number, confidence: number): string {
+  return normalizeVerdictLabel(result?.verdict, ARTICLE_VERDICT_MIDPOINTS)
+    ?? percentageToArticleVerdict(truthPercentage, confidence);
+}
+
 function getVerdictTruthPercentage(summary: any): number {
   if (typeof summary?.truthPercentage === "number") {
     return normalizePercentage(summary.truthPercentage);
@@ -1225,7 +1241,7 @@ export default function JobPage() {
     return claims.map((claimId: string) => {
       const cv = claimVerdicts.find((v: any) => v.claimId === claimId);
       if (!cv || cv.truthPercentage == null) return null;
-      return { pct: cv.truthPercentage, conf: cv.confidence ?? 0 };
+      return { pct: cv.truthPercentage, conf: cv.confidence ?? 0, verdict: cv.verdict };
     });
   }, [result?.coverageMatrix, claimVerdicts]);
 
@@ -1839,7 +1855,7 @@ export default function JobPage() {
               {/* v2.6.31: Handle edge case where hasMultipleContexts is true but context answers are missing */}
               {/* CB Pipeline: dedicated verdict banner using top-level fields */}
               {isCBSchema && typeof result?.truthPercentage === "number" && (() => {
-                const cbVerdictLabel = percentageToArticleVerdict(result.truthPercentage, result.confidence ?? 0);
+                const cbVerdictLabel = getArticleVerdictLabel(result, result.truthPercentage, result.confidence ?? 0);
                 const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(cbVerdictLabel, hasAnalysisGenerationFailure);
                 const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
                 const cbUiPalette = getVerdictUiPalette(cbVerdictLabel, cbColor);
@@ -2028,7 +2044,7 @@ export default function JobPage() {
                       onNavigate={navigateTo}
                       cellVerdicts={cellVerdicts}
                       claimVerdicts={claimLevelVerdicts}
-                      overallVerdict={result.truthPercentage != null ? { pct: result.truthPercentage, conf: result.confidence ?? 0 } : null}
+                      overallVerdict={result.truthPercentage != null ? { pct: result.truthPercentage, conf: result.confidence ?? 0, verdict: result.verdict } : null}
                       verdictColorMap={CLAIM_VERDICT_COLORS}
                     />
                   )}
@@ -3753,7 +3769,7 @@ function ClaimCard({
 }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
-  const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
+  const claimVerdictLabel = getClaimVerdictLabel(claim, claimTruth, claimConfidence);
   const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(claimVerdictLabel, hasAnalysisGenerationFailure);
   const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   const displayClaimPct = isFalseBand(claimVerdictLabel) ? 100 - claimTruth : claimTruth;
@@ -3916,7 +3932,7 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
             "#fff3e0"; // default orange for unverified
           const claimTruth = getClaimTruthPercentage(cv);
           const cvConfidence = cv?.confidence ?? 0;
-          const claimVerdictLabel = percentageToClaimVerdict(claimTruth, cvConfidence);
+          const claimVerdictLabel = getClaimVerdictLabel(cv, claimTruth, cvConfidence);
 
           return (
             <div key={cv.claimId} className={styles.highlighterClaimItem} style={{ backgroundColor: bgColor }}>
