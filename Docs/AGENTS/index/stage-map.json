@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T10:23:31.876Z",
+  "generatedAt": "2026-05-30T14:24:59.998Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
