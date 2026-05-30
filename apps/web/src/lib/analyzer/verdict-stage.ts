@@ -1381,6 +1381,7 @@ export async function validateVerdicts(
       }
     }
 
+    const hardCitationIntegrityIssues = getHardCitationIntegrityIssues(current, evidence);
     const deterministicDirectionIssues = getDeterministicDirectionIssues(
       current,
       evidence,
@@ -1434,10 +1435,12 @@ export async function validateVerdicts(
           },
         });
 
-        if (
-          config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
-          && current.verdictReason !== "verdict_integrity_failure"
-        ) {
+        const shouldEnforceDirectionIntegrity =
+          (config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
+            || hardCitationIntegrityIssues.length > 0)
+          && current.verdictReason !== "verdict_integrity_failure";
+
+        if (shouldEnforceDirectionIntegrity) {
           const preRepairVerdict = current;
           const finalizeAcceptedRepair = (candidate: CBClaimVerdict): CBClaimVerdict => {
             if (!repairContext) return candidate;
@@ -1508,8 +1511,10 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
-          const normalizedPlausible = normalizedDirection.valid !== false
-            || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
+          const normalizedStructurallyCitable = hasStructuralCitationIntegrity(repairSeedVerdict, evidence);
+          const normalizedPlausible = normalizedStructurallyCitable
+            && (normalizedDirection.valid !== false
+              || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig));
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1597,8 +1602,10 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
-          const repairedPlausible = retryDirection.valid !== false
-            || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
+          const repairedStructurallyCitable = hasStructuralCitationIntegrity(normalizedRepaired, evidence);
+          const repairedPlausible = repairedStructurallyCitable
+            && (retryDirection.valid !== false
+              || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig));
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(
@@ -1890,6 +1897,140 @@ function joinIssues(issues: string[]): string {
   return issues.length > 0 ? issues.join("; ") : "unknown";
 }
 
+const EXPLICIT_ZERO_CITATION_FALLBACK_REASONS = new Set([
+  "analysis_generation_failed",
+  "insufficient_evidence",
+  "report_damaged",
+  "verdict_integrity_failure",
+]);
+
+function hasZeroDirectionalCitations(verdict: CBClaimVerdict): boolean {
+  return (verdict.supportingEvidenceIds?.length ?? 0) === 0
+    && (verdict.contradictingEvidenceIds?.length ?? 0) === 0;
+}
+
+function isExplicitZeroCitationFallback(verdict: CBClaimVerdict): boolean {
+  return hasZeroDirectionalCitations(verdict)
+    && verdict.truthPercentage === 50
+    && verdict.confidenceTier === "INSUFFICIENT"
+    && typeof verdict.verdictReason === "string"
+    && EXPLICIT_ZERO_CITATION_FALLBACK_REASONS.has(verdict.verdictReason);
+}
+
+function hasStructuralCitationIntegrity(verdict: CBClaimVerdict, evidence: EvidenceItem[]): boolean {
+  return getHardCitationIntegrityIssues(verdict, evidence).length === 0;
+}
+
+function isMappedToDifferentClaim(item: EvidenceItem | undefined, claimId: string): boolean {
+  return Array.isArray(item?.relevantClaimIds)
+    && item.relevantClaimIds.length > 0
+    && !item.relevantClaimIds.includes(claimId);
+}
+
+function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: EvidenceItem[]): string[] {
+  const issues: string[] = [];
+
+  if (hasZeroDirectionalCitations(verdict)) {
+    if (!isExplicitZeroCitationFallback(verdict)) {
+      issues.push(
+        "Verdict has no supportingEvidenceIds or contradictingEvidenceIds. Non-fallback claim verdicts must cite at least one direct supporting or contradicting evidence item.",
+      );
+    }
+    return issues;
+  }
+
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
+  const supportIds = Array.from(new Set(verdict.supportingEvidenceIds ?? []));
+  const contradictIds = Array.from(new Set(verdict.contradictingEvidenceIds ?? []));
+  const missingSupportingIds: string[] = [];
+  const missingContradictingIds: string[] = [];
+  const siblingSupportingIds: string[] = [];
+  const siblingContradictingIds: string[] = [];
+  const misbucketedSupportingIds: string[] = [];
+  const misbucketedContradictingIds: string[] = [];
+  const nonDirectionalSupportingIds: string[] = [];
+  const nonDirectionalContradictingIds: string[] = [];
+  const nonDirectSupportingIds: string[] = [];
+  const nonDirectContradictingIds: string[] = [];
+
+  for (const id of supportIds) {
+    const item = evidenceById.get(id);
+    if (!item) {
+      missingSupportingIds.push(id);
+      continue;
+    }
+    if (isMappedToDifferentClaim(item, verdict.claimId)) siblingSupportingIds.push(id);
+    if (item.applicability && item.applicability !== "direct") nonDirectSupportingIds.push(id);
+    if (item.claimDirection === "contradicts") misbucketedSupportingIds.push(id);
+    else if (item.claimDirection !== "supports") nonDirectionalSupportingIds.push(id);
+  }
+
+  for (const id of contradictIds) {
+    const item = evidenceById.get(id);
+    if (!item) {
+      missingContradictingIds.push(id);
+      continue;
+    }
+    if (isMappedToDifferentClaim(item, verdict.claimId)) siblingContradictingIds.push(id);
+    if (item.applicability && item.applicability !== "direct") nonDirectContradictingIds.push(id);
+    if (item.claimDirection === "supports") misbucketedContradictingIds.push(id);
+    else if (item.claimDirection !== "contradicts") nonDirectionalContradictingIds.push(id);
+  }
+
+  if (missingSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations include ${missingSupportingIds.length} evidence ID(s) that are not present in the evidence pool.`,
+    );
+  }
+  if (missingContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations include ${missingContradictingIds.length} evidence ID(s) that are not present in the evidence pool.`,
+    );
+  }
+  if (siblingSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations include ${siblingSupportingIds.length} evidence item(s) mapped to a different claim.`,
+    );
+  }
+  if (siblingContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations include ${siblingContradictingIds.length} evidence item(s) mapped to a different claim.`,
+    );
+  }
+  if (misbucketedSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations are polarity-misaligned: ${misbucketedSupportingIds.length} supportingEvidenceIds point to contradicting evidence in the claim-local pool.`,
+    );
+  }
+  if (misbucketedContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations are polarity-misaligned: ${misbucketedContradictingIds.length} contradictingEvidenceIds point to supporting evidence in the claim-local pool.`,
+    );
+  }
+  if (nonDirectionalSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations include ${nonDirectionalSupportingIds.length} evidence item(s) without a direct supporting direction.`,
+    );
+  }
+  if (nonDirectionalContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations include ${nonDirectionalContradictingIds.length} evidence item(s) without a direct contradicting direction.`,
+    );
+  }
+  if (nonDirectSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations include ${nonDirectSupportingIds.length} explicitly non-direct evidence item(s); supportingEvidenceIds may cite only direct evidence.`,
+    );
+  }
+  if (nonDirectContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations include ${nonDirectContradictingIds.length} explicitly non-direct evidence item(s); contradictingEvidenceIds may cite only direct evidence.`,
+    );
+  }
+
+  return issues;
+}
+
 /**
  * Deterministic structural sanity check for verdict direction.
  * Returns false when directional citation arrays contain evidence whose own
@@ -1905,14 +2046,14 @@ export function isVerdictDirectionPlausible(
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
+  if (!hasStructuralCitationIntegrity(verdict, evidence)) {
+    return false;
+  }
+
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
 
   if (
-    summary.misbucketedSupportingIds.length > 0
-    || summary.misbucketedContradictingIds.length > 0
-    || summary.nonDirectSupportingIds.length > 0
-    || summary.nonDirectContradictingIds.length > 0
-    || (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
+    (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
     || (verdict.truthPercentage < 50 && summary.directContradictingCount === 0 && summary.directSupportingCount > 0)
     || (
       verdict.truthPercentage === 50
@@ -1995,28 +2136,7 @@ function getDeterministicDirectionIssues(
   calcConfig?: CalcConfig,
 ): string[] {
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
-  const issues: string[] = [];
-
-  if (summary.misbucketedSupportingIds.length > 0) {
-    issues.push(
-      `Supporting citations are polarity-misaligned: ${summary.misbucketedSupportingIds.length} supportingEvidenceIds point to contradicting evidence in the claim-local pool.`,
-    );
-  }
-  if (summary.misbucketedContradictingIds.length > 0) {
-    issues.push(
-      `Contradicting citations are polarity-misaligned: ${summary.misbucketedContradictingIds.length} contradictingEvidenceIds point to supporting evidence in the claim-local pool.`,
-    );
-  }
-  if (summary.nonDirectSupportingIds.length > 0) {
-    issues.push(
-      `Supporting citations include ${summary.nonDirectSupportingIds.length} explicitly non-direct evidence item(s); supportingEvidenceIds may cite only direct evidence.`,
-    );
-  }
-  if (summary.nonDirectContradictingIds.length > 0) {
-    issues.push(
-      `Contradicting citations include ${summary.nonDirectContradictingIds.length} explicitly non-direct evidence item(s); contradictingEvidenceIds may cite only direct evidence.`,
-    );
-  }
+  const issues = getHardCitationIntegrityIssues(verdict, evidence);
   if (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0) {
     issues.push(
       `Truth percentage ${verdict.truthPercentage}% points above the midpoint, but the direct cited evidence is one-sided toward contradiction (${summary.directContradictingCount} contradicting, 0 supporting).`,
@@ -2135,6 +2255,8 @@ function safeDowngradeVerdict(
     verdict: percentageToClaimVerdict(50, downgradedConfidence, undefined, mixedConfidenceThreshold),
     confidence: downgradedConfidence,
     confidenceTier: "INSUFFICIENT",
+    supportingEvidenceIds: [],
+    contradictingEvidenceIds: [],
   };
 }
 
@@ -2494,6 +2616,16 @@ async function attemptDirectionRepair(
 
   // Claim-local evidence scoping: use only evidence relevant to this claim
   const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence);
+  if (hasZeroDirectionalCitations(verdict)) {
+    const hasMappedDirectDirectionalEvidence = evidence.some((item) =>
+      item.relevantClaimIds?.includes(verdict.claimId)
+      && (!item.applicability || item.applicability === "direct")
+      && (item.claimDirection === "supports" || item.claimDirection === "contradicts")
+    );
+    if (!hasMappedDirectDirectionalEvidence) {
+      return null;
+    }
+  }
 
   const evidenceById = new Map(localEvidence.map((item) => [item.id, item]));
   const citedIds = new Set([

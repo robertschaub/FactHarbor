@@ -41,6 +41,7 @@ import {
   getClaimLocalEvidence,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
+  type VerdictRepairRequest,
   type VerdictStageConfig,
 } from "@/lib/analyzer/verdict-stage";
 import type {
@@ -1265,6 +1266,228 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "info")).toBe(true);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
+  });
+
+  it("safe-downgrades normal zero-citation verdicts even when direction policy is disabled", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 52,
+      confidence: 58,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" })];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        throw new Error("Repair should not run without repair context");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "disabled",
+    };
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_direction_issue")).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
+  });
+
+  it("safe-downgrades neutral directional citations even when direction policy is disabled", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 65,
+      confidence: 70,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: ["EV_NEUTRAL"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_NEUTRAL", relevantClaimIds: ["AC_01"], claimDirection: "neutral" }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "disabled",
+    };
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((w) => w.message.includes("without a direct supporting direction"))).toBe(true);
+  });
+
+  it("safe-downgrades sibling-claim citations even when direction policy is disabled", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 65,
+      confidence: 70,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: ["EV_AC01"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_AC01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "disabled",
+    };
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((w) => w.message.includes("mapped to a different claim"))).toBe(true);
+  });
+
+  it("repairs zero-citation verdicts only from mapped claim-local direct evidence", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 52,
+      confidence: 58,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports", applicability: "direct" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+    const repairExecutor = vi.fn(async (request: VerdictRepairRequest) => ({
+      ...request.verdict,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+      reasoning: "Repaired with claim-local direct evidence.",
+    }));
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix, repairExecutor },
+    );
+
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(repairExecutor).toHaveBeenCalledTimes(1);
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
+  });
+
+  it("does not repair zero-citation verdicts from the broad fallback evidence pool", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 52,
+      confidence: 58,
+      confidenceTier: "MEDIUM",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports", applicability: "direct" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+    const repairExecutor = vi.fn(async (request: VerdictRepairRequest) => ({
+      ...request.verdict,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    }));
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix, repairExecutor },
+    );
+
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(repairExecutor).not.toHaveBeenCalled();
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
   });
 
   it("repairs direction mismatch once when direction policy is enabled and repair succeeds", async () => {
@@ -4341,13 +4564,38 @@ describe("isVerdictDirectionPlausible", () => {
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(true);
   });
 
-  it("returns true when evidence IDs are empty", () => {
+  it("returns false when non-fallback evidence IDs are empty", () => {
     const verdict = createCBVerdict({
       truthPercentage: 50,
       supportingEvidenceIds: [],
       contradictingEvidenceIds: [],
     });
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(false);
+  });
+
+  it("allows explicit zero-citation insufficient-evidence fallbacks", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+      verdictReason: "insufficient_evidence",
+      confidence: 0,
+      confidenceTier: "INSUFFICIENT",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
     expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
+  });
+
+  it("rejects stale insufficient zero-citation verdicts without an explicit fallback reason", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+      confidence: 0,
+      confidenceTier: "INSUFFICIENT",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(false);
   });
 
   it("returns false when directional citations rely on explicitly contextual evidence", () => {
@@ -4361,6 +4609,38 @@ describe("isVerdictDirectionPlausible", () => {
         id: "EV_CTX",
         claimDirection: "supports",
         applicability: "contextual",
+      }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when a directional citation uses neutral evidence", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 70,
+      supportingEvidenceIds: ["EV_NEUTRAL"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+      }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when a directional citation is mapped only to a sibling claim", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 70,
+      supportingEvidenceIds: ["EV_AC01"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({
+        id: "EV_AC01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "supports",
       }),
     ];
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
