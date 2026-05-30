@@ -76,3 +76,23 @@ The reviews surfaced that "flaky" has **three distinct possible loci**, needing 
 - **L3** → correct the `selfContradicted` code check (treat `{preserved ∩ drifted}` as the valid orthogonal judgment Rule 11 mandates, not a contradiction).
 
 This keeps to the Captain's standard: prove the mechanism (now down to *which stage the variance lives in*) before touching code. Implementation, once the locus is known, is delegated to a Senior Developer with the matched change surface + the §6 guards.
+
+---
+
+## 8. Corrected evaluation against documented expectations (2026-05-30, per Captain) — L1 confirmed dominant
+
+My initial "4/5 pass" checked only verdict label + truth + confidence. Scored against the **full** documented `hydrogen-en` bar (`Captain_Quality_Expectations.md` line 26: FALSE/MOSTLY-FALSE; truth 5–25; conf 65–85; **≥2 boundaries; TTW and full-pathway structurally distinct, not conflated**):
+
+| Job | Verdict | T/C | Claims | Bnds | TTW vs full-pathway distinct | Full bar |
+|---|---|---|---|---|---|---|
+| `59eb6a95` | FALSE | 14/71 | 2 | 5 | yes (TTW Use-Phase + WTW Full-Pathway) | **PASS** |
+| `b779ab4b` | FALSE | 9/75 | 2 | 6 | yes (TTW/Powertrain + Full-Pathway WtW) | **PASS** |
+| `b885c508` | FALSE | 8/79 | 2 | 6 | weak — methodology-clustered boundaries, no clean TTW/WTW split | borderline |
+| `460c52ad` | MOSTLY-FALSE | 15/65 | **1** | 5 | **no — two WTW boundaries, no TTW; single undecomposed claim** | **FAIL (intent)** |
+| `184f0bba` | UNVERIFIED | 50/0 | 3 | 0 | n/a | **FAIL (report_damaged)** |
+
+⇒ **Only 2/5 meet the full bar.** `460c52ad` (Captain-flagged) conflates the dimensions despite landing in the verdict band.
+
+**Locus L1 (extraction-decomposition instability) is dominant.** The variance spans claim count (1/2/3) and boundary structure (clean-distinct → methodology-clustered → TTW-conflated → report_damaged); `report_damaged` is one tail. **L2/L3 fixes (validator resample / code-check) would not address the conflation/under-decomposition cases** — only stabilizing Stage-1 decomposition of broad comparative-efficiency inputs into distinct TTW + full-pathway claims/boundaries does. The discriminator's extraction-vs-validator question is largely answered by this data (extraction-dominated); a fixed-set re-validation remains only to classify the report_damaged tail (L2 vs L3).
+
+**Verifier correction (binds all future validation):** score each run against the **FULL** documented expectation — bands AND ≥2 boundaries AND TTW/full-pathway distinctness AND "every published verdict cites ≥1 evidence item" (generic expectation) — **never verdict bands alone**. Pass target: an agreed ≥k/N runs meet the full bar; `report_damaged` ≈ 0.
