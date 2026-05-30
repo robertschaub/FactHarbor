@@ -523,4 +523,45 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
     });
   });
+
+  describe("shared-standard process/outcome scope guard", () => {
+    it("keeps one shared assessment frame fused unless the input creates separable truth conditions", () => {
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      const contract = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+
+      expect(pass2).not.toBeNull();
+      expect(contract).not.toBeNull();
+
+      expect(pass2).toContain("Shared-standard process/outcome scope guard");
+      expect(pass2).toContain("one shared standard, criterion, or evaluative predicate");
+      expect(pass2).toContain("one assessment frame");
+      expect(pass2).toContain("keep that frame fused in a single thesis-direct claim");
+      expect(pass2).toContain("Do not strand a resulting decision or outcome as its own thesis-direct claim");
+
+      expect(contract).toContain("Shared-standard process/outcome cohesion audit (MANDATORY)");
+      expect(contract).toContain("a fused thesis-direct claim can be atomic");
+      expect(contract).toContain("Do NOT require separate process/path and resulting-decision/outcome claims merely because both are named");
+      expect(contract).toContain("strands a resulting decision or outcome as a standalone thesis-direct claim");
+    });
+
+    it("keeps the anti-bundling guardrails for distinct standards, predicates, and evidence routes", () => {
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      const contract = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+
+      expect(pass2).not.toBeNull();
+      expect(contract).not.toBeNull();
+
+      for (const section of [pass2, contract]) {
+        expect(section).toContain("distinct predicates");
+        expect(section).toContain("distinct standards");
+        expect(section).toContain("separately asserted outcome properties");
+        expect(section).toContain("independently resolvable evidence routes");
+      }
+
+      expect(pass2).toContain("does NOT weaken the coordinated-branch rule");
+      expect(contract).toContain("This is a scope guard only");
+      expect(contract).toContain("separable conjuncts");
+      expect(contract).toContain("rules 16-21");
+    });
+  });
 });
