@@ -160,6 +160,9 @@ apps/web/scripts/tmp-sr-*
 /jobs_dump.json
 /jobs_dump.txt
 
+# Local fhAgentKnowledge MCP cache (transient, per-machine, regenerable)
+/.cache/
+
 # Claude Code harness state
 .claude/scheduled_tasks.lock
 .aider*
