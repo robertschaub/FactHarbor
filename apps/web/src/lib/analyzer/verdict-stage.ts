@@ -1513,8 +1513,7 @@ export async function validateVerdicts(
           );
           const normalizedStructurallyCitable = hasStructuralCitationIntegrity(repairSeedVerdict, evidence);
           const normalizedPlausible = normalizedStructurallyCitable
-            && (normalizedDirection.valid !== false
-              || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig));
+            && isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1604,8 +1603,7 @@ export async function validateVerdicts(
           );
           const repairedStructurallyCitable = hasStructuralCitationIntegrity(normalizedRepaired, evidence);
           const repairedPlausible = repairedStructurallyCitable
-            && (retryDirection.valid !== false
-              || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig));
+            && isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(
@@ -2174,8 +2172,6 @@ function normalizeVerdictCitationDirections(
   evidence: EvidenceItem[],
 ): CBClaimVerdict {
   const evidenceById = new Map(evidence.map((e) => [e.id, e]));
-  const originalSupporting = new Set(verdict.supportingEvidenceIds);
-  const originalContradicting = new Set(verdict.contradictingEvidenceIds);
   const citedIds = Array.from(new Set([
     ...verdict.supportingEvidenceIds,
     ...verdict.contradictingEvidenceIds,
@@ -2186,14 +2182,18 @@ function normalizeVerdictCitationDirections(
   const contradictingEvidenceIds: string[] = [];
   for (const id of citedIds) {
     const item = evidenceById.get(id);
-    if (item?.applicability && item.applicability !== "direct") {
+    if (!item) {
       continue;
     }
-    const direction = item?.claimDirection;
+    if (isMappedToDifferentClaim(item, verdict.claimId)) {
+      continue;
+    }
+    if (item.applicability && item.applicability !== "direct") {
+      continue;
+    }
+    const direction = item.claimDirection;
     if (direction === "supports") supportingEvidenceIds.push(id);
     else if (direction === "contradicts") contradictingEvidenceIds.push(id);
-    else if (originalSupporting.has(id)) supportingEvidenceIds.push(id);
-    else if (originalContradicting.has(id)) contradictingEvidenceIds.push(id);
   }
 
   return {
