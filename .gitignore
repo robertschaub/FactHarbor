@@ -156,6 +156,10 @@ apps/web/scripts/tmp-sr-*
 
 # Local analysis artifacts at repo root (experiment outputs, not versioned)
 /bolsonaro_*.json
+/job_*.json
+/jobs_dump.json
+/jobs_dump.txt
 
 # Claude Code harness state
 .claude/scheduled_tasks.lock
+.aider*

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-30T15:20:52.388Z",
-  "count": 294,
+  "generatedAt": "2026-05-30T21:30:59.442Z",
+  "count": 297,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6056,6 +6056,57 @@
         "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
       ],
       "summary": "Review `contractCarrierClaimIds` flow from `evaluateClaimContractValidation` through `getProtectedContractCarrierIds`, `selectClaimsForGate1`, and Gate 1 restoration. Validation already passed: focused carrier/selection suites, full safe `npm test`, web build, and `git diff --check`."
+    },
+    {
+      "file": "2026-05-30_Agents_Supervisor_Agentic_Coding_Opus_4.8_Optimization.md",
+      "date": "2026-05-30",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "agentic",
+        "coding",
+        "opus",
+        "4.8",
+        "optimization"
+      ],
+      "files_touched": [],
+      "summary": "Agents Supervisor — Agentic Coding with Opus 4.8 Optimization"
+    },
+    {
+      "file": "2026-05-30_Lead_Architect_Cross_Stage_Contract_Audit.md",
+      "date": "2026-05-30",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "cross",
+        "stage",
+        "contract",
+        "audit"
+      ],
+      "files_touched": [],
+      "summary": "The pattern is shared, the fixes are not. **Hydrogen is flaky (live-confirmed), not a regression** — harden the Stage-1 contract gate's terminal-abort response (§1 RESOLVED, §6.1); do NOT revert/bisect/edit-rules. Treat §2 (EN) as standing debt with a known bounded fix; §3 (PT) needs nothing."
+    },
+    {
+      "file": "2026-05-30_Lead_Architect_Cross_Stage_Root_Cause_Debate_Handoff.md",
+      "date": "2026-05-30",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "cross",
+        "stage",
+        "root",
+        "cause",
+        "debate",
+        "handoff"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-30_Lead_Architect_Cross_Stage_Root_Cause_Debate_Handoff.md"
+      ],
+      "summary": "The Captain's latest request supersedes the earlier \"fix Hydrogen first\" framing. Continue with a diagnostic cross-stage contract audit. Prove whether Hydrogen, EN Bolsonaro, and PT Bolsonaro share a real contract-mismatch root before proposing any implementation. Keep `ac3b33da`; do not touch Stage"
     },
     {
       "file": "2026-05-30_Lead_Architect_Post_Stage4_Live_Validation_Review_Consolidation.md",

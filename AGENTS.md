@@ -306,6 +306,7 @@ When submitting **live analysis jobs or validation batches** after changing sour
 - **Commit first** before submitting a batch of jobs so each job records an associated git revision/hash that maps to the actual source under test.
 - **Refresh the runtime before submission.** If the change requires a process reload to take effect, restart the affected services first. If the change is prompt/config-only and reseeding is sufficient, reseed before submitting jobs.
 - **Do not submit live jobs against stale processes or stale prompt/config state.** Verification runs must use the updated source/prompt/config actually intended for evaluation.
+- **Fail-fast on clear regression (cost rule).** When validating a change, if the first **3 jobs** already show a *clear* regression (a previously-passing guard input now fails, or the target metric is unambiguously worse), **stop the batch** — do not spend further jobs to confirm what is already clear. Revert/quarantine the change and classify the attempt (see *Failed-Attempt Recovery*). This does NOT apply to inconclusive or variance-dominated results, where more samples may be needed for signal.
 
 ---
 
