@@ -610,9 +610,9 @@ API endpoint, configuration parameter, or pipeline stage:
 
 ## 6. Model-Class Guidelines
 
-> **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve.
+> **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve. Claude Code effort-level and fast-mode specifics (dated) live in §6.5.
 
-### 6.1 High-Capability Models (e.g., Claude Opus 4.6, GPT-o3, Gemini 2.0 Pro)
+### 6.1 High-Capability Models
 
 **Strengths:** Deep reasoning, complex analysis, nuanced understanding, large context
 **Best For:** Architecture decisions, complex investigations, quality gates, trade-off analysis
@@ -620,9 +620,9 @@ API endpoint, configuration parameter, or pipeline stage:
 - Reserve for high-stakes decisions and ambiguous problem spaces
 - Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
-- Claude Code: only tier that supports `CLAUDE_CODE_EFFORT_LEVEL=max`
+- Claude Code: effort-level and fast-mode tiering is covered in §6.5
 
-### 6.2 Mid-Tier Models (e.g., Claude Sonnet 4.6, GPT-4.1, Gemini 2.0 Flash)
+### 6.2 Mid-Tier Models
 
 **Strengths:** Balanced cost/capability, good reasoning, fast iteration
 **Best For:** Standard reviews, documentation, routine implementation, iterative review cycles
@@ -630,9 +630,9 @@ API endpoint, configuration parameter, or pipeline stage:
 - Well-suited for following structured protocols
 - Efficient for documentation tasks
 - Good default for most development work
-- Claude Code default for this project (`CLAUDE_CODE_EFFORT_LEVEL=high` set in settings)
+- Claude Code default for this project: `CLAUDE_CODE_EFFORT_LEVEL=xhigh` (env var; see §6.5)
 
-### 6.3 Lightweight Models (e.g., Claude Haiku 4.5, GPT-4.1 mini, Kimi K2, Gemini 1.5 Flash)
+### 6.3 Lightweight Models
 
 **Strengths:** Fast, cost-effective, good for bulk operations
 **Best For:** Fast iterations, autonomous workflows (Cline), bulk operations, extract/understand tasks
@@ -643,7 +643,7 @@ API endpoint, configuration parameter, or pipeline stage:
 
 **Context Budget — Lite Activation:**
 
-Lightweight models have smaller context windows. When activated with "As \<Role\>", use this graduated loading strategy instead of reading all Required Reading at once:
+Lightweight models have smaller context windows. **This graduated loading is for lightweight / small-context models only — it does NOT apply to the 1M-context Opus main loop, which should follow the AGENTS.md mandate to read files fully before acting.** When activated with "As \<Role\>", use this graduated loading strategy instead of reading all Required Reading at once:
 
 1. **Always load:** `/AGENTS.md` (terminology + safety — non-negotiable)
 2. **Load the role entry** from §2 of this document (one subsection, ~40 lines)
@@ -665,6 +665,29 @@ The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversari
 | Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
 
 Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
+
+---
+
+### 6.5 Effort & Fast-Mode Tiering (Claude Code)
+
+> Verified against `code.claude.com/docs` (model-config, env-vars) on 2026-05-30. Effort scales are calibrated per model, so the same level name is not the same underlying value across models.
+
+`CLAUDE_CODE_EFFORT_LEVEL` is the primary reasoning-depth control on adaptive-reasoning models (Opus 4.7+). Supported levels: **Opus 4.8 / 4.7** = `low/medium/high/xhigh/max`; **Opus 4.6 & Sonnet 4.6** = `low/medium/high/max` (no `xhigh`). An unsupported level falls back to the highest supported level at or below it (e.g., `xhigh` → `high` on Opus 4.6), so a single project default is safe across models.
+
+**Project default: `xhigh`** (env var) — deep reasoning where it matters without paying `max` on every call. Tier per task:
+
+| Task class | How to run it |
+|---|---|
+| Pipeline root-cause, architecture, quality gates, `/audit`, `/pipeline`, `/debate` reconciliation | `ultrathink` in the prompt (one-off deep reasoning), or `/effort max` for a deep session |
+| Routine implementation, code review, tests | default `xhigh` |
+| Mechanical edits, renames, doc sync, formatting | `/effort medium` (or `low`) for the session; optionally `/fast` |
+| Bulk read-only fan-out (search, discovery) | use the Explore agent |
+
+**Precedence (matters for cost):** the `CLAUDE_CODE_EFFORT_LEVEL` env var takes precedence over the `effortLevel` setting, over skill/subagent frontmatter, and over model defaults. Because this project sets the env var, **every subagent and Workflow agent inherits the project effort level process-wide** — you cannot lower it per-subagent via frontmatter while the env var is set. Lowering the env var (or migrating to `effortLevel` + frontmatter) is the lever if per-task subagent tiering is wanted.
+
+**Fast mode (`/fast`):** same model, faster output, higher per-token price; orthogonal to effort. **`ultracode` (`/effort ultracode`):** sends `xhigh` and has Claude auto-orchestrate dynamic workflows for substantive tasks (session-only) — the low-friction way to try Workflow-style orchestration without scripting it.
+
+**Opus 4.6 compatibility:** `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` + `MAX_THINKING_TOKENS` in `settings.json` are inert on Opus 4.7+ but active on Opus 4.6 / Sonnet 4.6 (fixed thinking budget). They are kept **intentionally** for occasional 4.6 use — do not remove them.
 
 ---
 

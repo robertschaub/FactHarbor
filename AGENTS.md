@@ -38,6 +38,8 @@ For prompt files over 100KB (currently: `claimboundary.prompt.md` at 212KB), use
 
 This exception applies ONLY to prompt files in `apps/web/prompts/` that exceed 100KB. Full reads remain required for all other files and for prompt files under 100KB.
 
+> With a 1M-token context window the constraint is **cost and signal-to-noise, not capacity** — the file fits, but targeted reads keep the working set focused and cheap. Do not "optimize away" this exception (or the handoff/stage indexes) on the assumption that the large window made them unnecessary.
+
 ---
 
 ## Fundamental Rules
@@ -323,7 +325,8 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 - Avoid destructive git commands unless explicitly asked
 - Do not overwrite `apps/api/factharbor.db` unless asked
 - Platform is Windows. Use PowerShell-compatible commands.
-- **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, `git push --force`, `git clean -f`; no `factharbor.db` writes; no expensive test runs. Main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
+- **PreToolUse hooks** (`.claude/settings.json`) block destructive Bash commands: `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs. **These hooks fire for the MAIN SESSION ONLY — they do NOT fire for subagent or Workflow-agent tool calls.** This is confirmed current behavior: anthropics/claude-code#34692 was closed (not-planned / stale-labeled) on 2026-05-30, so do not expect a fix. Under this repo's `bypassPermissions` mode, a subagent's destructive command is caught by **neither** the hook **nor** a permission prompt.
+- **Destructive or irreversible operations are main-session-only and MUST NEVER be delegated to a subagent or Workflow agent** — specifically `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs (the exact set the hook guards). For agents that mutate files in parallel, prefer **worktree isolation** to bound blast radius. Read-only fan-out (e.g., the Explore agent) is inherently safe.
 
 ---
 

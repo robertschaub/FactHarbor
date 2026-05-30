@@ -84,6 +84,18 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** The useful agent-operating lessons from `Pipeline_V2` should be retained as compact principles rather than re-imported as mandatory workflows: route reasoning effort by concrete state, require a distinct written question before using premium Claude/Gemini sidecars, reserve Steer-Co or committee-style review for high-impact steering or unresolved material dissent, keep Captain Deputy out unless explicitly requested, keep any restored debt sensors advisory-first, and do not treat session functions as durable role aliases.
 **Files:** `AGENTS.md`, `Pipeline_V2` branch
 
+### 2026-05-30 — Verify version-specific harness facts at the primary source before editing rules
+**Role:** Agents Supervisor  **Agent/Tool:** Claude Code (Opus 4.8, 1M)
+**Category:** gotcha
+**Learning:** When tuning Claude Code config/governance for a model upgrade (4.6→4.8), version-specific facts drift and second-hand reads are unreliable: a fast-model WebFetch of issue #34692 self-contradicted (header "not planned" vs. body "rationale not visible"), and a claude-code-guide subagent misstated effort inheritance (claimed subagents default to `high`). Both were resolved only at the primary source — `gh issue view --json state,stateReason` and `code.claude.com/docs`. Resulting facts: on Opus 4.8, `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING` + `MAX_THINKING_TOKENS` are inert (4.6-only), `CLAUDE_CODE_EFFORT_LEVEL` is the live knob and degrades gracefully cross-model (`xhigh`→`high` on 4.6), and the effort env var forces the level process-wide including subagents. Confirm at the primary source before changing `AGENTS.md` or `settings.json` on the strength of a model upgrade.
+**Files:** `Docs/WIP/2026-05-30_Agentic_Coding_Opus_4.8_Optimization.md`, `.claude/settings.json`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.5
+
+### 2026-05-30 — Attribute regressions by diffing the regression window, not by reading current code
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.8 1M)
+**Category:** gotcha
+**Learning:** A `report_damaged` on the hydrogen benchmark was read by two prior debates (Claude Opus 4.6, Gemini 3.1) as a "Rule 2/Rule 3 proxy-drift contradiction" in `CLAIM_CONTRACT_VALIDATION`, with the fix being a prompt edit to Rule 3. Static-reading the current code/prompt made that look right. But the case was a `SOLVED` benchmark (`FALSE 12/82`), so it was a **regression** — and `git log -L` showed Rule 2/Rule 3 were **unchanged since `4f7d3850` (03-20)**, i.e. identical when the case passed. The regression therefore could not live in those rules; it sat in the 04-16→05-30 window's extraction/completion churn (`0d97a7a6`, `f1130e40`, `e7deeb8b`). Lesson: when a previously-passing case breaks, bracket last-good→current from the benchmark's `latestVerifiedJobId` and **diff the window**; do not attribute cause from a static read of current code, and do not edit a rule whose history shows it predates the regression. Corollary: persisted job traces may omit raw LLM booleans (`preservesOriginalClaimContract`, per-claim `proxyDriftSeverity`) — if a "self-contradiction"/override claim depends on them, you cannot isolate the load-bearing trigger from the trace alone; say so rather than over-attributing.
+**Files:** `Docs/AGENTS/Handoffs/2026-05-30_Lead_Architect_Cross_Stage_Contract_Audit.md`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts:3361-3393`, `Docs/AGENTS/benchmark-expectations.json`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas

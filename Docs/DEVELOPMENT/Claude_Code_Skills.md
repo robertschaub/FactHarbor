@@ -355,7 +355,7 @@ For complex concepts it uses multiple analogies. The tone is conversational, not
 
 ## Cross-Tool Usage
 
-All ten skills are discoverable by non-Claude agents:
+All eleven skills are discoverable by non-Claude agents:
 
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also
