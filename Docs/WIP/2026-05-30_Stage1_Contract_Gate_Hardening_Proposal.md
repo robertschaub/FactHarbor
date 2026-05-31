@@ -114,3 +114,29 @@ My initial "4/5 pass" checked only verdict label + truth + confidence. Scored ag
 - **Fix C — optional.** Lower `understandTemperature` toward 0 for more deterministic classification. **Caution: global** (affects every input) — validate against the `rechtskräftig` Captain inputs (#1-2) before adopting. Prefer A+B (targeted) over C.
 
 **Verifier:** commit-first; re-run Hydrogen N× (fail-fast rule); score against the FULL documented bar (§8). Targets: classification = `ambiguous_single_claim` ~always; ≥k/N meet the full bar; `report_damaged` ≈0. **Regression guards:** Fix A must NOT over-trigger `ambiguous` on genuinely single-dimension or `multi_assertion_input` inputs — verify `rechtskräftig` #1-2, PT Bolsonaro, and a couple neutrality inputs are unchanged, and that a genuine multi-assertion input still classifies as `multi_assertion_input`.
+
+---
+
+## 10. LLM Expert review outcome + FINAL candidate wording (2026-05-30) — AWAITING CAPTAIN APPROVAL
+
+**Reviewer verdict: READY-FOR-CAPTAIN**, with a framing correction (verified by Lead Architect against the live file):
+- NOT "no tiebreaker." A **permissive dominance escape hatch** exists (`ambiguous` "ONLY when ≥2 equally plausible interpretations; if one dominates → single_atomic", Pass 1 L77 / Pass 2 L238). For broad comparative efficiency a model treats the most familiar measurement frame as "dominant" → collapses to `single_atomic` → no decomposition (the 1/5 flip).
+- **Pass 2 is decisive** and **already carries the anti-proxy/measurement-frame guidance** (L267-269, verified). Pass 1 lacks it. Routing reads `inputClassification` to gate dimension-decomposition tagging (`claim-extraction-stage.ts:969-970`, verified) — so stabilizing classification (Fix A) directly gates the structural outcome.
+
+**Fix A — close the dominance escape hatch (primary).** Append to the `ambiguous_single_claim` definition in BOTH passes (Pass 2 L238 decisive; Pass 1 L77 bias-prevention):
+> "For broad comparative efficiency, optimization, or resource-use predicates of the form 'A is more/less [predicate] than B', a comparison whose answer can differ depending on the measurement frame or system boundary applied is by that fact an input with ≥2 equally plausible interpretations — do NOT treat the most familiar or most commonly cited frame as the single dominant interpretation. Classify as `ambiguous_single_claim`. This frame-dependence test applies only after the multi-assertion / plurality / coordinated-branch overrides have been ruled out; it never overrides those."
+
+**Fix B — block the proxy-dimension leak.** Anti-proxy rule already in Pass 2 (L267-269), but the energy-density proxy leaked anyway in `184f0bba` ⇒ existing text insufficient. Two edits:
+- **B-1 (mirror to Pass 1, after L92):** "For broad comparative efficiency, optimization, or resource-use predicates, keep every interpretation dimension inside an actual measurement frame or system boundary of the same comparison. Do NOT introduce a dimension that switches to an adjacent intrinsic property, component attribute, or downstream operational proxy of either compared entity unless the input explicitly raises it; if a proposed dimension cannot be stated as the same comparison under a different measurement frame, drop it rather than substituting a proxy."
+- **B-2 (sharpen Pass 2 L267 — UPGRADED from reviewer's "optional" to RECOMMENDED, because the leak occurred despite the current L267 text):** append "…including adjacent intrinsic properties or component attributes of either compared entity."
+
+**Fix C — temperature reduction: OUT** (reviewer + LA concur). Wrong root (the flip is the permissive rule, not just sampling noise); temp=0 would lock in whatever the prompt leans toward; interacts with the retry ladder that *raises* temp (`claim-extraction-stage.ts:2660`/`:2805`); global blast radius across all 8 families. Land A+B first; revisit temperature only if residual instability remains. (Classification stability ≠ verdict variance — the alpha/no-caching note is a different axis.)
+
+**Pressure-test (adversarial): SAFE as written, conditional on preserving the scoping phrase "broad comparative efficiency, optimization, or resource-use predicates" VERBATIM** (reused from L267).
+- Trap — `asylum-wwii-de` is a frame-dependent *quantity* comparison; broadening Fix A to "comparative predicates" would over-trigger it. The efficiency/resource-use scoping correctly excludes it. **Do not broaden the scope.**
+- `plastic-en` ("pointless") is on the broad-*evaluative* track (L271-272); Fix B must NOT leak onto it (would break its evaluative decomposition). Scoping keeps them separate.
+- Bundesrat (×2), Bolsonaro (×2), asylum-235000: unaffected (multi-assertion/coordinated-branch overrides fire first; quantity/procedural, not efficiency). No over-trigger found.
+
+**Required verifier checks (before landing):** (1) confirm which pass logs the flip via Stage-1 debug; (2) diff-check the scoping phrase is verbatim; (3) **full 8-family benchmark rerun** (not just Hydrogen) — esp. plastic-en stays evaluative ≥2 boundaries, asylum-wwii/235000 unchanged, both Bolsonaro ≥3 boundaries, both Bundesrat no-collapse + finality anchor; (4) contract-validator interaction — Fix B stops the leak AND doesn't over-suppress to 1 claim; (5) multilingual check (non-English comparative-efficiency phrasing); (6) no test-case-term leakage (confirmed clean).
+
+**Status: PROMPT CHANGE — requires explicit Captain approval before any edit.** On approval, implementation delegates to a Senior Developer; validation per the checks above + the fail-fast rule + commit-first provenance.
