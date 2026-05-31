@@ -55,3 +55,24 @@ Two facts the framing must get right:
 - **Runtime discipline (learned the hard way):** never launch the dev server from the Claude Code agent shell without `unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_MODEL OPENAI_API_KEY …` (harness injects empty/wrong vars → LLM 404); avoid `restart-clean.ps1` until its CRLF env-prefix bug is fixed.
 
 **Status: design proposal — LLM Expert review + Captain approval required before any change.** Implementation (a UCM/config change for C1, or a Stage-2/3 change for C4) delegates to a Senior Developer.
+
+---
+
+## 6. Review outcome — `/debate` (STANDARD: Advocate/Challenger/Reconciler), 2026-05-31 → VERDICT: MODIFY (not C5-accept; pursue scoped C4(a))
+
+The structured review **overturned the §4 "lead with C5" recommendation** and advanced the analysis with a code-verified finding.
+
+**Verified mechanism (Lead Architect confirmed in-repo):** `generateResearchQueries(claim: AtomicClaim, …)` generates queries from a *single* `claim.statement` (`research-query-stage.ts:137,183`), invoked per-claim. So a `single_atomic` classification (one broad claim) yields **no use-phase/TTW-framed query → no TTW evidence fetched → no TTW boundary** — which explains E9 (`460c52ad`: 5 boundaries, none TTW). Stage-3 clustering *can* separate frames (`claimboundary.prompt.md:1359-1361`) but had no TTW evidence to cluster. **⇒ the fix locus is C4(a) research-query coverage, NOT C4(b) clustering.**
+
+**Verdict (Reconciler, governance-clean, INFERRED):**
+- **C5's honest re-status SURVIVES** — stop calling `hydrogen-en` SOLVED (the documented "structurally distinct / min 2 boundaries" intent is not reliably met).
+- **C5's "pursue no fix" is REJECTED as too complacent** — the failure is *silent and in-band* (passes verdict bands while conflating dimensions), and shipping that to alpha users is worse than a flagged failure. C5's "alpha variance is wanted" justification is a **category error** (classification stability ≠ verdict variance — proposal/§prior concession).
+- **C1 (temperature) REJECTED** (inverted + global), **C2 forbidden**, **prompt tiebreaker falsified** — all confirmed.
+- **ADOPTED from Challenger:** **C4(a)** — ensure research-query coverage spans both measurement frames (use-phase/TTW + full-pathway) for broad comparative-efficiency/optimization/resource-use predicates **regardless of Stage-1 claim count** (e.g. via the claim's `expectedEvidenceProfile`/`GENERATE_QUERIES` prompt), so Stage-3 has TTW-framed evidence to cluster. LLM/UCM-driven, generic, runtime-cost-neutral (no extra samples).
+
+**Sequenced next step (gated, cost-aware — NOT "implement C4"):**
+1. **Honestly re-status `hydrogen-en`** SOLVED → "known-open structural-intent gap; C4(a) spike commissioned" (`benchmark-expectations.json` + `Captain_Quality_Expectations.md`).
+2. **Scoped C4(a) feasibility-spike proposal** (LLM Expert review + Captain approval): does covering both measurement frames in research surface the TTW boundary even under `single_atomic`? Resolves G2/G4 via a few bounded Hydrogen runs — **no long autonomous arc**.
+3. **If the spike works** → C4(a) scoped implementation + **full 8-family** validation against the FULL bar (guard `plastic-en` decomposition) under fail-fast/commit-first → returns toward SOLVED. **If infeasible** → Captain *consciously* accepts the tail (deliberate, not silent).
+
+**Confidence:** INFERRED — C4(a) *locus* CONFIRMED by code; C4(a) *sufficiency* pending the spike. **Caveat:** if the spike shows TTW evidence still won't surface or clustering re-merges frames, C4 may need (a)+(b); true tail rate (G1) unmeasured.
