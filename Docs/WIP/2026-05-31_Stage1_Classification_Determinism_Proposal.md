@@ -76,3 +76,27 @@ The structured review **overturned the §4 "lead with C5" recommendation** and a
 3. **If the spike works** → C4(a) scoped implementation + **full 8-family** validation against the FULL bar (guard `plastic-en` decomposition) under fail-fast/commit-first → returns toward SOLVED. **If infeasible** → Captain *consciously* accepts the tail (deliberate, not silent).
 
 **Confidence:** INFERRED — C4(a) *locus* CONFIRMED by code; C4(a) *sufficiency* pending the spike. **Caveat:** if the spike shows TTW evidence still won't surface or clustering re-merges frames, C4 may need (a)+(b); true tail rate (G1) unmeasured.
+
+---
+
+## 7. CONSOLIDATED POSITION — after 2 independent fresh-eyes reviews (2026-05-31) — *authoritative; supersedes §4/§6 framing*
+
+Two independent reviewers (feasibility + decision) both returned **REFINE**: the direction is right (C4(a) locus; reject C1/C2/tiebreaker; re-status), with these corrections — each verified against the repo:
+
+**1. Mechanism corrected — the broken link is an `expectedEvidenceProfile` enumeration asymmetry, not "single statement."** `generateResearchQueries` renders `claim.expectedEvidenceProfile` (`research-query-stage.ts:185`) and `GENERATE_QUERIES` targets its methodologies (`claimboundary.prompt.md:898`) — so a single broad claim CAN fetch TTW evidence *iff its EEP names the use-phase/TTW frame*. The `ambiguous` extraction branch (`:257`) enumerates "full-pathway vs use-phase-only vs conversion-stage" as distinct dimensions; the `single_atomic` branch (`:253`) only says "keep specificity in EEP" and never *requires* enumerating the frames. **Cleanest hook = extend the `:253` single_atomic comparative-efficiency rule to enumerate distinct measurement frames in the EEP, mirroring `:257`.** EEP-/extraction-side (not `GENERATE_QUERIES`-side) → naturally scoped to the existing LLM-judged comparative-efficiency predicate class (used 5× in-prompt), no new deterministic logic, `plastic-en` unaffected.
+
+**2. C4(b) clustering NOT needed.** `460c52ad` had 5 boundaries with no forced merge (`maxClaimBoundaries=6`, `boundary-clustering-stage.ts:180`) → signature of *no TTW evidence*, not re-merge; clustering already separates frames (`:1361`). *Sufficiency still pending the spike* due to downstream LLM-judgment links: `EXTRACT_EVIDENCE` must tag TTW with a distinct `analyticalDimension` or items collapse at the `scopeFingerprint` step (`boundary-clustering-stage.ts:194`); EEP enrichment is itself an LLM judgment at temp 0.15.
+
+**3. New option surfaced — cheap non-blocking post-hoc DETECTOR (a Q-code in `report-quality-expectations.json` / `/report-review`):** "broad comparative-efficiency input yielded no measurement-frame-distinct boundary." Per project rule `feedback_no_text_parsing_mitigations`, post-hoc *review tooling* is explicitly NOT bound by the no-deterministic-semantic prohibition (which binds in-pipeline code) → this is allowed where C2 is not. Converts the failure **silent → flagged** at ~0 cost. It does NOT meet the distinctness *intent* (still conflated, just visible) → **complement to re-status, not a substitute for C4(a).**
+
+**4. Reframed decision axis (the key output):** the detector removes the *only* stated reason to reject pure-accept ("it's silent"). So the real choice for the Captain is **"is permanently watched-and-flagged acceptable for alpha, or must `hydrogen-en` return to SOLVED?"** — not "accept vs spike" in the abstract.
+
+**5. Honesty corrections (adopted):** (a) "right verdict, structurally incomplete & undetected" — NOT "wrong-looking-right" (the verdict *direction* is correct). (b) The "temperature is inverted" claim is a **hypothesis, not a finding** — C1 stays rejected on **blast-radius** grounds alone (global change for 7 tuned families). (c) The true tail is ~**2/5 full-bar-fail + 1 borderline** across the n=5 record (undercounted as "1/5 silent"); n=5 is too small to estimate a ~20% rate → sizes the spike's run budget. (d) **C4(a) addresses only the silent-conflation tail; the separate `report_damaged` tail (`184f0bba`, energy-density proxy tripping the contract validator) is a DIFFERENT failure mode it does not fix** — the family won't be fully clean from C4(a) alone.
+
+**6. Hardened spike (if commissioned):** success bar must be **end-to-end** — "a TTW-distinct boundary actually surfaces under a `single_atomic` classification," not merely "both-frame queries were generated"; hard run-cap (anti-limbo); watch the `maxClaimBoundaries=6` merge risk and the `EXTRACT_EVIDENCE` `analyticalDimension`-tagging step.
+
+### Consolidated recommendation (3 actions; 1 Captain branch)
+- **A. Re-status `hydrogen-en`** SOLVED → "known-open structural-intent gap" (honest; drops headline 5/8 → 4/8). *Both paths.*
+- **B. Add the post-hoc detector Q-code** (cheap, allowed, generic) → silent becomes flagged. *Both paths.*
+- **C. Captain's branch:** **(i)** if watched-and-flagged is acceptable for alpha → stop here (no pipeline change); **(ii)** if `hydrogen-en` must return to SOLVED → commission the hardened **C4(a) EEP-enumeration spike** (precisely located, generic across comparative-efficiency predicates, cheap hook).
+- **Lead Architect lean:** A + B now; for C, lean **(ii) commission the spike** *because* C4(a) generalizes beyond hydrogen and the hook is cheap/precise — but this is genuinely the Captain's risk/effort call, and **(i)** is fully defensible during alpha.
