@@ -93,6 +93,7 @@ Search scope: local `apps/api/factharbor.db` exact-input matches plus the deploy
 - No deterministic semantic adjudication in code. Meaningful analytical decisions come from LLM calls, not regexes, keyword lists, or heuristic rescues.
 - Input neutrality: question and statement forms of the same claim stay within ≤4% outcome drift.
 - Confidence accompanies every verdict and means confidence that THIS verdict is correct.
+- **No quality-gate / hard-failure error (baseline floor — precedes every other check).** Every report must reach `SUCCEEDED` with no hard-failure warning (`report_damaged`, `analysis_generation_failed`, `llm_provider_error`) — the PHASE-BLOCKER floor (`report-quality-expectations.json` Q-HF1). A verdict-band pass on a `report_damaged` job does **not** count. This is a **population-scale** expectation: the 8 benchmark families are a curated band-check set, **not** the input population — and `report_damaged` is the largest known defect family (~36% of the ~23% UNVERIFIED at n=500, per `Docs/WIP/2026-05-27_UNVERIFIED_Root_Cause_Plan_v2.md`). Band conformance is necessary but **not sufficient**; gate-error rate is a first-class expectation.
 - Evidence must be real, cited, and probative. Low-probative evidence should not drive verdicts.
 - Every published verdict cites at least one supporting or contradicting evidence item.
 - Web search is required — model staleness alone is not a sufficient evidence base.
