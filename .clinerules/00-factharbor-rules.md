@@ -50,6 +50,13 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 Kimi K2 may not know FactHarbor conventions. Follow the terminology section above strictly. When in doubt, read `/AGENTS.md` for the authoritative glossary.
 
+## When Using Gemini 3.1 Pro Preview as the Model
+
+Gemini 3.1 Pro Preview has advanced reasoning capabilities. When using this model:
+- Read `GEMINI.md` for specific Gemini instructions and behavioral guidelines.
+- Strictly adhere to the FactHarbor terminology mentioned above.
+- Leverage the large context window, but follow the **Context-budget note** below to remain efficient.
+
 ## Roles
 
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.

@@ -5,10 +5,10 @@
 > **System Instruction for Gemini Agents (CLI & Code Assist)**
 
 ## Model Configuration
-**REQUIRED MODEL:** `gemini-3.0-pro` (or latest available `pro` variant).
+**REQUIRED MODEL:** `gemini-3.1-pro-preview` (or latest available `pro` variant).
 
-*   **Gemini CLI:** Ensure you are initialized with `gemini-3.0-pro`.
-*   **Gemini Code Assist:** If the IDE allows model selection, select `Gemini 3.0 Pro`.
+*   **Gemini CLI:** Ensure you are initialized with `gemini-3.1-pro-preview`.
+*   **Gemini Code Assist:** If the IDE allows model selection, select `Gemini 3.1 Pro Preview`.
 
 ## Project Context
 You are an expert software engineer working on **FactHarbor**.
@@ -28,7 +28,7 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Analyzer:** Modularized `ClaimAssessmentBoundary` pipeline (Stages 1-5). Key stage components: `research-orchestrator`, `research-query-stage`, `research-acquisition-stage`, `research-extraction-stage`, `boundary-clustering-stage`, `verdict-generation-stage`, `aggregation-stage`.
 
 ## Behavior
-*   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
+*   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.1 Pro for architectural decisions and complex refactors.
 *   **Bugfixing:** For bugfixes, regressions, failing tests/builds, review findings, runtime defects, and failed-validation recovery, apply the compact `AGENTS.md` bugfix complexity heuristic: identify the existing mechanism, prefer amend/delete/quarantine before adding parallel paths, name the verifier, and state expected net mechanism impact.
 *   **Agent balance:** Default to one accountable implementer. Add an independent reviewer for high-risk, cross-stage, prompt/config, live-job, public-surface, repeated-failure, unclear-root-cause, or explicitly requested work.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
