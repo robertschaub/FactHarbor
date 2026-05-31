@@ -1946,6 +1946,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md (§11)
 
 ---
+### 2026-05-31 | Lead Architect | Claude Code (Opus 4.8 1M) | Stage-1 classification-determinism proposal (Fix C / structural) — [Significant] [open-items: yes]
+**For next agent:** Proposal for the Hydrogen L1 classification instability (after the prompt-tiebreaker was reverted). Key reframe: at the reverted prompt (`6f3037e1`) the classification mode is **already `ambiguous` (4/5)** — this is a ~1/5 **tail**, not a broken mode. **C1 (lower `understandTemperature`) is likely INVERTED** — 0.15 is intentional "exploration of ambiguous interpretations," so temp↓ → *more* `single_atomic` (worse). Options: **C5 accept-variance + re-status `hydrogen-en` SOLVED→watch (RECOMMENDED default)**; **C4 boundary-level distinctness (Stage-2/3, if the intent must be guaranteed)**; C1 rejected (counterproductive + global risk); C2 deterministic override forbidden (AGENTS.md). Latent-bug flag: `deterministic:true` (config-schemas.ts:1061) not honored by the understand step. Awaiting Captain pick among C5/C4/(C1) + LLM Expert review.
+→ Docs/WIP/2026-05-31_Stage1_Classification_Determinism_Proposal.md
+
+---
 ### 2026-05-31 | Senior Developer | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: no]
 **For next agent:** Scanned automation window from `2026-05-30T06:01:40.666Z` through HEAD `8f6e801b01b34f17c811d1720a307e40c705924d`. Reviewed runtime/prompt commits `8e87c3e9`, `ca143468`, and `ac3b33da`, plus docs/index/config commits. No diff-backed bug was confirmed, so no code fix was made. Verification passed: touched-surface verdict/prompt-contract Vitest (206 tests), full safe `npm test -- --runInBand --silent`, `npm -w apps/web run build`, and `git diff --check e294ee0b..HEAD`.
 **Warnings:** GitHub Actions do not cover current local HEAD because `main` is ahead of `origin/main` by 38 commits; latest visible pushed main guardrail CI success remains `2ac6cd029ce7b3e87fd50c98928b4067d5fbe1cf` on 2026-05-28, with CodeQL success for the same SHA on 2026-05-30. Build still reports the known Turbopack NFT warning in the `next.config.js` -> `source-reliability-cache.ts` trace.
