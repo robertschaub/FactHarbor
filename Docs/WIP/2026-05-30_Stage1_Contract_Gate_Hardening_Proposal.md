@@ -140,3 +140,25 @@ My initial "4/5 pass" checked only verdict label + truth + confidence. Scored ag
 **Required verifier checks (before landing):** (1) confirm which pass logs the flip via Stage-1 debug; (2) diff-check the scoping phrase is verbatim; (3) **full 8-family benchmark rerun** (not just Hydrogen) — esp. plastic-en stays evaluative ≥2 boundaries, asylum-wwii/235000 unchanged, both Bolsonaro ≥3 boundaries, both Bundesrat no-collapse + finality anchor; (4) contract-validator interaction — Fix B stops the leak AND doesn't over-suppress to 1 claim; (5) multilingual check (non-English comparative-efficiency phrasing); (6) no test-case-term leakage (confirmed clean).
 
 **Status: PROMPT CHANGE — requires explicit Captain approval before any edit.** On approval, implementation delegates to a Senior Developer; validation per the checks above + the fail-fast rule + commit-first provenance.
+
+---
+
+## 11. OUTCOME — Fix A+B implemented, validated, and REVERTED (ineffective) — 2026-05-31
+
+Captain approved; Fix A+B landed at `ed7698a8` (`npm test` 1895 pass, build green, prompt hash `2c6496cd`). **Live validation (3 Hydrogen runs, fail-fast wave) showed the fix did NOT achieve its objective:**
+
+| Job | Classification | Claims | Bnds | Verdict | T/C | Full bar |
+|---|---|---|---|---|---|---|
+| `15b20ead` | ambiguous | 2 | 5 | FALSE | 6/84 | PASS (TtW+WtW distinct) |
+| `951ef85b` | **single_atomic** | 1 | 5 | FALSE | 12/72 | FAIL (no decomposition; energy-density boundary) |
+| `740acb5f` | **single_atomic** | 1 | 4 | UNVERIFIED | 50/0 | FAIL (insufficient_evidence) |
+
+**Classification still flipped to `single_atomic_claim` 2/3** (one UNVERIFIED); only 1/3 met the full bar — no better than the 2/5 pre-fix baseline. **Fix A (prompt tiebreaker) cannot reliably override the stochastic classification at `understandTemperature 0.15`.** Per fail-fast + failed-attempt-recovery, **reverted at `1c790a05`** (prompt reseeded back to hash `6f3037e1`; runtime restarted clean).
+
+**Disposition:** Fix A+B = **REVERT** (done). The real lever is **Fix C (lower `understandTemperature` toward 0)** and/or a structural classification-determinism change — a **separate, scoped proposal** (LLM Expert review + Captain approval), NOT a stack-on. Do not re-attempt the prompt-tiebreaker approach; it's been empirically falsified for this input.
+
+**Validation provenance (commit-first):** runs scored against the full documented bar at promptHash `2c6496cd`; reverted runtime at `6f3037e1`.
+
+> **Runtime/infra notes discovered during validation (out of scope; flag separately):**
+> 1. `scripts/restart-clean.ps1` builds a `$env:KEY='value'` prefix from `.env.local` that corrupts keys (CRLF/`\r`) — it shouldn't.
+> 2. **Launching the FactHarbor dev server from the Claude Code agent shell is unsafe:** the harness injects `ANTHROPIC_API_KEY` (empty), `ANTHROPIC_BASE_URL`, and `ANTHROPIC_MODEL`, which Next.js does NOT override from `.env.local` → LLM calls 404. Agents MUST `unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_MODEL OPENAI_API_KEY …` before `npm run dev`, or launch from a non-agent shell.
