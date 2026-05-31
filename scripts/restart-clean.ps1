@@ -122,20 +122,19 @@ Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "cd `"$PSScriptRoot\..\apps\api`"; $apiEnvPrefix dotnet watch run"
 )
 
-# Propagate select env vars into the spawned Web dev-server shell explicitly.
-# (On Windows, relying on inherited environment across Start-Process can be unreliable in some setups.)
-# Also source apps/web/.env.local if present so settings are deterministic.
+# Propagate ONLY genuinely-runtime vars into the spawned Web dev-server shell
+# (FH_RUNNER_MAX_CONCURRENCY, FH_API_BASE_URL, PORT — set just below).
+#
+# Do NOT re-export apps/web/.env.local here. `next dev` already loads
+# apps/web/.env.local from its cwd (the spawned shell cd's into apps/web below),
+# and a shell-set $env: var takes PRECEDENCE over Next.js's own .env.local
+# loading (Next does not override an already-present process.env value). The
+# previous line-by-line re-export also left trailing-CR / quoting corruption on
+# values (e.g. ANTHROPIC_API_KEY, FH_INTERNAL_RUNNER_KEY) because Trim() does not
+# strip "\r" and single-quote interpolation is unsafe — so the corrupted value
+# won, breaking LLM calls (404) and API->web runner-key auth (401) after a
+# restart. Removing the re-export lets next dev read the clean .env.local values.
 $webEnvPrefix = ""
-$envLocalPath = Join-Path $PSScriptRoot "..\apps\web\.env.local"
-if (Test-Path $envLocalPath) {
-    Get-Content $envLocalPath | ForEach-Object {
-        if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') {
-            $key = $matches[1]
-            $val = $matches[2].Trim('"', "'", ' ')
-            $webEnvPrefix += "`$env:$key='$val'; "
-        }
-    }
-}
 # Allow explicit shell env to override .env.local
 if ($env:FH_RUNNER_MAX_CONCURRENCY) {
     $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY='$($env:FH_RUNNER_MAX_CONCURRENCY)'; "
