@@ -230,8 +230,10 @@ function parseMdFamilies(mdText) {
     const line = lines[i];
     // Table rows start with `|`. Header + separator precede data rows.
     if (/^\s*\|.*\|.*\|.*\|.*\|\s*$/.test(line)) {
-      // Skip header and separator rows
-      if (/^\s*\|\s*Slug\s*\|/i.test(line)) { inTable = true; continue; }
+      // Skip header and separator rows. Only the Benchmark-Families table
+      // (header carries a "Bands" column) is the band table; other Slug-keyed
+      // tables (e.g. the comparator-reports table) must NOT be parsed for bands.
+      if (/^\s*\|\s*Slug\s*\|/i.test(line)) { inTable = /\bBands\b/i.test(line); continue; }
       if (/^\s*\|[\s\-:|]+\|\s*$/.test(line)) continue;
       if (!inTable) continue;
 

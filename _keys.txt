@@ -1,2 +1,0 @@
-TOP KEYS: _schemaVersion, meta, truthPercentage, verdict, confidence, verdictNarrative, claimBoundaries, claimVerdicts, coverageMatrix, understanding, evidenceItems, sources, searchQueries, qualityGates, analysisWarnings
-claimVerdict KEYS: id, claimId, truthPercentage, verdict, confidence, confidenceTier, reasoning, harmPotential, thesisRelevance, isContested, supportingEvidenceIds, contradictingEvidenceIds, boundaryFindings, consistencyResult, challengeResponses, triangulationScore, misleadingness, misleadingnessReason

@@ -15,9 +15,21 @@ Adopted as-is:
 - bundesrat-simple → **TRUE/MOSTLY-TRUE 85–100**; asylum-235000-de → **LEANING-TRUE/MOSTLY-TRUE 58–75** (MIXED removed); bolsonaro-en/pt → **LEANING-TRUE/MOSTLY-TRUE 58–85** (MIXED removed); asylum-wwii-de → **MOSTLY-FALSE/LEANING-FALSE 18–42** (first band; now scoreable).
 - Structural additions (usage guide, comparator tables, MIXED-restraint generic rule, reading-order refs).
 
-**Explicit override of §5 recommendation — plastic-en:** adopted V2's **false-side** band (`FALSE/MOSTLY-FALSE/LEANING-FALSE/MIXED`, 10–42), which **reverts main's newer 2026-05-26 true-side correction** (V2's decision is dated 2026-05-11). This was flagged to the Captain and adopted under the blanket "V2 in all cases" ruling. *Consequence: the plastic family verdict direction flips true→false; any historical-report scoring must use the false-side band from here.*
+**Explicit override of §5 recommendation — plastic-en:** adopted V2's **false-side** band (`FALSE/MOSTLY-FALSE/LEANING-FALSE/MIXED`, 10–42), which **reverts main's newer 2026-05-26 true-side correction** (V2's decision is dated 2026-05-11). This was flagged to the Captain and adopted under the blanket "V2 in all cases" ruling.
+
+> **⚠️ SUPERSEDED 2026-05-31:** plastic-en was subsequently **recalibrated to a centered band** (`LEANING-FALSE/MIXED/LEANING-TRUE`, 42–65, conf ≤75) after an evidence-grounded 108-report analysis showed the dispute is a literal-vs-reasonable reading of "pointless." See `Docs/WIP/2026-05-31_Plastic_Pointless_AtomicClaim_Independent_Proposal.md`. The V2 false-side band described here is no longer in effect; all other V2 adoptions stand.
 
 **Still open (not changed by this ruling):** the stale `Docs/WIP/…` → `Docs/ARCHIVE/…` link to the Canonical doc persists in the adopted V2 Captain MD + `report-quality-expectations.json` `_sourceDocs` (the file lives in ARCHIVE on main). Separate clearly-correct fix; not yet applied.
+
+### Follow-on V2 adoptions (2026-05-31) — companion items beyond the criteria triad
+
+After a scoped sweep of `Pipeline_V2` for items *related* to the adopted criteria/comparator material, the following were taken over (Captain: "go"):
+
+- **AGENTS.md** — added V2's one-sentence enhancement to the existing *Report Quality Baseline Comparison* rule: *"Do not judge a report in isolation when a Captain expectation or comparator exists."* (Surgical; the rest of V2's AGENTS.md additions — debt-guard, V2-convergence controls — were **not** adopted as they are V2-rebuild governance.)
+- **`Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md`** — architecture-neutral comparator packet; supplies additional gold comparator job IDs + Stage-2 direction/applicability diagnosis. Useful gold inputs for the best-commit study.
+- **Validation harness upgrades** — `scripts/validation/extract-validation-summary.js` (+adds `executedWebGitCommitHash` / `promptContentHash` grouping), `scripts/run-validation-matrix.js`, `scripts/validation/compare-batches.js`, `scripts/measure-evidence-quality.ts`. Verified self-contained (fs/path + inline schema detection) and **dual-schema** (`legacy-v1` = main's schema still handled; `v2` branches additive). Syntax-checked clean. Directly upgrade the best-commit study's Phase 1/2 tooling.
+
+**Explicitly NOT adopted (V2-rebuild-specific):** `V2_Excellence_Scorecard.md`, `V2_Gate_Register.json`, all `V2_Slice_*` packets, `apps/web/prompts/claimboundary.prompt.md` and other pipeline code/test diffs. `Role_Learnings.md` and the AtomicClaim diagnostic packets were left for optional later cherry-pick.
 
 ---
 

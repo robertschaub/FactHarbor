@@ -25,9 +25,10 @@ const API_URL = (process.env.FH_API_URL || "http://localhost:5000").replace(/\/$
 const INVITE_CODE = process.env.FH_INVITE_CODE || "SELF-TEST";
 const JOB_TIMEOUT_MS = 600_000; // 10 minutes per job
 const POLL_INTERVAL_MS = 5_000;
+const isCli = require.main === module;
 
 const batchLabel = process.argv[2];
-if (!batchLabel) {
+if (isCli && !batchLabel) {
   console.error("Usage: node extract-validation-summary.js <batchLabel> [familiesFile]");
   console.error("  batchLabel:   Name for this batch (e.g., baseline, post_fix)");
   console.error("  familiesFile: JSON file with families (default: validation-families.json)");
@@ -35,13 +36,13 @@ if (!batchLabel) {
 }
 
 const familiesFile = process.argv[3] || path.join(__dirname, "validation-families.json");
-if (!fs.existsSync(familiesFile)) {
+if (isCli && !fs.existsSync(familiesFile)) {
   console.error(`Families file not found: ${familiesFile}`);
   process.exit(1);
 }
-const families = JSON.parse(fs.readFileSync(familiesFile, "utf-8"));
+const families = isCli ? JSON.parse(fs.readFileSync(familiesFile, "utf-8")) : [];
 
-const outputDir = path.join(__dirname, "..", "..", "test-output", "validation", batchLabel);
+const outputDir = isCli ? path.join(__dirname, "..", "..", "test-output", "validation", batchLabel) : "";
 
 // ---------------------------------------------------------------------------
 
@@ -67,7 +68,8 @@ async function submitJob(family) {
 async function waitForJob(jobId) {
   const start = Date.now();
   while (Date.now() - start < JOB_TIMEOUT_MS) {
-    const res = await fetch(`${API_URL}/v1/jobs/${jobId}`);
+    const headers = process.env.FH_ADMIN_KEY ? { "X-Admin-Key": process.env.FH_ADMIN_KEY } : undefined;
+    const res = await fetch(`${API_URL}/v1/jobs/${jobId}`, { headers });
     if (!res.ok) throw new Error(`Poll failed (${res.status})`);
     const job = await res.json();
     if (job.status === "SUCCEEDED" || job.status === "FAILED") return job;
@@ -76,17 +78,141 @@ async function waitForJob(jobId) {
   throw new Error(`Job ${jobId} timed out after ${JOB_TIMEOUT_MS / 1000}s`);
 }
 
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function asRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asString(value) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function asNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function readSchemaVersion(result) {
+  const meta = asRecord(result.meta);
+  return asString(result._schemaVersion) || asString(meta.schemaVersion);
+}
+
+function getResultSchemaKind(result) {
+  const meta = asRecord(result.meta);
+  const schemaVersion = readSchemaVersion(result);
+  const pipeline = asString(meta.pipeline);
+
+  if (
+    (schemaVersion === "4.0.0-cb-precutover" || schemaVersion === "4.0.0-cb") &&
+    pipeline === "claimboundary-v2"
+  ) {
+    return "v2";
+  }
+
+  if (schemaVersion === "3.2.0-cb" && pipeline === "claimboundary") {
+    return "legacy-v1";
+  }
+
+  return "unknown";
+}
+
+function readV2FallbackFields(result) {
+  const compatibility = asRecord(result.compatibility);
+  const v1 = asRecord(compatibility.v1);
+  return asRecord(v1.fallbackFields);
+}
+
+function normalizeV2Warnings(warnings) {
+  return normalizeArray(warnings).map((warning) => {
+    const item = asRecord(warning);
+    return {
+      ...item,
+      type: asString(item.type) || "unknown",
+      severity: asString(item.severity) || "info",
+      message: asString(item.message) || asString(item.materialityRationale) || "",
+    };
+  });
+}
+
+function buildSummaryReadModel(result) {
+  const schemaKind = getResultSchemaKind(result);
+  const meta = asRecord(result.meta);
+
+  if (schemaKind === "v2") {
+    const verdict = asRecord(result.verdict);
+    const fallbackFields = readV2FallbackFields(result);
+    const claimsGroup = asRecord(result.claims);
+    const analysisObservability = asRecord(result.analysisObservability);
+
+    return {
+      schemaKind,
+      meta,
+      article: {
+        truthPercentage: asNumber(verdict.truthPercentage),
+        verdict: asString(verdict.label),
+        confidence: asNumber(verdict.confidence),
+      },
+      claimVerdicts: normalizeArray(fallbackFields.claimVerdicts),
+      atomicClaims: normalizeArray(claimsGroup.atomicClaims),
+      warnings: normalizeV2Warnings(result.warnings),
+      qualityGates: asRecord(fallbackFields.qualityGates),
+      acsResearchWaste: asRecord(analysisObservability.acsResearchWaste),
+    };
+  }
+
+  const understanding = asRecord(result.understanding);
+  const analysisObservability = asRecord(result.analysisObservability);
+  return {
+    schemaKind,
+    meta,
+    article: {
+      truthPercentage: result.truthPercentage,
+      verdict: result.verdict,
+      confidence: result.confidence,
+    },
+    claimVerdicts: normalizeArray(result.claimVerdicts),
+    atomicClaims: normalizeArray(understanding.atomicClaims),
+    warnings: normalizeArray(result.analysisWarnings),
+    qualityGates: asRecord(result.qualityGates),
+    acsResearchWaste: asRecord(analysisObservability.acsResearchWaste),
+  };
+}
+
+function readClaimStatement(schemaKind, atomicClaims, claimVerdict) {
+  const claimId = claimVerdict.claimId;
+  const atomicClaim = atomicClaims.find((claim) => claim?.id === claimId);
+  if (schemaKind === "v2") {
+    return atomicClaim?.statement ||
+      atomicClaim?.claim ||
+      atomicClaim?.text ||
+      claimVerdict.claimText ||
+      claimId;
+  }
+
+  return atomicClaim?.claim || atomicClaim?.text || claimId;
+}
+
 function extractSummary(family, job) {
   const result = typeof job.resultJson === "string" ? JSON.parse(job.resultJson) : job.resultJson;
   if (!result) return null;
 
-  const meta = result.meta || {};
-  const claims = (result.claimVerdicts || []).map((cv) => {
-    // Find matching atomic claim for the statement text
-    const ac = (result.understanding?.atomicClaims || []).find((a) => a.id === cv.claimId);
+  const readModel = buildSummaryReadModel(result);
+  const meta = readModel.meta;
+  const acsResearchWaste = readModel.acsResearchWaste;
+  const selectedClaimResearchCoverage = normalizeArray(acsResearchWaste.selectedClaimResearchCoverage);
+  const zeroTargetedSelectedClaimIds = normalizeArray(acsResearchWaste.zeroTargetedSelectedClaimIds).length > 0
+    ? normalizeArray(acsResearchWaste.zeroTargetedSelectedClaimIds)
+    : selectedClaimResearchCoverage
+        .filter((entry) => entry?.zeroTargetedMainResearch)
+        .map((entry) => entry.claimId)
+        .filter(Boolean);
+  const claims = readModel.claimVerdicts.map((rawClaimVerdict) => {
+    const cv = asRecord(rawClaimVerdict);
     return {
       claimId: cv.claimId,
-      statement: ac?.claim || ac?.text || cv.claimId,
+      statement: readClaimStatement(readModel.schemaKind, readModel.atomicClaims, cv),
       truthPercentage: cv.truthPercentage,
       verdict: cv.verdict,
       confidence: cv.confidence,
@@ -94,7 +220,7 @@ function extractSummary(family, job) {
     };
   });
 
-  const warnings = result.analysisWarnings || [];
+  const warnings = readModel.warnings;
   const byType = {};
   const bySeverity = { error: 0, warning: 0, info: 0 };
   for (const w of warnings) {
@@ -102,25 +228,29 @@ function extractSummary(family, job) {
     if (w.severity in bySeverity) bySeverity[w.severity]++;
   }
 
-  const gate1 = result.qualityGates?.gate1Stats;
-  const gate4 = result.qualityGates?.gate4Stats;
-  const summary = result.qualityGates?.summary;
+  const gate1 = readModel.qualityGates.gate1Stats;
+  const gate4 = readModel.qualityGates.gate4Stats;
+  const summary = readModel.qualityGates.summary;
 
   return {
     schemaVersion: "1.0.0",
     run: {
       timestamp: new Date().toISOString(),
       jobId: job.jobId || job.id,
-      gitCommit: meta.executedWebGitCommitHash || null,
+      submissionPath: job.submissionPath || meta.submissionPath || null,
+      gitCommit: job.executedWebGitCommitHash || meta.executedWebGitCommitHash || job.gitCommitHash || meta.gitCommitHash || null,
+      createdGitCommitHash: job.createdGitCommitHash || meta.createdGitCommitHash || meta.gitCommitHash || null,
+      executedWebGitCommitHash: job.executedWebGitCommitHash || meta.executedWebGitCommitHash || null,
       promptHash: meta.promptContentHash || null,
+      promptContentHash: job.promptContentHash || meta.promptContentHash || null,
       inputText: family.inputValue,
       inputType: family.inputType,
       familyName: family.familyName,
     },
     article: {
-      truthPercentage: result.truthPercentage,
-      verdict: result.verdict,
-      confidence: result.confidence,
+      truthPercentage: readModel.article.truthPercentage,
+      verdict: readModel.article.verdict,
+      confidence: readModel.article.confidence,
     },
     claims,
     qualityGates: {
@@ -143,6 +273,13 @@ function extractSummary(family, job) {
             searchesPerformed: summary.searchesPerformed,
           }
         : null,
+    },
+    acsResearchWaste: {
+      selectedClaimResearchCoverage,
+      selectedClaimResearch: normalizeArray(acsResearchWaste.selectedClaimResearch),
+      zeroTargetedSelectedClaimCount:
+        acsResearchWaste.zeroTargetedSelectedClaimCount ?? zeroTargetedSelectedClaimIds.length,
+      zeroTargetedSelectedClaimIds,
     },
     warnings: { total: warnings.length, byType, bySeverity },
     meta: {
@@ -246,7 +383,15 @@ async function run() {
   console.log(`Results: ${outputDir}`);
 }
 
-run().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+if (isCli) {
+  run().catch((err) => {
+    console.error("Fatal:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  buildSummaryReadModel,
+  extractSummary,
+  getResultSchemaKind,
+};

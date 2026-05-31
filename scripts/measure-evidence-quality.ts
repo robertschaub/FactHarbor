@@ -29,6 +29,7 @@ import * as path from 'path';
 interface EvidenceItem {
   id: string;
   fact: string;
+  statement?: string;
   category: string;
   specificity?: string;
   sourceId: string;
@@ -45,6 +46,7 @@ interface EvidenceItem {
     temporal?: string;
     sourceType?: string;
   };
+  sourceType?: string;
   probativeValue?: "high" | "medium" | "low";
   extractionConfidence?: number;
 }
@@ -52,6 +54,8 @@ interface EvidenceItem {
 interface AnalysisJob {
   input?: string;
   facts?: EvidenceItem[];
+  evidenceItems?: EvidenceItem[];
+  resultJson?: string | Record<string, unknown>;
   sources?: any[];
   // ... other fields not needed for this measurement
 }
@@ -102,7 +106,127 @@ interface QualityMetrics {
 // ANALYSIS FUNCTIONS
 // ============================================================================
 
-function analyzeJobFiles(dirPath: string): QualityMetrics {
+type ResultSchemaKind = "v2" | "legacy-v1" | "unknown";
+
+interface EvidenceReadModel {
+  evidenceItems: EvidenceItem[];
+  sourceIds: string[];
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readSchemaVersion(result: Record<string, unknown>): string | null {
+  const meta = asRecord(result.meta);
+  return asString(result._schemaVersion) ?? asString(meta?.schemaVersion);
+}
+
+export function getResultSchemaKind(resultJson: unknown): ResultSchemaKind {
+  const result = asRecord(resultJson);
+  if (!result) return "unknown";
+
+  const schemaVersion = readSchemaVersion(result);
+  const meta = asRecord(result.meta);
+  const pipeline = asString(meta?.pipeline);
+
+  if (
+    (schemaVersion === "4.0.0-cb-precutover" || schemaVersion === "4.0.0-cb") &&
+    pipeline === "claimboundary-v2"
+  ) {
+    return "v2";
+  }
+
+  if (schemaVersion === "3.2.0-cb" && pipeline === "claimboundary") {
+    return "legacy-v1";
+  }
+
+  return "unknown";
+}
+
+function readStoredResultPayload(job: AnalysisJob | Record<string, unknown>): unknown {
+  const resultJson = (job as AnalysisJob).resultJson;
+  if (typeof resultJson === "string") {
+    try {
+      return JSON.parse(resultJson);
+    } catch {
+      return job;
+    }
+  }
+  if (resultJson && typeof resultJson === "object") return resultJson;
+  return job;
+}
+
+function sourceIdsFromSources(sources: unknown): string[] {
+  return asArray(sources)
+    .map((source) => asString(asRecord(source)?.id))
+    .filter((sourceId): sourceId is string => sourceId !== null);
+}
+
+function normalizeV2EvidenceItem(item: unknown): EvidenceItem | null {
+  const record = asRecord(item);
+  if (!record) return null;
+
+  const evidenceScope = asRecord(record.evidenceScope);
+  const sourceType = asString(record.sourceType);
+  const normalizedScope = evidenceScope
+    ? { ...evidenceScope, sourceType: asString(evidenceScope.sourceType) ?? sourceType ?? undefined }
+    : sourceType
+      ? { sourceType }
+      : undefined;
+
+  return {
+    ...(record as unknown as EvidenceItem),
+    evidenceScope: normalizedScope as EvidenceItem["evidenceScope"],
+  };
+}
+
+export function extractEvidenceReadModel(job: AnalysisJob | Record<string, unknown>): EvidenceReadModel {
+  const result = readStoredResultPayload(job);
+  const resultRecord = asRecord(result);
+  const schemaKind = getResultSchemaKind(resultRecord);
+
+  if (schemaKind === "v2" && resultRecord) {
+    const evidenceGroup = asRecord(resultRecord.evidence);
+    const sourcesGroup = asRecord(resultRecord.sources);
+    const evidenceItems = asArray(evidenceGroup?.evidenceItems)
+      .map(normalizeV2EvidenceItem)
+      .filter((item): item is EvidenceItem => item !== null);
+    return {
+      evidenceItems,
+      sourceIds: sourceIdsFromSources(sourcesGroup?.items),
+    };
+  }
+
+  if (schemaKind === "legacy-v1" && resultRecord) {
+    return {
+      evidenceItems: asArray(resultRecord.evidenceItems) as EvidenceItem[],
+      sourceIds: sourceIdsFromSources(resultRecord.sources),
+    };
+  }
+
+  const rawJob = job as AnalysisJob;
+  return {
+    evidenceItems: Array.isArray(rawJob.facts)
+      ? rawJob.facts
+      : Array.isArray(rawJob.evidenceItems)
+        ? rawJob.evidenceItems
+        : [],
+    sourceIds: sourceIdsFromSources(rawJob.sources),
+  };
+}
+
+export function analyzeJobFiles(dirPath: string): QualityMetrics {
   const files = fs.readdirSync(dirPath)
     .filter(f => f.endsWith('.json') && !f.includes('baseline'))
     .map(f => path.join(dirPath, f));
@@ -116,15 +240,22 @@ function analyzeJobFiles(dirPath: string): QualityMetrics {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const job: AnalysisJob = JSON.parse(content);
+      const readModel = extractEvidenceReadModel(job);
 
-      if (job.facts && Array.isArray(job.facts)) {
-        allEvidence.push(...job.facts);
-
-        // Track evidence per source
-        for (const evidence of job.facts) {
-          const count = sourceToEvidenceCount.get(evidence.sourceId) || 0;
-          sourceToEvidenceCount.set(evidence.sourceId, count + 1);
+      for (const sourceId of readModel.sourceIds) {
+        if (!sourceToEvidenceCount.has(sourceId)) {
+          sourceToEvidenceCount.set(sourceId, 0);
         }
+      }
+
+      if (readModel.evidenceItems.length > 0) {
+        allEvidence.push(...readModel.evidenceItems);
+      }
+
+      // Track evidence per source
+      for (const evidence of readModel.evidenceItems) {
+        const count = sourceToEvidenceCount.get(evidence.sourceId) || 0;
+        sourceToEvidenceCount.set(evidence.sourceId, count + 1);
       }
     } catch (error) {
       console.warn(`Failed to parse ${path.basename(filePath)}: ${error}`);
@@ -136,7 +267,7 @@ function analyzeJobFiles(dirPath: string): QualityMetrics {
   return calculateMetrics(allEvidence, sourceToEvidenceCount);
 }
 
-function calculateMetrics(
+export function calculateMetrics(
   evidence: EvidenceItem[],
   sourceToEvidenceCount: Map<string, number>
 ): QualityMetrics {
@@ -238,7 +369,7 @@ function printReport(metrics: QualityMetrics, outputFile?: string): void {
   }
 }
 
-function generateReport(m: QualityMetrics): string {
+export function generateReport(m: QualityMetrics): string {
   const lines: string[] = [];
 
   lines.push(`Measurement Date: ${new Date().toISOString()}`);
@@ -370,7 +501,7 @@ function pct(value: number, total: number): string {
 // MAIN
 // ============================================================================
 
-function main() {
+export function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
@@ -399,4 +530,6 @@ function main() {
   printReport(metrics, outputFile);
 }
 
-main();
+if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
+  main();
+}

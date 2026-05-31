@@ -29,18 +29,37 @@ if (rows.length){
 
 function pick(o, ...keys){ for(const k of keys) if(o && o[k]!=null) return o[k]; return undefined; }
 
+// theme bucketing for evaluative-dimension clustering
+function theme(s){
+  const t=(s||'').toLowerCase();
+  if(/environment|emission|carbon|co2|greenhouse|climate|pollution|landfill|incinerat/.test(t)) return 'ENVIRONMENTAL';
+  if(/econom|profit|cost|viable|financ|market|money/.test(t)) return 'ECONOMIC';
+  if(/rate|percent|%|actually recycl|share of|proportion|how much|amount of plastic that/.test(t)) return 'RATE/EFFECTIVENESS';
+  if(/downcycl|quality|degrad|loop|times|reprocess/.test(t)) return 'QUALITY/DOWNCYCLING';
+  if(/energy/.test(t)) return 'ENERGY';
+  if(/pointless|useless|worth|futile|no benefit|achieve|effective at reducing|meaningful/.test(t)) return 'OVERALL-EVALUATIVE';
+  return 'OTHER';
+}
+const allClaims = []; // flat list across reports
 const out = [];
 for (const row of rows){
   let r; try{ r=JSON.parse(row.ResultJson); }catch(e){ continue; }
+  const u = r.understanding || {};
+  const stmtById = {};
+  for (const ac of (u.atomicClaims||u.preFilterAtomicClaims||[])) stmtById[ac.id]=ac.statement;
+  const dimById = {};
+  for (const ac of (u.atomicClaims||[])) dimById[ac.id]=ac.isDimensionDecomposition;
   const cvs = r.claimVerdicts || [];
   const claims = cvs.map(cv => {
-    const text = pick(cv,'claimText','claim','statement','atomicClaimText','text');
-    const label = pick(cv,'verdictLabel','verdict','label');
+    const text = stmtById[cv.claimId] || pick(cv,'claimText','statement','text') || '(no text)';
+    const label = pick(cv,'verdict','verdictLabel','label');
     const truth = pick(cv,'truthPercentage','truthPct','truth');
     const conf = pick(cv,'confidence','conf');
     const sup = (pick(cv,'supportingEvidenceIds')||[]).length;
     const con = (pick(cv,'contradictingEvidenceIds')||[]).length;
-    return {text, label, truth, conf, sup, con};
+    const th = theme(text);
+    if(text!=='(no text)') allClaims.push({th,text,label,truth,conf});
+    return {text, label, truth, conf, sup, con, th};
   });
   out.push({
     jobId: row.JobId, commit:(row.gitcommit||'').slice(0,8), date:(row.CreatedUtc||'').slice(0,10),
@@ -61,12 +80,30 @@ out.forEach(o=>{const k=o.artVerdict||'?';byV[k]=(byV[k]||0)+1;});
 console.log('\n## Article verdict distribution');
 Object.entries(byV).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>console.log(`  ${k}: ${v}`));
 
-// 3) dump every report's claim set (compact)
-console.log('\n## Per-report AtomicClaim sets + per-claim ratings');
-for (const o of out){
-  console.log(`\n[${o.date} ${o.commit}] ${o.jobId.slice(0,8)}  ART=${o.artVerdict} ${o.artTruth}/${o.artConf}  (${o.nClaims} claims)`);
+// 3) theme distribution across all atomic claims + per-theme rating stats
+function stats(arr){ if(!arr.length) return '-'; const n=arr.length; const m=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length); const truths=arr.map(c=>c.truth).filter(x=>typeof x==='number'); const confs=arr.map(c=>c.conf).filter(x=>typeof x==='number'); const lab={}; arr.forEach(c=>{lab[c.label]=(lab[c.label]||0)+1;}); const labStr=Object.entries(lab).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}:${v}`).join(' '); return `n=${n} truth≈${m(truths)} (min ${Math.min(...truths)}/max ${Math.max(...truths)}) conf≈${m(confs)} | ${labStr}`; }
+const themes={};
+allClaims.forEach(c=>{(themes[c.th]=themes[c.th]||[]).push(c);});
+console.log('\n## Per-DIMENSION (theme) rating distribution across all reports');
+Object.entries(themes).sort((a,b)=>b[1].length-a[1].length).forEach(([th,arr])=>{
+  console.log(`\n### ${th}: ${stats(arr)}`);
+  // a few example statements
+  const ex=[...new Set(arr.map(c=>c.text.replace(/\s+/g,' ')))].slice(0,4);
+  ex.forEach(e=>console.log(`   • ${e.slice(0,140)}`));
+});
+
+// 4) most common 3-theme decomposition signatures
+console.log('\n## Decomposition signatures (sorted themes) for 3-claim reports');
+const sig={};
+out.filter(o=>o.nClaims===3).forEach(o=>{ const s=o.claims.map(c=>c.th).sort().join(' + '); sig[s]=(sig[s]||0)+1; });
+Object.entries(sig).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>console.log(`  ${v}×  ${k}`));
+
+// 5) dump a representative sample of full decompositions (newest 8)
+console.log('\n## Sample full decompositions (newest 8 three-claim reports)');
+for (const o of out.filter(o=>o.nClaims===3).slice(-8)){
+  console.log(`\n[${o.date} ${o.commit}] ${o.jobId.slice(0,8)}  ART=${o.artVerdict} ${o.artTruth}/${o.artConf}`);
   o.claims.forEach((c,i)=>{
-    const t = (c.text||'(no text)').replace(/\s+/g,' ').slice(0,150);
-    console.log(`   AC${i+1} [${c.label||'?'} ${c.truth??'?'}/${c.conf??'?'} +${c.sup}/-${c.con}] ${t}`);
+    const t=(c.text||'').replace(/\s+/g,' ').slice(0,150);
+    console.log(`   AC${i+1} <${c.th}> [${c.label||'?'} ${c.truth??'?'}/${c.conf??'?'} +${c.sup}/-${c.con}] ${t}`);
   });
 }

@@ -167,7 +167,7 @@ When judging analysis report quality — including `/report-review`, manual job 
 - `Docs/AGENTS/report-quality-expectations.json` for Q-code structural checks.
 - The best usable exact/family comparator reports listed in `Captain_Quality_Expectations.md`, when available.
 
-State whether each comparator is exact vs. variant, local vs. deployed, and current-stack vs. historical. If no best comparator exists, state that explicitly and do not invent one from nearby jobs.
+State whether each comparator is exact vs. variant, local vs. deployed, and current-stack vs. historical. Do not judge a report in isolation when a Captain expectation or comparator exists. If no best comparator exists, state that explicitly and do not invent one from nearby jobs.
 
 ### Report Quality & Event Communication
 

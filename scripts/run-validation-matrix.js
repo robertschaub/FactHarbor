@@ -11,16 +11,17 @@ const fs = require('fs');
 const path = require('path');
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
+const isCli = require.main === module;
 const SESSION_LABEL = process.argv[2] || 'current';
 const CLAIMS_FILE = process.argv[3] || path.join(__dirname, 'validation-claims.json');
 const OUTPUT_FILE = path.join(__dirname, '..', 'artifacts', `session${SESSION_LABEL}_orchestrated_matrix.jsonl`);
 
-if (!fs.existsSync(CLAIMS_FILE)) {
+if (isCli && !fs.existsSync(CLAIMS_FILE)) {
   console.error(`Claims file not found: ${CLAIMS_FILE}`);
   console.error('Usage: node scripts/run-validation-matrix.js [session_label] [claims_file]');
   process.exit(1);
 }
-const CLAIMS = JSON.parse(fs.readFileSync(CLAIMS_FILE, 'utf-8'));
+const CLAIMS = isCli ? JSON.parse(fs.readFileSync(CLAIMS_FILE, 'utf-8')) : [];
 
 const RUNS_PER_CLAIM = 5;
 
@@ -36,7 +37,84 @@ async function waitForJob(jobId, timeoutMs = 600000) {
   throw new Error('Job timed out after ' + (timeoutMs / 1000) + 's');
 }
 
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function asString(value) {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function asNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function readSchemaVersion(result) {
+  const meta = asRecord(result.meta);
+  return asString(result._schemaVersion) || asString(meta.schemaVersion);
+}
+
+function getResultSchemaKind(result) {
+  const meta = asRecord(result.meta);
+  const schemaVersion = readSchemaVersion(result);
+  const pipeline = asString(meta.pipeline);
+
+  if (
+    (schemaVersion === '4.0.0-cb-precutover' || schemaVersion === '4.0.0-cb') &&
+    pipeline === 'claimboundary-v2'
+  ) {
+    return 'v2';
+  }
+
+  if (schemaVersion === '3.2.0-cb' && pipeline === 'claimboundary') {
+    return 'legacy-v1';
+  }
+
+  return 'unknown';
+}
+
+function normalizeV2Warnings(warnings) {
+  return normalizeArray(warnings).map((warning) => {
+    const item = asRecord(warning);
+    return {
+      ...item,
+      type: asString(item.type) || 'unknown',
+      severity: asString(item.severity) || 'info',
+      message: asString(item.message) || asString(item.materialityRationale) || '',
+    };
+  });
+}
+
+function getDomain(source) {
+  try {
+    return new URL(source.url).hostname;
+  } catch {
+    return source.url;
+  }
+}
+
 function extractMetrics(result) {
+  if (getResultSchemaKind(result) === 'v2') {
+    const verdict = asRecord(result.verdict);
+    const claimsGroup = asRecord(result.claims);
+    const sourcesGroup = asRecord(result.sources);
+    const sources = normalizeArray(sourcesGroup.items);
+    return {
+      answer: asNumber(verdict.truthPercentage),
+      confidence: asNumber(verdict.confidence),
+      contexts: normalizeArray(claimsGroup.atomicClaims).length,
+      sources: sources.length,
+      fetchedSources: sources.length,
+      domains: [...new Set(sources.map(getDomain).filter(Boolean))],
+      verdict: asString(verdict.label),
+      analysisWarnings: normalizeV2Warnings(result.warnings),
+    };
+  }
+
   // Result structure: result.verdictSummary.{answer, confidence, truthPercentage}
   const vs = result.verdictSummary || {};
   const sources = result.sources || [];
@@ -47,7 +125,7 @@ function extractMetrics(result) {
     sources: sources.length,
     fetchedSources: sources.filter(s => s.fetchSuccess).length,
     domains: [...new Set(sources.filter(s => s.fetchSuccess).map(s => {
-      try { return new URL(s.url).hostname; } catch { return s.url; }
+      return getDomain(s);
     }))],
     verdict: vs.displayText,
     analysisWarnings: result.analysisWarnings || [],
@@ -274,7 +352,14 @@ async function runMatrix() {
   console.log(`Matrix data: ${OUTPUT_FILE}`);
 }
 
-runMatrix().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+if (isCli) {
+  runMatrix().catch(error => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  extractMetrics,
+  getResultSchemaKind,
+};
