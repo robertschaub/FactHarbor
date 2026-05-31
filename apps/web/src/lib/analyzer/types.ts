@@ -535,6 +535,12 @@ export interface EvidenceItem {
   isSeeded?: boolean;
   // CB pipeline Fix 3: Post-extraction applicability classification
   applicability?: "direct" | "contextual" | "foreign_reaction";
+  /**
+   * True when the applicability classifier was invoked for this evidence item.
+   * If true and `applicability` is absent, directness is unverified; publishable
+   * sufficiency/citation checks must not treat it as explicit direct evidence.
+   */
+  applicabilityAssessed?: boolean;
 }
 
 export interface FetchedSource {
@@ -758,6 +764,7 @@ export type AnalysisWarningType =
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
+  | "insufficient_direct_evidence"     // D5 Control 1: Claim lacks explicit direct directional evidence for publishable verdict
   | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
   | "structural_consistency"           // Verdict structural consistency check found issues
   | "inverse_consistency_error"        // Strict inverse pair complementarity check failed
@@ -769,6 +776,7 @@ export type AnalysisWarningType =
   | "llm_tpm_guard_fallback"           // OpenAI TPM guard swapped to smaller model (routine successful fallback)
   | "low_claim_count"                  // D1: Claim decomposition produced fewer claims than minimum after reprompt attempts
   | "evidence_applicability_filter"    // Fix 3: Post-extraction applicability filter removed foreign-jurisdiction evidence
+  | "evidence_applicability_assessment_degraded" // Applicability assessment failed or was unavailable; directness could not be verified
   | "phantom_evidence_stripped"        // Fix 5: Phantom evidence IDs removed from verdict (IDs not in evidence pool)
   | "phantom_evidence_all_supporting"  // Fix 5: ALL supporting evidence IDs were phantom — verdict has zero evidence backing
   | "boundary_evidence_concentration"  // Stage 3: One ClaimAssessmentBoundary contains a dominant share of evidence items

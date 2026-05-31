@@ -26,6 +26,8 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "source_reliability_error",
   "source_fetch_failure",
   "source_fetch_degradation",
+  "evidence_applicability_assessment_degraded",
+  "insufficient_direct_evidence",
   "query_budget_exhausted",
   "llm_provider_error",
   "grounding_check_degraded",
@@ -722,4 +724,3 @@ function emptyAggregateMetrics(
     totalEstimatedCostUSD: 0,
   };
 }
-

@@ -203,6 +203,7 @@ const DEGRADATION_WARNING_TYPES = new Set<string>([
   "verdict_partial_recovery",
   "verdict_batch_retry",
   "analysis_generation_failed",
+  "evidence_applicability_assessment_degraded",
   "no_checkworthy_claims",
   "claim_selection_truncated",
   "debate_provider_fallback",
@@ -313,7 +314,9 @@ export function buildQualityHealthMetrics(result: any): QualityHealthMetrics {
   const meta = result?.meta || {};
 
   // F4: Evidence sufficiency gate
-  const f4Warnings = warnings.filter(w => w.type === "insufficient_evidence");
+  const f4Warnings = warnings.filter(
+    w => w.type === "insufficient_evidence" || w.type === "insufficient_direct_evidence",
+  );
   const totalClaims = meta.claimCount || 0;
 
   // F5: Baseless challenge enforcement

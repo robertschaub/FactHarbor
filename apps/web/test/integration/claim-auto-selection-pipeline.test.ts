@@ -104,7 +104,9 @@ vi.mock("@/lib/analyzer/research-orchestrator", () => ({
   evaluateEvidenceSufficiency: vi.fn(() => ({
     sufficient: true,
     itemCount: 3,
+    totalDirectionalCount: 1,
     directionalCount: 1,
+    nonDirectDirectionalCount: 0,
     distinctSourceTypeCount: 2,
     distinctDomainCount: 3,
     hasSufficientItems: true,

@@ -1886,12 +1886,19 @@ export interface DiversitySufficiencyConfig {
   authoritativeDirectionalSourceTypes?: string[];
   /** When true, count seeded evidence toward sufficiency (matching D5 behavior). */
   includeSeeded: boolean;
+  /**
+   * When true, only evidence explicitly classified as `applicability: "direct"`
+   * counts toward directional sufficiency and authoritative-directional shortcuts.
+   */
+  requireDirectApplicability?: boolean;
 }
 
 export interface EvidenceSufficiencyResult {
   sufficient: boolean;
   itemCount: number;
+  totalDirectionalCount: number;
   directionalCount: number;
+  nonDirectDirectionalCount: number;
   distinctSourceTypeCount: number;
   distinctDomainCount: number;
   hasSufficientItems: boolean;
@@ -1907,6 +1914,19 @@ export interface ClaimResearchSufficiencyOptions {
   minResearchedIterationsPerClaim?: number;
 }
 
+function isDirectionalEvidence(item: EvidenceItem): boolean {
+  return item.claimDirection === "supports" || item.claimDirection === "contradicts";
+}
+
+function isPublishableDirectionalEvidence(
+  item: EvidenceItem,
+  requireDirectApplicability: boolean,
+): boolean {
+  if (!isDirectionalEvidence(item)) return false;
+  if (!requireDirectApplicability) return true;
+  return item.applicability === "direct";
+}
+
 export function evaluateEvidenceSufficiency(
   claimEvidence: EvidenceItem[],
   config: DiversitySufficiencyConfig,
@@ -1914,6 +1934,7 @@ export function evaluateEvidenceSufficiency(
   const minDirectionalItems = config.minDirectionalItems ?? 0;
   const authoritativeDirectionalMinItems = config.authoritativeDirectionalMinItems ?? Number.POSITIVE_INFINITY;
   const authoritativeSourceTypes = new Set(config.authoritativeDirectionalSourceTypes ?? []);
+  const requireDirectApplicability = config.requireDirectApplicability ?? false;
   const distinctSourceTypes = new Set(
     claimEvidence.map(e => e.sourceType).filter(Boolean),
   );
@@ -1922,8 +1943,9 @@ export function evaluateEvidenceSufficiency(
       .map(e => extractDomain(e.sourceUrl))
       .filter((d): d is string => Boolean(d)),
   );
-  const directionalEvidence = claimEvidence.filter(
-    (e) => e.claimDirection === "supports" || e.claimDirection === "contradicts",
+  const allDirectionalEvidence = claimEvidence.filter(isDirectionalEvidence);
+  const directionalEvidence = allDirectionalEvidence.filter((item) =>
+    isPublishableDirectionalEvidence(item, requireDirectApplicability),
   );
   const hasSufficientItems = claimEvidence.length >= config.minItems;
   const hasMinimumDirectionalEvidence = directionalEvidence.length >= minDirectionalItems;
@@ -1944,7 +1966,9 @@ export function evaluateEvidenceSufficiency(
       hasMinimumDirectionalEvidence &&
       (hasSufficientSourceDiversity || hasAuthoritativeDirectionalSufficiency),
     itemCount: claimEvidence.length,
+    totalDirectionalCount: allDirectionalEvidence.length,
     directionalCount: directionalEvidence.length,
+    nonDirectDirectionalCount: allDirectionalEvidence.length - directionalEvidence.length,
     distinctSourceTypeCount: distinctSourceTypes.size,
     distinctDomainCount: distinctDomains.size,
     hasSufficientItems,

@@ -1176,6 +1176,15 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
+    const applicabilityRelevantGeographies = getClaimsRelevantGeographies(
+      researchUnderstanding.atomicClaims,
+      researchUnderstanding.inferredGeography ?? null,
+    );
+    const directApplicabilityRequiredForD5 =
+      (initialPipelineConfig.applicabilityFilterEnabled ?? true)
+      && applicabilityRelevantGeographies.length > 0
+      && state.evidenceItems.length > 0;
+
     // Fix 3: Post-extraction applicability assessment (safety net for jurisdiction contamination)
     if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
       checkAbortSignal(input.jobId);
@@ -1187,10 +1196,8 @@ export async function runClaimBoundaryAnalysis(
         state.evidenceItems,
         researchUnderstanding.inferredGeography ?? null,
         initialPipelineConfig,
-        getClaimsRelevantGeographies(
-          researchUnderstanding.atomicClaims,
-          researchUnderstanding.inferredGeography ?? null,
-        ),
+        applicabilityRelevantGeographies,
+        state.warnings,
       );
       const removedItems = assessed.filter(
         (item) => item.applicability === "foreign_reaction"
@@ -1231,6 +1238,7 @@ export async function runClaimBoundaryAnalysis(
     const authoritativeDirectionalSourceTypes =
       initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? [];
     const insufficientClaimIds = new Set<string>();
+    const insufficientClaimReasons = new Map<string, "insufficient_evidence" | "insufficient_direct_evidence">();
     for (const claim of researchUnderstanding.atomicClaims) {
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
@@ -1243,19 +1251,40 @@ export async function runClaimBoundaryAnalysis(
         authoritativeDirectionalMinItems,
         authoritativeDirectionalSourceTypes,
         includeSeeded: true,
+        requireDirectApplicability: directApplicabilityRequiredForD5,
       });
 
       if (!sufficiency.sufficient) {
+        const lacksDirectDirectionalEvidence =
+          directApplicabilityRequiredForD5
+          && sufficiencyMinDirectionalItems > 0
+          && sufficiency.hasSufficientItems
+          && sufficiency.totalDirectionalCount >= sufficiencyMinDirectionalItems
+          && !sufficiency.hasMinimumDirectionalEvidence;
+        const warningType = lacksDirectDirectionalEvidence
+          ? "insufficient_direct_evidence"
+          : "insufficient_evidence";
+        const directionalLabel = directApplicabilityRequiredForD5
+          ? "direct directional items"
+          : "directional items";
         insufficientClaimIds.add(claim.id);
+        insufficientClaimReasons.set(claim.id, warningType);
         state.warnings.push({
-          type: "insufficient_evidence",
+          type: warningType,
           severity: "warning",
           message: `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
             `${sufficiency.itemCount} items (min ${sufficiencyMinItems}), ` +
-            `${sufficiency.directionalCount} directional items (min ${sufficiencyMinDirectionalItems}), ` +
+            `${sufficiency.directionalCount} ${directionalLabel} (min ${sufficiencyMinDirectionalItems}), ` +
             `${sufficiency.distinctSourceTypeCount} source types (min ${sufficiencyMinSourceTypes}), ` +
             `${sufficiency.distinctDomainCount} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
             `Verdict set to UNVERIFIED.`,
+          details: {
+            claimId: claim.id,
+            totalDirectionalCount: sufficiency.totalDirectionalCount,
+            directDirectionalCount: sufficiency.directionalCount,
+            nonDirectDirectionalCount: sufficiency.nonDirectDirectionalCount,
+            directApplicabilityRequired: directApplicabilityRequiredForD5,
+          },
         });
       }
     }
@@ -1310,14 +1339,15 @@ export async function runClaimBoundaryAnalysis(
     });
 
     // D5 Control 1: Create UNVERIFIED verdicts for insufficient claims
-    const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map((claim) =>
-      createUnverifiedFallbackVerdict(
-        claim,
-        "insufficient_evidence",
-        "Insufficient evidence to produce a reliable verdict. " +
-          "This claim did not meet the minimum evidence requirements (items plus source-type/domain diversity).",
-      )
-    );
+    const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map((claim) => {
+      const verdictReason = insufficientClaimReasons.get(claim.id) ?? "insufficient_evidence";
+      const reasoning = verdictReason === "insufficient_direct_evidence"
+        ? "Insufficient direct evidence to produce a reliable verdict. " +
+          "This claim did not have enough claim-local, explicitly direct supporting or contradicting evidence for a publishable verdict."
+        : "Insufficient evidence to produce a reliable verdict. " +
+          "This claim did not meet the minimum evidence requirements (items plus source-type/domain diversity).";
+      return createUnverifiedFallbackVerdict(claim, verdictReason, reasoning);
+    });
 
     let claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
 

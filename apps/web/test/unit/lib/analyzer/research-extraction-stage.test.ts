@@ -766,6 +766,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].applicability).toBe("direct");
       expect(result[1].applicability).toBe("foreign_reaction");
       expect(result[2].applicability).toBe("contextual");
+      expect(result.every((item) => item.applicabilityAssessed === true)).toBe(true);
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
       );
@@ -796,7 +797,7 @@ describe("Research Extraction Stage", () => {
       expect(mockGenerateText).not.toHaveBeenCalled();
     });
 
-    it("should default unclassified items to 'direct' (fail-open for missing indices)", async () => {
+    it("should leave unclassified items without direct applicability", async () => {
       const claims = [createClaim({ statement: "Test" })];
       const evidence = [
         createEvidence({ id: "EV_01" }),
@@ -816,20 +817,45 @@ describe("Research Extraction Stage", () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].applicability).toBe("contextual");
-      expect(result[1].applicability).toBe("direct"); // default for missing
+      expect(result[1].applicability).toBeUndefined();
+      expect(result[1].applicabilityAssessed).toBe(true);
     });
 
     it("should fail-open on LLM error — keeps all evidence without applicability", async () => {
       const claims = [createClaim({ statement: "Test" })];
       const evidence = [createEvidence({ id: "EV_01" })];
+      const warnings: any[] = [];
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockRejectedValue(new Error("LLM timeout"));
 
-      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig, undefined, warnings);
 
       expect(result).toHaveLength(1);
       expect(result[0].applicability).toBeUndefined();
+      expect(result[0].applicabilityAssessed).toBe(true);
+      expect(warnings).toContainEqual(expect.objectContaining({
+        type: "evidence_applicability_assessment_degraded",
+        severity: "warning",
+      }));
+    });
+
+    it("should emit a degrading warning when the applicability prompt section is unavailable", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+      const evidence = [createEvidence({ id: "EV_01" })];
+      const warnings: any[] = [];
+
+      mockLoadSection.mockResolvedValue(null as any);
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig, undefined, warnings);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].applicability).toBeUndefined();
+      expect(result[0].applicabilityAssessed).toBe(true);
+      expect(warnings).toContainEqual(expect.objectContaining({
+        type: "evidence_applicability_assessment_degraded",
+        severity: "warning",
+      }));
     });
 
     it("should pass inferredGeography and claims to the prompt template", async () => {

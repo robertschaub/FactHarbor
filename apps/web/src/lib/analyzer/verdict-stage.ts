@@ -85,6 +85,7 @@ type VerdictPromptEvidenceItem = Pick<
   | "category"
   | "claimDirection"
   | "applicability"
+  | "applicabilityAssessed"
   | "sourceId"
   | "sourceUrl"
   | "sourceTitle"
@@ -115,6 +116,7 @@ function toVerdictPromptEvidenceItems(
     category: item.category,
     claimDirection: item.claimDirection,
     applicability: item.applicability,
+    applicabilityAssessed: item.applicabilityAssessed,
     sourceId: item.sourceId,
     sourceUrl: item.sourceUrl,
     sourceTitle: item.sourceTitle,
@@ -137,6 +139,7 @@ type DirectionValidationEvidencePoolItem = {
   statement: string;
   claimDirection?: EvidenceItem["claimDirection"];
   applicability?: EvidenceItem["applicability"];
+  applicabilityAssessed?: boolean;
   relevantClaimIds?: string[];
 };
 
@@ -148,6 +151,7 @@ function toDirectionValidationEvidencePool(
     statement: item.statement,
     claimDirection: item.claimDirection,
     applicability: item.applicability,
+    applicabilityAssessed: item.applicabilityAssessed,
     relevantClaimIds: item.relevantClaimIds,
   }));
 }
@@ -1897,6 +1901,7 @@ function joinIssues(issues: string[]): string {
 
 const EXPLICIT_ZERO_CITATION_FALLBACK_REASONS = new Set([
   "analysis_generation_failed",
+  "insufficient_direct_evidence",
   "insufficient_evidence",
   "report_damaged",
   "verdict_integrity_failure",
@@ -1923,6 +1928,17 @@ function isMappedToDifferentClaim(item: EvidenceItem | undefined, claimId: strin
   return Array.isArray(item?.relevantClaimIds)
     && item.relevantClaimIds.length > 0
     && !item.relevantClaimIds.includes(claimId);
+}
+
+function isDirectForCitation(item: EvidenceItem | DirectionValidationEvidencePoolItem | undefined): boolean {
+  if (!item) return false;
+  if (item.applicability === "direct") return true;
+  if (item.applicability) return false;
+  return item.applicabilityAssessed !== true;
+}
+
+function isNonDirectForCitation(item: EvidenceItem | undefined): boolean {
+  return Boolean(item) && !isDirectForCitation(item);
 }
 
 function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: EvidenceItem[]): string[] {
@@ -1958,7 +1974,7 @@ function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: Evide
       continue;
     }
     if (isMappedToDifferentClaim(item, verdict.claimId)) siblingSupportingIds.push(id);
-    if (item.applicability && item.applicability !== "direct") nonDirectSupportingIds.push(id);
+    if (isNonDirectForCitation(item)) nonDirectSupportingIds.push(id);
     if (item.claimDirection === "contradicts") misbucketedSupportingIds.push(id);
     else if (item.claimDirection !== "supports") nonDirectionalSupportingIds.push(id);
   }
@@ -1970,7 +1986,7 @@ function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: Evide
       continue;
     }
     if (isMappedToDifferentClaim(item, verdict.claimId)) siblingContradictingIds.push(id);
-    if (item.applicability && item.applicability !== "direct") nonDirectContradictingIds.push(id);
+    if (isNonDirectForCitation(item)) nonDirectContradictingIds.push(id);
     if (item.claimDirection === "supports") misbucketedContradictingIds.push(id);
     else if (item.claimDirection !== "contradicts") nonDirectionalContradictingIds.push(id);
   }
@@ -2089,14 +2105,14 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of supportIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    if (!item?.applicability || item.applicability === "direct") {
+    if (isDirectForCitation(item)) {
       weightedSupports += weight;
       directSupportingCount += 1;
     }
     if (item?.claimDirection === "contradicts") {
       misbucketedSupportingIds.push(id);
     }
-    if (item?.applicability && item.applicability !== "direct") {
+    if (isNonDirectForCitation(item)) {
       nonDirectSupportingIds.push(id);
     }
   }
@@ -2104,14 +2120,14 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of contradictIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    if (!item?.applicability || item.applicability === "direct") {
+    if (isDirectForCitation(item)) {
       weightedContradicts += weight;
       directContradictingCount += 1;
     }
     if (item?.claimDirection === "supports") {
       misbucketedContradictingIds.push(id);
     }
-    if (item?.applicability && item.applicability !== "direct") {
+    if (isNonDirectForCitation(item)) {
       nonDirectContradictingIds.push(id);
     }
   }
@@ -2188,7 +2204,7 @@ function normalizeVerdictCitationDirections(
     if (isMappedToDifferentClaim(item, verdict.claimId)) {
       continue;
     }
-    if (item.applicability && item.applicability !== "direct") {
+    if (!isDirectForCitation(item)) {
       continue;
     }
     const direction = item.claimDirection;
@@ -2462,7 +2478,7 @@ function refreshBoundaryFindingsAfterRepair(
   calcConfig?: CalcConfig,
 ): BoundaryFinding[] {
   const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence)
-    .filter((item) => !item.applicability || item.applicability === "direct");
+    .filter((item) => isDirectForCitation(item));
   const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
   const boundaryById = new Map(boundaries.map((boundary) => [boundary.id, boundary]));
 
@@ -2503,7 +2519,7 @@ function deriveDirectionalCitationsFromEvidencePool(
   const contradictingEvidenceIds: string[] = [];
 
   for (const item of evidencePool) {
-    if (item.applicability && item.applicability !== "direct") continue;
+    if (!isDirectForCitation(item)) continue;
     if (item.claimDirection === "supports") supportingEvidenceIds.push(item.id);
     if (item.claimDirection === "contradicts") contradictingEvidenceIds.push(item.id);
   }
@@ -2619,7 +2635,7 @@ async function attemptDirectionRepair(
   if (hasZeroDirectionalCitations(verdict)) {
     const hasMappedDirectDirectionalEvidence = evidence.some((item) =>
       item.relevantClaimIds?.includes(verdict.claimId)
-      && (!item.applicability || item.applicability === "direct")
+      && isDirectForCitation(item)
       && (item.claimDirection === "supports" || item.claimDirection === "contradicts")
     );
     if (!hasMappedDirectDirectionalEvidence) {

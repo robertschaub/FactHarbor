@@ -20,6 +20,7 @@ import {
   normalizeExtractedSourceType 
 } from "./pipeline-utils";
 import {
+  AnalysisWarning,
   AtomicClaim,
   CBResearchState,
   EvidenceItem,
@@ -68,7 +69,7 @@ export const Stage2ExtractEvidenceOutputSchema = z.object({
 export const ApplicabilityAssessmentOutputSchema = z.object({
   assessments: z.array(z.object({
     evidenceIndex: z.number(),
-    applicability: z.enum(["direct", "contextual", "foreign_reaction"]).catch("direct"),
+    applicability: z.enum(["direct", "contextual", "foreign_reaction"]).optional().catch(undefined),
     reasoning: z.string(),
   })),
 });
@@ -479,6 +480,7 @@ export async function assessEvidenceApplicability(
   inferredGeography: string | null,
   pipelineConfig: PipelineConfig,
   relevantGeographies?: string[] | null,
+  warnings?: AnalysisWarning[],
 ): Promise<EvidenceItem[]> {
   const normalizedRelevantGeographies = normalizeRelevantGeographies(
     relevantGeographies,
@@ -514,7 +516,13 @@ export async function assessEvidenceApplicability(
     debugLogFileOnly("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter", {
       claimIds: claims.map((claim) => claim.id),
     });
-    return evidenceItems;
+    warnings?.push({
+      type: "evidence_applicability_assessment_degraded",
+      severity: "warning",
+      message: "Evidence applicability assessment could not run because the APPLICABILITY_ASSESSMENT prompt section was unavailable. Direct citation eligibility may be under-assessed.",
+      details: { claimIds: claims.map((claim) => claim.id), reason: "prompt_section_missing" },
+    });
+    return evidenceItems.map((item) => ({ ...item, applicabilityAssessed: true }));
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -558,7 +566,9 @@ export async function assessEvidenceApplicability(
     // Apply classifications to evidence items
     const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
     for (const assessment of validated.assessments) {
-      classificationMap.set(assessment.evidenceIndex, assessment.applicability);
+      if (assessment.applicability) {
+        classificationMap.set(assessment.evidenceIndex, assessment.applicability);
+      }
     }
 
     // Debug: count by category
@@ -566,21 +576,24 @@ export async function assessEvidenceApplicability(
     const foreignDomains: string[] = [];
 
     const assessed = evidenceItems.map((item, index) => {
-      const applicability = classificationMap.get(index) ?? "direct";
-      counts[applicability]++;
+      const applicability = classificationMap.get(index);
+      if (applicability) {
+        counts[applicability]++;
+      }
       if (applicability === "foreign_reaction") {
         const domain = item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown";
         foreignDomains.push(domain);
       }
-      return { ...item, applicability };
+      return { ...item, applicability, applicabilityAssessed: true };
     });
 
-    // Count unclassified (items not in LLM response — default to "direct")
+    // Count unclassified items not returned by the LLM. They remain usable as
+    // contextual material, but they are not explicit direct evidence.
     counts.unclassified = evidenceItems.length - classificationMap.size;
 
     debugLogFileOnly(
       `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
-      `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
+      `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(
@@ -605,12 +618,22 @@ export async function assessEvidenceApplicability(
       errorMessage,
       timestamp: new Date(),
     });
-    // Fail-open: if assessment fails, keep all evidence (don't block pipeline)
+    // Keep evidence available as context, but mark directness as unverified so
+    // publishable citation/sufficiency gates cannot treat it as explicit direct evidence.
     debugLogFileOnly("[Fix3] Applicability assessment failed, keeping all evidence", {
       claimIds: claims.map((claim) => claim.id),
       errorMessage,
     });
-    return evidenceItems;
+    warnings?.push({
+      type: "evidence_applicability_assessment_degraded",
+      severity: "warning",
+      message: "Evidence applicability assessment failed. Evidence remains available as context, but direct citation eligibility could not be fully verified.",
+      details: {
+        claimIds: claims.map((claim) => claim.id),
+        errorMessage,
+      },
+    });
+    return evidenceItems.map((item) => ({ ...item, applicabilityAssessed: true }));
   }
 }
 
@@ -786,4 +809,3 @@ export function applyPerSourceCap(
 
   return { kept, capped, evictedIds };
 }
-

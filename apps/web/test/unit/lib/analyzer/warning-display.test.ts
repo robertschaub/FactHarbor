@@ -59,6 +59,28 @@ describe("warning-display classification", () => {
     expect(errorLevel.displaySeverity).toBe("error");
   });
 
+  it("treats direct-evidence sufficiency failures as degrading analysis warnings", () => {
+    const result = classifyWarningForDisplay(warning({
+      type: "insufficient_direct_evidence",
+      severity: "info",
+    }));
+
+    expect(result.isProviderIssue).toBe(false);
+    expect(result.isReportDegrading).toBe(true);
+    expect(result.displaySeverity).toBe("warning");
+  });
+
+  it("treats applicability assessment failures as degrading analysis warnings", () => {
+    const result = classifyWarningForDisplay(warning({
+      type: "evidence_applicability_assessment_degraded",
+      severity: "info",
+    }));
+
+    expect(result.isProviderIssue).toBe(false);
+    expect(result.isReportDegrading).toBe(true);
+    expect(result.displaySeverity).toBe("warning");
+  });
+
   it("forces non-degrading provider warnings to info", () => {
     const result = classifyWarningForDisplay(warning({
       type: "source_fetch_failure",

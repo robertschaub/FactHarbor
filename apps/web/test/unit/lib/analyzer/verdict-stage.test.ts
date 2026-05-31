@@ -4766,6 +4766,19 @@ describe("isVerdictDirectionPlausible", () => {
     expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
   });
 
+  it("allows explicit zero-citation insufficient-direct-evidence fallbacks", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+      verdictReason: "insufficient_direct_evidence",
+      confidence: 0,
+      confidenceTier: "INSUFFICIENT",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
+  });
+
   it("rejects stale insufficient zero-citation verdicts without an explicit fallback reason", () => {
     const verdict = createCBVerdict({
       truthPercentage: 50,
@@ -4789,6 +4802,23 @@ describe("isVerdictDirectionPlausible", () => {
         id: "EV_CTX",
         claimDirection: "supports",
         applicability: "contextual",
+      }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when directional citations rely on assessed but unclassified applicability", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 70,
+      supportingEvidenceIds: ["EV_UNCLASSIFIED"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({
+        id: "EV_UNCLASSIFIED",
+        claimDirection: "supports",
+        applicability: undefined,
+        applicabilityAssessed: true,
       }),
     ];
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);

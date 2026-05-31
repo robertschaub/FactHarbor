@@ -3253,6 +3253,64 @@ describe("D5-aligned evidence sufficiency", () => {
     expect(sufficiency.hasMinimumDirectionalEvidence).toBe(false);
     expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
   });
+
+  it("counts only explicit direct evidence when direct applicability is required", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "supports", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "supports", applicability: "direct", applicabilityAssessed: true },
+    ] as any[];
+
+    const sufficiency = evaluateEvidenceSufficiency(evidence, {
+      ...d5Config,
+      requireDirectApplicability: true,
+    });
+
+    expect(sufficiency.totalDirectionalCount).toBe(3);
+    expect(sufficiency.directionalCount).toBe(1);
+    expect(sufficiency.nonDirectDirectionalCount).toBe(2);
+    expect(sufficiency.hasMinimumDirectionalEvidence).toBe(true);
+    expect(allClaimsSufficient(
+      [createAtomicClaim({ id: "AC_01" })],
+      evidence,
+      3,
+      1,
+      1,
+      0,
+      { ...d5Config, requireDirectApplicability: true },
+    )).toBe(true);
+  });
+
+  it("fails contextual-only directional evidence when direct applicability is required", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "supports", applicabilityAssessed: true },
+    ] as any[];
+
+    const strictConfig = { ...d5Config, requireDirectApplicability: true };
+    const sufficiency = evaluateEvidenceSufficiency(evidence, strictConfig);
+
+    expect(sufficiency.totalDirectionalCount).toBe(3);
+    expect(sufficiency.directionalCount).toBe(0);
+    expect(sufficiency.nonDirectDirectionalCount).toBe(3);
+    expect(sufficiency.hasMinimumDirectionalEvidence).toBe(false);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, strictConfig)).toBe(false);
+  });
+
+  it("preserves legacy directional sufficiency when direct applicability is not required", () => {
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "supports", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
+    ] as any[];
+
+    const sufficiency = evaluateEvidenceSufficiency(evidence, d5Config);
+
+    expect(sufficiency.directionalCount).toBe(3);
+    expect(sufficiency.hasMinimumDirectionalEvidence).toBe(true);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(true);
+  });
 });
 
 describe("claimNeedsMoreResearchForSufficiency", () => {
