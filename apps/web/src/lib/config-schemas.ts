@@ -566,6 +566,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum relevance score (0-1) for a search result to be considered for extraction (default: 0.4)"),
   sourceFetchTimeoutMs: z.number().int().min(1000).max(60000).optional()
     .describe("Timeout in milliseconds for fetching an individual source URL (default: 20000)"),
+  sourceMaxResponseBytes: z.number().int().min(1000000).max(52428800).optional()
+    .describe("Maximum bytes to buffer when fetching a single source (HTML or PDF). Larger institutional PDFs (e.g. OECD ~24 MB) need a higher cap; bounded to limit memory/DoS exposure. Default: 31457280 (30 MB)."),
   minEvidenceContentLength: z.number().int().min(10).max(1000).optional()
     .describe("Minimum character length for fetched source text to be considered usable (default: 100)"),
   fetchSameDomainDelayMs: z.number().int().min(0).max(5000).optional()
@@ -1194,6 +1196,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   claimSufficiencyThreshold: 3,
   relevanceFloor: 0.4,
   sourceFetchTimeoutMs: 20000,
+  sourceMaxResponseBytes: 30 * 1024 * 1024,
   minEvidenceContentLength: 100,
   fetchSameDomainDelayMs: 500,
   fetchDomainSkipThreshold: 2,

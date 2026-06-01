@@ -135,7 +135,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "sourceMaxResponseBytes" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
   options?: FetchSourcesOptions,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   type FetchCandidate = { url: string; relevanceScore?: number; depth: number };
@@ -157,6 +157,7 @@ export async function fetchSources(
   // Configurable timeout — default 20 s (was 12 s). Legal/government sources load slowly.
   const fetchTimeoutMs = pipelineConfig?.sourceFetchTimeoutMs ?? 20000;
   const extractionMaxLength = pipelineConfig?.sourceExtractionMaxLength ?? 15000;
+  const maxResponseBytes = pipelineConfig?.sourceMaxResponseBytes ?? 30 * 1024 * 1024;
   const retryDelayMs = pipelineConfig?.iterationRetryDelayMs ?? 2000;
   const minContentLength = pipelineConfig?.minEvidenceContentLength ?? 100;
   const sameDomainDelayMs = pipelineConfig?.fetchSameDomainDelayMs ?? 500;
@@ -273,6 +274,7 @@ export async function fetchSources(
             const content = await extractTextFromUrl(source.url, {
               timeoutMs: fetchTimeoutMs,
               maxLength: extractionMaxLength,
+              maxResponseBytes,
             });
             updateDomainBlockingStreak(domainFailureCounts, domain, "success");
             return { source, content, ok: true as const };
@@ -289,6 +291,7 @@ export async function fetchSources(
                   // Retry timeout: always >= first attempt, cap at schema max (60 s).
                   timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
                   maxLength: extractionMaxLength,
+                  maxResponseBytes,
                 });
                 updateDomainBlockingStreak(domainFailureCounts, domain, "success");
                 return { source, content, ok: true as const };

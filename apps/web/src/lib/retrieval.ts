@@ -19,9 +19,11 @@ import { getFamilyDomain } from "@/lib/domain-utils";
 // Default timeout for PDF parsing (ms)
 const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
 
-// Maximum response body size to buffer (10 MB). Enforced both via Content-Length pre-check
-// and streaming cumulative-byte checks for chunked responses without Content-Length.
-const MAX_RESPONSE_SIZE_BYTES = 10 * 1024 * 1024;
+// Default maximum response body size to buffer (30 MB). Enforced both via Content-Length
+// pre-check and streaming cumulative-byte checks for chunked responses without Content-Length.
+// Raised from 10 MB so legitimate large institutional PDFs (e.g. OECD, swissvotes ~20-24 MB)
+// are no longer hard-rejected. Overridable per-call via the maxResponseBytes option / config.
+const MAX_RESPONSE_SIZE_BYTES = 30 * 1024 * 1024;
 
 export interface ExtractedUrlContent {
   text: string;
@@ -401,6 +403,81 @@ function isPdfUrl(url: string, contentType?: string): boolean {
   return urlLower.endsWith(".pdf") || urlLower.includes(".pdf?");
 }
 
+// Content-types that are unambiguously NOT PDF. When the server explicitly declares one of
+// these, trust it over the URL's `.pdf` extension: many `.pdf` URLs return an HTML block,
+// login, or paywall page (200 OK, text/html) that must not be force-parsed as a PDF.
+const NON_PDF_CONTENT_TYPES = [
+  "text/html",
+  "application/xhtml",
+  "text/plain",
+  "application/xml",
+  "text/xml",
+  "application/json",
+];
+
+/**
+ * Decide whether a fetched response body should be parsed as PDF.
+ * Precedence: explicit `application/pdf` → yes; explicit textual non-PDF type → no;
+ * otherwise (missing/ambiguous type such as application/octet-stream) fall back to the
+ * URL extension. This prevents HTML block/paywall pages served from `.pdf` URLs from being
+ * fed to the PDF parser (the dominant `pdf_parse_failure` "Invalid PDF format" cause).
+ */
+export function shouldParseAsPdf(url: string, contentType?: string): boolean {
+  const ct = (contentType ?? "").toLowerCase();
+  if (ct.includes("application/pdf")) return true;
+  if (ct && NON_PDF_CONTENT_TYPES.some((t) => ct.includes(t))) return false;
+  const urlLower = url.toLowerCase();
+  return urlLower.endsWith(".pdf") || urlLower.includes(".pdf?");
+}
+
+/**
+ * Detect the "%PDF-" magic signature (0x25 0x50 0x44 0x46 0x2D). PDFs usually begin with it at
+ * byte 0, but a BOM or a few bytes of leading whitespace/junk can precede it (tolerated by PDF
+ * parsers), so scan the first ~1 KB rather than only offset 0. Used ONLY as a fallback when the
+ * content-type does not explicitly declare PDF.
+ */
+export function bufferLooksLikePdf(bytes: Uint8Array): boolean {
+  const limit = Math.min(bytes.length - 5, 1024);
+  for (let i = 0; i <= limit; i++) {
+    if (
+      bytes[i] === 0x25 &&
+      bytes[i + 1] === 0x50 &&
+      bytes[i + 2] === 0x44 &&
+      bytes[i + 3] === 0x46 &&
+      bytes[i + 4] === 0x2d
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Build ExtractedUrlContent from an already-decoded HTML string. Shared by the normal HTML
+ * path and the PDF-fallback path (when a `.pdf` URL actually returned HTML).
+ */
+function extractHtmlContent(
+  html: string,
+  requestUrl: string,
+  finalUrl: string,
+  contentType: string,
+  maxLength: number,
+): ExtractedUrlContent {
+  const $ = cheerio.load(html);
+  let title = $("title").text().trim();
+  if (!title) {
+    title = $("h1").first().text().trim() || new URL(requestUrl).hostname;
+  }
+  const text = extractTextFromHtml(html);
+  return {
+    text: text.slice(0, maxLength),
+    title,
+    contentType: contentType.split(";")[0] || "text/html",
+    discoveredDocumentUrls: extractSameFamilyPdfUrlsFromHtml(html, finalUrl),
+    discoveredFollowUpUrls: extractSameFamilyFollowUpUrlsFromHtml(html, finalUrl),
+  };
+}
+
 function extractYearScore(value: string): number {
   const matches = value.match(/\b(?:19|20)\d{2}\b/g);
   if (!matches) return 0;
@@ -687,9 +764,15 @@ export async function extractTextFromUrl(
     timeoutMs?: number;
     maxLength?: number;
     pdfParseTimeoutMs?: number;
+    maxResponseBytes?: number;
   } = {}
 ): Promise<ExtractedUrlContent> {
-  const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS } = options;
+  const {
+    timeoutMs = 30000,
+    maxLength = 50000,
+    pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS,
+    maxResponseBytes = MAX_RESPONSE_SIZE_BYTES,
+  } = options;
 
   // SSRF: validate URL before any network access
   await validateUrlForFetch(url);
@@ -730,19 +813,33 @@ export async function extractTextFromUrl(
     const contentLengthStr = response.headers.get("content-length");
     if (contentLengthStr) {
       const contentLength = parseInt(contentLengthStr, 10);
-      if (!isNaN(contentLength) && contentLength > MAX_RESPONSE_SIZE_BYTES) {
+      if (!isNaN(contentLength) && contentLength > maxResponseBytes) {
         throw new Error(
-          `Response too large: ${contentLength} bytes exceeds the ${MAX_RESPONSE_SIZE_BYTES / 1024 / 1024} MB limit`,
+          `Response too large: ${contentLength} bytes exceeds the ${maxResponseBytes / 1024 / 1024} MB limit`,
         );
       }
     }
 
     const contentType = response.headers.get("content-type") || "";
 
-    // Handle PDF
-    if (isPdfUrl(url, contentType)) {
-      console.log("[Retrieval] Processing as PDF");
-      const responseBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+    const finalUrl = response.url || url;
+
+    // Handle PDF (content-type aware: a `.pdf` URL that returns HTML is NOT a PDF).
+    if (shouldParseAsPdf(url, contentType)) {
+      const responseBytes = await readResponseBodyWithLimit(response, maxResponseBytes);
+
+      // Trust an explicit application/pdf content-type and parse regardless of magic bytes (a
+      // valid PDF may carry a BOM/leading bytes before "%PDF-"). Only when the type is ambiguous
+      // (extension-only, octet-stream, or missing) do we fall back on the %PDF- signature: that is
+      // the case where block/login/paywall HTML pages reach here from `.pdf` URLs and would
+      // otherwise yield "Invalid PDF format". Those fall back to HTML extraction.
+      const contentTypeSaysPdf = contentType.toLowerCase().includes("application/pdf");
+      if (!contentTypeSaysPdf && !bufferLooksLikePdf(responseBytes)) {
+        console.log("[Retrieval] PDF-looking URL returned non-PDF bytes; falling back to HTML extraction:", url);
+        const fallbackHtml = new TextDecoder("utf-8").decode(responseBytes);
+        return extractHtmlContent(fallbackHtml, url, finalUrl, contentType || "text/html", maxLength);
+      }
+
       const buffer = Buffer.from(responseBytes);
 
       console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
@@ -764,28 +861,10 @@ export async function extractTextFromUrl(
     }
     
     // Handle HTML with streaming size enforcement for chunked/no-Content-Length responses.
-    const htmlBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+    const htmlBytes = await readResponseBodyWithLimit(response, maxResponseBytes);
     const html = new TextDecoder("utf-8").decode(htmlBytes);
-    const $ = cheerio.load(html);
-    
-    // Extract title
-    let title = $("title").text().trim();
-    if (!title) {
-      title = $("h1").first().text().trim() || new URL(url).hostname;
-    }
-    
-    // Extract text
-    const text = extractTextFromHtml(html);
-    const discoveredDocumentUrls = extractSameFamilyPdfUrlsFromHtml(html, response.url || url);
-    
-    return {
-      text: text.slice(0, maxLength),
-      title,
-      contentType: contentType.split(";")[0] || "text/html",
-      discoveredDocumentUrls,
-      discoveredFollowUpUrls: extractSameFamilyFollowUpUrlsFromHtml(html, response.url || url),
-    };
-    
+    return extractHtmlContent(html, url, finalUrl, contentType, maxLength);
+
   } finally {
     clearTimeout(timeout);
   }
