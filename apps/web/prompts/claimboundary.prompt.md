@@ -1,5 +1,5 @@
 ---
-version: "1.0.10"
+version: "1.0.11"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
 lastModified: "2026-06-01T00:00:00Z"
@@ -432,7 +432,7 @@ Return a JSON object:
 Notes:
 - `retainedEvidence`: IDs of high-quality preliminary evidence items that should be kept in the evidence pool (avoiding redundant re-extraction in Stage 2).
 - Only include claims where `centrality` is "high" or "medium" in the final output. Drop "low" centrality claims.
-- `specificityScore`: 0.0–1.0. Claims below 0.6 should be flagged for potential decomposition.
+- `specificityScore`: 0.0–1.0 (LLM-assessed). Gate 1 flags low-specificity claims for potential decomposition using its configured threshold.
 - `relevantGeographies`: list the jurisdictions whose institutions, legal systems, or national conditions are directly being assessed by the specific claim. For comparative claims, include every directly implicated jurisdiction. Do not infer from input language alone.
 
 ---
@@ -1867,7 +1867,7 @@ This is a lightweight directional sanity check. Flag only clear mismatches (e.g.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Only check directional consistency — a verdict at 60% with mostly supporting evidence is fine; a verdict at 85% with mostly contradicting evidence is a flag.
 - Minor discrepancies (e.g., 55% with slightly more contradicting evidence) should NOT be flagged — only clear mismatches.
-- Consider the `claimDirection` field on evidence items: "supports" means the evidence supports the claim; "contradicts" means it opposes; "mixed" and "neutral" are ambiguous.
+- Consider the `claimDirection` field on evidence items: "supports" means the evidence supports the claim; "contradicts" means it opposes; "neutral" means non-directional or ambiguous.
 - Consider the `applicability` field when present. Only evidence marked `direct` may remain in `supportingEvidenceIds` or `contradictingEvidenceIds`. If a cited directional item is marked `contextual` or `foreign_reaction`, flag that as a direction issue even when its `claimDirection` matches the bucket.
 
 ### Input
