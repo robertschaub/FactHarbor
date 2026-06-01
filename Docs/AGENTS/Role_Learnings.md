@@ -30,6 +30,12 @@ After completing a task, if you discovered something that would help future agen
 
 ## Lead Architect
 
+### 2026-06-01 — Most candidate quality "bugs" turn out inherent/intentional/correct — size every lever before building
+**Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.8, 1M)
+**Category:** useful-pattern
+**Learning:** Across a quality-improvement arc, three candidate levers (report_damaged, §99 partisan-contradiction, fetch-reliability/evidence-drift) were each read-only census-sized BEFORE any build — and all three turned out rare, inherent, or correct-fail-safe → documented-not-built, avoiding three disproportionate changes. report_damaged is 94% the Stage-1 contract gate working correctly; §99 is ~9 true-side cases across all history; fetch-failure is 72% inherent HTTP 403 site-blocking (0.4% fixable) and does NOT correlate with worse quality (the pipeline over-fetches). The ONE clean win was a genuine fail-closed regression (Codex `2395f494`'s applicability degraded-path: fix is fail-OPEN on infra failure — disambiguate "classifier couldn't run" [infra → legacy direct] from "ran but didn't classify" [content → stay strict]). Meta-pattern: symptom-hunting on a mature pipeline mostly surfaces inherent/intentional variance, not fixable defects; size with read-only census tooling first, and surface "this is rare/correct, document it" crisply rather than building. Mechanics: `sources[]` keeps only `fetchSuccess:true` (the fetch-fail rate lives in the `source_fetch_failure` warning details); and `next build`'s tsc step catches missing imports that the `vitest` transpile does not.
+**Files:** `Docs/AGENTS/Handoffs/2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md`, `scripts/diag/*.cjs`
+
 ### 2026-02-16 — Two-pass claim extraction is worth the extra LLM cost
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** useful-pattern
