@@ -203,6 +203,7 @@ const PreliminaryEvidenceItemSchema = z.object({
     temporal: z.string().optional(),
     geographic: z.string().optional(),
     boundaries: z.string().optional(),
+    analyticalDimension: z.string().optional().catch(undefined),
   }).optional(),
   probativeValue: z.enum(["high", "medium", "low"]).optional(),
   sourceType: z.string().optional()
@@ -227,6 +228,7 @@ export interface PreliminaryEvidenceItem {
     temporal?: string;
     geographic?: string;
     boundaries?: string;
+    analyticalDimension?: string;
   };
   probativeValue?: "high" | "medium" | "low";
   claimDirection?: "supports" | "contradicts" | "contextual";
@@ -2095,6 +2097,7 @@ async function extractPreliminaryEvidence(
           temporal: ei.evidenceScope.temporal,
           geographic: ei.evidenceScope.geographic,
           boundaries: ei.evidenceScope.boundaries,
+          analyticalDimension: ei.evidenceScope.analyticalDimension,
         } : undefined,
         probativeValue: ei.probativeValue,
         claimDirection: ei.claimDirection,

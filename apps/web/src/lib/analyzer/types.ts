@@ -1231,6 +1231,7 @@ export interface CBClaimUnderstanding {
       temporal?: string;
       geographic?: string;
       boundaries?: string;
+      analyticalDimension?: string;
     };
   }>;
   gate1Stats: {

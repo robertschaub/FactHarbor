@@ -1121,6 +1121,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
         temporal: pe.evidenceScope.temporal,
         geographic: pe.evidenceScope.geographic,
         boundaries: pe.evidenceScope.boundaries,
+        analyticalDimension: pe.evidenceScope.analyticalDimension,
       } : {
         name: "Preliminary search result",
         methodology: "Preliminary search result",

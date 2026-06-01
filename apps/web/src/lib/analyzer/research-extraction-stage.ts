@@ -390,6 +390,7 @@ export async function extractResearchEvidence(
           temporal: ei.evidenceScope?.temporal,
           geographic: ei.evidenceScope?.geographic,
           boundaries: ei.evidenceScope?.boundaries,
+          analyticalDimension: ei.evidenceScope?.analyticalDimension,
           additionalDimensions: ei.evidenceScope?.additionalDimensions,
         },
         probativeValue: ei.probativeValue,

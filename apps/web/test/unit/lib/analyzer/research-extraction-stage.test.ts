@@ -428,6 +428,7 @@ describe("Research Extraction Stage", () => {
               methodology: "Government statistical survey",
               temporal: "2023-2024",
               geographic: "United States",
+              analyticalDimension: "use-phase efficiency",
             },
             probativeValue: "high",
             sourceType: "government_report",
@@ -444,6 +445,8 @@ describe("Research Extraction Stage", () => {
       expect(result[0].statement).toBe("Statistical data shows X increased by 30%");
       expect(result[0].evidenceScope?.methodology).toBe("Government statistical survey");
       expect(result[0].evidenceScope?.temporal).toBe("2023-2024");
+      // S4: analyticalDimension must survive the Stage-2 mapping (was dropped before; clustering reads it via scopeFingerprint)
+      expect(result[0].evidenceScope?.analyticalDimension).toBe("use-phase efficiency");
       expect(result[0].sourceType).toBe("government_report");
       expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
       expect(result[0].isDerivative).toBe(false);
