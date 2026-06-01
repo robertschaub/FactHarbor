@@ -67,10 +67,11 @@ export const Stage2ExtractEvidenceOutputSchema = z.object({
 });
 
 export const ApplicabilityAssessmentOutputSchema = z.object({
+  // Cost (2026-06-01): `reasoning` removed — emitted post-decision but never read
+  // (flow uses only evidenceIndex + applicability). See WIP 2026-06-01 §9.
   assessments: z.array(z.object({
     evidenceIndex: z.number(),
     applicability: z.enum(["direct", "contextual", "foreign_reaction"]).optional().catch(undefined),
-    reasoning: z.string(),
   })),
 });
 
@@ -148,6 +149,7 @@ export async function classifyRelevance(
         },
       ],
       temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
+      maxOutputTokens: 8192, // Cost: runaway guard (small outputs once reasoning is brief). See WIP 2026-06-01 §9.
       output: Output.object({ schema: RelevanceClassificationOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -303,6 +305,7 @@ export async function extractResearchEvidence(
         },
       ],
       temperature: pipelineConfig?.extractEvidenceTemperature ?? 0.1,
+      maxOutputTokens: 16384, // Cost: runaway guard above measured p99 (~4.3k); catches 64k outlier. See WIP 2026-06-01 §9.
       output: Output.object({ schema: Stage2ExtractEvidenceOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -545,6 +548,7 @@ export async function assessEvidenceApplicability(
         { role: "user", content: "Classify each evidence item by applicability." },
       ],
       temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
+      maxOutputTokens: 8192, // Cost: runaway guard. See WIP 2026-06-01 §9.
       output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         model.provider,

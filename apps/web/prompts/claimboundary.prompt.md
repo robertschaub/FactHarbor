@@ -1120,7 +1120,7 @@ Return a JSON object:
       "url": "string — source URL",
       "relevanceScore": 0.85,
       "jurisdictionMatch": "direct | contextual | foreign_reaction",
-      "reasoning": "string — why this is relevant"
+      "reasoning": "string — why relevant; ≤12 words"
     }
   ]
 }
@@ -1219,7 +1219,7 @@ Return a JSON object:
 {
   "evidenceItems": [
     {
-      "statement": "string — the evidence assertion",
+      "statement": "string — the evidence assertion; ≤2 sentences, no preamble",
       "sourceUrl": "https://example.com/source-url",
       "category": "legal_provision | evidence | direct_evidence | expert_quote | statistic | event | criticism",
       "claimDirection": "supports",
@@ -1393,7 +1393,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 
 - Do not assume any particular language. Work with scope descriptions in their original language.
 - Do not hardcode any domain-specific keywords, entity names, or categories.
-- Provide a congruence rationale for every merge/separation decision.
+- Decide `congruent` (true/false) for every merge/separation; do NOT emit a textual rationale — the output schema omits it.
 - Boundary names should be descriptive of the methodology/approach, not of the topic.
 - When scope text already provides established framework labels or acronyms for the analytical window, preserve those labels in `name` and especially `shortName` instead of replacing them with a generic label.
 
@@ -1434,14 +1434,13 @@ Return a JSON object:
     }
   ],
   "scopeToBoundaryMapping": [
-    { "scopeIndex": 0, "boundaryId": "CB_01", "rationale": "string — why this scope belongs here" }
+    { "scopeIndex": 0, "boundaryId": "CB_01" }
   ],
   "congruenceDecisions": [
     {
       "scopeA": 0,
       "scopeB": 1,
-      "congruent": true,
-      "rationale": "string — why merged or separated"
+      "congruent": true
     }
   ]
 }
@@ -2345,8 +2344,7 @@ Return a JSON object:
   "assessments": [
     {
       "evidenceIndex": 0,
-      "applicability": "direct | contextual | foreign_reaction",
-      "reasoning": "string — brief justification"
+      "applicability": "direct | contextual | foreign_reaction"
     }
   ]
 }

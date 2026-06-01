@@ -43,16 +43,17 @@ const BoundaryClusteringOutputSchema = z.object({
     constituentScopeIndices: z.array(z.number()),
     internalCoherence: z.number(),
   })),
+  // Cost (2026-06-01): `rationale` removed from both arrays — they were emitted
+  // (post-decision, high output-token cost on Sonnet) but never read downstream.
+  // See Docs/WIP/2026-06-01_LLM_API_Cost_Reduction_and_NPO_Discounts.md §9.
   scopeToBoundaryMapping: z.array(z.object({
     scopeIndex: z.number(),
     boundaryId: z.string(),
-    rationale: z.string(),
   })),
   congruenceDecisions: z.array(z.object({
     scopeA: z.number(),
     scopeB: z.number(),
     congruent: z.boolean(),
-    rationale: z.string(),
   })),
 });
 
@@ -329,6 +330,7 @@ export async function runLLMClustering(
         },
       ],
       temperature: pipelineConfig.boundaryClusteringTemperature ?? 0.05,
+      maxOutputTokens: 32768, // Cost: runaway guard above measured p99 (~22k); do NOT lower (16k would clip ~10% of legit calls). See WIP 2026-06-01 §9.
       output: Output.object({ schema: BoundaryClusteringOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
