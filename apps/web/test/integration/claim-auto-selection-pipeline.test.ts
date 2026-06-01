@@ -123,6 +123,16 @@ vi.mock("@/lib/analyzer/research-orchestrator", () => ({
     baseRequired: boolean,
     items: Array<{ applicabilityAssessed?: boolean }>,
   ) => baseRequired && items.some((item) => item.applicabilityAssessed === true),
+  claimRequiresDirectApplicability: (
+    filterEnabled: boolean,
+    claimEvidenceCount: number,
+    claimRelevantGeographies: string[],
+    items: Array<{ applicabilityAssessed?: boolean }>,
+  ) =>
+    filterEnabled &&
+    claimEvidenceCount > 0 &&
+    claimRelevantGeographies.length > 0 &&
+    items.some((item) => item.applicabilityAssessed === true),
 }));
 
 vi.mock("@/lib/analyzer/research-extraction-stage", () => ({
@@ -210,6 +220,7 @@ vi.mock("@/lib/analyzer/research-query-stage", () => ({
 
 vi.mock("@/lib/analyzer/jurisdiction-context", () => ({
   getClaimsRelevantGeographies: vi.fn(() => ({})),
+  getClaimRelevantGeographies: vi.fn(() => []),
 }));
 
 vi.mock("@/lib/analyzer/pipeline-utils", async (importOriginal) => {

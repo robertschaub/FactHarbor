@@ -60,7 +60,7 @@ import {
 } from "./llm";
 import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
-import { getClaimsRelevantGeographies } from "./jurisdiction-context";
+import { getClaimRelevantGeographies, getClaimsRelevantGeographies } from "./jurisdiction-context";
 import { classifyError } from "@/lib/error-classification";
 import {
   isSystemPaused,
@@ -126,7 +126,7 @@ import {
   getClaimQueryBudgetRemaining,
   getClaimQueryBudgetUsed,
   getPerClaimQueryBudget,
-  resolveDirectApplicabilityRequirement,
+  claimRequiresDirectApplicability,
 } from "./research-orchestrator";
 import {
   classifyRelevance,
@@ -1178,14 +1178,14 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
+    // The merged (job-wide) relevant geographies are still used to PROMPT the
+    // applicability classifier below. Whether a claim REQUIRES direct-applicability
+    // evidence for D5 is decided per-claim in the sufficiency loop (each claim's own
+    // geography), not from this merged set — see claimRequiresDirectApplicability.
     const applicabilityRelevantGeographies = getClaimsRelevantGeographies(
       researchUnderstanding.atomicClaims,
       researchUnderstanding.inferredGeography ?? null,
     );
-    let directApplicabilityRequiredForD5 =
-      (initialPipelineConfig.applicabilityFilterEnabled ?? true)
-      && applicabilityRelevantGeographies.length > 0
-      && state.evidenceItems.length > 0;
 
     // Fix 3: Post-extraction applicability assessment (safety net for jurisdiction contamination)
     if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
@@ -1222,15 +1222,6 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // Direct-applicability is required for D5 only when the applicability classifier
-    // actually ran; on infra degradation (no surviving item assessed) it must not be
-    // required — otherwise an infra failure collapses verdicts (fail-closed
-    // regression). See resolveDirectApplicabilityRequirement.
-    directApplicabilityRequiredForD5 = resolveDirectApplicabilityRequirement(
-      directApplicabilityRequiredForD5,
-      state.evidenceItems,
-    );
-
     // Stage 3: Cluster Boundaries
     checkAbortSignal(input.jobId);
     onEvent("Clustering evidence into boundaries...", 60);
@@ -1254,6 +1245,16 @@ export async function runClaimBoundaryAnalysis(
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
+      // Per-claim direct-applicability: require direct evidence only when THIS claim
+      // has its own relevant geography (not the merged job-wide set) and the
+      // classifier ran (degraded → fail-open). The classifier-ran check is job-wide
+      // (state.evidenceItems) because the classifier runs once over the whole pool.
+      const requireDirectApplicabilityForClaim = claimRequiresDirectApplicability(
+        initialPipelineConfig.applicabilityFilterEnabled ?? true,
+        claimEvidence.length,
+        getClaimRelevantGeographies(claim, researchUnderstanding.inferredGeography ?? null),
+        state.evidenceItems,
+      );
       const sufficiency = evaluateEvidenceSufficiency(claimEvidence, {
         minItems: sufficiencyMinItems,
         minSourceTypes: sufficiencyMinSourceTypes,
@@ -1262,12 +1263,12 @@ export async function runClaimBoundaryAnalysis(
         authoritativeDirectionalMinItems,
         authoritativeDirectionalSourceTypes,
         includeSeeded: true,
-        requireDirectApplicability: directApplicabilityRequiredForD5,
+        requireDirectApplicability: requireDirectApplicabilityForClaim,
       });
 
       if (!sufficiency.sufficient) {
         const lacksDirectDirectionalEvidence =
-          directApplicabilityRequiredForD5
+          requireDirectApplicabilityForClaim
           && sufficiencyMinDirectionalItems > 0
           && sufficiency.hasSufficientItems
           && sufficiency.totalDirectionalCount >= sufficiencyMinDirectionalItems
@@ -1275,7 +1276,7 @@ export async function runClaimBoundaryAnalysis(
         const warningType = lacksDirectDirectionalEvidence
           ? "insufficient_direct_evidence"
           : "insufficient_evidence";
-        const directionalLabel = directApplicabilityRequiredForD5
+        const directionalLabel = requireDirectApplicabilityForClaim
           ? "direct directional items"
           : "directional items";
         insufficientClaimIds.add(claim.id);
@@ -1294,7 +1295,7 @@ export async function runClaimBoundaryAnalysis(
             totalDirectionalCount: sufficiency.totalDirectionalCount,
             directDirectionalCount: sufficiency.directionalCount,
             nonDirectDirectionalCount: sufficiency.nonDirectDirectionalCount,
-            directApplicabilityRequired: directApplicabilityRequiredForD5,
+            directApplicabilityRequired: requireDirectApplicabilityForClaim,
           },
         });
       }

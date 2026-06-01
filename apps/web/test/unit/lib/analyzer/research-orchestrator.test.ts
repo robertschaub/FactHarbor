@@ -4,6 +4,7 @@ import {
   recordApplicabilityRemovalTelemetry,
   recordSeededEvidenceTelemetry,
   resolveDirectApplicabilityRequirement,
+  claimRequiresDirectApplicability,
 } from "@/lib/analyzer/research-orchestrator";
 import type { CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
 
@@ -65,6 +66,37 @@ describe("resolveDirectApplicabilityRequirement (degraded applicability fails op
     expect(
       resolveDirectApplicabilityRequirement(true, [{ id: "EV_0" }, { id: "EV_1", applicabilityAssessed: true }] as any),
     ).toBe(true);
+  });
+});
+
+describe("claimRequiresDirectApplicability (per-claim geography gate)", () => {
+  const assessed = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}`, applicabilityAssessed: true })) as any;
+  const unmarked = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}` })) as any;
+
+  // The core bug this fixes: a non-geo claim must NOT inherit a sibling claim's
+  // jurisdiction requirement in a mixed-jurisdiction job.
+  it("does NOT require direct evidence for a claim with NO relevant geography", () => {
+    // filter on, evidence present, classifier ran — but the claim itself is non-geo.
+    expect(claimRequiresDirectApplicability(true, 5, [], assessed(5))).toBe(false);
+  });
+
+  it("requires direct evidence for a geo-scoped claim when the classifier ran", () => {
+    expect(claimRequiresDirectApplicability(true, 5, ["CH"], assessed(5))).toBe(true);
+    expect(claimRequiresDirectApplicability(true, 3, ["CH", "DE"], assessed(3))).toBe(true);
+  });
+
+  it("fails open for a geo-scoped claim when the classifier degraded (no item assessed)", () => {
+    expect(claimRequiresDirectApplicability(true, 5, ["CH"], unmarked(5))).toBe(false);
+  });
+
+  it("never requires when the applicability filter is disabled", () => {
+    expect(claimRequiresDirectApplicability(false, 5, ["CH"], assessed(5))).toBe(false);
+  });
+
+  it("never requires when the claim has no evidence to evaluate", () => {
+    expect(claimRequiresDirectApplicability(true, 0, ["CH"], assessed(5))).toBe(false);
   });
 });
 

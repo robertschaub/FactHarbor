@@ -1945,6 +1945,31 @@ export function resolveDirectApplicabilityRequirement(
   return evidenceItems.some((item) => item.applicabilityAssessed === true);
 }
 
+/**
+ * Per-claim variant of {@link resolveDirectApplicabilityRequirement}. A single
+ * claim requires direct-applicability evidence for D5 only when ALL hold:
+ *  (a) the applicability filter is enabled,
+ *  (b) the claim has evidence to evaluate (`claimEvidenceCount > 0`),
+ *  (c) the claim has its OWN relevant geography, and
+ *  (d) the applicability classifier actually ran (degraded → fail-open).
+ *
+ * The geography test (c) is PER CLAIM by design: a non-geo claim sharing a job
+ * with a jurisdiction-scoped sibling must NOT inherit the sibling's requirement,
+ * otherwise it can spuriously fail to `insufficient_direct_evidence`. The
+ * classifier-ran check (d) stays job-wide (the classifier runs once over the whole
+ * pool) and is delegated to {@link resolveDirectApplicabilityRequirement}.
+ */
+export function claimRequiresDirectApplicability(
+  filterEnabled: boolean,
+  claimEvidenceCount: number,
+  claimRelevantGeographies: string[],
+  evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
+): boolean {
+  const baseRequired =
+    filterEnabled && claimEvidenceCount > 0 && claimRelevantGeographies.length > 0;
+  return resolveDirectApplicabilityRequirement(baseRequired, evidenceItems);
+}
+
 export function evaluateEvidenceSufficiency(
   claimEvidence: EvidenceItem[],
   config: DiversitySufficiencyConfig,
