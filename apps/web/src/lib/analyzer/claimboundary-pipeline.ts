@@ -1180,7 +1180,7 @@ export async function runClaimBoundaryAnalysis(
       researchUnderstanding.atomicClaims,
       researchUnderstanding.inferredGeography ?? null,
     );
-    const directApplicabilityRequiredForD5 =
+    let directApplicabilityRequiredForD5 =
       (initialPipelineConfig.applicabilityFilterEnabled ?? true)
       && applicabilityRelevantGeographies.length > 0
       && state.evidenceItems.length > 0;
@@ -1218,6 +1218,20 @@ export async function runClaimBoundaryAnalysis(
           details: { removedCount, beforeCount: beforeApplicability, afterCount: state.evidenceItems.length },
         });
       }
+    }
+
+    // If the applicability classifier could not RUN (infra failure: LLM error /
+    // prompt-missing), it leaves items unmarked and emits
+    // `evidence_applicability_assessment_degraded`. We then have no directness
+    // information, so do NOT require direct applicability for D5 — failing the job
+    // on an infra failure would be a fail-closed regression. Strict directness
+    // applies only when the classifier actually ran (it marks every surviving item
+    // `applicabilityAssessed`).
+    if (
+      directApplicabilityRequiredForD5
+      && !state.evidenceItems.some((item) => item.applicabilityAssessed === true)
+    ) {
+      directApplicabilityRequiredForD5 = false;
     }
 
     // Stage 3: Cluster Boundaries

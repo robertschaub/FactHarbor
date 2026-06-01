@@ -522,7 +522,10 @@ export async function assessEvidenceApplicability(
       message: "Evidence applicability assessment could not run because the APPLICABILITY_ASSESSMENT prompt section was unavailable. Direct citation eligibility may be under-assessed.",
       details: { claimIds: claims.map((claim) => claim.id), reason: "prompt_section_missing" },
     });
-    return evidenceItems.map((item) => ({ ...item, applicabilityAssessed: true }));
+    // Fail-open on infra failure: the classifier could not RUN, so there is no
+    // directness signal. Return items UNMARKED so legacy "missing = direct"
+    // applies downstream — an unavailable classifier must not collapse the job.
+    return evidenceItems;
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -618,8 +621,10 @@ export async function assessEvidenceApplicability(
       errorMessage,
       timestamp: new Date(),
     });
-    // Keep evidence available as context, but mark directness as unverified so
-    // publishable citation/sufficiency gates cannot treat it as explicit direct evidence.
+    // Fail-open on infra failure: keep all evidence and do NOT mark directness as
+    // assessed. A failed classifier call carries no directness signal, so legacy
+    // "missing = direct" treatment applies downstream — an infra failure must not
+    // collapse citations/sufficiency job-wide.
     debugLogFileOnly("[Fix3] Applicability assessment failed, keeping all evidence", {
       claimIds: claims.map((claim) => claim.id),
       errorMessage,
@@ -633,7 +638,7 @@ export async function assessEvidenceApplicability(
         errorMessage,
       },
     });
-    return evidenceItems.map((item) => ({ ...item, applicabilityAssessed: true }));
+    return evidenceItems;
   }
 }
 

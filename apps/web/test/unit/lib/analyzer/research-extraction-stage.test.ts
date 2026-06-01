@@ -833,7 +833,12 @@ describe("Research Extraction Stage", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].applicability).toBeUndefined();
-      expect(result[0].applicabilityAssessed).toBe(true);
+      // Fail-open: an infra failure leaves the item UNMARKED (not applicabilityAssessed),
+      // so downstream legacy "missing = direct" treatment applies and the job is NOT
+      // collapsed to non-direct/UNVERIFIED. Marking it assessed-but-unclassified was the
+      // fail-closed inversion this fixes (a transient classifier failure must not
+      // poison citations/sufficiency job-wide).
+      expect(result[0].applicabilityAssessed).toBeUndefined();
       expect(warnings).toContainEqual(expect.objectContaining({
         type: "evidence_applicability_assessment_degraded",
         severity: "warning",
@@ -851,7 +856,9 @@ describe("Research Extraction Stage", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].applicability).toBeUndefined();
-      expect(result[0].applicabilityAssessed).toBe(true);
+      // Fail-open on infra failure: item left UNMARKED → legacy "missing = direct"
+      // downstream (no job-wide collapse when the prompt section is unavailable).
+      expect(result[0].applicabilityAssessed).toBeUndefined();
       expect(warnings).toContainEqual(expect.objectContaining({
         type: "evidence_applicability_assessment_degraded",
         severity: "warning",
