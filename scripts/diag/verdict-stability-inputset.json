@@ -1,18 +1,8 @@
 [
   {
     "inputType": "text",
-    "inputValue": "Plastic recycling is pointless",
+    "inputValue": "Using hydrogen for cars is more efficient than using electricity",
     "note": "contested-EN"
-  },
-  {
-    "inputType": "text",
-    "inputValue": "Plastik recycling bringt nichts",
-    "note": "contested-DE"
-  },
-  {
-    "inputType": "text",
-    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
-    "note": "contested-EN-legal"
   },
   {
     "inputType": "text",
@@ -21,13 +11,13 @@
   },
   {
     "inputType": "text",
-    "inputValue": "Using hydrogen for cars is more efficient than using electricity",
-    "note": "contested-EN"
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+    "note": "contested-DE"
   },
   {
     "inputType": "text",
-    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
-    "note": "contested-DE"
+    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+    "note": "contested-EN-legal"
   },
   {
     "inputType": "text",
