@@ -201,8 +201,8 @@ function analyzeRecords(records) {
 
   // --run: health check, then submit sequentially (clean + cost-controllable)
   try {
-    const h = await fetch(`${API_URL}/api/health`); if (!h.ok) throw new Error(String(h.status));
-  } catch (e) { console.error(`\nAPI health check failed at ${API_URL}/api/health (${e.message}). Start the API + runner first.`); process.exit(1); }
+    const h = await fetch(`${API_URL}/health`); if (!h.ok) throw new Error(String(h.status));
+  } catch (e) { console.error(`\nAPI health check failed at ${API_URL}/health (${e.message}). Start the API + runner first.`); process.exit(1); }
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   const stream = fs.createWriteStream(outFile, { flags: 'a' });
