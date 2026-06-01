@@ -37,7 +37,7 @@ const TIMEOUT_MS = 600000;
 const HIGH_OVERLAP = 0.5; // Jaccard >= this => "within-pool" (proxy-catchable); below => substitution
 
 function parseArgs(argv) {
-  const a = { inputs: null, n: 8, run: false, analyze: null, out: null, sequential: true };
+  const a = { inputs: null, n: 8, run: false, analyze: null, out: null, sequential: true, stopAfterUnverified: 2 };
   for (let i = 0; i < argv.length; i++) {
     const v = argv[i];
     if (v === '--inputs') a.inputs = argv[++i];
@@ -45,6 +45,7 @@ function parseArgs(argv) {
     else if (v === '--run') a.run = true;
     else if (v === '--analyze') a.analyze = argv[++i];
     else if (v === '--out') a.out = argv[++i];
+    else if (v === '--stop-after-unverified') a.stopAfterUnverified = parseInt(argv[++i], 10);
   }
   return a;
 }
@@ -186,8 +187,9 @@ function analyzeRecords(records) {
 
   console.log('VERDICT-STABILITY BATCH');
   console.log(`  API: ${API_URL}   invite: ${INVITE}`);
-  console.log(`  inputs: ${inputs.length}   N per input: ${args.n}   => ${total} jobs`);
-  console.log(`  est. cost: ~$${(total * PER_JOB_USD).toFixed(0)} (@ $${PER_JOB_USD}/job; override FH_PER_JOB_USD)`);
+  console.log(`  inputs: ${inputs.length}   N per input: ${args.n}   => ${total} jobs (max)`);
+  console.log(`  est. cost: ~$${(total * PER_JOB_USD).toFixed(0)} max (@ $${PER_JOB_USD}/job; override FH_PER_JOB_USD)`);
+  if (args.stopAfterUnverified > 0) console.log(`  circuit-breaker: STOP after ${args.stopAfterUnverified} UNVERIFIED verdicts (likely halts well before ${total} on contested inputs)`);
   console.log(`  output: ${outFile}`);
   console.log('  --- input set ---');
   inputs.forEach((x, i) => console.log(`   ${i + 1}. [${x.inputType}] "${String(x.inputValue).slice(0, 72).replace(/\s+/g, ' ')}"${x.note ? `  (${x.note})` : ''}`));
@@ -204,9 +206,9 @@ function analyzeRecords(records) {
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   const stream = fs.createWriteStream(outFile, { flags: 'a' });
-  let done = 0;
-  for (let ii = 0; ii < inputs.length; ii++) {
-    for (let r = 1; r <= args.n; r++) {
+  let done = 0, unverified = 0, stopped = false;
+  for (let ii = 0; ii < inputs.length && !stopped; ii++) {
+    for (let r = 1; r <= args.n && !stopped; r++) {
       const input = inputs[ii];
       const label = input.note || String(input.inputValue).slice(0, 48);
       try {
@@ -216,6 +218,13 @@ function analyzeRecords(records) {
         stream.write(JSON.stringify(rec) + '\n');
         done++;
         console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ${rec.status} ${rec.verdict ?? '-'} truth=${rec.truth ?? '-'} sources=${rec.nSources}`);
+        if (rec.verdict === 'UNVERIFIED') {
+          unverified++;
+          if (args.stopAfterUnverified > 0 && unverified >= args.stopAfterUnverified) {
+            console.log(`\n*** CIRCUIT-BREAKER: ${unverified} UNVERIFIED verdicts reached (--stop-after-unverified ${args.stopAfterUnverified}). Halting batch. ***`);
+            stopped = true;
+          }
+        }
       } catch (e) {
         stream.write(JSON.stringify({ label, runIdx: r, status: 'ERROR', error: String(e.message) }) + '\n');
         console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ERROR ${e.message}`);
@@ -223,7 +232,12 @@ function analyzeRecords(records) {
     }
   }
   stream.end();
-  console.log(`\nCollected ${done}/${total} runs -> ${outFile}`);
+  console.log(`\nCollected ${done}/${total} runs (${unverified} UNVERIFIED${stopped ? '; stopped early by circuit-breaker' : ''}) -> ${outFile}`);
   const recs = fs.readFileSync(outFile, 'utf8').trim().split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l));
   analyzeRecords(recs);
+  const unv = recs.filter((r) => r.verdict === 'UNVERIFIED');
+  if (unv.length) {
+    console.log(`\n=== UNVERIFIED cases — drill into WHY (node scripts/diag/compare-evidence-pools.cjs <jobId> [<jobId>...]) ===`);
+    for (const u of unv) console.log(`  ${u.jobId}  truth=${u.truth ?? '-'}  "${u.label}"`);
+  }
 })();

@@ -31,21 +31,6 @@
   },
   {
     "inputType": "text",
-    "inputValue": "Switzerland is a federal republic",
-    "note": "clear-EN-true"
-  },
-  {
-    "inputType": "text",
-    "inputValue": "Meta exited the US Third-Party Fact-Checking Program (January 2025)",
-    "note": "clear-EN-true"
-  },
-  {
-    "inputType": "text",
-    "inputValue": "Der Bundesrat hat den EU-Vertrag unterzeichnet",
-    "note": "clear-DE-true"
-  },
-  {
-    "inputType": "text",
     "inputValue": "Muslims are more violent than Christians.",
     "note": "sensitive-EN"
   }
