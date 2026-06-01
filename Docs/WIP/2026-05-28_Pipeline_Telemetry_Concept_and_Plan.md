@@ -1,10 +1,10 @@
 # Pipeline Telemetry Concept And Plan
 
-**Status:** Reviewed and consolidated plan  
+**Status:** Phase 1 + Phase 2 implemented 2026-06-01 (see §15). Reviewed, consolidated, and source-refreshed 2026-06-01
 **Created:** 2026-05-28  
 **Owner:** open  
 **Scope:** ClaimAssessmentBoundary pipeline telemetry only  
-**Non-goals:** model-routing changes, D5 behavior changes, warning severity changes, live-job collection, admin UI thresholds
+**Non-goals:** model-routing changes, D5 behavior changes, warning severity changes, live-job collection, admin UI thresholds, controlled rerun-stability experiments
 
 ---
 
@@ -18,6 +18,8 @@ FactHarbor currently uses `analysisWarnings[]` as the easiest way to observe sev
 The consolidated conceptual change is to add narrow first-class `pipelineTelemetry` to persisted `AnalysisMetrics`. It should be computed after analysis from existing structured outputs, not injected into the pipeline as another behavior path.
 
 This keeps warning semantics clean while making the parked routing questions measurable. D5 partition health remains owned by `qualityHealth` for now to avoid duplicating the existing F6 surface.
+
+2026-06-01 source refresh: `pipelineTelemetry` is still not implemented in source. Current source already changed the D5/direct-publishability path: D5 sufficiency can emit `insufficient_direct_evidence` with per-claim directional counts, and `qualityHealth.f4_*` now counts both `insufficient_evidence` and `insufficient_direct_evidence`. Treat this document as the implementation plan and current-source alignment note, not as a description of a shipped `pipelineTelemetry` schema.
 
 ---
 
@@ -34,6 +36,8 @@ The telemetry should answer these currently parked architecture questions:
 
 Telemetry does not decide these questions by itself. It produces the measurement substrate for later decisions.
 
+Related but separate: the 2026-06-01 verdict-direction instability findings measure rerun instability from evidence-pool drift and stochastic pipeline behavior. The Phase 1 `verdictDirection` telemetry below measures the Stage 4 direction validator/repair/downgrade control path only. It must not be used as a substitute for controlled rerun-stability telemetry or validation batches.
+
 ---
 
 ## 3. Goals
@@ -48,6 +52,7 @@ Telemetry does not decide these questions by itself. It produces the measurement
 - Keep telemetry additive and backward-compatible for older metrics records.
 - Provide enough provenance to know whether jobs are comparable across deploys.
 - Ship the smallest useful first release: contract validation, verdict direction, and challenger model guard counters.
+- Keep Phase 1 direction telemetry scoped to direction-validator control flow, not broader rerun stability.
 
 ---
 
@@ -158,12 +163,15 @@ Cross-cutting metrics context should be added outside `pipelineTelemetry`:
 interface MetricsTelemetryContext {
   metricsSchemaVersion: string;
   pipelineVariant: string;
+  pipelineCommitId?: string;
   pipelineCommitShort?: string;
   telemetryComputedAt: string;
 }
 ```
 
 This context supports before/after deploy comparisons and helps aggregation report how many jobs are missing telemetry.
+
+Current provenance source: use `resultJson.meta.executedWebGitCommitHash` when present. It is populated by the web runner from `getWebGitCommitHash()` and may include a `+<workingTreeHash>` dirty suffix. The API also exposes the same execution-time value to admins as `gitCommitHash`, with a legacy fallback. Aggregates should keep the full `pipelineCommitId` for grouping and derive `pipelineCommitShort` only for display; do not silently group dirty-suffix jobs with the clean commit.
 
 Aggregate summary shape must include availability counts:
 
@@ -203,7 +211,7 @@ First release includes only:
 
 Deferred:
 
-- D5 partitioning stays in `qualityHealth.f6_*`; improve that surface separately if the existing aggregate is insufficient.
+- D5 partitioning and direct-publishability sufficiency stay in `qualityHealth`; improve that surface separately if the existing aggregate is insufficient. Current source already counts both `insufficient_evidence` and `insufficient_direct_evidence` in `qualityHealth.f4_*`, but it does not yet expose enough D5/directness substructure for architecture decisions.
 - Evidence-ID compliance moves to `qualityHealth` or a one-release cleanup metric with an explicit sunset condition.
 - Admin UI is deferred unless Captain explicitly scopes it in.
 
@@ -231,6 +239,8 @@ UI is deferred. The first release stops at persisted metrics plus API summary ag
 
 If UI is later scoped, show raw counts, denominators, and rates only. Do not introduce hardcoded "good" or "bad" threshold colors unless those thresholds are UCM-backed.
 
+Current-source caveat: the existing admin quality-health page already applies hardcoded status colors to some F6 rates. Phase 1 pipeline telemetry must not add more hardcoded thresholds. If D5/F6 UI work is touched, either leave existing display behavior unchanged or move new threshold logic into UCM-backed configuration before automating decisions.
+
 ### Phase 4 - Tests And Verification
 
 1. Add focused unit tests for telemetry builder behavior:
@@ -241,7 +251,8 @@ If UI is later scoped, show raw counts, denominators, and rates only. Do not int
    - fallback warning without role metadata, which must mark `challengerModelGuard` partial instead of inventing a clean zero;
    - missing or malformed warning details.
 2. If API aggregation changes, add parser/controller coverage where practical.
-3. Run safe tests/build only. Do not run real-LLM suites without explicit Captain approval.
+3. If D5 quality-health telemetry is added, test ordinary insufficiency, direct-insufficiency, classifier-degraded partial status, and sufficient claims that still required direct applicability.
+4. Run safe tests/build only. Do not run real-LLM suites without explicit Captain approval.
 
 ---
 
@@ -258,6 +269,8 @@ Telemetry is usable when an admin can answer these questions without manual repo
 
 D5 and evidence-ID questions remain important, but they should be answered through `qualityHealth` or a dedicated temporary cleanup metric rather than Phase 1 `pipelineTelemetry`.
 
+For the D5 quality-health follow-up specifically, telemetry is usable when an admin can distinguish ordinary low-evidence rejection from contextual-only/directness rejection, see whether applicability assessment degraded, and identify the affected claim IDs without reading full report prose.
+
 ---
 
 ## 9. D5 Follow-Up Telemetry
@@ -271,17 +284,43 @@ Required fields:
 ```ts
 interface D5QualityHealthTelemetry {
   status: TelemetrySectionStatus;
-  partitioningActive: boolean;
-  institutionalCount: number;
-  generalCount: number;
-  totalEvidence: number;
-  institutionalGeneralRatio: number | null;
-  supportCount: number;
-  contradictCount: number;
-  neutralCount: number;
-  directionalEvidenceTotal: number;
-  supportContradictRatio: number | null;
+  partitioning: {
+    status: TelemetrySectionStatus;
+    partitioningActive: boolean;
+    institutionalCount: number;
+    generalCount: number;
+    totalEvidence: number;
+    institutionalGeneralRatio: number | null;
+  };
+  directPublishability: {
+    status: TelemetrySectionStatus;
+    totalClaims: number;
+    claimsRequiringDirectApplicability: number;
+    insufficientEvidenceClaims: number;
+    insufficientDirectEvidenceClaims: number;
+    claimsWithApplicabilityAssessmentDegraded: number;
+    totalDirectionalEvidenceTotal: number;
+    directDirectionalEvidenceTotal: number;
+    nonDirectDirectionalEvidenceTotal: number;
+    claimDiagnostics: Array<{
+      claimId: string;
+      directApplicabilityRequired: boolean;
+      sufficiencyStatus: "sufficient" | "insufficient_evidence" | "insufficient_direct_evidence";
+      totalDirectionalCount: number;
+      directDirectionalCount: number;
+      nonDirectDirectionalCount: number;
+    }>;
+  };
+  evidenceDirection: {
+    status: TelemetrySectionStatus;
+    supportCount: number;
+    contradictCount: number;
+    neutralCount: number;
+    directionalEvidenceTotal: number;
+    supportContradictRatio: number | null;
+  };
   roleTruthDeltas: {
+    status: TelemetrySectionStatus;
     claimCountWithRoleSnapshots: number;
     advocateChallengerAvgAbsDelta: number | null;
     advocateChallengerMaxAbsDelta: number | null;
@@ -296,16 +335,24 @@ interface D5QualityHealthTelemetry {
 Implementation notes:
 
 - `partitioningActive`, institutional/general counts, and total evidence are already available from `evidence_partition_stats`.
-- Support/contradict/neutral counts can come from structured evidence `claimDirection` values already present in result JSON.
+- Current `qualityHealth.f4_insufficientClaims` already counts both `insufficient_evidence` and `insufficient_direct_evidence`. That aggregate is useful for total rejection rate but insufficient for D5 decisions; split the two warning types in the new D5/direct-publishability fields.
+- The current D5 gate is per-claim: `claimRequiresDirectApplicability(...)` decides whether direct applicability is required for that claim, and `evaluateEvidenceSufficiency(...)` returns total, direct, and non-direct directional counts. Persist those claim-level diagnostics while the D5 loop has them; do not reconstruct them later from aggregate warning counts only.
+- Existing `insufficient_direct_evidence` warning details already include `claimId`, `totalDirectionalCount`, `directDirectionalCount`, `nonDirectDirectionalCount`, and `directApplicabilityRequired` for insufficient claims. Sufficient claims that required direct applicability still need explicit metrics capture if denominator decisions depend on them.
+- `evidence_applicability_assessment_degraded` means the classifier failed or was unavailable. D5 currently fails open in that case; quality-health must count it separately instead of classifying it as either clean sufficiency or analytical scarcity.
+- Support/contradict/neutral counts can come from structured evidence `claimDirection` values already present in result JSON, but they are not a substitute for claim-local direct-publishability counts.
 - Advocate/challenger/reconciler truth deltas are not fully wired today. They require Stage 4 to persist role-level truth snapshots as metrics-only diagnostics. That is a telemetry-only addition, not a D5 behavior change.
 - If role-level snapshots are unavailable, mark `roleTruthDeltas.status` or the parent D5 status as partial rather than returning zero deltas.
 
 Decision thresholds for review packets, not hardcoded UI colors:
 
+For these thresholds, include only jobs whose relevant D5 sub-section has `status.available === true`. Per-claim D5 rates divide by `directPublishability.totalClaims` across available jobs, not by all jobs in the selected window.
+
 | Signal | Threshold | Interpretation |
 |---|---|---|
 | `partitioningActiveRate < 20%` over a 50+ job current-stack window | D5 rarely activates | D5 structural-bias concern is low practical priority; keep or simplify later |
 | `partitioningActiveRate >= 50%` and median `institutionalGeneralRatio > 5:1` | D5 often activates with structurally imbalanced pools | Escalate D5 option B/D review |
+| `insufficientDirectEvidenceRate` is materially higher than ordinary `insufficientEvidenceRate` | Research finds evidence volume but not claim-local direct directional evidence | Prioritize D5/directness or evidence-to-claim attribution work before changing Stage 4 publication rules |
+| `claimsWithApplicabilityAssessmentDegraded > 0` in current-stack review packets | Directness classifier failed open | Treat D5 directness conclusions as partial; fix classifier reliability before using the rate for architecture decisions |
 | `partitioningActiveRate >= 70%` and role truth deltas are consistently material | D5 changes actual role outputs | Option A is weak; compare B vs. D |
 | `supportContradictRatio` routinely lacks enough evidence on one side | Direction-based partitioning may be under-supported | Do not adopt D5 option B/D until direction evidence coverage improves |
 
@@ -324,6 +371,7 @@ If these thresholds are ever displayed or automated, move them into UCM first. I
 | Partial telemetry is mistaken for clean success | High | Persist section `available/partial/error` status and exclude partial sections from decisive rates |
 | Naive direction unresolved math misleads decisions | High | Use claim-ID sets and mark section partial when claim IDs are missing |
 | Physical LLM calls are mistaken for role invocations | Medium | Store both role-invocation and physical-call denominators |
+| D5 direct-publishability failures are hidden inside the broad F4 rejection rate | Medium | Split `insufficient_evidence`, `insufficient_direct_evidence`, and classifier-degraded counts under `qualityHealth` |
 | Runtime overhead | Low | One in-memory pass over warnings and LLM calls during metrics finalization |
 | UI implies thresholds that are not approved | Medium | Show raw read-only values first; put tunable thresholds in UCM if later needed |
 | Evidence-ID compliance check becomes behavioral validation | Medium | Keep it as metrics only; never block or alter report output |
@@ -335,9 +383,9 @@ If these thresholds are ever displayed or automated, move them into UCM first. I
 ## 11. Open Questions
 
 1. Should evidence-ID compliance be added under `qualityHealth`, or handled as a separate one-release cleanup metric?
-2. What exact source should populate `pipelineCommitShort` in local/dev and deployed environments?
-3. Should aggregate API output include per-window telemetry schema version counts in addition to `jobsMissingTelemetry` and `jobsWithPartialTelemetry`?
-4. Should Phase 1 add `debateRole` to TPM fallback warning details, or derive challenger fallback from structural prompt keys until a broader invocation-id scheme exists?
+2. Should aggregate API output include per-window telemetry schema version counts in addition to `jobsMissingTelemetry` and `jobsWithPartialTelemetry`?
+3. Should Phase 1 add `debateRole` to TPM fallback warning details, or derive challenger fallback from structural prompt keys until a broader invocation-id scheme exists?
+4. How much D5 `claimDiagnostics` should be persisted for every job versus reduced to aggregate counts if metrics payload size becomes an issue?
 
 ---
 
@@ -410,6 +458,10 @@ This revision addresses those findings by requiring:
 - separate `challengerRoleInvocationCount` and `challengerPhysicalCallCount`;
 - a concrete D5 quality-health follow-up telemetry shape and manual review thresholds.
 
+### 2026-06-01 Source Refresh
+
+The plan was rechecked against current source after the direct-publishability sufficiency work landed. No `AnalysisMetrics.pipelineTelemetry` field or aggregate `pipelineTelemetry` API exists yet. The important drift is in adjacent health telemetry: current source emits `insufficient_direct_evidence`, records direct/non-direct directional counts on that warning, registers `evidence_applicability_assessment_degraded`, and folds both insufficiency warning types into `qualityHealth.f4_*`. The plan now treats those shipped facts as the baseline for the D5 follow-up, not as new Phase 1 `pipelineTelemetry` scope.
+
 ---
 
 ## 14. Consolidated Decision
@@ -424,6 +476,7 @@ This revision addresses those findings by requiring:
 6. Direction telemetry must store claim-level sets, not only counts.
 7. Challenger guard telemetry must distinguish role invocations from physical LLM attempts.
 8. Do not add UI in the first release.
+9. D5 direct-publishability and classifier-degradation subcounts belong under `qualityHealth`, because the source already uses F4/F6 for that health surface.
 
 ### Rejected
 
@@ -434,7 +487,7 @@ This revision addresses those findings by requiring:
 
 ### Deferred
 
-1. Improve D5 telemetry through `qualityHealth` if existing F6 aggregation is insufficient.
+1. Improve D5/direct-publishability telemetry through `qualityHealth`; existing F4/F6 aggregation is now known to be too coarse for D5 architecture decisions.
 2. Add evidence-ID compliance as a temporary cleanup metric with a sunset rule.
 3. Revisit in-band telemetry events only if real-time monitoring or deeper debug traceability becomes a concrete user need.
 4. Add admin UI only after API/persisted metrics prove useful.
@@ -444,3 +497,54 @@ This revision addresses those findings by requiring:
 The first-class `pipelineTelemetry` concept is worth keeping, but only as a compact measurement layer for routing-related control-flow counters. The implementation should not become a general event system, a warning replacement, or a home for every temporary cleanup metric.
 
 The first useful increment is a unit-tested post-analysis builder plus API aggregation over existing metrics JSON. That gives durable cross-job rates and denominators without changing ClaimAssessmentBoundary behavior.
+
+---
+
+## 15. Implementation Status (2026-06-01)
+
+Phase 0/1/2 are implemented. Phase 3 (admin UI) remains deferred per the consolidated decision.
+
+### What shipped
+
+- **Schema (`apps/web/src/lib/analyzer/metrics.ts`):** added `TelemetrySectionStatus`, `PipelineTelemetry`, `MetricsTelemetryContext`; added optional additive `pipelineTelemetry` and `telemetryContext` to `AnalysisMetrics`; added `MetricsCollector.setPipelineTelemetry()`, `getLLMCallsSnapshot()`, and `getPipelineVariant()`.
+- **Builder (`apps/web/src/lib/analyzer/metrics-integration.ts`):** added `buildPipelineTelemetry(result, llmCalls)` and `buildMetricsTelemetryContext(result, pipelineVariant)`, wired into `recordOutputQuality()` behind a defensive try/catch.
+- **API aggregation (`apps/api/Controllers/MetricsController.cs`):** added `PipelineTelemetryAccumulator` and a `pipelineTelemetry` object in the `/summary` response, with `jobsWithTelemetry`/`jobsMissingTelemetry`/`jobsWithPartialTelemetry`/`jobsErroredTelemetry`, per-section availability counts, and denominator-correct rates. Reuses the existing `AnalysisMetrics.MetricsJson` TEXT blob — **no DB migration**.
+- **Tests:** `apps/web/test/unit/lib/analyzer/pipeline-telemetry.test.ts` (17 cases). Existing metrics tests unaffected (25 pass). TS typecheck and C# compile clean.
+
+### Decisions applied during implementation (from Senior Developer review)
+
+1. **`challengerModelGuard` kept its name but is now fully challenger-scoped.** All TPM fallback counts filter on `details.promptKey === "VERDICT_CHALLENGER"`; no job-wide counts are mixed in. The guard at `verdict-generation-stage.ts` is actually role-agnostic, so a broader `verdictModelGuard` rollup (with per-role breakdown) is the natural future extension — deferred. The rate divides by physical-call count (`fallbackPhysicalCallRate`), since TPM warnings are emitted per physical attempt.
+2. **Challenger fallback attribution is by prompt key — zero pipeline change.** No `debateRole` was added to the TPM warning (Phase 1 step 6 / Open Question #3 resolved in favor of the post-analysis-only path). Revisit only if prompt keys prove brittle.
+3. **Contract counters are occurrence-derived.** `retryCount`/`repairPassCount` count warning occurrences; `failingClaimCount` sums `details.failingClaimCount` across retry warnings; a retry warning lacking that field marks the section `partial`. `contract_completion_diagnostic` is not yet counted.
+4. **Builder self-guards.** `buildPipelineTelemetry` catches internally and emits `available:false` for every section; the `recordOutputQuality` call site also wraps defensively because it runs in the analysis hot path with no outer catch.
+5. Direction unresolved math marks `partial` both when a direction warning lacks a `claimId` and when a rescued/downgraded claim was never flagged (join inconsistency).
+6. Challenger absence (role never ran / disabled) yields `available:false`, not a row of zeros.
+7. `telemetrySchemaVersion` versions only the telemetry sub-schema; `MetricsTelemetryContext` carries provenance and keeps the full dirty commit for grouping plus a clean short prefix for display.
+8. **Provenance timing seam (caught in review verification):** the web runner sets `meta.executedWebGitCommitHash` *after* `runClaimBoundaryAnalysis` returns (`internal-runner-queue.ts`), but the telemetry builder runs *inside* the pipeline via `recordOutputQuality`. Naively reading `meta` would persist an empty commit on every job and silently kill deploy comparison. `buildMetricsTelemetryContext` therefore prefers the meta value when present and otherwise resolves the same build hash directly via `getWebGitCommitHash({ useCache: true })` (same process, same source the runner uses). `debateRole` threading to `recordLLMCall` was verified present, so `challengerPhysicalCallCount` works on real persisted metrics.
+
+### Post-implementation code review (2026-06-01)
+
+An independent multi-angle diff review ran after implementation. Result:
+
+- **TS↔C# JSON field contract verified consistent** — every C# `TryGetProperty` read matches a TS-written camelCase field of compatible type; `CreateMetrics` stores raw JSON with no casing transform. The silent-zero risk is cleared.
+- **One correctness bug found and fixed:** the C# aggregator's `ReadStatus` ignored `status.error`, so a section that is `available:false` **without** an error (legitimately not-applicable — e.g. the challenger role never ran on early-terminated jobs) was bucketed into `jobsErrored`, misrepresenting not-applicable jobs as telemetry failures. Fixed by reading the error field and adding a distinct `jobsNotApplicable` bucket per section in `sectionAvailability`. Top-level `available:false` still counts as errored (only the catch path produces it, and it always sets `error`).
+- **Low-severity notes — all three actioned (2026-06-01):**
+  - `extractWarnings` is now the single shared warning-extraction helper; `buildFailureModeMetrics` and `buildQualityHealthMetrics` call it instead of each inlining the same `analysisWarnings ?? warnings` pattern.
+  - `verdictDirection.issueCount` (raw occurrences) vs `unresolvedIssueCount` (de-duplicated) now carry a schema doc comment explaining they are on different bases and must not be subtracted.
+  - The `/summary` `pipelineTelemetry` aggregate now reports `schemaVersions` (per-window counts of `telemetrySchemaVersion`), closing the measurement side of Open Question #2.
+
+### D5 derivable subcounts shipped (2026-06-01)
+
+The derivable part of the §9 D5 follow-up landed (post-analysis, no pipeline touch):
+
+- `QualityHealthMetrics.d5` (additive) splits what `f4_insufficientClaims` lumps: `insufficientEvidenceClaims`, `insufficientDirectEvidenceClaims`, `applicabilityAssessmentDegradedClaims` (distinct claim IDs across the batch-level `claimIds` arrays) + `applicabilityAssessmentDegradedEvents`, plus direct/non-direct/total directional evidence totals and per-claim `claimDiagnostics`. `f4_*` is unchanged for backward compat.
+- `buildD5QualityHealthTelemetry` in `metrics-integration.ts` is self-guarding and marks `status.partial` when an insufficiency warning lacks directional detail or a degraded warning lacks `claimIds`.
+- API: `MetricsController.GetQualityHealth` now aggregates `aggregates.d5` (jobsAvailable/Partial/Missing + claim totals + `insufficientEvidenceRate`/`insufficientDirectEvidenceRate`/`applicabilityDegradedRate`, dividing by claims across d5-available jobs only).
+- Tests: 5 new cases in `quality-health-metrics.test.ts` (43 metrics-suite tests pass; TS typecheck + C# compile clean). **Deliberately omitted** (not derivable from warnings): `claimsRequiringDirectApplicability` for *sufficient* claims.
+
+### Deferred / open (unchanged by this work)
+
+- Phase 3 admin UI (premature until persisted metrics prove useful, per the plan's own gate).
+- **The D5 pipeline-touch remainder:** `roleTruthDeltas` (Stage 4 must persist per-role truth snapshots) and capturing `directApplicabilityRequired` for *sufficient* claims. Both need a Stage 4 change and remain a separate task.
+- Evidence-ID compliance placement (Open Question #1).
+- **Deploy note:** the API changes only take effect after the API is rebuilt/restarted; the running dev instance must be stopped to relink `FactHarbor.Api.dll`.

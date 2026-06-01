@@ -134,3 +134,76 @@ describe("buildQualityHealthMetrics", () => {
     expect(qh.f4_totalClaims).toBe(3);
   });
 });
+
+describe("buildQualityHealthMetrics — D5 direct-publishability split", () => {
+  it("returns an available, zeroed d5 block for an empty result", () => {
+    const qh = buildQualityHealthMetrics(makeResult({ meta: { claimCount: 4 } }));
+    expect(qh.d5?.status.available).toBe(true);
+    expect(qh.d5?.status.partial).toBe(false);
+    expect(qh.d5?.totalClaims).toBe(4);
+    expect(qh.d5?.insufficientEvidenceClaims).toBe(0);
+    expect(qh.d5?.insufficientDirectEvidenceClaims).toBe(0);
+    expect(qh.d5?.claimDiagnostics).toEqual([]);
+  });
+
+  it("splits insufficient_evidence vs insufficient_direct_evidence and sums directional totals", () => {
+    const qh = buildQualityHealthMetrics(makeResult({
+      analysisWarnings: [
+        {
+          type: "insufficient_evidence", severity: "warning", message: "x",
+          details: { claimId: "AC_01", totalDirectionalCount: 0, directDirectionalCount: 0, nonDirectDirectionalCount: 0, directApplicabilityRequired: false },
+        },
+        {
+          type: "insufficient_direct_evidence", severity: "warning", message: "x",
+          details: { claimId: "AC_02", totalDirectionalCount: 3, directDirectionalCount: 0, nonDirectDirectionalCount: 3, directApplicabilityRequired: true },
+        },
+      ],
+      meta: { claimCount: 5 },
+    }));
+    expect(qh.d5?.insufficientEvidenceClaims).toBe(1);
+    expect(qh.d5?.insufficientDirectEvidenceClaims).toBe(1);
+    expect(qh.d5?.totalDirectionalEvidenceTotal).toBe(3);
+    expect(qh.d5?.directDirectionalEvidenceTotal).toBe(0);
+    expect(qh.d5?.nonDirectDirectionalEvidenceTotal).toBe(3);
+    expect(qh.d5?.status.partial).toBe(false);
+    expect(qh.d5?.claimDiagnostics).toHaveLength(2);
+    const direct = qh.d5?.claimDiagnostics.find(c => c.claimId === "AC_02");
+    expect(direct?.sufficiencyStatus).toBe("insufficient_direct_evidence");
+    expect(direct?.directApplicabilityRequired).toBe(true);
+  });
+
+  it("counts distinct claim IDs across batch-level applicability-degraded warnings", () => {
+    const qh = buildQualityHealthMetrics(makeResult({
+      analysisWarnings: [
+        { type: "evidence_applicability_assessment_degraded", severity: "warning", message: "x", details: { claimIds: ["AC_01", "AC_02"], reason: "prompt_section_missing" } },
+        { type: "evidence_applicability_assessment_degraded", severity: "warning", message: "x", details: { claimIds: ["AC_02", "AC_03"] } },
+      ],
+      meta: { claimCount: 3 },
+    }));
+    expect(qh.d5?.applicabilityAssessmentDegradedEvents).toBe(2);
+    expect(qh.d5?.applicabilityAssessmentDegradedClaims).toBe(3); // AC_01, AC_02, AC_03 distinct
+  });
+
+  it("marks d5 partial when an insufficiency warning lacks expected directional detail", () => {
+    const qh = buildQualityHealthMetrics(makeResult({
+      analysisWarnings: [
+        { type: "insufficient_direct_evidence", severity: "warning", message: "x", details: { claimId: "AC_01" } },
+      ],
+      meta: { claimCount: 2 },
+    }));
+    expect(qh.d5?.status.partial).toBe(true);
+    expect(qh.d5?.insufficientDirectEvidenceClaims).toBe(1);
+  });
+
+  it("marks d5 partial when a degraded warning lacks a claimIds array", () => {
+    const qh = buildQualityHealthMetrics(makeResult({
+      analysisWarnings: [
+        { type: "evidence_applicability_assessment_degraded", severity: "warning", message: "x", details: { reason: "prompt_section_missing" } },
+      ],
+      meta: { claimCount: 2 },
+    }));
+    expect(qh.d5?.status.partial).toBe(true);
+    expect(qh.d5?.applicabilityAssessmentDegradedEvents).toBe(1);
+    expect(qh.d5?.applicabilityAssessmentDegradedClaims).toBe(0);
+  });
+});

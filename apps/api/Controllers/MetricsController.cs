@@ -148,6 +148,7 @@ public class MetricsController : ControllerBase
                 return Ok(new
                 {
                     count = 0,
+                    pipelineTelemetry = PipelineTelemetryAccumulator.Empty(),
                     avgDuration = 0,
                     avgCost = 0,
                     avgTokens = 0,
@@ -183,6 +184,7 @@ public class MetricsController : ControllerBase
             var byProvider = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
             var byStage = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
             var byTopic = new Dictionary<string, FailureModeCounter>(StringComparer.OrdinalIgnoreCase);
+            var ptAgg = new PipelineTelemetryAccumulator();
             int count = 0;
 
             foreach (var record in metricsRecords)
@@ -298,6 +300,9 @@ public class MetricsController : ControllerBase
                         }
                     }
 
+                    // Pipeline telemetry aggregation (additive; missing ≠ zero).
+                    ptAgg.Ingest(root);
+
                     count++;
                 }
                 catch (Exception ex)
@@ -312,6 +317,7 @@ public class MetricsController : ControllerBase
                 return Ok(new
                 {
                     count = 0,
+                    pipelineTelemetry = PipelineTelemetryAccumulator.Empty(),
                     avgDuration = 0,
                     avgCost = 0,
                     avgTokens = 0,
@@ -352,6 +358,7 @@ public class MetricsController : ControllerBase
                     byStage = ToResponseCounters(byStage),
                     byTopic = ToResponseCounters(byTopic),
                 },
+                pipelineTelemetry = ptAgg.Build(count),
                 startDate = metricsRecords.Last().CreatedUtc,
                 endDate = metricsRecords.First().CreatedUtc
             });
@@ -394,6 +401,11 @@ public class MetricsController : ControllerBase
             double f4RateSum = 0, f5RateSum = 0;
             int f6ActiveCount = 0, f6ImbalanceCount = 0;
             int validCount = 0;
+            // D5 direct-publishability split (additive; older records lack qh.d5).
+            int d5Available = 0, d5Partial = 0, d5Missing = 0;
+            long d5TotalClaims = 0, d5InsufficientEvidence = 0, d5InsufficientDirect = 0;
+            long d5ApplicabilityDegradedClaims = 0;
+            long d5DirectDirectional = 0, d5NonDirectDirectional = 0, d5TotalDirectional = 0;
 
             foreach (var record in records)
             {
@@ -442,6 +454,37 @@ public class MetricsController : ControllerBase
                     if (f6Active) f6ActiveCount++;
                     if (f6Imbalance) f6ImbalanceCount++;
                     validCount++;
+
+                    // D5 split: aggregate only over jobs where qh.d5 is present and
+                    // available (status.available === true). Missing d5 (older
+                    // records) is counted separately, never as a zero.
+                    if (qh.TryGetProperty("d5", out var d5) && d5.ValueKind == JsonValueKind.Object)
+                    {
+                        var d5Avail = false;
+                        var d5Part = false;
+                        if (d5.TryGetProperty("status", out var d5st) && d5st.ValueKind == JsonValueKind.Object)
+                        {
+                            d5Avail = d5st.TryGetProperty("available", out var d5a) && d5a.ValueKind == JsonValueKind.True;
+                            d5Part = d5st.TryGetProperty("partial", out var d5p) && d5p.ValueKind == JsonValueKind.True;
+                        }
+                        if (d5Avail)
+                        {
+                            d5Available++;
+                            if (d5Part) d5Partial++;
+                            d5TotalClaims += d5.TryGetProperty("totalClaims", out var d5tc) ? ReadInt(d5tc) : 0;
+                            d5InsufficientEvidence += d5.TryGetProperty("insufficientEvidenceClaims", out var d5ie) ? ReadInt(d5ie) : 0;
+                            d5InsufficientDirect += d5.TryGetProperty("insufficientDirectEvidenceClaims", out var d5id) ? ReadInt(d5id) : 0;
+                            d5ApplicabilityDegradedClaims += d5.TryGetProperty("applicabilityAssessmentDegradedClaims", out var d5ad) ? ReadInt(d5ad) : 0;
+                            d5DirectDirectional += d5.TryGetProperty("directDirectionalEvidenceTotal", out var d5dd) ? ReadInt(d5dd) : 0;
+                            d5NonDirectDirectional += d5.TryGetProperty("nonDirectDirectionalEvidenceTotal", out var d5nd) ? ReadInt(d5nd) : 0;
+                            d5TotalDirectional += d5.TryGetProperty("totalDirectionalEvidenceTotal", out var d5td) ? ReadInt(d5td) : 0;
+                        }
+                        // d5 present but available:false is a builder error; not aggregated.
+                    }
+                    else
+                    {
+                        d5Missing++;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -462,6 +505,24 @@ public class MetricsController : ControllerBase
                     f5_avgBlockRate = validCount > 0 ? f5RateSum / validCount : 0,
                     f6_partitioningActiveRate = validCount > 0 ? (double)f6ActiveCount / validCount : 0,
                     f6_poolImbalanceRate = validCount > 0 ? (double)f6ImbalanceCount / validCount : 0,
+                    // D5 direct-publishability split. Rates divide by claims across
+                    // d5-available jobs only (plan §9 denominator discipline).
+                    d5 = new
+                    {
+                        jobsAvailable = d5Available,
+                        jobsPartial = d5Partial,
+                        jobsMissing = d5Missing,
+                        totalClaims = d5TotalClaims,
+                        insufficientEvidenceClaims = d5InsufficientEvidence,
+                        insufficientDirectEvidenceClaims = d5InsufficientDirect,
+                        applicabilityAssessmentDegradedClaims = d5ApplicabilityDegradedClaims,
+                        directDirectionalEvidenceTotal = d5DirectDirectional,
+                        nonDirectDirectionalEvidenceTotal = d5NonDirectDirectional,
+                        totalDirectionalEvidenceTotal = d5TotalDirectional,
+                        insufficientEvidenceRate = d5TotalClaims > 0 ? (double)d5InsufficientEvidence / d5TotalClaims : 0.0,
+                        insufficientDirectEvidenceRate = d5TotalClaims > 0 ? (double)d5InsufficientDirect / d5TotalClaims : 0.0,
+                        applicabilityDegradedRate = d5TotalClaims > 0 ? (double)d5ApplicabilityDegradedClaims / d5TotalClaims : 0.0,
+                    },
                 },
             });
         }
@@ -586,5 +647,194 @@ public class MetricsController : ControllerBase
         public int RefusalCount { get; set; }
         public int DegradationCount { get; set; }
         public int TotalEvents { get; set; }
+    }
+
+    /// <summary>
+    /// Aggregates the additive <c>pipelineTelemetry</c> object across metrics
+    /// records for the summary endpoint. Honors the plan's denominator
+    /// discipline: records that predate the schema are counted as
+    /// <c>jobsMissingTelemetry</c> (never read as zero), present-but-unavailable
+    /// telemetry is counted as errored, and each per-section rate divides only by
+    /// the jobs where that section is available. See
+    /// Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md §6 / Phase 2.
+    /// </summary>
+    private sealed class PipelineTelemetryAccumulator
+    {
+        private int _jobsWith, _jobsMissing, _jobsPartial, _jobsErrored;
+        // Per-window telemetry schema-version counts (Open Question #2): lets an
+        // admin see how many jobs are comparable when the telemetry schema evolves.
+        private readonly Dictionary<string, int> _schemaVersions = new();
+        // A section can be available:false for two distinct reasons: the builder
+        // errored (status.error present) or the section is legitimately not
+        // applicable to this job (e.g. the challenger role never ran — early
+        // termination or disabled). They must NOT be conflated, or jobsErrored
+        // misrepresents not-applicable jobs as telemetry failures.
+        private int _cvAvail, _cvPartial, _cvErrored, _cvNotApplicable;
+        private int _vdAvail, _vdPartial, _vdErrored, _vdNotApplicable;
+        private int _cgAvail, _cgPartial, _cgErrored, _cgNotApplicable;
+        // contractValidation totals (summed over available jobs only)
+        private int _cvJobsWithRetry, _cvJobsWithRepair;
+        private long _cvTotalRetry, _cvTotalRepair, _cvTotalFailingClaims;
+        // verdictDirection totals (summed over available jobs only)
+        private long _vdIssue, _vdRescue, _vdDowngrade, _vdUnresolved;
+        // challengerModelGuard totals (summed over available jobs only)
+        private long _cgPhysical, _cgRoleInvocations, _cgFallback, _cgPrecheck, _cgRetry;
+
+        public void Ingest(JsonElement root)
+        {
+            if (!root.TryGetProperty("pipelineTelemetry", out var pt) || pt.ValueKind != JsonValueKind.Object)
+            {
+                _jobsMissing++;
+                return;
+            }
+
+            var schemaVersion = pt.TryGetProperty("telemetrySchemaVersion", out var sv) && sv.ValueKind == JsonValueKind.String
+                ? (sv.GetString() ?? "unknown")
+                : "unknown";
+            _schemaVersions[schemaVersion] = _schemaVersions.TryGetValue(schemaVersion, out var svCount) ? svCount + 1 : 1;
+
+            // Top-level available:false only occurs when the builder threw (catch
+            // path always sets status.error), so any not-available top-level is an error.
+            var (topAvailable, topPartial, _) = ReadStatus(pt);
+            if (topAvailable)
+            {
+                _jobsWith++;
+                if (topPartial) _jobsPartial++;
+            }
+            else
+            {
+                _jobsErrored++;
+            }
+
+            if (TryGetSection(pt, "contractValidation", out var cv))
+            {
+                var (avail, partial, hasError) = ReadStatus(cv);
+                if (avail)
+                {
+                    _cvAvail++;
+                    if (partial) _cvPartial++;
+                    _cvTotalRetry += ReadIntProp(cv, "retryCount");
+                    _cvTotalRepair += ReadIntProp(cv, "repairPassCount");
+                    _cvTotalFailingClaims += ReadIntProp(cv, "failingClaimCount");
+                    if (ReadBoolProp(cv, "jobHadRetry")) _cvJobsWithRetry++;
+                    if (ReadBoolProp(cv, "jobHadRepair")) _cvJobsWithRepair++;
+                }
+                else if (hasError) { _cvErrored++; }
+                else { _cvNotApplicable++; }
+            }
+
+            if (TryGetSection(pt, "verdictDirection", out var vd))
+            {
+                var (avail, partial, hasError) = ReadStatus(vd);
+                if (avail)
+                {
+                    _vdAvail++;
+                    if (partial) _vdPartial++;
+                    _vdIssue += ReadIntProp(vd, "issueCount");
+                    _vdRescue += ReadIntProp(vd, "rescueCount");
+                    _vdDowngrade += ReadIntProp(vd, "downgradeCount");
+                    _vdUnresolved += ReadIntProp(vd, "unresolvedIssueCount");
+                }
+                else if (hasError) { _vdErrored++; }
+                else { _vdNotApplicable++; }
+            }
+
+            if (TryGetSection(pt, "challengerModelGuard", out var cg))
+            {
+                var (avail, partial, hasError) = ReadStatus(cg);
+                if (avail)
+                {
+                    _cgAvail++;
+                    if (partial) _cgPartial++;
+                    _cgPhysical += ReadIntProp(cg, "challengerPhysicalCallCount");
+                    _cgRoleInvocations += ReadIntProp(cg, "challengerRoleInvocationCount");
+                    _cgFallback += ReadIntProp(cg, "totalFallbackCount");
+                    _cgPrecheck += ReadIntProp(cg, "precheckFallbackCount");
+                    _cgRetry += ReadIntProp(cg, "retryFallbackCount");
+                }
+                else if (hasError) { _cgErrored++; }
+                else { _cgNotApplicable++; }
+            }
+        }
+
+        public object Build(int jobsTotal)
+        {
+            return new
+            {
+                jobsTotal,
+                jobsWithTelemetry = _jobsWith,
+                jobsMissingTelemetry = _jobsMissing,
+                jobsWithPartialTelemetry = _jobsPartial,
+                jobsErroredTelemetry = _jobsErrored,
+                schemaVersions = _schemaVersions,
+                sectionAvailability = new
+                {
+                    contractValidation = new { jobsAvailable = _cvAvail, jobsPartial = _cvPartial, jobsErrored = _cvErrored, jobsNotApplicable = _cvNotApplicable },
+                    verdictDirection = new { jobsAvailable = _vdAvail, jobsPartial = _vdPartial, jobsErrored = _vdErrored, jobsNotApplicable = _vdNotApplicable },
+                    challengerModelGuard = new { jobsAvailable = _cgAvail, jobsPartial = _cgPartial, jobsErrored = _cgErrored, jobsNotApplicable = _cgNotApplicable },
+                },
+                contractValidation = new
+                {
+                    jobsWithRetry = _cvJobsWithRetry,
+                    jobsWithRepair = _cvJobsWithRepair,
+                    totalRetryCount = _cvTotalRetry,
+                    totalRepairPassCount = _cvTotalRepair,
+                    totalFailingClaimCount = _cvTotalFailingClaims,
+                    retryJobRate = _cvAvail > 0 ? (double)_cvJobsWithRetry / _cvAvail : 0.0,
+                    repairJobRate = _cvAvail > 0 ? (double)_cvJobsWithRepair / _cvAvail : 0.0,
+                },
+                verdictDirection = new
+                {
+                    totalIssueCount = _vdIssue,
+                    totalRescueCount = _vdRescue,
+                    totalDowngradeCount = _vdDowngrade,
+                    totalUnresolvedIssueCount = _vdUnresolved,
+                },
+                challengerModelGuard = new
+                {
+                    totalChallengerPhysicalCalls = _cgPhysical,
+                    totalChallengerRoleInvocations = _cgRoleInvocations,
+                    totalFallbackCount = _cgFallback,
+                    precheckFallbackCount = _cgPrecheck,
+                    retryFallbackCount = _cgRetry,
+                    // Rate divides by physical calls because TPM warnings are emitted
+                    // per physical attempt; zero-denominator safe.
+                    fallbackPhysicalCallRate = _cgPhysical > 0 ? (double)_cgFallback / _cgPhysical : 0.0,
+                },
+            };
+        }
+
+        public static object Empty() => new PipelineTelemetryAccumulator().Build(0);
+
+        private static bool TryGetSection(JsonElement pt, string name, out JsonElement section)
+        {
+            if (pt.TryGetProperty(name, out var sec) && sec.ValueKind == JsonValueKind.Object)
+            {
+                section = sec;
+                return true;
+            }
+            section = default;
+            return false;
+        }
+
+        private static (bool available, bool partial, bool hasError) ReadStatus(JsonElement el)
+        {
+            if (el.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.Object)
+            {
+                var available = st.TryGetProperty("available", out var a) && a.ValueKind == JsonValueKind.True;
+                var partial = st.TryGetProperty("partial", out var p) && p.ValueKind == JsonValueKind.True;
+                var hasError = st.TryGetProperty("error", out var e)
+                    && e.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrEmpty(e.GetString());
+                return (available, partial, hasError);
+            }
+            return (false, false, false);
+        }
+
+        private static int ReadIntProp(JsonElement el, string name)
+            => el.TryGetProperty(name, out var v) ? ReadInt(v) : 0;
+
+        private static bool ReadBoolProp(JsonElement el, string name)
+            => el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
     }
 }

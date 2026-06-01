@@ -9,8 +9,18 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
-import type { FailureModeMetrics, LLMCallMetric, QualityHealthMetrics, SearchQueryMetric } from './metrics';
+import type {
+  FailureModeMetrics,
+  LLMCallMetric,
+  MetricsTelemetryContext,
+  PipelineTelemetry,
+  QualityHealthD5Metrics,
+  QualityHealthMetrics,
+  SearchQueryMetric,
+  TelemetrySectionStatus,
+} from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
+import { getWebGitCommitHash } from '../build-info';
 
 /**
  * Per-job metrics isolation using AsyncLocalStorage.
@@ -190,6 +200,19 @@ export function recordOutputQuality(result: any): void {
 
   // Quality health metrics (F4/F5/F6 monitoring)
   currentMetrics.setQualityHealth(buildQualityHealthMetrics(result));
+
+  // Neutral control-flow telemetry (post-analysis, additive). buildPipelineTelemetry
+  // self-guards, but this call site sits in the analysis hot path with no outer
+  // try/catch (review finding #4), so wrap defensively here too — telemetry must
+  // never break analysis.
+  try {
+    const llmCalls = currentMetrics.getLLMCallsSnapshot();
+    const telemetry = buildPipelineTelemetry(result, llmCalls);
+    const context = buildMetricsTelemetryContext(result, currentMetrics.getPipelineVariant());
+    currentMetrics.setPipelineTelemetry(telemetry, context);
+  } catch (error) {
+    console.error('[Metrics] Failed to build pipeline telemetry:', error);
+  }
 }
 
 const DEGRADATION_WARNING_TYPES = new Set<string>([
@@ -216,11 +239,7 @@ interface WarningShape {
 }
 
 export function buildFailureModeMetrics(result: any): FailureModeMetrics {
-  const warnings: WarningShape[] = Array.isArray(result?.analysisWarnings)
-    ? result.analysisWarnings
-    : Array.isArray(result?.warnings)
-      ? result.warnings
-      : [];
+  const warnings = extractWarnings(result);
 
   const byProvider: FailureModeMetrics["byProvider"] = {};
   const byStage: FailureModeMetrics["byStage"] = {};
@@ -306,11 +325,7 @@ function incrementCounter(
 }
 
 export function buildQualityHealthMetrics(result: any): QualityHealthMetrics {
-  const warnings: WarningShape[] = Array.isArray(result?.analysisWarnings)
-    ? result.analysisWarnings
-    : Array.isArray(result?.warnings)
-      ? result.warnings
-      : [];
+  const warnings = extractWarnings(result);
   const meta = result?.meta || {};
 
   // F4: Evidence sufficiency gate
@@ -341,6 +356,378 @@ export function buildQualityHealthMetrics(result: any): QualityHealthMetrics {
     f6_generalCount: (partitionStats?.details as any)?.generalCount ?? 0,
     f6_poolImbalanceDetected: poolImbalance,
     f6_balanceRatio: balanceRatio,
+    d5: buildD5QualityHealthTelemetry(warnings, totalClaims),
+  };
+}
+
+/**
+ * Build the D5 direct-publishability split from existing warnings. Post-analysis
+ * only; no pipeline touch. Self-guarding so it can never break metrics finalization.
+ */
+function buildD5QualityHealthTelemetry(
+  warnings: WarningShape[],
+  totalClaims: number,
+): QualityHealthD5Metrics {
+  const numOrNull = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
+
+  try {
+    const insufficientEvidenceWarnings = warnings.filter(w => w?.type === "insufficient_evidence");
+    const insufficientDirectWarnings = warnings.filter(w => w?.type === "insufficient_direct_evidence");
+    const degradedWarnings = warnings.filter(w => w?.type === "evidence_applicability_assessment_degraded");
+
+    let partial = false;
+    let directDirectionalEvidenceTotal = 0;
+    let nonDirectDirectionalEvidenceTotal = 0;
+    let totalDirectionalEvidenceTotal = 0;
+    const claimDiagnostics: QualityHealthD5Metrics["claimDiagnostics"] = [];
+
+    const addDiagnostics = (
+      ws: WarningShape[],
+      sufficiencyStatus: "insufficient_evidence" | "insufficient_direct_evidence",
+    ) => {
+      for (const w of ws) {
+        const d = (w.details as Record<string, unknown> | undefined) ?? {};
+        const claimId = typeof d.claimId === "string" && d.claimId.length > 0 ? d.claimId : undefined;
+        const total = numOrNull(d.totalDirectionalCount);
+        const direct = numOrNull(d.directDirectionalCount);
+        const nonDirect = numOrNull(d.nonDirectDirectionalCount);
+        if (!claimId || total === null || direct === null || nonDirect === null) {
+          // Missing expected per-claim detail — don't treat absent as a clean zero.
+          partial = true;
+        }
+        totalDirectionalEvidenceTotal += total ?? 0;
+        directDirectionalEvidenceTotal += direct ?? 0;
+        nonDirectDirectionalEvidenceTotal += nonDirect ?? 0;
+        claimDiagnostics.push({
+          claimId: claimId ?? "(unknown)",
+          directApplicabilityRequired: d.directApplicabilityRequired === true,
+          sufficiencyStatus,
+          totalDirectionalCount: total ?? 0,
+          directDirectionalCount: direct ?? 0,
+          nonDirectDirectionalCount: nonDirect ?? 0,
+        });
+      }
+    };
+    addDiagnostics(insufficientEvidenceWarnings, "insufficient_evidence");
+    addDiagnostics(insufficientDirectWarnings, "insufficient_direct_evidence");
+
+    // Applicability-degraded warnings are batch-level: details carry `claimIds` (plural array).
+    const degradedClaimIds = new Set<string>();
+    for (const w of degradedWarnings) {
+      const ids = (w.details as Record<string, unknown> | undefined)?.claimIds;
+      if (Array.isArray(ids)) {
+        for (const id of ids) {
+          if (typeof id === "string" && id.length > 0) degradedClaimIds.add(id);
+        }
+      } else {
+        partial = true;
+      }
+    }
+
+    return {
+      status: { available: true, partial },
+      totalClaims,
+      insufficientEvidenceClaims: insufficientEvidenceWarnings.length,
+      insufficientDirectEvidenceClaims: insufficientDirectWarnings.length,
+      applicabilityAssessmentDegradedClaims: degradedClaimIds.size,
+      applicabilityAssessmentDegradedEvents: degradedWarnings.length,
+      directDirectionalEvidenceTotal,
+      nonDirectDirectionalEvidenceTotal,
+      totalDirectionalEvidenceTotal,
+      claimDiagnostics,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      status: { available: false, partial: false, error: message },
+      totalClaims,
+      insufficientEvidenceClaims: 0,
+      insufficientDirectEvidenceClaims: 0,
+      applicabilityAssessmentDegradedClaims: 0,
+      applicabilityAssessmentDegradedEvents: 0,
+      directDirectionalEvidenceTotal: 0,
+      nonDirectDirectionalEvidenceTotal: 0,
+      totalDirectionalEvidenceTotal: 0,
+      claimDiagnostics: [],
+    };
+  }
+}
+
+// ============================================================================
+// PIPELINE TELEMETRY BUILDER
+// ============================================================================
+//
+// See Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md and the type
+// docs in metrics.ts. Pure functions over already-collected structured outputs:
+// no LLM calls, no behavior change, no severity change.
+
+const TELEMETRY_SCHEMA_VERSION = "1.0";
+const CHALLENGER_DEBATE_ROLE = "challenger";
+/** Stage 4 challenger invocations use this prompt key; TPM warnings carry it in details. */
+const CHALLENGER_PROMPT_KEY = "VERDICT_CHALLENGER";
+
+function sectionStatus(available: boolean, partial = false, error?: string): TelemetrySectionStatus {
+  return error ? { available, partial, error } : { available, partial };
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+function extractWarnings(result: any): WarningShape[] {
+  return Array.isArray(result?.analysisWarnings)
+    ? result.analysisWarnings
+    : Array.isArray(result?.warnings)
+      ? result.warnings
+      : [];
+}
+
+function buildContractValidationTelemetry(
+  warnings: WarningShape[],
+): PipelineTelemetry["contractValidation"] {
+  // Occurrence-derived: neither warning carries an aggregate counter.
+  const retryWarnings = warnings.filter(w => w?.type === "contract_validation_retry_triggered");
+  const repairWarnings = warnings.filter(w => w?.type === "contract_repair_pass_fired");
+
+  let failingClaimCount = 0;
+  let partial = false;
+  for (const w of retryWarnings) {
+    const raw = (w.details as Record<string, unknown> | undefined)?.failingClaimCount;
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      failingClaimCount += raw;
+    } else {
+      // Retry warning present but lacks a numeric failingClaimCount — do not
+      // silently treat as zero (review finding #3 + "missing ≠ zero").
+      partial = true;
+    }
+  }
+
+  return {
+    status: sectionStatus(true, partial),
+    retryCount: retryWarnings.length,
+    repairPassCount: repairWarnings.length,
+    failingClaimCount,
+    jobHadRetry: retryWarnings.length > 0,
+    jobHadRepair: repairWarnings.length > 0,
+  };
+}
+
+function buildVerdictDirectionTelemetry(
+  warnings: WarningShape[],
+): PipelineTelemetry["verdictDirection"] {
+  const issueWarnings = warnings.filter(w => w?.type === "verdict_direction_issue");
+  const rescueWarnings = warnings.filter(w => w?.type === "direction_rescue_plausible");
+  const downgradeWarnings = warnings.filter(w => {
+    if (w?.type !== "verdict_integrity_failure") return false;
+    const details = (w.details as Record<string, unknown> | undefined) ?? {};
+    // Prefer triggerPolicy; fall back to the legacy integrityFailureType alias.
+    return details.triggerPolicy === "direction" || details.integrityFailureType === "direction";
+  });
+
+  let partial = false;
+  const collectClaimIds = (ws: WarningShape[]): string[] => {
+    const ids: string[] = [];
+    for (const w of ws) {
+      const id = (w.details as Record<string, unknown> | undefined)?.claimId;
+      if (typeof id === "string" && id.length > 0) {
+        ids.push(id);
+      } else {
+        // Cannot join sets reliably without claim IDs — section is not
+        // decision-ready (review finding + plan §6).
+        partial = true;
+      }
+    }
+    return ids;
+  };
+
+  const flaggedClaimIds = uniqueStrings(collectClaimIds(issueWarnings));
+  const rescuedClaimIds = uniqueStrings(collectClaimIds(rescueWarnings));
+  const downgradedClaimIds = uniqueStrings(collectClaimIds(downgradeWarnings));
+
+  const flaggedSet = new Set(flaggedClaimIds);
+  const resolvedSet = new Set([...rescuedClaimIds, ...downgradedClaimIds]);
+  // Review finding #5: a rescued/downgraded claim that was never flagged is a
+  // join inconsistency. Mark partial so unresolved math isn't trusted blindly.
+  for (const id of resolvedSet) {
+    if (!flaggedSet.has(id)) {
+      partial = true;
+      break;
+    }
+  }
+  const unresolvedClaimIds = flaggedClaimIds.filter(id => !resolvedSet.has(id));
+
+  return {
+    status: sectionStatus(true, partial),
+    issueCount: issueWarnings.length,
+    rescueCount: rescueWarnings.length,
+    downgradeCount: downgradeWarnings.length,
+    flaggedClaimIds,
+    rescuedClaimIds,
+    downgradedClaimIds,
+    unresolvedClaimIds,
+    unresolvedIssueCount: unresolvedClaimIds.length,
+  };
+}
+
+function buildChallengerModelGuardTelemetry(
+  warnings: WarningShape[],
+  llmCalls: LLMCallMetric[],
+  meta: Record<string, unknown>,
+): PipelineTelemetry["challengerModelGuard"] {
+  const challengerPhysicalCallCount = Array.isArray(llmCalls)
+    ? llmCalls.filter(c => c?.debateRole === CHALLENGER_DEBATE_ROLE).length
+    : 0;
+
+  const roleModels = meta?.runtimeRoleModels as Record<string, unknown> | undefined;
+  const challengerRole = roleModels && typeof roleModels === "object"
+    ? (roleModels[CHALLENGER_DEBATE_ROLE] as { callCount?: unknown } | undefined)
+    : undefined;
+  const challengerRoleInvocationCount =
+    challengerRole && typeof challengerRole.callCount === "number"
+      ? challengerRole.callCount
+      : 0;
+
+  // Challenger-scoped TPM fallback warnings only (review decision #1).
+  const tpmWarnings = warnings.filter(w =>
+    w?.type === "llm_tpm_guard_fallback"
+    && (w.details as Record<string, unknown> | undefined)?.promptKey === CHALLENGER_PROMPT_KEY,
+  );
+  const precheckFallbackCount = tpmWarnings.filter(
+    w => (w.details as Record<string, unknown>)?.reason === "tpm_guard_precheck",
+  ).length;
+  const retryFallbackCount = tpmWarnings.filter(
+    w => (w.details as Record<string, unknown>)?.reason === "tpm_guard_retry",
+  ).length;
+  const totalFallbackCount = tpmWarnings.length;
+
+  const challengerRan = challengerPhysicalCallCount > 0 || challengerRoleInvocationCount > 0 || !!challengerRole;
+  if (!challengerRan) {
+    // Challenger role was not part of this job (e.g. disabled by config or never
+    // reached). Absent ≠ zero-success (review finding #6).
+    return {
+      status: sectionStatus(false, false),
+      precheckFallbackCount: 0,
+      retryFallbackCount: 0,
+      totalFallbackCount: 0,
+      challengerRoleInvocationCount: 0,
+      challengerPhysicalCallCount: 0,
+      fallbackPhysicalCallRate: 0,
+    };
+  }
+
+  // Fallback warnings exist but no physical-call denominator to contextualize
+  // them — rate would be meaningless, so flag partial rather than emit a bogus 0.
+  const partial = totalFallbackCount > 0 && challengerPhysicalCallCount === 0;
+  const fallbackPhysicalCallRate =
+    challengerPhysicalCallCount > 0 ? totalFallbackCount / challengerPhysicalCallCount : 0;
+
+  return {
+    status: sectionStatus(true, partial),
+    precheckFallbackCount,
+    retryFallbackCount,
+    totalFallbackCount,
+    challengerRoleInvocationCount,
+    challengerPhysicalCallCount,
+    fallbackPhysicalCallRate,
+  };
+}
+
+/**
+ * Build neutral control-flow telemetry from already-collected structured outputs.
+ * Self-guarding: on any internal error it returns explicit unavailable status
+ * for every section rather than throwing, because the caller runs in the
+ * analysis hot path (review finding #4).
+ */
+export function buildPipelineTelemetry(result: any, llmCalls: LLMCallMetric[]): PipelineTelemetry {
+  try {
+    const warnings = extractWarnings(result);
+    const meta = (result?.meta as Record<string, unknown> | undefined) ?? {};
+
+    const contractValidation = buildContractValidationTelemetry(warnings);
+    const verdictDirection = buildVerdictDirectionTelemetry(warnings);
+    const challengerModelGuard = buildChallengerModelGuardTelemetry(warnings, llmCalls, meta);
+
+    const anyPartial =
+      contractValidation.status.partial
+      || verdictDirection.status.partial
+      || challengerModelGuard.status.partial;
+
+    return {
+      telemetrySchemaVersion: TELEMETRY_SCHEMA_VERSION,
+      status: sectionStatus(true, anyPartial),
+      contractValidation,
+      verdictDirection,
+      challengerModelGuard,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const failed = sectionStatus(false, false, message);
+    return {
+      telemetrySchemaVersion: TELEMETRY_SCHEMA_VERSION,
+      status: failed,
+      contractValidation: {
+        status: failed,
+        retryCount: 0,
+        repairPassCount: 0,
+        failingClaimCount: 0,
+        jobHadRetry: false,
+        jobHadRepair: false,
+      },
+      verdictDirection: {
+        status: failed,
+        issueCount: 0,
+        rescueCount: 0,
+        downgradeCount: 0,
+        flaggedClaimIds: [],
+        rescuedClaimIds: [],
+        downgradedClaimIds: [],
+        unresolvedClaimIds: [],
+        unresolvedIssueCount: 0,
+      },
+      challengerModelGuard: {
+        status: failed,
+        precheckFallbackCount: 0,
+        retryFallbackCount: 0,
+        totalFallbackCount: 0,
+        challengerRoleInvocationCount: 0,
+        challengerPhysicalCallCount: 0,
+        fallbackPhysicalCallRate: 0,
+      },
+    };
+  }
+}
+
+/**
+ * Build cross-cutting telemetry provenance. Keeps the full
+ * executedWebGitCommitHash (incl. dirty suffix) for grouping and derives a clean
+ * short prefix for display / clean-commit rollups (review finding #8).
+ *
+ * Provenance timing seam: the web runner sets `meta.executedWebGitCommitHash`
+ * AFTER `runClaimBoundaryAnalysis` returns (internal-runner-queue.ts), but this
+ * builder runs INSIDE the pipeline (via recordOutputQuality). So `meta` is
+ * usually empty here. We prefer the meta value when present (forward-compatible)
+ * and otherwise resolve the same build hash directly from build-info — same
+ * process, same source of truth the runner uses. `resolveCommit` is injectable
+ * for tests. Without this fallback the persisted commit would always be empty
+ * and the deploy-comparison need would be silently dead.
+ */
+export function buildMetricsTelemetryContext(
+  result: any,
+  pipelineVariant: string,
+  resolveCommit: () => string | null = () => getWebGitCommitHash({ useCache: true }),
+): MetricsTelemetryContext {
+  const metaCommit = result?.meta?.executedWebGitCommitHash;
+  const rawCommit = typeof metaCommit === "string" && metaCommit.length > 0
+    ? metaCommit
+    : (resolveCommit() ?? undefined);
+  const commitId = typeof rawCommit === "string" && rawCommit.length > 0 ? rawCommit : undefined;
+  const commitShort = commitId ? commitId.split("+")[0].slice(0, 12) : undefined;
+  return {
+    pipelineVariant,
+    pipelineCommitId: commitId,
+    pipelineCommitShort: commitShort,
+    telemetryComputedAt: new Date().toISOString(),
   };
 }
 

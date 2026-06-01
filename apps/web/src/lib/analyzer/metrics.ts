@@ -118,6 +118,43 @@ export interface FailureModeMetrics {
   byTopic: Record<string, FailureModeCounter>;
 }
 
+/**
+ * D5 direct-publishability quality-health subcounts.
+ *
+ * Derived POST-ANALYSIS from existing warnings only (no pipeline touch):
+ * `insufficient_evidence`, `insufficient_direct_evidence` (per-claim, carrying
+ * directional counts), and `evidence_applicability_assessment_degraded`
+ * (batch-level, carrying a `claimIds` array). Splits what `f4_insufficientClaims`
+ * lumps together — the split is what D5 architecture decisions actually need.
+ *
+ * Deliberately omitted because it is NOT derivable from warnings without a
+ * pipeline change: `claimsRequiringDirectApplicability` for *sufficient* claims
+ * (only the insufficient claims carry `directApplicabilityRequired`). That, and
+ * `roleTruthDeltas`, remain the deferred pipeline-touch task.
+ */
+export interface QualityHealthD5Metrics {
+  status: TelemetrySectionStatus;
+  totalClaims: number;
+  insufficientEvidenceClaims: number;
+  insufficientDirectEvidenceClaims: number;
+  /** Distinct claim IDs across all applicability-degraded warnings. */
+  applicabilityAssessmentDegradedClaims: number;
+  /** Number of applicability-degraded warning events (batch-level). */
+  applicabilityAssessmentDegradedEvents: number;
+  directDirectionalEvidenceTotal: number;
+  nonDirectDirectionalEvidenceTotal: number;
+  totalDirectionalEvidenceTotal: number;
+  /** Per-claim diagnostics for the insufficient claims (bounded by claim count). */
+  claimDiagnostics: Array<{
+    claimId: string;
+    directApplicabilityRequired: boolean;
+    sufficiencyStatus: "insufficient_evidence" | "insufficient_direct_evidence";
+    totalDirectionalCount: number;
+    directDirectionalCount: number;
+    nonDirectDirectionalCount: number;
+  }>;
+}
+
 export interface QualityHealthMetrics {
   f4_insufficientClaims: number;
   f4_totalClaims: number;
@@ -130,6 +167,11 @@ export interface QualityHealthMetrics {
   f6_generalCount: number;
   f6_poolImbalanceDetected: boolean;
   f6_balanceRatio: number | null;
+  /**
+   * D5 direct-publishability split (additive). Older records lack it (treated as
+   * missing, not zero, by aggregation). `f4_*` is unchanged for backward compat.
+   */
+  d5?: QualityHealthD5Metrics;
 }
 
 export interface SchemaComplianceMetric {
@@ -149,6 +191,119 @@ export interface SchemaComplianceMetric {
     retries: number;
     errorType?: string;
   };
+}
+
+// ============================================================================
+// PIPELINE TELEMETRY (neutral control-flow instrumentation)
+// ============================================================================
+//
+// See Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md.
+//
+// Design rules enforced here:
+// - Computed AFTER analysis from existing structured outputs only. Never adds
+//   LLM calls, alters routing, changes D5 behavior, or changes warning severity.
+// - Missing/partial telemetry is NEVER a clean zero. Sections carry explicit
+//   available/partial/error status.
+// - Additive and backward-compatible: older metrics records simply lack these
+//   fields and are treated as "missing" (not zero) by aggregation.
+
+/** Per-section availability so absent data is never read as a clean zero. */
+export interface TelemetrySectionStatus {
+  available: boolean;
+  partial: boolean;
+  error?: string;
+}
+
+export interface PipelineTelemetry {
+  /**
+   * Versions ONLY this telemetry sub-schema. Independent of the top-level
+   * `AnalysisMetrics.schemaVersion` (review finding #7).
+   */
+  telemetrySchemaVersion: string; // current value: "1.0"
+  status: TelemetrySectionStatus;
+
+  /**
+   * Stage 1 contract validation control flow.
+   * The pipeline emits one `contract_validation_retry_triggered` warning per
+   * retry trigger and one `contract_repair_pass_fired` warning per repair, with
+   * no aggregate counter on the warning itself — so these counts are derived by
+   * counting warning occurrences (review finding #3). `failingClaimCount` is the
+   * SUM of `details.failingClaimCount` across retry warnings.
+   */
+  contractValidation: {
+    status: TelemetrySectionStatus;
+    retryCount: number;
+    repairPassCount: number;
+    failingClaimCount: number;
+    jobHadRetry: boolean;
+    jobHadRepair: boolean;
+  };
+
+  /**
+   * Stage 4 verdict-direction validator/repair/downgrade control path ONLY.
+   * Not a substitute for controlled rerun-stability measurement. Claim-scoped:
+   * decisions depend on which claims were affected, not just raw counts.
+   * Downgrades are `verdict_integrity_failure` warnings whose
+   * `details.triggerPolicy === "direction"` (legacy alias `integrityFailureType`).
+   */
+  verdictDirection: {
+    status: TelemetrySectionStatus;
+    /**
+     * NOTE ON BASES: issueCount/rescueCount/downgradeCount are raw warning
+     * occurrence counts (a claim flagged twice counts twice, and warnings
+     * lacking a claimId are still counted here). The *ClaimIds arrays and
+     * unresolvedIssueCount are de-duplicated by claimId. So issueCount and
+     * unresolvedIssueCount are NOT directly subtractable — do not compute
+     * "resolved = issueCount − unresolvedIssueCount". Use the claim-ID sets for
+     * join math, and treat the section as not decision-ready when status.partial.
+     */
+    issueCount: number;
+    rescueCount: number;
+    downgradeCount: number;
+    flaggedClaimIds: string[];
+    rescuedClaimIds: string[];
+    downgradedClaimIds: string[];
+    /** flagged − (rescued ∪ downgraded), de-duplicated. Partial if any direction warning lacks a claimId. */
+    unresolvedClaimIds: string[];
+    /** = unresolvedClaimIds.length (de-duplicated); see the bases note above. */
+    unresolvedIssueCount: number;
+  };
+
+  /**
+   * Challenger-role exposure to the Stage 4 OpenAI TPM model guard.
+   * ALL fields are challenger-scoped (review decision #1): fallback counts come
+   * only from `llm_tpm_guard_fallback` warnings whose `details.promptKey ===
+   * "VERDICT_CHALLENGER"`. The guard itself is role-agnostic; a broader
+   * `verdictModelGuard` rollup is deferred. Attribution is by prompt key, so no
+   * pipeline change is needed (review decision #2). Both a role-invocation and a
+   * physical-call denominator are stored; the rate divides by physical calls
+   * because TPM warnings are emitted per physical attempt.
+   */
+  challengerModelGuard: {
+    status: TelemetrySectionStatus;
+    precheckFallbackCount: number;
+    retryFallbackCount: number;
+    totalFallbackCount: number;
+    challengerRoleInvocationCount: number;
+    challengerPhysicalCallCount: number;
+    /** totalFallbackCount / challengerPhysicalCallCount, zero-denominator safe. */
+    fallbackPhysicalCallRate: number;
+  };
+}
+
+/**
+ * Cross-cutting provenance kept OUTSIDE `pipelineTelemetry` (review finding #7).
+ * Supports before/after-deploy comparison and lets aggregation report how many
+ * jobs are comparable. `pipelineCommitId` keeps the full
+ * `executedWebGitCommitHash` (incl. any `+<workingTreeHash>` dirty suffix) for
+ * grouping; `pipelineCommitShort` is the clean prefix for display and
+ * clean-commit rollups (review finding #8).
+ */
+export interface MetricsTelemetryContext {
+  pipelineVariant: string;
+  pipelineCommitId?: string;
+  pipelineCommitShort?: string;
+  telemetryComputedAt: string;
 }
 
 export interface AnalysisMetrics {
@@ -196,7 +351,15 @@ export interface AnalysisMetrics {
 
   // Quality health monitoring (F4/F5/F6 from investigation report)
   qualityHealth?: QualityHealthMetrics;
-  
+
+  // Neutral control-flow telemetry for routing architecture decisions.
+  // Additive and optional: older records simply lack it (treated as missing,
+  // not zero, by aggregation). Computed post-analysis; never alters behavior.
+  pipelineTelemetry?: PipelineTelemetry;
+
+  // Cross-cutting telemetry provenance (deploy comparison / comparability).
+  telemetryContext?: MetricsTelemetryContext;
+
   // Costs (estimated)
   estimatedCostUSD: number;
   tokenCounts: {
@@ -346,6 +509,29 @@ export class MetricsCollector {
    */
   setConfig(config: AnalysisMetrics['config']): void {
     this.metrics.config = config;
+  }
+
+  /**
+   * Set neutral control-flow telemetry plus its provenance context.
+   * Both are additive; callers compute them post-analysis from existing
+   * structured outputs (see buildPipelineTelemetry in metrics-integration.ts).
+   */
+  setPipelineTelemetry(telemetry: PipelineTelemetry, context: MetricsTelemetryContext): void {
+    this.metrics.pipelineTelemetry = telemetry;
+    this.metrics.telemetryContext = context;
+  }
+
+  /**
+   * Snapshot of recorded LLM calls. Needed by buildPipelineTelemetry because the
+   * challenger-guard section requires `llmCalls[]` physical-call denominators.
+   */
+  getLLMCallsSnapshot(): LLMCallMetric[] {
+    return [...(this.metrics.llmCalls ?? [])];
+  }
+
+  /** Pipeline variant for telemetry provenance context. */
+  getPipelineVariant(): string {
+    return this.metrics.pipelineVariant ?? 'unknown';
   }
 
   /**

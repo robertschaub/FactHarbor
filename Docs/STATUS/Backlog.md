@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-15
+**Last Updated**: 2026-06-01
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -76,6 +76,17 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | **LIVE-1** | **LiveCheck / Innosuisse future track**: funding and research proposal line for live audio/video fact-checking. Keep distinct from the current Alpha validation track. | Product / Research / Funding | low | med | `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md` |
 | **PROV-1** | **Source Provenance Tracking**: Trace evidence back to original creator (person/org) to detect single-source amplification, propaganda, and attribution washing. Design complete (v2, post-GPT review). 3 phases: Phase 1 extraction + telemetry, Phase 1.5 challenger/reconciler prompt integration, Phase 2 LLM entity resolution. Integrates with existing `sourcePortfolioByClaim` and `independence_concern`. Implementation parked. | Analyzer / Quality / SR | low | high | `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` |
 | **SEARCH-2** | **Google-CSE per-minute rate-limit throttle**: under runner concurrency 3, parallel research searches exceed Google-CSE "Queries per minute per user" → HTTP 429 (observed 2026-05-26: 9 events across 2 concurrent jobs). The pipeline falls back to Serper/Wikipedia mid-run, which is both a latency source and a **verdict-variance driver** (the same claim gets a different evidence pool depending on 429 timing). Fix is a client-side token-bucket / throttle on Google-CSE calls (or lower per-job search concurrency), **not** a quota upgrade. Targeted for the source-fetch / variance workstream alongside the fetch-failure taxonomy. | Search / Reliability / Quality | med | high | Diagnostic session 2026-05-26; `apps/web/src/lib/web-search.ts` |
+| **TELEM-UI** | **Pipeline telemetry admin UI (Phase 3)**: render the persisted `pipelineTelemetry` + `qualityHealth.d5` aggregates (raw counts, denominators, availability/not-applicable buckets, `schemaVersions`). Deferred by the plan's own gate until persisted metrics prove useful. Read-only values only — no hardcoded "good/bad" threshold colors unless UCM-backed. | Web / Observability | low | med | `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` §7 Phase 3 |
+| **TELEM-D5PIPE** | **D5 follow-up telemetry pipeline-touch remainder**: `roleTruthDeltas` (Stage 4 must persist per-role advocate/challenger/reconciler truth snapshots as metrics-only diagnostics) and capturing `directApplicabilityRequired` for *sufficient* claims. NOT derivable post-analysis — both require a Stage 4 change, so they were deliberately carved out of the shipped derivable D5 subcounts. Needs its own task + Captain sign-off (touches the verdict stage). | Analyzer / Stage 4 / Observability | low | med | `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` §9 |
+| **TELEM-EVID** | **Evidence-ID compliance cleanup metric (Open Question #1)**: decide placement (recommended: a one-release cleanup metric under `qualityHealth` with an explicit sunset condition, NOT permanent `pipelineTelemetry`) and implement it so the defensive grounding alias map can eventually retire with evidence that reports emit short sequential `EV_001`-style IDs. | Analyzer / Observability / Cleanup | low | low | `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` §11 Q1 |
+
+---
+
+## Recently Completed (2026-06-01)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Pipeline telemetry Phase 1/2 + D5 derivable subcounts**: added first-class additive `AnalysisMetrics.pipelineTelemetry` (contractValidation, claim-scoped verdictDirection, challenger-scoped challengerModelGuard) + `telemetryContext` provenance, computed post-analysis with **no pipeline behavior change**; `/summary` API aggregation with availability/not-applicable buckets, denominator-correct rates, and per-window `schemaVersions`; and the derivable D5 split under `qualityHealth.d5` (insufficient_evidence vs insufficient_direct_evidence vs applicability-degraded) with `/quality-health` aggregation. No DB migration (reuses `MetricsJson`). Senior-Developer reviewed + independent diff review (fixed a not-applicable-vs-error aggregation bug). Deferred remainder tracked as TELEM-UI / TELEM-D5PIPE / TELEM-EVID. | Metrics / Observability | 2026-06-01 | `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` §15 |
 
 ---
 
