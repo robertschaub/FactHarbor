@@ -194,8 +194,8 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   providers: {
     googleCse: {
       enabled: true,
-      priority: 1,
-      dailyQuotaLimit: 8000, // Leave buffer below 10k limit
+      priority: 2,
+      dailyQuotaLimit: 100, // Free tier only (Google Cloud billing disabled); fallback behind Serper
     },
     serpapi: {
       enabled: false,
@@ -209,7 +209,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     },
     serper: {
       enabled: true,
-      priority: 2,
+      priority: 1, // Primary provider ($1/1k queries)
       dailyQuotaLimit: 0, // Paid per search
     },
     wikipedia: {
@@ -1267,8 +1267,8 @@ export const SourceReliabilityConfigSchema = z.object({
     dateRestrict: z.enum(["y", "m", "w"]).nullable().default(null),
     timeoutMs: z.number().int().min(5000).max(60000).default(15000),
     providers: z.object({
-      googleCse: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 1, dailyQuotaLimit: 0 }),
-      serper: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 2, dailyQuotaLimit: 0 }),
+      googleCse: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 2, dailyQuotaLimit: 100 }),
+      serper: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 1, dailyQuotaLimit: 0 }),
       serpapi: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 3, dailyQuotaLimit: 0 }),
       brave: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 4, dailyQuotaLimit: 0 }),
     }).default({}),
@@ -1323,8 +1323,8 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
     dateRestrict: null,
     timeoutMs: 15000,
     providers: {
-      googleCse: { enabled: true, priority: 1, dailyQuotaLimit: 0 },
-      serper: { enabled: true, priority: 2, dailyQuotaLimit: 0 },
+      googleCse: { enabled: true, priority: 2, dailyQuotaLimit: 100 },
+      serper: { enabled: true, priority: 1, dailyQuotaLimit: 0 },
       serpapi: { enabled: true, priority: 3, dailyQuotaLimit: 0 },
       brave: { enabled: true, priority: 4, dailyQuotaLimit: 0 },
     },

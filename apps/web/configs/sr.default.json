@@ -19,8 +19,8 @@
     "dateRestrict": null,
     "timeoutMs": 15000,
     "providers": {
-      "googleCse": { "enabled": true, "priority": 1, "dailyQuotaLimit": 0 },
-      "serper": { "enabled": true, "priority": 2, "dailyQuotaLimit": 0 },
+      "googleCse": { "enabled": true, "priority": 2, "dailyQuotaLimit": 100 },
+      "serper": { "enabled": true, "priority": 1, "dailyQuotaLimit": 0 },
       "serpapi": { "enabled": true, "priority": 3, "dailyQuotaLimit": 0 },
       "brave": { "enabled": true, "priority": 4, "dailyQuotaLimit": 0 }
     }
