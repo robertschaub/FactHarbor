@@ -1,0 +1,52 @@
+[
+  {
+    "inputType": "text",
+    "inputValue": "Plastic recycling is pointless",
+    "note": "contested-EN"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Plastik recycling bringt nichts",
+    "note": "contested-DE"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+    "note": "contested-EN-legal"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "note": "contested-DE-contractanchor"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Using hydrogen for cars is more efficient than using electricity",
+    "note": "contested-EN"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+    "note": "contested-DE"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Switzerland is a federal republic",
+    "note": "clear-EN-true"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Meta exited the US Third-Party Fact-Checking Program (January 2025)",
+    "note": "clear-EN-true"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Der Bundesrat hat den EU-Vertrag unterzeichnet",
+    "note": "clear-DE-true"
+  },
+  {
+    "inputType": "text",
+    "inputValue": "Muslims are more violent than Christians.",
+    "note": "sensitive-EN"
+  }
+]
