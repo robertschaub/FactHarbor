@@ -1,8 +1,8 @@
 ---
-version: "2.6.41"
+version: "2.6.42"
 pipeline: "source-reliability"
 description: "Source reliability evaluation prompt for LLM-based domain assessment"
-lastModified: "2026-01-27T00:00:00Z"
+lastModified: "2026-06-01T00:00:00Z"
 variables:
   - domain
   - currentDate
@@ -60,7 +60,7 @@ ${evidenceSection}
    - 3+ fact-checker failures AND academic/research classification as unreliable/misinformation
      -> score in unreliable band (0.15-0.28). The academic confirmation elevates severity beyond
      individual fact-check failures.
-   - 3+ fact-checker failures AND cited in disinformation tracking databases (EUvsDisinfo etc.)
+   - 3+ fact-checker failures AND cited in official or intergovernmental disinformation-tracking databases
      -> score in unreliable band (0.15-0.28).
    - Multiple HIGH negative signals that independently confirm the same pattern (e.g., fact-checkers
      + academic researchers + press councils all documenting inaccuracy) -> use the LOWER applicable
@@ -70,8 +70,10 @@ ${evidenceSection}
    When evidence items are labeled with probativeValue, weight HIGH items most heavily in determining
    which band applies.
 
-   Press council reprimands from countries with rule of law -> count as fact-checker failures
-   (Reprimands from regimes without rule of law should be IGNORED or viewed positively)
+   Press council reprimands from a body whose independence is evidenced -> count as fact-checker failures.
+   Reprimands from a body whose independence is NOT evidenced are non-probative (neither positive nor
+   negative) -> UNLESS independent evidence shows the reprimand is retaliatory or otherwise
+   credibility-relevant, in which case weight that evidenced context, not the reprimand's origin alone.
 
 4. SOURCE TYPE SCORE CAPS (hard limits - NO exceptions, score within band not at border)
    - sourceType="propaganda_outlet" -> score MUST be in highly_unreliable band (0.01-0.14)
@@ -177,7 +179,7 @@ Political bias alone does NOT make a source propaganda or disinformation.
 - aggregator: Republishes content from other sources
 - propaganda_outlet: PRIMARY PURPOSE is coordinated influence operations
   CLASSIFICATION TRIGGERS (ANY ONE is sufficient):
-  (1) Listed on government/EU disinformation tracking databases
+  (1) Listed on official government or intergovernmental disinformation tracking databases
   (2) Identified by academic disinformation researchers as coordinated influence
   (3) Evidence shows domain mirrors/amplifies known state propaganda narratives
   (4) Domain registered/operated by sanctioned entities or state actors
@@ -194,14 +196,11 @@ ADDITIONAL GUIDANCE for severe classifications:
   - propaganda_outlet: DO NOT USE for mainstream outlets with political bias, advocacy journalism
   - known_disinformation: DO NOT USE for outlets with occasional fact-check failures but real journalistic operation
 
-SOURCE TYPE SCORE CAPS (hard limits):
-  - propaganda_outlet:       MAX 0.14 (highly_unreliable)
-  - known_disinformation:    MAX 0.14 (highly_unreliable)
-  - state_controlled_media:  MAX 0.42 (leaning_unreliable)
-  - platform_ugc:            MAX 0.42 (leaning_unreliable)
-  - collaborative_reference: NO CAP (scored purely on evidence)
+SOURCE TYPE SCORE CAPS (hard limits): see CRITICAL RULES item 4 above — those caps are authoritative
+(propaganda_outlet / known_disinformation -> highly_unreliable; state_controlled_media / platform_ugc ->
+leaning_unreliable; collaborative_reference -> NO CAP). Apply them from that single definition; do not
+restate the numeric bands here, to avoid divergence.
 Note: If evidence suggests a source has reformed, reclassify the sourceType instead.
-Note: collaborative_reference is NOT capped — these platforms are evaluated on evidence alone.
 
 ## RECOGNIZED INDEPENDENT ASSESSORS (any of these count as "fact-checker")
 
@@ -209,7 +208,7 @@ TIER 1 - Full Authority (single mention can establish verdict):
   - IFCN signatories (International Fact-Checking Network)
   - Media credibility rating services (source rating databases)
   - Academic disinformation research labs (university-affiliated)
-  - EU/government disinformation tracking units
+  - Official or intergovernmental disinformation tracking units
   - Press freedom organizations (journalist protection NGOs)
   - Digital forensics/open-source intelligence organizations
 
@@ -249,9 +248,9 @@ TASK: For each evidence item about "${domain}", classify THREE fields:
 Guidance:
 - Use the recognized independent assessor taxonomy above.
 - HIGH = authoritative third-party assessments, rulings, and directly probative findings.
-  Examples: MBFC (Media Bias/Fact Check) ratings, NewsGuard ratings, AllSides bias/reliability ratings,
-  CORRECTIV fact-checks, Snopes verdicts, PolitiFact rulings, IFCN signatory assessments,
-  press council rulings, EU disinfo tracking (EUvsDisinfo). These are ALL fact_checker_rating.
+  Examples: IFCN-signatory fact-checker assessments, media-credibility / bias rating services,
+  press council rulings, and official or intergovernmental disinformation-tracking units.
+  These are ALL fact_checker_rating.
 - MEDIUM = substantive but indirect supporting analyses.
   Examples: academic papers studying media reliability, journalism school reports,
   think tank analyses, newsroom investigations of editorial practices.

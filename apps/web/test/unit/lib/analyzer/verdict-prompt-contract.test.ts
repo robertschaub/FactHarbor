@@ -720,7 +720,7 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("scope-clarifying treatment");
       expect(section).toContain("closest authoritative measures");
       expect(section).toContain("flow or process metrics");
-      expect(section).toContain("current stock, standing population, or inventory");
+      expect(section).toContain("current stock or standing total");
     });
 
     it("institutional-ecosystem extraction allows convergent actor and network pages to evidence ecosystem existence", () => {

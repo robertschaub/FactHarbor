@@ -1,8 +1,8 @@
 ---
-version: "1.0.9"
+version: "1.0.10"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-05-24T00:00:00Z"
+lastModified: "2026-06-01T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -100,8 +100,8 @@ Given the input text below, extract:
   - Keep roughClaims close to the original proposition and make `searchHint` stay in the input language unless a foreign-language source-native label is clearly needed. The `searchHint` must name the activity plus a concrete institutional signal route (for example directory/registry presence, participant/member/certification lists, network rosters, dedicated units or desks, recurring organizational outputs, or governance/monitoring structures) rather than only the broad activity label.
   - Do NOT let `searchHint` collapse to generic words such as system, infrastructure, institutions, landscape, or comparison unless the hint also names the concrete source-native signal or artifact being sought.
   - Prefer actor-, participant-, membership-, certification-, roster-, or recurring-output routes before abstract governance or coordination routes. Do NOT steer `searchHint` toward the governance of a broader policy problem or harm domain unless that source-native route explicitly inventories, governs, or structurally describes the named activity ecosystem itself.
-- **Language detection**: Detect the primary language of the input text and return the BCP-47 language code (e.g., "de", "en", "fr", "es", "pt"). Base this on the input text itself, not on entity names within it (e.g., "Zürich" in an English sentence is still English input).
-- **Geography inference**: Return a country code ONLY when the claim describes events, conditions, or measurements **occurring within** a specific place. **Priority rule**: if the claim explicitly names a sub-national geographic entity (city, district, canton, province, region, county, municipality, or other administrative unit), derive the country from that entity — the input language is irrelevant to this determination (e.g., a German-language claim naming a city or canton that belongs to Switzerland → Swiss country code, not a German-speaking country's code). Return `null` when a country is merely the subject or actor but evidence would come from international sources (e.g., "Country D developed technology Y" → `null`, "Country E exports product Z" → `null`). Do NOT infer geography from input language, institutions, or cultural associations. When in doubt, return `null`.
+- **Language detection**: Detect the primary language of the input text and return the BCP-47 language code (e.g., "de", "en", "fr", "es", "pt"). Base this on the input text itself, not on entity names within it (e.g., a place name appearing inside a sentence written in language L does not by itself change the detected language — classify by the surrounding text, not the named entity).
+- **Geography inference**: Return a country code ONLY when the claim describes events, conditions, or measurements **occurring within** a specific place. **Priority rule**: if the claim explicitly names a sub-national geographic entity (city, district, canton, province, region, county, municipality, or other administrative unit), derive the country from that entity — the input language is irrelevant to this determination (e.g., a claim written in language L_a that names a sub-national unit belonging to country C → country C's code, even when L_a is not C's dominant language). Return `null` when a country is merely the subject or actor but evidence would come from international sources (e.g., "Country D developed technology Y" → `null`, "Country E exports product Z" → `null`). Do NOT infer geography from input language, institutions, or cultural associations. When in doubt, return `null`.
 
 ### Input
 
@@ -223,7 +223,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 
    *Worked example of the sibling test:* for an input stating that "the committee approved" a proposal, a surface-vocabulary sibling is "a committee member approved" the proposal. The alternative differs in whether the approval was an institutional decision of the committee as a body vs. an individual endorsement — different evidence would verify each. The "collective-body-vs-individual-member" aspect is therefore distinguishing. Note: this is the **method**, not a template. Apply the sibling test to the actual input you were given.
 3. **Aspects commonly distinguishing** (not exhaustive; you identify what applies to this specific input): agent; action or predicate; temporal and causal relations; scope or quantification; modal and illocutionary status (examples from other domains: possible vs certain, obligatory vs permitted, licensed vs prohibited); attribution and source-framing.
-4. **Commit to preserving each distinguishing aspect in the decomposition.** Preservation requires retaining the input's own words for each distinguishing aspect in the **primary thesis-direct claim's statement**. If the input's own wording carries an aspect, the primary thesis-direct claim must carry it too — dropping, weakening, or shifting the aspect's role (adverbial force → mere descriptor, finality → mere occurrence, binding commitment → mere scheduling) is a preservation failure even if the claim reads fluently.
+4. **Commit to preserving each distinguishing aspect in the decomposition** — retain the input's own words for each distinguishing aspect in the **primary thesis-direct claim's statement**. The **Wording fidelity** rule under Rules below is authoritative on what counts as dropping, weakening, or shifting an aspect (adverbial force, finality, binding commitment, etc.); carry these commitments into that rule rather than re-deriving them here.
 5. **Edge case — plain assertions:** if the input is a plain factual assertion with no distinguishing aspect beyond the bare agent-action-object, the commitment list is minimal.
 6. **Proceed to the rules below** with this meaning commitment in mind. The rules below remain authoritative; this section is a mandatory reasoning scaffold that precedes rule application.
 
@@ -908,7 +908,7 @@ Treat `${freshnessRequirement}` as the authoritative claim-level freshness contr
 - When the claim uses a broad public-language population label but the authoritative publisher likely uses a different source-native umbrella label, include at least one official-source query with the public-language wording and at least one with the likely source-native umbrella wording. Do NOT let all official queries collapse onto a narrower formal subcategory unless the claim itself is explicit about that narrower category.
 - For current-versus-historical or current-versus-reference comparison claims phrased with a broad public-language population label, keep at least one current-side official query anchored to the broadest authoritative umbrella total that could satisfy or falsify the comparison. Do NOT let all current-side official queries collapse onto a narrower formal status subset merely because that subset is easier to find.
 - Avoid institution-plus-topic-only official queries when they are likely to land on the publisher homepage. Prefer the specific statistics subsite, archive, or recurring publication route that can surface the decisive figure directly.
-- When the claim is explicitly about the present or current state (for example: current, currently, now, today, aktuell, derzeit, zurzeit, en ce moment), prioritize the newest source-native route intended to reflect the current state before falling back to historical or retrospective summaries.
+- When the claim's meaning concerns the present or current state (regardless of the specific words or language used to express it), prioritize the newest source-native route intended to reflect the current state before falling back to historical or retrospective summaries.
 - When the decisive current figure may be a composite assembled from multiple official sub-counts rather than a single published headline number, generate one query for the umbrella total and one query for the current component breakdown within the same source family.
 - When the decisive proposition may depend on an umbrella figure plus aligned component figures, at least one query must keep the umbrella population, metric, or threshold comparison as the main target rather than collapsing entirely into component-only phrasing. Component-breakdown queries are complementary, not substitutes for the umbrella query.
 - When the claim itself contains a numeric threshold or count anchor, preserve that anchor or a direct comparison to it in at least one query when doing so would help locate the decisive current figure.
@@ -1136,7 +1136,7 @@ You are an evidence extraction engine. Your task is to extract evidence items fr
 
 Given a claim and source content, extract evidence items with full metadata including:
 - `statement`: The evidence assertion (fact, finding, data point)
-- `category`: Type of evidence (statistical_data, expert_testimony, case_study, etc.)
+- `category`: Exactly one canonical category — one of `legal_provision`, `evidence`, `direct_evidence`, `expert_quote`, `statistic`, `event`, `criticism`.
 - `claimDirection`: How this relates to the claim ("supports", "contradicts", "contextual")
 - `evidenceScope`: **REQUIRED** — methodology, temporal bounds, geographic/system boundaries, analytical dimension
 - `probativeValue`: Quality assessment ("high", "medium", "low")
@@ -1162,7 +1162,7 @@ Given a claim and source content, extract evidence items with full metadata incl
 - A narrower official subcategory or legal-status subset is NOT automatic contradiction to a broader public-language total claim. Treat such subset figures as `contradicts` only when the claim itself clearly names that narrower category or when the source explicitly presents the subset as the full answer to the claim's target population; otherwise prefer `contextual` or scope-clarifying treatment.
 - For approximate comparison claims, when two source-native umbrella totals are the closest authoritative measures for the broad public-language populations being compared, extract both as usable comparison evidence and preserve any scope caveats in `evidenceScope` rather than converting label mismatch alone into contradiction.
 - If the relevant figure appears in a table cell, bullet list, chart label, or short statistical sentence rather than a narrative paragraph, still extract it with the literal number. Treat table-style numeric reporting as first-class evidence, not background.
-- Do NOT treat flow or process metrics (for example: applications filed, decisions issued, permits granted, admissions approved, arrivals during a period) as contradiction to a claim about a current stock, standing population, or inventory unless the source explicitly states that the flow metric is the same quantity the claim is about. For stock claims, such flow metrics are usually contextual.
+- Do NOT treat flow or process metrics (counts of events occurring during a period) as contradiction to a claim about a current stock or standing total at a point in time unless the source explicitly states that the flow metric is the same quantity the claim is about. For stock claims, such flow metrics are usually contextual.
 - **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
@@ -1221,7 +1221,7 @@ Return a JSON object:
     {
       "statement": "string — the evidence assertion",
       "sourceUrl": "https://example.com/source-url",
-      "category": "string — evidence type",
+      "category": "legal_provision | evidence | direct_evidence | expert_quote | statistic | event | criticism",
       "claimDirection": "supports",
       "evidenceScope": {
         "methodology": "string — how this was measured/studied",
@@ -1693,6 +1693,7 @@ Produce a final verdict that:
 - Do NOT uphold a low-truth or false verdict solely because one side of a broad public-language population claim has a narrower official subset count. Reconcile against the closest authoritative umbrella totals first unless the claim itself explicitly uses the narrow formal category.
 - Do NOT let topical-adjacent mentions, isolated implementations, or platform-specific programs outweigh direct evidence about the broader ecosystem structure when the claim is about whether a practice is systematic or institutionalized.
 - For approximate comparisons between broad public-language populations, resolve truth primarily on whether the authoritative totals are materially close in magnitude. Reserve strong truth downgrades for cases where the numeric gap or scope mismatch changes the comparison's substantive answer, not merely because the labels are not perfectly identical.
+- Conversely, when the claim's own wording states a strict comparison operator or threshold (for example, "more than", "at least as many as", "exceeds"), honor that stated strictness: loose magnitude closeness does not by itself satisfy a strictly-stated threshold. If the decisive evidence shows the strictly-stated operator is not met, reflect that in `truthPercentage` — not only in confidence or misleadingness. This is the symmetric counterpart to the rule below against imposing strictness the claim did not state.
 - When a historical comparator is available only as a published umbrella period-total and no direct endpoint stock is evidenced, treat stock-versus-period asymmetry primarily as a confidence or misleadingness caveat. Do NOT force a low-truth verdict by inventing an uncited lower endpoint comparator that is not actually in evidence.
 - Reject or heavily discount challenges that lower truth mainly by imposing a stricter synchronized-stock, endpoint-only, or same-method comparator that the AtomicClaim does not explicitly state and the evidence does not directly provide.
 - If a challenge depends on a hand-built lower comparator assembled from selected subgroups, assumed non-overlap, assumed attrition, or assumed duration, treat that as a confidence or misleadingness concern unless the source itself transparently endorses the reconstruction for the same comparison target. Do not let such unsupported arithmetic drive a strong truth downgrade.
