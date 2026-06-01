@@ -33,7 +33,7 @@ const API_URL = (process.env.FH_API_URL || 'http://localhost:5000').replace(/\/$
 const INVITE = process.env.FH_INVITE_CODE || 'SELF-TEST';
 const PER_JOB_USD = Number(process.env.FH_PER_JOB_USD) || 0.75;
 const POLL_MS = 5000;
-const TIMEOUT_MS = 600000;
+const TIMEOUT_MS = Number(process.env.FH_JOB_TIMEOUT_MS) || 1800000; // 30 min/job (jobs run ~10-15 min under heavy local load)
 const HIGH_OVERLAP = 0.5; // Jaccard >= this => "within-pool" (proxy-catchable); below => substitution
 
 function parseArgs(argv) {
