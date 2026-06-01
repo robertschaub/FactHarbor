@@ -28,6 +28,38 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+
+// Per-job telemetry (additive, schemaVersion 1.0) lives in AnalysisMetrics.MetricsJson
+// (NOT ResultJson, NOT a Jobs column). Read it by JobId. ABSENCE = MISSING, not zero.
+// NB: pipelineTelemetry.verdictDirection is the direction-VALIDATOR control path — it is
+// NOT a rerun-stability signal. Rerun stability is measured ONLY from result.verdict.
+const DB_PATH = process.env.FH_DB_PATH || path.join(__dirname, '..', '..', 'apps', 'api', 'factharbor.db');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function readMetricsForJob(jobId) {
+  if (!jobId) return null;
+  try {
+    const q = "SELECT MetricsJson FROM AnalysisMetrics WHERE JobId='" + String(jobId).replace(/'/g, "''") + "' ORDER BY CreatedUtc DESC LIMIT 1";
+    const out = execFileSync('sqlite3', ['-readonly', '-json', DB_PATH, q], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    const rows = out.trim() ? JSON.parse(out) : [];
+    return rows.length ? JSON.parse(rows[0].MetricsJson) : null;
+  } catch { return null; }
+}
+async function attachTelemetry(rec) {
+  let m = null;
+  for (let i = 0; i < 5 && !m; i++) { m = readMetricsForJob(rec.jobId); if (!m) await sleep(2000); }
+  const pt = m && m.pipelineTelemetry;
+  rec.pipelineCommitId = (m && m.telemetryContext && m.telemetryContext.pipelineCommitId) || null;       // null = missing
+  rec.pipelineCommitShort = (m && m.telemetryContext && m.telemetryContext.pipelineCommitShort) || null;
+  rec.telemetry = pt ? {
+    contractValidation: pt.contractValidation && pt.contractValidation.status || null,
+    verdictDirection: pt.verdictDirection && pt.verdictDirection.status || null,        // control-flow health ONLY
+    challengerModelGuard: pt.challengerModelGuard && pt.challengerModelGuard.status || null,
+  } : null;
+  rec.d5 = (m && m.qualityHealth && m.qualityHealth.d5) || null;
+  rec.telemetryPresent = !!pt;
+  return rec;
+}
 
 const API_URL = (process.env.FH_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const INVITE = process.env.FH_INVITE_CODE || 'SELF-TEST';
@@ -167,6 +199,21 @@ function analyzeRecords(records) {
   }
   console.log(`\n=== per-input detail ===`);
   for (const p of perInput) console.log(`  [${p.flag}] runs=${p.runs}${p.failed ? `(+${p.failed} failed)` : ''} meanJaccard=${p.meanJaccard} truth=${p.truthRange}  {${p.verdicts}}  "${p.label}"`);
+
+  // Telemetry provenance + control-flow health (absence = MISSING, not zero; compare on pipelineCommitId).
+  const okRuns = records.filter((r) => r.status === 'SUCCEEDED');
+  const commits = [...new Set(okRuns.map((r) => r.pipelineCommitShort).filter(Boolean))];
+  const noTelem = okRuns.filter((r) => !r.telemetryPresent).length;
+  console.log(`\n=== telemetry provenance + pipeline health ===`);
+  if (commits.length === 0) console.log(`  pipelineCommitId: MISSING on all ${okRuns.length} runs (pre-telemetry build) — provenance unavailable`);
+  else if (commits.length === 1) console.log(`  pipelineCommitId: all runs on ${commits[0]} — clean same-code comparison`);
+  else console.log(`  WARNING pipelineCommitId spans ${commits.length} commits {${commits.join(', ')}} — NOT pure same-code; segment before comparing`);
+  if (noTelem) console.log(`  ${noTelem}/${okRuns.length} runs missing pipelineTelemetry (treated as missing, not zero)`);
+  const statusTally = {};
+  for (const r of okRuns) if (r.telemetry) for (const k of Object.keys(r.telemetry)) { const s = r.telemetry[k]; if (s) { const lvl = s.error ? 'error' : (s.partial ? 'partial' : 'available'); const key = k + ':' + lvl; statusTally[key] = (statusTally[key] || 0) + 1; } }
+  const flags = Object.keys(statusTally).filter((k) => k.endsWith(':error') || k.endsWith(':partial'));
+  if (flags.length) console.log(`  control-flow telemetry FLAGS: ${flags.map((k) => k + '=' + statusTally[k]).join(', ')}`);
+  else if (okRuns.some((r) => r.telemetry)) console.log(`  control-flow telemetry: all sections available (no error/partial)`);
 }
 
 // ---- main ---------------------------------------------------------------------
@@ -215,9 +262,11 @@ function analyzeRecords(records) {
         const jobId = await submit(input);
         const job = await waitFor(jobId);
         const rec = extract(job, label, r);
+        await attachTelemetry(rec);
         stream.write(JSON.stringify(rec) + '\n');
         done++;
-        console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ${rec.status} ${rec.verdict ?? '-'} truth=${rec.truth ?? '-'} sources=${rec.nSources}`);
+        const commit = rec.pipelineCommitShort || (rec.telemetryPresent ? '?' : 'no-telem');
+        console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ${rec.status} ${rec.verdict ?? '-'} truth=${rec.truth ?? '-'} sources=${rec.nSources} commit=${commit}`);
         if (rec.verdict === 'UNVERIFIED') {
           unverified++;
           if (args.stopAfterUnverified > 0 && unverified >= args.stopAfterUnverified) {
@@ -238,6 +287,6 @@ function analyzeRecords(records) {
   const unv = recs.filter((r) => r.verdict === 'UNVERIFIED');
   if (unv.length) {
     console.log(`\n=== UNVERIFIED cases — drill into WHY (node scripts/diag/compare-evidence-pools.cjs <jobId> [<jobId>...]) ===`);
-    for (const u of unv) console.log(`  ${u.jobId}  truth=${u.truth ?? '-'}  "${u.label}"`);
+    for (const u of unv) console.log(`  ${u.jobId}  truth=${u.truth ?? '-'}  d5=${u.d5 ? JSON.stringify(u.d5) : 'missing'}  "${u.label}"`);
   }
 })();
