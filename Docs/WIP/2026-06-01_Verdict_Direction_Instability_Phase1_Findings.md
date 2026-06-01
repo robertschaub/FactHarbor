@@ -10,7 +10,9 @@ tool: scripts/diag/verdict-direction-instability.cjs (read-only)
 **Date:** 2026-06-01 · **Role:** Lead Architect · **Status:** grounding only; nothing built.
 
 ## 0. TL;DR
-On **identical input + identical code + identical prompts**, the pipeline flips the verdict's **truth direction (TRUE-leaning ↔ FALSE-leaning) ~14–17%** of the time, flips **in/out of UNVERIFIED ~25–37%**, gives a **different verdict label ~67–70%**, with a **median truth-% swing of ~12–18 points** (max 44). The bolsonaro 44↔71 was **representative, not a fluke.** This is real and worth a fix — but the clean sample is small and biased toward contested inputs, so the rate is an **upper-ish bound from a thin sample**, not a precise population figure. Recommendation: pursue a **targeted, cheap stability gate**, but get a **precise baseline via a small controlled re-run batch first** (the one spend ask).
+**Existence is proven:** in the 12 confound-clean clusters (same input + same code + same prompt), 8 disagree on the verdict label and 2 flip truth *polarity* (TRUE-leaning ↔ FALSE-leaning) — e.g. "Plastic recycling" swings MOSTLY-FALSE↔LEANING-TRUE, the Bundesrat claim LEANING-FALSE↔MOSTLY-TRUE. Drift-driven verdict instability is real; the bolsonaro 44↔71 was representative, not a fluke.
+**Two things are NOT known and matter for any fix:** (a) the **rate** — the clean sample is tiny (N=12) and selected for contested benchmark inputs, so the observed ~14–17% polarity / ~25–37% UNVERIFIED flip is an **unpinned contested-input upper band**, not a population figure; (b) **what drives the flips** — measured pool overlap is Jaccard 0.10–0.29, so the dominant driver is likely *sources not retrieved* (pool substitution), which a cheap within-pool fix cannot see.
+**Recommendation:** do **not** commit to a fix mechanism yet. One **controlled re-run batch** resolves *both* unknowns — it pins the rate *and* tests whether a cheap within-pool stability proxy would actually catch real cross-run flips. Build the mechanism the batch points to.
 
 ## 1. Measurement (read-only; `scripts/diag/verdict-direction-instability.cjs`)
 Clustered 1,564 SUCCEEDED jobs by repeated identical `InputValue`, at three confound-control levels:
@@ -22,9 +24,9 @@ Clustered 1,564 SUCCEEDED jobs by repeated identical `InputValue`, at three conf
 | L3 | + same prompts (**pure drift**) | 12 | ~2.75 | 67% | **17%** | 25% | 12 / 42 / 44 |
 
 **Reading it correctly:**
-- **L1 is inflated** by far more runs per cluster (~11) — more runs = more chances to observe a flip. Don't use L1 for the rate.
-- **L2 vs L3 is the fair comparison** (matched ~2.8 runs/cluster). Adding the prompt control (L2→L3) barely moves the numbers → the instability is **genuine evidence-pool drift, not code or prompt churn.**
-- At only 2–3 runs/cluster these are **lower bounds** on the true per-input flip propensity.
+- **Existence rests on L3 alone, and L3 is airtight:** every L3 cluster holds input + code + prompt *constant*, yet 8/12 produce a different verdict label. That is a direct, sufficient proof of drift-driven instability — no cross-level inference needed.
+- **Do NOT read L1/L2 as independent corroboration of the rate.** L3 ⊂ L2 (same input+code, just refined by prompt-hash), `PromptContentHash` is null for most rows so L2 is not really "prompt-controlled," and all three levels share the same contested-benchmark selection bias. Their numbers agreeing is partly mechanical (matched ~2.8 runs/cluster), not three independent estimates. L1's higher figures are further inflated by ~11 runs/cluster (more runs = more flip opportunities).
+- **So treat the rate as unpinned.** At 2–3 runs/cluster even the clean figures are *lower bounds* on per-input flip propensity, from a thin, upward-biased sample. The rate needs a controlled batch (§6); existence does not.
 
 **The pure-drift clusters (L3) by name** — Plastic-recycling, Bolsonaro, Hydrogen, "Bundesrat … rechtskräftig". Examples: `Plastic recycling` swings MOSTLY-FALSE↔LEANING-TRUE (truth 21→59); the Bundesrat claim swings LEANING-FALSE↔MOSTLY-TRUE; Hydrogen swings UNVERIFIED↔FALSE (truth 6→50).
 
@@ -48,20 +50,28 @@ Any robustness mechanism trades against three standing constraints:
 |---|---|---|---|---|---|
 | 1 | **Confidence dampening on thin/contested pools** — widen toward MIXED/lower-confidence when evidence is sparse or highly contradictory | polarity flips | low (verdict-logic only) | fewer false-confident flips | blunt → can raise UNVERIFIED/MIXED (UNVERIFIED-bar tension) |
 | 2 | **Raise evidence-sufficiency to commit to a polarity** | polarity flips | low | stronger verdicts only | same UNVERIFIED-bar tension as #1; coarser |
-| 3 | **Verdict-stability gate via evidence RESAMPLING (no new LLM)** — recompute the verdict over bootstrap subsamples of the *existing* pool; if the polarity flips under resampling, the verdict is pool-sensitive → lower confidence / widen to MIXED **only then** | the instability *directly* (detects pool-sensitivity) | low–med (deterministic resampling of existing evidence; **no extra LLM calls** if verdict aggregation is rule-based, med if it needs an LLM re-call) | **targeted** — only dampens when genuinely unstable, so it doesn't blanket-raise UNVERIFIED | needs the verdict aggregation to be re-runnable on a subset; design work |
+| 3 | **Verdict-stability gate via evidence RESAMPLING (no new LLM)** — recompute the verdict over bootstrap subsamples of the *existing* pool; if the polarity flips under resampling, the verdict is pool-sensitive → lower confidence / widen to MIXED **only then** | within-pool fragility only | low–med (deterministic resampling of existing evidence; **no extra LLM calls** if verdict aggregation is rule-based, med if it needs an LLM re-call) | targeted; doesn't blanket-raise UNVERIFIED | **⚠ structurally blind to pool-SUBSTITUTION drift** — it can only drop sources you *have*, not the different sources you *didn't retrieve*. Given Jaccard 0.10–0.29 (pools barely overlap), substitution is likely the dominant driver, so this proxy may **under-detect the real cross-run flips**. Necessary-ish, not sufficient. Must be validated against the batch (§6) before building. |
 | 4 | **Larger / saturated evidence pools** — over-fetch so the pool is more stable run-to-run | drift at source | med–high (more fetch + extraction $) | less drift to be sensitive to; aligns with the fetch-sizing finding (25–50%-fail bucket was best) | cost; diminishing returns; doesn't fix sensitivity, only feeds it more |
 | 5 | **Authoritative-evidence anchoring** — weight direct/authoritative evidence so marginal sources can't swing the verdict | sensitivity to marginal sources | med (verdict-weighting change) | verdict driven by stable core, not drift-y margins | needs a robust authority signal; interacts with applicability/direct gating just changed |
 
-## 5. Recommendation
-- **Most promising:** **Option 3 (resampling stability gate)** — it's the only one that targets the instability *directly* and *selectively* (dampens confidence only when the verdict is demonstrably pool-sensitive), so it reduces flips without the blunt UNVERIFIED inflation that #1/#2 risk. Pair with a light **#5 anchoring** if the resampling shows marginal sources are the swing factor.
-- **Do NOT** start with #1/#2 alone — they fight the checkworthy-UNVERIFIED bar.
-- **#4** is a fallback only if source-drift turns out dominant over verdict-sensitivity.
+## 5. Recommendation — no fix mechanism is safe to commit to yet
+The measured Jaccard (0.10–0.29) points to **pool substitution** (sources not retrieved) as the likely dominant driver, which reframes the options:
+- **Option 3 (within-pool resampling) is NOT the safe frontrunner** it first looks like — it is blind to substitution drift (§4) and would likely under-detect the real flips. Build it only if the batch shows within-pool fragility actually predicts cross-run flips.
+- **If substitution dominates** (the likely case), the on-target mechanisms are **#4 (larger/saturated pools** — reduce substitution at the source; aligns with the fetch-sizing finding that more sources helped**)** and/or **#5 (anchor the verdict to stable authoritative evidence** so marginal-source churn can't swing it**)**, or a cross-pool **consensus** approach (expensive).
+- **Do NOT** start with #1/#2 alone — they reduce flips by inflating UNVERIFIED/MIXED, which fights the checkworthy-UNVERIFIED bar.
+
+The driver is genuinely unknown from existing data (free read-only data is exhausted — same-code clusters average only 2.8 runs). The right move is to let the batch decide the mechanism, not pre-pick one.
 
 ## 6. Phase-2 decision (Captain)
-The thin clean sample (N=12) is enough to confirm the problem is real, **not** enough to (a) baseline a precise rate or (b) measure a fix against. So before building Option 3 I recommend **one controlled re-run batch** — re-run a representative, Captain-provided input set (mix of contested + clear, multilingual) **N times on the current commit**, to get a precise per-input flip rate. That batch then doubles as the before/after yardstick for any fix.
+Existence is settled; the existing data is exhausted. **One controlled re-run batch** — a representative, Captain-provided input set (contested + clear, multilingual) run **N times on the current commit**, capturing per-run verdict **and the evidence-source set** — resolves all three open questions at once:
+1. **Rate** — the real per-input polarity/UNVERIFIED flip frequency (pins the unpinned upper band).
+2. **Driver** — compute cross-run source-set overlap (Jaccard) vs verdict agreement: is the flipping driven by *pool substitution* (low overlap) or *within-pool sensitivity* (high overlap, different verdict)? This decides between the §5 mechanism families.
+3. **Proxy validity** — for each real cross-run flip, would the cheap within-pool resampling gate (Option 3) have flagged it? If that catch-rate is low, Option 3 is the wrong build — and we've learned that for the price of the batch, not a failed implementation.
+
+The batch also becomes the before/after yardstick for whatever fix the driver points to.
 
 **Two asks:**
-1. **Go/no-go on a controlled re-run batch** (real LLM cost; I'll cost it once you fix the input set + N) — needed for a precise baseline and to measure a fix.
-2. If yes, **provide the input set** (I won't fabricate it) — and I'll then prototype **Option 3** against that baseline.
+1. **Go/no-go on the controlled re-run batch** (real LLM cost; I'll cost it precisely once the input set + N are fixed).
+2. If yes, **provide the input set** (I won't fabricate it). I'll then build the harness (read-only on the pipeline; it just runs jobs + records verdict + source-set), report the three measurements, and recommend the mechanism the data points to.
 
-If you'd rather not spend, the honest fallback is: the problem is confirmed-real at ~14–17% polarity-flip on contested inputs, Option 3 is the design to build, and we accept building against the thin baseline.
+If you'd rather not spend: existence is proven, but the rate, the driver, and any fix's validity all stay unknown — so I would **not** build a fix blind. Better to log it as a known, bounded alpha limitation than to ship a mechanism that might be aimed at the wrong driver.
