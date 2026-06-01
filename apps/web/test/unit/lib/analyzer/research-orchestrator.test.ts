@@ -3,6 +3,7 @@ import {
   finalizeClaimAcquisitionTelemetry,
   recordApplicabilityRemovalTelemetry,
   recordSeededEvidenceTelemetry,
+  resolveDirectApplicabilityRequirement,
 } from "@/lib/analyzer/research-orchestrator";
 import type { CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
 
@@ -31,6 +32,41 @@ function createState(claimIds = ["AC_01", "AC_02", "AC_03"]): CBResearchState {
     warnings: [],
   };
 }
+
+describe("resolveDirectApplicabilityRequirement (degraded applicability fails open)", () => {
+  const assessed = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}`, applicabilityAssessed: true })) as any;
+  const unmarked = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}` })) as any;
+
+  it("keeps direct-applicability required when the classifier ran (items assessed)", () => {
+    expect(resolveDirectApplicabilityRequirement(true, assessed(3))).toBe(true);
+  });
+
+  it("drops the requirement when the classifier did NOT run (degraded → no item assessed)", () => {
+    // Infra degradation: assessEvidenceApplicability returns items UNMARKED. Requiring
+    // direct applicability here would collapse the job to UNVERIFIED on an infra failure
+    // (the fail-closed inversion this fixes).
+    expect(resolveDirectApplicabilityRequirement(true, unmarked(3))).toBe(false);
+  });
+
+  it("drops the requirement on a pool with no assessed item", () => {
+    expect(resolveDirectApplicabilityRequirement(true, [])).toBe(false);
+    expect(
+      resolveDirectApplicabilityRequirement(true, [{ id: "EV_0" }, { id: "EV_1", applicability: "contextual" }] as any),
+    ).toBe(false);
+  });
+
+  it("never requires when the base requirement is false (filter disabled / no geography)", () => {
+    expect(resolveDirectApplicabilityRequirement(false, assessed(5))).toBe(false);
+  });
+
+  it("requires when at least one surviving item is assessed (classifier ran)", () => {
+    expect(
+      resolveDirectApplicabilityRequirement(true, [{ id: "EV_0" }, { id: "EV_1", applicabilityAssessed: true }] as any),
+    ).toBe(true);
+  });
+});
 
 describe("research-orchestrator telemetry helpers", () => {
   it("records seeded evidence counts claim-locally", () => {

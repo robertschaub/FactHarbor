@@ -126,6 +126,7 @@ import {
   getClaimQueryBudgetRemaining,
   getClaimQueryBudgetUsed,
   getPerClaimQueryBudget,
+  resolveDirectApplicabilityRequirement,
 } from "./research-orchestrator";
 import {
   classifyRelevance,
@@ -226,6 +227,7 @@ export {
   getClaimQueryBudgetRemaining,
   getClaimQueryBudgetUsed,
   getPerClaimQueryBudget,
+  resolveDirectApplicabilityRequirement,
   type DiversitySufficiencyConfig,
 } from "./research-orchestrator";
 export {
@@ -1220,19 +1222,14 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // If the applicability classifier could not RUN (infra failure: LLM error /
-    // prompt-missing), it leaves items unmarked and emits
-    // `evidence_applicability_assessment_degraded`. We then have no directness
-    // information, so do NOT require direct applicability for D5 — failing the job
-    // on an infra failure would be a fail-closed regression. Strict directness
-    // applies only when the classifier actually ran (it marks every surviving item
-    // `applicabilityAssessed`).
-    if (
-      directApplicabilityRequiredForD5
-      && !state.evidenceItems.some((item) => item.applicabilityAssessed === true)
-    ) {
-      directApplicabilityRequiredForD5 = false;
-    }
+    // Direct-applicability is required for D5 only when the applicability classifier
+    // actually ran; on infra degradation (no surviving item assessed) it must not be
+    // required — otherwise an infra failure collapses verdicts (fail-closed
+    // regression). See resolveDirectApplicabilityRequirement.
+    directApplicabilityRequiredForD5 = resolveDirectApplicabilityRequirement(
+      directApplicabilityRequiredForD5,
+      state.evidenceItems,
+    );
 
     // Stage 3: Cluster Boundaries
     checkAbortSignal(input.jobId);

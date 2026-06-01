@@ -119,6 +119,10 @@ vi.mock("@/lib/analyzer/research-orchestrator", () => ({
   getClaimQueryBudgetRemaining: vi.fn(() => 0),
   getClaimQueryBudgetUsed: vi.fn(() => 0),
   getPerClaimQueryBudget: vi.fn(() => 0),
+  resolveDirectApplicabilityRequirement: (
+    baseRequired: boolean,
+    items: Array<{ applicabilityAssessed?: boolean }>,
+  ) => baseRequired && items.some((item) => item.applicabilityAssessed === true),
 }));
 
 vi.mock("@/lib/analyzer/research-extraction-stage", () => ({

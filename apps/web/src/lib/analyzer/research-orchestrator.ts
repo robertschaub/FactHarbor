@@ -1927,6 +1927,23 @@ function isPublishableDirectionalEvidence(
   return item.applicability === "direct";
 }
 
+/**
+ * Direct-applicability is required for D5 sufficiency only when the applicability
+ * classifier actually RAN. It marks every surviving evidence item
+ * `applicabilityAssessed` when it ran; on infra degradation (LLM error /
+ * prompt-missing) it leaves items unmarked and emits
+ * `evidence_applicability_assessment_degraded`. With no directness signal,
+ * direct-applicability must NOT be required — failing the job on an infra failure
+ * would be a fail-closed regression. Strict directness applies only when it ran.
+ */
+export function resolveDirectApplicabilityRequirement(
+  baseRequired: boolean,
+  evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
+): boolean {
+  if (!baseRequired) return false;
+  return evidenceItems.some((item) => item.applicabilityAssessed === true);
+}
+
 export function evaluateEvidenceSufficiency(
   claimEvidence: EvidenceItem[],
   config: DiversitySufficiencyConfig,
