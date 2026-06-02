@@ -45,6 +45,12 @@ function readMetricsForJob(jobId) {
     return rows.length ? JSON.parse(rows[0].MetricsJson) : null;
   } catch { return null; }
 }
+function sql(query) {
+  try {
+    const out = execFileSync('sqlite3', ['-readonly', '-json', DB_PATH, query], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    return out.trim() ? JSON.parse(out) : [];
+  } catch { return []; }
+}
 async function attachTelemetry(rec) {
   let m = null;
   for (let i = 0; i < 5 && !m; i++) { m = readMetricsForJob(rec.jobId); if (!m) await sleep(2000); }
@@ -78,6 +84,7 @@ function parseArgs(argv) {
     else if (v === '--analyze') a.analyze = argv[++i];
     else if (v === '--out') a.out = argv[++i];
     else if (v === '--stop-after-unverified') a.stopAfterUnverified = parseInt(argv[++i], 10);
+    else if (v === '--analyze-pool') a.analyzePool = argv[++i];   // commitShort to analyze the whole DB pool on
   }
   return a;
 }
@@ -224,6 +231,44 @@ function analyzeRecords(records) {
     const recs = fs.readFileSync(args.analyze, 'utf8').trim().split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l));
     console.log(`Analyzing ${recs.length} collected runs from ${args.analyze}`);
     analyzeRecords(recs);
+    return;
+  }
+
+  if (args.analyzePool) {
+    // READ-ONLY: pull every SUCCEEDED job on a given pipelineCommitShort from the DB
+    // (mine + anyone else's), reconstruct per-run records, run the same rate/driver/proxy.
+    const want = args.analyzePool;
+    const since = process.env.FH_POOL_SINCE || '2026-06-02';
+    const jobs = sql(`SELECT JobId AS id, InputValue AS inp, ResultJson AS rj FROM Jobs WHERE Status='SUCCEEDED' AND CreatedUtc>='${since}' AND ResultJson IS NOT NULL`);
+    const perInput = {};
+    const records = [];
+    let scanned = 0, matched = 0;
+    for (const j of jobs) {
+      scanned++;
+      const m = readMetricsForJob(j.id);
+      const pcs = m && m.telemetryContext && m.telemetryContext.pipelineCommitShort;
+      if (pcs !== want) continue;
+      matched++;
+      let result = {};
+      try { result = JSON.parse(j.rj); } catch { continue; }
+      const sources = [...new Set((result.sources || []).map((s) => normUrl(s && (s.url || s.sourceUrl))).filter(Boolean))];
+      const label = String(j.inp).slice(0, 46).replace(/\s+/g, ' ');
+      perInput[label] = (perInput[label] || 0) + 1;
+      const pt = m && m.pipelineTelemetry;
+      records.push({
+        label, runIdx: perInput[label], jobId: j.id, status: 'SUCCEEDED',
+        verdict: result.verdict ?? null, truth: result.truthPercentage ?? null,
+        nSources: sources.length, sources,
+        pipelineCommitShort: pcs,
+        telemetry: pt ? { contractValidation: pt.contractValidation && pt.contractValidation.status || null, verdictDirection: pt.verdictDirection && pt.verdictDirection.status || null, challengerModelGuard: pt.challengerModelGuard && pt.challengerModelGuard.status || null } : null,
+        d5: (m && m.qualityHealth && m.qualityHealth.d5) || null,
+        telemetryPresent: !!pt,
+      });
+    }
+    console.log(`Combined-pool analysis (READ-ONLY): ${matched}/${scanned} SUCCEEDED jobs since ${since} are on pipelineCommitShort=${want}`);
+    analyzeRecords(records);
+    const unv = records.filter((r) => r.verdict === 'UNVERIFIED');
+    if (unv.length) { console.log(`\n=== UNVERIFIED cases ===`); for (const u of unv) console.log(`  ${u.jobId} truth=${u.truth ?? '-'} sources=${u.nSources} d5=${u.d5 ? JSON.stringify(u.d5).slice(0, 120) : 'missing'}  "${u.label}"`); }
     return;
   }
 
