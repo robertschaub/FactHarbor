@@ -154,6 +154,7 @@
   "claimSufficiencyThreshold": 3,
   "relevanceFloor": 0.4,
   "sourceFetchTimeoutMs": 20000,
+  "sourceMaxResponseBytes": 31457280,
   "minEvidenceContentLength": 100,
   "fetchSameDomainDelayMs": 500,
   "fetchDomainSkipThreshold": 2,
