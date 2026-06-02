@@ -133,15 +133,19 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 
 ### Failed-Attempt Recovery
 
-When a code or prompt change fails its first focused validation (for example: `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not automatically stack broader edits on top of that failed attempt.
+A fix has **failed** when, after your change, a focused test/build fails, a live job regresses on a previously-passing input, **or you or the user judge the result worse than before** — not only red tests.
 
-- **Classify the prior attempt before proceeding:** explicitly decide whether it is `keep`, `quarantine`, or `revert`.
-- **Keep** only the parts still justified by the latest local evidence and verifier output.
-- **Quarantine or revert** parts that are now speculative, contradicted by validation, or no longer needed for the next hypothesis.
-- **Broaden scope only with a verifier-backed reason:** if moving from a narrow local fix into cross-file or cross-system changes, state what the failed validation showed and why the broader scope is required.
-- **If ownership is unclear, ask Captain before reverting.** Never assume an earlier change is safe to remove just because the current attempt failed.
+**Before your next edit, record and log one line:**
+`ATTEMPT <n> · symptom: … · last-known-good: <commit/ref> · choice: keep | amend | revert | quarantine | add — because …`
+then persist it: `node scripts/hooks/revert-classify.cjs --choice <choice> --symptom "<symptom>" --baseline <ref>`
 
-This is **bounded backtracking**, not blanket rollback-first behavior.
+- **Name the last-known-good** (state before this fix chain began). Revert = restore those hunks with `Edit`; never `git reset`/`checkout` (blocked by the safety hook).
+- **Revert and amend are first-class options, not fallbacks.** Undoing recent work is not a failure; it is often the lowest-net-complexity correction. State why the rejected options are worse.
+- **Do not stack a new mechanism on a change that just failed** unless you state why amending or reverting it cannot carry the behavior.
+- **Broaden scope only with a verifier-backed reason** — state what the failed validation showed and why the wider scope is required.
+- **If ownership is unclear, ask Captain before reverting** another agent's or the user's work.
+
+This is **bounded backtracking** — weigh undoing as seriously as adding. It is *not* blanket rollback-first.
 
 ### Bugfix Complexity Heuristic
 

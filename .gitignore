@@ -165,4 +165,6 @@ apps/web/scripts/tmp-sr-*
 
 # Claude Code harness state
 .claude/scheduled_tasks.lock
+.claude/state/
+.claude/revert-telemetry.jsonl
 .aider*
