@@ -1,0 +1,9 @@
+---
+### 2026-06-01 | Unassigned | Codex (GPT-5) | Pipeline Telemetry Plan Source Refresh
+**Task:** Re-check the pipeline telemetry concept plan against current source changes and update stale assumptions.
+**Files touched:** `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md`; `Docs/WIP/README.md`; `Docs/AGENTS/Handoffs/2026-06-01_Unassigned_Pipeline_Telemetry_Plan_Source_Refresh.md`; `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** `pipelineTelemetry` remains unimplemented in source, so the plan is still an implementation plan. Current D5/direct-publishability changes are now reflected as shipped adjacent behavior: `insufficient_direct_evidence` and `evidence_applicability_assessment_degraded` belong in `qualityHealth`, not Phase 1 `pipelineTelemetry`; `qualityHealth.f4_*` already counts both ordinary and direct insufficiency and needs split subcounts for D5 decisions. Provenance should use `resultJson.meta.executedWebGitCommitHash` / admin `gitCommitHash`, keeping dirty suffixes for grouping.
+**Open items:** Implement `AnalysisMetrics.pipelineTelemetry`; decide evidence-ID cleanup placement; decide whether to add `debateRole` to TPM fallback warning details; decide how much D5 `claimDiagnostics` to persist if metrics payload size matters.
+**Warnings:** Documentation only. No source implementation, build, safe tests, expensive tests, or live jobs were run. Existing unrelated dirty worktree files were preserved.
+**For next agent:** Use the refreshed plan as the baseline. Do not treat `verdictDirection` telemetry as a proxy for broader rerun stability; that needs controlled rerun measurement. For D5, split `insufficient_evidence`, `insufficient_direct_evidence`, and applicability-classifier degradation under `qualityHealth` before using rates for architecture decisions.
+**Learnings:** No role learning appended.
