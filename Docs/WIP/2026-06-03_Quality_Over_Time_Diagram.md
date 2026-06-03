@@ -78,8 +78,13 @@ local gap), deduped by JobId. Each report scored 0–100 by **Captain criteria**
 - benchmark families (ground truth): in-band(verdict+truth+conf, ±8) = 95, label-only = 65, off-band = 30
 - generic (no ground truth): base 85 − 45×(checkworthy-UNVERIFIED rate) − 15 if verdict_integrity_failure
 
-Build timepoint = CreatedUtc (the build live when the report ran). Markers: deployed (Apr 22),
-rehome (May 24), gated/HEAD era (May 28).
+**Build timepoint (x-axis) = committer date of `ExecutedWebGitCommitHash`** — the commit/build that
+produced the report, NOT the job submission time (`CreatedUtc`). A report run on the deployed build
+plots at that build's commit date regardless of when it ran. `+dirty`/`+overlay` experiments use their
+base commit's date (the commit they forked from; the uncommitted edits have no commit date). Reports
+with **no recorded commit (645, pre ~Mar 28) are excluded** from the build-date charts — their build is
+unknown and we do NOT fall back to submission date. Build-date coverage: **1489/2134 reports, build
+dates 2026-03-28 .. 2026-06-02**. Markers: deployed (Apr 22), rehome (May 24), gated/HEAD era (May 28).
 
 ## Headline: the naive "decline" is a measurement artifact, not a quality regression
 The naive aggregate weekly mean falls 79 → 35 (mid-May) → recovers ~60. **That curve is a

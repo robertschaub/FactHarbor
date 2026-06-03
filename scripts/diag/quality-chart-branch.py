@@ -11,11 +11,16 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 rows = collections.defaultdict(list)   # branch -> [(t, score, dirty)]
+skipped_no_build = 0
 with open('test-output/quality-branch-membership.csv') as f:
     for r in csv.DictReader(f):
-        try: t = dt.datetime.fromisoformat(r['iso'][:19])
+        bd = r.get('builddate', '')          # x-axis = commit date of the analysis build (NOT submission)
+        if not bd:
+            skipped_no_build += 1; continue   # no commit -> build date unknown -> excluded
+        try: t = dt.datetime.fromisoformat(bd[:10])
         except Exception: continue
         rows[r['branch']].append((t, float(r['score']), int(r.get('dirty', 0) or 0)))
+print(f'(build-date x-axis; {skipped_no_build} membership rows excluded — no commit/build date)')
 
 def short(b):
     return (b.replace('codex/', '').replace('-2026-05-27', '')) if b.startswith('codex/') else b
@@ -72,10 +77,10 @@ for d, lab in [('2026-04-22','deployed (2f7a2805)'), ('2026-05-24','rehome rebui
     ax.text(x, 104, lab, rotation=90, va='bottom', ha='center', fontsize=8, color='dimgray')
 
 total = sum(len(v) for v in rows.values())
-ax.set_ylim(0, 112); ax.set_xlabel('build timepoint (report run date, 2026)')
+ax.set_ylim(0, 112); ax.set_xlabel('BUILD timepoint — commit date of the analysis build (2026)')
 ax.set_ylabel('report quality score 0-100 (Captain criteria)')
-ax.set_title('V1 claimboundary quality over time, by branch (multi-membership: a report appears under '
-             'every branch containing its commit)')
+ax.set_title('V1 claimboundary quality by BUILD date (commit), by branch (multi-membership: a report '
+             'appears under every branch containing its commit)')
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
 plt.setp(ax.get_xticklabels(), rotation=45, ha='right', fontsize=8)

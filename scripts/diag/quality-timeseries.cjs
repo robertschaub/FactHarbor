@@ -45,6 +45,14 @@ function branchOf(commit){
   else v='other-branch';
   bcache[commit]=v; return v;
 }
+// build timepoint = committer date of the commit used for analysis (NOT job submission time).
+const dcache={};
+function commitDate(c){
+  if(!c) return '';
+  if(c in dcache) return dcache[c];
+  let v=''; try{ v=execFileSync('git',['show','-s','--format=%cI',c],{cwd:ROOT,encoding:'utf8'}).trim(); }catch(e){ v=''; }
+  dcache[c]=v; return v;
+}
 
 const spec=JSON.parse(fs.readFileSync(ROOT+'/Docs/AGENTS/benchmark-expectations.json','utf8'));
 const noise=spec.noiseTolerancePct??8;
@@ -99,13 +107,14 @@ for(const [name,db] of DBS){
       const base=(raw.match(/^[0-9a-f]{7,40}/i)||[''])[0]; // drop +dirty / +<overlay> suffix
       const dirty=/\+/.test(raw)?1:0;
       const br=branchOf(base);
+      const bdate=commitDate(base); // build timepoint (commit date), '' if no/unknown commit
       perBranch[br]=(perBranch[br]||0)+1;
-      out.push({iso:row.ts, score:sc.s, kind:sc.kind, branch:br, src:name, dirty, cwC:sc.cwC, cmt:base.slice(0,12)});
+      out.push({iso:row.ts, builddate:bdate, score:sc.s, kind:sc.kind, branch:br, src:name, dirty, cwC:sc.cwC, cmt:base.slice(0,12)});
     }
   }
 }
 out.sort((a,b)=>a.iso<b.iso?-1:1);
-const csv='iso,score,kind,branch,src,dirty,cwC,commit\n'+out.map(d=>`${d.iso},${d.score},${d.kind},${d.branch},${d.src},${d.dirty},${d.cwC},${d.cmt}`).join('\n');
+const csv='iso,score,kind,branch,src,dirty,cwC,commit,builddate\n'+out.map(d=>`${d.iso},${d.score},${d.kind},${d.branch},${d.src},${d.dirty},${d.cwC},${d.cmt},${d.builddate}`).join('\n');
 fs.mkdirSync(ROOT+'/test-output',{recursive:true});
 fs.writeFileSync(ROOT+'/test-output/quality-ts.csv',csv);
 
@@ -118,4 +127,7 @@ console.log('\n# BRANCH attribution (by base-commit ancestry; +dirty/+overlay su
 for(const [b,n] of Object.entries(perBranch).sort((a,b)=>b[1]-a[1])) console.log(`  ${b.padEnd(16)} ${n}`);
 const dirtyN=out.filter(d=>d.dirty).length;
 console.log(`\n# DIRTY working-tree reports (ran on a modified tree — experiments): ${dirtyN}/${out.length} (${(100*dirtyN/out.length).toFixed(0)}%)`);
+const haveBD=out.filter(d=>d.builddate).length;
+console.log(`\n# BUILD-DATE coverage (x-axis = commit date, not submission): ${haveBD}/${out.length} have a build date; ${out.length-haveBD} have no commit (excluded from build-date charts)`);
+if(haveBD){ const bd=out.filter(d=>d.builddate).map(d=>d.builddate.slice(0,10)).sort(); console.log(`  build-date range: ${bd[0]} .. ${bd[bd.length-1]}`); }
 console.log(`\nwrote ${out.length} datapoints -> test-output/quality-ts.csv`);
