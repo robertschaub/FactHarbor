@@ -50,7 +50,8 @@ const noise=spec.noiseTolerancePct??8;
 const fams=spec.families.map(f=>({inp:f.inputValue, exp:new Set(f.expectedVerdictLabels.map(x=>x.toUpperCase())), tb:f.truthPercentageBand, cb:f.confidenceBand, slug:f.slug}));
 const HARD=['report_damaged','analysis_generation_failed','llm_provider_error'];
 
-function isCB(r){ const p=(r.meta&&r.meta.pipeline)||''; const v=r._schemaVersion||(r.meta&&r.meta.schemaVersion)||''; return /claimboundary/i.test(p) || /-cb/i.test(v); }
+// V1 ONLY: meta.pipeline must be exactly 'claimboundary' (excludes 'claimboundary-v2' and monolithic).
+function isV1(r){ return (r.meta&&r.meta.pipeline)==='claimboundary'; }
 function scoreReport(r,input,label){
   const wt=new Set((r.analysisWarnings||[]).map(w=>w&&w.type));
   const hard=HARD.some(h=>wt.has(h));
@@ -90,7 +91,7 @@ for(const [name,db] of DBS){
       perDb[name].scanned++;
       if(seen.has(row.id)) continue; seen.add(row.id);
       let r; try{r=JSON.parse(row.rj);}catch(e){continue;}
-      if(!isCB(r)) continue;
+      if(!isV1(r)) continue;
       perDb[name].added++;
       const sc=scoreReport(r,row.inp,row.vl);
       const raw=row.cmt||'';

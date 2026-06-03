@@ -6,14 +6,16 @@
 **Tooling (read-only):** `scripts/diag/quality-timeseries.cjs` (score+coverage+branch),
 `scripts/diag/quality-chart.py` (by kind), `scripts/diag/quality-chart-branch.py` (by branch)
 
-## Coverage — every report DB on disk (verified)
+## Coverage — every report DB on disk (verified), V1 claimboundary only
 Enumerated every `.db` under `C:\DEV` with a `Jobs` table (config/cache DBs excluded). Five hold
-reports; unioned all, deduped by JobId (first-wins). **Total = 2144 unique claimboundary reports.**
+reports; unioned all, deduped by JobId (first-wins). **V1 filter = `meta.pipeline === 'claimboundary'`
+exactly** — this excludes 196 `claimboundary-v2` reports (in cand-corrected) and 4 old monolithic.
+**Total = 1948 unique V1 claimboundary reports** (was 2144 before the V2/monolithic exclusion).
 
-| DB | role | unique CB added |
+| DB | role | unique V1 added |
 |---|---|---|
 | `apps/api/factharbor.db` | local main | 1587 |
-| `test-output/candidate-ranking-corrected/...` | ranking copy (May 3–23 gap) | 534 |
+| `test-output/candidate-ranking-corrected/...` | ranking copy (May 3–23 gap) | 338 (was 534; −196 V2) |
 | `FH-unverified-2f7-isolation/apps/api/factharbor.db` | isolation experiment | 23 |
 | `FH-rehome-validation/.../factharbor-rehome-validation.db` | rehome worktree | 0 (subset) |
 | `test-output/candidate-ranking-extended-2026-05-23/...` | ranking copy | 0 (= corrected) |
@@ -21,21 +23,38 @@ reports; unioned all, deduped by JobId (first-wins). **Total = 2144 unique claim
 **Caveat — production:** the deployed/production DB lives on the server, **not on this machine**, so
 its reports are NOT in this dataset. Including them needs a server dump.
 
-## Branch separation (by base-commit ancestry; `+dirty`/`+overlay` suffix stripped)
-| branch | n | mean score | dirty (experiment) |
-|---|---|---|---|
-| main | 863 | 64 | 633 |
-| untracked (pre commit-recording, ~early Mar) | 564 | 78 | 0 |
-| rehome | 323 | 57 | 248 |
-| Pipeline_V2 | 211 | **34** | 42 |
-| other-branch | 142 | 59 | 67 |
-| codex-pre-rehome | 41 | 56 | 39 |
+## Branch separation — multi-membership (a report appears under EVERY branch containing its commit)
+Tooling: `quality-branch-membership.cjs` (`git for-each-ref --contains`). Filters (Captain's rules):
+keep `main` always; keep a non-main branch only if it has **≥10 divergent-from-main report-commits**
+("fully redundant" = adds no report-commit beyond main → dropped; "<10 commits" measured on the
+divergent-from-main set); collapse exact mirrors. Dropped 34 refs (all dependabot/backup/chore +
+origin/* mirrors). **7 survivor branches:**
 
-**48% of all reports (1029/2144) ran on a *dirty* working tree** — the A/B / candidate-ranking /
-bolso experiments — so their base "branch" is the commit they forked from, not pristine branch
-behavior. `ExecutedWebGitCommitHash` stores `<40hash>`, `<40hash>+dirty`, or `<40hash>+<overlayhash>`.
-Pipeline_V2 (mean 34) is the lowest-quality branch — consistent with it being dropped; these are
-claimboundary reports that *ran on* Pipeline_V2 commits and can be filtered if out of scope.
+| branch | reports | divergent-from-main commits | % dirty |
+|---|---|---|---|
+| Pipeline_V2 | 1050 | 180 | 75% |
+| codex/main-before-v2-rehome (rehome) | 1035 | 174 | 75% |
+| codex/private-admin-repo-cutover | 985 | 127 | 80% |
+| codex/integrate-admin-preparation-access | 916 | 92 | 79% |
+| codex/private-admin-repo-cutover-clean | 913 | 91 | 79% |
+| **main** (current HEAD) | 863 | 0 | 73% |
+| codex/current-main-2026-05-27-before-rehome | 780 | 12 | 75% |
+| *untracked (no commit, pre ~Mar 28)* | 564 | — | 0% |
+| *orphan (commit on no branch tip)* | 44 | — | — |
+
+**Key structural finding: `main` (current HEAD) is *lean*** — only 174 contained report-commits /
+863 reports. Several codex/rehome branches contain *more* report-commits than main, because **most
+experiments were never merged into main** — they live on side branches. So the per-branch lines are
+*identical Mar→early-May* (shared history) and only **fan out in late May** where the rabbit-holes
+diverged (rehome spikes up ~May 25; others dip).
+
+**Caveats on reading the branch lines:** (1) **~75% of every branch's reports ran on a dirty/experiment
+tree** — these are not pristine-branch behavior. (2) The late-May per-branch spread is still partly
+benchmark-mix (the divergent reports differ in input/family composition). (3) Three survivors
+(`*-admin-repo-cutover*`, `integrate-admin-preparation-access`) are downstream admin-plumbing snapshots
+that share most of the same report lineage — distinct in report-set (so not "fully redundant") but not
+analytically separate rabbit-holes. The 4 meaningful lineages are main / rehome / codex-pre-rehome /
+Pipeline_V2.
 
 
 ## What was built
