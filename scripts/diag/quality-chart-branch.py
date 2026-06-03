@@ -61,28 +61,39 @@ def weekly(series):
     ks = sorted(w for w in wk if len(wk[w]) >= 3)
     x = [dt.datetime.combine(w + dt.timedelta(days=3), dt.time(12)) for w in ks]
     y = [float(np.mean(wk[w])) for w in ks]
-    return x, y
+    n = [len(wk[w]) for w in ks]                 # samples in each weekly bin
+    return x, y, n
+
+def annotate_n(x, y, n, color):
+    for xi, yi, ni in zip(x, y, n):
+        ax.annotate(str(ni), (xi, yi), textcoords='offset points', xytext=(0, 4),
+                    fontsize=6, color=color, ha='center', va='bottom', zorder=10)
 
 for b in branches:
-    x, y = weekly(rows[b])
+    x, y, nn = weekly(rows[b])
     if not x: continue
-    n = len(rows[b]); dn = sum(1 for _,_,d in rows[b] if d)
+    tot = len(rows[b]); dn = sum(1 for _,_,d in rows[b] if d)
     lw = 3.4 if b == 'main' else 2.0
     ax.plot(x, y, color=cmap[b], lw=lw, marker='o', ms=4, alpha=0.9 if b=='main' else 0.8,
             zorder=6 if b=='main' else 5,
-            label=f'{short(b)}  (n={n}, {100*dn//max(n,1)}% dirty)')
+            label=f'{short(b)}  (n={tot}, {100*dn//max(tot,1)}% dirty)')
+    annotate_n(x, y, nn, cmap[b])
 
 # PROD (deployed instance) — bold reference series (the Captain's "deployed quality" baseline)
 if 'PROD (deployed)' in rows:
-    x, y = weekly(rows['PROD (deployed)'])
-    if x: ax.plot(x, y, color='#d62728', lw=3.6, marker='D', ms=6, zorder=8,
-                  label=f'PROD deployed instance  (n={len(rows["PROD (deployed)"])})')
+    x, y, nn = weekly(rows['PROD (deployed)'])
+    if x:
+        ax.plot(x, y, color='#d62728', lw=3.6, marker='D', ms=6, zorder=8,
+                label=f'PROD deployed instance  (n={len(rows["PROD (deployed)"])})')
+        annotate_n(x, y, nn, '#d62728')
 # other non-branch reference series
 for b, col, ls in [('untracked (no commit)', '#888888', '--'), ('orphan (no branch)', '#bbbbbb', ':')]:
     if b in rows:
-        x, y = weekly(rows[b])
-        if x: ax.plot(x, y, color=col, lw=1.8, ls=ls, marker='.', ms=4, zorder=3,
-                      label=f'{b}  (n={len(rows[b])})')
+        x, y, nn = weekly(rows[b])
+        if x:
+            ax.plot(x, y, color=col, lw=1.8, ls=ls, marker='.', ms=4, zorder=3,
+                    label=f'{b}  (n={len(rows[b])})')
+            annotate_n(x, y, nn, col)
 
 for d, lab in [('2026-04-22','deployed (2f7a2805)'), ('2026-05-24','rehome rebuild'), ('2026-05-28','gated / HEAD era')]:
     x = dt.datetime.fromisoformat(d)
@@ -98,7 +109,7 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
 plt.setp(ax.get_xticklabels(), rotation=45, ha='right', fontsize=8)
 ax.legend(loc='lower left', fontsize=8, framealpha=0.93, ncol=2,
-          title='survivor branches (main-anchored; <10 divergent-from-main dropped)')
+          title='survivor branches (main-anchored; <10 divergent-from-main dropped) · point labels = weekly sample count')
 ax.grid(True, alpha=0.2)
 plt.tight_layout()
 plt.savefig(OUT, dpi=130)
