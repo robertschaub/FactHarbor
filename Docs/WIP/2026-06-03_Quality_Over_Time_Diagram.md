@@ -1,10 +1,25 @@
 # Claimboundary report quality over time — longitudinal diagram + reading
 
 **Date:** 2026-06-03 · **Role:** Lead Architect · **Status:** delivered, read-only
-**Artifacts:** `test-output/claimboundary-quality-over-time.png` (by kind),
-`test-output/claimboundary-quality-by-branch.png` (by branch), `test-output/quality-ts.csv`
-**Tooling (read-only):** `scripts/diag/quality-timeseries.cjs` (score+coverage+branch),
-`scripts/diag/quality-chart.py` (by kind), `scripts/diag/quality-chart-branch.py` (by branch)
+**Artifacts (dual x-axis):**
+`claimboundary-quality-by-build.png` / `…-by-submission.png` (by kind),
+`claimboundary-quality-by-branch-build.png` / `…-branch-submission.png` (by branch),
+`test-output/quality-ts.csv` (carries both `builddate` and `iso`).
+**Tooling (read-only):** `quality-timeseries.cjs` (score+coverage+branch+builddate),
+`quality-chart.py {build|submission}` (by kind), `quality-chart-branch.py {build|submission}` (by branch).
+
+## Two x-axes (both kept)
+- **PRIMARY — BUILD date** = committer date of `ExecutedWebGitCommitHash` (the commit/build that
+  produced the report). Isolates *code-version* quality; excludes the 645 no-commit reports
+  (build unknown) → covers builds 2026-03-28 .. 2026-06-02.
+- **ALSO — JOB SUBMISSION date** = `CreatedUtc` (when the report ran). Includes ALL 2134 reports
+  (submission time always exists) → covers 2026-03-01 .. 2026-06-03. Kept specifically to expose
+  **LLM-provider drift**: if quality falls over *calendar run time* but the build-date view is flat
+  for the same builds, that points to the model degrading, not the code. (Context: Claude Opus 4.6
+  is known to have degraded ~mid-Feb–March.) **Caveat:** our earliest report is 2026-03-01, so this
+  dataset cannot see mid-February; the early-March field-health baseline (~80) is the earliest we have,
+  and the submission-axis decline (~80 early-Mar → ~55–69 April) is NOT yet decomposed into
+  model-drift vs code vs input-mix — a *same-build-vs-run-time* controlled cut is the clean test.
 
 ## Coverage — every report DB incl. PRODUCTION (verified), V1 claimboundary only
 Enumerated every `.db` under `C:\DEV` with a `Jobs` table + pulled the **production** DB from the

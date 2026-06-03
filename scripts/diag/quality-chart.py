@@ -3,27 +3,41 @@
 Splits the trend by report kind (benchmark vs generic/field) because the bench fraction rises
 over time and benchmark scores are bimodal -- so the naive aggregate mean is a mix signal,
 not a quality signal. Two weekly-mean lines + bench-fraction make the confound visible."""
-import csv, datetime as dt, collections
+import csv, datetime as dt, collections, sys
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
+# x-axis mode: 'build' = commit date of ExecutedWebGitCommitHash (the analysis build);
+#              'submission' = CreatedUtc (when the job ran). The submission view keeps the
+#              early-March reports that have no commit, useful for spotting LLM-provider drift.
+MODE = sys.argv[1] if len(sys.argv) > 1 else 'build'
+assert MODE in ('build', 'submission'), "arg must be 'build' or 'submission'"
+
 rows = []
-skipped_no_build = 0
+skipped = 0
 with open('test-output/quality-ts.csv') as f:
     for r in csv.DictReader(f):
-        bd = r.get('builddate', '')            # x-axis = commit date of the analysis build (NOT submission)
-        if not bd:
-            skipped_no_build += 1; continue     # no commit -> build date unknown -> excluded
-        try:
-            t = dt.datetime.fromisoformat(bd[:10])
-        except Exception:
-            continue
+        if MODE == 'build':
+            bd = r.get('builddate', '')         # commit date; exclude rows with no commit
+            if not bd:
+                skipped += 1; continue
+            try: t = dt.datetime.fromisoformat(bd[:10])
+            except Exception: continue
+        else:                                    # submission: CreatedUtc, always present
+            iso = r.get('iso', '')
+            try: t = dt.datetime.fromisoformat(iso[:19])
+            except Exception: skipped += 1; continue
         rows.append((t, float(r['score']), r['kind']))
 rows.sort(key=lambda x: x[0])
-print(f'(build-date x-axis; {skipped_no_build} reports excluded — no commit/build date)')
+print(f'({MODE} x-axis; {skipped} reports excluded)')
+AXLAB = ('BUILD timepoint — commit date of the analysis build (2026)' if MODE == 'build'
+         else 'JOB SUBMISSION date — when the report ran, CreatedUtc (2026)')
+TITLEKIND = 'by BUILD date (commit)' if MODE == 'build' else 'by JOB SUBMISSION date'
+NOTE = 'reports w/ known build' if MODE == 'build' else 'all reports'
+OUT = f'test-output/claimboundary-quality-by-{MODE}.png'
 
 def weekly(sel):
     wk = collections.defaultdict(list)
@@ -78,7 +92,7 @@ for d, lab in [('2026-04-22','deployed (2f7a2805)'), ('2026-05-24','rehome rebui
 dr0 = min(t for t,_,_ in rows).date(); dr1 = max(t for t,_,_ in rows).date()
 ax.set_ylim(0, 112)
 ax.set_ylabel('report quality score 0-100  (Captain criteria)')
-ax.set_title(f'FactHarbor claimboundary quality by BUILD date (commit)  (n={len(rows)} reports w/ known build, {dr0} .. {dr1})')
+ax.set_title(f'FactHarbor claimboundary quality {TITLEKIND}  (n={len(rows)} {NOTE}, {dr0} .. {dr1})')
 ax.legend(loc='lower left', fontsize=8.5, framealpha=0.92); ax.grid(True, alpha=0.2)
 
 # bottom panel: weekly bench-fraction (the confound driver) + weekly report count
@@ -94,15 +108,15 @@ for w in sorted(wk_all):
     frac_v.append(100.0*b/tot)
 ax2.bar(frac_x, frac_v, width=5, color='#cc6677', alpha=0.55, label='% benchmark runs that week')
 ax2.set_ylim(0, 100); ax2.set_ylabel('% benchmark', fontsize=9)
-ax2.set_xlabel('BUILD timepoint — commit date of the analysis build (2026)')
+ax2.set_xlabel(AXLAB)
 ax2.grid(True, alpha=0.2); ax2.legend(loc='upper left', fontsize=8)
 ax2.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 ax2.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
 plt.setp(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=8)
 
 plt.tight_layout()
-plt.savefig('test-output/claimboundary-quality-over-time.png', dpi=130)
-print('saved test-output/claimboundary-quality-over-time.png')
+plt.savefig(OUT, dpi=130)
+print('saved', OUT)
 print('\nweekly means (generic / field health):')
 for x,y,n in zip(gx_,gy_,gn_): print(f'  {x.date()}  gen_mean={y:4.0f}  n={n}')
 print('\nweekly means (benchmark in-band):')
