@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-30T21:59:33.592Z",
-  "count": 297,
+  "generatedAt": "2026-06-02T10:58:12.609Z",
+  "count": 301,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6128,6 +6128,85 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Live jobs on clean HEAD `8061954e`:"
+    },
+    {
+      "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
+      "date": "2026-06-01",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "applicability",
+        "fail_open",
+        "evidence_drift",
+        "report_damaged",
+        "checkworthy_unverified",
+        "fetch_failure"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/research-orchestrator.test.ts",
+        "apps/web/test/integration/claim-auto-selection-pipeline.test.ts",
+        "scripts/restart-clean.ps1",
+        ".claude/settings.json",
+        "Docs/AGENTS/Captain_Quality_Expectations.md",
+        "Docs/WIP/2026-06-01_Review_Codex_2395f494_Direct_Sufficiency.md",
+        "scripts/diag/checkworthy-unverified-census.cjs",
+        "scripts/diag/fetch-failure-drift-sizing.cjs"
+      ],
+      "summary": "Lead Architect — Quality-Lever Consolidation (2026-06-01)"
+    },
+    {
+      "file": "2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md",
+      "date": "2026-06-01",
+      "roles": [
+        "senior_architect"
+      ],
+      "topics": [
+        "bestcommit",
+        "investigation",
+        "pause"
+      ],
+      "files_touched": [],
+      "summary": "Identify which commit (or commit-range) produced the best ClaimBoundary reports \"so far,\" better than prior attempts. **Status: PAUSED at user request; likely to continue.** This handoff is the resump"
+    },
+    {
+      "file": "2026-06-01_Unassigned_Pipeline_Telemetry_Plan_Source_Refresh.md",
+      "date": "2026-06-01",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "pipeline",
+        "telemetry",
+        "plan",
+        "source",
+        "refresh"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-06-01_Unassigned_Pipeline_Telemetry_Plan_Source_Refresh.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the refreshed plan as the baseline. Do not treat `verdictDirection` telemetry as a proxy for broader rerun stability; that needs controlled rerun measurement. For D5, split `insufficient_evidence`, `insufficient_direct_evidence`, and applicability-classifier degradation under `qualityHealth` bef"
+    },
+    {
+      "file": "2026-06-02_Lead_Architect_BestCommit_Regression_Consolidation.md",
+      "date": "2026-06-02",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "bestcommit",
+        "regression",
+        "consolidation"
+      ],
+      "files_touched": [],
+      "summary": "Resume `2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md` and consolidate: which commit/range produced the best ClaimBoundary reports; rate quality vs Captain's documented bar; investigat"
     }
   ]
 }

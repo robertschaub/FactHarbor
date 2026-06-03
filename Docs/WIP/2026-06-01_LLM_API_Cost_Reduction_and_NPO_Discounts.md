@@ -250,6 +250,43 @@ Set on the `generateText` calls (only verdict has one today, at `verdict-generat
 
 ---
 
+## 10. Gemini 2.5 Flash routing — benefit / risk / cost / effort
+
+**Mechanism (grounded):** `getModelForTask(task, providerOverride, config)` (`llm.ts:137`) already accepts a per-call provider; the budget-tier sites — relevance classification, evidence extraction, applicability, claim decomposition — pass `undefined`, so they inherit the global `llmProvider=anthropic` → Haiku. Passing `"google"` routes to `gemini-2.5-flash` (resolver budget tier). Google is a **built-but-unexercised** provider: `buildProviderModel` handles it; `getStructuredOutputProviderOptions("google")` returns `undefined` (so the AI SDK uses Gemini's native structured-output path, no Anthropic options leak); and there is already **Gemini-specific structured-output guidance + schema-retry prompts** (`config-adaptations/structured-output.ts` `case 'google'`). The challenger role already runs non-Anthropic (OpenAI) in prod. **Missing piece:** no per-task/tier provider config (only global `llmProvider` + per-debate-role provider) → a new config field + threading is required.
+
+**Benefit (estimate — ranges; prod mix unconfirmed; baseline is the *pre-output-cut* local mix):**
+- Budget tier (Haiku) ≈ **45% of the Claude token bill** (last-30d local: $90.52 / $202.14). Flash is **~85% cheaper input / ~88% output** ($0.15/$0.60 vs $1/$5).
+- **If the whole budget tier moved and quality held → ~38% of the Claude bill (~$240–310/mo at current run-rate)** — the single largest structural lever. **But it is not one uniform slice — ranked by risk:**
+
+| Sub-task | metrics `taskType` | ~share | Risk | Why |
+|---|---|---|---|---|
+| relevance + applicability (classifiers) | bundled in `research` | small sub-slice (not separately metered) | **LOW** | binary relevance / jurisdiction enum — lowest judgment; safe-now candidate |
+| evidence extraction | bulk of `research` | bulk of ~35% | **HIGH** | *defines the evidence pool*; verdict variance is evidence-pool-drift-dominated ([[verdict_variance_evidence_drift]]) — moving the extractor perturbs the project's #1 instability |
+| claim decomposition | `understand` | ~9% | **MEDIUM** | defines the atomic-claim set (upstream of everything) |
+
+So the **clearly-safe-now slice is small** (classifier sub-calls); the **large dollars are tied to the evidence pool / claim set** — exactly the signals alpha is trying to stabilize.
+
+**Risks:**
+1. **Evidence-pool drift → verdict shift (dominant).** Changing the extractor changes which evidence is found/classified → pool drifts → verdicts can move *without the verdict model changing*. Gates the big-$ slice.
+2. **Audit-gate trap:** evidence-pool Jaccard **cannot** be the gate — same-input Haiku-vs-Haiku already drifts at Jaccard 0.10–0.29, so Haiku-vs-Flash Jaccard is uninterpretable. **Gate = verdict-direction / truth-% distribution across N≥5 reps per arm, arm-to-arm, + accuracy vs `benchmark-expectations.json` + schema-completeness / no new `report_damaged`.**
+3. **No Haiku-vs-Flash quality data exists** (only Sonnet-vs-Gemini-Pro). Extraction parity is **unknown**; multilingual (de/fr/es/pt) extraction fidelity unverified. The audit must establish it.
+4. **Gemini structured-output adherence:** budget schemas use `z.record` (`additionalDimensions`) + enums-with-`.catch` — Gemini's responseSchema may not support arbitrary-key records → parse failures → `report_damaged`. Mitigated by the existing Gemini retry prompts, but verify; may need schema tweaks.
+5. **Operational:** check the Gemini key's RPM/TPM for ~50k extraction calls/period; `FH_LLM_MAX_CONCURRENCY_GOOGLE` knob exists; **a Google→Haiku fallback needs adding** (only an OpenAI-TPM-guard fallback exists today) so a Gemini outage can't degrade the critical path.
+6. **Timing:** alpha is the QA window and evidence-drift is the #1 instability — a second extractor adds a confound to the exact signal being stabilized.
+
+**Cost / effort:**
+- **Code: LOW–MEDIUM (~0.5–1.5 days)** — add per-task/tier provider config + thread to ~4 budget call sites; add Google→Haiku fallback; verify/adjust budget schemas for Gemini. (Routing param, Gemini structured-output guidance + retry already exist.)
+- **Validation: the real cost, audit-dominated:**
+  - **Cheapest first gate — OFFLINE shadow-eval (~0.5 day):** run Flash over *already-collected* source texts from past jobs and diff extracted evidence vs Haiku — no full pipeline runs, no live API job cost. De-risks before spending.
+  - **Then live paired-job audit (~0.5–1 day + modest API $):** real inputs (user-provided, not invented), N≥5 reps/arm; gate on verdict-direction distribution + benchmark accuracy + `report_damaged` rate.
+
+**Recommendation:**
+- **Now (small, safe $):** route only the pure classifiers (relevance, applicability) to Flash behind the audit gate above.
+- **Defer the big $ (evidence extraction, claim decomposition):** offline shadow-eval → live paired-job audit; prefer **post-alpha**, since it perturbs the evidence pool. Never gate it on Jaccard.
+- Net: the *theoretical* 38% is real but mostly collides with the top known risk; the *bankable-now* portion is small. Sequence accordingly.
+
+---
+
 ## Sources
 - [Anthropic pricing (primary)](https://platform.claude.com/docs/en/about-claude/pricing) · [AI for Science rules](https://www.anthropic.com/ai-for-science-program-rules) · [External Researcher Access](https://support.claude.com/en/articles/9125743-what-is-the-external-researcher-access-program)
 - [OpenAI for Nonprofits (Goodstack)](https://goodstack.org/software-discounts/openai)
