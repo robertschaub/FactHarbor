@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const ROOT = 'C:/DEV/FactHarbor';
 
 const L = fs.readFileSync(ROOT+'/test-output/quality-ts.csv','utf8').trim().split('\n').slice(1);
-const reports = L.map(l=>{const p=l.split(','); return {iso:p[0],score:+p[1],kind:p[2],dirty:+p[5],commit:p[7]||''};});
+const reports = L.map(l=>{const p=l.split(','); return {iso:p[0],score:+p[1],kind:p[2],src:p[4]||'',dirty:+p[5],commit:p[7]||''};});
 
 const commits = [...new Set(reports.filter(r=>r.commit).map(r=>r.commit))];
 const contain = {};
@@ -51,6 +51,9 @@ const rows=[];
 for(const br of kept) for(const r of info[br].reps) rows.push(`${br},${r.iso},${r.score},${r.kind},${r.dirty}`);
 for(const r of untracked) rows.push(`untracked (no commit),${r.iso},${r.score},${r.kind},${r.dirty}`);
 for(const r of orphans) rows.push(`orphan (no branch),${r.iso},${r.score},${r.kind},${r.dirty}`);
+// PROD (deployed instance) — provenance series, NOT a branch; also counted under its commit's branch above.
+const prod = reports.filter(r=>r.src==='prod');
+for(const r of prod) rows.push(`PROD (deployed),${r.iso},${r.score},${r.kind},${r.dirty}`);
 fs.writeFileSync(ROOT+'/test-output/quality-branch-membership.csv','branch,iso,score,kind,dirty\n'+rows.join('\n'));
 
 console.log('# SURVIVOR-BRANCH GATE (main-anchored; multi-membership; V1 claimboundary only)');

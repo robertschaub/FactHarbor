@@ -18,6 +18,7 @@ const fs = require('node:fs');
 const ROOT = 'C:/DEV/FactHarbor';
 // All report-bearing DBs (verified: have a Jobs table). Priority order = dedup preference.
 const DBS = [
+  ['prod',        ROOT+'/test-output/prod/factharbor-prod.db'],
   ['local-main',  ROOT+'/apps/api/factharbor.db'],
   ['rehome-val',  'C:/DEV/FH-rehome-validation/apps/api/factharbor-rehome-validation.db'],
   ['2f7-isolation','C:/DEV/FH-unverified-2f7-isolation/apps/api/factharbor.db'],

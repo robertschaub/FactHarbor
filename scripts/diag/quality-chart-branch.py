@@ -21,7 +21,7 @@ def short(b):
     return (b.replace('codex/', '').replace('-2026-05-27', '')) if b.startswith('codex/') else b
 
 # order: main first (reference), then branches by size, then untracked/orphan last
-special = ['untracked (no commit)', 'orphan (no branch)']
+special = ['untracked (no commit)', 'orphan (no branch)', 'PROD (deployed)']
 branches = [b for b in rows if b not in special]
 branches.sort(key=lambda b: (-len(rows[b]), b))
 if 'main' in branches:
@@ -54,7 +54,12 @@ for b in branches:
             zorder=6 if b=='main' else 5,
             label=f'{short(b)}  (n={n}, {100*dn//max(n,1)}% dirty)')
 
-# non-branch reference series
+# PROD (deployed instance) — bold reference series (the Captain's "deployed quality" baseline)
+if 'PROD (deployed)' in rows:
+    x, y = weekly(rows['PROD (deployed)'])
+    if x: ax.plot(x, y, color='#d62728', lw=3.6, marker='D', ms=6, zorder=8,
+                  label=f'PROD deployed instance  (n={len(rows["PROD (deployed)"])})')
+# other non-branch reference series
 for b, col, ls in [('untracked (no commit)', '#888888', '--'), ('orphan (no branch)', '#bbbbbb', ':')]:
     if b in rows:
         x, y = weekly(rows[b])

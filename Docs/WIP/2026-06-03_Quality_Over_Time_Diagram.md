@@ -6,22 +6,33 @@
 **Tooling (read-only):** `scripts/diag/quality-timeseries.cjs` (score+coverage+branch),
 `scripts/diag/quality-chart.py` (by kind), `scripts/diag/quality-chart-branch.py` (by branch)
 
-## Coverage — every report DB on disk (verified), V1 claimboundary only
-Enumerated every `.db` under `C:\DEV` with a `Jobs` table (config/cache DBs excluded). Five hold
-reports; unioned all, deduped by JobId (first-wins). **V1 filter = `meta.pipeline === 'claimboundary'`
-exactly** — this excludes 196 `claimboundary-v2` reports (in cand-corrected) and 4 old monolithic.
-**Total = 1948 unique V1 claimboundary reports** (was 2144 before the V2/monolithic exclusion).
+## Coverage — every report DB incl. PRODUCTION (verified), V1 claimboundary only
+Enumerated every `.db` under `C:\DEV` with a `Jobs` table + pulled the **production** DB from the
+Infomaniak VPS (`/opt/factharbor/data/factharbor.db` → `test-output/prod/factharbor-prod.db`,
+`PRAGMA integrity_check = ok`). Unioned all, deduped by JobId (first-wins). **V1 filter =
+`meta.pipeline === 'claimboundary'` exactly** (excludes 196 `claimboundary-v2` + 4 monolithic).
+**Total = 2134 unique V1 claimboundary reports.**
 
 | DB | role | unique V1 added |
 |---|---|---|
-| `apps/api/factharbor.db` | local main | 1587 |
-| `test-output/candidate-ranking-corrected/...` | ranking copy (May 3–23 gap) | 338 (was 534; −196 V2) |
+| `test-output/prod/factharbor-prod.db` | **PRODUCTION (deployed instance)** | **186** |
+| `apps/api/factharbor.db` | local main (dev) | 1587 |
+| `test-output/candidate-ranking-corrected/...` | ranking copy (May 3–23 gap) | 338 |
 | `FH-unverified-2f7-isolation/apps/api/factharbor.db` | isolation experiment | 23 |
 | `FH-rehome-validation/.../factharbor-rehome-validation.db` | rehome worktree | 0 (subset) |
 | `test-output/candidate-ranking-extended-2026-05-23/...` | ranking copy | 0 (= corrected) |
 
-**Caveat — production:** the deployed/production DB lives on the server, **not on this machine**, so
-its reports are NOT in this dataset. Including them needs a server dump.
+**Production coverage note:** prod holds 186 V1 reports, **2026-03-03 .. 2026-05-28** (no production
+jobs recorded after May 28; deployed commit is `2f7a2805`, Apr 22). All `meta.pipeline='claimboundary'`,
+0% dirty (production never runs a modified tree). Test instance (`test.factharbor.ch`,
+`/opt/factharbor/data-test/`) not pulled — say the word if its reports are also wanted.
+
+### PROD vs dev — the deployed-quality reference
+PROD overall mean **77** (n=186) vs dev `main` **64** — prod is consistently the **top line** on the
+by-branch chart. This *leans toward* the Captain's prior (deployed ≳ HEAD), **but** with a confound:
+prod is **0% dirty and field-input-heavy**, whereas dev `main` is **73% dirty experiments + benchmark
+stress-batches** that drag the heuristic down. So the 77-vs-64 gap is partly mix, not purely "deployed
+code is better." Prod is the realistic real-world signal and sits solidly healthy (~77).
 
 ## Branch separation — multi-membership (a report appears under EVERY branch containing its commit)
 Tooling: `quality-branch-membership.cjs` (`git for-each-ref --contains`). Filters (Captain's rules):
