@@ -44,12 +44,26 @@ ax.scatter(bx, by, s=10, alpha=0.16, color='#cc6677', edgecolors='none')
 ax_x, ax_y, ax_n, _ = weekly(lambda k: True)
 gx_, gy_, gn_, _ = weekly(lambda k: k=='generic')
 bx_, by_, bn_, _ = weekly(lambda k: k=='bench')
-ax.plot(ax_x, ax_y, color='gray', lw=1.4, ls=':', marker='.', ms=4, zorder=4,
-        label='naive aggregate mean (mix-confounded)')
-ax.plot(gx_, gy_, color='#1f5fa8', lw=2.8, marker='o', ms=4.5, zorder=6,
-        label='generic / field reports — weekly mean')
-ax.plot(bx_, by_, color='#b03050', lw=2.8, marker='s', ms=4.5, zorder=6,
-        label='benchmark reports — weekly mean (ground-truth in-band)')
+ax.plot(ax_x, ax_y, color='gray', lw=1.3, ls=':', marker='.', ms=4, zorder=4,
+        label='naive pooled mean (distorted by benchmark cadence)')
+ax.plot(gx_, gy_, color='#1f5fa8', lw=2.6, marker='o', ms=4.5, zorder=6,
+        label='generic / field reports — weekly mean (health)')
+ax.plot(bx_, by_, color='#b03050', lw=2.6, marker='s', ms=4.5, zorder=6,
+        label='benchmark reports — weekly mean (correctness, in-band)')
+
+# 3rd line: mix-adjusted combination — fix the bench:field ratio at its all-time average
+# every week, so movement reflects quality change, not the changing benchmark cadence.
+nb = sum(1 for _,_,k in rows if k=='bench'); ng = len(rows)-nb
+wB, wG = nb/(nb+ng), ng/(nb+ng)
+gmap = {x.date():(y,n) for x,y,n in zip(gx_,gy_,gn_)}
+bmap = {x.date():(y,n) for x,y,n in zip(bx_,by_,bn_)}
+cx, cy = [], []
+for d in sorted(set(gmap) & set(bmap)):
+    (gy0,gn0),(by0,bn0) = gmap[d], bmap[d]
+    if gn0>=3 and bn0>=3:
+        cx.append(dt.datetime.combine(d, dt.time(12))); cy.append(wG*gy0 + wB*by0)
+ax.plot(cx, cy, color='#117733', lw=3.2, marker='D', ms=5.5, zorder=7,
+        label=f'combined, mix-adjusted (fixed {wG:.0%} field / {wB:.0%} bench)')
 
 for d, lab in [('2026-04-22','deployed (2f7a2805)'), ('2026-05-24','rehome rebuild'), ('2026-05-28','gated / HEAD era')]:
     x = dt.datetime.fromisoformat(d)
