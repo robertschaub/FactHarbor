@@ -93,13 +93,17 @@ local gap), deduped by JobId. Each report scored 0–100 by **Captain criteria**
 - benchmark families (ground truth): in-band(verdict+truth+conf, ±8) = 95, label-only = 65, off-band = 30
 - generic (no ground truth): base 85 − 45×(checkworthy-UNVERIFIED rate) − 15 if verdict_integrity_failure
 
-**Build timepoint (x-axis) = committer date of `ExecutedWebGitCommitHash`** — the commit/build that
-produced the report, NOT the job submission time (`CreatedUtc`). A report run on the deployed build
-plots at that build's commit date regardless of when it ran. `+dirty`/`+overlay` experiments use their
-base commit's date (the commit they forked from; the uncommitted edits have no commit date). Reports
-with **no recorded commit (645, pre ~Mar 28) are excluded** from the build-date charts — their build is
-unknown and we do NOT fall back to submission date. Build-date coverage: **1489/2134 reports, build
-dates 2026-03-28 .. 2026-06-02**. Markers: deployed (Apr 22), rehome (May 24), gated/HEAD era (May 28).
+**Build timepoint (x-axis) = committer date of the analysis-build commit**, NOT job submission time
+(`CreatedUtc`). Commit source: prefer `ExecutedWebGitCommitHash` (web/analysis build); **fall back to
+`GitCommitHash` (co-deployed API build)** when the web hash wasn't recorded — this recovers +239 early
+reports (build coverage 1489 → **1728/2134**, range now **2026-03-21 .. 2026-06-02**). `+dirty`/`+overlay`
+experiments use their base commit's date. Reports with **no commit at all (406, Mar 1–21) are excluded**
+from the build-date charts (build unknown; no fallback to submission date).
+**Origin:** diagrams now extend back to the claimboundary origin commit **`9cdc8889` (2026-02-17**,
+"switch verdict to Sonnet", just after CB was wired as default Feb 16) — green dashed marker. **No
+claimboundary report data exists before Mar 1** in any DB (incl. production), so Feb 17–Mar 1 is an
+empty origin gap and Mar 1–21 appears only on the submission axis. Markers: deployed (Apr 22), rehome
+(May 24), gated/HEAD era (May 28).
 
 ## Headline: the naive "decline" is a measurement artifact, not a quality regression
 The naive aggregate weekly mean falls 79 → 35 (mid-May) → recovers ~60. **That curve is a

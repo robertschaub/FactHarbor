@@ -95,7 +95,7 @@ for(const [name,db] of DBS){
   perDb[name]={scanned:0,added:0,total};
   const BATCH=250;
   for(let off=0; off<total; off+=BATCH){
-    const rows=sql(db,`SELECT JobId AS id, CreatedUtc AS ts, ExecutedWebGitCommitHash AS cmt, InputValue AS inp, VerdictLabel AS vl, ResultJson AS rj FROM Jobs WHERE Status='SUCCEEDED' AND ResultJson IS NOT NULL ORDER BY CreatedUtc ASC LIMIT ${BATCH} OFFSET ${off}`);
+    const rows=sql(db,`SELECT JobId AS id, CreatedUtc AS ts, ExecutedWebGitCommitHash AS cmt, GitCommitHash AS gcmt, InputValue AS inp, VerdictLabel AS vl, ResultJson AS rj FROM Jobs WHERE Status='SUCCEEDED' AND ResultJson IS NOT NULL ORDER BY CreatedUtc ASC LIMIT ${BATCH} OFFSET ${off}`);
     for(const row of rows){
       perDb[name].scanned++;
       if(seen.has(row.id)) continue; seen.add(row.id);
@@ -103,7 +103,9 @@ for(const [name,db] of DBS){
       if(!isV1(r)) continue;
       perDb[name].added++;
       const sc=scoreReport(r,row.inp,row.vl);
-      const raw=row.cmt||'';
+      // prefer ExecutedWebGitCommitHash (the analysis/web build); fall back to GitCommitHash (API build,
+      // co-deployed) for early reports where the web hash wasn't recorded yet.
+      const raw=(row.cmt&&row.cmt.trim())?row.cmt:(row.gcmt||'');
       const base=(raw.match(/^[0-9a-f]{7,40}/i)||[''])[0]; // drop +dirty / +<overlay> suffix
       const dirty=/\+/.test(raw)?1:0;
       const br=branchOf(base);

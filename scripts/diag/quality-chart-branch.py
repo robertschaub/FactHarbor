@@ -100,6 +100,14 @@ for d, lab in [('2026-04-22','deployed (2f7a2805)'), ('2026-05-24','rehome rebui
     ax.axvline(x, color='gray', ls=':', lw=1.0, alpha=0.7)
     ax.text(x, 104, lab, rotation=90, va='bottom', ha='center', fontsize=8, color='dimgray')
 
+# claimboundary origin commit 9cdc8889 (Feb 17) — extend axis back to it
+ORIGIN = dt.datetime(2026, 2, 17)
+ax.axvline(ORIGIN, color='#117733', ls='--', lw=1.5, alpha=0.9)
+ax.text(ORIGIN, 104, 'claimboundary origin (9cdc8889, Feb 17)', rotation=90, va='bottom', ha='center', fontsize=8, color='#117733')
+ax.set_xlim(left=ORIGIN - dt.timedelta(days=3))
+gap_note = 'no report data\nbefore Mar 1' if MODE == 'submission' else 'no commit-tagged\ndata before ~Mar 21'
+ax.text(ORIGIN + dt.timedelta(days=4), 55, gap_note, fontsize=7, color='gray', style='italic', va='center', ha='left')
+
 total = sum(len(v) for v in rows.values())
 ax.set_ylim(0, 112); ax.set_xlabel(AXLAB)
 ax.set_ylabel('report quality score 0-100 (Captain criteria)')
