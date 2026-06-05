@@ -15,7 +15,7 @@ Measure, rate, and **systematically compare across builds** the quality of FactH
 ## 2. Design in brief (the load-bearing decisions)
 
 1. **Vector-primary; the scalar only gates.** The authoritative object is a per-report **`ReportQualityVector`**, not a single number. A scalar (tier / optional NQS) gates release readiness; it **never ranks builds** (a flat score hides offsetting changes).
-2. **The reference gradient.** "Right answer" availability is *not* uniform: **gold exists only at the overall verdict (C4)** (`benchmark-expectations.json`) and a few coarse floors. C1/C2/C3 have no gold → measured by structural checks + cross-run stability + judge. Deeper into per-item detail, run-to-run drift erodes any per-item target.
+2. **The reference gradient.** "Right answer" availability is *not* uniform: aggregate gold exists by default at the overall verdict (C4) (`benchmark-expectations.json`) and a few coarse floors. Deeper AtomicClaim-level gold exists only for families with independently reviewed reference dossiers, scored through N:M semantic alignment rather than strict claim-string matching. Until such dossiers exist, C1/C2/C3 remain structural checks + cross-run stability + judge. See `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`.
 3. **Integrity ≠ quality.** Recomputed-structural checks (label↔truth, citation-in-set, aggregation faithfulness, claim-count, anchor survival) detect *brokenness/regression*, **not analytical goodness** — they **gate/floor, never rank**. Quality ranks on **gold (C4) + calibration + cost + independent judge**. Pipeline self-labels (probativeValue, sourceType, TIGERScore…) are **colour, never ranked**.
 4. **Comparison is relative & cost-aware.** Where gold exists, score absolutely; where not, judge **pairwise A/B** (conditional, not isolation). Cost is **co-equal via tie-band** (below). Everything distributional over **N reps**.
 5. **One role per signal.** Every signal is exactly one of **GATE/FLOOR · RANK · TIE-BREAK · COLOUR · CONTROL-FOR** — see the canonical routing table (§5). If it's not in the table, it isn't used.
@@ -25,7 +25,7 @@ Measure, rate, and **systematically compare across builds** the quality of FactH
 | # | Component | Pipeline stage | What it measures | Reference |
 |---|---|---|---|---|
 | **Gate** | Runtime integrity (`Q-HF1`) | — | Report completed without `report_damaged`/provider-failure/missing-verdict | structural gate |
-| **C1** | Atomic-claim extraction | Stage 1 | Faithful, atomic, complete decomposition of input | none (count+anchor floors only) |
+| **C1** | Atomic-claim extraction | Stage 1 | Faithful, atomic, complete decomposition of input | none by default (count+anchor floors only); dossier-backed semantic coverage where available |
 | **C2** | Evidence & boundaries | Stage 2/3 | Relevant, sufficient, diverse, scoped evidence per claim | minBoundaryCount floor |
 | **C3** | Per-claim verdict | Stage 4 | Grounded, cited, direction-coherent, self-consistent verdict | none per-claim |
 | **C4** | Overall verdict | Stage 5 | Label / truth% / confidence / boundaries vs **gold band** | **GOLD** |
@@ -150,7 +150,7 @@ ReportQualityVector = {
 **Aggregation faithfulness (an integrity GATE, not a quality measure):** recompute the weighted truth from `aggregation-stage.ts::aggregateAssessment` (the LIVE aggregator — **not** `aggregation.ts`): per-claim `finalWeight = centrality{3/2/1} × harm{crit1.5/high1.2/med1.0/low1.0} × (conf/100) × (1+triangulation) × derivative × anchor{2.5 if anchor-preserved} × probative{mean 1.0/0.9/0.5}`; invert truth for `contradicts_thesis`; weight 0 for `thesisRelevance≠direct` and INSUFFICIENT-with-zero-citations. Must equal `adjudicationPath.baselineAggregate.truthPercentage` (truth exact; **confidence** reconciled via the integrity cap `min(·, INSUFFICIENT_CONFIDENCE_MAX)` + adjudication guards + the **narrative downward delta** ≤`narrativeConfidenceMaxDownwardDelta`). Truth is never narrative-adjusted; checking vs `finalAggregate` directly false-positives adjudicated/narrative-lowered reports. **⚠ Flagged (§7 ⑥):** the live path does not apply `contestationWeights` — verify before relying on this metric.
 
 ## 10. Limitations (state in every comparison report)
-1. No gold below the aggregate verdict — C1/C2/C3 are intrinsic + judge, never "verified correct."
+1. No gold below the aggregate verdict by default — C1/C2/C3 are intrinsic + judge unless an independently reviewed AtomicClaim reference dossier exists for that family.
 2. Run-to-run drift (claim Jaccard ≥0.6 tolerated; evidence-pool 0.10–0.29) is the primary isolation confound.
 3. External-world drift — measures "this build on today's world"; mitigate by running arms concurrently.
 4. Judge bias — pairwise reduces, doesn't remove; anchor on gold.
