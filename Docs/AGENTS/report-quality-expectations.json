@@ -1,7 +1,7 @@
 {
   "_schemaVersion": "1.0.0",
   "_purpose": "Machine-readable quality expectations for /report-review. The skill describes HOW to run the checks (phase flow, debate, fixes); this file describes WHAT to check. Update this file when the canonical quality criteria change — the skill will pick up new Q-codes automatically via its dimensionMap traversal.",
-  "_lastUpdated": "2026-05-11",
+  "_lastUpdated": "2026-06-05",
   "_sourceDocs": [
     "Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md",
     "Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md",
@@ -83,7 +83,7 @@
       "severity": "HIGH",
       "source": "Canonical_Quality_Criteria.md §Stage 1 + 2026-04-08 Issue 2",
       "description": "Strong user predicates (truth-condition-bearing modifiers) survive extraction intact. An anchor word the user typed must remain in the primary claim text, not be demoted to a side-claim or dropped.",
-      "structuralCheck": "for each token in family.anchorTokens: token appears verbatim in claimVerdicts[0].claimText OR in the top-ranked boundary's primary claim. claimVerdicts[i>0] hosting the anchor is NOT a pass.",
+      "structuralCheck": "for each token in family.anchorTokens: token appears verbatim in understanding.atomicClaims[].statement for the claim referenced by claimVerdicts[0].claimId; if claimVerdicts is absent, use the first atomic claim as the fallback primary claim. claimVerdicts[i>0] / side claims hosting the anchor are NOT a pass.",
       "annotationRequired": "families[slug].anchorTokens (array of strings; order-insensitive)",
       "onFail": "Flag HIGH finding in dimension 3b (input integrity extension). Skip if annotation absent.",
       "status": "active"
@@ -295,8 +295,8 @@
       "category": "benchmark-expectation",
       "severity": "MEDIUM",
       "source": "Skill-internal + benchmark-expectations.json",
-      "description": "Observed confidence is within confidenceBand expanded by noiseTolerancePct.",
-      "structuralCheck": "family.confidenceBand.min - noiseTolerancePct <= confidence <= family.confidenceBand.max + noiseTolerancePct",
+      "description": "Observed confidence is within confidenceBand strictly; noiseTolerancePct does not expand confidence.",
+      "structuralCheck": "family.confidenceBand.min <= confidence <= family.confidenceBand.max",
       "onFail": "Flag in 3a unless family is STALE.",
       "status": "active"
     },
@@ -458,7 +458,7 @@
   },
 
   "pendingAnnotationsInBenchmarkExpectations": {
-    "_note": "These family-level annotations are needed for the annotation-dependent Q-codes to activate. Add them to families[slug] in Docs/AGENTS/benchmark-expectations.json as the data becomes available — the skill will then start running those checks automatically.",
+    "_note": "Phase 0 added these family-level annotations to Docs/AGENTS/benchmark-expectations.json. This block documents the expected annotation contract for annotation-dependent Q-codes and future families.",
     "anchorTokens": "Q-S1.3 — array of truth-condition-bearing tokens the user typed that must survive extraction (e.g., ['rechtskräftig'] for bundesrat-rechtskraftig)",
     "minDistinctEvents": "Q-S1.1 — integer, minimum number of distinct atomic claims expected (e.g., 3 for bundesrat-rechtskraftig: treaty signed, popular vote pending, parliament vote pending)",
     "trueButMisleading": "Q-V6 — boolean, true if the family is factually true but framed misleadingly; verdict must not be FALSE",

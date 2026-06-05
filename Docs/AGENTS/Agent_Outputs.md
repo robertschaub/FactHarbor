@@ -2010,3 +2010,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 **For next agent:** Refreshed `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md` against current source. `pipelineTelemetry` is still not implemented, but D5/direct-publishability behavior changed: `insufficient_direct_evidence` and `evidence_applicability_assessment_degraded` are now source facts and should be split under `qualityHealth`, not Phase 1 `pipelineTelemetry`. Provenance should use `resultJson.meta.executedWebGitCommitHash` / admin `gitCommitHash` and preserve dirty suffixes for grouping.
 **Warnings:** Documentation only; no source implementation, tests, build, expensive tests, or live jobs were run. The worktree had pre-existing unrelated dirty files and they were preserved.
 → Docs/AGENTS/Handoffs/2026-06-01_Unassigned_Pipeline_Telemetry_Plan_Source_Refresh.md
+
+---
+### 2026-06-05 | Lead Developer | Codex (GPT-5) | Report Quality Phase 0 + Phase 1 Scorer -- [Standard] [open-items: yes]
+**For next agent:** Phase 0 is landed in `benchmark-expectations.json` and `report-quality-expectations.json`; Phase 1 started with `scripts/measure-report-quality.ts`. Run with `npx tsx scripts/measure-report-quality.ts` (`--family`, `--limit`, `--build`, `--compare`, `--json` available). Full zero-spend dry-run scored 514 exact benchmark reports with 0 parse failures and no live jobs/LLM calls.
+→ Docs/AGENTS/Handoffs/2026-06-05_Lead_Developer_Report_Quality_Phase0_Phase1_Scorer.md
+
+---
+### 2026-06-05 | Lead Developer | Codex (GPT-5) | Report Quality Scorer Review Remediation -- [Standard] [open-items: yes]
+**For next agent:** Diverse read-only review returned NO-GO on the initial scorer; remediation is appended in the same handoff. Main fixes: primary-claim anchor floor, exact evidence-reference parsing including unknown `EV_*` reason tokens, calibration target split from confidence-band success, optional `AnalysisMetrics`, parse-failure isolation, and matched family/build tie-band comparison. Follow-up review found two further NO-GO items, now fixed: compare coverage uses the required benchmark family universe and reports `missingBoth`, and aggregation-faithfulness provenance normalizes consumed source-default baseline weighting fields instead of comparing an incomplete local aggregation object. Q-S1.3 metadata now names the current persisted CB shape. Final diverse re-review after second remediation: Gemini 3.1 GO, Claude Opus conditional GO with `contestationWeights` residual verified closed against source, local Codex GO. Full zero-spend dry-run passes: 514 scored reports, 0 parse failures, no live jobs/LLM calls.
+→ Docs/AGENTS/Handoffs/2026-06-05_Lead_Developer_Report_Quality_Phase0_Phase1_Scorer.md
