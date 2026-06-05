@@ -54,6 +54,9 @@ for(const r of orphans) rows.push(`orphan (no branch),${r.builddate},${r.iso},${
 // PROD (deployed instance) — provenance series, NOT a branch; also counted under its commit's branch above.
 const prod = reports.filter(r=>r.src==='prod');
 for(const r of prod) rows.push(`PROD (deployed),${r.builddate},${r.iso},${r.score},${r.kind},${r.dirty}`);
+// qbd d3ad26ca — deliberately-run reports at the quality_before_decline build (Mar 8), distinct marker.
+const qbd = reports.filter(r=>r.src==='qbd-d3ad26ca');
+for(const r of qbd) rows.push(`qbd d3ad26ca (Mar 8),${r.builddate},${r.iso},${r.score},${r.kind},${r.dirty}`);
 fs.writeFileSync(ROOT+'/test-output/quality-branch-membership.csv','branch,builddate,iso,score,kind,dirty\n'+rows.join('\n'));
 
 console.log('# SURVIVOR-BRANCH GATE (main-anchored; multi-membership; V1 claimboundary only)');

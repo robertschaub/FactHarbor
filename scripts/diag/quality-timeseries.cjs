@@ -19,6 +19,7 @@ const ROOT = 'C:/DEV/FactHarbor';
 // All report-bearing DBs (verified: have a Jobs table). Priority order = dedup preference.
 const DBS = [
   ['prod',        ROOT+'/test-output/prod/factharbor-prod.db'],
+  ['qbd-d3ad26ca','C:/DEV/FH-quality_before_decline/apps/api/factharbor.db'],
   ['local-main',  ROOT+'/apps/api/factharbor.db'],
   ['rehome-val',  'C:/DEV/FH-rehome-validation/apps/api/factharbor-rehome-validation.db'],
   ['2f7-isolation','C:/DEV/FH-unverified-2f7-isolation/apps/api/factharbor.db'],
@@ -100,12 +101,15 @@ for(const [name,db] of DBS){
       perDb[name].scanned++;
       if(seen.has(row.id)) continue; seen.add(row.id);
       let r; try{r=JSON.parse(row.rj);}catch(e){continue;}
-      if(!isV1(r)) continue;
+      // qbd-d3ad26ca: deliberately-run d3ad26ca reports (known claimboundary V1); the old build's
+      // entity records no commit hash, so we KNOW (not infer) the build = d3ad26ca and force it below.
+      if(!isV1(r) && name!=='qbd-d3ad26ca') continue;
       perDb[name].added++;
       const sc=scoreReport(r,row.inp,row.vl);
       // prefer ExecutedWebGitCommitHash (the analysis/web build); fall back to GitCommitHash (API build,
       // co-deployed) for early reports where the web hash wasn't recorded yet.
-      const raw=(row.cmt&&row.cmt.trim())?row.cmt:(row.gcmt||'');
+      let raw=(row.cmt&&row.cmt.trim())?row.cmt:(row.gcmt||'');
+      if(name==='qbd-d3ad26ca') raw='d3ad26ca6b4f9c2c826af774053ccb07e71fda53'; // known build (no recorded hash)
       const base=(raw.match(/^[0-9a-f]{7,40}/i)||[''])[0]; // drop +dirty / +<overlay> suffix
       const dirty=/\+/.test(raw)?1:0;
       const br=branchOf(base);

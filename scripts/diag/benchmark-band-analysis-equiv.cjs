@@ -40,7 +40,7 @@ const tot={HEAD:0,older:0,unknown:0};
 for(const f of spec.families){
   const exp=new Set((f.expectedVerdictLabels||[]).map(x=>x.toUpperCase()));
   const tb=f.truthPercentageBand||{min:0,max:100}; const cb=f.confidenceBand||{min:0,max:100};
-  const rows=sql(`SELECT VerdictLabel, substr(ExecutedWebGitCommitHash,1,12) AS cmt, ResultJson FROM Jobs WHERE Status='SUCCEEDED' AND ResultJson IS NOT NULL AND InputValue='${esc(f.inputValue)}'`);
+  const rows=sql(`SELECT VerdictLabel, substr(COALESCE(NULLIF(ExecutedWebGitCommitHash,''), GitCommitHash),1,12) AS cmt, ResultJson FROM Jobs WHERE Status='SUCCEEDED' AND ResultJson IS NOT NULL AND InputValue='${esc(f.inputValue)}'`);
   const B={HEAD:{n:0,inband:0,unver:0},older:{n:0,inband:0,unver:0},unknown:{n:0,inband:0,unver:0}};
   for(const row of rows){
     let r; try{r=JSON.parse(row.ResultJson);}catch(e){continue;}

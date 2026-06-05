@@ -39,7 +39,7 @@ def short(b):
     return (b.replace('codex/', '').replace('-2026-05-27', '')) if b.startswith('codex/') else b
 
 # order: main first (reference), then branches by size, then untracked/orphan last
-special = ['untracked (no commit)', 'orphan (no branch)', 'PROD (deployed)']
+special = ['untracked (no commit)', 'orphan (no branch)', 'PROD (deployed)', 'qbd d3ad26ca (Mar 8)']
 branches = [b for b in rows if b not in special]
 branches.sort(key=lambda b: (-len(rows[b]), b))
 if 'main' in branches:
@@ -86,6 +86,13 @@ if 'PROD (deployed)' in rows:
         ax.plot(x, y, color='#d62728', lw=3.6, marker='D', ms=6, zorder=8,
                 label=f'PROD deployed instance  (n={len(rows["PROD (deployed)"])})')
         annotate_n(x, y, nn, '#d62728')
+# quality_before_decline d3ad26ca (Mar 8) — deliberately-run measurement, distinct star
+if 'qbd d3ad26ca (Mar 8)' in rows:
+    x, y, nn = weekly(rows['qbd d3ad26ca (Mar 8)'])
+    if x:
+        ax.plot(x, y, color='#117733', lw=0, marker='*', ms=22, zorder=12, markeredgecolor='black', markeredgewidth=0.6,
+                label=f'quality_before_decline d3ad26ca (Mar 8, n={len(rows["qbd d3ad26ca (Mar 8)"])})')
+        annotate_n(x, y, nn, '#117733')
 # other non-branch reference series
 for b, col, ls in [('untracked (no commit)', '#888888', '--'), ('orphan (no branch)', '#bbbbbb', ':')]:
     if b in rows:
