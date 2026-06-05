@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-02T10:58:12.609Z",
-  "count": 301,
+  "generatedAt": "2026-06-05T22:25:33.130Z",
+  "count": 305,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6207,6 +6207,79 @@
       ],
       "files_touched": [],
       "summary": "Resume `2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md` and consolidate: which commit/range produced the best ClaimBoundary reports; rate quality vs Captain's documented bar; investigat"
+    },
+    {
+      "file": "2026-06-04_Lead_Architect_Multi_Variant_Pipeline_Architecture.md",
+      "date": "2026-06-04",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "multi",
+        "variant",
+        "pipeline",
+        "architecture"
+      ],
+      "files_touched": [],
+      "summary": "Start at Architecture §11 (review the 5 open questions) and the Plan's Phase 0 (registry + dispatcher, pure refactor, zero behavior change). The `pipelineVariant` field already exists end-to-end (`AnalyzeController` → `JobService.CreateJobAsync` → `JobEntity`); the hardcoded allowlist `[\"claimbounda"
+    },
+    {
+      "file": "2026-06-04_Lead_Architect_Report_Quality_Measurement_Concept.md",
+      "date": "2026-06-04",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "report",
+        "quality",
+        "measurement",
+        "concept"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md"
+      ],
+      "summary": "Start at `Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md`. It is the measurement layer for the era-comparison study (`Docs/WIP/2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md`, Phase 3). Phase 1 is implementable with zero spend over stored `ResultJson` using"
+    },
+    {
+      "file": "2026-06-04_Lead_Developer_LLM_Expert_Report_Quality_Concept_Review.md",
+      "date": "2026-06-04",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "report",
+        "quality",
+        "concept",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-06-04_Lead_Developer_LLM_Expert_Report_Quality_Concept_Review.md"
+      ],
+      "summary": "Start with the review brief, then patch the concept around sections 2, 4a-4c, 5a-5f, 6, 8, 9, and Appendix A. Cross-check against `apps/web/src/lib/analyzer/aggregation-stage.ts:130-267`, `types.ts:840-878`, `types.ts:1035-1075`, `types.ts:1376-1424`, `report-quality-expectations.json:35-88`, `bench"
+    },
+    {
+      "file": "2026-06-05_Lead_Developer_Report_Quality_Phase0_Phase1_Scorer.md",
+      "date": "2026-06-05",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "report",
+        "quality",
+        "phase0",
+        "phase1",
+        "scorer"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/benchmark-expectations.json",
+        "Docs/AGENTS/report-quality-expectations.json",
+        "scripts/measure-report-quality.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Main command: `npx tsx scripts/measure-report-quality.ts`. Useful filters: `--family <slug>`, `--limit <n>`, `--build <prefix>`, `--compare <a> <b>`, `--json`. Verified full local DB dry-run: 514 exact benchmark reports, 0 parse failures, no live jobs/LLM calls. Full-run headline output at this poin"
     }
   ]
 }
