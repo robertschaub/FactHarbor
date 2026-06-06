@@ -13,6 +13,7 @@
     "status",
     "expectedInputClassification",
     "ambiguityPolicy",
+    "ambiguityPolicyRationale",
     "curation",
     "validityWindow",
     "sourceSnapshots",
@@ -43,6 +44,7 @@
       "type": "string",
       "enum": ["commit_allowed", "must_disclose", "must_cover_all"]
     },
+    "ambiguityPolicyRationale": { "type": ["string", "null"] },
     "curation": {
       "type": "object",
       "additionalProperties": false,
@@ -106,8 +108,8 @@
       "additionalProperties": false,
       "required": ["min", "max"],
       "properties": {
-        "min": { "type": ["number", "null"] },
-        "max": { "type": ["number", "null"] }
+        "min": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "max": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
       }
     },
     "sourceSnapshot": {
@@ -254,7 +256,20 @@
         "confidenceBand": { "$ref": "#/$defs/band" },
         "acceptedVerdictLabels": {
           "type": "array",
-          "items": { "type": ["number", "string"] }
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "TRUE",
+              "MOSTLY-TRUE",
+              "LEANING-TRUE",
+              "MIXED",
+              "UNVERIFIED",
+              "LEANING-FALSE",
+              "MOSTLY-FALSE",
+              "FALSE"
+            ]
+          }
         },
         "freshnessRequirement": {
           "type": "string",

@@ -73,11 +73,6 @@ const DEFAULT_AGGREGATION = {
     maxDeviationFromBaseline: 30,
     borderlineMargin: 10,
   },
-  contestationWeights: {
-    established: 0.5,
-    disputed: 0.7,
-    opinion: 1,
-  },
 };
 
 const DEFAULT_PROBATIVE_VALUE_WEIGHTS = { high: 1.0, medium: 0.9, low: 0.5 };

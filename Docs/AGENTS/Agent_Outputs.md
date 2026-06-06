@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | Reference Dossier Validator Review Fixes -- [Standard] [open-items: yes]
+**For next agent:** Addressed the lead-developer review blockers for the report-quality implementation plan and AtomicClaim reference-data model. Restatused Phase 0 as done and Phase 1 scorer as built pending conformance sweep/dry-run, corrected the plastic family join slug to `plastic-en`, wired `scripts/validate-reference-dossiers.cjs` to the JSON Schema via AJV, added benchmark-slug, multi-frame commit-rationale, verdict-label/truth-band, source/reference, current-snapshot, and band-order cross-field checks, tightened schema verdict labels and band domains, added the aggregation-faithfulness contestation-coupling note, and removed the unused scorer `contestationWeights` config.
+**Warnings:** No reference dossiers were authored and no live jobs, expensive tests, or LLM calls were run. Remaining work is execution: Phase 0b dossier authoring plus Phase 1 full conformance sweep and stored-report dry-run sign-off.
+
+---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | Reference Data Contract Closure -- [Standard] [open-items: no]
 **For next agent:** Tightened the AtomicClaim reference-data model and implementation plan so the v0.1 data/model contract is closed, not left for implementers to define. Added needs/pains coverage matrix, `determinabilityStatus`, closed manual-alignment rubric, score artifact contract, C1/C3 judge output contracts, explicit Phase 0b execution boundary, and plan language that treats deferred items as outside the MVP/data-model contract.
 **Warnings:** Remaining work is execution against the contract: author dossiers, validate them, run manual alignment, instantiate prompts from the fixed contracts, and collect gate evidence. No live jobs or LLM calls were run.

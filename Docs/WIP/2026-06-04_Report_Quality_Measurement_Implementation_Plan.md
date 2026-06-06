@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-04
 **Role:** Lead Architect
-**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **This consolidated plan was itself reviewed by 2 independent reviewers → GO / GO-after-fixes; the doc-contract fixes are applied.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined; scorer wiring remains gated by the Phase 0b reliability checks.
+**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **Phase 0 is complete; Phase 1 zero-spend scorer is built and requires full conformance sweep + dry-run sign-off, not reimplementation.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks.
 **Companion (full rationale + review audit trail):** `Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md` (v7). This file is the *clean, actionable consolidation* — it supersedes the need to read the concept's changelog.
 **Feeds:** the Pipeline-Era Comparison study (`2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md`) — its Phase-3 "normalize + compare" measurement layer.
 
@@ -114,17 +114,17 @@ ReportQualityVector = {
 
 ## 8. Phased implementation plan
 
-### Phase 0 — References & policy *(owner: LLM Expert; zero spend, no LLM calls)*
-- **P0.1** Annotate all 8 families in `Docs/AGENTS/benchmark-expectations.json` with the four keys (generic, non-teaching-to-test).
-- **P0.2** Apply the **strict-confidence** policy: drop the `±noise` expansion on confidence in `Q-BE3` (`report-quality-expectations.json`) to match the band scripts (one-line edit).
-- **Gate:** annotations present for all families; JSON↔script confidence policy consistent.
+### Phase 0 — References & policy *(owner: LLM Expert; zero spend, no LLM calls)* — **DONE**
+- **P0.1 done:** all 8 families in `Docs/AGENTS/benchmark-expectations.json` carry `minDistinctEvents`, `anchorTokens`, `trueButMisleading`, and `crossLanguageVariantOf`.
+- **P0.2 done:** strict-confidence policy is in `Q-BE3` (`report-quality-expectations.json`): confidence is checked strictly inside `confidenceBand`; `noiseTolerancePct` does not expand confidence.
+- **Gate passed:** annotations are present for all families; JSON↔script confidence policy is consistent.
 
 ### Phase 0b — Reference dossiers *(owner: LLM Expert + Lead Developer; zero spend until explicit judge cap)*
 - **P0b.0** Use the structural dossier contract: `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs`. No root `atomicityPolicy`; use the real Stage 1 `expectedInputClassification` enum only.
 - **P0b.1** Instantiate dossier files from `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`: `expectedInputClassification`, dossier-level `ambiguityPolicy`, frame-scoped `atomicityProfile` including `determinabilityStatus`, required reference assertions, truth/confidence bands, source snapshots, and `validityWindow` for current-snapshot assertions.
 - **P0b.2** Use the manual-alignment rubric and score artifact contract in the reference-data model: active-frame selection, assertion coverage, Stage-1-only atomicity fidelity, disclosure fidelity, C3 verdict/evidence equivalence, tie handling, and `needs_human_review`.
 - **P0b.3** Produce one full dossier for `bundesrat-rechtskraftig` (`rechtskräftig` = both axes: materially ambiguous legal/procedural term plus clearly distinct truth conditions).
-- **P0b.4** Produce partial dossiers for `plastic-recycling-pointless` (interpretation-frame heavy) and one Bolsonaro input (atomicity-heavy with legal/procedural adjudication risk).
+- **P0b.4** Produce partial dossiers for `plastic-en` (interpretation-frame heavy) and one Bolsonaro input (atomicity-heavy with legal/procedural adjudication risk).
 - **P0b.5** Run manual alignment on stored reports first. Score per axis: input-classification fit, frame admissibility, assertion coverage, atomicity fidelity, and disclosure fidelity.
 - **P0b.6** Instantiate strict-JSON C1 alignment and C3 evidence-equivalence judge prompts from the fixed v0.1 judge output contracts; do not add labels, fields, or scoring rules, and do not run them until Captain approves a cap.
 - **P0b.7** Only after Captain approves a cap, run a small two-pass LLM alignment pilot: first active-frame selection, then assertion/atomicity mapping within the selected frame. Default initial cap for approval: USD 10; stop on first unstable per-axis mapping.
@@ -132,8 +132,8 @@ ReportQualityVector = {
 
 **Phase 0b closed contract:** all data fields, labels, score domains, validation rules, manual-rubric labels, C1/C3 judge output shapes, routing roles, and reliability gates are defined in the reference-data model + schema. Phase 0b implementers fill dossiers, validate them, run manual alignment, instantiate prompts from the contract, and collect gate evidence; they do not define new model semantics.
 
-### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)*
-- **P1.1** New scorer emitting the `ReportQualityVector` per stored `ResultJson` (reuse `measure-evidence-quality.ts` IO scaffolding only — it's legacy v1).
+### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)* — **BUILT, NEEDS SIGN-OFF**
+- **P1.1 built:** `scripts/measure-report-quality.ts` emits the `ReportQualityVector` per stored `ResultJson`.
 - **P1.2 Integrity gate/floor (T2 — gate, never rank):** Q-HF1; label↔truth; citation-in-set; aggregation-faithfulness recompute (§9); **+ C1/C2 structural minimums** — claim count vs `minDistinctEvents`, anchor-token survival, per-claim citation/evidence floor. *(NOT source-type diversity — that reads the `sourceType` self-label → colour, P1.4.)*
 - **P1.3 C4 quality (RANK):** harm-adjusted tiered gold-band — exact 100 / adjacent 70 / same-side-out-of-band 0–70 by distance / **flip = baseTiered − confidencePct** / **UNVERIFIED = 25**; domain **[−100,100]**, aggregate **raw (no clipping)**; strict confidence band.
 - **P1.4 T3 colour (reported, never ranked):** probative-value index, `sourceType` mix, etc. — surfaced in the matrix-diff, excluded from the verdict.
@@ -141,7 +141,7 @@ ReportQualityVector = {
   - **Data contract:** `{ Jobs.ResultJson, AnalysisMetrics.MetricsJson (optional), Job timestamps (optional) }`, grouped by `(benchmark input, build = commit + dirty-state, rep)`.
 - **P1.6 Stability** (≥2 reps) + **availability flags** for gated beta fields (TIGERScore, explanationQualityCheck — may be absent historically).
 - **P1.7 Matrix-diff (zero-spend part):** build the §5 routing-table-grouped Shadow-Mode matrix-diff and **validate it on EXISTING stored reports**. CIs via hand-rolled bootstrap (no heavy dep) / normal-approx SE fallback.
-- **Verification:** `node --check`, dry-run over stored reports, **no batch/live spend**.
+- **Verification status:** targeted conformance has been checked for the load-bearing C4 harm-adjusted rank, strict-confidence handling, aggregation recompute target, anchor logic, and family/noise wiring. Remaining Phase 1 sign-off is a full conformance sweep over floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, and matrix-diff, plus a stored-report dry-run. **No batch/live spend.**
 - **Phase-1 caveat:** C1 floor checks depend on Phase-0 annotations; dossier-backed semantic C1/C3 remains diagnostic until Phase 0b gates pass; efficiency rich-cost is forward-only; current-snapshot gold cannot be mixed across dossier versions.
 
 ### Phase 1b — Live comparison *(Captain-gated spend; NOT zero-spend)*
@@ -162,7 +162,7 @@ ReportQualityVector = {
 
 **Harmful-error-adjusted C4 (the quality rank):** base tiered = exact 100 / adjacent band 70 / same-side-out-of-band 0–70 by distance; **directional flip ⇒ `harmAdjustedC4 = baseTiered − confidencePct`** (90%-confident flip ≈ −90); **UNVERIFIED/abstention = 25** (safe non-answer, not a flip). Domain **[−100,100]**; aggregate raw across claims/reps/families before CIs — **no clipping**. Calibration is reported separately — **no double-count**.
 
-**Aggregation faithfulness (an integrity GATE, not a quality measure):** recompute the weighted truth from `aggregation-stage.ts::aggregateAssessment` (the LIVE aggregator — **not** `aggregation.ts`): per-claim `finalWeight = centrality{3/2/1} × harm{crit1.5/high1.2/med1.0/low1.0} × (conf/100) × (1+triangulation) × derivative × anchor{2.5 if anchor-preserved} × probative{mean 1.0/0.9/0.5}`; invert truth for `contradicts_thesis`; weight 0 for `thesisRelevance≠direct` and INSUFFICIENT-with-zero-citations. Must equal `adjudicationPath.baselineAggregate.truthPercentage` (truth exact; **confidence** reconciled via the integrity cap `min(·, INSUFFICIENT_CONFIDENCE_MAX)` + adjudication guards + the **narrative downward delta** ≤`narrativeConfidenceMaxDownwardDelta`). Truth is never narrative-adjusted; checking vs `finalAggregate` directly false-positives adjudicated/narrative-lowered reports. **⚠ Flagged (§7 ⑥):** the live path does not apply `contestationWeights` — verify before relying on this metric.
+**Aggregation faithfulness (an integrity GATE, not a quality measure):** recompute the weighted truth from `aggregation-stage.ts::aggregateAssessment` (the LIVE aggregator — **not** `aggregation.ts`): per-claim `finalWeight = centrality{3/2/1} × harm{crit1.5/high1.2/med1.0/low1.0} × (conf/100) × (1+triangulation) × derivative × anchor{2.5 if anchor-preserved} × probative{mean 1.0/0.9/0.5}`; invert truth for `contradicts_thesis`; weight 0 for `thesisRelevance≠direct` and INSUFFICIENT-with-zero-citations. Must equal `adjudicationPath.baselineAggregate.truthPercentage` (truth exact; **confidence** reconciled via the integrity cap `min(·, INSUFFICIENT_CONFIDENCE_MAX)` + adjudication guards + the **narrative downward delta** ≤`narrativeConfidenceMaxDownwardDelta`). Truth is never narrative-adjusted; checking vs `finalAggregate` directly false-positives adjudicated/narrative-lowered reports. **Contestation coupling:** this gate is valid only while the live `aggregateAssessment` path omits `contestationWeights`; if those weights are wired into the live aggregator, the scorer recompute must change in lockstep or the gate will false-positive.
 
 ## 10. Limitations (state in every comparison report)
 1. No gold below the aggregate verdict by default — C1/C2/C3 are intrinsic + judge unless an independently reviewed AtomicClaim reference dossier exists for that family and its frame/atomicity alignment gates have passed.
@@ -178,7 +178,7 @@ ReportQualityVector = {
 `report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands) · `Captain_Quality_Expectations.md` (intent) · `Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs` (Phase 0b structural contract) · `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` §7/§8 (manual rubric + judge output contracts) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
 
 ## 12. Immediate next action
-**Greenlight Phase 0** (LLM-Expert annotations + the P0.2 strict-confidence edit) — zero spend, the critical-path prerequisite. Phase 1 code (Senior Developer) can start once Phase 0 lands. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
+**Start Phase 0b authoring** (`bundesrat-rechtskraftig` full dossier, `plastic-en` partial dossier, one Bolsonaro partial dossier) and run the **Phase 1 conformance sweep + stored-report dry-run**. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
 
 ---
 *Lead Architect — consolidated plan. Design converged across 3 independent reviewers (two model families) + internal passes; reference-dossier review fixes are folded into the executable contract. Full rationale and the v1→v7 review audit trail: the companion concept doc.*

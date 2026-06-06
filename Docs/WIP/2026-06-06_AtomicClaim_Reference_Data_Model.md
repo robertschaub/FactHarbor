@@ -72,12 +72,12 @@ Canonical compact benchmark link:
 
 ```json
 {
-  "slug": "plastic-recycling-pointless",
+  "slug": "plastic-en",
   "referenceDossier": {
-    "id": "plastic-recycling-pointless",
+    "id": "plastic-en",
     "version": "0.1.0",
     "status": "draft | source_grounded | independently_reviewed | adjudicated_gold",
-    "path": "Docs/AGENTS/Reference_Dossiers/plastic-recycling-pointless.v0.1.json"
+    "path": "Docs/AGENTS/Reference_Dossiers/plastic-en.v0.1.json"
   }
 }
 ```
@@ -86,14 +86,15 @@ v0.1 dossier shape:
 
 ```json
 {
-  "id": "plastic-recycling-pointless",
+  "id": "plastic-en",
   "version": "0.1.0",
-  "inputSlug": "plastic-recycling-pointless",
+  "inputSlug": "plastic-en",
   "captainInputValue": "Plastic recycling is pointless",
   "language": "en",
   "status": "draft",
   "expectedInputClassification": "single_atomic_claim | ambiguous_single_claim | multi_assertion_input | question | article",
   "ambiguityPolicy": "commit_allowed | must_disclose | must_cover_all",
+  "ambiguityPolicyRationale": null,
   "curation": {
     "curator": null,
     "adjudicator": null,
@@ -180,14 +181,17 @@ Pilot v0.1 required fields are the schema-required fields in `Docs/AGENTS/Refere
 
 Validation rules:
 
-- The dossier shape is a v0.1 contract, not prose-only guidance. Structural validation lives in `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` plus `scripts/validate-reference-dossiers.cjs`; semantic alignment remains manual or LLM-adjudicated.
+- The dossier shape is a v0.1 contract, not prose-only guidance. `scripts/validate-reference-dossiers.cjs` compiles and runs `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` with AJV, then applies cross-field checks that JSON Schema cannot express cleanly. Semantic alignment remains manual or LLM-adjudicated.
 - `expectedInputClassification` must use the real Stage 1 enum only: `single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, or `article`.
+- `inputSlug` must equal a real `Docs/AGENTS/benchmark-expectations.json` family slug. `plastic-en` is the slug for `Plastic recycling is pointless`.
 - Root-level `atomicityPolicy` is forbidden. Atomicity is frame-scoped through `interpretationFrames[].atomicityProfile`.
 - `atomicityProfile.determinabilityStatus` is required. Only `settled` frames can produce automated dossier-backed rank; `contested` and `needs_adjudication` frames stay colour/human-review only.
-- If an input has two or more interpretation frames, default `ambiguityPolicy` is `must_disclose`. `commit_allowed` requires explicit curator/adjudicator rationale. `must_cover_all` is reserved for compound inputs where frames are not alternatives but separate required dimensions.
+- If an input has two or more interpretation frames, default `ambiguityPolicy` is `must_disclose`. `commit_allowed` requires non-empty `ambiguityPolicyRationale`. `must_cover_all` is reserved for compound inputs where frames are not alternatives but separate required dimensions.
 - Every required reference assertion belongs to exactly one truth condition through `referenceAssertions[].truthConditionId`; the reverse mapping is derived, not duplicated.
 - Every `truthConditionId` resolves to a truth condition in the same frame.
 - `separability: strict` requires an independently assessable truth condition.
+- `acceptedVerdictLabels[]` uses the live string labels only: `TRUE`, `MOSTLY-TRUE`, `LEANING-TRUE`, `MIXED`, `UNVERIFIED`, `LEANING-FALSE`, `MOSTLY-FALSE`, `FALSE`.
+- All truth/confidence bands are percentages in `[0,100]`; non-null band endpoints require `min <= max`.
 - `acceptedVerdictLabels` and `truthBand` must be checked for 7-point-scale consistency. Store both, but reject inconsistent combinations unless the dossier explains why.
 - `required` plus `contested: true` is allowed only as a provisional state. It is not a hard scoring requirement until adjudication resolves it or widens the band.
 - `current_snapshot` assertions require `validityWindow.currentSnapshot = true` and a pinned `validityWindow.referenceTime`; build comparisons must pin dossier ID, dossier version, and comparison run-window. Revalidation that changes source snapshots, frame definitions, assertions, or bands creates a new dossier version.
@@ -364,9 +368,9 @@ Each manual or LLM alignment run writes a score artifact with this shape:
 ```json
 {
   "schemaVersion": "reference-alignment-score.v0.1",
-  "dossierId": "plastic-recycling-pointless",
+  "dossierId": "plastic-en",
   "dossierVersion": "0.1.0",
-  "inputSlug": "plastic-recycling-pointless",
+  "inputSlug": "plastic-en",
   "reportJobId": null,
   "buildId": null,
   "runWindowId": null,

@@ -1,55 +1,35 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const Ajv2020 = require('ajv/dist/2020');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_DIR = path.join(REPO_ROOT, 'Docs', 'AGENTS', 'Reference_Dossiers');
 const SCHEMA_FILE = 'reference-dossier.schema.json';
+const BENCHMARK_FILE = path.join(REPO_ROOT, 'Docs', 'AGENTS', 'benchmark-expectations.json');
 
-const INPUT_CLASSIFICATIONS = new Set([
-  'single_atomic_claim',
-  'ambiguous_single_claim',
-  'multi_assertion_input',
-  'question',
-  'article',
-]);
-
-const DETERMINABILITY_VALUES = new Set([
-  'determinable',
-  'partial',
-  'indeterminable',
-]);
-
-const DETERMINABILITY_STATUSES = new Set([
-  'settled',
-  'contested',
-  'needs_adjudication',
-]);
-
-const ROOT_REQUIRED = [
-  'id',
-  'version',
-  'inputSlug',
-  'captainInputValue',
-  'language',
-  'status',
-  'expectedInputClassification',
-  'ambiguityPolicy',
-  'curation',
-  'validityWindow',
-  'sourceSnapshots',
-  'interpretationFrames',
-  'benchmarkCoherence',
+const VERDICT_BANDS = [
+  { label: 'FALSE', min: 0, max: 14 },
+  { label: 'MOSTLY-FALSE', min: 15, max: 28 },
+  { label: 'LEANING-FALSE', min: 29, max: 42 },
+  { label: 'MIXED', min: 43, max: 57 },
+  { label: 'UNVERIFIED', min: 43, max: 57 },
+  { label: 'LEANING-TRUE', min: 58, max: 71 },
+  { label: 'MOSTLY-TRUE', min: 72, max: 85 },
+  { label: 'TRUE', min: 86, max: 100 },
 ];
-
-const ALLOWED_ROOT = new Set(ROOT_REQUIRED);
 
 function usage() {
   console.log(`Usage: node scripts/validate-reference-dossiers.cjs [file-or-dir ...]
 
-Validates structural constraints for Docs/AGENTS/Reference_Dossiers/*.json.
+Validates Docs/AGENTS/Reference_Dossiers/*.json against the JSON Schema, then
+applies cross-field contract checks that JSON Schema cannot express cleanly.
 Semantic claim/evidence alignment is intentionally out of scope.
 `);
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
 function collectTargets(args) {
@@ -79,208 +59,191 @@ function collectTargets(args) {
   return files;
 }
 
-function assertSchemaReadable() {
+function buildSchemaValidator() {
   const schemaPath = path.join(DEFAULT_DIR, SCHEMA_FILE);
-  try {
-    JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
-  } catch (error) {
-    throw new Error(`Schema file is missing or invalid: ${schemaPath} (${error.message})`);
+  const schema = readJson(schemaPath);
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  return ajv.compile(schema);
+}
+
+function loadBenchmarkSlugs() {
+  const benchmark = readJson(BENCHMARK_FILE);
+  if (!Array.isArray(benchmark.families)) {
+    throw new Error(`Expected ${BENCHMARK_FILE} to contain a families[] array`);
   }
+  return new Set(benchmark.families.map((family) => family.slug).filter(Boolean));
 }
 
-function isObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function requireObject(value, label, errors) {
-  if (!isObject(value)) {
-    errors.push(`${label} must be an object`);
-    return false;
+function formatSchemaError(error) {
+  const where = error.instancePath || '(root)';
+  if (error.keyword === 'additionalProperties') {
+    return `${where} unexpected property: ${error.params.additionalProperty}`;
   }
-  return true;
-}
-
-function requireArray(value, label, errors) {
-  if (!Array.isArray(value)) {
-    errors.push(`${label} must be an array`);
-    return false;
+  if (error.keyword === 'required') {
+    return `${where} missing required property: ${error.params.missingProperty}`;
   }
-  return true;
+  return `${where} ${error.message}`;
 }
 
-function requireString(value, label, errors) {
-  if (typeof value !== 'string' || value.trim() === '') {
-    errors.push(`${label} must be a non-empty string`);
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function normalizeVerdictLabel(value) {
+  if (typeof value !== 'string') {
+    return null;
   }
+  const normalized = value.trim().toUpperCase().replace(/_/g, '-');
+  return VERDICT_BANDS.some((band) => band.label === normalized) ? normalized : null;
 }
 
-function validateBand(band, label, errors) {
-  if (!requireObject(band, label, errors)) {
+function bandForLabel(label) {
+  return VERDICT_BANDS.find((band) => band.label === label) ?? null;
+}
+
+function bandsOverlap(left, right) {
+  return left.min <= right.max && right.min <= left.max;
+}
+
+function validateBandOrder(band, label, errors) {
+  if (!band || typeof band.min !== 'number' || typeof band.max !== 'number') {
     return;
   }
-  for (const key of ['min', 'max']) {
-    const value = band[key];
-    if (value !== null && typeof value !== 'number') {
-      errors.push(`${label}.${key} must be number or null`);
-    }
-  }
-  if (typeof band.min === 'number' && typeof band.max === 'number' && band.min > band.max) {
+  if (band.min > band.max) {
     errors.push(`${label}.min must be <= ${label}.max`);
   }
 }
 
-function validateDossier(dossier) {
+function validateVerdictBandConsistency(assertion, label, errors) {
+  const truthBand = assertion.truthBand;
+  if (
+    !truthBand ||
+    typeof truthBand.min !== 'number' ||
+    typeof truthBand.max !== 'number' ||
+    !Array.isArray(assertion.acceptedVerdictLabels) ||
+    assertion.acceptedVerdictLabels.length === 0
+  ) {
+    return;
+  }
+
+  for (const verdict of assertion.acceptedVerdictLabels) {
+    const normalized = normalizeVerdictLabel(verdict);
+    if (!normalized) {
+      errors.push(`${label}.acceptedVerdictLabels contains unknown verdict label: ${verdict}`);
+      continue;
+    }
+    const verdictBand = bandForLabel(normalized);
+    if (!bandsOverlap(verdictBand, truthBand) && !nonEmptyString(assertion.notes)) {
+      errors.push(
+        `${label}.acceptedVerdictLabels ${normalized} does not overlap truthBand ` +
+        `${truthBand.min}-${truthBand.max}; add assertion.notes only for an explicit exception`
+      );
+    }
+  }
+}
+
+function validateCrossFields(dossier, benchmarkSlugs) {
   const errors = [];
-  if (!requireObject(dossier, 'dossier', errors)) {
-    return errors;
+
+  validateBandOrder(dossier.benchmarkCoherence.familyTruthBand, 'benchmarkCoherence.familyTruthBand', errors);
+  validateBandOrder(dossier.benchmarkCoherence.familyConfidenceBand, 'benchmarkCoherence.familyConfidenceBand', errors);
+
+  if (!benchmarkSlugs.has(dossier.inputSlug)) {
+    errors.push(`inputSlug does not match any benchmark family slug: ${dossier.inputSlug}`);
   }
 
-  for (const field of ROOT_REQUIRED) {
-    if (!(field in dossier)) {
-      errors.push(`missing root field: ${field}`);
+  if (dossier.interpretationFrames.length >= 2 && dossier.ambiguityPolicy === 'commit_allowed') {
+    if (!nonEmptyString(dossier.ambiguityPolicyRationale)) {
+      errors.push('ambiguityPolicy=commit_allowed with multiple frames requires ambiguityPolicyRationale');
     }
   }
-  for (const field of Object.keys(dossier)) {
-    if (!ALLOWED_ROOT.has(field)) {
-      errors.push(`unexpected root field: ${field}`);
-    }
-  }
-  if ('atomicityPolicy' in dossier) {
-    errors.push('root atomicityPolicy is forbidden; use interpretationFrames[].atomicityProfile');
-  }
 
-  requireString(dossier.id, 'id', errors);
-  requireString(dossier.version, 'version', errors);
-  requireString(dossier.inputSlug, 'inputSlug', errors);
-  requireString(dossier.captainInputValue, 'captainInputValue', errors);
-  requireString(dossier.language, 'language', errors);
-
-  if (!INPUT_CLASSIFICATIONS.has(dossier.expectedInputClassification)) {
-    errors.push(`expectedInputClassification must be one of: ${[...INPUT_CLASSIFICATIONS].join(', ')}`);
-  }
-
-  if (!requireObject(dossier.validityWindow, 'validityWindow', errors)) {
-    return errors;
-  }
-  if (typeof dossier.validityWindow.currentSnapshot !== 'boolean') {
-    errors.push('validityWindow.currentSnapshot must be boolean');
-  }
-  if (dossier.validityWindow.currentSnapshot === true && !dossier.validityWindow.referenceTime) {
+  if (dossier.validityWindow.currentSnapshot === true && !nonEmptyString(dossier.validityWindow.referenceTime)) {
     errors.push('validityWindow.currentSnapshot is true but validityWindow.referenceTime is missing');
   }
 
-  if (!requireArray(dossier.sourceSnapshots, 'sourceSnapshots', errors)) {
-    return errors;
-  }
   const sourceIds = new Set();
-  dossier.sourceSnapshots.forEach((source, index) => {
-    const label = `sourceSnapshots[${index}]`;
-    if (!requireObject(source, label, errors)) {
-      return;
-    }
-    requireString(source.id, `${label}.id`, errors);
+  for (const source of dossier.sourceSnapshots) {
     if (sourceIds.has(source.id)) {
       errors.push(`duplicate source id: ${source.id}`);
     }
     sourceIds.add(source.id);
-  });
-
-  if (!requireArray(dossier.interpretationFrames, 'interpretationFrames', errors)) {
-    return errors;
   }
-  dossier.interpretationFrames.forEach((frame, frameIndex) => {
-    const frameLabel = `interpretationFrames[${frameIndex}]`;
-    if (!requireObject(frame, frameLabel, errors)) {
-      return;
-    }
-    requireString(frame.id, `${frameLabel}.id`, errors);
-    if (!requireObject(frame.atomicityProfile, `${frameLabel}.atomicityProfile`, errors)) {
-      return;
-    }
-    if (!DETERMINABILITY_VALUES.has(frame.atomicityProfile.determinability)) {
-      errors.push(`${frameLabel}.atomicityProfile.determinability must be one of: ${[...DETERMINABILITY_VALUES].join(', ')}`);
-    }
-    if (!DETERMINABILITY_STATUSES.has(frame.atomicityProfile.determinabilityStatus)) {
-      errors.push(`${frameLabel}.atomicityProfile.determinabilityStatus must be one of: ${[...DETERMINABILITY_STATUSES].join(', ')}`);
-    }
 
-    const truthConditions = frame.atomicityProfile.distinctTruthConditions;
-    if (!requireArray(truthConditions, `${frameLabel}.atomicityProfile.distinctTruthConditions`, errors)) {
-      return;
-    }
+  for (const [frameIndex, frame] of dossier.interpretationFrames.entries()) {
+    const frameLabel = `interpretationFrames[${frameIndex}]`;
     const truthConditionIds = new Set();
-    truthConditions.forEach((truthCondition, tcIndex) => {
-      const tcLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${tcIndex}]`;
-      if (!requireObject(truthCondition, tcLabel, errors)) {
-        return;
-      }
-      requireString(truthCondition.id, `${tcLabel}.id`, errors);
+
+    for (const [truthIndex, truthCondition] of frame.atomicityProfile.distinctTruthConditions.entries()) {
+      const truthLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${truthIndex}]`;
       if (truthConditionIds.has(truthCondition.id)) {
         errors.push(`${frameLabel} duplicate truth condition id: ${truthCondition.id}`);
       }
       truthConditionIds.add(truthCondition.id);
       if ('coversReferenceAssertionIds' in truthCondition) {
-        errors.push(`${tcLabel}.coversReferenceAssertionIds is forbidden; use referenceAssertions[].truthConditionId`);
+        errors.push(`${truthLabel}.coversReferenceAssertionIds is forbidden; use referenceAssertions[].truthConditionId`);
       }
-      if (typeof truthCondition.independentAssessabilityRequired !== 'boolean') {
-        errors.push(`${tcLabel}.independentAssessabilityRequired must be boolean`);
-      }
-    });
-
-    if (!requireArray(frame.referenceAssertions, `${frameLabel}.referenceAssertions`, errors)) {
-      return;
     }
-    frame.referenceAssertions.forEach((assertion, raIndex) => {
-      const raLabel = `${frameLabel}.referenceAssertions[${raIndex}]`;
-      if (!requireObject(assertion, raLabel, errors)) {
-        return;
-      }
-      requireString(assertion.id, `${raLabel}.id`, errors);
-      requireString(assertion.truthConditionId, `${raLabel}.truthConditionId`, errors);
-      if (!truthConditionIds.has(assertion.truthConditionId)) {
-        errors.push(`${raLabel}.truthConditionId does not resolve in same frame: ${assertion.truthConditionId}`);
-      }
-      validateBand(assertion.truthBand, `${raLabel}.truthBand`, errors);
-      validateBand(assertion.confidenceBand, `${raLabel}.confidenceBand`, errors);
-      for (const sourceField of ['evidenceSourceIds', 'knownCounterEvidenceSourceIds']) {
-        if (!requireArray(assertion[sourceField], `${raLabel}.${sourceField}`, errors)) {
-          continue;
+
+    for (const [truthIndex, truthCondition] of frame.atomicityProfile.distinctTruthConditions.entries()) {
+      const truthLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${truthIndex}]`;
+      for (const mergeTarget of truthCondition.mergeAllowedWith) {
+        if (!truthConditionIds.has(mergeTarget)) {
+          errors.push(`${truthLabel}.mergeAllowedWith references unknown truth condition: ${mergeTarget}`);
         }
+      }
+    }
+
+    for (const [assertionIndex, assertion] of frame.referenceAssertions.entries()) {
+      const assertionLabel = `${frameLabel}.referenceAssertions[${assertionIndex}]`;
+
+      if (!truthConditionIds.has(assertion.truthConditionId)) {
+        errors.push(`${assertionLabel}.truthConditionId does not resolve in same frame: ${assertion.truthConditionId}`);
+      }
+
+      for (const sourceField of ['evidenceSourceIds', 'knownCounterEvidenceSourceIds']) {
         for (const sourceId of assertion[sourceField]) {
           if (!sourceIds.has(sourceId)) {
-            errors.push(`${raLabel}.${sourceField} references unknown source id: ${sourceId}`);
+            errors.push(`${assertionLabel}.${sourceField} references unknown source id: ${sourceId}`);
           }
         }
       }
-      if (assertion.freshnessRequirement === 'current_snapshot' && !dossier.validityWindow.referenceTime) {
-        errors.push(`${raLabel} is current_snapshot but validityWindow.referenceTime is missing`);
-      }
-      if (assertion.freshnessRequirement === 'current_snapshot' && dossier.validityWindow.currentSnapshot !== true) {
-        errors.push(`${raLabel} is current_snapshot but validityWindow.currentSnapshot is not true`);
-      }
-    });
 
-    for (const truthCondition of truthConditions) {
+      if (assertion.freshnessRequirement === 'current_snapshot') {
+        if (dossier.validityWindow.currentSnapshot !== true) {
+          errors.push(`${assertionLabel} is current_snapshot but validityWindow.currentSnapshot is not true`);
+        }
+        if (!nonEmptyString(dossier.validityWindow.referenceTime)) {
+          errors.push(`${assertionLabel} is current_snapshot but validityWindow.referenceTime is missing`);
+        }
+      }
+
+      validateBandOrder(assertion.truthBand, `${assertionLabel}.truthBand`, errors);
+      validateBandOrder(assertion.confidenceBand, `${assertionLabel}.confidenceBand`, errors);
+      validateVerdictBandConsistency(assertion, assertionLabel, errors);
+    }
+
+    for (const truthCondition of frame.atomicityProfile.distinctTruthConditions) {
       if (truthCondition.independentAssessabilityRequired !== true) {
         continue;
       }
-      const hasAssertion = frame.referenceAssertions.some((assertion) =>
+      const hasRequiredAssertion = frame.referenceAssertions.some((assertion) =>
         assertion.truthConditionId === truthCondition.id && assertion.role === 'required'
       );
-      if (!hasAssertion) {
+      if (!hasRequiredAssertion) {
         errors.push(`${frameLabel} strict truth condition has no required reference assertion: ${truthCondition.id}`);
       }
     }
-  });
+  }
 
-  validateBand(dossier.benchmarkCoherence?.familyTruthBand, 'benchmarkCoherence.familyTruthBand', errors);
-  validateBand(dossier.benchmarkCoherence?.familyConfidenceBand, 'benchmarkCoherence.familyConfidenceBand', errors);
   return errors;
 }
 
 function main() {
-  assertSchemaReadable();
   const files = collectTargets(process.argv.slice(2));
+  const validateSchema = buildSchemaValidator();
+  const benchmarkSlugs = loadBenchmarkSlugs();
+
   if (files.length === 0) {
     console.log('No reference dossier files found.');
     return;
@@ -288,15 +251,20 @@ function main() {
 
   let failed = false;
   for (const file of files) {
-    let parsed;
+    let dossier;
     try {
-      parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+      dossier = readJson(file);
     } catch (error) {
       console.error(`${file}: invalid JSON: ${error.message}`);
       failed = true;
       continue;
     }
-    const errors = validateDossier(parsed);
+
+    const schemaOk = validateSchema(dossier);
+    const schemaErrors = schemaOk ? [] : validateSchema.errors.map(formatSchemaError);
+    const crossFieldErrors = schemaOk ? validateCrossFields(dossier, benchmarkSlugs) : [];
+    const errors = [...schemaErrors, ...crossFieldErrors];
+
     if (errors.length > 0) {
       failed = true;
       console.error(`${file}:`);
