@@ -7,7 +7,7 @@
   "status": "draft",
   "expectedInputClassification": "multi_assertion_input",
   "ambiguityPolicy": "must_disclose",
-  "ambiguityPolicyRationale": null,
+  "ambiguityPolicyRationale": "The input combines a true procedural chronology with an ambiguous legal/procedural term. Reports may choose a strict or looser frame only if they disclose the competing reading instead of silently treating one as the only possible meaning.",
   "curation": {
     "curator": "Codex GPT-5 (Lead Developer draft)",
     "adjudicator": null,
@@ -90,9 +90,9 @@
       "id": "FRAME_final_binding_entry_into_force",
       "label": "Rechtskräftig as final binding force / entry into force",
       "interpretedTermOrFrame": "rechtskräftig",
-      "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland.",
+      "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
       "admissibility": "defensible",
-      "admissibilityRationale": "This is the strict legal/procedural reading most relevant to the user's word 'rechtskräftig'. It separates the act of signature from final domestic approval, ratification, and entry into force.",
+      "admissibilityRationale": "This is the strict legal/procedural reading of the user's word 'rechtskräftig'. It separates the act of signature from final domestic approval, ratification, and entry into force.",
       "ambiguityPolicy": "must_disclose",
       "atomicityProfile": {
         "determinability": "determinable",
@@ -133,9 +133,9 @@
       },
       "referenceAssertions": [
         {
-          "id": "RA_PACKAGE_SIGNED_BEFORE_PARLIAMENT",
+          "id": "RA_PACKAGE_SIGNATURE_OCCURRED",
           "truthConditionId": "TC_SIGNATURE_OCCURRED",
-          "text": "The remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed on 2 March 2026 before the Federal Council submitted the package to Parliament on 13 March 2026.",
+          "text": "The remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed on 2 March 2026.",
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
@@ -155,7 +155,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": null
+          "notes": "External verification before any status upgrade must confirm the exact official wording for what was signed, by whom, and under whose authority."
         },
         {
           "id": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
@@ -180,7 +180,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": null
+          "notes": "This assertion carries the before-Parliament timing that was intentionally removed from the signature-occurrence assertion; external verification before upgrade must confirm the reference-time parliamentary status."
         },
         {
           "id": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
@@ -204,7 +204,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": null
+          "notes": "External verification before any status upgrade must confirm whether any popular vote had occurred by the reference time and the exact referendum contingency."
         },
         {
           "id": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
@@ -233,12 +233,12 @@
             "severity": "high"
           },
           "contested": false,
-          "notes": "The known counter-evidence concerns limited provisional or transitional effects; it does not establish final entry into force of the whole package."
+          "notes": "The known counter-evidence sources are apparent counterevidence for a loose legal-effect reading only; they do not directly contradict the claim that signature was not final entry into force of the whole package."
         },
         {
           "id": "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT",
           "truthConditionId": "TC_PACKAGE_OBJECT",
-          "text": "The object is the Switzerland-EU package/Bilaterals III, consisting of multiple agreements, protocols, implementation acts, and federal decrees; reports may mention this as context to avoid treating it as a single EU membership treaty.",
+          "text": "The object is the Switzerland-EU package/Bilaterals III, consisting of multiple agreements/protocols and related implementation material; reports may mention this as context to avoid treating it as a single EU membership treaty.",
           "role": "tolerated_context",
           "separability": "flexible",
           "kind": "factual",
@@ -263,17 +263,23 @@
     },
     {
       "id": "FRAME_provisional_or_limited_legal_effect",
-      "label": "Rechtskräftig as limited legal/procedural effect after signature",
+      "label": "Rechtskräftig as valid signature or limited legal/procedural effect",
       "interpretedTermOrFrame": "rechtskräftig",
-      "interpretationDefinition": "The term is read loosely as 'the signature had some legal or procedural effect', including provisional application of the programme agreement or cooperation during the ratification phase, not as final entry into force of the whole package.",
+      "interpretationDefinition": "The term is read loosely as 'the signature was legally valid/effective as a procedural act' or 'the signature had some legal or procedural effect', including valid signature/authentication of package texts, provisional application of the programme agreement, or cooperation during the ratification phase. This frame does not treat those effects as final entry into force of the whole package. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
       "admissibility": "defensible",
-      "admissibilityRationale": "This is a defensible colloquial or political reading because official sources describe provisional application and ratification-phase cooperation before final package entry into force. It must not be silently substituted for the strict final-binding reading.",
+      "admissibilityRationale": "This is a defensible colloquial or political reading because official sources describe an official signature act, provisional application, and ratification-phase cooperation before final package entry into force. It must not be silently substituted for the strict final-binding reading.",
       "ambiguityPolicy": "must_disclose",
       "atomicityProfile": {
         "determinability": "partial",
         "determinabilityStatus": "settled",
         "determinabilityRationale": "The signature/provisional-effect facts are verifiable, but the word 'rechtskräftig' is evaluative/legal shorthand. This frame scores strict facts about provisional effects and disclosure, while waiving any claim that limited effects equal final force.",
         "distinctTruthConditions": [
+          {
+            "id": "TC_VALID_SIGNATURE_AUTHENTICATION",
+            "description": "Whether the 2 March 2026 signature was an official/valid procedural act without itself establishing final binding force.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
           {
             "id": "TC_LIMITED_EFFECT_EUPA",
             "description": "Whether the programme agreement had provisional/retroactive association effects before final package ratification.",
@@ -296,6 +302,31 @@
       },
       "referenceAssertions": [
         {
+          "id": "RA_SIGNATURE_VALID_PROCEDURAL_ACT",
+          "truthConditionId": "TC_VALID_SIGNATURE_AUTHENTICATION",
+          "text": "The 2 March 2026 signing was an official procedural signature/authentication act for package texts, but that valid signature act was not final entry into force of the whole package.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Omitting this reading can force a report to call every legal-effect interpretation false even when it only rejects final binding force.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "External verification before any status upgrade must confirm the exact official status of the signature/authentication act and avoid inferring broader final force from that act."
+        },
+        {
           "id": "RA_EUPA_PROVISIONAL_APPLICATION",
           "truthConditionId": "TC_LIMITED_EFFECT_EUPA",
           "text": "The EU programme agreement, signed before the rest of the package, could be provisionally applied retroactively to selected EU programmes from 1 January 2025 before package ratification.",
@@ -317,7 +348,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": null
+          "notes": "External verification before any status upgrade must confirm the exact legal mechanism and date for the retroactive/provisional EU programme association."
         },
         {
           "id": "RA_RATIFICATION_PHASE_COOPERATION",
@@ -326,9 +357,9 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 72, "max": 85 },
-          "confidenceBand": { "min": 65, "max": 90 },
-          "acceptedVerdictLabels": ["MOSTLY-TRUE"],
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 90 },
+          "acceptedVerdictLabels": ["TRUE"],
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland", "European Union"],
           "evidenceSourceIds": [
@@ -340,7 +371,7 @@
             "severity": "low"
           },
           "contested": false,
-          "notes": "Mostly-true rather than true because the source establishes cooperation modalities, not final binding force of the package."
+          "notes": "This assertion is limited to transitional cooperation modalities; it does not assert final binding force of the package."
         },
         {
           "id": "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE",
@@ -373,6 +404,6 @@
   "benchmarkCoherence": {
     "familyTruthBand": { "min": 35, "max": 60 },
     "familyConfidenceBand": { "min": 55, "max": 85 },
-    "coherenceNote": "The aggregate benchmark remains mixed/leaning-false: signing before Parliament/people is true, but 'rechtskräftig' as final binding force is false; limited provisional effects make an unqualified false answer incomplete. Dossier-backed scoring should require reports to disclose the chosen 'rechtskräftig' frame and keep the timing events separate."
+    "coherenceNote": "The aggregate benchmark remains mixed/leaning-false for the strict final-binding frame: signing before Parliament/people is true, but 'rechtskräftig' as final binding force is false; valid-signature and limited provisional effects make an unqualified false answer incomplete. The benchmark's narrow LEANING-TRUE edge is admissible only for reports that explicitly choose the valid-signature/limited-effect frame while preserving the final-force caveat and keeping the timing events separate."
   }
 }

@@ -183,16 +183,18 @@ Validation rules:
 
 - The dossier shape is a v0.1 contract, not prose-only guidance. `scripts/validate-reference-dossiers.cjs` compiles and runs `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` with AJV, then applies cross-field checks that JSON Schema cannot express cleanly. Semantic alignment remains manual or LLM-adjudicated.
 - `expectedInputClassification` must use the real Stage 1 enum only: `single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, or `article`.
-- `inputSlug` must equal a real `Docs/AGENTS/benchmark-expectations.json` family slug. `plastic-en` is the slug for `Plastic recycling is pointless`.
+- `inputSlug` must equal a real `Docs/AGENTS/benchmark-expectations.json` family slug. `benchmarkCoherence.familyTruthBand` must equal that family's `truthPercentageBand`, and `benchmarkCoherence.familyConfidenceBand` must equal that family's `confidenceBand`. `plastic-en` is the slug for `Plastic recycling is pointless`.
 - Root-level `atomicityPolicy` is forbidden. Atomicity is frame-scoped through `interpretationFrames[].atomicityProfile`.
 - `atomicityProfile.determinabilityStatus` is required. Only `settled` frames can produce automated dossier-backed rank; `contested` and `needs_adjudication` frames stay colour/human-review only.
 - If an input has two or more interpretation frames, default `ambiguityPolicy` is `must_disclose`. `commit_allowed` requires non-empty `ambiguityPolicyRationale`. `must_cover_all` is reserved for compound inputs where frames are not alternatives but separate required dimensions.
+- Frame IDs and reference assertion IDs must be unique within a dossier.
 - Every required reference assertion belongs to exactly one truth condition through `referenceAssertions[].truthConditionId`; the reverse mapping is derived, not duplicated.
 - Every `truthConditionId` resolves to a truth condition in the same frame.
 - `separability: strict` requires an independently assessable truth condition.
+- `role: required` requires at least one source-grounded `evidenceSourceId`.
 - `acceptedVerdictLabels[]` uses the live string labels only: `TRUE`, `MOSTLY-TRUE`, `LEANING-TRUE`, `MIXED`, `UNVERIFIED`, `LEANING-FALSE`, `MOSTLY-FALSE`, `FALSE`.
 - All truth/confidence bands are percentages in `[0,100]`; non-null band endpoints require `min <= max`.
-- `acceptedVerdictLabels` and `truthBand` must be checked for 7-point-scale consistency. Store both, but reject inconsistent combinations unless the dossier explains why.
+- `acceptedVerdictLabels` and `truthBand` must be checked for 7-point-scale consistency. Store both, but reject inconsistent combinations unless `notes` starts with `BAND_EXCEPTION:` and explains the exception.
 - `required` plus `contested: true` is allowed only as a provisional state. It is not a hard scoring requirement until adjudication resolves it or widens the band.
 - `current_snapshot` assertions require `validityWindow.currentSnapshot = true` and a pinned `validityWindow.referenceTime`; build comparisons must pin dossier ID, dossier version, and comparison run-window. Revalidation that changes source snapshots, frame definitions, assertions, or bands creates a new dossier version.
 - Any dossier band change must reconcile with the family-level band in `benchmark-expectations.json`; any benchmark band change must cite the dossier version that justifies it. Legacy scorer behavior continues to use `benchmark-expectations.json` until the dossier link is wired.

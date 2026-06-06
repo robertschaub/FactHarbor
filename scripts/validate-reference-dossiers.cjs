@@ -66,12 +66,22 @@ function buildSchemaValidator() {
   return ajv.compile(schema);
 }
 
-function loadBenchmarkSlugs() {
+function loadBenchmarkFamilies() {
   const benchmark = readJson(BENCHMARK_FILE);
   if (!Array.isArray(benchmark.families)) {
     throw new Error(`Expected ${BENCHMARK_FILE} to contain a families[] array`);
   }
-  return new Set(benchmark.families.map((family) => family.slug).filter(Boolean));
+  const bySlug = new Map();
+  for (const family of benchmark.families) {
+    if (!family.slug) {
+      continue;
+    }
+    if (bySlug.has(family.slug)) {
+      throw new Error(`Duplicate benchmark family slug in ${BENCHMARK_FILE}: ${family.slug}`);
+    }
+    bySlug.set(family.slug, family);
+  }
+  return bySlug;
 }
 
 function formatSchemaError(error) {
@@ -101,8 +111,23 @@ function bandForLabel(label) {
   return VERDICT_BANDS.find((band) => band.label === label) ?? null;
 }
 
+function formatBand(band) {
+  if (!band) {
+    return '(missing)';
+  }
+  return `${band.min}-${band.max}`;
+}
+
 function bandsOverlap(left, right) {
   return left.min <= right.max && right.min <= left.max;
+}
+
+function bandsEqual(left, right) {
+  return Boolean(left && right && left.min === right.min && left.max === right.max);
+}
+
+function hasBandException(assertion) {
+  return typeof assertion.notes === 'string' && assertion.notes.trim().startsWith('BAND_EXCEPTION:');
 }
 
 function validateBandOrder(band, label, errors) {
@@ -133,23 +158,44 @@ function validateVerdictBandConsistency(assertion, label, errors) {
       continue;
     }
     const verdictBand = bandForLabel(normalized);
-    if (!bandsOverlap(verdictBand, truthBand) && !nonEmptyString(assertion.notes)) {
+    if (!bandsOverlap(verdictBand, truthBand) && !hasBandException(assertion)) {
       errors.push(
         `${label}.acceptedVerdictLabels ${normalized} does not overlap truthBand ` +
-        `${truthBand.min}-${truthBand.max}; add assertion.notes only for an explicit exception`
+        `${truthBand.min}-${truthBand.max}; add assertion.notes starting with BAND_EXCEPTION: only for an explicit exception`
       );
     }
   }
 }
 
-function validateCrossFields(dossier, benchmarkSlugs) {
+function validateBenchmarkCoherence(dossier, benchmarkFamily, errors) {
+  if (!benchmarkFamily) {
+    return;
+  }
+  if (!bandsEqual(dossier.benchmarkCoherence.familyTruthBand, benchmarkFamily.truthPercentageBand)) {
+    errors.push(
+      `benchmarkCoherence.familyTruthBand ${formatBand(dossier.benchmarkCoherence.familyTruthBand)} ` +
+      `must match benchmark truthPercentageBand ${formatBand(benchmarkFamily.truthPercentageBand)} for ${dossier.inputSlug}`
+    );
+  }
+  if (!bandsEqual(dossier.benchmarkCoherence.familyConfidenceBand, benchmarkFamily.confidenceBand)) {
+    errors.push(
+      `benchmarkCoherence.familyConfidenceBand ${formatBand(dossier.benchmarkCoherence.familyConfidenceBand)} ` +
+      `must match benchmark confidenceBand ${formatBand(benchmarkFamily.confidenceBand)} for ${dossier.inputSlug}`
+    );
+  }
+}
+
+function validateCrossFields(dossier, benchmarkFamilies) {
   const errors = [];
 
   validateBandOrder(dossier.benchmarkCoherence.familyTruthBand, 'benchmarkCoherence.familyTruthBand', errors);
   validateBandOrder(dossier.benchmarkCoherence.familyConfidenceBand, 'benchmarkCoherence.familyConfidenceBand', errors);
 
-  if (!benchmarkSlugs.has(dossier.inputSlug)) {
+  const benchmarkFamily = benchmarkFamilies.get(dossier.inputSlug);
+  if (!benchmarkFamily) {
     errors.push(`inputSlug does not match any benchmark family slug: ${dossier.inputSlug}`);
+  } else {
+    validateBenchmarkCoherence(dossier, benchmarkFamily, errors);
   }
 
   if (dossier.interpretationFrames.length >= 2 && dossier.ambiguityPolicy === 'commit_allowed') {
@@ -170,9 +216,16 @@ function validateCrossFields(dossier, benchmarkSlugs) {
     sourceIds.add(source.id);
   }
 
+  const frameIds = new Set();
+  const assertionIds = new Set();
+
   for (const [frameIndex, frame] of dossier.interpretationFrames.entries()) {
     const frameLabel = `interpretationFrames[${frameIndex}]`;
     const truthConditionIds = new Set();
+    if (frameIds.has(frame.id)) {
+      errors.push(`duplicate frame id: ${frame.id}`);
+    }
+    frameIds.add(frame.id);
 
     for (const [truthIndex, truthCondition] of frame.atomicityProfile.distinctTruthConditions.entries()) {
       const truthLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${truthIndex}]`;
@@ -196,9 +249,22 @@ function validateCrossFields(dossier, benchmarkSlugs) {
 
     for (const [assertionIndex, assertion] of frame.referenceAssertions.entries()) {
       const assertionLabel = `${frameLabel}.referenceAssertions[${assertionIndex}]`;
+      if (assertionIds.has(assertion.id)) {
+        errors.push(`duplicate reference assertion id: ${assertion.id}`);
+      }
+      assertionIds.add(assertion.id);
 
       if (!truthConditionIds.has(assertion.truthConditionId)) {
         errors.push(`${assertionLabel}.truthConditionId does not resolve in same frame: ${assertion.truthConditionId}`);
+      }
+      const truthCondition = frame.atomicityProfile.distinctTruthConditions.find((candidate) =>
+        candidate.id === assertion.truthConditionId
+      );
+      if (assertion.separability === 'strict' && truthCondition?.independentAssessabilityRequired !== true) {
+        errors.push(`${assertionLabel}.separability=strict requires an independently assessable truth condition`);
+      }
+      if (assertion.role === 'required' && assertion.evidenceSourceIds.length === 0) {
+        errors.push(`${assertionLabel}.role=required requires at least one evidenceSourceId`);
       }
 
       for (const sourceField of ['evidenceSourceIds', 'knownCounterEvidenceSourceIds']) {
@@ -242,7 +308,7 @@ function validateCrossFields(dossier, benchmarkSlugs) {
 function main() {
   const files = collectTargets(process.argv.slice(2));
   const validateSchema = buildSchemaValidator();
-  const benchmarkSlugs = loadBenchmarkSlugs();
+  const benchmarkFamilies = loadBenchmarkFamilies();
 
   if (files.length === 0) {
     console.log('No reference dossier files found.');
@@ -262,7 +328,7 @@ function main() {
 
     const schemaOk = validateSchema(dossier);
     const schemaErrors = schemaOk ? [] : validateSchema.errors.map(formatSchemaError);
-    const crossFieldErrors = schemaOk ? validateCrossFields(dossier, benchmarkSlugs) : [];
+    const crossFieldErrors = schemaOk ? validateCrossFields(dossier, benchmarkFamilies) : [];
     const errors = [...schemaErrors, ...crossFieldErrors];
 
     if (errors.length > 0) {

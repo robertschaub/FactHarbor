@@ -5,7 +5,18 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const DEFAULT_MODEL = 'claude-opus-4-6';
+const DEFAULT_PROFILE = 'opus-4.8-1m-max';
+const PROFILES = {
+  'opus-4.8-1m-max': {
+    // Claude Code currently exposes Opus as an alias and effort as the
+    // supported lane selector; the 1M context entitlement is account/CLI
+    // resolved rather than a separate documented wrapper flag.
+    model: 'opus',
+    effort: 'max',
+    contextWindow: '1m',
+    contextResolution: 'account_or_cli_entitlement',
+  },
+};
 
 function findRepoRoot(startDir) {
   let current = path.resolve(startDir);
@@ -30,24 +41,75 @@ function hasFlag(args, flag) {
   return args.some((arg) => arg === flag || arg.startsWith(`${flag}=`));
 }
 
+function getFlagValue(args, flag) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === flag && i + 1 < args.length) {
+      return args[i + 1];
+    }
+    if (arg.startsWith(`${flag}=`)) {
+      return arg.slice(flag.length + 1);
+    }
+  }
+  return null;
+}
+
+function extractProfile(args) {
+  const finalArgs = [];
+  let profile = DEFAULT_PROFILE;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--profile') {
+      profile = args[++i];
+      continue;
+    }
+    if (arg.startsWith('--profile=')) {
+      profile = arg.slice('--profile='.length);
+      continue;
+    }
+    finalArgs.push(arg);
+  }
+  if (!PROFILES[profile]) {
+    throw new Error(`Unknown Claude invocation profile: ${profile}. Known profiles: ${Object.keys(PROFILES).join(', ')}`);
+  }
+  return { profile, args: finalArgs };
+}
+
 function withDefaultArgs(args, settingsPath, env) {
-  const finalArgs = [...args];
+  const selected = extractProfile(args);
+  const finalArgs = [...selected.args];
+  const defaults = PROFILES[selected.profile];
   if (!hasFlag(finalArgs, '--settings')) finalArgs.unshift('--settings', settingsPath);
-  if (!hasFlag(finalArgs, '--effort') && env.CLAUDE_CODE_EFFORT_LEVEL) finalArgs.unshift('--effort', String(env.CLAUDE_CODE_EFFORT_LEVEL));
-  if (!hasFlag(finalArgs, '--model')) finalArgs.unshift('--model', DEFAULT_MODEL);
-  return finalArgs;
+  if (!hasFlag(finalArgs, '--effort')) finalArgs.unshift('--effort', defaults.effort || String(env.CLAUDE_CODE_EFFORT_LEVEL || 'xhigh'));
+  if (!hasFlag(finalArgs, '--model')) finalArgs.unshift('--model', defaults.model);
+  const effectiveEffort = getFlagValue(finalArgs, '--effort') || defaults.effort || null;
+  return {
+    profile: selected.profile,
+    profileContract: {
+      model: defaults.model,
+      effort: defaults.effort,
+      contextWindow: defaults.contextWindow,
+      contextResolution: defaults.contextResolution,
+    },
+    envOverrides: effectiveEffort ? { CLAUDE_CODE_EFFORT_LEVEL: effectiveEffort } : {},
+    args: finalArgs,
+  };
 }
 
 function main() {
   const repoRoot = findRepoRoot(process.cwd());
   const { settingsPath, env } = loadClaudeSettings(repoRoot);
-  const finalArgs = withDefaultArgs(process.argv.slice(2), settingsPath, env);
+  const invocation = withDefaultArgs(process.argv.slice(2), settingsPath, env);
+  const finalArgs = invocation.args;
   const childEnv = { ...process.env };
   for (const [key, value] of Object.entries(env)) childEnv[key] = String(value);
+  for (const [key, value] of Object.entries(invocation.envOverrides)) childEnv[key] = String(value);
 
   if (process.env.FH_INVOKE_CLAUDE_DRY_RUN === '1') {
     process.stdout.write(`${JSON.stringify({
       command: process.env.FH_CLAUDE_BIN || 'claude',
+      profile: invocation.profile,
+      profileContract: invocation.profileContract,
       args: finalArgs,
       env: Object.fromEntries(Object.keys(env).map((key) => [key, childEnv[key]])),
     }, null, 2)}\n`);
