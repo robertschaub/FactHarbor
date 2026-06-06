@@ -7,9 +7,14 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | Report Quality Phase 1 CLI Sign-Off -- [Standard] [open-items: yes]
+**For next agent:** Completed the Phase 1 zero-spend scorer conformance sweep and updated `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md` to mark `scripts/measure-report-quality.ts` signed off for CLI use. Verified floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, matrix-diff, focused `--family`/`--compare` paths, duplicate-compare rejection, and full stored-report dry-run: 514 scored reports, 0 parse failures, no live jobs/LLM calls; headline kept `plastic-en` excluded, coarse `llmCalls` covered all 392 headline vectors, rich metrics joined for 388.
+**Warnings:** This signs off the zero-spend CLI scorer only, not UI integration and not dossier-backed C1/C3 wiring. Remaining critical path is Phase 0b dossier authoring (`bundesrat-rechtskraftig` full, `plastic-en` partial, one Bolsonaro partial) plus manual alignment gate evidence.
+
+---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | Reference Dossier Validator Review Fixes -- [Standard] [open-items: yes]
-**For next agent:** Addressed the lead-developer review blockers for the report-quality implementation plan and AtomicClaim reference-data model. Restatused Phase 0 as done and Phase 1 scorer as built pending conformance sweep/dry-run, corrected the plastic family join slug to `plastic-en`, wired `scripts/validate-reference-dossiers.cjs` to the JSON Schema via AJV, added benchmark-slug, multi-frame commit-rationale, verdict-label/truth-band, source/reference, current-snapshot, and band-order cross-field checks, tightened schema verdict labels and band domains, added the aggregation-faithfulness contestation-coupling note, and removed the unused scorer `contestationWeights` config.
-**Warnings:** No reference dossiers were authored and no live jobs, expensive tests, or LLM calls were run. Remaining work is execution: Phase 0b dossier authoring plus Phase 1 full conformance sweep and stored-report dry-run sign-off.
+**For next agent:** Addressed the lead-developer review blockers for the report-quality implementation plan and AtomicClaim reference-data model. Restatused Phase 0 as done and Phase 1 scorer as built pending sign-off at that point, corrected the plastic family join slug to `plastic-en`, wired `scripts/validate-reference-dossiers.cjs` to the JSON Schema via AJV, added benchmark-slug, multi-frame commit-rationale, verdict-label/truth-band, source/reference, current-snapshot, and band-order cross-field checks, tightened schema verdict labels and band domains, added the aggregation-faithfulness contestation-coupling note, and removed the unused scorer `contestationWeights` config.
+**Warnings:** Superseded by the 2026-06-06 Phase 1 CLI sign-off entry above. No reference dossiers were authored and no live jobs, expensive tests, or LLM calls were run in this validator-fix pass.
 
 ---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | Reference Data Contract Closure -- [Standard] [open-items: no]

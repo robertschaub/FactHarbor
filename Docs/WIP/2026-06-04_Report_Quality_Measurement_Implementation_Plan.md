@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-04
 **Role:** Lead Architect
-**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **Phase 0 is complete; Phase 1 zero-spend scorer is built and requires full conformance sweep + dry-run sign-off, not reimplementation.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks.
+**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **Phase 0 is complete; Phase 1 zero-spend scorer is built and signed off for CLI use after conformance sweep + stored-report dry-run.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks.
 **Companion (full rationale + review audit trail):** `Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md` (v7). This file is the *clean, actionable consolidation* — it supersedes the need to read the concept's changelog.
 **Feeds:** the Pipeline-Era Comparison study (`2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md`) — its Phase-3 "normalize + compare" measurement layer.
 
@@ -132,7 +132,7 @@ ReportQualityVector = {
 
 **Phase 0b closed contract:** all data fields, labels, score domains, validation rules, manual-rubric labels, C1/C3 judge output shapes, routing roles, and reliability gates are defined in the reference-data model + schema. Phase 0b implementers fill dossiers, validate them, run manual alignment, instantiate prompts from the contract, and collect gate evidence; they do not define new model semantics.
 
-### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)* — **BUILT, NEEDS SIGN-OFF**
+### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)* — **BUILT, SIGNED OFF FOR CLI USE**
 - **P1.1 built:** `scripts/measure-report-quality.ts` emits the `ReportQualityVector` per stored `ResultJson`.
 - **P1.2 Integrity gate/floor (T2 — gate, never rank):** Q-HF1; label↔truth; citation-in-set; aggregation-faithfulness recompute (§9); **+ C1/C2 structural minimums** — claim count vs `minDistinctEvents`, anchor-token survival, per-claim citation/evidence floor. *(NOT source-type diversity — that reads the `sourceType` self-label → colour, P1.4.)*
 - **P1.3 C4 quality (RANK):** harm-adjusted tiered gold-band — exact 100 / adjacent 70 / same-side-out-of-band 0–70 by distance / **flip = baseTiered − confidencePct** / **UNVERIFIED = 25**; domain **[−100,100]**, aggregate **raw (no clipping)**; strict confidence band.
@@ -141,7 +141,7 @@ ReportQualityVector = {
   - **Data contract:** `{ Jobs.ResultJson, AnalysisMetrics.MetricsJson (optional), Job timestamps (optional) }`, grouped by `(benchmark input, build = commit + dirty-state, rep)`.
 - **P1.6 Stability** (≥2 reps) + **availability flags** for gated beta fields (TIGERScore, explanationQualityCheck — may be absent historically).
 - **P1.7 Matrix-diff (zero-spend part):** build the §5 routing-table-grouped Shadow-Mode matrix-diff and **validate it on EXISTING stored reports**. CIs via hand-rolled bootstrap (no heavy dep) / normal-approx SE fallback.
-- **Verification status:** targeted conformance has been checked for the load-bearing C4 harm-adjusted rank, strict-confidence handling, aggregation recompute target, anchor logic, and family/noise wiring. Remaining Phase 1 sign-off is a full conformance sweep over floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, and matrix-diff, plus a stored-report dry-run. **No batch/live spend.**
+- **Verification status:** signed off on 2026-06-06 for zero-spend CLI use. Checks covered C4 harm-adjusted rank, strict-confidence handling, aggregation recompute target, anchor logic, family/noise wiring, floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, matrix-diff, focused `--family`/`--compare` paths, and a full stored-report dry-run (**514 scored, 0 parse failures, no batch/live spend**). This does not imply UI integration or dossier-backed scorer wiring.
 - **Phase-1 caveat:** C1 floor checks depend on Phase-0 annotations; dossier-backed semantic C1/C3 remains diagnostic until Phase 0b gates pass; efficiency rich-cost is forward-only; current-snapshot gold cannot be mixed across dossier versions.
 
 ### Phase 1b — Live comparison *(Captain-gated spend; NOT zero-spend)*
@@ -178,7 +178,7 @@ ReportQualityVector = {
 `report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands) · `Captain_Quality_Expectations.md` (intent) · `Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs` (Phase 0b structural contract) · `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` §7/§8 (manual rubric + judge output contracts) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
 
 ## 12. Immediate next action
-**Start Phase 0b authoring** (`bundesrat-rechtskraftig` full dossier, `plastic-en` partial dossier, one Bolsonaro partial dossier) and run the **Phase 1 conformance sweep + stored-report dry-run**. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
+**Start Phase 0b authoring** (`bundesrat-rechtskraftig` full dossier, `plastic-en` partial dossier, one Bolsonaro partial dossier). The Phase 1 zero-spend CLI scorer is signed off; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
 
 ---
 *Lead Architect — consolidated plan. Design converged across 3 independent reviewers (two model families) + internal passes; reference-dossier review fixes are folded into the executable contract. Full rationale and the v1→v7 review audit trail: the companion concept doc.*
