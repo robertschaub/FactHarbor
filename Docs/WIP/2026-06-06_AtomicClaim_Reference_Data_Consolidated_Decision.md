@@ -1,7 +1,7 @@
 # AtomicClaim Reference Data — Consolidated Decision
 
 **Date:** 2026-06-06
-**Status:** Consolidated design decision
+**Status:** Closed v0.1 design decision
 **Related model:** `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`
 **Related plan:** `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md`
 
@@ -26,8 +26,9 @@ The central hard case is not arbitrary claim-count variance. Split/combine wordi
   - distinct truth conditions when determinable.
 - Each required reference assertion belongs to exactly one truth condition.
 - Strict truth conditions must remain independently assessable through Stage 1 `AtomicClaims`.
-- `expectedInputClassification` uses the real Stage 1 enum (`single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, `article`). Richer clarification reasons are future telemetry and are not scored in v0.1.
+- `expectedInputClassification` uses the real Stage 1 enum (`single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, `article`). Richer clarification reasons are outside the v0.1 contract and are not scored.
 - Atomicity is frame-scoped only. There is no root-level atomicity override.
+- Determinability has an explicit review state: `settled | contested | needs_adjudication`.
 - Current-snapshot dossiers are time-relative gold: build comparisons must pin dossier ID, dossier version, and comparison run-window.
 
 N:M semantic alignment is permitted only to tolerate wording and occasional split/combine differences. It must not allow a report to merge away, omit, or obscure clearly distinct truth conditions.
@@ -49,8 +50,9 @@ C3 dossier-backed scoring applies only after C1 alignment and only against the a
 Dossier-backed C1/C3 metrics stay diagnostic until the pilot proves reliability:
 
 - manual alignment first;
-- JSON Schema + structural validator before dossier authoring beyond draft;
-- pinned manual-alignment rubric before manual-vs-judge agreement is measured;
+- JSON Schema + structural validator used for every dossier;
+- pinned manual-alignment rubric and score artifact contract used before manual-vs-judge agreement is measured;
+- fixed C1/C3 judge output contracts used for any LLM alignment run;
 - two-pass LLM alignment only after Captain-approved spend cap;
 - at least 85% manual-vs-judge agreement on each axis;
 - kappa at or above 0.70 only once an axis has at least 30 adjudicable scored units and a non-degenerate label distribution;
@@ -66,3 +68,7 @@ Dossier-backed C1/C3 metrics stay diagnostic until the pilot proves reliability:
 - No C1 rescue from downstream verdicts, evidence, or narrative.
 - No production use of current-snapshot gold without dossier-version and run-window pinning.
 - No LLM judge spend without Captain-approved cap.
+
+## Closed Contract Boundary
+
+The v0.1 data model, validation rules, manual-rubric labels, C1/C3 judge output shapes, score conversions, routing roles, and reliability gates are defined in the model doc and schema. Phase 0b work is dossier authoring and validation against that contract, not further definition of fields or scoring semantics.

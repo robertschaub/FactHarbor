@@ -165,11 +165,20 @@
         "atomicityProfile": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["determinability", "determinabilityRationale", "distinctTruthConditions"],
+          "required": [
+            "determinability",
+            "determinabilityStatus",
+            "determinabilityRationale",
+            "distinctTruthConditions"
+          ],
           "properties": {
             "determinability": {
               "type": "string",
               "enum": ["determinable", "partial", "indeterminable"]
+            },
+            "determinabilityStatus": {
+              "type": "string",
+              "enum": ["settled", "contested", "needs_adjudication"]
             },
             "determinabilityRationale": { "type": ["string", "null"] },
             "distinctTruthConditions": {

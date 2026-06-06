@@ -14,6 +14,18 @@ const INPUT_CLASSIFICATIONS = new Set([
   'article',
 ]);
 
+const DETERMINABILITY_VALUES = new Set([
+  'determinable',
+  'partial',
+  'indeterminable',
+]);
+
+const DETERMINABILITY_STATUSES = new Set([
+  'settled',
+  'contested',
+  'needs_adjudication',
+]);
+
 const ROOT_REQUIRED = [
   'id',
   'version',
@@ -153,6 +165,9 @@ function validateDossier(dossier) {
   if (typeof dossier.validityWindow.currentSnapshot !== 'boolean') {
     errors.push('validityWindow.currentSnapshot must be boolean');
   }
+  if (dossier.validityWindow.currentSnapshot === true && !dossier.validityWindow.referenceTime) {
+    errors.push('validityWindow.currentSnapshot is true but validityWindow.referenceTime is missing');
+  }
 
   if (!requireArray(dossier.sourceSnapshots, 'sourceSnapshots', errors)) {
     return errors;
@@ -181,6 +196,12 @@ function validateDossier(dossier) {
     requireString(frame.id, `${frameLabel}.id`, errors);
     if (!requireObject(frame.atomicityProfile, `${frameLabel}.atomicityProfile`, errors)) {
       return;
+    }
+    if (!DETERMINABILITY_VALUES.has(frame.atomicityProfile.determinability)) {
+      errors.push(`${frameLabel}.atomicityProfile.determinability must be one of: ${[...DETERMINABILITY_VALUES].join(', ')}`);
+    }
+    if (!DETERMINABILITY_STATUSES.has(frame.atomicityProfile.determinabilityStatus)) {
+      errors.push(`${frameLabel}.atomicityProfile.determinabilityStatus must be one of: ${[...DETERMINABILITY_STATUSES].join(', ')}`);
     }
 
     const truthConditions = frame.atomicityProfile.distinctTruthConditions;
@@ -233,6 +254,9 @@ function validateDossier(dossier) {
       }
       if (assertion.freshnessRequirement === 'current_snapshot' && !dossier.validityWindow.referenceTime) {
         errors.push(`${raLabel} is current_snapshot but validityWindow.referenceTime is missing`);
+      }
+      if (assertion.freshnessRequirement === 'current_snapshot' && dossier.validityWindow.currentSnapshot !== true) {
+        errors.push(`${raLabel} is current_snapshot but validityWindow.currentSnapshot is not true`);
       }
     });
 

@@ -7,9 +7,14 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | Reference Data Contract Closure -- [Standard] [open-items: no]
+**For next agent:** Tightened the AtomicClaim reference-data model and implementation plan so the v0.1 data/model contract is closed, not left for implementers to define. Added needs/pains coverage matrix, `determinabilityStatus`, closed manual-alignment rubric, score artifact contract, C1/C3 judge output contracts, explicit Phase 0b execution boundary, and plan language that treats deferred items as outside the MVP/data-model contract.
+**Warnings:** Remaining work is execution against the contract: author dossiers, validate them, run manual alignment, instantiate prompts from the fixed contracts, and collect gate evidence. No live jobs or LLM calls were run.
+
+---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | AtomicClaim Reference Data Review Fixes -- [Standard] [open-items: yes]
 **For next agent:** Addressed two independent reviews of the AtomicClaim reference-data design. Closed the non-existent clarification taxonomy by switching v0.1 to real `CBClaimUnderstanding.inputClassification`; made C1 atomicity Stage-1-only; added determinability criteria/disagreement handling, current-snapshot dossier-version/run-window pinning, C3 evidence-equivalence judge contract, Phase 0b routing/gates, and the structural dossier schema/validator (`Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json`, `scripts/validate-reference-dossiers.cjs`, `npm run validate:reference-dossiers`).
-**Warnings:** No reference dossiers, manual-alignment rubric, or C1/C3 judge prompts have been authored yet. The validator is structural only; semantic alignment remains manual/LLM-adjudicated and no live jobs or LLM calls were run.
+**Warnings:** No reference dossiers or prompt files have been authored yet. The validator is structural only; semantic alignment remains manual/LLM-adjudicated and no live jobs or LLM calls were run.
 
 ---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | AtomicClaim Reference Data Consolidation -- [Standard] [open-items: yes]
