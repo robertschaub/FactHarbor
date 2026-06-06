@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-04
 **Role:** Lead Architect
-**Status:** **Converged & implementation-ready.** Design affirmed across independent reviewers (two model families) + internal passes. **This consolidated plan was itself reviewed by 2 independent reviewers → GO / GO-after-fixes; the 2 doc-contract fixes (cost single-role; `Q-HF1` source = `Jobs.Status` + `ResultJson.analysisWarnings`) are applied.** 5 Captain decisions recorded; 2 deferred. No code yet — this is the plan to execute on greenlight.
+**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **This consolidated plan was itself reviewed by 2 independent reviewers → GO / GO-after-fixes; the doc-contract fixes are applied.** 5 Captain decisions recorded; 2 deferred. The Phase 0b structural dossier schema/validator exists; scorer wiring remains gated by the Phase 0b reliability checks.
 **Companion (full rationale + review audit trail):** `Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md` (v7). This file is the *clean, actionable consolidation* — it supersedes the need to read the concept's changelog.
 **Feeds:** the Pipeline-Era Comparison study (`2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md`) — its Phase-3 "normalize + compare" measurement layer.
 
@@ -15,8 +15,8 @@ Measure, rate, and **systematically compare across builds** the quality of FactH
 ## 2. Design in brief (the load-bearing decisions)
 
 1. **Vector-primary; the scalar only gates.** The authoritative object is a per-report **`ReportQualityVector`**, not a single number. A scalar (tier / optional NQS) gates release readiness; it **never ranks builds** (a flat score hides offsetting changes).
-2. **The reference gradient.** "Right answer" availability is *not* uniform: aggregate gold exists by default at the overall verdict (C4) (`benchmark-expectations.json`) and a few coarse floors. Deeper AtomicClaim-level gold exists only for families with independently reviewed reference dossiers, scored through frame-scoped N:M semantic alignment with per-frame atomicity fidelity — never through strict claim-string matching, and never by allowing ambiguity to hide clearly distinct truth conditions. Until such dossiers exist, C1/C2/C3 remain structural checks + cross-run stability + judge. See `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`.
-3. **Integrity ≠ quality.** Recomputed-structural checks (label↔truth, citation-in-set, aggregation faithfulness, claim-count, anchor survival) detect *brokenness/regression*, **not analytical goodness** — they **gate/floor, never rank**. Quality ranks on **gold (C4) + calibration + cost + independent judge**. Pipeline self-labels (probativeValue, sourceType, TIGERScore…) are **colour, never ranked**.
+2. **The reference gradient.** "Right answer" availability is *not* uniform: aggregate gold exists by default at the overall verdict (C4) (`benchmark-expectations.json`) and a few coarse floors. Deeper AtomicClaim-level gold exists only for families with independently reviewed reference dossiers, scored through frame-scoped N:M semantic alignment with per-frame atomicity fidelity — never through strict claim-string matching, never by letting ambiguity hide clearly distinct truth conditions, and never by rescuing C1 with downstream verdict/evidence. Until such dossiers exist and pass Phase 0b gates, C1/C2/C3 remain structural checks + cross-run stability + judge. Current-snapshot dossiers are time-relative gold and require dossier-version + run-window pinning. See `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`.
+3. **Integrity ≠ quality.** Recomputed-structural checks (label↔truth, citation-in-set, aggregation faithfulness, claim-count, anchor survival) detect *brokenness/regression*, **not analytical goodness** — they **gate/floor, never rank**. Quality ranks on **gold (C4, plus validated dossier-backed C1/C3 where available) + calibration + cost + independent judge**. Pipeline self-labels (probativeValue, sourceType, TIGERScore…) are **colour, never ranked**.
 4. **Comparison is relative & cost-aware.** Where gold exists, score absolutely; where not, judge **pairwise A/B** (conditional, not isolation). Cost is **co-equal via tie-band** (below). Everything distributional over **N reps**.
 5. **One role per signal.** Every signal is exactly one of **GATE/FLOOR · RANK · TIE-BREAK · COLOUR · CONTROL-FOR** — see the canonical routing table (§5). If it's not in the table, it isn't used.
 
@@ -42,8 +42,8 @@ Measure, rate, and **systematically compare across builds** the quality of FactH
 ```
 ReportQualityVector = {
   integrity,          // GATE — Q-HF1; fail ⇒ BLOCK, vector zeroed
-  claims, evidence,   // C1, C2 — integrity gates/floors + colour (no quality rank)
-  claimVerdicts,      // C3 — integrity gates + self-consistency + (Phase-2) judge
+  claims, evidence,   // C1, C2 — integrity gates/floors + colour; dossier-backed C1 can rank only after Phase 0b gates
+  claimVerdicts,      // C3 — integrity gates + self-consistency + (Phase-2) judge; dossier-backed C3 can rank only after Phase 0b gates
   overallVerdict,     // C4 — the gold-anchored QUALITY rank (harm-adjusted)
   narrative,          // C5 — structural + (Phase-2) judge
   stability,          // build-level (≥2 reps)
@@ -56,7 +56,7 @@ ReportQualityVector = {
 
 **Build verdict (§5f) — pre-registered, gated, tie-band:**
 1. **GATES / FLOORS:** integrity rate (`Q-HF1`) + integrity/contract violation rate (T2) + a **C4 gold-band floor**. Regress any ⇒ the build loses regardless of other gains. *(Correctness floor protected — "cheap but wrong" can never win. Cost is **not** a gate — it has a single role: tie-band RANK, §5; a hard budget gate would need an explicit Captain-defined threshold + its own routing-table row.)*
-2. **QUALITY RANK (tie-band — Captain decision ①):** rank on {**C4 harm-adjusted**, **calibration**, **stability**} first; **among builds statistically tied on quality (CIs overlap within the noise band), the cheaper/faster build wins.** Cost decides only on a quality tie (no exchange rate needed; works with coarse `llmCalls`). *(Pure Pareto can't decide cost-vs-quality — it deadlocks; tie-band resolves it while protecting correctness.)*
+2. **QUALITY RANK (tie-band — Captain decision ①):** rank on {**C4 harm-adjusted**, **calibration**, **stability**} first; add **validated dossier-backed C1/C3 alignment** only for dossier families whose Phase 0b gates have passed. **Among builds statistically tied on quality (CIs overlap within the noise band), the cheaper/faster build wins.** Cost decides only on a quality tie (no exchange rate needed; works with coarse `llmCalls`). *(Pure Pareto can't decide cost-vs-quality — it deadlocks; tie-band resolves it while protecting correctness.)*
 3. **TIE-BREAKERS:** T4 pairwise wins (C1, C5; conditional-C3 colour only) + bias/neutrality.
 - **T2 gates but never ranks; T3 self-labels are colour, never ranked.** A surviving tie = **no-strict-order — report it.**
 
@@ -72,9 +72,11 @@ ReportQualityVector = {
 | anchor-token survival | **FLOOR** | ResultJson + Phase-0 annotation | pass / violation |
 | per-claim citation/evidence floor | **FLOOR** | ResultJson | pass / violation |
 | **C4 harm-adjusted gold-band** | **RANK** | ResultJson + benchmark bands | **[−100,100]**, raw mean (no clip) |
+| validated dossier-backed C1/C3 alignment | **RANK** (availability-gated, dossier families only) | Reference dossier + manual/LLM alignment after Phase 0b gates | C1 extraction-only frame/assertion/atomicity/disclosure alignment + C3 mapped verdict/evidence alignment; [0,1] per axis |
 | calibration (ECE/Brier) | **RANK** (build) | C4 vs bands × reps | [0,1]; descriptive at pilot N |
 | stability (`Q-ST1–6`) | **RANK** (build) | ≥2 reps | spreads / Jaccard |
 | cost-efficiency | **RANK** (build, tie-band — only on a quality tie) | `meta.llmCalls` (coarse, always) / `AnalysisMetrics` (rich, forward-only) | quality-per-cost; **n/a** if absent (never a penalty) |
+| unvalidated reference-dossier diagnostics | **COLOUR** | Draft/pilot dossiers before Phase 0b gates | manual notes only; no automated build rank |
 | C1 claim-decomposition pairwise | **TIE-BREAK** (T4, Phase 2, live) | judge | win-rate |
 | C5 narrative pairwise | **TIE-BREAK** (T4, Phase 2, live) | judge | win-rate |
 | bias / neutrality | **TIE-BREAK** (Phase 3, live/paired) | calibration runner | symmetry delta vs `expectedSkew` |
@@ -118,12 +120,15 @@ ReportQualityVector = {
 - **Gate:** annotations present for all families; JSON↔script confidence policy consistent.
 
 ### Phase 0b — Reference dossiers *(owner: LLM Expert + Lead Developer; zero spend until explicit judge cap)*
-- **P0b.1** Create the dossier template from `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`: `expectedClarificationReason`, dossier-level `ambiguityPolicy`, frame-scoped `atomicityProfile`, required reference assertions, truth/confidence bands, and source snapshots.
-- **P0b.2** Produce one full dossier for `bundesrat-rechtskraftig` (`rechtskräftig` = both axes: materially ambiguous legal/procedural term plus clearly distinct truth conditions).
-- **P0b.3** Produce partial dossiers for `plastic-recycling-pointless` (interpretation-frame heavy) and one Bolsonaro input (atomicity-heavy with legal/procedural adjudication risk).
-- **P0b.4** Run manual alignment on stored reports first. Score per axis: clarification fit, frame admissibility, assertion coverage, atomicity fidelity, and disclosure fidelity.
-- **P0b.5** Only after Captain approves a cap, run a small two-pass LLM alignment pilot: first active-frame selection, then assertion/atomicity mapping within the selected frame. Proposed initial cap: USD 10; stop on first unstable per-axis mapping.
-- **Gate:** no dossier-backed C1/C3 metric leaves diagnostic mode until manual-vs-judge agreement is at least 85% on each axis and kappa is at least 0.70 for assertion coverage and atomicity fidelity where sample size supports it. Below 0.60 is no-go for scaling.
+- **P0b.0** Create the structural dossier contract first: `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs`. No root `atomicityPolicy`; use the real Stage 1 `expectedInputClassification` enum only.
+- **P0b.1** Create the dossier template from `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`: `expectedInputClassification`, dossier-level `ambiguityPolicy`, frame-scoped `atomicityProfile`, required reference assertions, truth/confidence bands, source snapshots, and `validityWindow` for current-snapshot assertions.
+- **P0b.2** Create the manual-alignment rubric before scoring stored reports: active-frame selection, assertion coverage, Stage-1-only atomicity fidelity, disclosure fidelity, C3 verdict/evidence equivalence, tie handling, and `needs_human_review`.
+- **P0b.3** Produce one full dossier for `bundesrat-rechtskraftig` (`rechtskräftig` = both axes: materially ambiguous legal/procedural term plus clearly distinct truth conditions).
+- **P0b.4** Produce partial dossiers for `plastic-recycling-pointless` (interpretation-frame heavy) and one Bolsonaro input (atomicity-heavy with legal/procedural adjudication risk).
+- **P0b.5** Run manual alignment on stored reports first. Score per axis: input-classification fit, frame admissibility, assertion coverage, atomicity fidelity, and disclosure fidelity.
+- **P0b.6** Draft strict-JSON C1 alignment and C3 evidence-equivalence judge prompts, but do not run them until Captain approves a cap.
+- **P0b.7** Only after Captain approves a cap, run a small two-pass LLM alignment pilot: first active-frame selection, then assertion/atomicity mapping within the selected frame. Proposed initial cap: USD 10; stop on first unstable per-axis mapping.
+- **Gate:** no dossier-backed C1/C3 metric leaves diagnostic mode until manual-vs-judge agreement is at least 85% on each axis. Kappa becomes a scaling gate only once an axis has at least 30 adjudicable scored units and a non-degenerate label distribution; kappa >=0.70 is the target, below 0.60 is no-go. Determinability disagreement must be resolved or marked contested before automated scorer wiring. Current-snapshot comparisons must pin dossier version and run-window.
 
 ### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)*
 - **P1.1** New scorer emitting the `ReportQualityVector` per stored `ResultJson` (reuse `measure-evidence-quality.ts` IO scaffolding only — it's legacy v1).
@@ -135,7 +140,7 @@ ReportQualityVector = {
 - **P1.6 Stability** (≥2 reps) + **availability flags** for gated beta fields (TIGERScore, explanationQualityCheck — may be absent historically).
 - **P1.7 Matrix-diff (zero-spend part):** build the §5 routing-table-grouped Shadow-Mode matrix-diff and **validate it on EXISTING stored reports**. CIs via hand-rolled bootstrap (no heavy dep) / normal-approx SE fallback.
 - **Verification:** `node --check`, dry-run over stored reports, **no batch/live spend**.
-- **Phase-1 caveat:** C1 floor checks depend on Phase-0 annotations; dossier-backed semantic C1/C3 remains diagnostic until Phase 0b gates pass; efficiency rich-cost is forward-only.
+- **Phase-1 caveat:** C1 floor checks depend on Phase-0 annotations; dossier-backed semantic C1/C3 remains diagnostic until Phase 0b gates pass; efficiency rich-cost is forward-only; current-snapshot gold cannot be mixed across dossier versions.
 
 ### Phase 1b — Live comparison *(Captain-gated spend; NOT zero-spend)*
 - HEAD-vs-HEAD **noise-floor run** (validate "no difference" when there is none) → **branch-vs-HEAD** comparison (decision ④). Live jobs; must not be conflated with the Phase-1 rollup.
@@ -160,7 +165,7 @@ ReportQualityVector = {
 ## 10. Limitations (state in every comparison report)
 1. No gold below the aggregate verdict by default — C1/C2/C3 are intrinsic + judge unless an independently reviewed AtomicClaim reference dossier exists for that family and its frame/atomicity alignment gates have passed.
 2. Run-to-run drift (claim Jaccard ≥0.6 tolerated; evidence-pool 0.10–0.29) is the primary isolation confound.
-3. External-world drift — measures "this build on today's world"; mitigate by running arms concurrently.
+3. External-world drift — measures "this build on today's world"; mitigate by running arms concurrently. Current-snapshot reference dossiers are time-relative gold and must be pinned by dossier version + run-window.
 4. Judge bias — pairwise reduces, doesn't remove; anchor on gold.
 5. Per-stage **causal** attribution needs the deferred injection harness.
 6. Statistical power — pilot N catches only large/categorical differences; calibration & small deltas need larger N.
@@ -168,10 +173,10 @@ ReportQualityVector = {
 8. Integrity ≠ quality — T2 checks detect brokenness, not goodness.
 
 ## 11. Reuse map (don't reinvent)
-`report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands) · `Captain_Quality_Expectations.md` (intent) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
+`report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands) · `Captain_Quality_Expectations.md` (intent) · `Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs` (Phase 0b structural contract) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
 
 ## 12. Immediate next action
 **Greenlight Phase 0** (LLM-Expert annotations + the P0.2 strict-confidence edit) — zero spend, the critical-path prerequisite, unaffected by any remaining review. Phase 1 code (Senior Developer) can start once Phase 0 lands. The two open decisions (③, ⑥) do not block the MVP.
 
 ---
-*Lead Architect — consolidated plan. Design converged across 3 independent reviewers (two model families) + internal passes; both final re-reviewers PASS. Full rationale and the v1→v7 review audit trail: the companion concept doc.*
+*Lead Architect — consolidated plan. Design converged across 3 independent reviewers (two model families) + internal passes; reference-dossier review fixes are folded into the executable contract. Full rationale and the v1→v7 review audit trail: the companion concept doc.*

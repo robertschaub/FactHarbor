@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | AtomicClaim Reference Data Review Fixes -- [Standard] [open-items: yes]
+**For next agent:** Addressed two independent reviews of the AtomicClaim reference-data design. Closed the non-existent clarification taxonomy by switching v0.1 to real `CBClaimUnderstanding.inputClassification`; made C1 atomicity Stage-1-only; added determinability criteria/disagreement handling, current-snapshot dossier-version/run-window pinning, C3 evidence-equivalence judge contract, Phase 0b routing/gates, and the structural dossier schema/validator (`Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json`, `scripts/validate-reference-dossiers.cjs`, `npm run validate:reference-dossiers`).
+**Warnings:** No reference dossiers, manual-alignment rubric, or C1/C3 judge prompts have been authored yet. The validator is structural only; semantic alignment remains manual/LLM-adjudicated and no live jobs or LLM calls were run.
+
+---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | AtomicClaim Reference Data Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Consolidated the reference-data design into `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` and `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Consolidated_Decision.md`. Settled model: dossiers cover two first-class axes — interpretation-frame contract for ambiguous terms (`pointless`, `rechtskräftig`) and frame-scoped atomicity/separability for clearly determinable truth conditions. Updated `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md` with explicit Phase 0b tasks/gates.
 **Warnings:** Dossier-backed C1/C3 remains diagnostic only until Phase 0b proves per-axis reliability: manual-vs-judge agreement >=85% on each axis, kappa >=0.70 where sample supports it, and no LLM judge spend without Captain-approved cap.

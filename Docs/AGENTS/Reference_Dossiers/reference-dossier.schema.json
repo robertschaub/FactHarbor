@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/reference-dossier.schema.json",
+  "title": "FactHarbor AtomicClaim Reference Dossier v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "inputSlug",
+    "captainInputValue",
+    "language",
+    "status",
+    "expectedInputClassification",
+    "ambiguityPolicy",
+    "curation",
+    "validityWindow",
+    "sourceSnapshots",
+    "interpretationFrames",
+    "benchmarkCoherence"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "inputSlug": { "type": "string", "minLength": 1 },
+    "captainInputValue": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "source_grounded", "independently_reviewed", "adjudicated_gold"]
+    },
+    "expectedInputClassification": {
+      "type": "string",
+      "enum": [
+        "single_atomic_claim",
+        "ambiguous_single_claim",
+        "multi_assertion_input",
+        "question",
+        "article"
+      ]
+    },
+    "ambiguityPolicy": {
+      "type": "string",
+      "enum": ["commit_allowed", "must_disclose", "must_cover_all"]
+    },
+    "curation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "curator",
+        "adjudicator",
+        "peerReviewer",
+        "createdAt",
+        "lastRevalidatedAt",
+        "revalidateAfter",
+        "roleSeparationMode"
+      ],
+      "properties": {
+        "curator": { "type": ["string", "null"] },
+        "adjudicator": { "type": ["string", "null"] },
+        "peerReviewer": { "type": ["string", "null"] },
+        "createdAt": { "type": ["string", "null"] },
+        "lastRevalidatedAt": { "type": ["string", "null"] },
+        "revalidateAfter": { "type": ["string", "null"] },
+        "roleSeparationMode": {
+          "type": "string",
+          "enum": ["human_split", "human_plus_agents", "multi_agent_draft"]
+        }
+      }
+    },
+    "validityWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["referenceTime", "validFrom", "validThrough", "currentSnapshot"],
+      "properties": {
+        "referenceTime": { "type": ["string", "null"] },
+        "validFrom": { "type": ["string", "null"] },
+        "validThrough": { "type": ["string", "null"] },
+        "currentSnapshot": { "type": "boolean" }
+      }
+    },
+    "sourceSnapshots": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sourceSnapshot" }
+    },
+    "interpretationFrames": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/interpretationFrame" }
+    },
+    "benchmarkCoherence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["familyTruthBand", "familyConfidenceBand", "coherenceNote"],
+      "properties": {
+        "familyTruthBand": { "$ref": "#/$defs/band" },
+        "familyConfidenceBand": { "$ref": "#/$defs/band" },
+        "coherenceNote": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "$defs": {
+    "band": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] }
+      }
+    },
+    "sourceSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "url",
+        "archiveUrl",
+        "localPath",
+        "localHash",
+        "retrievedAt",
+        "sourceType",
+        "notes"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^SRC_[A-Za-z0-9_-]+$" },
+        "url": { "type": ["string", "null"] },
+        "archiveUrl": { "type": ["string", "null"] },
+        "localPath": { "type": ["string", "null"] },
+        "localHash": { "type": ["string", "null"] },
+        "retrievedAt": { "type": ["string", "null"] },
+        "sourceType": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "interpretationFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "interpretedTermOrFrame",
+        "interpretationDefinition",
+        "admissibility",
+        "admissibilityRationale",
+        "ambiguityPolicy",
+        "atomicityProfile",
+        "referenceAssertions"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^FRAME_[A-Za-z0-9_-]+$" },
+        "label": { "type": "string", "minLength": 1 },
+        "interpretedTermOrFrame": { "type": "string", "minLength": 1 },
+        "interpretationDefinition": { "type": ["string", "null"] },
+        "admissibility": {
+          "type": "string",
+          "enum": ["defensible", "contested", "excluded"]
+        },
+        "admissibilityRationale": { "type": ["string", "null"] },
+        "ambiguityPolicy": {
+          "type": ["string", "null"],
+          "enum": ["commit_allowed", "must_disclose", "must_cover_all", null]
+        },
+        "atomicityProfile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["determinability", "determinabilityRationale", "distinctTruthConditions"],
+          "properties": {
+            "determinability": {
+              "type": "string",
+              "enum": ["determinable", "partial", "indeterminable"]
+            },
+            "determinabilityRationale": { "type": ["string", "null"] },
+            "distinctTruthConditions": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/truthCondition" }
+            }
+          }
+        },
+        "referenceAssertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/referenceAssertion" }
+        }
+      }
+    },
+    "truthCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "independentAssessabilityRequired",
+        "mergeAllowedWith"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^TC_[A-Za-z0-9_-]+$" },
+        "description": { "type": ["string", "null"] },
+        "independentAssessabilityRequired": { "type": "boolean" },
+        "mergeAllowedWith": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^TC_[A-Za-z0-9_-]+$" }
+        }
+      }
+    },
+    "referenceAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "truthConditionId",
+        "text",
+        "role",
+        "separability",
+        "kind",
+        "truthBand",
+        "confidenceBand",
+        "acceptedVerdictLabels",
+        "freshnessRequirement",
+        "relevantGeographies",
+        "evidenceSourceIds",
+        "knownCounterEvidenceSourceIds",
+        "harmfulMissCondition",
+        "contested",
+        "notes"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" },
+        "truthConditionId": { "type": "string", "pattern": "^TC_[A-Za-z0-9_-]+$" },
+        "text": { "type": ["string", "null"] },
+        "role": {
+          "type": "string",
+          "enum": ["required", "optional", "tolerated_context", "forbidden"]
+        },
+        "separability": {
+          "type": "string",
+          "enum": ["strict", "flexible"]
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["factual", "evaluative", "procedural"]
+        },
+        "truthBand": { "$ref": "#/$defs/band" },
+        "confidenceBand": { "$ref": "#/$defs/band" },
+        "acceptedVerdictLabels": {
+          "type": "array",
+          "items": { "type": ["number", "string"] }
+        },
+        "freshnessRequirement": {
+          "type": "string",
+          "enum": ["current_snapshot", "recent", "none"]
+        },
+        "relevantGeographies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidenceSourceIds": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^SRC_[A-Za-z0-9_-]+$" }
+        },
+        "knownCounterEvidenceSourceIds": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^SRC_[A-Za-z0-9_-]+$" }
+        },
+        "harmfulMissCondition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["description", "severity"],
+          "properties": {
+            "description": { "type": ["string", "null"] },
+            "severity": {
+              "type": "string",
+              "enum": ["high", "medium", "low"]
+            }
+          }
+        },
+        "contested": { "type": "boolean" },
+        "notes": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
