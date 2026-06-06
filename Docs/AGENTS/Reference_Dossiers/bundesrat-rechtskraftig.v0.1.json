@@ -13,7 +13,7 @@
     "adjudicator": null,
     "peerReviewer": null,
     "createdAt": "2026-06-06T00:00:00Z",
-    "lastRevalidatedAt": "2026-06-06T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-06T22:03:12Z",
     "revalidateAfter": "2026-09-06T00:00:00Z",
     "roleSeparationMode": "multi_agent_draft"
   },
@@ -28,59 +28,49 @@
       "id": "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
       "url": "https://www.admin.ch/de/paket-schweiz-eu",
       "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
+      "localHash": "sha256:8f925d143f6d272c62c48a8de45b748bc72a4a9fb9908b32769c43b73aaaa10d",
+      "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
-      "notes": "Official Federal Council overview: on 13 March 2026 the Federal Council submitted the Switzerland-EU package to Parliament; Parliament is now considering it; if there is a referendum, the population votes."
+      "notes": "Official Federal Council overview: on 13 March 2026 the Federal Council submitted the Switzerland-EU package to Parliament; Parliament is now considering it; if there is a referendum, the population votes; the Federal Council requested optional-referendum treatment, with Parliament to decide."
     },
     {
       "id": "SRC_EDA_PACKAGE_TIMELINE_20260313",
       "url": "https://www.eda.admin.ch/de/weiterentwicklung-beziehungen-schweiz-eu",
       "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
+      "localHash": "sha256:9452766216fbb1b58b5972b54b406653458d5f32d6b74d481734e31f3e9d7358",
+      "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
-      "notes": "Official FDFA timeline: remaining package agreements were signed in Brussels on 2 March 2026; the programme agreement was signed on 10 November 2025; the package was prepared for parliamentary handling and ratification."
+      "notes": "Official FDFA timeline/newsticker: the remaining package agreements were signed in Brussels on 2 March 2026; the programme agreement was signed on 10 November 2025 and could be applied retroactively from early 2025; after paraphing comes signature and then ratification, including treatment by the Federal Assembly and any popular vote."
     },
     {
       "id": "SRC_ADMIN_SIGNING_20260302",
       "url": "https://www.admin.ch/de/newnsb/afSUBKNIaRs3s1tqaCebd",
       "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_ADMIN_SIGNING_20260302.html",
+      "localHash": "sha256:efb42f6817183eae1e6ea4a77236dbcd21ee09f5165bec88479002def6bd8059",
+      "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
-      "notes": "Official 2 March 2026 notice: the remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed and were to be part of the dispatch expected for Parliament in March 2026."
+      "notes": "Official 25 February 2026 Federal Council notice: announced that Federal President Guy Parmelin and Commission President Ursula von der Leyen would sign the Switzerland-EU package agreements in Brussels on 2 March 2026; the remaining agreements/protocols and a joint declaration were to form part of the March 2026 dispatch to Parliament."
     },
     {
       "id": "SRC_ADMIN_EUPA_20250410",
       "url": "https://www.admin.ch/de/nsb?id=105609",
       "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_ADMIN_EUPA_20250410.html",
+      "localHash": "sha256:8ca6ad791b1ece119d30ddf8ec1ec543998a5c5abd24838b9990922c0be18214",
+      "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
       "notes": "Official 10 April 2025 notice: the EU programme agreement enters into force with ratification of the package, while signature enables retroactive association to selected EU programmes from 1 January 2025."
-    },
-    {
-      "id": "SRC_BK_RATIFICATION_GUIDELINES",
-      "url": "https://www.bk.admin.ch/apps/gtr/de/ratification_dun_traite_international_ou_adhesion.html",
-      "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
-      "sourceType": "government_primary",
-      "notes": "Federal legislative drafting guidance: domestic approval is one step toward treaty binding force; for treaties signed under ratification reservation, ratification is the prerequisite for entry into force."
     },
     {
       "id": "SRC_EDA_LAW_RELATION_20260201",
       "url": "https://www.eda.admin.ch/de/das-verhaeltnis-von-voelkerrecht-und-landesrecht",
       "archiveUrl": null,
-      "localPath": null,
-      "localHash": null,
-      "retrievedAt": "2026-06-06T00:00:00Z",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
+      "localHash": "sha256:8f1b3c5b1672587a36a29a95219345da9aed457461acd7fb8b79c6464a8c3bf2",
+      "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
       "notes": "Official FDFA explainer: international-law norms accepted by Switzerland gain domestic effect when domestic approval procedures are complete and the international norm is also in force."
     }
@@ -145,9 +135,9 @@
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland", "European Union"],
           "evidenceSourceIds": [
-            "SRC_ADMIN_SIGNING_20260302",
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
-            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302"
           ],
           "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
@@ -170,9 +160,9 @@
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland"],
           "evidenceSourceIds": [
-            "SRC_ADMIN_SIGNING_20260302",
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
-            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302"
           ],
           "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
@@ -219,10 +209,10 @@
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland", "European Union"],
           "evidenceSourceIds": [
-            "SRC_BK_RATIFICATION_GUIDELINES",
             "SRC_EDA_LAW_RELATION_20260201",
             "SRC_ADMIN_EUPA_20250410",
-            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313"
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
           ],
           "knownCounterEvidenceSourceIds": [
             "SRC_ADMIN_EUPA_20250410",
@@ -314,9 +304,9 @@
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland", "European Union"],
           "evidenceSourceIds": [
-            "SRC_ADMIN_SIGNING_20260302",
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
-            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313"
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_ADMIN_SIGNING_20260302"
           ],
           "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
@@ -386,9 +376,9 @@
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": ["Switzerland", "European Union"],
           "evidenceSourceIds": [
-            "SRC_BK_RATIFICATION_GUIDELINES",
             "SRC_EDA_LAW_RELATION_20260201",
-            "SRC_ADMIN_EUPA_20250410"
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
           ],
           "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {

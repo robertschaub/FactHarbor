@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const Ajv2020 = require('ajv/dist/2020');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -99,6 +100,14 @@ function nonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function parseSha256Hash(value) {
+  if (!nonEmptyString(value)) {
+    return null;
+  }
+  const match = value.trim().match(/^sha256:([a-f0-9]{64})$/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
 function normalizeVerdictLabel(value) {
   if (typeof value !== 'string') {
     return null;
@@ -185,6 +194,36 @@ function validateBenchmarkCoherence(dossier, benchmarkFamily, errors) {
   }
 }
 
+function validateLocalSnapshot(source, errors) {
+  const hasLocalPath = nonEmptyString(source.localPath);
+  const hasLocalHash = nonEmptyString(source.localHash);
+  if (!hasLocalPath && hasLocalHash) {
+    errors.push(`${source.id}.localHash is set but localPath is missing`);
+    return;
+  }
+  if (!hasLocalPath) {
+    return;
+  }
+  const expectedHash = parseSha256Hash(source.localHash);
+  if (!expectedHash) {
+    errors.push(`${source.id}.localHash must be sha256:<64 hex chars> when localPath is set`);
+    return;
+  }
+  const resolvedPath = path.resolve(REPO_ROOT, source.localPath);
+  if (!resolvedPath.startsWith(`${REPO_ROOT}${path.sep}`)) {
+    errors.push(`${source.id}.localPath must resolve inside the repository: ${source.localPath}`);
+    return;
+  }
+  if (!fs.existsSync(resolvedPath)) {
+    errors.push(`${source.id}.localPath does not exist: ${source.localPath}`);
+    return;
+  }
+  const actualHash = crypto.createHash('sha256').update(fs.readFileSync(resolvedPath)).digest('hex');
+  if (actualHash !== expectedHash) {
+    errors.push(`${source.id}.localHash mismatch for ${source.localPath}: expected ${expectedHash}, got ${actualHash}`);
+  }
+}
+
 function validateCrossFields(dossier, benchmarkFamilies) {
   const errors = [];
 
@@ -214,6 +253,7 @@ function validateCrossFields(dossier, benchmarkFamilies) {
       errors.push(`duplicate source id: ${source.id}`);
     }
     sourceIds.add(source.id);
+    validateLocalSnapshot(source, errors);
   }
 
   const frameIds = new Set();
