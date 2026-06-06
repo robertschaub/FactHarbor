@@ -7,13 +7,8 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
-### 2026-06-06 | Lead Developer | Codex (GPT-5) + Claude Opus/Gemini Review | AtomicClaim Reference Data Model -- [Standard] [open-items: yes]
-**For next agent:** Created `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` after diverse review by Claude Opus and Gemini, then second-pass/final verification. Verdict: GO for Captain discussion. Key decision: adopt source-grounded reference assertions at AtomicClaim granularity, but **not** strict 1:1 expected claim strings; use interpretation frames, N:M semantic alignment, `must_disclose` default for ambiguous multi-frame dossiers, source snapshots, role-separated curation/adjudication, and an explicit USD 10 proposed cap before any LLM alignment-judge pilot. Updated the main implementation plan's reference-gradient language to say C4 aggregate gold is default, while deeper AtomicClaim gold exists only for independently reviewed dossiers.
-**Warnings:** Do not wire dossier-backed C1/C3 scoring yet. Phase 0b must first pilot manual alignment, source snapshot handling, and judge agreement (>=85% manual-map agreement; kappa warning below 0.70). No LLM judge spend without Captain-approved cap.
-
----
-### 2026-06-06 | Lead Developer | Codex (GPT-5) + Claude Opus/Gemini Debate | AtomicClaim Reference Ambiguity And Atomicity Debate -- [Standard] [open-items: yes]
-**For next agent:** Captain corrected the prior reference-data model: split/combine claim variance exists, but often the number of distinct AtomicClaims/truth conditions is clear; the harder recurring issue is ambiguous term/frame interpretation (`pointless`, `rechtskräftig`). Ran a focused diverse debate (Claude Opus + Gemini + Codex reconciliation). Outcome: reference dossiers must cover **two first-class axes** — interpretation-frame contract and frame-scoped atomicity/separability contract. Updated `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`, added `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Debate.md`, and amended `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md` with explicit Phase 0b tasks/gates.
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | AtomicClaim Reference Data Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Consolidated the reference-data design into `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` and `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Consolidated_Decision.md`. Settled model: dossiers cover two first-class axes — interpretation-frame contract for ambiguous terms (`pointless`, `rechtskräftig`) and frame-scoped atomicity/separability for clearly determinable truth conditions. Updated `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md` with explicit Phase 0b tasks/gates.
 **Warnings:** Dossier-backed C1/C3 remains diagnostic only until Phase 0b proves per-axis reliability: manual-vs-judge agreement >=85% on each axis, kappa >=0.70 where sample supports it, and no LLM judge spend without Captain-approved cap.
 
 ---

@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-06
 **Role:** Lead Developer
-**Status:** Captain-review ready after focused diverse debate. Claude Opus and Gemini debated the user's correction that clear atomicity and ambiguous term interpretation are separate problems; this version incorporates the reconciled decision.
+**Status:** Consolidated design for Captain review.
 **Related plan:** `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md`
 
 ## 1. Why this exists
@@ -11,7 +11,7 @@ The current report-quality plan intentionally treats gold reference as available
 
 The correction is to define source-grounded reference data at the pipeline's analytical unit: `AtomicClaim`.
 
-The focused debate resolved one important correction: this is **not mainly about arbitrary claim-count variance**. For many inputs, the number of distinct truth conditions can be determined clearly. The more common hard problem is **term/frame interpretation**: words or concepts such as "pointless" or "rechtskräftig" can support multiple defensible readings. The reference system therefore needs two first-class contracts:
+This model is **not mainly about arbitrary claim-count variance**. For many inputs, the number of distinct truth conditions can be determined clearly. The more common hard problem is **term/frame interpretation**: words or concepts such as "pointless" or "rechtskräftig" can support multiple defensible readings. The reference system therefore needs two first-class contracts:
 
 1. **Interpretation-frame contract** - what ambiguous term, phrase, or legal/procedural concept means under each defensible reading; when the report may commit to one frame; when it must disclose alternatives; when it must cover all frames.
 2. **Atomicity/separability contract** - within a chosen frame, which truth conditions are clearly distinct and must remain independently assessable.
@@ -28,7 +28,7 @@ N:M alignment remains allowed, but only as a guard for occasional wording or spl
 - Current report-quality Q-codes use claim/event floors and anchor survival, not source-grounded per-AtomicClaim gold (`Docs/AGENTS/report-quality-expectations.json:74`, `Docs/AGENTS/report-quality-expectations.json:86`).
 - FactHarbor rules forbid deterministic semantic matching or keyword adjudication for analytical meaning. Alignment between report claims and reference assertions must be manual or LLM-adjudicated with structural validation.
 
-## 3. Debate Decision
+## 3. Consolidated Decision
 
 Adopt AtomicClaim-level reference dossiers with **frame-scoped atomicity**:
 
