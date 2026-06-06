@@ -11,7 +11,7 @@ The current report-quality plan intentionally treats gold reference as available
 
 The correction is to define reference data closer to the pipeline's analytical unit: `AtomicClaim`.
 
-Important limit: the reference unit must not be a strict expected list of pipeline `AtomicClaim` strings. Stage 1 decomposition is allowed to vary across runs, prompt versions, and languages. A valid report may split one reference proposition into two claims, or combine two propositions into one claim, while preserving the same meaning. Strict 1:1 claim matching would create false precision and punish defensible ambiguity handling.
+Important limit: the main ambiguity this model handles is usually **term or frame interpretation**, not arbitrary claim-count variance. For many inputs, the number of distinct truth conditions can be determined clearly. Hard cases are terms such as "pointless" or "rechtskräftig", where the same input can support multiple defensible readings. The reference dossier should therefore define interpretation frames first. N:M alignment is only a guard for occasional split/combine wording differences; it is not a license to hide, merge away, or ignore clearly distinct AtomicClaims.
 
 ## 2. Source-grounded constraints
 
@@ -27,9 +27,9 @@ Important limit: the reference unit must not be a strict expected list of pipeli
 Adopt AtomicClaim-level reference data with limits:
 
 1. The reference layer defines **source-grounded reference assertions / core propositions**, not expected pipeline claim IDs or exact claim strings.
-2. Ambiguous inputs can have one or more **interpretation frames**.
+2. Ambiguous terms, phrases, or legal/procedural concepts can have one or more **interpretation frames**.
 3. Each frame has required, optional, tolerated-context, and forbidden reference assertions.
-4. v0.1 does **not** pre-register strict admissible extraction topologies. The scorer should judge collective assertion coverage across the report's extracted claims. Topology constraints can be added later only if the pilot proves role-based assertion coverage is too permissive.
+4. v0.1 does **not** pre-register strict admissible extraction topologies. The scorer should judge collective assertion coverage across the report's extracted claims, while still requiring every clearly distinct reference assertion to remain independently assessable. Topology constraints can be added later only if the pilot proves role-based assertion coverage is too permissive.
 5. A report passes extraction alignment if its extracted claims collectively cover the required reference assertions for at least one admissible frame, do not introduce forbidden propositions, and satisfy the frame's ambiguity policy.
 6. Reference dossiers are the authority. `benchmark-expectations.json` remains the compact scoring contract and points to dossier IDs/versions.
 
@@ -167,7 +167,7 @@ For a report, compare `CBClaimUnderstanding.atomicClaims[]` against the dossier:
 
 - Human or LLM judge selects the best-fitting interpretation frame.
 - Output is a structured mapping matrix: report AtomicClaim(s) -> reference assertion(s), with `addressed | partial | not_addressed | contradicted | tolerated_context | unsupported_extra`.
-- Full C1 semantic credit requires required assertions covered for one admissible frame, no forbidden assertions, and no unsupported direct proposition that changes the input's meaning.
+- Full C1 semantic credit requires required assertions covered for one admissible frame, no forbidden assertions, and no unsupported direct proposition that changes the input's meaning. If the dossier marks multiple reference assertions as clearly distinct, the report must make each truth condition independently assessable even when it combines them in one extracted claim.
 - Factual, harmless context is not penalized merely because it was not pre-listed. It is either mapped to `tolerated_context` or ignored as colour.
 - Ambiguous inputs use `ambiguityPolicy`:
   - `commit_allowed`: report may choose one defensible frame, with dossier rationale.
