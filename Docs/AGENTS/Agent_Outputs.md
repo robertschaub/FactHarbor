@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-06 | Lead Developer | Codex (GPT-5) | Bundesrat Reference Dossier Draft -- [Standard] [open-items: yes]
+**For next agent:** Started Phase 0b dossier authoring by adding `Docs/AGENTS/Reference_Dossiers/bundesrat-rechtskraftig.v0.1.json`, a validator-clean full draft for the Captain input `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`. The draft uses two admissible frames: strict final binding/entry-into-force and limited provisional/procedural legal effect; separates signature, Parliament, people/referendum, and final-force truth conditions; cites official Swiss government/FDFA/BK sources; and keeps status `draft`.
+**Warnings:** This is not source-grounded/adjudicated gold yet. It still needs independent curator/adjudicator/reviewer passes before any dossier-backed C1/C3 metric can rank builds. Local/archive source snapshots are not captured yet; `archiveUrl`, `localPath`, and `localHash` remain null in the draft.
+
+---
 ### 2026-06-06 | Lead Developer | Codex (GPT-5) | Report Quality Phase 1 CLI Sign-Off -- [Standard] [open-items: yes]
 **For next agent:** Completed the Phase 1 zero-spend scorer conformance sweep and updated `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md` to mark `scripts/measure-report-quality.ts` signed off for CLI use. Verified floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, matrix-diff, focused `--family`/`--compare` paths, duplicate-compare rejection, and full stored-report dry-run: 514 scored reports, 0 parse failures, no live jobs/LLM calls; headline kept `plastic-en` excluded, coarse `llmCalls` covered all 392 headline vectors, rich metrics joined for 388.
 **Warnings:** This signs off the zero-spend CLI scorer only, not UI integration and not dossier-backed C1/C3 wiring. Remaining critical path is Phase 0b dossier authoring (`bundesrat-rechtskraftig` full, `plastic-en` partial, one Bolsonaro partial) plus manual alignment gate evidence.

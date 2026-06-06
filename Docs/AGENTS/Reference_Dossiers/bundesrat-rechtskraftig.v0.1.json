@@ -1,0 +1,378 @@
+{
+  "id": "bundesrat-rechtskraftig",
+  "version": "0.1.0",
+  "inputSlug": "bundesrat-rechtskraftig",
+  "captainInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+  "language": "de",
+  "status": "draft",
+  "expectedInputClassification": "multi_assertion_input",
+  "ambiguityPolicy": "must_disclose",
+  "ambiguityPolicyRationale": null,
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-06T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-06T00:00:00Z",
+    "revalidateAfter": "2026-09-06T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-06T00:00:00Z",
+    "validFrom": "2026-06-06T00:00:00Z",
+    "validThrough": null,
+    "currentSnapshot": true
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+      "url": "https://www.admin.ch/de/paket-schweiz-eu",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official Federal Council overview: on 13 March 2026 the Federal Council submitted the Switzerland-EU package to Parliament; Parliament is now considering it; if there is a referendum, the population votes."
+    },
+    {
+      "id": "SRC_EDA_PACKAGE_TIMELINE_20260313",
+      "url": "https://www.eda.admin.ch/de/weiterentwicklung-beziehungen-schweiz-eu",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official FDFA timeline: remaining package agreements were signed in Brussels on 2 March 2026; the programme agreement was signed on 10 November 2025; the package was prepared for parliamentary handling and ratification."
+    },
+    {
+      "id": "SRC_ADMIN_SIGNING_20260302",
+      "url": "https://www.admin.ch/de/newnsb/afSUBKNIaRs3s1tqaCebd",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official 2 March 2026 notice: the remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed and were to be part of the dispatch expected for Parliament in March 2026."
+    },
+    {
+      "id": "SRC_ADMIN_EUPA_20250410",
+      "url": "https://www.admin.ch/de/nsb?id=105609",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official 10 April 2025 notice: the EU programme agreement enters into force with ratification of the package, while signature enables retroactive association to selected EU programmes from 1 January 2025."
+    },
+    {
+      "id": "SRC_BK_RATIFICATION_GUIDELINES",
+      "url": "https://www.bk.admin.ch/apps/gtr/de/ratification_dun_traite_international_ou_adhesion.html",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Federal legislative drafting guidance: domestic approval is one step toward treaty binding force; for treaties signed under ratification reservation, ratification is the prerequisite for entry into force."
+    },
+    {
+      "id": "SRC_EDA_LAW_RELATION_20260201",
+      "url": "https://www.eda.admin.ch/de/das-verhaeltnis-von-voelkerrecht-und-landesrecht",
+      "archiveUrl": null,
+      "localPath": null,
+      "localHash": null,
+      "retrievedAt": "2026-06-06T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official FDFA explainer: international-law norms accepted by Switzerland gain domestic effect when domestic approval procedures are complete and the international norm is also in force."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_final_binding_entry_into_force",
+      "label": "Rechtskräftig as final binding force / entry into force",
+      "interpretedTermOrFrame": "rechtskräftig",
+      "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the strict legal/procedural reading most relevant to the user's word 'rechtskräftig'. It separates the act of signature from final domestic approval, ratification, and entry into force.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "determinable",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "Under this frame, the input decomposes into independently verifiable conditions: signature, parliamentary decision status, popular decision status, and final binding/entry-into-force status. Each can be true or false under different evidence.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_SIGNATURE_OCCURRED",
+            "description": "Whether Switzerland/EU signed the relevant package agreements or programme agreement.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_PARLIAMENT_DECISION_PENDING",
+            "description": "Whether the Federal Assembly had not yet decided on approval when the relevant signing occurred.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_POPULAR_DECISION_PENDING",
+            "description": "Whether the people had not yet voted/decided when the relevant signing occurred, noting that a popular vote is contingent on a referendum.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_FINAL_BINDING_NOT_REACHED",
+            "description": "Whether final legally binding force / entry into force had not yet been reached at signature under the ratification-reserved package path.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_PACKAGE_OBJECT",
+            "description": "Whether the object is a multi-agreement package rather than one single EU membership treaty.",
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_PACKAGE_SIGNED_BEFORE_PARLIAMENT",
+          "truthConditionId": "TC_SIGNATURE_OCCURRED",
+          "text": "The remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed on 2 March 2026 before the Federal Council submitted the package to Parliament on 13 March 2026.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 80, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Missing the signature event makes the report falsely deny the true procedural sequence.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": null
+        },
+        {
+          "id": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
+          "truthConditionId": "TC_PARLIAMENT_DECISION_PENDING",
+          "text": "At the time of the 2 March 2026 signature, Parliament had not yet decided on the package; the Federal Council submitted the dispatch on 13 March 2026 and Parliament was still considering the package at the 2026-06-06 reference time.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 80, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Conflating Federal Council submission with parliamentary approval hides the parliamentary approval step.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": null
+        },
+        {
+          "id": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
+          "truthConditionId": "TC_POPULAR_DECISION_PENDING",
+          "text": "At the time of the 2 March 2026 signature, the Swiss electorate had not voted on the package; a popular vote would occur only if the package is subject to a referendum and a referendum is taken.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "A report must distinguish an actually held popular vote from the contingent possibility of a referendum vote.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": null
+        },
+        {
+          "id": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+          "truthConditionId": "TC_FINAL_BINDING_NOT_REACHED",
+          "text": "Under the final-binding reading of 'rechtskräftig', the signature did not by itself make the package finally binding/in force for Switzerland before domestic approval, ratification, and entry into force.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_BK_RATIFICATION_GUIDELINES",
+            "SRC_EDA_LAW_RELATION_20260201",
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "harmfulMissCondition": {
+            "description": "Treating signature as final binding force would invert the central legal/procedural claim.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The known counter-evidence concerns limited provisional or transitional effects; it does not establish final entry into force of the whole package."
+        },
+        {
+          "id": "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT",
+          "truthConditionId": "TC_PACKAGE_OBJECT",
+          "text": "The object is the Switzerland-EU package/Bilaterals III, consisting of multiple agreements, protocols, implementation acts, and federal decrees; reports may mention this as context to avoid treating it as a single EU membership treaty.",
+          "role": "tolerated_context",
+          "separability": "flexible",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": null,
+            "severity": "low"
+          },
+          "contested": false,
+          "notes": "Colour/context only in v0.1; not a required atomicity condition."
+        }
+      ]
+    },
+    {
+      "id": "FRAME_provisional_or_limited_legal_effect",
+      "label": "Rechtskräftig as limited legal/procedural effect after signature",
+      "interpretedTermOrFrame": "rechtskräftig",
+      "interpretationDefinition": "The term is read loosely as 'the signature had some legal or procedural effect', including provisional application of the programme agreement or cooperation during the ratification phase, not as final entry into force of the whole package.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is a defensible colloquial or political reading because official sources describe provisional application and ratification-phase cooperation before final package entry into force. It must not be silently substituted for the strict final-binding reading.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The signature/provisional-effect facts are verifiable, but the word 'rechtskräftig' is evaluative/legal shorthand. This frame scores strict facts about provisional effects and disclosure, while waiving any claim that limited effects equal final force.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_LIMITED_EFFECT_EUPA",
+            "description": "Whether the programme agreement had provisional/retroactive association effects before final package ratification.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_RATIFICATION_PHASE_COOPERATION",
+            "description": "Whether Switzerland and the EU arranged cooperation during the period before package entry into force.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_LIMITED_NOT_FINAL_FORCE",
+            "description": "Whether those limited effects still differ from final legally binding entry into force of the whole package.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_EUPA_PROVISIONAL_APPLICATION",
+          "truthConditionId": "TC_LIMITED_EFFECT_EUPA",
+          "text": "The EU programme agreement, signed before the rest of the package, could be provisionally applied retroactively to selected EU programmes from 1 January 2025 before package ratification.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Ignoring provisional programme effects can make the report overstate the falsity of every legal-effect reading.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": null
+        },
+        {
+          "id": "RA_RATIFICATION_PHASE_COOPERATION",
+          "truthConditionId": "TC_RATIFICATION_PHASE_COOPERATION",
+          "text": "Switzerland and the EU arranged cooperation for the period from the end of 2024 until package entry into force, especially for the next phases including ratification.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 72, "max": 85 },
+          "confidenceBand": { "min": 65, "max": 90 },
+          "acceptedVerdictLabels": ["MOSTLY-TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Ignoring transitional cooperation can erase the limited-effect frame that explains why a simple false label is incomplete.",
+            "severity": "low"
+          },
+          "contested": false,
+          "notes": "Mostly-true rather than true because the source establishes cooperation modalities, not final binding force of the package."
+        },
+        {
+          "id": "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE",
+          "truthConditionId": "TC_LIMITED_NOT_FINAL_FORCE",
+          "text": "The provisional and transitional effects are not the same as final legally binding entry into force of the whole Switzerland-EU package.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_BK_RATIFICATION_GUIDELINES",
+            "SRC_EDA_LAW_RELATION_20260201",
+            "SRC_ADMIN_EUPA_20250410"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Conflating limited provisional effects with final force would hide the legal distinction that drives the reference answer.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": null
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 35, "max": 60 },
+    "familyConfidenceBand": { "min": 55, "max": 85 },
+    "coherenceNote": "The aggregate benchmark remains mixed/leaning-false: signing before Parliament/people is true, but 'rechtskräftig' as final binding force is false; limited provisional effects make an unqualified false answer incomplete. Dossier-backed scoring should require reports to disclose the chosen 'rechtskräftig' frame and keep the timing events separate."
+  }
+}
