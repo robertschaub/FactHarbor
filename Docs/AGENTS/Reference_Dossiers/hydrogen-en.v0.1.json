@@ -1,0 +1,189 @@
+{
+  "id": "hydrogen-en",
+  "version": "0.1.0",
+  "inputSlug": "hydrogen-en",
+  "captainInputValue": "Using hydrogen for cars is more efficient than using electricity",
+  "language": "en",
+  "status": "draft",
+  "expectedInputClassification": "ambiguous_single_claim",
+  "ambiguityPolicy": "must_cover_all",
+  "ambiguityPolicyRationale": "The predicate 'efficient' is measurement-frame dependent. A valid report must keep full-pathway/well-to-wheel and use-phase/tank-to-wheel efficiency structurally distinct, and must not substitute range, refueling speed, or energy-density advantages for energy efficiency.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-07T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-07T19:54:09Z",
+    "revalidateAfter": "2026-12-07T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-07T00:00:00Z",
+    "validFrom": "2026-06-07T00:00:00Z",
+    "validThrough": null,
+    "currentSnapshot": false
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_FUELECONOMY_EVTECH",
+      "url": "https://www.fueleconomy.gov/feg/evtech.shtml",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/hydrogen-en/v0.1/SRC_FUELECONOMY_EVTECH.html",
+      "localHash": "sha256:80ed606d6ef1c459a6784b33b9023d87a681d8a3454df87a7b2590eb20f9d6f6",
+      "retrievedAt": "2026-06-07T19:54:09Z",
+      "sourceType": "government_primary",
+      "notes": "Official DOE/EPA FuelEconomy.gov EV page: all-electric vehicles convert over 77% of electrical energy from the grid to power at the wheels; source notes also state that battery charging efficiency can vary but is often 84%-93%."
+    },
+    {
+      "id": "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
+      "url": "https://www.energy.gov/cmei/fuels/comparison-fuel-cell-technologies",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/hydrogen-en/v0.1/SRC_DOE_FUEL_CELL_TECH_COMPARISON.html",
+      "localHash": "sha256:570c79d3928deaf84c83ee0bd916067279d09fb6c9e180fdfae053b5fd1a2d18",
+      "retrievedAt": "2026-06-07T19:54:09Z",
+      "sourceType": "government_primary",
+      "notes": "DOE fuel-cell technology comparison table: polymer electrolyte membrane fuel cells, including transportation applications, have electrical efficiency listed as 60% for direct hydrogen and 40% for reformed fuel. This is a fuel-cell conversion stage, not a whole hydrogen production-and-delivery pathway."
+    },
+    {
+      "id": "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225",
+      "url": "https://www.energy.gov/cmei/vehicles/articles/hydrogens-role-transportation",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/hydrogen-en/v0.1/SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225.html",
+      "localHash": "sha256:16c97b66a2ac1d8f19aaebc48d5b6f43bbb1bc4b4c5e415cfdb01371b63d3863",
+      "retrievedAt": "2026-06-07T19:54:09Z",
+      "sourceType": "government_primary",
+      "notes": "DOE transportation page: battery-only EVs charge the battery directly; hydrogen fuel-cell vehicles store hydrogen in a tank, run it through a fuel cell, and create electricity for the motor. The page also describes hydrogen range/refueling advantages and says 1 kg of hydrogen is about the energy of one gallon of gasoline and can drive a fuel-cell vehicle about 60 miles; these advantages are not the same as beating direct-electric cars on energy efficiency."
+    },
+    {
+      "id": "SRC_DOE_HYDROGEN_ELECTROLYSIS",
+      "url": "https://www.energy.gov/cmei/fuels/hydrogen-production-electrolysis",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/hydrogen-en/v0.1/SRC_DOE_HYDROGEN_ELECTROLYSIS.html",
+      "localHash": "sha256:22b7ea200814721d820900cbd72f692d248a209b85327e96b53b992bc9084073",
+      "retrievedAt": "2026-06-07T19:54:09Z",
+      "sourceType": "government_primary",
+      "notes": "DOE electrolysis page: electrolysis uses electricity to split water into hydrogen and oxygen; the source electricity's cost and efficiency must be considered when evaluating electrolysis; DOE research includes improving energy efficiency for converting electricity to hydrogen. This establishes the upstream conversion step for electricity-to-hydrogen-to-car comparisons."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_comparative_efficiency_measurement_frames",
+      "label": "Efficiency as energy efficiency across measurement frames",
+      "interpretedTermOrFrame": "efficient",
+      "interpretationDefinition": "The claim compares hydrogen fuel-cell cars with battery-electric/direct-electric cars, using energy-efficiency measurement frames. Full-pathway/well-to-wheel and use-phase/tank-to-wheel must be separately assessable; range, refueling speed, and hydrogen's energy content by weight may be context but are not substitutes for energy efficiency.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the benchmark's required reading: 'using electricity' is read as passenger cars using electricity directly through battery-electric/direct-electric propulsion, not trolleybus, catenary, rail, or other non-car electricity uses. Prior report-quality history shows that acceptable reports stay false-side only when the measurement windows remain visible and proxy advantages such as energy density do not become thesis-direct support.",
+      "ambiguityPolicy": "must_cover_all",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The overall verdict is stable false-side, but the word 'efficient' has multiple legitimate measurement windows. Both full-pathway and use-phase comparisons are independently assessable from the cited sources; proxy advantages are context only.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_FULL_PATHWAY_WELL_TO_WHEEL",
+            "description": "Whether a hydrogen car is more energy-efficient than a direct-electric/battery-electric car across the full electricity-to-motion pathway, including hydrogen production and conversion losses.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_USE_PHASE_TANK_TO_WHEEL",
+            "description": "Whether a hydrogen fuel-cell car is more energy-efficient than a direct-electric/battery-electric car at the vehicle/use-phase or tank-to-wheel stage.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_PROXY_ADVANTAGES_NOT_EFFICIENCY",
+            "description": "Whether hydrogen range, refueling speed, or energy-density advantages are separate context rather than proof that hydrogen cars are more energy-efficient than direct-electric cars.",
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": [
+              "TC_FULL_PATHWAY_WELL_TO_WHEEL",
+              "TC_USE_PHASE_TANK_TO_WHEEL"
+            ]
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_FULL_PATHWAY_HYDROGEN_MORE_EFFICIENT_FALSE",
+          "truthConditionId": "TC_FULL_PATHWAY_WELL_TO_WHEEL",
+          "text": "Across the full electricity-to-motion pathway, using electricity to make hydrogen for a fuel-cell car is not more energy-efficient than using electricity directly in a battery-electric car.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 0, "max": 14 },
+          "confidenceBand": { "min": 65, "max": 80 },
+          "acceptedVerdictLabels": ["FALSE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["United States", "General"],
+          "evidenceSourceIds": [
+            "SRC_FUELECONOMY_EVTECH",
+            "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
+            "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225",
+            "SRC_DOE_HYDROGEN_ELECTROLYSIS"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "A report that treats hydrogen's production and fuel-cell conversion chain as more efficient than direct electricity reverses the benchmark's central false-side result.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This assertion is about energy efficiency, not emissions, cost, range, or suitability for heavy-duty cases. The cited sources establish the direct BEV grid-to-wheel efficiency, hydrogen's additional production step when made from electricity, and the fuel-cell conversion ceiling; this v0.1 draft does not include a complete quantified hydrogen production, compression, delivery, and dispensing loss model."
+        },
+        {
+          "id": "RA_USE_PHASE_HYDROGEN_MORE_EFFICIENT_FALSE",
+          "truthConditionId": "TC_USE_PHASE_TANK_TO_WHEEL",
+          "text": "At the vehicle/use-phase or tank-to-wheel stage, hydrogen fuel-cell cars are not more energy-efficient than battery-electric cars using electricity directly.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 5, "max": 25 },
+          "confidenceBand": { "min": 65, "max": 85 },
+          "acceptedVerdictLabels": ["FALSE", "MOSTLY-FALSE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["United States", "General"],
+          "evidenceSourceIds": [
+            "SRC_FUELECONOMY_EVTECH",
+            "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
+            "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Conflating hydrogen's better-than-ICE fuel-cell efficiency with superiority over battery-electric cars can produce a false positive or an underconfident mixed verdict.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The embedded sources do not provide a single apples-to-apples tank-to-wheel table. They do show BEVs converting over 77% of grid electricity to power at the wheels, while DOE's PEM fuel-cell table lists 60% electrical efficiency for direct hydrogen before remaining drivetrain and upstream-pathway losses. This supports a false-side result even before full-pathway losses are added."
+        },
+        {
+          "id": "RA_PROXY_ADVANTAGES_NOT_EFFICIENCY",
+          "truthConditionId": "TC_PROXY_ADVANTAGES_NOT_EFFICIENCY",
+          "text": "Hydrogen's range, refueling-speed, or energy-content advantages are separate context and do not establish that hydrogen cars are more energy-efficient than direct-electric cars.",
+          "role": "tolerated_context",
+          "separability": "flexible",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["United States", "General"],
+          "evidenceSourceIds": [
+            "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225",
+            "SRC_FUELECONOMY_EVTECH"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Using range, refueling speed, or energy density as thesis-direct evidence for energy efficiency is the known proxy-drift failure mode for this benchmark.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "Colour/context only in v0.1. `kind=procedural` is intentional because this assertion governs evidence admissibility, not the top-line world-state polarity. A good report may mention hydrogen's long-range or fast-refueling use cases, especially for heavier duty cycles, but these should not substitute for full-pathway or use-phase energy-efficiency claims about cars."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 5, "max": 25 },
+    "familyConfidenceBand": { "min": 65, "max": 85 },
+    "coherenceNote": "This partial dossier matches the benchmark's FALSE/MOSTLY-FALSE expectation for `Using hydrogen for cars is more efficient than using electricity`. Dossier-backed scoring must reward structural separation of full-pathway/well-to-wheel and use-phase/tank-to-wheel comparisons and must penalize proxy drift where hydrogen range, refueling speed, or energy density is treated as evidence of energy-efficiency superiority."
+  }
+}
