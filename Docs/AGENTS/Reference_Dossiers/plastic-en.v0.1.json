@@ -1,0 +1,274 @@
+{
+  "id": "plastic-en",
+  "version": "0.1.0",
+  "inputSlug": "plastic-en",
+  "captainInputValue": "Plastic recycling is pointless",
+  "language": "en",
+  "status": "draft",
+  "expectedInputClassification": "ambiguous_single_claim",
+  "ambiguityPolicy": "must_disclose",
+  "ambiguityPolicyRationale": "The predicate 'pointless' can mean the literal claim that plastic recycling achieves nothing, or the reasonable/evaluative claim that plastic recycling does not meaningfully work or is not worth it at scale. Reports must declare which reading they assess and must not silently substitute the literal zero-benefit reading for the reasonable policy/effectiveness reading.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-07T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-06T22:20:00Z",
+    "revalidateAfter": "2026-12-07T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-07T00:00:00Z",
+    "validFrom": "2026-06-07T00:00:00Z",
+    "validThrough": null,
+    "currentSnapshot": false
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+      "url": "https://www.oecd-ilibrary.org/en/about/news/press-releases/2022/02/plastic-pollution-is-growing-relentlessly-as-waste-management-and-recycling-fall-short.html",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/plastic-en/v0.1/SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222.html",
+      "localHash": "sha256:504b6f571fc03bdad8e81b955f35b814bd85d85e0e755b6aa5280421dd31398e",
+      "retrievedAt": "2026-06-06T22:20:00Z",
+      "sourceType": "intergovernmental_primary",
+      "notes": "OECD press release for the Global Plastics Outlook: global plastic waste generation reached 353 million tonnes in 2019; only 9% was recycled; 15% was collected for recycling but 40% of that collection became residues; secondary plastics production was only 6% of total plastics production; OECD calls for stronger markets and policy instruments."
+    },
+    {
+      "id": "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
+      "url": "https://www.oecd.org/en/publications/global-plastics-outlook_de747aef-en/full-report/component-6.html",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/plastic-en/v0.1/SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022.html",
+      "localHash": "sha256:d2be8c06c61c14638ea641ba2fbfb9c87d3109b723517ce703b3b8dbbfe4bd84",
+      "retrievedAt": "2026-06-06T22:20:00Z",
+      "sourceType": "intergovernmental_primary",
+      "notes": "OECD Global Plastics Outlook overview and policy highlights: recycled-plastics markets, technological innovation, domestic policy, and international co-operation are critical levers; plastic-to-plastic chemical recycling is emerging but faces significant challenges; stronger policy is needed to close loops and reduce leakage."
+    },
+    {
+      "id": "SRC_UNEP_TURNING_OFF_TAP_2023",
+      "url": "https://www.unep.org/resources/turning-off-tap-end-plastic-pollution-create-circular-economy",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/plastic-en/v0.1/SRC_UNEP_TURNING_OFF_TAP_2023.html",
+      "localHash": "sha256:229ac9f6b57e4d20d5a83d5f6a2e6b024ba5b307dab08799ac6d48b51e22280a",
+      "retrievedAt": "2026-06-06T22:20:00Z",
+      "sourceType": "intergovernmental_primary",
+      "notes": "UNEP Turning off the Tap report page: plastic pollution needs systems change; reduction/reuse, recycling, and sustainable alternatives all matter; only about nine percent of plastics produced are mechanically recycled; recycling-market viability is one complement, not a standalone solution."
+    },
+    {
+      "id": "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018",
+      "url": "https://www.epa.gov/facts-and-figures-about-materials-waste-and-recycling/plastics-material-specific-data",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/plastic-en/v0.1/SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018.html",
+      "localHash": "sha256:0c72cc3181ac5ef9d36b80a0209c4d053154f5f4a1c954b10d6998ff5de29fee",
+      "retrievedAt": "2026-06-06T22:20:00Z",
+      "sourceType": "government_primary",
+      "notes": "US EPA plastics material-specific data: overall US plastics recycling was 8.7% in 2018, while PET bottles and jars and HDPE natural bottles had materially higher recycling rates around 29%; this supports material-specific variation and rejects a universal zero-benefit reading."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_literal_zero_benefit",
+      "label": "Pointless as literal zero benefit",
+      "interpretedTermOrFrame": "pointless",
+      "interpretationDefinition": "The term is read literally: plastic recycling achieves nothing useful at all, has no meaningful recycled output, and provides no environmental, economic, or practical benefit in any material stream.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This reading is linguistically possible but brittle. It is useful as a contrast frame because evidence of any nonzero recycling activity or material-specific benefit falsifies the literal zero-benefit claim.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "determinable",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "Under the literal reading, the decisive truth condition is whether plastic recycling has any real output or benefit. This is independently assessable from official/intergovernmental recycling statistics and material-specific data.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_ZERO_BENEFIT",
+            "description": "Whether plastic recycling achieves no useful output or benefit at all.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_LITERAL_ZERO_BENEFIT_FALSE",
+          "truthConditionId": "TC_ZERO_BENEFIT",
+          "text": "Plastic recycling achieves no useful output or benefit at all.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 0, "max": 14 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["FALSE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["Global", "United States"],
+          "evidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_UNEP_TURNING_OFF_TAP_2023",
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_UNEP_TURNING_OFF_TAP_2023"
+          ],
+          "harmfulMissCondition": {
+            "description": "Treating the literal zero-benefit reading as true produces an overconfident false-side verdict and hides material-specific nonzero benefits.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "This frame should not be silently used as the only meaning of the input; it is the lower-edge reading allowed by the centered benchmark band."
+        }
+      ]
+    },
+    {
+      "id": "FRAME_reasonable_effectiveness_worth",
+      "label": "Pointless as not meaningfully effective or not worth it",
+      "interpretedTermOrFrame": "pointless",
+      "interpretationDefinition": "The term is read as the reasonable fact-checking/evaluative claim that plastic recycling does not meaningfully work at scale or is not worth it overall, considering practical effectiveness, environmental benefit, and economic viability. This frame does not require the stronger claim that recycling literally achieves nothing.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the benchmark's preferred reasonable-reading frame. It reflects how the stored-report corpus decomposed the input: environmental value, economic value, and practical effectiveness/rate/downcycling. It must still disclose that a stricter literal reading would be false.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The stable decomposition has three assessable dimensions, but the word 'pointless' is evaluative and policy-dependent. Effectiveness/rate is strict; environmental and economic dimensions are strict at the level of separate assessment but retain wider mixed bands because benefits and limitations coexist across materials and jurisdictions.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_EFFECTIVENESS_AT_SCALE",
+            "description": "Whether plastic recycling does not meaningfully work at global scale, given low actual recycling rates, collection losses, residue disposal, and downcycling/loop-closing limits.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_ENVIRONMENTAL_VALUE",
+            "description": "Whether plastic recycling is environmentally pointless, considering both real avoided virgin production/pollution benefits and the small aggregate offset relative to growing plastics production and leakage.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_ECONOMIC_VALUE",
+            "description": "Whether plastic recycling is economically pointless or not worth it, considering weak secondary markets, policy dependence, and material-specific viable streams.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_MATERIAL_SPECIFIC_VARIANCE",
+            "description": "Whether material-specific variation matters enough that reports should avoid universal claims about all plastics and all recycling systems.",
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": [
+              "TC_ENVIRONMENTAL_VALUE",
+              "TC_ECONOMIC_VALUE"
+            ]
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_EFFECTIVENESS_POINTLESS_REASONABLE",
+          "truthConditionId": "TC_EFFECTIVENESS_AT_SCALE",
+          "text": "Under the reasonable scale-effectiveness reading, the claim that plastic recycling largely fails to work at global scale is leaning true: global data show only about 9% of plastic waste is recycled, with collection losses and residue disposal limiting actual recycling.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 58, "max": 72 },
+          "confidenceBand": { "min": 55, "max": 75 },
+          "acceptedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["Global"],
+          "evidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_UNEP_TURNING_OFF_TAP_2023",
+            "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "harmfulMissCondition": {
+            "description": "Ignoring the low real recycling rate misses the strongest source-grounded reason the reasonable reading can score true-leaning.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The upper edge should remain confidence-capped because the assertion is evaluative and material/jurisdiction-specific variation matters."
+        },
+        {
+          "id": "RA_ENVIRONMENTAL_POINTLESS_MIXED",
+          "truthConditionId": "TC_ENVIRONMENTAL_VALUE",
+          "text": "Under the environmental reading, 'plastic recycling is pointless' is mixed: recycling can reduce reliance on virgin plastics and is part of circularity policy, but its current aggregate scale is too small to offset growing plastic waste, leakage, and pollution by itself.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 43, "max": 57 },
+          "confidenceBand": { "min": 50, "max": 75 },
+          "acceptedVerdictLabels": ["MIXED"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["Global"],
+          "evidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
+            "SRC_UNEP_TURNING_OFF_TAP_2023"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "harmfulMissCondition": {
+            "description": "A report that treats recycling as either environmentally useless or sufficient by itself loses the mixed nature of the environmental evidence.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "The environmental score should stay mixed: recycling has real circularity value, but the current aggregate scale and leakage limits prevent a simple pro-recycling or anti-recycling verdict."
+        },
+        {
+          "id": "RA_ECONOMIC_POINTLESS_MIXED",
+          "truthConditionId": "TC_ECONOMIC_VALUE",
+          "text": "Under the economic reading, 'plastic recycling is pointless' is mixed: secondary plastics markets remain small and policy-dependent, while targeted policy, demand, and specific material streams can make recycling economically meaningful in narrower contexts.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 43, "max": 57 },
+          "confidenceBand": { "min": 50, "max": 75 },
+          "acceptedVerdictLabels": ["MIXED"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["Global", "United States"],
+          "evidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Flattening all polymers and markets into one economic verdict hides why the benchmark is centered rather than one-sided.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "OECD sources support the weak-market and policy-dependence side; EPA supports material-specific variation rather than direct economic profitability. Do not generalize PET/HDPE container viability to mixed municipal plastics, films, or all recycling systems without separate evidence."
+        },
+        {
+          "id": "RA_MATERIAL_SPECIFIC_VARIANCE_MATTERS",
+          "truthConditionId": "TC_MATERIAL_SPECIFIC_VARIANCE",
+          "text": "Material-specific variation matters: aggregate plastic recycling rates are low, but some streams such as PET bottles and HDPE natural bottles recycle at materially higher rates than aggregate plastics.",
+          "role": "tolerated_context",
+          "separability": "flexible",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": ["United States"],
+          "evidenceSourceIds": [
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Ignoring material-specific variation can make a report overstate an all-plastics conclusion.",
+            "severity": "low"
+          },
+          "contested": false,
+          "notes": "Colour/context in v0.1; required ranking should stay on the three stable dimensions until adjudication confirms whether material-specific variance becomes a strict truth condition."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 42, "max": 65 },
+    "familyConfidenceBand": { "min": 50, "max": 75 },
+    "coherenceNote": "This partial dossier matches the benchmark's centered expectation: literal zero-benefit is false, while the reasonable effectiveness/worth reading is mixed-to-leaning-true. The three strict reasonable-reading dimensions mirror the 2026-05-31 stored-report analysis: effectiveness/rate is true-leaning, environmental value is mixed, and economic value is mixed. Dossier-backed scoring must require the report to disclose which 'pointless' frame it assesses and must keep the three reasonable-reading dimensions independently assessable."
+  }
+}
