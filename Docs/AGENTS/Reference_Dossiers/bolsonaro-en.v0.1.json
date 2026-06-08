@@ -1,0 +1,452 @@
+{
+  "id": "bolsonaro-en",
+  "version": "0.1.0",
+  "inputSlug": "bolsonaro-en",
+  "captainInputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+  "language": "en",
+  "status": "draft",
+  "expectedInputClassification": "question",
+  "ambiguityPolicy": "must_cover_all",
+  "ambiguityPolicyRationale": "The input asks about multiple proceedings and multiple evaluative dimensions. A valid report must cover Brazilian-law compliance, domestic procedural/constitutional safeguards, international fair-trial standards, and the fairness/legal support of the verdicts or sentences. It must not answer only the coup conviction, only the TSE ineligibility ruling, or only the politics around Bolsonaro.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-08T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-08T00:00:00Z",
+    "revalidateAfter": "2026-09-08T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-08T00:00:00Z",
+    "validFrom": "2026-06-08T00:00:00Z",
+    "validThrough": "2026-09-08T00:00:00Z",
+    "currentSnapshot": true
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_STF_REVISION_FINAL_20260512",
+      "url": "https://noticias.stf.jus.br/postsnoticias/ex-presidente-bolsonaro-apresenta-revisao-criminal-contra-condenacao-por-tentativa-de-golpe-de-estado/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_STF_REVISION_FINAL_20260512.html",
+      "localHash": "sha256:6e8deddcdc11fbfb0a1d8510b2534903e043156eda2ecbe84a1e8de9fbf89ba2",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "STF official page: the defense filed a criminal review to annul Bolsonaro's definitive coup-plot conviction (`transitada em julgado`); AP 2668 sentence was 27 years and three months for armed criminal organization, violent abolition of the democratic rule of law, coup d'etat, qualified damage, and deterioration of listed heritage."
+    },
+    {
+      "id": "SRC_STF_CONCLUDES_COUP_CASES_20251217",
+      "url": "https://noticias.stf.jus.br/postsnoticias/stf-concluiu-julgamento-de-acoes-contra-reus-que-planejaram-golpe-de-estado/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_STF_CONCLUDES_COUP_CASES_20251217.html",
+      "localHash": "sha256:09db7f025612561a36d2e63f7678328b602d550564be55563d711d8906903614",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "STF official wrap-up: APs 2668/2693/2694/2696 were tried in 2025; AP 2668's `Nucleo 1` was responsible for planning and articulating coup acts, and Bolsonaro received the highest penalty, 27 years and 3 months."
+    },
+    {
+      "id": "SRC_STF_RECEIVES_DENUNCIA_NUCLEO1_20250326",
+      "url": "https://noticias.stf.jus.br/postsnoticias/stf-recebe-denuncia-contra-nucleo-1-por-tentativa-de-golpe-de-estado/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_STF_RECEIVES_DENUNCIA_NUCLEO1_20250326.html",
+      "localHash": "sha256:474d4b535b95bef82a3a3773b2a3974ae033dc0de0410aee1f4ee3d77dd3eb25",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "STF official page: the First Panel unanimously accepted the PGR complaint against Bolsonaro and seven others; it examined legal minimums for opening a criminal action, found materiality and indicia of authorship, and listed the coup-related crimes."
+    },
+    {
+      "id": "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325",
+      "url": "https://noticias.stf.jus.br/postsnoticias/stf-rejeita-preliminares-levantadas-pelas-defesas-de-acusados-de-tentativa-de-golpe-de-estado/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325.html",
+      "localHash": "sha256:7d3125281688d852ba1505ba965abeb575b20ae88ba66fecce62008902c43d81",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "STF official page: the First Panel rejected defense preliminary objections and stated that due process and full defense were guaranteed; it also records Luiz Fux's dissent on STF competence and the court's rejection of alleged denial of access to evidence."
+    },
+    {
+      "id": "SRC_STF_WITNESSES_NUCLEO1_20250519",
+      "url": "https://noticias.stf.jus.br/postsnoticias/stf-ouve-primeiro-grupo-de-testemunhas-na-acao-penal-que-apura-tentativa-de-golpe-de-estado/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_STF_WITNESSES_NUCLEO1_20250519.html",
+      "localHash": "sha256:fd639cbd80d0fff6ceafe78abaaf9a8b79c1ce9652fe42d03184a07bddec52d7",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "STF official page: AP 2668 witness hearings began; witnesses were questioned by the PGR and by defense lawyers, with hearings planned through early June 2025."
+    },
+    {
+      "id": "SRC_TSE_INELEGIBLE_20230630",
+      "url": "https://www.tse.jus.br/comunicacao/noticias/2023/Junho/por-maioria-de-votos-tse-declara-bolsonaro-inelegivel-por-8-anos",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_TSE_INELEGIBLE_20230630.html",
+      "localHash": "sha256:cb9ebeac0568ed0c4ce617048fd392a72497bd675372d082d92693212de0e9e7",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "court_primary",
+      "notes": "TSE official page: by 5-2 vote, Bolsonaro was declared ineligible for eight years for abuse of political power and misuse of communications in the July 18, 2022 ambassadors meeting; the page records the legal basis in article 22 of Complementary Law 64/1990 and dissenting votes."
+    },
+    {
+      "id": "SRC_PLANALTO_CONSTITUTION_ART5",
+      "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicaocompilado.htm",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_PLANALTO_CONSTITUTION_ART5.html",
+      "localHash": "sha256:a995f5ed69e93c6ddcf5875bcac4315ffa63b06582a56dc09756abce7fa8a00f",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "government_legal_text",
+      "notes": "Official compiled Brazilian Constitution text: Article 5 LIV/LV provides due process, adversarial proceedings, and full defense; LVII provides that no one is considered guilty until final judgment."
+    },
+    {
+      "id": "SRC_PLANALTO_L14197_2021",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14197.htm",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_PLANALTO_L14197_2021.html",
+      "localHash": "sha256:b772828e5bb0628109410f6125452149cae5327ad6ece9eb1395037a53df5fbb",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "government_legal_text",
+      "notes": "Official Law 14.197/2021 text adding crimes against the democratic rule of law to the Penal Code, including violent abolition of the democratic rule of law and coup d'etat."
+    },
+    {
+      "id": "SRC_OAS_ACHR_ART8",
+      "url": "https://www.oas.org/dil/treaties_b-32_american_convention_on_human_rights.htm",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_OAS_ACHR_ART8.html",
+      "localHash": "sha256:d0a43d1c72a382d30dde307f8158c2b849438bf3df7820583e690e7347b8f28a",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "international_legal_text",
+      "notes": "OAS text of the American Convention on Human Rights: Article 8 sets fair-trial guarantees, including a competent, independent and impartial tribunal, adequate defense rights, and appeal."
+    },
+    {
+      "id": "SRC_AP_CONVICTION_SENTENCE_20250911",
+      "url": "https://apnews.com/article/f95765c36dbbdc3355ad3af0b70eacf6",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_AP_CONVICTION_SENTENCE_20250911.html",
+      "localHash": "sha256:89b5d2e02f10d327197a4e905ceebcebd161e31ce725cdc46c4868b8cd9e8a15",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "news_wire",
+      "notes": "Associated Press report: four of five STF panel justices convicted Bolsonaro on five counts and sentenced him to 27 years and three months; Bolsonaro denied wrongdoing and could appeal at that time; experts said appeal to the full Supreme Court was unlikely but not impossible."
+    },
+    {
+      "id": "SRC_AP_SENTENCE_APPEAL_20251028",
+      "url": "https://apnews.com/article/77f77ffc22b6b399524b1616c9725403",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_AP_SENTENCE_APPEAL_20251028.html",
+      "localHash": "sha256:cd1f2c11690ccfaf4888a22be623ab479d519c117efe4d5089d9e1a7d02ecb43",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "news_wire",
+      "notes": "Associated Press report: Bolsonaro's lawyers sought to reduce the sentence, alleged profound injustices and overlapping charges, and a law professor said that such appeals were unlikely to reduce the sentence. Pre-finality snapshot: superseded for current case status by SRC_STF_REVISION_FINAL_20260512; use for defense arguments and sentence-reduction reasoning, not for current appeal/finality status."
+    },
+    {
+      "id": "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903",
+      "url": "https://kfgo.com/2025/09/03/bolsonaro-lawyer-says-his-clients-defense-rights-were-restricted-in-coup-case/",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bolsonaro-shared/v0.1/SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903.html",
+      "localHash": "sha256:ac43c5ef8463458eaf3f602f290502feab64e536f21a6722366a1ea33cf95fdb",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "news_wire",
+      "notes": "Reuters-syndicated report via KFGO: Bolsonaro lawyer Celso Vilardi argued defense rights were restricted, citing lack of evidence access and insufficient time."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_brazilian_law_fair_trial_verdicts",
+      "label": "Brazilian-law compliance and fair-trial/verdict fairness",
+      "interpretedTermOrFrame": "legal proceedings, Brazilian law, international standards for a fair trial, and verdicts",
+      "interpretationDefinition": "The input is read as a broad report-quality question about Bolsonaro's major legal proceedings through the June 2026 reference date: the 2023 TSE ineligibility proceeding and the 2025 STF AP 2668 criminal coup-plot proceeding. The answer should be true-side with caveats: legal basis and procedural safeguards are strongly supported, while competence, defense-access, appeal/review-scope, and sentence-proportionality objections cap confidence and make the verdict/sentence fairness claim evaluative rather than absolute.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This matches the Captain expectation for this family: legal basis is strongly supported and procedural fairness is largely supported with legitimate concerns. The source record contains official court support plus dissent and defense objections, so MIXED or false-side outcomes require stronger target-specific evidence than the caveats captured here.",
+      "ambiguityPolicy": "must_cover_all",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The topic is decomposable into determinate legal/procedural events and an evaluative verdict-fairness judgment. Legal basis and procedural steps are highly determinable; fair-trial and sentence-fairness conclusions require weighing documented caveats without letting those caveats erase the true-side legal support.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_TSE_ELECTORAL_PROCEEDING_LEGAL_BASIS",
+            "description": "Whether the 2023 TSE ineligibility proceeding had a Brazilian-law basis and a reasoned court decision, while acknowledging dissent.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_STF_CRIMINAL_PROCEEDING_LEGAL_BASIS",
+            "description": "Whether AP 2668 was opened, tried, and concluded under Brazilian criminal/legal authorities for recognized coup-related crimes.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_DOMESTIC_PROCEDURAL_SAFEGUARDS",
+            "description": "Whether domestic due-process/full-defense safeguards were materially present in AP 2668.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_INTERNATIONAL_FAIR_TRIAL_STANDARDS",
+            "description": "Whether the proceedings substantially met international fair-trial standards, with caveats for competence, appeal/review scope, sentence proportionality, and defense-access objections.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_VERDICT_LEGAL_SUPPORTABILITY",
+            "description": "Whether the TSE and STF verdicts were legally supportable on the current source record, while recognizing dissent and defense objections.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SENTENCE_PROPORTIONALITY_FAIRNESS",
+            "description": "Whether the AP 2668 sentence was broadly fair/just in the limited legal-process and proportionality sense, while recognizing defense arguments about excessiveness and overlapping charges.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_TSE_INELEGIBILITY_LEGAL_BASIS_TRUE_WITH_DISSENT",
+          "truthConditionId": "TC_TSE_ELECTORAL_PROCEEDING_LEGAL_BASIS",
+          "text": "The TSE ineligibility proceeding was legally grounded and reasoned: by 5-2 vote, the TSE declared Bolsonaro ineligible for eight years for abuse of political power and misuse of communications, citing article 22 of Complementary Law 64/1990; dissenting judges considered the conduct insufficient for the sanction.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": {
+            "min": 72,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 70,
+            "max": 90
+          },
+          "acceptedVerdictLabels": [
+            "MOSTLY-TRUE",
+            "TRUE"
+          ],
+          "freshnessRequirement": "none",
+          "relevantGeographies": [
+            "Brazil"
+          ],
+          "evidenceSourceIds": [
+            "SRC_TSE_INELEGIBLE_20230630"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_TSE_INELEGIBLE_20230630"
+          ],
+          "harmfulMissCondition": {
+            "description": "Ignoring the TSE proceeding or its dissent makes a broad `legal proceedings` answer incomplete and can overstate certainty.",
+            "severity": "medium"
+          },
+          "contested": true,
+          "notes": "The dissent is a caveat, not a family-level false signal. Reports may treat this as background if they explain that the core input primarily concerns the criminal coup proceedings, but they should not deny or omit the TSE legal-basis record in a broad EN answer."
+        },
+        {
+          "id": "RA_STF_AP2668_LEGAL_BASIS_TRUE",
+          "truthConditionId": "TC_STF_CRIMINAL_PROCEEDING_LEGAL_BASIS",
+          "text": "AP 2668 had a Brazilian-law basis: the STF accepted the PGR complaint after checking minimum legal requirements, listed recognized coup-related crimes, and later recorded Bolsonaro's definitive conviction and 27-year-3-month sentence for those crimes.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Brazil"
+          ],
+          "evidenceSourceIds": [
+            "SRC_STF_RECEIVES_DENUNCIA_NUCLEO1_20250326",
+            "SRC_STF_REVISION_FINAL_20260512",
+            "SRC_STF_CONCLUDES_COUP_CASES_20251217",
+            "SRC_PLANALTO_L14197_2021"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "A report that treats the criminal case as legally baseless contradicts the official charge-acceptance, legal-text, and final-conviction record.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This assertion covers legal basis, not whether every procedural objection was correct."
+        },
+        {
+          "id": "RA_DOMESTIC_DUE_PROCESS_LARGELY_SATISFIED",
+          "truthConditionId": "TC_DOMESTIC_PROCEDURAL_SAFEGUARDS",
+          "text": "Domestic procedural safeguards were materially present: the STF rejected preliminary objections, including alleged denial of evidence access/cerceamento, stated due process and full defense were guaranteed, and held witness hearings in which PGR and defense lawyers could question witnesses.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": {
+            "min": 72,
+            "max": 85
+          },
+          "confidenceBand": {
+            "min": 55,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MOSTLY-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Brazil"
+          ],
+          "evidenceSourceIds": [
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325",
+            "SRC_STF_WITNESSES_NUCLEO1_20250519",
+            "SRC_PLANALTO_CONSTITUTION_ART5"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903",
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325"
+          ],
+          "harmfulMissCondition": {
+            "description": "Dropping the defense-access/time objections can make the report overconfident; treating them as dispositive can wrongly flip the verdict.",
+            "severity": "high"
+          },
+          "contested": true,
+          "notes": "The source record supports `largely satisfied`, not an uncaveated `perfectly satisfied`; defense claims of restricted access/time should reduce confidence unless independently disproved. SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325 carries both positive court findings and Fux/defense caveat material."
+        },
+        {
+          "id": "RA_INTERNATIONAL_FAIR_TRIAL_SUBSTANTIALLY_MET_WITH_CAVEATS",
+          "truthConditionId": "TC_INTERNATIONAL_FAIR_TRIAL_STANDARDS",
+          "text": "Against Article 8-style fair-trial standards, the proceedings are true-side but caveated: they involved a competent court under Brazilian procedure, official court proceedings with published decisions, defense participation, witness questioning, and appeal/post-final review mechanisms, while objections about STF competence, defense access/time, appeal/review scope, and sentence proportionality limit confidence.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 58,
+            "max": 85
+          },
+          "confidenceBand": {
+            "min": 45,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-TRUE",
+            "MOSTLY-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Brazil",
+            "Americas"
+          ],
+          "evidenceSourceIds": [
+            "SRC_OAS_ACHR_ART8",
+            "SRC_PLANALTO_CONSTITUTION_ART5",
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325",
+            "SRC_STF_WITNESSES_NUCLEO1_20250519",
+            "SRC_AP_SENTENCE_APPEAL_20251028",
+            "SRC_STF_REVISION_FINAL_20260512"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903",
+            "SRC_AP_SENTENCE_APPEAL_20251028",
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325"
+          ],
+          "harmfulMissCondition": {
+            "description": "Answering only domestic legal basis without evaluating international fair-trial criteria fails the input's standard-of-review clause.",
+            "severity": "high"
+          },
+          "contested": true,
+          "notes": "This assertion sets the correct shape for the fair-trial dimension: true-side with caveats and bounded confidence. A criminal review after final judgment is not the same as an ordinary appeal, so reports should not overstate the Article 8 appeal issue."
+        },
+        {
+          "id": "RA_VERDICTS_BROADLY_LEGALLY_SUPPORTABLE",
+          "truthConditionId": "TC_VERDICT_LEGAL_SUPPORTABILITY",
+          "text": "The TSE and STF verdicts are broadly legally supportable on the current record: the TSE ruling identified a statutory ineligibility basis despite dissent, and AP 2668 reached a definitive conviction for serious coup-related crimes after the STF accepted and tried the PGR complaint.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 72,
+            "max": 85
+          },
+          "confidenceBand": {
+            "min": 55,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MOSTLY-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Brazil"
+          ],
+          "evidenceSourceIds": [
+            "SRC_STF_REVISION_FINAL_20260512",
+            "SRC_STF_CONCLUDES_COUP_CASES_20251217",
+            "SRC_STF_RECEIVES_DENUNCIA_NUCLEO1_20250326",
+            "SRC_AP_CONVICTION_SENTENCE_20250911",
+            "SRC_TSE_INELEGIBLE_20230630"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903",
+            "SRC_TSE_INELEGIBLE_20230630",
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325"
+          ],
+          "harmfulMissCondition": {
+            "description": "If verdict legal supportability is merged into sentence proportionality, a report can lose the strong legal-basis signal or overstate sentence fairness.",
+            "severity": "medium"
+          },
+          "contested": true,
+          "notes": "This assertion is higher than the family top-line because it covers legal supportability of the verdicts, not the more contested sentence-proportionality question. TSE carries both majority and dissent material."
+        },
+        {
+          "id": "RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE",
+          "truthConditionId": "TC_SENTENCE_PROPORTIONALITY_FAIRNESS",
+          "text": "The AP 2668 sentence is broadly fair/just in the limited legal-process and proportionality sense, but not beyond reasonable controversy: the conviction is definitive as of May 2026 and the sentence is tied to serious coup-related crimes, while defense arguments about excessiveness, overlapping charges, historical sentence-reduction appeals, current criminal review, competence, and evidence access remain legitimate caveats.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 58,
+            "max": 85
+          },
+          "confidenceBand": {
+            "min": 45,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-TRUE",
+            "MOSTLY-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Brazil"
+          ],
+          "evidenceSourceIds": [
+            "SRC_STF_REVISION_FINAL_20260512",
+            "SRC_STF_CONCLUDES_COUP_CASES_20251217",
+            "SRC_AP_CONVICTION_SENTENCE_20250911",
+            "SRC_AP_SENTENCE_APPEAL_20251028",
+            "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_AP_SENTENCE_APPEAL_20251028",
+            "SRC_REUTERS_DEFENSE_RESTRICTED_KFGO_20250903",
+            "SRC_STF_REJECTS_PRELIM_DUE_PROCESS_20250325"
+          ],
+          "harmfulMissCondition": {
+            "description": "If the verdict/sentence-fairness question is omitted as merely subjective, the report can pass legal-basis checks while missing the user's explicit `verdicts` clause.",
+            "severity": "high"
+          },
+          "contested": true,
+          "notes": "This is the family top-line limiter. It does not mean the sentence is morally unassailable; it means the best current reference answer is LEANING-TRUE/MOSTLY-TRUE with confidence capped by recorded objections. Documented dissent, defense-access/time objections, competence objections, and sentence-proportionality arguments must be surfaced as caveats; they should not be treated as dispositive absent stronger source-grounded evidence of actual procedural or constitutional failure."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": {
+      "min": 58,
+      "max": 85
+    },
+    "familyConfidenceBand": {
+      "min": 45,
+      "max": 75
+    },
+    "coherenceNote": "This dossier matches the Captain-accepted true-side-with-caveats expectation for `bolsonaro-en`. Legal basis is strong, domestic procedure is largely supported, and international fair-trial/verdict/sentence fairness is LEANING-TRUE/MOSTLY-TRUE with confidence capped by competence, access/time, appeal/review-scope, and proportionality caveats. The TSE proceeding is required background for the broad EN phrasing, but AP 2668 carries most of the criminal fair-trial and sentence-fairness weight. The top-line family band is set by `RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE`; high-truth legal-basis and verdict-supportability assertions are required subclaim controls, not a license to ignore the fair-trial/verdict/sentence clauses. Caveats should cap confidence and qualify the fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."
+  }
+}
