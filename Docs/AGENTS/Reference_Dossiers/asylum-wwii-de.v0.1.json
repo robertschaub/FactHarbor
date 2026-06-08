@@ -1,0 +1,231 @@
+{
+  "id": "asylum-wwii-de",
+  "version": "0.1.0",
+  "inputSlug": "asylum-wwii-de",
+  "captainInputValue": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.",
+  "language": "de",
+  "status": "draft",
+  "expectedInputClassification": "multi_assertion_input",
+  "ambiguityPolicy": "must_disclose",
+  "ambiguityPolicyRationale": "The input combines a current-count assertion with a historical comparison. `Flüchtlinge` can be read narrowly as recognized refugees or loosely as the broader SEM asylum-area population, and `am Ende des Zweiten Weltkrieges` must be read as endpoint stock at war's end rather than cumulative wartime admissions/flows. Reports should disclose the current-count definition but let the endpoint-stock comparison dominate the top-line false-side verdict.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-08T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-08T00:00:00Z",
+    "revalidateAfter": "2026-07-15T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-08T00:00:00Z",
+    "validFrom": "2026-06-08T00:00:00Z",
+    "validThrough": "2026-07-15T00:00:00Z",
+    "currentSnapshot": true
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+      "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf.download.pdf/stat-jahr-2025-kommentar-d.pdf",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-wwii-de/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
+      "localHash": "sha256:6052f1fe77b6b0b3009a7ecd3d8f0ceec88a88281e08e4253546eb07db4e87b3",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "government_primary",
+      "notes": "Official SEM annual asylum statistics commentary for 2025: table text shows `Total anerkannte Flüchtlinge` = 94 261 and the published total `Total Personen aus dem Asylbereich (inkl. RU)` = 235 057 at end December 2025. SEM separately warns that `Total RU` contains people with pending asylum processes and must not be added to calculate the overall total; this dossier uses SEM's published 235 057 total, not a reconstructed component sum."
+    },
+    {
+      "id": "SRC_HLS_FLUECHTLINGE_20160107",
+      "url": "https://hls-dhs-dss.ch/de/articles/016388/2016-01-07/",
+      "archiveUrl": "https://web.archive.org/web/20190605212341/https://hls-dhs-dss.ch/de/articles/016388/2016-01-07/",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-wwii-de/v0.1/SRC_HLS_FLUECHTLINGE_20160107_WAYBACK_20190605.html",
+      "localHash": "sha256:67f637e893e9faca67c47e557a36102c167a3361b13fd07474a1fcbb5bb5596b",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "historical_secondary",
+      "notes": "Historisches Lexikon der Schweiz article `Flüchtlinge`, captured from Wayback because direct live capture was Cloudflare-blocked: while the cumulative wartime total was about 290 000, that figure does not say how many refugees were in Switzerland at a given time; it states that at war's end Switzerland had about 115 000 refugees."
+    },
+    {
+      "id": "SRC_BAR_UMSTRITTENE_FLUECHTLINGSPOLITIK_20191028",
+      "url": "https://www.bar.admin.ch/bar/de/home/recherche/recherchetipps/themen/die-schweiz-im-zweiten-weltkrieg/umstrittene-fluechtlingspolitik-im-zweiten-weltkrieg.html",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-wwii-de/v0.1/SRC_BAR_UMSTRITTENE_FLUECHTLINGSPOLITIK_20191028.html",
+      "localHash": "sha256:87acc3d402f1b315ff179aff497b1993ae2f6e73e15caf76d66e84629fcafafd",
+      "retrievedAt": "2026-06-08T00:00:00Z",
+      "sourceType": "government_archive",
+      "notes": "Swiss Federal Archives page: during WWII about 51 000 civilians came to Switzerland and about 104 000 military refugees were interned. These are wartime admission/internment figures and support the dossier guard against using cumulative flows as endpoint-stock evidence."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_current_count_vs_wwii_endpoint_stock",
+      "label": "Current asylum-area count compared with WWII endpoint stock",
+      "interpretedTermOrFrame": "`235000 Flüchtlinge` and `am Ende des Zweiten Weltkrieges`",
+      "interpretationDefinition": "The current count may be read loosely as the broader SEM asylum-area population, but `am Ende des Zweiten Weltkrieges` is read as point-in-time refugee stock at war's end. Cumulative wartime admissions/internments are not valid support for the endpoint comparison.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the Captain-expected frame: the present 235k count can be true-side or definition-caveated, but the historical comparison is false-side when measured against endpoint stock rather than cumulative wartime flows.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The current-count subclaim is definition-dependent because `Flüchtlinge` can mean recognized refugees or the broader asylum-area population. The historical comparison is determinable once `at the end of WWII` is fixed to endpoint stock. These conditions must remain separate so a true/caveated current count does not override the false endpoint comparison.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_CURRENT_BROAD_ASYLAREA_NEAR_235K",
+            "description": "Whether a broad SEM asylum-area reading supports a current-ish count around 235 000.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_CURRENT_NARROW_REFUGEES_BELOW_235K",
+            "description": "Whether the narrower official recognized-refugee count is substantially below 235 000.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_WWII_ENDPOINT_STOCK_AROUND_115K",
+            "description": "Whether endpoint stock at the end of WWII was around 115 000 refugees in Switzerland.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK",
+            "description": "Whether cumulative wartime admissions/internments must not be used as the end-of-war stock denominator.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_ALMOST_AS_MANY_COMPARISON_FALSE",
+            "description": "Whether the claim that today's 235 000 is almost as many as the end-of-WWII endpoint stock is false-side.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_CURRENT_BROAD_ASYLAREA_235057",
+          "truthConditionId": "TC_CURRENT_BROAD_ASYLAREA_NEAR_235K",
+          "text": "Under the broad SEM asylum-area reading, the current-count part is true-side: SEM reported 235 057 `Personen aus dem Asylbereich (inkl. RU)` at end December 2025.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Ignoring the broad SEM asylum-area count can make a report falsely reject the current-count premise instead of isolating the historical comparison.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "Subclaim only. This assertion should not rescue the top-line comparison; it establishes the strongest defensible version of the present-count premise. Use the SEM-published 235 057 total only; do not reconstruct the total by adding RU or other component tables."
+        },
+        {
+          "id": "RA_CURRENT_NARROW_RECOGNIZED_REFUGEES_94261",
+          "truthConditionId": "TC_CURRENT_NARROW_REFUGEES_BELOW_235K",
+          "text": "Under the narrow official recognized-refugee reading, `235000 Flüchtlinge` is definition-caveated: SEM reported 94 261 `Total anerkannte Flüchtlinge` at end December 2025, well below 235 000.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Failing to disclose the narrow recognized-refugee count lets the report treat `Flüchtlinge` as unambiguous when it is not.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "Definition caveat. This is not the benchmark's dominant false-side signal; it prevents overclaiming from the word `Flüchtlinge`."
+        },
+        {
+          "id": "RA_WWII_ENDPOINT_STOCK_AROUND_115000",
+          "truthConditionId": "TC_WWII_ENDPOINT_STOCK_AROUND_115K",
+          "text": "The relevant endpoint stock at war's end was about 115 000 refugees in Switzerland, not about 235 000.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 65, "max": 85 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "none",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_HLS_FLUECHTLINGE_20160107"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Missing the endpoint-stock figure lets cumulative wartime totals be misused and can flip the family verdict.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "HLS live capture was blocked by Cloudflare, so the dossier stores a Wayback capture of the endpoint-stock passage."
+        },
+        {
+          "id": "RA_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK",
+          "truthConditionId": "TC_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK",
+          "text": "Cumulative WWII figures such as about 290 000 total protected/admitted people, about 51 000 civilian arrivals, or about 104 000 military internments are flows/admissions over time and must not be used as the endpoint stock at war's end.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 65, "max": 85 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "none",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_HLS_FLUECHTLINGE_20160107",
+            "SRC_BAR_UMSTRITTENE_FLUECHTLINGSPOLITIK_20191028"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Using cumulative admissions or internments as the endpoint denominator is the known regression for this benchmark.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "Report-quality guard. This assertion should not be averaged into top-line truth; it controls source admissibility for the historical comparison."
+        },
+        {
+          "id": "RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE",
+          "truthConditionId": "TC_ALMOST_AS_MANY_COMPARISON_FALSE",
+          "text": "The top-line comparison is false-side: 235 000 is not `fast so viel` as the end-of-WWII endpoint stock of about 115 000; it is roughly twice that endpoint-stock figure. Reports should land MOSTLY-FALSE or LEANING-FALSE despite the broad current-count premise being supportable.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": { "min": 18, "max": 42 },
+          "confidenceBand": { "min": 50, "max": 75 },
+          "acceptedVerdictLabels": ["MOSTLY-FALSE", "LEANING-FALSE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+            "SRC_HLS_FLUECHTLINGE_20160107",
+            "SRC_BAR_UMSTRITTENE_FLUECHTLINGSPOLITIK_20191028"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "If this comparison is scored from cumulative wartime flows rather than endpoint stock, the verdict can incorrectly flip toward true-side.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This assertion sets the family top-line truth band. Current-count assertions are subclaims/caveats; cumulative-flow figures are inadmissible as support for the endpoint comparison."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 18, "max": 42 },
+    "familyConfidenceBand": { "min": 50, "max": 75 },
+    "coherenceNote": "This dossier matches the benchmark's false-side expectation: the current 235k premise can be accepted under a broad SEM asylum-area reading or caveated under narrow recognized-refugee terminology, but the historical comparison must use end-of-WWII endpoint stock around 115k, not cumulative wartime admissions/flows. Only `RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE` sets the family top-line truth band; current-count and source-admissibility assertions are required subclaim/caveat controls."
+  }
+}
