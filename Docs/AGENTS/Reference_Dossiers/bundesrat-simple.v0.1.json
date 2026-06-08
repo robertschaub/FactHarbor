@@ -309,7 +309,8 @@
             "max": 95
           },
           "acceptedVerdictLabels": [
-            "TRUE"
+            "TRUE",
+            "MOSTLY-TRUE"
           ],
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": [

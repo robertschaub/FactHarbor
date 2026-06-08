@@ -3,6 +3,11 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const Ajv2020 = require('ajv/dist/2020');
+const {
+  normalizeVerdictSet,
+  sameStringSet,
+  sortedSetValues,
+} = require('./lib/reference-dossier-routing.cjs');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_DIR = path.join(REPO_ROOT, 'Docs', 'AGENTS', 'Reference_Dossiers');
@@ -135,6 +140,10 @@ function bandsEqual(left, right) {
   return Boolean(left && right && left.min === right.min && left.max === right.max);
 }
 
+function formatStringSet(set) {
+  return `[${sortedSetValues(set).join(', ')}]`;
+}
+
 function hasBandException(assertion) {
   return typeof assertion.notes === 'string' && assertion.notes.trim().startsWith('BAND_EXCEPTION:');
 }
@@ -176,7 +185,7 @@ function validateVerdictBandConsistency(assertion, label, errors) {
   }
 }
 
-function validateBenchmarkCoherence(dossier, benchmarkFamily, errors) {
+function validateBenchmarkCoherence(dossier, benchmarkFamily, file, errors) {
   if (!benchmarkFamily) {
     return;
   }
@@ -191,6 +200,25 @@ function validateBenchmarkCoherence(dossier, benchmarkFamily, errors) {
       `benchmarkCoherence.familyConfidenceBand ${formatBand(dossier.benchmarkCoherence.familyConfidenceBand)} ` +
       `must match benchmark confidenceBand ${formatBand(benchmarkFamily.confidenceBand)} for ${dossier.inputSlug}`
     );
+  }
+
+  const referenceDossier = benchmarkFamily.referenceDossier;
+  const relPath = file ? path.relative(REPO_ROOT, file).replace(/\\/g, '/') : null;
+  if (!referenceDossier || typeof referenceDossier !== 'object') {
+    errors.push(`benchmark family ${dossier.inputSlug} is missing referenceDossier link`);
+    return;
+  }
+  if (referenceDossier.id !== dossier.id) {
+    errors.push(`benchmark family ${dossier.inputSlug}.referenceDossier.id must equal dossier id ${dossier.id}`);
+  }
+  if (referenceDossier.version !== dossier.version) {
+    errors.push(`benchmark family ${dossier.inputSlug}.referenceDossier.version must equal dossier version ${dossier.version}`);
+  }
+  if (referenceDossier.status !== dossier.status) {
+    errors.push(`benchmark family ${dossier.inputSlug}.referenceDossier.status must equal dossier status ${dossier.status}`);
+  }
+  if (relPath && referenceDossier.path !== relPath) {
+    errors.push(`benchmark family ${dossier.inputSlug}.referenceDossier.path must equal ${relPath}`);
   }
 }
 
@@ -224,7 +252,7 @@ function validateLocalSnapshot(source, errors) {
   }
 }
 
-function validateAssertionRouting(dossier, assertionById, errors) {
+function validateAssertionRouting(dossier, assertionById, benchmarkFamily, errors) {
   const routingFields = [
     'topLineAssertionIds',
     'coverageGuardAssertionIds',
@@ -281,9 +309,26 @@ function validateAssertionRouting(dossier, assertionById, errors) {
       }
     }
   }
+
+  if (benchmarkFamily && topLineIds.size > 0) {
+    const familyLabels = normalizeVerdictSet(benchmarkFamily.expectedVerdictLabels);
+    const topLineLabels = new Set();
+    for (const assertionId of topLineIds) {
+      const assertion = assertionById.get(assertionId);
+      for (const label of normalizeVerdictSet(assertion?.acceptedVerdictLabels)) {
+        topLineLabels.add(label);
+      }
+    }
+    if (!sameStringSet(topLineLabels, familyLabels)) {
+      errors.push(
+        `benchmarkCoherence.topLineAssertionIds acceptedVerdictLabels ${formatStringSet(topLineLabels)} ` +
+        `must match benchmark expectedVerdictLabels ${formatStringSet(familyLabels)}`
+      );
+    }
+  }
 }
 
-function validateCrossFields(dossier, benchmarkFamilies) {
+function validateCrossFields(dossier, benchmarkFamilies, file) {
   const errors = [];
 
   validateBandOrder(dossier.benchmarkCoherence.familyTruthBand, 'benchmarkCoherence.familyTruthBand', errors);
@@ -293,7 +338,7 @@ function validateCrossFields(dossier, benchmarkFamilies) {
   if (!benchmarkFamily) {
     errors.push(`inputSlug does not match any benchmark family slug: ${dossier.inputSlug}`);
   } else {
-    validateBenchmarkCoherence(dossier, benchmarkFamily, errors);
+    validateBenchmarkCoherence(dossier, benchmarkFamily, file, errors);
   }
 
   if (dossier.interpretationFrames.length >= 2 && dossier.ambiguityPolicy === 'commit_allowed') {
@@ -403,7 +448,7 @@ function validateCrossFields(dossier, benchmarkFamilies) {
     }
   }
 
-  validateAssertionRouting(dossier, assertionById, errors);
+  validateAssertionRouting(dossier, assertionById, benchmarkFamily, errors);
 
   return errors;
 }
@@ -431,7 +476,7 @@ function main() {
 
     const schemaOk = validateSchema(dossier);
     const schemaErrors = schemaOk ? [] : validateSchema.errors.map(formatSchemaError);
-    const crossFieldErrors = schemaOk ? validateCrossFields(dossier, benchmarkFamilies) : [];
+    const crossFieldErrors = schemaOk ? validateCrossFields(dossier, benchmarkFamilies, file) : [];
     const errors = [...schemaErrors, ...crossFieldErrors];
 
     if (errors.length > 0) {

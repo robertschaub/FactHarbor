@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-04
 **Role:** Lead Architect
-**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **Phase 0 is complete; Phase 1 zero-spend scorer is built and signed off for CLI use after conformance sweep + stored-report dry-run.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks.
+**Status:** **Converged & implementation-ready, with gated execution.** Design affirmed across independent reviewers (two model families) + internal passes. **Phase 0 is complete; Phase 1 zero-spend scorer is built and signed off for CLI use after conformance sweep + stored-report dry-run.** 5 Captain decisions recorded. The Phase 0b structural dossier schema/validator, manual rubric, score artifact contract, and judge output contracts are defined. The scorer now consumes validated dossier top-line routing for C4 expectations; dossier-backed C1/C3 semantic alignment remains gated by the Phase 0b reliability checks.
 **Companion (full rationale + review audit trail):** `Docs/WIP/2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md` (v7). This file is the *clean, actionable consolidation* — it supersedes the need to read the concept's changelog.
 **Feeds:** the Pipeline-Era Comparison study (`2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md`) — its Phase-3 "normalize + compare" measurement layer.
 
@@ -28,7 +28,7 @@ Measure, rate, and **systematically compare across builds** the quality of FactH
 | **C1** | Atomic-claim extraction | Stage 1 | Faithful, atomic, complete decomposition of input; for dossier-backed families, correct frame choice + independently assessable truth conditions | none by default (count+anchor floors only); dossier-backed frame/atomicity coverage only after Phase 0b gates |
 | **C2** | Evidence & boundaries | Stage 2/3 | Relevant, sufficient, diverse, scoped evidence per claim | minBoundaryCount floor |
 | **C3** | Per-claim verdict | Stage 4 | Grounded, cited, direction-coherent, self-consistent verdict | none per-claim |
-| **C4** | Overall verdict | Stage 5 | Label / truth% / confidence / boundaries vs **gold band** | **GOLD** |
+| **C4** | Overall verdict | Stage 5 | Label / truth% / confidence / boundaries vs **gold band** | **GOLD** (`benchmark-expectations.json`, with linked dossier top-line routing as the machine-checked source where available) |
 | **C5** | Narrative & communication | Stage 5 | Explanation reflects evidence, uncertainty, limits, verdict | none |
 | x-cut | **Stability** | reps | Drift across identical reruns (truth-spread, claim/evidence Jaccard, classification) | distributional |
 | x-cut | **Calibration** | build × reps | Confidence tracks in-band hit-rate (the overconfidence failure mode) | gold (C4) |
@@ -71,7 +71,7 @@ ReportQualityVector = {
 | claim count ≥ `minDistinctEvents` | **FLOOR** | ResultJson + Phase-0 annotation | pass / violation |
 | anchor-token survival | **FLOOR** | ResultJson + Phase-0 annotation | pass / violation |
 | per-claim citation/evidence floor | **FLOOR** | ResultJson | pass / violation |
-| **C4 harm-adjusted gold-band** | **RANK** | ResultJson + benchmark bands | **[−100,100]**, raw mean (no clip) |
+| **C4 harm-adjusted gold-band** | **RANK** | ResultJson + benchmark bands; linked dossier `topLineAssertionIds` provide the machine-checked top-line contract where available | **[−100,100]**, raw mean (no clip) |
 | validated dossier-backed C1/C3 alignment | **RANK** (availability-gated, dossier families only) | Reference dossier + manual/LLM alignment after Phase 0b gates | C1 extraction-only frame/assertion/atomicity/disclosure alignment + C3 mapped verdict/evidence alignment; [0,1] per axis |
 | calibration (ECE/Brier) | **RANK** (build) | C4 vs bands × reps | [0,1]; descriptive at pilot N |
 | stability (`Q-ST1–6`) | **RANK** (build) | ≥2 reps | spreads / Jaccard |
@@ -130,7 +130,7 @@ ReportQualityVector = {
 - **P0b.7** Only after Captain approves a cap, run a small two-pass LLM alignment pilot: first active-frame selection, then assertion/atomicity mapping within the selected frame. Default initial cap for approval: USD 10; stop on first unstable per-axis mapping.
 - **Gate:** no dossier-backed C1/C3 metric leaves diagnostic mode until manual-vs-judge agreement is at least 85% on each axis. Kappa becomes a scaling gate only once an axis has at least 30 adjudicable scored units and a non-degenerate label distribution; kappa >=0.70 is the target, below 0.60 is no-go. Determinability disagreement must be resolved or marked contested before automated scorer wiring. Current-snapshot comparisons must pin dossier version and run-window. New fields, labels, score conversions, routing roles, or acceptance gates require a reviewed design change.
 
-**Phase 0b closed contract:** all data fields, labels, score domains, validation rules, manual-rubric labels, C1/C3 judge output shapes, routing roles, and reliability gates are defined in the reference-data model + schema. Phase 0b implementers fill dossiers, validate them, run manual alignment, instantiate prompts from the contract, and collect gate evidence; they do not define new model semantics.
+**Phase 0b closed contract:** all data fields, labels, score domains, validation rules, manual-rubric labels, C1/C3 judge output shapes, routing roles, and reliability gates are defined in the reference-data model + schema. Phase 0b implementers fill dossiers, validate them, run manual alignment, instantiate prompts from the contract, and collect gate evidence; they do not define new model semantics. `benchmark-expectations.json` must link each active dossier through `families[].referenceDossier`, and the validator enforces that linked top-line assertion labels/bands match the benchmark family contract.
 
 ### Phase 1 — `scripts/measure-report-quality.ts` *(owner: Senior Developer; zero spend — already-stored data only)* — **BUILT, SIGNED OFF FOR CLI USE**
 - **P1.1 built:** `scripts/measure-report-quality.ts` emits the `ReportQualityVector` per stored `ResultJson`.
@@ -141,7 +141,8 @@ ReportQualityVector = {
   - **Data contract:** `{ Jobs.ResultJson, AnalysisMetrics.MetricsJson (optional), Job timestamps (optional) }`, grouped by `(benchmark input, build = commit + dirty-state, rep)`.
 - **P1.6 Stability** (≥2 reps) + **availability flags** for gated beta fields (TIGERScore, explanationQualityCheck — may be absent historically).
 - **P1.7 Matrix-diff (zero-spend part):** build the §5 routing-table-grouped Shadow-Mode matrix-diff and **validate it on EXISTING stored reports**. CIs via hand-rolled bootstrap (no heavy dep) / normal-approx SE fallback.
-- **Verification status:** signed off on 2026-06-06 for zero-spend CLI use. Checks covered C4 harm-adjusted rank, strict-confidence handling, aggregation recompute target, anchor logic, family/noise wiring, floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, matrix-diff, focused `--family`/`--compare` paths, and a full stored-report dry-run (**514 scored, 0 parse failures, no batch/live spend**). This does not imply UI integration or dossier-backed scorer wiring.
+- **P1.8 built:** reference-dossier routing consumer. Linked dossiers provide the C4 top-line expected labels/truth/confidence bands through `benchmarkCoherence.topLineAssertionIds`; `coverageGuardAssertionIds` and `contextAssertionIds` are exposed as diagnostic colour and are not averaged into C4. C1/C3 dossier alignment remains rank-ineligible until Phase 0b gates pass.
+- **Verification status:** signed off on 2026-06-06 for zero-spend CLI use; reference-routing consumer added on 2026-06-08. Checks covered C4 harm-adjusted rank, strict-confidence handling, aggregation recompute target, anchor logic, family/noise wiring, floors, T3 colour, efficiency join, bootstrap CIs, stability Jaccard, matrix-diff, focused `--family`/`--compare` paths, and a full stored-report dry-run (**514 scored, 0 parse failures, no batch/live spend**). This does not imply UI integration or C1/C3 dossier-backed semantic scoring.
 - **Phase-1 caveat:** C1 floor checks depend on Phase-0 annotations; dossier-backed semantic C1/C3 remains diagnostic until Phase 0b gates pass; efficiency rich-cost is forward-only; current-snapshot gold cannot be mixed across dossier versions.
 
 ### Phase 1b — Live comparison *(Captain-gated spend; NOT zero-spend)*
@@ -175,10 +176,10 @@ ReportQualityVector = {
 8. Integrity ≠ quality — T2 checks detect brokenness, not goodness.
 
 ## 11. Reuse map (don't reinvent)
-`report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands) · `Captain_Quality_Expectations.md` (intent) · `Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs` (Phase 0b structural contract) · `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` §7/§8 (manual rubric + judge output contracts) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
+`report-quality-expectations.json` (Q-codes) · `benchmark-expectations.json` (gold bands + dossier links) · `Captain_Quality_Expectations.md` (intent) · `Reference_Dossiers/reference-dossier.schema.json` + `scripts/validate-reference-dossiers.cjs` + `scripts/lib/reference-dossier-routing.cjs` (Phase 0b structural/routing contract) · `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md` §7/§8 (manual rubric + judge output contracts) · `best-commit-phase1.cjs` (per-report penalty weights ONLY, not its composite ranker) · `checkworthy-unverified-census.cjs` · `benchmark-band-analysis-equiv.cjs` / `benchmark-band-era-check.cjs` · `compare-evidence-pools.cjs` · `verdict-direction-instability.cjs` · `metrics.ts`/`AnalysisMetrics` (efficiency) · `/report-review` panels (adapted, Phase 2) · the paired calibration runner (Phase 3).
 
 ## 12. Immediate next action
-**Review/adjudicate the `bundesrat-rechtskraftig` draft dossier, then author the `plastic-en` partial dossier and one Bolsonaro partial dossier.** The Phase 1 zero-spend CLI scorer is signed off; dossier-backed scorer wiring remains gated by the Phase 0b reliability checks. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
+**Run manual C1/C3 alignment on stored reports for the linked draft dossiers, starting with `bundesrat-rechtskraftig`, `plastic-en`, and one Bolsonaro input.** The Phase 1 zero-spend CLI scorer is signed off and consumes top-line dossier routing for C4; dossier-backed C1/C3 semantic scoring remains gated by Phase 0b reliability checks. The deferred items (③, ⑥) are outside the executable MVP/data-model contract.
 
 ---
 *Lead Architect — consolidated plan. Design converged across 3 independent reviewers (two model families) + internal passes; reference-dossier review fixes are folded into the executable contract. Full rationale and the v1→v7 review audit trail: the companion concept doc.*

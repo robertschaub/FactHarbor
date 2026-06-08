@@ -335,6 +335,7 @@
             "max": 75
           },
           "acceptedVerdictLabels": [
+            "LEANING-FALSE",
             "MIXED",
             "LEANING-TRUE"
           ],

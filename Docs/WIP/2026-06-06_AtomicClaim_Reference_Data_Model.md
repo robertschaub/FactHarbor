@@ -172,6 +172,9 @@ v0.1 dossier shape:
   "benchmarkCoherence": {
     "familyTruthBand": { "min": null, "max": null },
     "familyConfidenceBand": { "min": null, "max": null },
+    "topLineAssertionIds": [],
+    "coverageGuardAssertionIds": [],
+    "contextAssertionIds": [],
     "coherenceNote": null
   }
 }
@@ -184,6 +187,10 @@ Validation rules:
 - The dossier shape is a v0.1 contract, not prose-only guidance. `scripts/validate-reference-dossiers.cjs` compiles and runs `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` with AJV, then applies cross-field checks that JSON Schema cannot express cleanly. Semantic alignment remains manual or LLM-adjudicated.
 - `expectedInputClassification` must use the real Stage 1 enum only: `single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, or `article`.
 - `inputSlug` must equal a real `Docs/AGENTS/benchmark-expectations.json` family slug. `benchmarkCoherence.familyTruthBand` must equal that family's `truthPercentageBand`, and `benchmarkCoherence.familyConfidenceBand` must equal that family's `confidenceBand`. `plastic-en` is the slug for `Plastic recycling is pointless`.
+- `Docs/AGENTS/benchmark-expectations.json` must link each active dossier through `families[].referenceDossier` with matching dossier `id`, `version`, `status`, and repository-relative `path`.
+- `benchmarkCoherence.topLineAssertionIds[]` is the authoritative route for the family-level C4 top-line. Top-line assertions must resolve, must be `role: required`, and their truth/confidence bands plus accepted verdict-label set must match the benchmark family contract.
+- `benchmarkCoherence.coverageGuardAssertionIds[]` lists required guard/caveat assertions that prevent misleading passes but must not be averaged into the C4 top-line.
+- `benchmarkCoherence.contextAssertionIds[]` lists tolerated context assertions. They must reference `role: tolerated_context` assertions and must not overlap with top-line assertions.
 - If `sourceSnapshots[].localPath` is set, it must resolve inside the repository and `sourceSnapshots[].localHash` must be `sha256:<64 hex chars>` matching the committed file contents. A `localHash` without `localPath` is invalid.
 - Root-level `atomicityPolicy` is forbidden. Atomicity is frame-scoped through `interpretationFrames[].atomicityProfile`.
 - `atomicityProfile.determinabilityStatus` is required. Only `settled` frames can produce automated dossier-backed rank; `contested` and `needs_adjudication` frames stay colour/human-review only.
@@ -315,6 +322,7 @@ AtomicClaim reference metrics should start as colour diagnostics until the Phase
 
 Routing transition:
 
+- C4 can consume the dossier immediately only through the structurally validated `topLineAssertionIds` route: it reads top-line expected labels/truth/confidence bands, which the validator requires to match `benchmark-expectations.json`. This is not C1/C3 semantic alignment.
 - Before the Phase 0b gate passes, dossier-backed C1/C3 is **COLOUR** for diagnosis and may be used only as a labelled manual tie-break in human review.
 - After the Phase 0b gate passes for a specific dossier family, dossier-backed AtomicClaim alignment becomes an availability-gated **RANK** signal for that family only. It ranks alongside, not instead of, C4. C4 remains the aggregate gold band; dossier C1/C3 catches false aggregate passes and localizes which frame/assertion failed.
 - Current-snapshot dossiers are time-relative gold. Any build comparison using them must pin dossier ID, dossier version, and comparison run-window; comparisons across revalidated dossier versions are reported as cross-reference-era, not a single stable gold comparison.

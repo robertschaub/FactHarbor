@@ -21,6 +21,11 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  loadReferenceDossierRoutes,
+  referenceDossierSignalForFamily,
+  scoringFamilyFromReferenceDossier,
+} = require('./lib/reference-dossier-routing.cjs');
 
 const HARD_FAILURE_WARNINGS = new Set([
   'analysis_generation_failed',
@@ -1163,7 +1168,7 @@ function computeReportTier(vector) {
   return 'PASS';
 }
 
-function scoreReport(row, family, metrics, noise) {
+function scoreReport(row, family, metrics, noise, referenceDossierSignal) {
   let result;
   try {
     result = JSON.parse(row.resultJson);
@@ -1172,6 +1177,7 @@ function scoreReport(row, family, metrics, noise) {
       jobId: row.jobId,
       familySlug: family.slug,
       build: row.executedWebGitCommitHash || row.gitCommitHash || 'unknown',
+      referenceDossier: referenceDossierSignal,
       integrity: {
         runtime: { role: 'GATE', passed: false, status: row.status, hardWarnings: [], qCode: 'Q-HF1' },
         parse: { passed: false, error: error.message },
@@ -1181,7 +1187,8 @@ function scoreReport(row, family, metrics, noise) {
     return { vector, result: null, parseError: error };
   }
 
-  const c4 = computeC4Score({ family, result, row, noise });
+  const scoringFamily = scoringFamilyFromReferenceDossier(family, referenceDossierSignal);
+  const c4 = computeC4Score({ family: scoringFamily, result, row, noise });
   const floors = computeFloors(result, family);
   const vector = {
     jobId: row.jobId,
@@ -1194,6 +1201,7 @@ function scoreReport(row, family, metrics, noise) {
     buildShort: shortBuild(buildKey(row, result)),
     promptContentHash: row.promptContentHash || result?.meta?.promptContentHash || null,
     schemaVersion: result?._schemaVersion || result?.meta?.schemaVersion || null,
+    referenceDossier: referenceDossierSignal,
     integrity: {
       runtime: computeRuntimeIntegrity(row, result),
       labelTruthConsistency: computeLabelTruthConsistency(row, result),
@@ -1224,9 +1232,11 @@ function scoreReport(row, family, metrics, noise) {
         confidence: c4.confidence,
       },
       expected: {
-        labels: family.expectedVerdictLabels || [],
-        truthPercentageBand: family.truthPercentageBand || null,
-        confidenceBand: family.confidenceBand || null,
+        source: scoringFamily.scoringReference?.source || 'benchmark-expectations',
+        labels: scoringFamily.expectedVerdictLabels || [],
+        truthPercentageBand: scoringFamily.truthPercentageBand || null,
+        confidenceBand: scoringFamily.confidenceBand || null,
+        referenceDossier: scoringFamily.scoringReference || null,
       },
     },
     narrative: {
@@ -1395,6 +1405,9 @@ function summarizeGroup(scoredItems, includePlasticHeadline) {
   const brierValues = headlineItems.map((item) => item.vector.calibrationSignals.brierContribution).filter((v) => Number.isFinite(v));
   const richCostValues = headlineItems.map((item) => item.vector.efficiency.richCost?.estimatedCostUSD).filter((v) => Number.isFinite(v));
   const wallClockValues = headlineItems.map((item) => item.vector.efficiency.jobWallClockMs).filter((v) => Number.isFinite(v));
+  const referenceDossierItems = headlineItems.filter((item) => item.vector.referenceDossier?.available === true);
+  const referenceDossierFamilies = new Set(referenceDossierItems.map((item) => item.vector.familySlug));
+  const referenceDossierRankingEligible = headlineItems.filter((item) => item.vector.referenceDossier?.rankingEligible === true);
 
   return {
     n: scoredItems.length,
@@ -1418,6 +1431,15 @@ function summarizeGroup(scoredItems, includePlasticHeadline) {
       avgEstimatedCostUSD: mean(richCostValues),
       avgWallClockMs: mean(wallClockValues),
       richCostCoverage: pct(richCostValues.length, headlineItems.length),
+    },
+    referenceDossiers: {
+      role: 'COLOUR',
+      mode: 'diagnostic_only',
+      availableReportCount: referenceDossierItems.length,
+      availableFamilyCount: referenceDossierFamilies.size,
+      rankingEligibleReportCount: referenceDossierRankingEligible.length,
+      rankingEligibleFamilyCount: new Set(referenceDossierRankingEligible.map((item) => item.vector.familySlug)).size,
+      note: 'Dossier routing is consumed for top-line C4 expected bands/labels; C1/C3 alignment remains diagnostic until Phase 0b gates pass.',
     },
   };
 }
@@ -1878,6 +1900,7 @@ function textReport(payload) {
 
   console.log('\n## Notes');
   console.log('  - C4 truth uses benchmark noise; confidence is strict.');
+  console.log('  - Linked reference dossiers provide the C4 top-line expectation; coverage guards/context are diagnostic and are not averaged.');
   console.log('  - Cost tie-band uses ResultJson.meta.llmCalls. runtimeRoleModels is reported as colour only.');
   console.log('  - Rich token/$/latency cost is n/a unless AnalysisMetrics exists for the job.');
   console.log('  - Aggregation faithfulness is unavailable unless ResultJson carries consumable calc-config provenance.');
@@ -1895,6 +1918,7 @@ function printSummary(summary, label) {
   console.log(`  calibration mean Brier: ${fmtNum(summary.calibration.meanBrier, 3)}`);
   console.log(`  avg coarse llmCalls: ${fmtNum(summary.efficiency.avgLlmCalls, 1)}`);
   console.log(`  rich-cost coverage: ${fmtPct(summary.efficiency.richCostCoverage)}`);
+  console.log(`  reference dossiers: ${summary.referenceDossiers.availableFamilyCount}/${summary.families.length} families diagnostic; rank-eligible ${summary.referenceDossiers.rankingEligibleFamilyCount}`);
 }
 
 function fmtSigned(value, digits = 1) {
@@ -1912,6 +1936,10 @@ function fmtSignedPct(value) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const benchmark = readJsonFile(path.join('Docs', 'AGENTS', 'benchmark-expectations.json'));
+  const referenceDossierRoutes = loadReferenceDossierRoutes(ROOT);
+  for (const error of referenceDossierRoutes.errors) {
+    runtimeWarnings.push(`Reference dossier route unavailable for ${error.path}: ${error.error}`);
+  }
   const noise = finiteNumber(benchmark.noiseTolerancePct) ?? 8;
   let families = benchmark.families || [];
   if (args.family) {
@@ -1932,7 +1960,8 @@ function main() {
   for (const row of rows) {
     const family = familyByInput.get(row.inputValue);
     if (!family) continue;
-    const scored = scoreReport(row, family, metricsByJob.get(row.jobId), noise);
+    const referenceDossierSignal = referenceDossierSignalForFamily(family, referenceDossierRoutes);
+    const scored = scoreReport(row, family, metricsByJob.get(row.jobId), noise, referenceDossierSignal);
     if (scored.parseError) {
       parseFailures++;
       parseFailureVectors.push(scored.vector);
