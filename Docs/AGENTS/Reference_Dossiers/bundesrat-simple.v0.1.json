@@ -1,0 +1,245 @@
+{
+  "id": "bundesrat-simple",
+  "version": "0.1.0",
+  "inputSlug": "bundesrat-simple",
+  "captainInputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+  "language": "de",
+  "status": "draft",
+  "expectedInputClassification": "multi_assertion_input",
+  "ambiguityPolicy": "must_disclose",
+  "ambiguityPolicyRationale": "The input is a literal chronology claim, but `EU-Vertrag` is shorthand for the Switzerland-EU package/Bilaterals III in this dossier and `bevor Volk und Parlament entschieden haben` can imply final democratic approval or procedural impropriety. Reports should score the chronology as true while disclosing that signature is not final parliamentary/popular approval or ratification.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-08T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-08T00:00:00Z",
+    "revalidateAfter": "2026-09-08T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-08T00:00:00Z",
+    "validFrom": "2026-06-08T00:00:00Z",
+    "validThrough": null,
+    "currentSnapshot": true
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+      "url": "https://www.admin.ch/de/paket-schweiz-eu",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
+      "localHash": "sha256:8f925d143f6d272c62c48a8de45b748bc72a4a9fb9908b32769c43b73aaaa10d",
+      "retrievedAt": "2026-06-06T22:03:12Z",
+      "sourceType": "government_primary",
+      "notes": "Official Federal Council overview: on 13 March 2026 the Federal Council adopted the Switzerland-EU package for Parliament; the package is now being considered in Parliament; if there is a referendum, the population votes."
+    },
+    {
+      "id": "SRC_EDA_PACKAGE_TIMELINE_20260313",
+      "url": "https://www.eda.admin.ch/de/weiterentwicklung-beziehungen-schweiz-eu",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
+      "localHash": "sha256:9452766216fbb1b58b5972b54b406653458d5f32d6b74d481734e31f3e9d7358",
+      "retrievedAt": "2026-06-06T22:03:12Z",
+      "sourceType": "government_primary",
+      "notes": "Official FDFA timeline/newsticker: after paraphing comes signature by both sides and then ratification, including treatment by the Federal Assembly and any popular vote; it records the 2 March 2026 signing of the remaining package agreements."
+    },
+    {
+      "id": "SRC_ADMIN_SIGNING_20260302",
+      "url": "https://www.admin.ch/de/newnsb/afSUBKNIaRs3s1tqaCebd",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_ADMIN_SIGNING_20260302.html",
+      "localHash": "sha256:efb42f6817183eae1e6ea4a77236dbcd21ee09f5165bec88479002def6bd8059",
+      "retrievedAt": "2026-06-06T22:03:12Z",
+      "sourceType": "government_primary",
+      "notes": "Official Federal Council notice: the Federal Council was informed that Federal President Guy Parmelin and Commission President Ursula von der Leyen would sign the package agreements in Brussels on 2 March 2026; the notice says the remaining agreements/protocols and a joint declaration were to form part of the March 2026 dispatch to Parliament."
+    },
+    {
+      "id": "SRC_EDA_LAW_RELATION_20260201",
+      "url": "https://www.eda.admin.ch/de/das-verhaeltnis-von-voelkerrecht-und-landesrecht",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
+      "localHash": "sha256:8f1b3c5b1672587a36a29a95219345da9aed457461acd7fb8b79c6464a8c3bf2",
+      "retrievedAt": "2026-06-06T22:03:12Z",
+      "sourceType": "government_primary",
+      "notes": "Official FDFA explainer: international-law norms accepted by Switzerland gain domestic effect when domestic approval procedures are complete and the international norm is also in force."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_literal_chronology_package_signature",
+      "label": "Literal chronology of the Switzerland-EU package signature",
+      "interpretedTermOrFrame": "Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament entschieden haben",
+      "interpretationDefinition": "The input is read as a chronology statement about the 2026 Switzerland-EU package/Bilaterals III: the relevant package agreements were signed before Swiss parliamentary approval and before any popular vote. The frame does not read the signature as final ratification, entry into force, or a completed democratic approval decision.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the Captain-expected literal reading for `bundesrat-simple`: the chronology is true, while a high-quality report must avoid implying that signature equals final approval or that a popular vote had already been required and held.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "determinable",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The input separates into independently verifiable conditions: whether the package was signed, whether Parliament had decided before that signature, whether the electorate had decided before that signature, and whether the signature should be distinguished from final approval/ratification.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_PACKAGE_SIGNATURE_OCCURRED",
+            "description": "Whether the relevant Switzerland-EU package agreements/protocols were signed.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SIGNATURE_BEFORE_PARLIAMENT_DECISION",
+            "description": "Whether the signature occurred before Parliament decided on the package.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SIGNATURE_BEFORE_POPULAR_DECISION",
+            "description": "Whether the signature occurred before the Swiss electorate decided or voted on the package, noting that a vote depends on the referendum path.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SIGNATURE_NOT_FINAL_APPROVAL",
+            "description": "Whether signature must be distinguished from final parliamentary/popular approval, ratification, and entry into force.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_PACKAGE_OBJECT",
+            "description": "Whether `EU-Vertrag` is dossier shorthand for the Switzerland-EU package/Bilaterals III rather than a single EU membership treaty.",
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "truthConditionId": "TC_PACKAGE_SIGNATURE_OCCURRED",
+          "text": "The remaining agreements/protocols and a joint declaration of the Switzerland-EU package were signed on 2 March 2026 by the Swiss side through the Federal Council, with Federal President Guy Parmelin named as the Swiss signer in the official notice.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 80, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Missing the signature event makes the report falsely deny the core chronology.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The dossier treats `Der Bundesrat unterschrieb` as the Swiss side/Federal Council acting through its authorized Federal President, not as a claim that all seven Federal Council members physically signed. It treats the 2026 Switzerland-EU package/Bilaterals III as the input referent. Reports using another referent must disclose that choice."
+        },
+        {
+          "id": "RA_SIGNATURE_BEFORE_PARLIAMENT",
+          "truthConditionId": "TC_SIGNATURE_BEFORE_PARLIAMENT_DECISION",
+          "text": "The 2 March 2026 signature occurred before Parliament decided on the package: the Federal Council adopted/submitted the package for Parliament on 13 March 2026, and the captured overview says the package is being considered in Parliament.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 80, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Conflating Federal Council signature or submission with parliamentary decision would invert the chronology being tested.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": null
+        },
+        {
+          "id": "RA_SIGNATURE_BEFORE_POPULAR_DECISION",
+          "truthConditionId": "TC_SIGNATURE_BEFORE_POPULAR_DECISION",
+          "text": "The 2 March 2026 signature occurred before any popular decision on the package: the captured Federal Council overview places any popular vote after the referendum path, and the package had not even been submitted to Parliament until 13 March 2026.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "A report must not treat a contingent later referendum path as a popular decision that had already occurred before signature.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "This is not a claim that a popular vote was legally required by 2 March 2026; it is a chronology claim that no popular decision had occurred before the signature."
+        },
+        {
+          "id": "RA_SIGNATURE_NOT_FINAL_APPROVAL",
+          "truthConditionId": "TC_SIGNATURE_NOT_FINAL_APPROVAL",
+          "text": "The signature was not final parliamentary/popular approval, ratification, or entry into force; official sources describe ratification after signature, including treatment by the Federal Assembly and any popular vote.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_EDA_LAW_RELATION_20260201",
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Calling the chronology true without this caveat can make a true-but-misleading political implication look like completed democratic approval.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "This assertion is a required report-quality caveat for the simple input. It should not lower the top-line truth; it prevents overclaiming from a true chronology."
+        },
+        {
+          "id": "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT",
+          "truthConditionId": "TC_PACKAGE_OBJECT",
+          "text": "The object is the Switzerland-EU package/Bilaterals III, consisting of multiple agreements/protocols and related material; reports may mention this as context to avoid treating the input as a single EU membership treaty.",
+          "role": "tolerated_context",
+          "separability": "flexible",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland", "European Union"],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": null,
+            "severity": "low"
+          },
+          "contested": false,
+          "notes": "Colour/context only in v0.1; not a required top-line truth condition."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 85, "max": 100 },
+    "familyConfidenceBand": { "min": 75, "max": 95 },
+    "coherenceNote": "This dossier matches the Captain-corrected high-true expectation for `bundesrat-simple`: under the package/Bilaterals III referent, signature happened before Parliament and before any popular decision. The report-quality caveat is not a truth-lowering counterclaim; it prevents a true chronology from being read as final democratic approval, ratification, or entry into force."
+  }
+}
