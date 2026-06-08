@@ -48,7 +48,7 @@
       "id": "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
       "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf.download.pdf/stat-jahr-2025-kommentar-d.pdf",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-shared/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
       "localHash": "sha256:6052f1fe77b6b0b3009a7ecd3d8f0ceec88a88281e08e4253546eb07db4e87b3",
       "retrievedAt": "2026-06-08T06:04:47Z",
       "sourceType": "government_primary",
@@ -133,11 +133,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "factual",
-          "truthBand": { "min": 58, "max": 75 },
-          "confidenceBand": { "min": 40, "max": 70 },
-          "acceptedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+          "truthBand": {
+            "min": 58,
+            "max": 75
+          },
+          "confidenceBand": {
+            "min": 40,
+            "max": 70
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-TRUE",
+            "MOSTLY-TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
             "SRC_SEM_ASYLSTATISTIK_MAIN_20260430"
@@ -157,11 +168,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
             "SRC_SEM_ASYLSTATISTIK_MAIN_20260430",
@@ -182,11 +203,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_LESEHINWEISE_PDF",
             "SRC_SEM_ASYLSTATISTIK_APRIL_2026_PAGE",
@@ -208,11 +239,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
             "SRC_SEM_ASYLSTATISTIK_APRIL_6_10_XLSX"
@@ -229,8 +270,23 @@
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 58, "max": 75 },
-    "familyConfidenceBand": { "min": 40, "max": 70 },
-    "coherenceNote": "This partial current-snapshot dossier matches the benchmark's true-side expectation while preserving the calibration caveats: the decisive clean SEM aggregate is 235 057 at end December 2025, only 57 above the threshold; the latest SEM current page available on 2026-06-08 points to April 2026 component tables but the captured packet does not contain a clean annual-equivalent April umbrella total. Only `RA_SEM_2025_UMBRELLA_ABOVE_235000` sets the top-line truth band; procedural/definition guard assertions are report-quality/admissibility constraints and must not be averaged into the top-line truth percentage. Dossier-backed scoring must require source-date disclosure and must reject unsupported component-stitching or narrower-category substitution."
+    "familyTruthBand": {
+      "min": 58,
+      "max": 75
+    },
+    "familyConfidenceBand": {
+      "min": 40,
+      "max": 70
+    },
+    "topLineAssertionIds": [
+      "RA_SEM_2025_UMBRELLA_ABOVE_235000"
+    ],
+    "coverageGuardAssertionIds": [
+      "RA_SOURCE_DATE_MUST_BE_DISCLOSED",
+      "RA_DO_NOT_STITCH_CURRENT_COMPONENT_TOTAL",
+      "RA_ASYLPROCESS_ONLY_NOT_EQUIVALENT"
+    ],
+    "contextAssertionIds": [],
+    "coherenceNote": "This partial current-snapshot dossier matches the benchmark's true-side expectation while preserving the calibration caveats: the decisive clean SEM aggregate is 235 057 at end December 2025, only 57 above the threshold; the latest SEM current page available on 2026-06-08 points to April 2026 component tables but the captured packet does not contain a clean annual-equivalent April umbrella total. Top-line scoring must use `RA_SEM_2025_UMBRELLA_ABOVE_235000`. Procedural/definition guard assertions are report-quality/admissibility constraints and must not be averaged into the top-line truth percentage. Dossier-backed scoring must require source-date disclosure and must reject unsupported component-stitching or narrower-category substitution."
   }
 }

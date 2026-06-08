@@ -28,7 +28,7 @@
       "id": "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
       "url": "https://www.admin.ch/de/paket-schweiz-eu",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
       "localHash": "sha256:8f925d143f6d272c62c48a8de45b748bc72a4a9fb9908b32769c43b73aaaa10d",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -38,7 +38,7 @@
       "id": "SRC_EDA_PACKAGE_TIMELINE_20260313",
       "url": "https://www.eda.admin.ch/de/weiterentwicklung-beziehungen-schweiz-eu",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
       "localHash": "sha256:9452766216fbb1b58b5972b54b406653458d5f32d6b74d481734e31f3e9d7358",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -48,7 +48,7 @@
       "id": "SRC_ADMIN_SIGNING_20260302",
       "url": "https://www.admin.ch/de/newnsb/afSUBKNIaRs3s1tqaCebd",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_ADMIN_SIGNING_20260302.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_ADMIN_SIGNING_20260302.html",
       "localHash": "sha256:efb42f6817183eae1e6ea4a77236dbcd21ee09f5165bec88479002def6bd8059",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -68,7 +68,7 @@
       "id": "SRC_EDA_LAW_RELATION_20260201",
       "url": "https://www.eda.admin.ch/de/das-verhaeltnis-von-voelkerrecht-und-landesrecht",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-rechtskraftig/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
       "localHash": "sha256:8f1b3c5b1672587a36a29a95219345da9aed457461acd7fb8b79c6464a8c3bf2",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -118,6 +118,12 @@
             "description": "Whether the object is a multi-agreement package rather than one single EU membership treaty.",
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
+            "description": "Whether the unqualified claim that the Federal Council signed the EU package rechtskräftig before Parliament and the people decided is true overall, given the true chronology, false final-binding reading, and limited-effect caveats.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
           }
         ]
       },
@@ -129,11 +135,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 80, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 80,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
@@ -154,11 +171,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 80, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 80,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
@@ -179,11 +206,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -203,11 +240,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_EDA_LAW_RELATION_20260201",
             "SRC_ADMIN_EUPA_20250410",
@@ -232,11 +280,22 @@
           "role": "tolerated_context",
           "separability": "flexible",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -248,6 +307,49 @@
           },
           "contested": false,
           "notes": "Colour/context only in v0.1; not a required atomicity condition."
+        },
+        {
+          "id": "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE",
+          "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
+          "text": "The unqualified claim is mixed/leaning-false overall: the package was signed before Parliament and before any popular decision, but the signature was not `rechtskräftig` in the strict final-binding/entry-into-force sense; valid signature and limited provisional effects prevent a simple uncaveated false answer.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 35,
+            "max": 60
+          },
+          "confidenceBand": {
+            "min": 55,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-FALSE",
+            "MIXED",
+            "LEANING-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_EDA_LAW_RELATION_20260201"
+          ],
+          "knownCounterEvidenceSourceIds": [
+            "SRC_ADMIN_EUPA_20250410",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313"
+          ],
+          "harmfulMissCondition": {
+            "description": "Without this aggregate assertion, consumers can mistakenly score the dossier as high-true by averaging only the true chronology and limited-effect subclaims.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This is the sole family top-line assertion. Chronology, valid-signature, and limited-effect assertions are required subclaim/admissibility controls and must not be averaged into the family truth percentage."
         }
       ]
     },
@@ -298,11 +400,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
@@ -323,11 +436,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_EUPA_20250410",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -347,11 +471,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 90 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 90
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
           ],
@@ -370,11 +505,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_EDA_LAW_RELATION_20260201",
             "SRC_ADMIN_EUPA_20250410",
@@ -392,8 +538,21 @@
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 35, "max": 60 },
-    "familyConfidenceBand": { "min": 55, "max": 85 },
-    "coherenceNote": "The aggregate benchmark remains mixed/leaning-false for the strict final-binding frame: signing before Parliament/people is true, but 'rechtskräftig' as final binding force is false; valid-signature and limited provisional effects make an unqualified false answer incomplete. The benchmark's narrow LEANING-TRUE edge is admissible only for reports that explicitly choose the valid-signature/limited-effect frame while preserving the final-force caveat and keeping the timing events separate."
+    "familyTruthBand": {
+      "min": 35,
+      "max": 60
+    },
+    "familyConfidenceBand": {
+      "min": 55,
+      "max": 85
+    },
+    "topLineAssertionIds": [
+      "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE"
+    ],
+    "coverageGuardAssertionIds": [],
+    "contextAssertionIds": [
+      "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT"
+    ],
+    "coherenceNote": "The family band is 35-60. The default unqualified reading is mixed/leaning-false because the chronology is true but strict final-binding `rechtskräftig` is false. Scores near the upper edge are admissible only when a report explicitly chooses the valid-signature/limited-effect reading while preserving the final-force caveat and keeping the timing events separate. Top-line scoring must use `RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE`; chronology, valid-signature, limited-effect, and context assertions are required coverage controls or context, not family-truth averaging inputs."
   }
 }

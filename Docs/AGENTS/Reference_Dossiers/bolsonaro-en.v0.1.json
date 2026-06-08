@@ -447,6 +447,11 @@
       "min": 45,
       "max": 75
     },
-    "coherenceNote": "This dossier matches the Captain-accepted true-side-with-caveats expectation for `bolsonaro-en`. Legal basis is strong, domestic procedure is largely supported, and international fair-trial/verdict/sentence fairness is LEANING-TRUE/MOSTLY-TRUE with confidence capped by competence, access/time, appeal/review-scope, and proportionality caveats. The TSE proceeding is required background for the broad EN phrasing, but AP 2668 carries most of the criminal fair-trial and sentence-fairness weight. The top-line family band is set by `RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE`; high-truth legal-basis and verdict-supportability assertions are required subclaim controls, not a license to ignore the fair-trial/verdict/sentence clauses. Caveats should cap confidence and qualify the fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."
+    "topLineAssertionIds": [
+      "RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE"
+    ],
+    "coverageGuardAssertionIds": [],
+    "contextAssertionIds": [],
+    "coherenceNote": "This dossier matches the Captain-accepted true-side-with-caveats expectation for `bolsonaro-en`. Legal basis is strong, domestic procedure is largely supported, and international fair-trial/verdict/sentence fairness is LEANING-TRUE/MOSTLY-TRUE with confidence capped by competence, access/time, appeal/review-scope, and proportionality caveats. The TSE proceeding is required background for the broad EN phrasing, but AP 2668 carries most of the criminal fair-trial and sentence-fairness weight. Top-line scoring must use `RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE`; high-truth legal-basis, fair-trial, and verdict-supportability assertions are required subclaim controls, not family-truth averaging inputs. Caveats should cap confidence and qualify the fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."
   }
 }

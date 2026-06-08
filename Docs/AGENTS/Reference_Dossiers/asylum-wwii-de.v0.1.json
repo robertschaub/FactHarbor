@@ -28,7 +28,7 @@
       "id": "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
       "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf.download.pdf/stat-jahr-2025-kommentar-d.pdf",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-wwii-de/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-shared/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
       "localHash": "sha256:6052f1fe77b6b0b3009a7ecd3d8f0ceec88a88281e08e4253546eb07db4e87b3",
       "retrievedAt": "2026-06-08T00:00:00Z",
       "sourceType": "government_primary",
@@ -109,11 +109,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF"
           ],
@@ -123,7 +133,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": "Subclaim only. This assertion should not rescue the top-line comparison; it establishes the strongest defensible version of the present-count premise. Use the SEM-published 235 057 total only; do not reconstruct the total by adding RU or other component tables."
+          "notes": "Subclaim only. This assertion should not rescue the top-line comparison; it establishes the strongest defensible version of the present-count premise. Use the SEM-published 235 057 total only; do not reconstruct the total by adding RU or other component tables. This high truth band applies only to the rounded broad-current premise inside the WWII comparison. It should not be reused for the separate near-threshold `more than 235 000 zurzeit` benchmark, where date freshness and the 57-person margin cap the family band."
         },
         {
           "id": "RA_CURRENT_NARROW_RECOGNIZED_REFUGEES_94261",
@@ -132,11 +142,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF"
           ],
@@ -155,11 +175,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 65, "max": 85 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 65,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "none",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_HLS_FLUECHTLINGE_20160107"
           ],
@@ -178,11 +208,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 65, "max": 85 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 65,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "none",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_HLS_FLUECHTLINGE_20160107",
             "SRC_BAR_UMSTRITTENE_FLUECHTLINGSPOLITIK_20191028"
@@ -202,11 +242,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 18, "max": 42 },
-          "confidenceBand": { "min": 50, "max": 75 },
-          "acceptedVerdictLabels": ["MOSTLY-FALSE", "LEANING-FALSE"],
+          "truthBand": {
+            "min": 18,
+            "max": 42
+          },
+          "confidenceBand": {
+            "min": 50,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MOSTLY-FALSE",
+            "LEANING-FALSE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
             "SRC_HLS_FLUECHTLINGE_20160107",
@@ -224,8 +275,21 @@
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 18, "max": 42 },
-    "familyConfidenceBand": { "min": 50, "max": 75 },
-    "coherenceNote": "This dossier matches the benchmark's false-side expectation: the current 235k premise can be accepted under a broad SEM asylum-area reading or caveated under narrow recognized-refugee terminology, but the historical comparison must use end-of-WWII endpoint stock around 115k, not cumulative wartime admissions/flows. Only `RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE` sets the family top-line truth band; current-count and source-admissibility assertions are required subclaim/caveat controls."
+    "familyTruthBand": {
+      "min": 18,
+      "max": 42
+    },
+    "familyConfidenceBand": {
+      "min": 50,
+      "max": 75
+    },
+    "topLineAssertionIds": [
+      "RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE"
+    ],
+    "coverageGuardAssertionIds": [
+      "RA_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK"
+    ],
+    "contextAssertionIds": [],
+    "coherenceNote": "This dossier matches the benchmark's false-side expectation: the current 235k premise can be accepted under a broad SEM asylum-area reading or caveated under narrow recognized-refugee terminology, but the historical comparison must use end-of-WWII endpoint stock around 115k, not cumulative wartime admissions/flows. Top-line scoring must use `RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE`; current-count assertions are subclaim/caveat controls, and `RA_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK` is a source-admissibility guard that must not be averaged into the top-line truth percentage."
   }
 }

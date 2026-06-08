@@ -224,6 +224,65 @@ function validateLocalSnapshot(source, errors) {
   }
 }
 
+function validateAssertionRouting(dossier, assertionById, errors) {
+  const routingFields = [
+    'topLineAssertionIds',
+    'coverageGuardAssertionIds',
+    'contextAssertionIds',
+  ];
+  const usedByField = new Map();
+
+  for (const field of routingFields) {
+    const values = dossier.benchmarkCoherence[field];
+    if (!Array.isArray(values)) {
+      continue;
+    }
+    const seen = new Set();
+    for (const assertionId of values) {
+      if (seen.has(assertionId)) {
+        errors.push(`benchmarkCoherence.${field} contains duplicate assertion id: ${assertionId}`);
+      }
+      seen.add(assertionId);
+      const assertion = assertionById.get(assertionId);
+      if (!assertion) {
+        errors.push(`benchmarkCoherence.${field} references unknown assertion id: ${assertionId}`);
+        continue;
+      }
+      if (field === 'topLineAssertionIds') {
+        if (!bandsEqual(assertion.truthBand, dossier.benchmarkCoherence.familyTruthBand)) {
+          errors.push(
+            `benchmarkCoherence.${field} ${assertionId} truthBand ${formatBand(assertion.truthBand)} ` +
+            `must match familyTruthBand ${formatBand(dossier.benchmarkCoherence.familyTruthBand)}`
+          );
+        }
+        if (!bandsEqual(assertion.confidenceBand, dossier.benchmarkCoherence.familyConfidenceBand)) {
+          errors.push(
+            `benchmarkCoherence.${field} ${assertionId} confidenceBand ${formatBand(assertion.confidenceBand)} ` +
+            `must match familyConfidenceBand ${formatBand(dossier.benchmarkCoherence.familyConfidenceBand)}`
+          );
+        }
+        if (assertion.role !== 'required') {
+          errors.push(`benchmarkCoherence.${field} ${assertionId} must reference a required assertion`);
+        }
+      }
+      if (field === 'contextAssertionIds' && assertion.role !== 'tolerated_context') {
+        errors.push(`benchmarkCoherence.${field} ${assertionId} must reference a tolerated_context assertion`);
+      }
+    }
+    usedByField.set(field, seen);
+  }
+
+  const topLineIds = usedByField.get('topLineAssertionIds') ?? new Set();
+  for (const field of ['coverageGuardAssertionIds', 'contextAssertionIds']) {
+    const values = usedByField.get(field) ?? new Set();
+    for (const assertionId of values) {
+      if (topLineIds.has(assertionId)) {
+        errors.push(`benchmarkCoherence.${field} must not overlap topLineAssertionIds: ${assertionId}`);
+      }
+    }
+  }
+}
+
 function validateCrossFields(dossier, benchmarkFamilies) {
   const errors = [];
 
@@ -258,6 +317,7 @@ function validateCrossFields(dossier, benchmarkFamilies) {
 
   const frameIds = new Set();
   const assertionIds = new Set();
+  const assertionById = new Map();
 
   for (const [frameIndex, frame] of dossier.interpretationFrames.entries()) {
     const frameLabel = `interpretationFrames[${frameIndex}]`;
@@ -293,6 +353,7 @@ function validateCrossFields(dossier, benchmarkFamilies) {
         errors.push(`duplicate reference assertion id: ${assertion.id}`);
       }
       assertionIds.add(assertion.id);
+      assertionById.set(assertion.id, assertion);
 
       if (!truthConditionIds.has(assertion.truthConditionId)) {
         errors.push(`${assertionLabel}.truthConditionId does not resolve in same frame: ${assertion.truthConditionId}`);
@@ -341,6 +402,8 @@ function validateCrossFields(dossier, benchmarkFamilies) {
       }
     }
   }
+
+  validateAssertionRouting(dossier, assertionById, errors);
 
   return errors;
 }

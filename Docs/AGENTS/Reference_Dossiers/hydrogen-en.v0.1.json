@@ -110,11 +110,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 0, "max": 14 },
-          "confidenceBand": { "min": 65, "max": 80 },
-          "acceptedVerdictLabels": ["FALSE"],
+          "truthBand": {
+            "min": 0,
+            "max": 14
+          },
+          "confidenceBand": {
+            "min": 65,
+            "max": 80
+          },
+          "acceptedVerdictLabels": [
+            "FALSE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["United States", "General"],
+          "relevantGeographies": [
+            "United States",
+            "General"
+          ],
           "evidenceSourceIds": [
             "SRC_FUELECONOMY_EVTECH",
             "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
@@ -136,11 +147,23 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 5, "max": 25 },
-          "confidenceBand": { "min": 65, "max": 85 },
-          "acceptedVerdictLabels": ["FALSE", "MOSTLY-FALSE"],
+          "truthBand": {
+            "min": 5,
+            "max": 25
+          },
+          "confidenceBand": {
+            "min": 65,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "FALSE",
+            "MOSTLY-FALSE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["United States", "General"],
+          "relevantGeographies": [
+            "United States",
+            "General"
+          ],
           "evidenceSourceIds": [
             "SRC_FUELECONOMY_EVTECH",
             "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
@@ -161,11 +184,22 @@
           "role": "tolerated_context",
           "separability": "flexible",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["United States", "General"],
+          "relevantGeographies": [
+            "United States",
+            "General"
+          ],
           "evidenceSourceIds": [
             "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225",
             "SRC_FUELECONOMY_EVTECH"
@@ -182,8 +216,21 @@
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 5, "max": 25 },
-    "familyConfidenceBand": { "min": 65, "max": 85 },
-    "coherenceNote": "This partial dossier matches the benchmark's FALSE/MOSTLY-FALSE expectation for `Using hydrogen for cars is more efficient than using electricity`. Dossier-backed scoring must reward structural separation of full-pathway/well-to-wheel and use-phase/tank-to-wheel comparisons and must penalize proxy drift where hydrogen range, refueling speed, or energy density is treated as evidence of energy-efficiency superiority."
+    "familyTruthBand": {
+      "min": 5,
+      "max": 25
+    },
+    "familyConfidenceBand": {
+      "min": 65,
+      "max": 85
+    },
+    "topLineAssertionIds": [
+      "RA_USE_PHASE_HYDROGEN_MORE_EFFICIENT_FALSE"
+    ],
+    "coverageGuardAssertionIds": [],
+    "contextAssertionIds": [
+      "RA_PROXY_ADVANTAGES_NOT_EFFICIENCY"
+    ],
+    "coherenceNote": "This partial dossier matches the benchmark's FALSE/MOSTLY-FALSE expectation for `Using hydrogen for cars is more efficient than using electricity`. Top-line scoring must use `RA_USE_PHASE_HYDROGEN_MORE_EFFICIENT_FALSE`; the full-pathway assertion is a required independent subclaim, and proxy advantages are context only. Dossier-backed scoring must reward structural separation of full-pathway/well-to-wheel and use-phase/tank-to-wheel comparisons and must penalize proxy drift where hydrogen range, refueling speed, or energy density is treated as evidence of energy-efficiency superiority."
   }
 }

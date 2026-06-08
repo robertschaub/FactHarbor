@@ -20,7 +20,7 @@
   "validityWindow": {
     "referenceTime": "2026-06-08T00:00:00Z",
     "validFrom": "2026-06-08T00:00:00Z",
-    "validThrough": null,
+    "validThrough": "2026-09-08T00:00:00Z",
     "currentSnapshot": true
   },
   "sourceSnapshots": [
@@ -28,7 +28,7 @@
       "id": "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
       "url": "https://www.admin.ch/de/paket-schweiz-eu",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_ADMIN_PACKAGE_OVERVIEW_20260313.html",
       "localHash": "sha256:8f925d143f6d272c62c48a8de45b748bc72a4a9fb9908b32769c43b73aaaa10d",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -38,7 +38,7 @@
       "id": "SRC_EDA_PACKAGE_TIMELINE_20260313",
       "url": "https://www.eda.admin.ch/de/weiterentwicklung-beziehungen-schweiz-eu",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_EDA_PACKAGE_TIMELINE_20260313.html",
       "localHash": "sha256:9452766216fbb1b58b5972b54b406653458d5f32d6b74d481734e31f3e9d7358",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -48,7 +48,7 @@
       "id": "SRC_ADMIN_SIGNING_20260302",
       "url": "https://www.admin.ch/de/newnsb/afSUBKNIaRs3s1tqaCebd",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_ADMIN_SIGNING_20260302.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_ADMIN_SIGNING_20260302.html",
       "localHash": "sha256:efb42f6817183eae1e6ea4a77236dbcd21ee09f5165bec88479002def6bd8059",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -58,7 +58,7 @@
       "id": "SRC_EDA_LAW_RELATION_20260201",
       "url": "https://www.eda.admin.ch/de/das-verhaeltnis-von-voelkerrecht-und-landesrecht",
       "archiveUrl": null,
-      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-simple/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/bundesrat-shared/v0.1/SRC_EDA_LAW_RELATION_20260201.html",
       "localHash": "sha256:8f1b3c5b1672587a36a29a95219345da9aed457461acd7fb8b79c6464a8c3bf2",
       "retrievedAt": "2026-06-06T22:03:12Z",
       "sourceType": "government_primary",
@@ -108,6 +108,12 @@
             "description": "Whether `EU-Vertrag` is dossier shorthand for the Switzerland-EU package/Bilaterals III rather than a single EU membership treaty.",
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SIMPLE_CHRONOLOGY_TOPLINE",
+            "description": "Whether the literal chronology claim is true overall under the Switzerland-EU package/Bilaterals III referent, while distinguishing signature from final approval, ratification, or entry into force.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
           }
         ]
       },
@@ -119,11 +125,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 80, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 80,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_SIGNING_20260302",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -143,11 +160,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 80, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 80,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
@@ -168,11 +195,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland"],
+          "relevantGeographies": [
+            "Switzerland"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -192,11 +229,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_EDA_PACKAGE_TIMELINE_20260313",
             "SRC_EDA_LAW_RELATION_20260201",
@@ -217,11 +265,22 @@
           "role": "tolerated_context",
           "separability": "flexible",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "current_snapshot",
-          "relevantGeographies": ["Switzerland", "European Union"],
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
           "evidenceSourceIds": [
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
@@ -233,13 +292,65 @@
           },
           "contested": false,
           "notes": "Colour/context only in v0.1; not a required top-line truth condition."
+        },
+        {
+          "id": "RA_SIMPLE_CHRONOLOGY_TOPLINE_TRUE",
+          "truthConditionId": "TC_SIMPLE_CHRONOLOGY_TOPLINE",
+          "text": "The literal chronology claim is true: under the Switzerland-EU package/Bilaterals III referent, the relevant package agreements were signed before Parliament decided and before any popular decision, while signature remained distinct from final approval, ratification, or entry into force.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": {
+            "min": 85,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_EDA_LAW_RELATION_20260201"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Without this aggregate assertion, consumers must infer the family verdict by combining separate chronology and caveat assertions.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "This is the family top-line assertion. `RA_SIGNATURE_NOT_FINAL_APPROVAL` is a required coverage guard and should not lower the top-line truth."
         }
       ]
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 85, "max": 100 },
-    "familyConfidenceBand": { "min": 75, "max": 95 },
-    "coherenceNote": "This dossier matches the Captain-corrected high-true expectation for `bundesrat-simple`: under the package/Bilaterals III referent, signature happened before Parliament and before any popular decision. The report-quality caveat is not a truth-lowering counterclaim; it prevents a true chronology from being read as final democratic approval, ratification, or entry into force."
+    "familyTruthBand": {
+      "min": 85,
+      "max": 100
+    },
+    "familyConfidenceBand": {
+      "min": 75,
+      "max": 95
+    },
+    "topLineAssertionIds": [
+      "RA_SIMPLE_CHRONOLOGY_TOPLINE_TRUE"
+    ],
+    "coverageGuardAssertionIds": [
+      "RA_SIGNATURE_NOT_FINAL_APPROVAL"
+    ],
+    "contextAssertionIds": [
+      "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT"
+    ],
+    "coherenceNote": "This dossier matches the Captain-corrected high-true expectation for `bundesrat-simple`: under the package/Bilaterals III referent, signature happened before Parliament and before any popular decision. Top-line scoring must use `RA_SIMPLE_CHRONOLOGY_TOPLINE_TRUE`. The report-quality caveat `RA_SIGNATURE_NOT_FINAL_APPROVAL` is required coverage but is not a truth-lowering counterclaim; it prevents a true chronology from being read as final democratic approval, ratification, or entry into force."
   }
 }

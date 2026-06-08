@@ -333,6 +333,11 @@
       "min": 45,
       "max": 75
     },
-    "coherenceNote": "This dossier matches the confirmed true-side-with-caveats expectation for `bolsonaro-pt`. The legal/procedural and constitutional components are strongly supported, while the `sentencas justas` clause carries the top-line LEANING-TRUE/MOSTLY-TRUE band because sentence fairness is evaluative and caveated by defense, dissent, access/time, current criminal review, and proportionality objections. Reports that skip the sentence-justice clause are structurally incomplete even if their top-line verdict is in band. Caveats should cap confidence and qualify the sentence-fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."
+    "topLineAssertionIds": [
+      "RA_SENTENCAS_JUSTAS_CAVEATED_TRUE_SIDE"
+    ],
+    "coverageGuardAssertionIds": [],
+    "contextAssertionIds": [],
+    "coherenceNote": "This dossier matches the confirmed true-side-with-caveats expectation for `bolsonaro-pt`. The legal/procedural and constitutional components are strongly supported, while the `sentencas justas` clause carries the top-line LEANING-TRUE/MOSTLY-TRUE band because sentence fairness is evaluative and caveated by defense, dissent, access/time, current criminal review, and proportionality objections. Top-line scoring must use `RA_SENTENCAS_JUSTAS_CAVEATED_TRUE_SIDE`. Reports that skip the sentence-justice clause are structurally incomplete even if their top-line verdict is in band. Caveats should cap confidence and qualify the sentence-fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."
   }
 }

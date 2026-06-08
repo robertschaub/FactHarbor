@@ -13,7 +13,7 @@
     "adjudicator": null,
     "peerReviewer": null,
     "createdAt": "2026-06-07T00:00:00Z",
-    "lastRevalidatedAt": "2026-06-06T22:20:00Z",
+    "lastRevalidatedAt": "2026-06-07T00:00:00Z",
     "revalidateAfter": "2026-12-07T00:00:00Z",
     "roleSeparationMode": "multi_agent_draft"
   },
@@ -95,26 +95,34 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 0, "max": 14 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["FALSE"],
+          "truthBand": {
+            "min": 0,
+            "max": 14
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "FALSE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["Global", "United States"],
+          "relevantGeographies": [
+            "Global",
+            "United States"
+          ],
           "evidenceSourceIds": [
             "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
             "SRC_UNEP_TURNING_OFF_TAP_2023",
             "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
           ],
-          "knownCounterEvidenceSourceIds": [
-            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
-            "SRC_UNEP_TURNING_OFF_TAP_2023"
-          ],
+          "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
             "description": "Treating the literal zero-benefit reading as true produces an overconfident false-side verdict and hides material-specific nonzero benefits.",
             "severity": "medium"
           },
           "contested": false,
-          "notes": "This frame should not be silently used as the only meaning of the input; it is the lower-edge reading allowed by the centered benchmark band."
+          "notes": "This frame should not be silently used as the only meaning of the input; it is the lower-edge reading allowed by the centered benchmark band. OECD/UNEP evidence is evidence against the literal zero-benefit claim because it shows nonzero activity and policy value despite low rates; it is not counterevidence to this false-band assertion."
         }
       ]
     },
@@ -157,6 +165,12 @@
               "TC_ENVIRONMENTAL_VALUE",
               "TC_ECONOMIC_VALUE"
             ]
+          },
+          {
+            "id": "TC_REASONABLE_POINTLESS_OVERALL",
+            "description": "Whether the claim 'Plastic recycling is pointless' is overall mixed-to-leaning-true under the reasonable effectiveness/worth reading, while rejecting the literal zero-benefit reading.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
           }
         ]
       },
@@ -168,11 +182,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 58, "max": 72 },
-          "confidenceBand": { "min": 55, "max": 75 },
-          "acceptedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+          "truthBand": {
+            "min": 58,
+            "max": 72
+          },
+          "confidenceBand": {
+            "min": 55,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-TRUE",
+            "MOSTLY-TRUE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["Global"],
+          "relevantGeographies": [
+            "Global"
+          ],
           "evidenceSourceIds": [
             "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
             "SRC_UNEP_TURNING_OFF_TAP_2023",
@@ -195,11 +220,21 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 43, "max": 57 },
-          "confidenceBand": { "min": 50, "max": 75 },
-          "acceptedVerdictLabels": ["MIXED"],
+          "truthBand": {
+            "min": 43,
+            "max": 57
+          },
+          "confidenceBand": {
+            "min": 50,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MIXED"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["Global"],
+          "relevantGeographies": [
+            "Global"
+          ],
           "evidenceSourceIds": [
             "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
             "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
@@ -222,11 +257,22 @@
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
-          "truthBand": { "min": 43, "max": 57 },
-          "confidenceBand": { "min": 50, "max": 75 },
-          "acceptedVerdictLabels": ["MIXED"],
+          "truthBand": {
+            "min": 43,
+            "max": 57
+          },
+          "confidenceBand": {
+            "min": 50,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MIXED"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["Global", "United States"],
+          "relevantGeographies": [
+            "Global",
+            "United States"
+          ],
           "evidenceSourceIds": [
             "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
             "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
@@ -247,11 +293,21 @@
           "role": "tolerated_context",
           "separability": "flexible",
           "kind": "factual",
-          "truthBand": { "min": 86, "max": 100 },
-          "confidenceBand": { "min": 75, "max": 95 },
-          "acceptedVerdictLabels": ["TRUE"],
+          "truthBand": {
+            "min": 86,
+            "max": 100
+          },
+          "confidenceBand": {
+            "min": 75,
+            "max": 95
+          },
+          "acceptedVerdictLabels": [
+            "TRUE"
+          ],
           "freshnessRequirement": "recent",
-          "relevantGeographies": ["United States"],
+          "relevantGeographies": [
+            "United States"
+          ],
           "evidenceSourceIds": [
             "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
           ],
@@ -262,13 +318,66 @@
           },
           "contested": false,
           "notes": "Colour/context in v0.1; required ranking should stay on the three stable dimensions until adjudication confirms whether material-specific variance becomes a strict truth condition."
+        },
+        {
+          "id": "RA_REASONABLE_POINTLESS_OVERALL_CENTERED",
+          "truthConditionId": "TC_REASONABLE_POINTLESS_OVERALL",
+          "text": "Overall, under the reasonable effectiveness/worth reading, 'Plastic recycling is pointless' is mixed-to-leaning-true: global plastic recycling performs poorly at scale, but recycling is not literally useless and has material-specific environmental and economic value in narrower streams.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 42,
+            "max": 65
+          },
+          "confidenceBand": {
+            "min": 50,
+            "max": 75
+          },
+          "acceptedVerdictLabels": [
+            "MIXED",
+            "LEANING-TRUE"
+          ],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": [
+            "Global",
+            "United States"
+          ],
+          "evidenceSourceIds": [
+            "SRC_OECD_PLASTICS_RECYCLING_FALL_SHORT_20220222",
+            "SRC_OECD_GLOBAL_PLASTICS_OVERVIEW_POLICY_HIGHLIGHTS_2022",
+            "SRC_UNEP_TURNING_OFF_TAP_2023",
+            "SRC_EPA_PLASTICS_MATERIAL_SPECIFIC_DATA_2018"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Without this aggregate assertion, consumers may over-weight the literal false frame or flatten the three reasonable-reading dimensions into the wrong family band.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This is the family top-line assertion. The literal zero-benefit assertion is a contrast/disclosure guard and must not be averaged into the top-line family truth percentage."
         }
       ]
     }
   ],
   "benchmarkCoherence": {
-    "familyTruthBand": { "min": 42, "max": 65 },
-    "familyConfidenceBand": { "min": 50, "max": 75 },
-    "coherenceNote": "This partial dossier matches the benchmark's centered expectation: literal zero-benefit is false, while the reasonable effectiveness/worth reading is mixed-to-leaning-true. The three strict reasonable-reading dimensions mirror the 2026-05-31 stored-report analysis: effectiveness/rate is true-leaning, environmental value is mixed, and economic value is mixed. Dossier-backed scoring must require the report to disclose which 'pointless' frame it assesses and must keep the three reasonable-reading dimensions independently assessable."
+    "familyTruthBand": {
+      "min": 42,
+      "max": 65
+    },
+    "familyConfidenceBand": {
+      "min": 50,
+      "max": 75
+    },
+    "topLineAssertionIds": [
+      "RA_REASONABLE_POINTLESS_OVERALL_CENTERED"
+    ],
+    "coverageGuardAssertionIds": [
+      "RA_LITERAL_ZERO_BENEFIT_FALSE"
+    ],
+    "contextAssertionIds": [
+      "RA_MATERIAL_SPECIFIC_VARIANCE_MATTERS"
+    ],
+    "coherenceNote": "This partial dossier matches the benchmark's centered expectation: literal zero-benefit is false, while the reasonable effectiveness/worth reading is mixed-to-leaning-true. Top-line scoring must use `RA_REASONABLE_POINTLESS_OVERALL_CENTERED`. The three strict reasonable-reading dimensions mirror the 2026-05-31 stored-report analysis: effectiveness/rate is true-leaning, environmental value is mixed, and economic value is mixed. The literal zero-benefit assertion is a disclosure/contrast guard, and material-specific variance is context; neither should be averaged into the family truth percentage."
   }
 }

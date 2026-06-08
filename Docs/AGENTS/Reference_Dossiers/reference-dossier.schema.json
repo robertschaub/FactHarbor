@@ -94,10 +94,30 @@
     "benchmarkCoherence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["familyTruthBand", "familyConfidenceBand", "coherenceNote"],
+      "required": [
+        "familyTruthBand",
+        "familyConfidenceBand",
+        "topLineAssertionIds",
+        "coverageGuardAssertionIds",
+        "contextAssertionIds",
+        "coherenceNote"
+      ],
       "properties": {
         "familyTruthBand": { "$ref": "#/$defs/band" },
         "familyConfidenceBand": { "$ref": "#/$defs/band" },
+        "topLineAssertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" }
+        },
+        "coverageGuardAssertionIds": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" }
+        },
+        "contextAssertionIds": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" }
+        },
         "coherenceNote": { "type": ["string", "null"] }
       }
     }
