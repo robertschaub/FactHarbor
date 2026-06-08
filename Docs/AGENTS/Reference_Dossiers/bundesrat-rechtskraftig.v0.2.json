@@ -1,13 +1,13 @@
 {
   "id": "bundesrat-rechtskraftig",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "inputSlug": "bundesrat-rechtskraftig",
   "captainInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
   "language": "de",
   "status": "draft",
   "expectedInputClassification": "multi_assertion_input",
   "ambiguityPolicy": "must_disclose",
-  "ambiguityPolicyRationale": "The input combines a true procedural chronology with an ambiguous legal/procedural term. Reports may choose a strict or looser frame only if they disclose the competing reading instead of silently treating one as the only possible meaning.",
+  "ambiguityPolicyRationale": "The input combines true procedural chronology with an ambiguous legal/procedural term. The primary/default reading of `rechtskräftig` is final legal force or entry into force; a less likely secondary reading treats the signed text as formally signed/authenticated/fixed while explicitly preserving that the treaty/package is not yet in force. Reports must disclose the competing reading they do not pursue.",
   "curation": {
     "curator": "Codex GPT-5 (Lead Developer draft)",
     "adjudicator": null,
@@ -81,6 +81,7 @@
       "label": "Rechtskräftig as final binding force / entry into force",
       "interpretedTermOrFrame": "rechtskräftig",
       "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the strict legal/procedural reading of the user's word 'rechtskräftig'. It separates the act of signature from final domestic approval, ratification, and entry into force.",
       "ambiguityPolicy": "must_disclose",
@@ -92,36 +93,48 @@
           {
             "id": "TC_SIGNATURE_OCCURRED",
             "description": "Whether Switzerland/EU signed the relevant package agreements or programme agreement.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_PARLIAMENT_DECISION_PENDING",
             "description": "Whether the Federal Assembly had not yet decided on approval when the relevant signing occurred.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_POPULAR_DECISION_PENDING",
             "description": "Whether the people had not yet voted/decided when the relevant signing occurred, noting that a popular vote is contingent on a referendum.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_FINAL_BINDING_NOT_REACHED",
             "description": "Whether final legally binding force / entry into force had not yet been reached at signature under the ratification-reserved package path.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.5,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_PACKAGE_OBJECT",
             "description": "Whether the object is a multi-agreement package rather than one single EU membership treaty.",
+            "dominanceRole": "context",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
             "description": "Whether the unqualified claim that the Federal Council signed the EU package rechtskräftig before Parliament and the people decided is true overall, given the true chronology, false final-binding reading, and limited-effect caveats.",
+            "dominanceRole": "aggregate_topline",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -311,13 +324,13 @@
         {
           "id": "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE",
           "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
-          "text": "The unqualified claim is mixed/leaning-false overall: the package was signed before Parliament and before any popular decision, but the signature was not `rechtskräftig` in the strict final-binding/entry-into-force sense; valid signature and limited provisional effects prevent a simple uncaveated false answer.",
+          "text": "Under the primary/default final-binding or entry-into-force reading, the unqualified claim is mixed/leaning-false overall: the package was signed before Parliament and before any popular decision, but the dominant legal-force claim is false because the signature was not `rechtskräftig` in the sense of final binding force or entry into force.",
           "role": "required",
           "separability": "strict",
           "kind": "evaluative",
           "truthBand": {
-            "min": 35,
-            "max": 60
+            "min": 29,
+            "max": 57
           },
           "confidenceBand": {
             "min": 55,
@@ -325,8 +338,7 @@
           },
           "acceptedVerdictLabels": [
             "LEANING-FALSE",
-            "MIXED",
-            "LEANING-TRUE"
+            "MIXED"
           ],
           "freshnessRequirement": "current_snapshot",
           "relevantGeographies": [
@@ -349,44 +361,61 @@
             "severity": "high"
           },
           "contested": false,
-          "notes": "This is the sole family top-line assertion. Chronology, valid-signature, and limited-effect assertions are required subclaim/admissibility controls and must not be averaged into the family truth percentage."
+          "notes": "Primary legacy C4 route. Chronology is true-side but supporting; the final legal-force condition is dominant. The secondary signed-text/authentication route is valid only when explicit and is represented in alternativeTopLineRoutes, not by averaging chronology or caveats into this primary route."
         }
       ]
     },
     {
-      "id": "FRAME_provisional_or_limited_legal_effect",
-      "label": "Rechtskräftig as valid signature or limited legal/procedural effect",
+      "id": "FRAME_signed_text_fixed_not_in_force",
+      "label": "Rechtskräftig as finalized/authenticated signed text, not entry into force",
       "interpretedTermOrFrame": "rechtskräftig",
-      "interpretationDefinition": "The term is read loosely as 'the signature was legally valid/effective as a procedural act' or 'the signature had some legal or procedural effect', including valid signature/authentication of package texts, provisional application of the programme agreement, or cooperation during the ratification phase. This frame does not treat those effects as final entry into force of the whole package. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
+      "interpretationDefinition": "The term is read in a less likely but admissible way: the signed treaty/package text is formally signed, authenticated, or fixed as the negotiated text, while the treaty/package is not yet finally binding or in force for Switzerland. This is not the primary legal-force reading, and a report using it must explicitly state the not-yet-in-force caveat.",
+      "frameRole": "secondary",
       "admissibility": "defensible",
-      "admissibilityRationale": "This is a defensible colloquial or political reading because official sources describe an official signature act, provisional application, and ratification-phase cooperation before final package entry into force. It must not be silently substituted for the strict final-binding reading.",
+      "admissibilityRationale": "This secondary reading can be good report work only when stated explicitly. It is less likely than the ordinary legal-force/entry-into-force reading, but it addresses the plausible distinction between a finalized signed text and a treaty that has entered into force.",
       "ambiguityPolicy": "must_disclose",
       "atomicityProfile": {
         "determinability": "partial",
         "determinabilityStatus": "settled",
-        "determinabilityRationale": "The signature/provisional-effect facts are verifiable, but the word 'rechtskräftig' is evaluative/legal shorthand. This frame scores strict facts about provisional effects and disclosure, while waiving any claim that limited effects equal final force.",
+        "determinabilityRationale": "The signed-text/authentication fact is verifiable and can be true while final entry into force remains false. Provisional programme effects and ratification-phase cooperation remain caveats, not co-equal top-line meanings of `rechtskräftig`.",
         "distinctTruthConditions": [
           {
             "id": "TC_VALID_SIGNATURE_AUTHENTICATION",
-            "description": "Whether the 2 March 2026 signature was an official/valid procedural act without itself establishing final binding force.",
+            "description": "Whether the signed package text was formally signed/authenticated/fixed as the negotiated text without itself establishing final binding force.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_LIMITED_EFFECT_EUPA",
             "description": "Whether the programme agreement had provisional/retroactive association effects before final package ratification.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_RATIFICATION_PHASE_COOPERATION",
             "description": "Whether Switzerland and the EU arranged cooperation during the period before package entry into force.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_LIMITED_NOT_FINAL_FORCE",
             "description": "Whether those limited effects still differ from final legally binding entry into force of the whole package.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SIGNED_TEXT_RECHTSKRAEFTIG_TOPLINE",
+            "description": "Whether the unqualified claim can be true-side under the explicit secondary reading that `rechtskräftig` means the signed text is formally fixed/authenticated, while the treaty/package is not yet in force.",
+            "dominanceRole": "aggregate_topline",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -396,7 +425,7 @@
         {
           "id": "RA_SIGNATURE_VALID_PROCEDURAL_ACT",
           "truthConditionId": "TC_VALID_SIGNATURE_AUTHENTICATION",
-          "text": "The 2 March 2026 signing was an official procedural signature/authentication act for package texts, but that valid signature act was not final entry into force of the whole package.",
+          "text": "The 2 March 2026 signing was an official procedural signature/authentication act for the package texts; under the secondary signed-text reading, that can support a true legal-status atomic claim only when the report also states that the package was not yet finally binding or in force for Switzerland.",
           "role": "required",
           "separability": "strict",
           "kind": "procedural",
@@ -423,11 +452,11 @@
           ],
           "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
-            "description": "Omitting this reading can force a report to call every legal-effect interpretation false even when it only rejects final binding force.",
+            "description": "Omitting this secondary reading can make a report overstate falsity when it explicitly distinguishes a fixed signed text from final entry into force.",
             "severity": "medium"
           },
           "contested": false,
-          "notes": "External verification before any status upgrade must confirm the exact official status of the signature/authentication act and avoid inferring broader final force from that act."
+          "notes": "Secondary-frame assertion. It may support an explicit signed-text/authentication reading, but it must not be silently substituted for the primary legal-force reading."
         },
         {
           "id": "RA_EUPA_PROVISIONAL_APPLICATION",
@@ -533,14 +562,52 @@
           },
           "contested": false,
           "notes": null
+        },
+        {
+          "id": "RA_SIGNED_TEXT_RECHTSKRAEFTIG_TOPLINE_TRUE_SIDE",
+          "truthConditionId": "TC_SIGNED_TEXT_RECHTSKRAEFTIG_TOPLINE",
+          "text": "Under the explicit secondary signed-text reading, the overall claim is true-side: the package texts were formally signed/authenticated before Parliament and any popular decision, while the report must also state that this did not make the treaty/package finally binding or in force for Switzerland.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 58,
+            "max": 85
+          },
+          "confidenceBand": {
+            "min": 55,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "LEANING-TRUE",
+            "MOSTLY-TRUE"
+          ],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": [
+            "Switzerland",
+            "European Union"
+          ],
+          "evidenceSourceIds": [
+            "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
+            "SRC_EDA_PACKAGE_TIMELINE_20260313",
+            "SRC_ADMIN_SIGNING_20260302",
+            "SRC_EDA_LAW_RELATION_20260201"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Treating an explicit signed-text reading as wrong without acknowledging the not-yet-in-force caveat would collapse a valid secondary interpretation into the primary frame.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "Alternative top-line route only. The legacy primary C4 route remains the legal-force/entry-into-force reading until Phase 0b frame alignment can select routes per report."
         }
       ]
     }
   ],
   "benchmarkCoherence": {
     "familyTruthBand": {
-      "min": 35,
-      "max": 60
+      "min": 29,
+      "max": 57
     },
     "familyConfidenceBand": {
       "min": 55,
@@ -549,10 +616,35 @@
     "topLineAssertionIds": [
       "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE"
     ],
-    "coverageGuardAssertionIds": [],
+    "alternativeTopLineRoutes": [
+      {
+        "routeId": "ALT_SIGNED_TEXT_FIXED_NOT_IN_FORCE_TRUE_SIDE",
+        "frameId": "FRAME_signed_text_fixed_not_in_force",
+        "assertionIds": [
+          "RA_SIGNED_TEXT_RECHTSKRAEFTIG_TOPLINE_TRUE_SIDE"
+        ],
+        "truthBand": {
+          "min": 58,
+          "max": 85
+        },
+        "confidenceBand": {
+          "min": 55,
+          "max": 85
+        },
+        "acceptedVerdictLabels": [
+          "LEANING-TRUE",
+          "MOSTLY-TRUE"
+        ],
+        "admissibilityCondition": "Only when the report explicitly interprets `rechtskräftig` as the signed text being formally fixed/authenticated and also states that the treaty/package is not yet finally binding or in force for Switzerland."
+      }
+    ],
+    "coverageGuardAssertionIds": [
+      "RA_SIGNATURE_VALID_PROCEDURAL_ACT",
+      "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE"
+    ],
     "contextAssertionIds": [
       "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT"
     ],
-    "coherenceNote": "The family band is 35-60. The default unqualified reading is mixed/leaning-false because the chronology is true but strict final-binding `rechtskräftig` is false. Scores near the upper edge are admissible only when a report explicitly chooses the valid-signature/limited-effect reading while preserving the final-force caveat and keeping the timing events separate. Top-line scoring must use `RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE`; chronology, valid-signature, limited-effect, and context assertions are required coverage controls or context, not family-truth averaging inputs."
+    "coherenceNote": "Primary/default C4 uses the legal-force/entry-into-force reading: the chronology is true but supporting, while the dominant `rechtskräftig` legal-force claim is false, so the primary band is 29-57 with LEANING-FALSE/MIXED labels. A less likely secondary signed-text/authentication reading can be true-side only when explicitly stated together with the not-yet-in-force caveat; that conditional route is recorded in alternativeTopLineRoutes and must not be obtained by averaging true chronology or limited-effect caveats into the primary route."
   }
 }

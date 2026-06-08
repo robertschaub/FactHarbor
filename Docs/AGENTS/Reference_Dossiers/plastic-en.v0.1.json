@@ -71,6 +71,7 @@
       "label": "Pointless as literal zero benefit",
       "interpretedTermOrFrame": "pointless",
       "interpretationDefinition": "The term is read literally: plastic recycling achieves nothing useful at all, has no meaningful recycled output, and provides no environmental, economic, or practical benefit in any material stream.",
+      "frameRole": "secondary",
       "admissibility": "defensible",
       "admissibilityRationale": "This reading is linguistically possible but brittle. It is useful as a contrast frame because evidence of any nonzero recycling activity or material-specific benefit falsifies the literal zero-benefit claim.",
       "ambiguityPolicy": "must_disclose",
@@ -82,6 +83,8 @@
           {
             "id": "TC_ZERO_BENEFIT",
             "description": "Whether plastic recycling achieves no useful output or benefit at all.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -131,6 +134,7 @@
       "label": "Pointless as not meaningfully effective or not worth it",
       "interpretedTermOrFrame": "pointless",
       "interpretationDefinition": "The term is read as the reasonable fact-checking/evaluative claim that plastic recycling does not meaningfully work at scale or is not worth it overall, considering practical effectiveness, environmental benefit, and economic viability. This frame does not require the stronger claim that recycling literally achieves nothing.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the benchmark's preferred reasonable-reading frame. It reflects how the stored-report corpus decomposed the input: environmental value, economic value, and practical effectiveness/rate/downcycling. It must still disclose that a stricter literal reading would be false.",
       "ambiguityPolicy": "must_disclose",
@@ -142,24 +146,32 @@
           {
             "id": "TC_EFFECTIVENESS_AT_SCALE",
             "description": "Whether plastic recycling does not meaningfully work at global scale, given low actual recycling rates, collection losses, residue disposal, and downcycling/loop-closing limits.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.5,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_ENVIRONMENTAL_VALUE",
             "description": "Whether plastic recycling is environmentally pointless, considering both real avoided virgin production/pollution benefits and the small aggregate offset relative to growing plastics production and leakage.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.25,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_ECONOMIC_VALUE",
             "description": "Whether plastic recycling is economically pointless or not worth it, considering weak secondary markets, policy dependence, and material-specific viable streams.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.25,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_MATERIAL_SPECIFIC_VARIANCE",
             "description": "Whether material-specific variation matters enough that reports should avoid universal claims about all plastics and all recycling systems.",
+            "dominanceRole": "context",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": [
               "TC_ENVIRONMENTAL_VALUE",
@@ -169,6 +181,8 @@
           {
             "id": "TC_REASONABLE_POINTLESS_OVERALL",
             "description": "Whether the claim 'Plastic recycling is pointless' is overall mixed-to-leaning-true under the reasonable effectiveness/worth reading, while rejecting the literal zero-benefit reading.",
+            "dominanceRole": "aggregate_topline",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -373,6 +387,7 @@
     "topLineAssertionIds": [
       "RA_REASONABLE_POINTLESS_OVERALL_CENTERED"
     ],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [
       "RA_LITERAL_ZERO_BENEFIT_FALSE"
     ],

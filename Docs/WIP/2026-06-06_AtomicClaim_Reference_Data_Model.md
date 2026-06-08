@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-06
 **Role:** Lead Developer
-**Status:** Closed v0.1 contract for Phase 0b implementation.
+**Status:** Closed v0.2 contract for Phase 0b implementation. Updated 2026-06-08 to add frame-role and dominance routing for primary vs secondary readings and mixed true/false AtomicClaims.
 **Related plan:** `Docs/WIP/2026-06-04_Report_Quality_Measurement_Implementation_Plan.md`
 
 ## 1. Why this exists
@@ -23,7 +23,8 @@ N:M alignment remains allowed, but only as a guard for occasional wording or spl
 | Need / pain | Contract coverage | Non-negotiable rule |
 |---|---|---|
 | Captain preference is not enough as gold truth | Source-grounded `referenceAssertions[]`, source snapshots, role-separated curation/adjudication/review | No `adjudicated_gold` without independent review + Captain acceptance |
-| Ambiguous terms such as `pointless` or `rechtskräftig` | `interpretationFrames[]` with explicit frame definitions and dossier/frame `ambiguityPolicy` | Score within the active frame; require disclosure when `must_disclose` |
+| Ambiguous terms such as `pointless` or `rechtskräftig` | `interpretationFrames[]` with explicit frame definitions, `frameRole`, and dossier/frame `ambiguityPolicy` | Score within the active frame; require disclosure when `must_disclose`; caveat frames cannot drive the top-line |
+| Mixed true/false AtomicClaims | `distinctTruthConditions[].dominanceRole` + `dominanceWeight` | Dominant claims control the overall interpretation; supporting true claims cannot swamp a dominant false claim by raw counting |
 | The number of AtomicClaims is often clearly determinable | Frame-scoped `atomicityProfile` with `determinability`, `determinabilityStatus`, and strict truth conditions | Ambiguity cannot excuse missed strict truth conditions |
 | Split/combine wording variance is sometimes legitimate | N:M semantic alignment maps report `AtomicClaims` to reference assertions/truth conditions | Split/combine tolerance never hides a strict truth-condition miss |
 | Current facts decay | `validityWindow` plus per-assertion `freshnessRequirement` | Current-snapshot comparisons pin dossier ID, version, and run-window |
@@ -128,6 +129,7 @@ v0.1 dossier shape:
       "label": "reasonable fact-checking reading",
       "interpretedTermOrFrame": "pointless",
       "interpretationDefinition": null,
+      "frameRole": "primary | secondary | caveat",
       "admissibility": "defensible",
       "admissibilityRationale": null,
       "ambiguityPolicy": null,
@@ -139,6 +141,8 @@ v0.1 dossier shape:
           {
             "id": "TC_001",
             "description": null,
+            "dominanceRole": "dominant | supporting | caveat | context | aggregate_topline",
+            "dominanceWeight": 1.0,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -173,6 +177,7 @@ v0.1 dossier shape:
     "familyTruthBand": { "min": null, "max": null },
     "familyConfidenceBand": { "min": null, "max": null },
     "topLineAssertionIds": [],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [],
     "contextAssertionIds": [],
     "coherenceNote": null
@@ -180,17 +185,20 @@ v0.1 dossier shape:
 }
 ```
 
-Pilot v0.1 required fields are the schema-required fields in `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json`. Arrays such as `knownCounterEvidenceSourceIds[]` may be empty when no source-grounded counter-evidence is known; `harmfulMissCondition.description` may be `null` when no specific harmful-miss condition is defined. These are explicit nullable/empty states, not open design gaps.
+Pilot v0.2 required fields are the schema-required fields in `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json`. Arrays such as `knownCounterEvidenceSourceIds[]`, `alternativeTopLineRoutes[]`, or route lists may be empty when no source-grounded counter-evidence or alternative route is known; `harmfulMissCondition.description` may be `null` when no specific harmful-miss condition is defined. These are explicit nullable/empty states, not open design gaps.
 
 Validation rules:
 
-- The dossier shape is a v0.1 contract, not prose-only guidance. `scripts/validate-reference-dossiers.cjs` compiles and runs `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` with AJV, then applies cross-field checks that JSON Schema cannot express cleanly. Semantic alignment remains manual or LLM-adjudicated.
+- The dossier shape is a v0.2 contract, not prose-only guidance. `scripts/validate-reference-dossiers.cjs` compiles and runs `Docs/AGENTS/Reference_Dossiers/reference-dossier.schema.json` with AJV, then applies cross-field checks that JSON Schema cannot express cleanly. Semantic alignment remains manual or LLM-adjudicated.
 - `expectedInputClassification` must use the real Stage 1 enum only: `single_atomic_claim`, `ambiguous_single_claim`, `multi_assertion_input`, `question`, or `article`.
 - `inputSlug` must equal a real `Docs/AGENTS/benchmark-expectations.json` family slug. `benchmarkCoherence.familyTruthBand` must equal that family's `truthPercentageBand`, and `benchmarkCoherence.familyConfidenceBand` must equal that family's `confidenceBand`. `plastic-en` is the slug for `Plastic recycling is pointless`.
 - `Docs/AGENTS/benchmark-expectations.json` must link each active dossier through `families[].referenceDossier` with matching dossier `id`, `version`, `status`, and repository-relative `path`.
-- `benchmarkCoherence.topLineAssertionIds[]` is the authoritative route for the family-level C4 top-line. Top-line assertions must resolve, must be `role: required`, and their truth/confidence bands plus accepted verdict-label set must match the benchmark family contract.
+- Every interpretation frame has exactly one `frameRole`: `primary` (default route for the family), `secondary` (admissible alternative only when explicitly pursued and disclosed), or `caveat` (context/guard only). Every dossier must contain at least one primary frame; non-`must_cover_all` dossiers must contain exactly one primary frame.
+- Every truth condition has `dominanceRole` and `dominanceWeight`. `dominant` and `supporting` truth conditions are the frame-level AtomicClaim weighting surface and their weights must sum to 1.0 within each primary or secondary frame. `caveat` and `context` conditions carry `null` or `0` weight. `aggregate_topline` is a non-atomic C4 route condition and is excluded from the AtomicClaim weight sum.
+- `benchmarkCoherence.topLineAssertionIds[]` is the authoritative primary/default route for the family-level C4 top-line. Top-line assertions must resolve from a primary frame, must be `role: required`, must attach to a `dominant` or `aggregate_topline` truth condition, and their truth/confidence bands plus accepted verdict-label set must match the benchmark family contract.
+- `benchmarkCoherence.alternativeTopLineRoutes[]` lists conditional secondary top-line routes. Each route must reference a secondary frame, required assertions in that frame, a separate truth/confidence band, accepted labels, and a plain-language admissibility condition. These routes are not consumed by the legacy C4 scorer until Phase 0b frame alignment can select routes per report.
 - `benchmarkCoherence.coverageGuardAssertionIds[]` lists required guard/caveat assertions that prevent misleading passes but must not be averaged into the C4 top-line.
-- `benchmarkCoherence.contextAssertionIds[]` lists tolerated context assertions. They must reference `role: tolerated_context` assertions and must not overlap with top-line assertions.
+- `benchmarkCoherence.contextAssertionIds[]` lists tolerated context assertions. They must reference `role: tolerated_context` assertions attached to `dominanceRole: context` truth conditions and must not overlap with top-line assertions.
 - If `sourceSnapshots[].localPath` is set, it must resolve inside the repository and `sourceSnapshots[].localHash` must be `sha256:<64 hex chars>` matching the committed file contents. A `localHash` without `localPath` is invalid.
 - Root-level `atomicityPolicy` is forbidden. Atomicity is frame-scoped through `interpretationFrames[].atomicityProfile`.
 - `atomicityProfile.determinabilityStatus` is required. Only `settled` frames can produce automated dossier-backed rank; `contested` and `needs_adjudication` frames stay colour/human-review only.
@@ -205,7 +213,7 @@ Validation rules:
 - `acceptedVerdictLabels` and `truthBand` must be checked for 7-point-scale consistency. Store both, but reject inconsistent combinations unless `notes` starts with `BAND_EXCEPTION:` and explains the exception.
 - `required` plus `contested: true` is allowed only as a provisional state. It is not a hard scoring requirement until adjudication resolves it or widens the band.
 - `current_snapshot` assertions require `validityWindow.currentSnapshot = true` and a pinned `validityWindow.referenceTime`; build comparisons must pin dossier ID, dossier version, and comparison run-window. Revalidation that changes source snapshots, frame definitions, assertions, or bands creates a new dossier version.
-- Any dossier band change must reconcile with the family-level band in `benchmark-expectations.json`; any benchmark band change must cite the dossier version that justifies it. Legacy scorer behavior continues to use `benchmark-expectations.json` until the dossier link is wired.
+- Any primary dossier band change must reconcile with the family-level band in `benchmark-expectations.json`; any benchmark band change must cite the dossier version that justifies it. Conditional secondary bands live in `alternativeTopLineRoutes[]` and must not silently widen the primary family band. Legacy scorer behavior continues to use the primary route until frame-aware alignment is wired.
 
 ## 5. Research and Adjudication Workflow
 
@@ -214,8 +222,8 @@ Phase 0b should run before any additional live validation spend.
 1. **Freeze the input.** Use only Captain-defined input wording. The input remains byte-exact.
 2. **Classify the reference problem.** Curator labels the family as primarily `clear_atomicity`, `interpretation_ambiguous`, `both`, or `indeterminate`.
 3. **Independent source discovery.** One researcher builds a source matrix with primary sources preferred, secondary sources only as context. Every source used for reference judgment must have retrieval date and archive/local hash where feasible.
-4. **Interpretation-frame drafting.** A curator identifies ambiguous terms/frames, defines admissible readings, sets `ambiguityPolicy`, and sets `expectedInputClassification` against the real Stage 1 enum.
-5. **Atomicity drafting.** For each frame, the curator declares whether truth-condition count is determinable and lists `distinctTruthConditions` where determinable.
+4. **Interpretation-frame drafting.** A curator identifies ambiguous terms/frames, defines admissible readings, assigns `frameRole` (`primary | secondary | caveat`), sets `ambiguityPolicy`, and sets `expectedInputClassification` against the real Stage 1 enum.
+5. **Atomicity and dominance drafting.** For each frame, the curator declares whether truth-condition count is determinable, lists `distinctTruthConditions` where determinable, and marks each condition as `dominant`, `supporting`, `caveat`, `context`, or `aggregate_topline`. Dominant/supporting AtomicClaim weights within each primary or secondary frame must sum to 1.0.
 6. **Assertion drafting.** Curator links each required reference assertion to exactly one truth condition.
 7. **Adjudication split.** A different adjudicator assigns verdict/truth/confidence bands to each reference assertion using the source snapshots.
 8. **Adversarial review.** A reviewer challenges omitted interpretations, missing counter-evidence, weak source choices, over-precise bands, and any hidden merge of distinct truth conditions.
@@ -270,7 +278,7 @@ Axis domains for Phase 0b:
 - `inputClassificationFit`: 1.0 match, 0.5 uncertain/manual-review, 0.0 mismatch; reports without `inputClassification` are `n/a`, not zero.
 - `frameAdmissibility`: 1.0 active frame identified, 0.0 no admissible frame.
 - `assertionCoverage`: required assertions addressed or partial, with partial scored 0.5, divided by total required assertions in the active frame; forbidden assertion present floors the active frame to 0.
-- `atomicityFidelity`: strict truth conditions separately represented in Stage 1 `AtomicClaims`, divided by strict truth conditions required in the active frame. If determinability is `indeterminable`, this axis is waived as 1.0.
+- `atomicityFidelity`: strict truth conditions separately represented in Stage 1 `AtomicClaims`, weighted by `dominanceWeight` for `dominant`/`supporting` conditions in the active frame. If determinability is `indeterminable`, this axis is waived as 1.0.
 - `disclosureFidelity`: 1.0 if policy does not require disclosure or disclosure is present; 0.0 if `must_disclose` / `must_cover_all` is violated.
 
 Per-frame C1:
@@ -287,9 +295,11 @@ C1(frame) =
 
 `inputClassificationFit` is a cap, not a multiplier: match = cap 1.0; uncertain/manual-review = cap 0.5; mismatch = cap 0.0; `n/a` = cap absent.
 
-Report C1 uses the report's active admissible frame, but the score artifact must record the active frame, runner-up frame, and all axis sub-scores. If two frames are near-equally admissible and the report did not disclose the ambiguity, record `ambiguous_active_frame`, use the lower tied frame score for automated comparison, and route the case to human review. This prevents "best frame" scoring from flattering a report that did not genuinely pursue or disclose that frame.
+Report C1 uses the report's active admissible frame, but the score artifact must record the active frame, runner-up frame, `frameRole`, and all axis sub-scores. If two frames are near-equally admissible and the report did not disclose the ambiguity, record `ambiguous_active_frame`, use the lower tied frame score for automated comparison, and route the case to human review. This prevents "best frame" scoring from flattering a report that did not genuinely pursue or disclose that frame. If a report explicitly pursues a secondary frame and satisfies its admissibility condition, it can receive frame-specific credit; if it silently relies on secondary/caveat facts while presenting the primary frame, it does not.
 
 Factual, harmless context is not penalized merely because it was not pre-listed. It is mapped to `tolerated_context` or reported as colour. Forbidden assertions or unsupported direct propositions that change the input's meaning can floor C1 for the active frame.
+
+Dominance weighting is not a raw arithmetic average of extracted claims. Within the active frame, `dominanceWeight` is used only after semantic alignment has mapped report `AtomicClaims` to reference truth conditions. A dominant false or missing condition can control the overall frame assessment even when multiple supporting conditions are true. Supporting conditions can move the result within the frame band, but they cannot override a dominant condition by claim count.
 
 If no frame admits the report, Phase 0b marks `needs_human_review`. Once the method is approved, high-confidence no-frame outcomes become zero C1 semantic coverage plus a finding; they still should not silently rewrite C4.
 
@@ -322,14 +332,15 @@ AtomicClaim reference metrics should start as colour diagnostics until the Phase
 
 Routing transition:
 
-- C4 can consume the dossier immediately only through the structurally validated `topLineAssertionIds` route: it reads top-line expected labels/truth/confidence bands, which the validator requires to match `benchmark-expectations.json`. This is not C1/C3 semantic alignment.
+- C4 can consume the dossier immediately only through the structurally validated primary `topLineAssertionIds` route: it reads top-line expected labels/truth/confidence bands, which the validator requires to match `benchmark-expectations.json`. This is not C1/C3 semantic alignment.
+- `alternativeTopLineRoutes[]` are available for manual/frame-aware review and future scorer support after Phase 0b gates. They do not widen the legacy primary C4 band and are invalid unless the report explicitly satisfies the route's admissibility condition.
 - Before the Phase 0b gate passes, dossier-backed C1/C3 is **COLOUR** for diagnosis and may be used only as a labelled manual tie-break in human review.
 - After the Phase 0b gate passes for a specific dossier family, dossier-backed AtomicClaim alignment becomes an availability-gated **RANK** signal for that family only. It ranks alongside, not instead of, C4. C4 remains the aggregate gold band; dossier C1/C3 catches false aggregate passes and localizes which frame/assertion failed.
 - Current-snapshot dossiers are time-relative gold. Any build comparison using them must pin dossier ID, dossier version, and comparison run-window; comparisons across revalidated dossier versions are reported as cross-reference-era, not a single stable gold comparison.
 
 ## 7. Manual Alignment Rubric and Score Artifact
 
-This section is the pinned v0.1 manual rubric. Implementers instantiate it; they do not define a new rubric.
+This section is the pinned v0.2 manual rubric. Implementers instantiate it; they do not define a new rubric.
 
 ### C1 Rubric
 
@@ -337,13 +348,14 @@ Manual alignment is sequential and frame-primary:
 
 1. `activeFrameId`: the frame the report actually pursues.
 2. `runnerUpFrameId`: the closest alternative frame, or `null`.
-3. `frameDecision`: `active_clear | active_ambiguous | no_admissible_frame`.
-4. `inputClassificationFit`: `match | uncertain | mismatch | absent`.
-5. `assertionCoverage[]`: one item per required reference assertion in the active frame, each labelled `addressed | partial | not_addressed | contradicted`.
-6. `extraClaims[]`: report direct claims not mapped to required assertions, each labelled `tolerated_context | unsupported_extra | forbidden`.
-7. `atomicityFidelity[]`: one item per strict truth condition in the active frame, each labelled `separately_represented | merged_but_visible | hidden_or_missing | waived`.
-8. `disclosureFidelity`: `satisfied | violated | not_required`.
-9. `reviewFlags[]`: zero or more of `ambiguous_active_frame`, `determinability_contested`, `unsupported_forbidden_extra`, `low_confidence_alignment`, `needs_human_review`.
+3. `activeFrameRole`: `primary | secondary | caveat`.
+4. `frameDecision`: `active_clear | active_ambiguous | no_admissible_frame`.
+5. `inputClassificationFit`: `match | uncertain | mismatch | absent`.
+6. `assertionCoverage[]`: one item per required reference assertion in the active frame, each labelled `addressed | partial | not_addressed | contradicted`.
+7. `extraClaims[]`: report direct claims not mapped to required assertions, each labelled `tolerated_context | unsupported_extra | forbidden`.
+8. `atomicityFidelity[]`: one item per strict truth condition in the active frame, each labelled `separately_represented | merged_but_visible | hidden_or_missing | waived`; each item carries the reference `dominanceRole` and `dominanceWeight`.
+9. `disclosureFidelity`: `satisfied | violated | not_required`.
+10. `reviewFlags[]`: zero or more of `ambiguous_active_frame`, `secondary_frame_not_disclosed`, `secondary_route_condition_unsatisfied`, `dominant_truth_condition_missed`, `determinability_contested`, `unsupported_forbidden_extra`, `low_confidence_alignment`, `needs_human_review`.
 
 Scoring conversions:
 
@@ -351,6 +363,7 @@ Scoring conversions:
 - `assertionCoverage`: `addressed = 1.0`, `partial = 0.5`, `not_addressed = 0.0`, `contradicted = 0.0` plus `harmFlag`.
 - `extraClaims`: `tolerated_context` excluded from score; `unsupported_extra` recorded as colour unless it changes the input meaning; `forbidden` floors `assertionCoverage` to `0.0`.
 - `atomicityFidelity`: `separately_represented = 1.0`; `merged_but_visible = 0.5` only when the truth condition is explicitly marked flexible; `hidden_or_missing = 0.0`; `waived` excluded from denominator.
+- `dominanceWeight`: after semantic alignment, dominant/supporting truth-condition fidelity is weighted by the active frame's declared weights. Caveat, context, and aggregate-topline conditions are excluded from the AtomicClaim fidelity denominator.
 - `disclosureFidelity`: `satisfied` or `not_required = 1.0`; `violated = 0.0`.
 - `active_ambiguous` without adequate disclosure uses the lower of the tied frame scores and sets `needs_human_review`.
 - `no_admissible_frame` sets C1 semantic coverage to `0.0` after human confirmation; before confirmation it remains colour only.
@@ -378,7 +391,7 @@ Each manual or LLM alignment run writes a score artifact with this shape:
 
 ```json
 {
-  "schemaVersion": "reference-alignment-score.v0.1",
+  "schemaVersion": "reference-alignment-score.v0.2",
   "dossierId": "plastic-en",
   "dossierVersion": "0.1.0",
   "inputSlug": "plastic-en",
@@ -395,6 +408,7 @@ Each manual or LLM alignment run writes a score artifact with this shape:
   "c1": {
     "activeFrameId": null,
     "runnerUpFrameId": null,
+    "activeFrameRole": "primary | secondary | caveat",
     "frameDecision": "active_clear | active_ambiguous | no_admissible_frame",
     "axisScores": {
       "inputClassificationFit": null,
@@ -426,7 +440,7 @@ Do not use deterministic string or keyword matching for semantic alignment.
 Minimum requirements:
 
 - Use a two-pass sequence: first frame admissibility, then assertion mapping within the active frame.
-- Elicit frame admissibility, assertion coverage, atomicity fidelity, and disclosure fidelity as separable judge outputs so per-axis agreement is measurable.
+- Elicit frame admissibility, frame role, assertion coverage, dominance-weighted atomicity fidelity, and disclosure fidelity as separable judge outputs so per-axis agreement is measurable.
 - The C1 judge prompt receives the byte-exact input, dossier frame(s), reference assertions, truth conditions, and report AtomicClaims only. It must not receive downstream verdict/evidence/narrative artifacts for C1 scoring.
 - The C3 judge prompt receives the active C1 mapping plus report `CBClaimVerdict` and cited `EvidenceItem` artifacts. C3 may judge verdict/evidence correctness after C1 alignment, but it must not rewrite C1 atomicity.
 - C1 output must be strict JSON with claim IDs, frame IDs, truth-condition IDs, and reference assertion IDs only. C3 output may also include report evidence IDs and reference source IDs for evidence-equivalence mapping.
@@ -437,13 +451,14 @@ Minimum requirements:
 - Low-confidence judge outputs become `needs_human_review`, not auto-fail.
 - Use the pinned manual-alignment rubric in §7 before judging manual-vs-LLM agreement. The rubric defines each axis, allowed labels, tie handling, and examples of `needs_human_review`.
 
-The v0.1 judge output contracts are:
+The v0.2 judge output contracts are:
 
 ```json
 {
-  "schemaVersion": "reference-c1-judge.v0.1",
+  "schemaVersion": "reference-c1-judge.v0.2",
   "activeFrameId": "FRAME_...",
   "runnerUpFrameId": null,
+  "activeFrameRole": "primary | secondary | caveat",
   "frameDecision": "active_clear | active_ambiguous | no_admissible_frame",
   "inputClassificationFit": "match | uncertain | mismatch | absent",
   "assertionCoverage": [
@@ -456,6 +471,8 @@ The v0.1 judge output contracts are:
   "atomicityFidelity": [
     {
       "truthConditionId": "TC_...",
+      "dominanceRole": "dominant | supporting | caveat | context | aggregate_topline",
+      "dominanceWeight": 1.0,
       "status": "separately_represented | merged_but_visible | hidden_or_missing | waived",
       "reportClaimIds": ["AC_..."]
     }
@@ -519,12 +536,12 @@ Recommended pilot set:
 
 Pilot tasks:
 
-1. Instantiate the dossier template from the existing JSON Schema and validator with `expectedInputClassification`, dossier-level `ambiguityPolicy`, frame-scoped `atomicityProfile`, and required v0.1 fields.
+1. Instantiate the dossier template from the existing JSON Schema and validator with `expectedInputClassification`, dossier-level `ambiguityPolicy`, `frameRole`, frame-scoped `atomicityProfile`, truth-condition dominance roles/weights, and required v0.2 fields.
 2. Use the pinned manual-alignment rubric in §7 before scoring any stored reports.
 3. Produce one full dossier for `rechtskräftig`.
 4. Produce partial dossiers for `Plastic recycling is pointless` and one Bolsonaro input.
 5. Run manual alignment on historical stored reports for all three.
-6. Record manual scores per axis: input-classification fit, frame admissibility, assertion coverage, atomicity fidelity, and disclosure fidelity.
+6. Record manual scores per axis: input-classification fit, frame admissibility, frame-role fit, assertion coverage, dominance-weighted atomicity fidelity, and disclosure fidelity.
 7. Instantiate strict-JSON C1 alignment and C3 evidence-equivalence judge prompts from §8, but do not run them until Captain approves the cap.
 8. If manual alignment is coherent and Captain approves the cap, run the two-pass LLM alignment pilot.
 9. Measure manual-vs-judge agreement per axis.
@@ -546,6 +563,7 @@ Gates before dossier-backed metrics leave diagnostic mode:
 - No keyword, regex, or substring scoring for semantic alignment.
 - No single-pass multi-frame LLM judging for C1.
 - No scoring extraction coverage without first determining the active interpretation frame.
+- No top-line scoring from a caveat frame, and no secondary-frame true-side credit unless the report explicitly satisfies the route's admissibility condition.
 - No rescuing C1 atomicity with downstream verdicts, evidence, or narrative; C1 is Stage 1 extraction-only.
 - No using frame ambiguity to excuse missed atoms. A report cannot get C1 credit by saying the input is ambiguous if the active frame's truth conditions are determinable and missed.
 - No collapsing distinct truth conditions to evade an atomicity miss. If `separability = strict` or `independentAssessabilityRequired = true`, a merged Stage 1 claim that hides one truth condition is a C1 miss.
@@ -555,11 +573,12 @@ Gates before dossier-backed metrics leave diagnostic mode:
 - No scoring of subjective pipeline fields such as `checkWorthiness` or exact `centrality` against gold.
 - No teaching-to-test prompt changes based on dossier wording.
 - No hidden update of benchmark bands without dossier version bump.
+- No raw claim-count averaging when dominant and supporting truth conditions diverge.
 - No LLM judge spend without an explicit Captain-approved cap.
 
 ## 11. Closed Contract / Execution Boundary
 
-No v0.1 reference-data contract item is left to define in implementation. Remaining work is execution against this contract:
+No v0.2 reference-data contract item is left to define in implementation. Remaining work is execution against this contract:
 
 - author dossiers;
 - run structural validation;
@@ -568,7 +587,7 @@ No v0.1 reference-data contract item is left to define in implementation. Remain
 - run the gated pilot only after Captain-approved spend;
 - wire scoring only after the published gates pass.
 
-Changes to fields, labels, score conversions, routing roles, or acceptance gates are design changes and require a new review.
+Changes to fields, labels, score conversions, routing roles, or acceptance gates after v0.2 are design changes and require a new review.
 
 ## 12. Plan Alignment
 
@@ -580,4 +599,4 @@ Phase 1 zero-spend scorer can still run with the existing aggregate bands. But b
 - frame-scoped atomicity/separability;
 - C1/C3 judge reliability against the pinned manual rubric.
 
-Plan implementation must not add new fields, labels, score conversions, routing roles, or acceptance gates without a reviewed design change.
+Plan implementation must not add new fields, labels, score conversions, routing roles, or acceptance gates beyond the v0.2 frame-role/dominance extension without a reviewed design change.

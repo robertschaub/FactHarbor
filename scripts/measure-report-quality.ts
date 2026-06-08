@@ -1900,7 +1900,7 @@ function textReport(payload) {
 
   console.log('\n## Notes');
   console.log('  - C4 truth uses benchmark noise; confidence is strict.');
-  console.log('  - Linked reference dossiers provide the C4 top-line expectation; coverage guards/context are diagnostic and are not averaged.');
+  console.log('  - Linked reference dossiers provide the primary C4 top-line expectation; secondary routes/guards/context are diagnostic and are not averaged.');
   console.log('  - Cost tie-band uses ResultJson.meta.llmCalls. runtimeRoleModels is reported as colour only.');
   console.log('  - Rich token/$/latency cost is n/a unless AnalysisMetrics exists for the job.');
   console.log('  - Aggregation faithfulness is unavailable unless ResultJson carries consumable calc-config provenance.');

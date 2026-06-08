@@ -81,8 +81,11 @@ function summarizeAssertion(assertion, routeRole, index) {
     routeRole,
     assertionRole: assertion.role,
     frameId: frame?.id || null,
+    frameRole: frame?.frameRole || null,
     truthConditionId: assertion.truthConditionId,
     truthConditionDescription: truthCondition?.description || null,
+    dominanceRole: truthCondition?.dominanceRole || null,
+    dominanceWeight: typeof truthCondition?.dominanceWeight === 'number' ? truthCondition.dominanceWeight : null,
     text: assertion.text,
     kind: assertion.kind,
     separability: assertion.separability,
@@ -97,6 +100,24 @@ function summarizeAssertion(assertion, routeRole, index) {
     harmfulMissSeverity: assertion.harmfulMissCondition?.severity || null,
     contested: assertion.contested === true,
   };
+}
+
+function resolveAlternativeTopLineRoutes(dossier, index) {
+  const routes = Array.isArray(dossier?.benchmarkCoherence?.alternativeTopLineRoutes)
+    ? dossier.benchmarkCoherence.alternativeTopLineRoutes
+    : [];
+  return routes.map((route) => ({
+    routeId: route.routeId,
+    frameId: route.frameId,
+    admissibilityCondition: route.admissibilityCondition,
+    expectedVerdictLabels: sortedSetValues(normalizeVerdictSet(route.acceptedVerdictLabels)),
+    truthPercentageBand: cloneBand(route.truthBand),
+    confidenceBand: cloneBand(route.confidenceBand),
+    assertions: (Array.isArray(route.assertionIds) ? route.assertionIds : [])
+      .map((id) => index.assertionById.get(id))
+      .filter(Boolean)
+      .map((assertion) => summarizeAssertion(assertion, 'ALTERNATIVE_TOP_LINE', index)),
+  }));
 }
 
 function resolveRoutedAssertions(dossier, routeField, routeRole, index) {
@@ -128,6 +149,7 @@ function buildReferenceDossierRoute(dossier, relPath) {
   const topLineAssertions = resolveRoutedAssertions(dossier, 'topLineAssertionIds', 'TOP_LINE', index);
   const coverageGuardAssertions = resolveRoutedAssertions(dossier, 'coverageGuardAssertionIds', 'COVERAGE_GUARD', index);
   const contextAssertions = resolveRoutedAssertions(dossier, 'contextAssertionIds', 'CONTEXT', index);
+  const alternativeTopLineRoutes = resolveAlternativeTopLineRoutes(dossier, index);
   const frames = Array.isArray(dossier.interpretationFrames) ? dossier.interpretationFrames : [];
   const allAssertions = [...index.assertionById.values()];
   const strictTruthConditionCount = frames.reduce((sum, frame) => {
@@ -152,11 +174,21 @@ function buildReferenceDossierRoute(dossier, relPath) {
     ambiguityPolicy: dossier.ambiguityPolicy,
     validityWindow: dossier.validityWindow || null,
     topLineScoring: buildTopLineScoring(topLineAssertions),
+    alternativeTopLineScoring: alternativeTopLineRoutes,
     routing: {
       topLineAssertions,
+      alternativeTopLineRoutes,
       coverageGuardAssertions,
       contextAssertions,
     },
+    frames: frames.map((frame) => ({
+      id: frame.id,
+      frameRole: frame.frameRole || null,
+      admissibility: frame.admissibility,
+      ambiguityPolicy: frame.ambiguityPolicy,
+      determinability: frame.atomicityProfile?.determinability || null,
+      determinabilityStatus: frame.atomicityProfile?.determinabilityStatus || null,
+    })),
     counts: {
       frames: frames.length,
       referenceAssertions: allAssertions.length,

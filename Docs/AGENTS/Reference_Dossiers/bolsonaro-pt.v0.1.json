@@ -131,6 +131,7 @@
       "label": "AP 2668 procedural, constitutional, and sentence-fairness assessment",
       "interpretedTermOrFrame": "direito processual brasileiro, requisitos constitucionais, and sentencas justas",
       "interpretationDefinition": "The input is read as a claim about the STF criminal process against Bolsonaro for attempted coup/coup-related crimes. It asks whether the process respected Brazilian procedural law and constitutional safeguards and whether the resulting judgments/sentences were fair or just in the legal-process sense. It is not a claim that the sentence is politically/morally uncontestable.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the Captain-expected Portuguese variant: true-side with caveats. The official record supports legal basis and procedural safeguards, while defense claims, competence dissent, access/time objections, and sentence-proportionality arguments cap confidence. The sentence-justice clause must remain explicit.",
       "ambiguityPolicy": "must_cover_all",
@@ -142,24 +143,32 @@
           {
             "id": "TC_AP2668_SCOPE_AND_LEGAL_BASIS",
             "description": "Whether the process at issue is AP 2668/the STF criminal coup proceeding and whether it had a Brazilian-law basis.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_DIREITO_PROCESSUAL_BRASILEIRO",
             "description": "Whether the process materially respected Brazilian procedural-law requirements, including charge acceptance, competence reasoning, defense access, and evidence/witness procedure.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.25,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_REQUISITOS_CONSTITUCIONAIS",
             "description": "Whether constitutional safeguards such as due process, adversarial proceedings, full defense, and final judgment were materially satisfied.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.25,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_SENTENCAS_JUSTAS",
             "description": "Whether the convictions/sentences were broadly fair or just in the legal-process sense, while preserving proportionality and dissent caveats.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.3,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -336,6 +345,7 @@
     "topLineAssertionIds": [
       "RA_SENTENCAS_JUSTAS_CAVEATED_TRUE_SIDE"
     ],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [],
     "contextAssertionIds": [],
     "coherenceNote": "This dossier matches the confirmed true-side-with-caveats expectation for `bolsonaro-pt`. The legal/procedural and constitutional components are strongly supported, while the `sentencas justas` clause carries the top-line LEANING-TRUE/MOSTLY-TRUE band because sentence fairness is evaluative and caveated by defense, dissent, access/time, current criminal review, and proportionality objections. Top-line scoring must use `RA_SENTENCAS_JUSTAS_CAVEATED_TRUE_SIDE`. Reports that skip the sentence-justice clause are structurally incomplete even if their top-line verdict is in band. Caveats should cap confidence and qualify the sentence-fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."

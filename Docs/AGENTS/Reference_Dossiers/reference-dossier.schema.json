@@ -98,6 +98,7 @@
         "familyTruthBand",
         "familyConfidenceBand",
         "topLineAssertionIds",
+        "alternativeTopLineRoutes",
         "coverageGuardAssertionIds",
         "contextAssertionIds",
         "coherenceNote"
@@ -109,6 +110,10 @@
           "type": "array",
           "minItems": 1,
           "items": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" }
+        },
+        "alternativeTopLineRoutes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/alternativeTopLineRoute" }
         },
         "coverageGuardAssertionIds": {
           "type": "array",
@@ -156,6 +161,48 @@
         "notes": { "type": ["string", "null"] }
       }
     },
+    "alternativeTopLineRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routeId",
+        "frameId",
+        "assertionIds",
+        "truthBand",
+        "confidenceBand",
+        "acceptedVerdictLabels",
+        "admissibilityCondition"
+      ],
+      "properties": {
+        "routeId": { "type": "string", "pattern": "^ALT_[A-Za-z0-9_-]+$" },
+        "frameId": { "type": "string", "pattern": "^FRAME_[A-Za-z0-9_-]+$" },
+        "assertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^RA_[A-Za-z0-9_-]+$" }
+        },
+        "truthBand": { "$ref": "#/$defs/band" },
+        "confidenceBand": { "$ref": "#/$defs/band" },
+        "acceptedVerdictLabels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "TRUE",
+              "MOSTLY-TRUE",
+              "LEANING-TRUE",
+              "MIXED",
+              "UNVERIFIED",
+              "LEANING-FALSE",
+              "MOSTLY-FALSE",
+              "FALSE"
+            ]
+          }
+        },
+        "admissibilityCondition": { "type": "string", "minLength": 1 }
+      }
+    },
     "interpretationFrame": {
       "type": "object",
       "additionalProperties": false,
@@ -164,6 +211,7 @@
         "label",
         "interpretedTermOrFrame",
         "interpretationDefinition",
+        "frameRole",
         "admissibility",
         "admissibilityRationale",
         "ambiguityPolicy",
@@ -175,6 +223,10 @@
         "label": { "type": "string", "minLength": 1 },
         "interpretedTermOrFrame": { "type": "string", "minLength": 1 },
         "interpretationDefinition": { "type": ["string", "null"] },
+        "frameRole": {
+          "type": "string",
+          "enum": ["primary", "secondary", "caveat"]
+        },
         "admissibility": {
           "type": "string",
           "enum": ["defensible", "contested", "excluded"]
@@ -222,12 +274,23 @@
       "required": [
         "id",
         "description",
+        "dominanceRole",
+        "dominanceWeight",
         "independentAssessabilityRequired",
         "mergeAllowedWith"
       ],
       "properties": {
         "id": { "type": "string", "pattern": "^TC_[A-Za-z0-9_-]+$" },
         "description": { "type": ["string", "null"] },
+        "dominanceRole": {
+          "type": "string",
+          "enum": ["dominant", "supporting", "caveat", "context", "aggregate_topline"]
+        },
+        "dominanceWeight": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
         "independentAssessabilityRequired": { "type": "boolean" },
         "mergeAllowedWith": {
           "type": "array",

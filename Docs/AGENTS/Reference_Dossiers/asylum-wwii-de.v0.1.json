@@ -61,6 +61,7 @@
       "label": "Current asylum-area count compared with WWII endpoint stock",
       "interpretedTermOrFrame": "`235000 Flüchtlinge` and `am Ende des Zweiten Weltkrieges`",
       "interpretationDefinition": "The current count may be read loosely as the broader SEM asylum-area population, but `am Ende des Zweiten Weltkrieges` is read as point-in-time refugee stock at war's end. Cumulative wartime admissions/internments are not valid support for the endpoint comparison.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the Captain-expected frame: the present 235k count can be true-side or definition-caveated, but the historical comparison is false-side when measured against endpoint stock rather than cumulative wartime flows.",
       "ambiguityPolicy": "must_disclose",
@@ -72,30 +73,40 @@
           {
             "id": "TC_CURRENT_BROAD_ASYLAREA_NEAR_235K",
             "description": "Whether a broad SEM asylum-area reading supports a current-ish count around 235 000.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_CURRENT_NARROW_REFUGEES_BELOW_235K",
             "description": "Whether the narrower official recognized-refugee count is substantially below 235 000.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_WWII_ENDPOINT_STOCK_AROUND_115K",
             "description": "Whether endpoint stock at the end of WWII was around 115 000 refugees in Switzerland.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.25,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK",
             "description": "Whether cumulative wartime admissions/internments must not be used as the end-of-war stock denominator.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_ALMOST_AS_MANY_COMPARISON_FALSE",
             "description": "Whether the claim that today's 235 000 is almost as many as the end-of-WWII endpoint stock is false-side.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.55,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -286,6 +297,7 @@
     "topLineAssertionIds": [
       "RA_ALMOST_AS_MANY_COMPARISON_FALSE_SIDE"
     ],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [
       "RA_CUMULATIVE_FLOWS_NOT_ENDPOINT_STOCK"
     ],

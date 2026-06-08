@@ -151,6 +151,7 @@
       "label": "Brazilian-law compliance and fair-trial/verdict fairness",
       "interpretedTermOrFrame": "legal proceedings, Brazilian law, international standards for a fair trial, and verdicts",
       "interpretationDefinition": "The input is read as a broad report-quality question about Bolsonaro's major legal proceedings through the June 2026 reference date: the 2023 TSE ineligibility proceeding and the 2025 STF AP 2668 criminal coup-plot proceeding. The answer should be true-side with caveats: legal basis and procedural safeguards are strongly supported, while competence, defense-access, appeal/review-scope, and sentence-proportionality objections cap confidence and make the verdict/sentence fairness claim evaluative rather than absolute.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This matches the Captain expectation for this family: legal basis is strongly supported and procedural fairness is largely supported with legitimate concerns. The source record contains official court support plus dissent and defense objections, so MIXED or false-side outcomes require stronger target-specific evidence than the caveats captured here.",
       "ambiguityPolicy": "must_cover_all",
@@ -162,36 +163,48 @@
           {
             "id": "TC_TSE_ELECTORAL_PROCEEDING_LEGAL_BASIS",
             "description": "Whether the 2023 TSE ineligibility proceeding had a Brazilian-law basis and a reasoned court decision, while acknowledging dissent.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.15,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_STF_CRIMINAL_PROCEEDING_LEGAL_BASIS",
             "description": "Whether AP 2668 was opened, tried, and concluded under Brazilian criminal/legal authorities for recognized coup-related crimes.",
+            "dominanceRole": "supporting",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_DOMESTIC_PROCEDURAL_SAFEGUARDS",
             "description": "Whether domestic due-process/full-defense safeguards were materially present in AP 2668.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_INTERNATIONAL_FAIR_TRIAL_STANDARDS",
             "description": "Whether the proceedings substantially met international fair-trial standards, with caveats for competence, appeal/review scope, sentence proportionality, and defense-access objections.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.2,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_VERDICT_LEGAL_SUPPORTABILITY",
             "description": "Whether the TSE and STF verdicts were legally supportable on the current source record, while recognizing dissent and defense objections.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.15,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_SENTENCE_PROPORTIONALITY_FAIRNESS",
             "description": "Whether the AP 2668 sentence was broadly fair/just in the limited legal-process and proportionality sense, while recognizing defense arguments about excessiveness and overlapping charges.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 0.1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -450,6 +463,7 @@
     "topLineAssertionIds": [
       "RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE"
     ],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [],
     "contextAssertionIds": [],
     "coherenceNote": "This dossier matches the Captain-accepted true-side-with-caveats expectation for `bolsonaro-en`. Legal basis is strong, domestic procedure is largely supported, and international fair-trial/verdict/sentence fairness is LEANING-TRUE/MOSTLY-TRUE with confidence capped by competence, access/time, appeal/review-scope, and proportionality caveats. The TSE proceeding is required background for the broad EN phrasing, but AP 2668 carries most of the criminal fair-trial and sentence-fairness weight. Top-line scoring must use `RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE`; high-truth legal-basis, fair-trial, and verdict-supportability assertions are required subclaim controls, not family-truth averaging inputs. Caveats should cap confidence and qualify the fairness component rather than automatically flip the family verdict without stronger source-grounded proof of procedural or constitutional failure."

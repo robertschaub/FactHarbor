@@ -91,6 +91,7 @@
       "label": "Official SEM asylum-area umbrella threshold",
       "interpretedTermOrFrame": "Asylbereich; zurzeit",
       "interpretationDefinition": "The claim is read under the official SEM umbrella category `Total Personen aus dem Asylbereich (inkl. RU)`, with the time anchor disclosed as the latest clean SEM full aggregate available in the dossier. Narrower `Asylprozess`, `Flüchtlinge`, or component tables may be caveats/context but are not substitutes for the umbrella category.",
+      "frameRole": "primary",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the benchmark's required reading: one clean official SEM aggregate total, true-side but calibrated because the threshold is barely crossed and the clean umbrella aggregate is end-2025 rather than same-day live data.",
       "ambiguityPolicy": "must_disclose",
@@ -102,24 +103,32 @@
           {
             "id": "TC_OFFICIAL_SEM_UMBRELLA_THRESHOLD",
             "description": "Whether the clean official SEM umbrella aggregate `Total Personen aus dem Asylbereich (inkl. RU)` is above 235 000 in the latest clean full aggregate used by the dossier.",
+            "dominanceRole": "dominant",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_SOURCE_DATE_DISCLOSURE",
             "description": "Whether a report discloses the source date and freshness limits for the `zurzeit` wording instead of presenting the number as a same-day count.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_NO_COMPONENT_STITCHING",
             "description": "Whether a report avoids unsupported or incomplete current umbrella totals from component tables, especially adding total RU to asylum-process stock despite SEM's double-counting warning.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           },
           {
             "id": "TC_NARROW_PROCESS_NOT_EQUIVALENT",
             "description": "Whether narrower `Asylprozess`, recognized-refugee, or refugee-only counts are distinguished from the broader SEM `Asylbereich` umbrella category.",
+            "dominanceRole": "caveat",
+            "dominanceWeight": null,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
           }
@@ -281,6 +290,7 @@
     "topLineAssertionIds": [
       "RA_SEM_2025_UMBRELLA_ABOVE_235000"
     ],
+    "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [
       "RA_SOURCE_DATE_MUST_BE_DISCLOSED",
       "RA_DO_NOT_STITCH_CURRENT_COMPONENT_TOTAL",

@@ -148,6 +148,14 @@ function hasBandException(assertion) {
   return typeof assertion.notes === 'string' && assertion.notes.trim().startsWith('BAND_EXCEPTION:');
 }
 
+function isPositiveNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function approxEqual(left, right, tolerance = 0.001) {
+  return Math.abs(left - right) <= tolerance;
+}
+
 function validateBandOrder(band, label, errors) {
   if (!band || typeof band.min !== 'number' || typeof band.max !== 'number') {
     return;
@@ -252,7 +260,32 @@ function validateLocalSnapshot(source, errors) {
   }
 }
 
-function validateAssertionRouting(dossier, assertionById, benchmarkFamily, errors) {
+function validateTopLineLikeLabels(routeLabel, truthBand, acceptedVerdictLabels, errors) {
+  if (
+    !truthBand ||
+    typeof truthBand.min !== 'number' ||
+    typeof truthBand.max !== 'number' ||
+    !Array.isArray(acceptedVerdictLabels)
+  ) {
+    return;
+  }
+  for (const verdict of acceptedVerdictLabels) {
+    const normalized = normalizeVerdictLabel(verdict);
+    if (!normalized) {
+      errors.push(`${routeLabel}.acceptedVerdictLabels contains unknown verdict label: ${verdict}`);
+      continue;
+    }
+    const verdictBand = bandForLabel(normalized);
+    if (!bandsOverlap(verdictBand, truthBand)) {
+      errors.push(
+        `${routeLabel}.acceptedVerdictLabels ${normalized} does not overlap truthBand ` +
+        `${truthBand.min}-${truthBand.max}`
+      );
+    }
+  }
+}
+
+function validateAssertionRouting(dossier, assertionById, assertionContextById, frameById, benchmarkFamily, errors) {
   const routingFields = [
     'topLineAssertionIds',
     'coverageGuardAssertionIds',
@@ -277,6 +310,16 @@ function validateAssertionRouting(dossier, assertionById, benchmarkFamily, error
         continue;
       }
       if (field === 'topLineAssertionIds') {
+        const context = assertionContextById.get(assertionId);
+        if (context?.frame?.frameRole !== 'primary') {
+          errors.push(`benchmarkCoherence.${field} ${assertionId} must route from a primary frame`);
+        }
+        const dominanceRole = context?.truthCondition?.dominanceRole;
+        if (!['dominant', 'aggregate_topline'].includes(dominanceRole)) {
+          errors.push(
+            `benchmarkCoherence.${field} ${assertionId} must reference a dominant or aggregate_topline truth condition`
+          );
+        }
         if (!bandsEqual(assertion.truthBand, dossier.benchmarkCoherence.familyTruthBand)) {
           errors.push(
             `benchmarkCoherence.${field} ${assertionId} truthBand ${formatBand(assertion.truthBand)} ` +
@@ -295,6 +338,12 @@ function validateAssertionRouting(dossier, assertionById, benchmarkFamily, error
       }
       if (field === 'contextAssertionIds' && assertion.role !== 'tolerated_context') {
         errors.push(`benchmarkCoherence.${field} ${assertionId} must reference a tolerated_context assertion`);
+      }
+      if (field === 'contextAssertionIds') {
+        const context = assertionContextById.get(assertionId);
+        if (context?.truthCondition?.dominanceRole !== 'context') {
+          errors.push(`benchmarkCoherence.${field} ${assertionId} must reference a context truth condition`);
+        }
       }
     }
     usedByField.set(field, seen);
@@ -324,6 +373,76 @@ function validateAssertionRouting(dossier, assertionById, benchmarkFamily, error
         `benchmarkCoherence.topLineAssertionIds acceptedVerdictLabels ${formatStringSet(topLineLabels)} ` +
         `must match benchmark expectedVerdictLabels ${formatStringSet(familyLabels)}`
       );
+    }
+  }
+
+  const alternativeRoutes = Array.isArray(dossier.benchmarkCoherence.alternativeTopLineRoutes)
+    ? dossier.benchmarkCoherence.alternativeTopLineRoutes
+    : [];
+  const alternativeRouteIds = new Set();
+  for (const [routeIndex, route] of alternativeRoutes.entries()) {
+    const routeLabel = `benchmarkCoherence.alternativeTopLineRoutes[${routeIndex}]`;
+    if (alternativeRouteIds.has(route.routeId)) {
+      errors.push(`${routeLabel}.routeId is duplicated: ${route.routeId}`);
+    }
+    alternativeRouteIds.add(route.routeId);
+
+    validateBandOrder(route.truthBand, `${routeLabel}.truthBand`, errors);
+    validateBandOrder(route.confidenceBand, `${routeLabel}.confidenceBand`, errors);
+    validateTopLineLikeLabels(routeLabel, route.truthBand, route.acceptedVerdictLabels, errors);
+
+    const frame = frameById.get(route.frameId);
+    if (!frame) {
+      errors.push(`${routeLabel}.frameId references unknown frame: ${route.frameId}`);
+      continue;
+    }
+    if (frame.frameRole !== 'secondary') {
+      errors.push(`${routeLabel}.frameId must reference a secondary frame`);
+    }
+
+    const seenAssertions = new Set();
+    for (const assertionId of route.assertionIds) {
+      if (seenAssertions.has(assertionId)) {
+        errors.push(`${routeLabel}.assertionIds contains duplicate assertion id: ${assertionId}`);
+      }
+      seenAssertions.add(assertionId);
+      if (topLineIds.has(assertionId)) {
+        errors.push(`${routeLabel}.assertionIds must not overlap primary topLineAssertionIds: ${assertionId}`);
+      }
+      const assertion = assertionById.get(assertionId);
+      const context = assertionContextById.get(assertionId);
+      if (!assertion || !context) {
+        errors.push(`${routeLabel}.assertionIds references unknown assertion id: ${assertionId}`);
+        continue;
+      }
+      if (context.frame?.id !== route.frameId) {
+        errors.push(`${routeLabel}.assertionIds ${assertionId} does not belong to frame ${route.frameId}`);
+      }
+      if (assertion.role !== 'required') {
+        errors.push(`${routeLabel}.assertionIds ${assertionId} must reference a required assertion`);
+      }
+      if (!bandsEqual(assertion.truthBand, route.truthBand)) {
+        errors.push(
+          `${routeLabel}.assertionIds ${assertionId} truthBand ${formatBand(assertion.truthBand)} ` +
+          `must match route truthBand ${formatBand(route.truthBand)}`
+        );
+      }
+      if (!bandsEqual(assertion.confidenceBand, route.confidenceBand)) {
+        errors.push(
+          `${routeLabel}.assertionIds ${assertionId} confidenceBand ${formatBand(assertion.confidenceBand)} ` +
+          `must match route confidenceBand ${formatBand(route.confidenceBand)}`
+        );
+      }
+      if (!sameStringSet(normalizeVerdictSet(assertion.acceptedVerdictLabels), normalizeVerdictSet(route.acceptedVerdictLabels))) {
+        errors.push(
+          `${routeLabel}.assertionIds ${assertionId} acceptedVerdictLabels ` +
+          `${formatStringSet(normalizeVerdictSet(assertion.acceptedVerdictLabels))} must match route labels ` +
+          `${formatStringSet(normalizeVerdictSet(route.acceptedVerdictLabels))}`
+        );
+      }
+      if (!['dominant', 'aggregate_topline'].includes(context.truthCondition?.dominanceRole)) {
+        errors.push(`${routeLabel}.assertionIds ${assertionId} must reference a dominant or aggregate_topline truth condition`);
+      }
     }
   }
 }
@@ -361,8 +480,11 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
   }
 
   const frameIds = new Set();
+  const frameById = new Map();
   const assertionIds = new Set();
   const assertionById = new Map();
+  const assertionContextById = new Map();
+  let primaryFrameCount = 0;
 
   for (const [frameIndex, frame] of dossier.interpretationFrames.entries()) {
     const frameLabel = `interpretationFrames[${frameIndex}]`;
@@ -371,7 +493,16 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       errors.push(`duplicate frame id: ${frame.id}`);
     }
     frameIds.add(frame.id);
+    frameById.set(frame.id, frame);
+    if (frame.frameRole === 'primary') {
+      primaryFrameCount += 1;
+    }
+    if (frame.frameRole === 'caveat' && frame.admissibility === 'excluded') {
+      errors.push(`${frameLabel}.frameRole=caveat should not be combined with admissibility=excluded`);
+    }
 
+    let weightedTruthConditionTotal = 0;
+    let dominantTruthConditionCount = 0;
     for (const [truthIndex, truthCondition] of frame.atomicityProfile.distinctTruthConditions.entries()) {
       const truthLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${truthIndex}]`;
       if (truthConditionIds.has(truthCondition.id)) {
@@ -380,6 +511,36 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       truthConditionIds.add(truthCondition.id);
       if ('coversReferenceAssertionIds' in truthCondition) {
         errors.push(`${truthLabel}.coversReferenceAssertionIds is forbidden; use referenceAssertions[].truthConditionId`);
+      }
+      if (['dominant', 'supporting', 'aggregate_topline'].includes(truthCondition.dominanceRole)) {
+        if (!isPositiveNumber(truthCondition.dominanceWeight)) {
+          errors.push(`${truthLabel}.dominanceWeight must be > 0 for dominanceRole=${truthCondition.dominanceRole}`);
+        }
+      }
+      if (['caveat', 'context'].includes(truthCondition.dominanceRole)) {
+        if (!(truthCondition.dominanceWeight === null || truthCondition.dominanceWeight === 0)) {
+          errors.push(`${truthLabel}.dominanceWeight must be null or 0 for dominanceRole=${truthCondition.dominanceRole}`);
+        }
+      }
+      if (truthCondition.dominanceRole === 'aggregate_topline' && frame.frameRole === 'caveat') {
+        errors.push(`${truthLabel}.dominanceRole=aggregate_topline is not allowed in a caveat frame`);
+      }
+      if (truthCondition.dominanceRole === 'dominant') {
+        dominantTruthConditionCount += 1;
+      }
+      if (['dominant', 'supporting'].includes(truthCondition.dominanceRole)) {
+        weightedTruthConditionTotal += truthCondition.dominanceWeight;
+      }
+    }
+
+    if (['primary', 'secondary'].includes(frame.frameRole)) {
+      if (dominantTruthConditionCount === 0) {
+        errors.push(`${frameLabel}.frameRole=${frame.frameRole} requires at least one dominant truth condition`);
+      }
+      if (!approxEqual(weightedTruthConditionTotal, 1)) {
+        errors.push(
+          `${frameLabel} dominant/supporting dominanceWeight values must sum to 1.0; got ${weightedTruthConditionTotal.toFixed(3)}`
+        );
       }
     }
 
@@ -399,6 +560,7 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       }
       assertionIds.add(assertion.id);
       assertionById.set(assertion.id, assertion);
+      assertionContextById.set(assertion.id, { frame, truthCondition: null });
 
       if (!truthConditionIds.has(assertion.truthConditionId)) {
         errors.push(`${assertionLabel}.truthConditionId does not resolve in same frame: ${assertion.truthConditionId}`);
@@ -406,6 +568,7 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       const truthCondition = frame.atomicityProfile.distinctTruthConditions.find((candidate) =>
         candidate.id === assertion.truthConditionId
       );
+      assertionContextById.set(assertion.id, { frame, truthCondition });
       if (assertion.separability === 'strict' && truthCondition?.independentAssessabilityRequired !== true) {
         errors.push(`${assertionLabel}.separability=strict requires an independently assessable truth condition`);
       }
@@ -448,7 +611,14 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
     }
   }
 
-  validateAssertionRouting(dossier, assertionById, benchmarkFamily, errors);
+  if (primaryFrameCount === 0) {
+    errors.push('interpretationFrames must contain at least one frameRole=primary frame');
+  }
+  if (dossier.ambiguityPolicy !== 'must_cover_all' && primaryFrameCount !== 1) {
+    errors.push(`ambiguityPolicy=${dossier.ambiguityPolicy} requires exactly one frameRole=primary frame`);
+  }
+
+  validateAssertionRouting(dossier, assertionById, assertionContextById, frameById, benchmarkFamily, errors);
 
   return errors;
 }

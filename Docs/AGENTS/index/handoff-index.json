@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-05T22:25:33.130Z",
-  "count": 305,
+  "generatedAt": "2026-06-08T17:31:38.599Z",
+  "count": 306,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6280,6 +6280,22 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Main command: `npx tsx scripts/measure-report-quality.ts`. Useful filters: `--family <slug>`, `--limit <n>`, `--build <prefix>`, `--compare <a> <b>`, `--json`. Verified full local DB dry-run: 514 exact benchmark reports, 0 parse failures, no live jobs/LLM calls. Full-run headline output at this poin"
+    },
+    {
+      "file": "2026-06-08_Lead_Developer_Reference_Dossier_Frame_Dominance_Extension.md",
+      "date": "2026-06-08",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "reference",
+        "dossier",
+        "frame",
+        "dominance",
+        "extension"
+      ],
+      "files_touched": [],
+      "summary": "Lead Developer Handoff — Reference Dossier Frame/Dominance Extension"
     }
   ]
 }
