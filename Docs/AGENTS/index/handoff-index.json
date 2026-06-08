@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-08T17:50:36.614Z",
-  "count": 307,
+  "generatedAt": "2026-06-08T18:18:31.217Z",
+  "count": 308,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6280,6 +6280,22 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Main command: `npx tsx scripts/measure-report-quality.ts`. Useful filters: `--family <slug>`, `--limit <n>`, `--build <prefix>`, `--compare <a> <b>`, `--json`. Verified full local DB dry-run: 514 exact benchmark reports, 0 parse failures, no live jobs/LLM calls. Full-run headline output at this poin"
+    },
+    {
+      "file": "2026-06-08_Lead_Developer_Bundesrat_Rechtskraftig_Manual_Alignment_Pilot.md",
+      "date": "2026-06-08",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "bundesrat",
+        "rechtskraftig",
+        "manual",
+        "alignment",
+        "pilot"
+      ],
+      "files_touched": [],
+      "summary": "Lead Developer Handoff — Bundesrat-Rechtskräftig Manual Alignment Pilot"
     },
     {
       "file": "2026-06-08_Lead_Developer_Reference_Dossier_Frame_Aggregation_Mode.md",

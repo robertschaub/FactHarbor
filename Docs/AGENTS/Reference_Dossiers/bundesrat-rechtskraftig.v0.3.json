@@ -1,6 +1,6 @@
 {
   "id": "bundesrat-rechtskraftig",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "inputSlug": "bundesrat-rechtskraftig",
   "captainInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
   "language": "de",
@@ -13,7 +13,7 @@
     "adjudicator": null,
     "peerReviewer": null,
     "createdAt": "2026-06-06T00:00:00Z",
-    "lastRevalidatedAt": "2026-06-06T22:03:12Z",
+    "lastRevalidatedAt": "2026-06-08T00:00:00Z",
     "revalidateAfter": "2026-09-06T00:00:00Z",
     "roleSeparationMode": "multi_agent_draft"
   },
@@ -89,15 +89,18 @@
       "atomicityProfile": {
         "determinability": "determinable",
         "determinabilityStatus": "settled",
-        "determinabilityRationale": "Under this frame, the input decomposes into independently verifiable conditions: signature, parliamentary decision status, popular decision status, and final binding/entry-into-force status. Each can be true or false under different evidence.",
+        "determinabilityRationale": "Under this frame, the input decomposes into three Captain-confirmed expected AtomicClaims: signature before Parliament decision, signature before people decision, and final binding/entry-into-force status. Signature occurrence remains required coverage but may be visibly merged into the two chronology claims; it is not required as a standalone extracted AtomicClaim.",
         "distinctTruthConditions": [
           {
             "id": "TC_SIGNATURE_OCCURRED",
             "description": "Whether Switzerland/EU signed the relevant package agreements or programme agreement.",
             "dominanceRole": "supporting",
             "dominanceWeight": 0.1,
-            "independentAssessabilityRequired": true,
-            "mergeAllowedWith": []
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": [
+              "TC_PARLIAMENT_DECISION_PENDING",
+              "TC_POPULAR_DECISION_PENDING"
+            ]
           },
           {
             "id": "TC_PARLIAMENT_DECISION_PENDING",
@@ -147,7 +150,7 @@
           "truthConditionId": "TC_SIGNATURE_OCCURRED",
           "text": "The remaining agreements, protocols, and a joint declaration of the Switzerland-EU package were signed on 2 March 2026.",
           "role": "required",
-          "separability": "strict",
+          "separability": "flexible",
           "kind": "procedural",
           "truthBand": {
             "min": 86,
@@ -176,7 +179,7 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": "External verification before any status upgrade must confirm the exact official wording for what was signed, by whom, and under whose authority."
+          "notes": "Captain-confirmed v0.3 atomicity: signature occurrence may be visibly merged into the before-Parliament and before-people chronology AtomicClaims. External verification before any status upgrade must confirm the exact official wording for what was signed, by whom, and under whose authority."
         },
         {
           "id": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
@@ -647,6 +650,6 @@
     "contextAssertionIds": [
       "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT"
     ],
-    "coherenceNote": "Primary/default C4 uses the legal-force/entry-into-force reading: the chronology is true but supporting, while the dominant `rechtskräftig` legal-force claim is false, so the primary band is 29-57 with LEANING-FALSE/MIXED labels. A less likely secondary signed-text/authentication reading can be true-side only when explicitly stated together with the not-yet-in-force caveat; that conditional route is recorded in alternativeTopLineRoutes and must not be obtained by averaging true chronology or limited-effect caveats into the primary route."
+    "coherenceNote": "Primary/default C4 uses the legal-force/entry-into-force reading: the two chronology claims are true but supporting, while the dominant `rechtskräftig` legal-force claim is false, so the primary band is 29-57 with LEANING-FALSE/MIXED labels. Captain-confirmed v0.3 C1 shape expects three AtomicClaims: signature before Parliament, signature before the people, and legal-force/final-binding status. A less likely secondary signed-text/authentication reading can be true-side only when explicitly stated together with the not-yet-in-force caveat; that conditional route is recorded in alternativeTopLineRoutes and must not be obtained by averaging true chronology or limited-effect caveats into the primary route."
   }
 }

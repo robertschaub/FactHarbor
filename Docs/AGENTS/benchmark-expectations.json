@@ -25,12 +25,12 @@
       "crossLanguageVariantOf": null,
       "referenceDossier": {
         "id": "bundesrat-rechtskraftig",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "status": "draft",
-        "path": "Docs/AGENTS/Reference_Dossiers/bundesrat-rechtskraftig.v0.2.json"
+        "path": "Docs/AGENTS/Reference_Dossiers/bundesrat-rechtskraftig.v0.3.json"
       },
       "qualityStatus": "CONFIRMED-ON-CURRENT-STACK",
-      "qualityStatusNote": "Stage 1 contract/anchor failure fixed. Current isolated rerun f8e72c84fb004f23945e23c81973fc26 on 2026-05-10 succeeded as LEANING-FALSE 32/80 with 3 AtomicClaims, 5 boundaries, 88 evidence items, and no user-visible warnings; Captain accepted it as good. The v0.2 reference dossier makes the legal-force/entry-into-force reading primary and records an explicit secondary signed-text/authentication route separately.",
+      "qualityStatusNote": "Stage 1 contract/anchor failure fixed. Current isolated rerun f8e72c84fb004f23945e23c81973fc26 on 2026-05-10 succeeded as LEANING-FALSE 32/80 with 3 AtomicClaims, 5 boundaries, 88 evidence items, and no user-visible warnings; Captain accepted it as good. The v0.3 reference dossier makes the legal-force/entry-into-force reading primary, records the Captain-confirmed 3-AtomicClaim C1 shape, and records an explicit secondary signed-text/authentication route separately.",
       "latestVerifiedJobId": "f8e72c84fb004f23945e23c81973fc26",
       "latestObserved": { "verdictLabel": "LEANING-FALSE", "truthPercentage": 32, "confidence": 80 },
       "_failed_rerun_2026-04-16": "Rerun 4177998a at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls. Root cause: Stage 2 evidence extraction timed out (467 Fix3 LLM timeouts logged that day; 5 jobs submitted concurrently). NOT treated as a regression — needs isolated single-job rerun to confirm qualityStatus.",

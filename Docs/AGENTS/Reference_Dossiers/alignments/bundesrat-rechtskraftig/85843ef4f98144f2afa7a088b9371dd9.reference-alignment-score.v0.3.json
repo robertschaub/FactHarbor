@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "reference-alignment-score.v0.3",
+  "dossierId": "bundesrat-rechtskraftig",
+  "dossierVersion": "0.3.0",
+  "inputSlug": "bundesrat-rechtskraftig",
+  "reportJobId": "85843ef4f98144f2afa7a088b9371dd9",
+  "buildId": null,
+  "runWindowId": "manual-pilot-2026-06-08",
+  "scorerVersion": "manual-captain-confirmed-v0.3-2026-06-08",
+  "alignmentMode": "manual",
+  "judge": {
+    "promptVersion": null,
+    "model": null,
+    "runId": null
+  },
+  "captainConfirmation": {
+    "confirmedAt": "2026-06-08",
+    "expectedAtomicClaimShape": [
+      "signature occurred before Parliament decision",
+      "signature occurred before people decision",
+      "signature was or was not legally in force/finally binding"
+    ],
+    "dominantTruthConditionId": "TC_FINAL_BINDING_NOT_REACHED",
+    "notes": "Captain confirmed that the ideal extraction for this input has three AtomicClaims. Signature occurrence is required coverage but may be visibly merged into the two chronology claims."
+  },
+  "reportSnapshot": {
+    "inputClassification": "multi_assertion_input",
+    "overallVerdict": "MOSTLY-TRUE",
+    "truthPercentage": 75.3,
+    "confidence": 78
+  },
+  "c1": {
+    "activeFrameId": "FRAME_final_binding_entry_into_force",
+    "runnerUpFrameId": "FRAME_signed_text_fixed_not_in_force",
+    "activeFrameRole": "primary",
+    "activeFrameAggregationMode": "dominance_weighted",
+    "frameDecision": "active_clear",
+    "axisScores": {
+      "inputClassificationFit": 1,
+      "frameAdmissibility": 1,
+      "assertionCoverage": 0.8,
+      "atomicityFidelity": 0.7,
+      "disclosureFidelity": 0
+    },
+    "claimMappings": [
+      {
+        "reportClaimId": "AC_01",
+        "referenceAssertionIds": [
+          "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+          "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE"
+        ],
+        "truthConditionIds": [
+          "TC_SIGNATURE_OCCURRED",
+          "TC_FINAL_BINDING_NOT_REACHED",
+          "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE"
+        ],
+        "status": "partial",
+        "notes": "Compound top-line claim keeps `rechtskräftig` visible, but it combines legal-force status with chronology instead of representing the dominant legal-force condition as its own AtomicClaim."
+      },
+      {
+        "reportClaimId": "AC_02",
+        "referenceAssertionIds": [
+          "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE"
+        ],
+        "truthConditionIds": [
+          "TC_SIGNATURE_OCCURRED",
+          "TC_PARLIAMENT_DECISION_PENDING"
+        ],
+        "status": "addressed",
+        "notes": "Clean chronology AtomicClaim: signature before Parliament decision."
+      },
+      {
+        "reportClaimId": "AC_03",
+        "referenceAssertionIds": [
+          "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE"
+        ],
+        "truthConditionIds": [
+          "TC_SIGNATURE_OCCURRED",
+          "TC_POPULAR_DECISION_PENDING"
+        ],
+        "status": "addressed",
+        "notes": "Clean chronology AtomicClaim: signature before possible popular referendum."
+      }
+    ],
+    "truthConditionMappings": [
+      {
+        "truthConditionId": "TC_SIGNATURE_OCCURRED",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.1,
+        "status": "waived",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ],
+        "notes": "Required coverage, but no standalone AtomicClaim required after Captain-confirmed v0.3 atomicity."
+      },
+      {
+        "truthConditionId": "TC_PARLIAMENT_DECISION_PENDING",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.2,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "truthConditionId": "TC_POPULAR_DECISION_PENDING",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.2,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_03"
+        ]
+      },
+      {
+        "truthConditionId": "TC_FINAL_BINDING_NOT_REACHED",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.5,
+        "status": "merged_but_visible",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The dominant legal-force truth condition is visible through `rechtskräftig`, but hidden inside a compound top-line AtomicClaim. This is the main C1 atomicity penalty."
+      },
+      {
+        "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
+        "dominanceRole": "aggregate_topline",
+        "dominanceWeight": 1,
+        "status": "waived",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ],
+        "notes": "Aggregate top-line is excluded from the AtomicClaim fidelity denominator."
+      }
+    ],
+    "assertionCoverage": [
+      {
+        "referenceAssertionId": "RA_PACKAGE_SIGNATURE_OCCURRED",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_03"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+        "status": "partial",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The report addresses legal-force status only inside the compound top-line claim and resolves it as MIXED, not as a clean false-side verdict on a separate legal-force claim."
+      },
+      {
+        "referenceAssertionId": "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE",
+        "status": "partial",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ],
+        "notes": "The top-line assertion is present, but the report's overall C4 result is true-side rather than primary-route mixed/leaning-false."
+      }
+    ],
+    "extraClaims": [],
+    "reviewFlags": [
+      "secondary_frame_not_disclosed",
+      "dominant_truth_condition_missed"
+    ],
+    "notes": "Correct input classification and chronology split, but weaker C1 atomicity than 874... because the dominant legal-force condition is not independently extracted."
+  },
+  "c3": {
+    "assertionVerdictFits": [
+      {
+        "referenceAssertionId": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "reportClaimId": "AC_02",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict TRUE 95/90 fits the reference chronology assertion."
+      },
+      {
+        "referenceAssertionId": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "reportClaimId": "AC_03",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict TRUE 97/90 fits the reference chronology assertion."
+      },
+      {
+        "referenceAssertionId": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "adjacent",
+        "confidenceFit": "below_band",
+        "harmfulError": "none",
+        "notes": "AC_01 is MIXED 55/70. It partially recognizes the legal-force problem but does not deliver the clean false-side verdict expected when the positive `rechtskräftig` claim is assessed separately. Confidence is below the reference 75-95 band for the direction-normalized legal-force assertion."
+      }
+    ],
+    "evidenceMappings": [],
+    "harmFlags": [],
+    "reviewFlags": []
+  },
+  "c4Note": {
+    "primaryRouteFit": "miss",
+    "observed": {
+      "verdict": "MOSTLY-TRUE",
+      "truthPercentage": 75.3,
+      "confidence": 78
+    },
+    "expectedPrimaryRoute": {
+      "acceptedVerdictLabels": [
+        "LEANING-FALSE",
+        "MIXED"
+      ],
+      "truthBand": {
+        "min": 29,
+        "max": 57
+      },
+      "confidenceBand": {
+        "min": 55,
+        "max": 85
+      }
+    },
+    "notes": "This report has good chronology handling and correct multi-assertion classification but misses the primary aggregate route by keeping the overall verdict true-side."
+  }
+}
