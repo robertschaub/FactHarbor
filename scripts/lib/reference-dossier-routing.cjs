@@ -82,6 +82,7 @@ function summarizeAssertion(assertion, routeRole, index) {
     assertionRole: assertion.role,
     frameId: frame?.id || null,
     frameRole: frame?.frameRole || null,
+    frameAggregationMode: frame?.frameAggregationMode || null,
     truthConditionId: assertion.truthConditionId,
     truthConditionDescription: truthCondition?.description || null,
     dominanceRole: truthCondition?.dominanceRole || null,
@@ -184,6 +185,7 @@ function buildReferenceDossierRoute(dossier, relPath) {
     frames: frames.map((frame) => ({
       id: frame.id,
       frameRole: frame.frameRole || null,
+      frameAggregationMode: frame.frameAggregationMode || null,
       admissibility: frame.admissibility,
       ambiguityPolicy: frame.ambiguityPolicy,
       determinability: frame.atomicityProfile?.determinability || null,

@@ -92,6 +92,7 @@
       "interpretedTermOrFrame": "Asylbereich; zurzeit",
       "interpretationDefinition": "The claim is read under the official SEM umbrella category `Total Personen aus dem Asylbereich (inkl. RU)`, with the time anchor disclosed as the latest clean SEM full aggregate available in the dossier. Narrower `Asylprozess`, `Flüchtlinge`, or component tables may be caveats/context but are not substitutes for the umbrella category.",
       "frameRole": "primary",
+      "frameAggregationMode": "balanced_composite",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the benchmark's required reading: one clean official SEM aggregate total, true-side but calibrated because the threshold is barely crossed and the clean umbrella aggregate is end-2025 rather than same-day live data.",
       "ambiguityPolicy": "must_disclose",
@@ -103,7 +104,7 @@
           {
             "id": "TC_OFFICIAL_SEM_UMBRELLA_THRESHOLD",
             "description": "Whether the clean official SEM umbrella aggregate `Total Personen aus dem Asylbereich (inkl. RU)` is above 235 000 in the latest clean full aggregate used by the dossier.",
-            "dominanceRole": "dominant",
+            "dominanceRole": "supporting",
             "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []

@@ -62,6 +62,7 @@
       "interpretedTermOrFrame": "`235000 Flüchtlinge` and `am Ende des Zweiten Weltkrieges`",
       "interpretationDefinition": "The current count may be read loosely as the broader SEM asylum-area population, but `am Ende des Zweiten Weltkrieges` is read as point-in-time refugee stock at war's end. Cumulative wartime admissions/internments are not valid support for the endpoint comparison.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the Captain-expected frame: the present 235k count can be true-side or definition-caveated, but the historical comparison is false-side when measured against endpoint stock rather than cumulative wartime flows.",
       "ambiguityPolicy": "must_disclose",

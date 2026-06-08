@@ -156,6 +156,16 @@ function approxEqual(left, right, tolerance = 0.001) {
   return Math.abs(left - right) <= tolerance;
 }
 
+function topLineDominanceRolesForFrame(frame) {
+  if (frame?.frameAggregationMode === 'balanced_composite') {
+    return ['supporting', 'aggregate_topline'];
+  }
+  if (frame?.frameAggregationMode === 'dominance_weighted') {
+    return ['dominant', 'aggregate_topline'];
+  }
+  return [];
+}
+
 function validateBandOrder(band, label, errors) {
   if (!band || typeof band.min !== 'number' || typeof band.max !== 'number') {
     return;
@@ -315,9 +325,10 @@ function validateAssertionRouting(dossier, assertionById, assertionContextById, 
           errors.push(`benchmarkCoherence.${field} ${assertionId} must route from a primary frame`);
         }
         const dominanceRole = context?.truthCondition?.dominanceRole;
-        if (!['dominant', 'aggregate_topline'].includes(dominanceRole)) {
+        const allowedRoles = topLineDominanceRolesForFrame(context?.frame);
+        if (!allowedRoles.includes(dominanceRole)) {
           errors.push(
-            `benchmarkCoherence.${field} ${assertionId} must reference a dominant or aggregate_topline truth condition`
+            `benchmarkCoherence.${field} ${assertionId} must reference ${allowedRoles.join(' or ') || 'no'} truth condition for frameAggregationMode=${context?.frame?.frameAggregationMode || 'missing'}`
           );
         }
         if (!bandsEqual(assertion.truthBand, dossier.benchmarkCoherence.familyTruthBand)) {
@@ -440,8 +451,11 @@ function validateAssertionRouting(dossier, assertionById, assertionContextById, 
           `${formatStringSet(normalizeVerdictSet(route.acceptedVerdictLabels))}`
         );
       }
-      if (!['dominant', 'aggregate_topline'].includes(context.truthCondition?.dominanceRole)) {
-        errors.push(`${routeLabel}.assertionIds ${assertionId} must reference a dominant or aggregate_topline truth condition`);
+      const allowedRoles = topLineDominanceRolesForFrame(context.frame);
+      if (!allowedRoles.includes(context.truthCondition?.dominanceRole)) {
+        errors.push(
+          `${routeLabel}.assertionIds ${assertionId} must reference ${allowedRoles.join(' or ') || 'no'} truth condition for frameAggregationMode=${context.frame?.frameAggregationMode || 'missing'}`
+        );
       }
     }
   }
@@ -503,6 +517,9 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
 
     let weightedTruthConditionTotal = 0;
     let dominantTruthConditionCount = 0;
+    let supportingTruthConditionCount = 0;
+    let weightedAtomicTruthConditionCount = 0;
+    let aggregateToplineCount = 0;
     for (const [truthIndex, truthCondition] of frame.atomicityProfile.distinctTruthConditions.entries()) {
       const truthLabel = `${frameLabel}.atomicityProfile.distinctTruthConditions[${truthIndex}]`;
       if (truthConditionIds.has(truthCondition.id)) {
@@ -528,18 +545,69 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       if (truthCondition.dominanceRole === 'dominant') {
         dominantTruthConditionCount += 1;
       }
+      if (truthCondition.dominanceRole === 'supporting') {
+        supportingTruthConditionCount += 1;
+      }
+      if (truthCondition.dominanceRole === 'aggregate_topline') {
+        aggregateToplineCount += 1;
+      }
       if (['dominant', 'supporting'].includes(truthCondition.dominanceRole)) {
         weightedTruthConditionTotal += truthCondition.dominanceWeight;
+        weightedAtomicTruthConditionCount += 1;
       }
     }
 
-    if (['primary', 'secondary'].includes(frame.frameRole)) {
+    if (frame.frameRole === 'caveat' && frame.frameAggregationMode !== 'no_topline') {
+      errors.push(`${frameLabel}.frameRole=caveat requires frameAggregationMode=no_topline`);
+    }
+    if (['primary', 'secondary'].includes(frame.frameRole) && frame.frameAggregationMode === 'no_topline') {
+      errors.push(`${frameLabel}.frameRole=${frame.frameRole} cannot use frameAggregationMode=no_topline`);
+    }
+
+    if (frame.frameAggregationMode === 'dominance_weighted') {
       if (dominantTruthConditionCount === 0) {
-        errors.push(`${frameLabel}.frameRole=${frame.frameRole} requires at least one dominant truth condition`);
+        errors.push(`${frameLabel}.frameAggregationMode=dominance_weighted requires at least one dominant truth condition`);
+      }
+      if (
+        weightedAtomicTruthConditionCount > 0 &&
+        dominantTruthConditionCount >= weightedAtomicTruthConditionCount
+      ) {
+        errors.push(
+          `${frameLabel}.frameAggregationMode=dominance_weighted requires fewer dominant truth conditions than weighted AtomicClaims; use balanced_composite when no condition uniquely dominates`
+        );
       }
       if (!approxEqual(weightedTruthConditionTotal, 1)) {
         errors.push(
           `${frameLabel} dominant/supporting dominanceWeight values must sum to 1.0; got ${weightedTruthConditionTotal.toFixed(3)}`
+        );
+      }
+    }
+    if (frame.frameAggregationMode === 'balanced_composite') {
+      if (!['primary', 'secondary'].includes(frame.frameRole)) {
+        errors.push(`${frameLabel}.frameAggregationMode=balanced_composite is only valid for primary or secondary frames`);
+      }
+      if (dominantTruthConditionCount !== 0) {
+        errors.push(`${frameLabel}.frameAggregationMode=balanced_composite must not contain dominant truth conditions`);
+      }
+      if (supportingTruthConditionCount === 0) {
+        errors.push(`${frameLabel}.frameAggregationMode=balanced_composite requires at least one supporting truth condition`);
+      }
+      if (!approxEqual(weightedTruthConditionTotal, 1)) {
+        errors.push(
+          `${frameLabel} supporting dominanceWeight values must sum to 1.0 for balanced_composite; got ${weightedTruthConditionTotal.toFixed(3)}`
+        );
+      }
+    }
+    if (frame.frameAggregationMode === 'no_topline') {
+      if (frame.frameRole !== 'caveat') {
+        errors.push(`${frameLabel}.frameAggregationMode=no_topline requires frameRole=caveat`);
+      }
+      if (dominantTruthConditionCount !== 0 || supportingTruthConditionCount !== 0 || aggregateToplineCount !== 0) {
+        errors.push(`${frameLabel}.frameAggregationMode=no_topline cannot contain dominant, supporting, or aggregate_topline truth conditions`);
+      }
+      if (!approxEqual(weightedTruthConditionTotal, 0)) {
+        errors.push(
+          `${frameLabel} weighted AtomicClaim dominanceWeight values must sum to 0.0 for no_topline; got ${weightedTruthConditionTotal.toFixed(3)}`
         );
       }
     }

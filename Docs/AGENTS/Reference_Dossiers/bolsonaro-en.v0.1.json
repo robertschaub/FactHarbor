@@ -152,6 +152,7 @@
       "interpretedTermOrFrame": "legal proceedings, Brazilian law, international standards for a fair trial, and verdicts",
       "interpretationDefinition": "The input is read as a broad report-quality question about Bolsonaro's major legal proceedings through the June 2026 reference date: the 2023 TSE ineligibility proceeding and the 2025 STF AP 2668 criminal coup-plot proceeding. The answer should be true-side with caveats: legal basis and procedural safeguards are strongly supported, while competence, defense-access, appeal/review-scope, and sentence-proportionality objections cap confidence and make the verdict/sentence fairness claim evaluative rather than absolute.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This matches the Captain expectation for this family: legal basis is strongly supported and procedural fairness is largely supported with legitimate concerns. The source record contains official court support plus dissent and defense objections, so MIXED or false-side outcomes require stronger target-specific evidence than the caveats captured here.",
       "ambiguityPolicy": "must_cover_all",

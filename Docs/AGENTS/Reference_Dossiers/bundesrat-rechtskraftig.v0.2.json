@@ -82,6 +82,7 @@
       "interpretedTermOrFrame": "rechtskräftig",
       "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the strict legal/procedural reading of the user's word 'rechtskräftig'. It separates the act of signature from final domestic approval, ratification, and entry into force.",
       "ambiguityPolicy": "must_disclose",
@@ -371,6 +372,7 @@
       "interpretedTermOrFrame": "rechtskräftig",
       "interpretationDefinition": "The term is read in a less likely but admissible way: the signed treaty/package text is formally signed, authenticated, or fixed as the negotiated text, while the treaty/package is not yet finally binding or in force for Switzerland. This is not the primary legal-force reading, and a report using it must explicitly state the not-yet-in-force caveat.",
       "frameRole": "secondary",
+      "frameAggregationMode": "balanced_composite",
       "admissibility": "defensible",
       "admissibilityRationale": "This secondary reading can be good report work only when stated explicitly. It is less likely than the ordinary legal-force/entry-into-force reading, but it addresses the plausible distinction between a finalized signed text and a treaty that has entered into force.",
       "ambiguityPolicy": "must_disclose",
@@ -382,7 +384,7 @@
           {
             "id": "TC_VALID_SIGNATURE_AUTHENTICATION",
             "description": "Whether the signed package text was formally signed/authenticated/fixed as the negotiated text without itself establishing final binding force.",
-            "dominanceRole": "dominant",
+            "dominanceRole": "supporting",
             "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []

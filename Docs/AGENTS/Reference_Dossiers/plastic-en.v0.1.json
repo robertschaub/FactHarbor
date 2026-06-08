@@ -72,6 +72,7 @@
       "interpretedTermOrFrame": "pointless",
       "interpretationDefinition": "The term is read literally: plastic recycling achieves nothing useful at all, has no meaningful recycled output, and provides no environmental, economic, or practical benefit in any material stream.",
       "frameRole": "secondary",
+      "frameAggregationMode": "balanced_composite",
       "admissibility": "defensible",
       "admissibilityRationale": "This reading is linguistically possible but brittle. It is useful as a contrast frame because evidence of any nonzero recycling activity or material-specific benefit falsifies the literal zero-benefit claim.",
       "ambiguityPolicy": "must_disclose",
@@ -83,7 +84,7 @@
           {
             "id": "TC_ZERO_BENEFIT",
             "description": "Whether plastic recycling achieves no useful output or benefit at all.",
-            "dominanceRole": "dominant",
+            "dominanceRole": "supporting",
             "dominanceWeight": 1,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
@@ -135,6 +136,7 @@
       "interpretedTermOrFrame": "pointless",
       "interpretationDefinition": "The term is read as the reasonable fact-checking/evaluative claim that plastic recycling does not meaningfully work at scale or is not worth it overall, considering practical effectiveness, environmental benefit, and economic viability. This frame does not require the stronger claim that recycling literally achieves nothing.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the benchmark's preferred reasonable-reading frame. It reflects how the stored-report corpus decomposed the input: environmental value, economic value, and practical effectiveness/rate/downcycling. It must still disclose that a stricter literal reading would be false.",
       "ambiguityPolicy": "must_disclose",

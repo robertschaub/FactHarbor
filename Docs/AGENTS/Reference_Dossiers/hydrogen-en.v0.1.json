@@ -72,6 +72,7 @@
       "interpretedTermOrFrame": "efficient",
       "interpretationDefinition": "The claim compares hydrogen fuel-cell cars with battery-electric/direct-electric cars, using energy-efficiency measurement frames. Full-pathway/well-to-wheel and use-phase/tank-to-wheel must be separately assessable; range, refueling speed, and hydrogen's energy content by weight may be context but are not substitutes for energy efficiency.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the benchmark's required reading: 'using electricity' is read as passenger cars using electricity directly through battery-electric/direct-electric propulsion, not trolleybus, catenary, rail, or other non-car electricity uses. Prior report-quality history shows that acceptable reports stay false-side only when the measurement windows remain visible and proxy advantages such as energy density do not become thesis-direct support.",
       "ambiguityPolicy": "must_cover_all",
@@ -91,7 +92,7 @@
           {
             "id": "TC_USE_PHASE_TANK_TO_WHEEL",
             "description": "Whether a hydrogen fuel-cell car is more energy-efficient than a direct-electric/battery-electric car at the vehicle/use-phase or tank-to-wheel stage.",
-            "dominanceRole": "dominant",
+            "dominanceRole": "supporting",
             "dominanceWeight": 0.4,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
@@ -101,6 +102,17 @@
             "description": "Whether hydrogen range, refueling speed, or energy-density advantages are separate context rather than proof that hydrogen cars are more energy-efficient than direct-electric cars.",
             "dominanceRole": "context",
             "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": [
+              "TC_FULL_PATHWAY_WELL_TO_WHEEL",
+              "TC_USE_PHASE_TANK_TO_WHEEL"
+            ]
+          },
+          {
+            "id": "TC_HYDROGEN_EFFICIENCY_TOPLINE",
+            "description": "The non-atomic C4 top-line route for the overall claim that hydrogen cars are more efficient than direct-electric cars.",
+            "dominanceRole": "aggregate_topline",
+            "dominanceWeight": 1,
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": [
               "TC_FULL_PATHWAY_WELL_TO_WHEEL",
@@ -185,6 +197,44 @@
           "notes": "The embedded sources do not provide a single apples-to-apples tank-to-wheel table. They do show BEVs converting over 77% of grid electricity to power at the wheels, while DOE's PEM fuel-cell table lists 60% electrical efficiency for direct hydrogen before remaining drivetrain and upstream-pathway losses. This supports a false-side result even before full-pathway losses are added."
         },
         {
+          "id": "RA_HYDROGEN_EFFICIENCY_TOPLINE_FALSE",
+          "truthConditionId": "TC_HYDROGEN_EFFICIENCY_TOPLINE",
+          "text": "Overall, using hydrogen for cars is not more energy-efficient than using electricity directly in battery-electric cars.",
+          "role": "required",
+          "separability": "flexible",
+          "kind": "evaluative",
+          "truthBand": {
+            "min": 5,
+            "max": 25
+          },
+          "confidenceBand": {
+            "min": 65,
+            "max": 85
+          },
+          "acceptedVerdictLabels": [
+            "FALSE",
+            "MOSTLY-FALSE"
+          ],
+          "freshnessRequirement": "recent",
+          "relevantGeographies": [
+            "United States",
+            "General"
+          ],
+          "evidenceSourceIds": [
+            "SRC_FUELECONOMY_EVTECH",
+            "SRC_DOE_FUEL_CELL_TECH_COMPARISON",
+            "SRC_DOE_HYDROGEN_TRANSPORT_ROLE_20220225",
+            "SRC_DOE_HYDROGEN_ELECTROLYSIS"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "A report that concludes hydrogen cars are more energy-efficient than direct-electric cars reverses the benchmark's top-line false-side result.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "Aggregate C4 route only. C1/C3 AtomicClaim alignment should still score the strict full-pathway and use-phase truth conditions separately; this assertion prevents the legacy aggregate scorer from selecting a supporting subclaim as the top-line."
+        },
+        {
           "id": "RA_PROXY_ADVANTAGES_NOT_EFFICIENCY",
           "truthConditionId": "TC_PROXY_ADVANTAGES_NOT_EFFICIENCY",
           "text": "Hydrogen's range, refueling-speed, or energy-content advantages are separate context and do not establish that hydrogen cars are more energy-efficient than direct-electric cars.",
@@ -232,13 +282,13 @@
       "max": 85
     },
     "topLineAssertionIds": [
-      "RA_USE_PHASE_HYDROGEN_MORE_EFFICIENT_FALSE"
+      "RA_HYDROGEN_EFFICIENCY_TOPLINE_FALSE"
     ],
     "alternativeTopLineRoutes": [],
     "coverageGuardAssertionIds": [],
     "contextAssertionIds": [
       "RA_PROXY_ADVANTAGES_NOT_EFFICIENCY"
     ],
-    "coherenceNote": "This partial dossier matches the benchmark's FALSE/MOSTLY-FALSE expectation for `Using hydrogen for cars is more efficient than using electricity`. Top-line scoring must use `RA_USE_PHASE_HYDROGEN_MORE_EFFICIENT_FALSE`; the full-pathway assertion is a required independent subclaim, and proxy advantages are context only. Dossier-backed scoring must reward structural separation of full-pathway/well-to-wheel and use-phase/tank-to-wheel comparisons and must penalize proxy drift where hydrogen range, refueling speed, or energy density is treated as evidence of energy-efficiency superiority."
+    "coherenceNote": "This partial dossier matches the benchmark's FALSE/MOSTLY-FALSE expectation for `Using hydrogen for cars is more efficient than using electricity`. Top-line C4 scoring uses the aggregate route `RA_HYDROGEN_EFFICIENCY_TOPLINE_FALSE`; the full-pathway assertion is dominant, the use-phase assertion is supporting, and proxy advantages are context only. Dossier-backed scoring must reward structural separation of full-pathway/well-to-wheel and use-phase/tank-to-wheel comparisons and must penalize proxy drift where hydrogen range, refueling speed, or energy density is treated as evidence of energy-efficiency superiority."
   }
 }

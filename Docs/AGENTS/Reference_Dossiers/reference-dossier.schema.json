@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://factharbor.local/schemas/reference-dossier.schema.json",
-  "title": "FactHarbor AtomicClaim Reference Dossier v0.1",
+  "title": "FactHarbor AtomicClaim Reference Dossier v0.3",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -212,6 +212,7 @@
         "interpretedTermOrFrame",
         "interpretationDefinition",
         "frameRole",
+        "frameAggregationMode",
         "admissibility",
         "admissibilityRationale",
         "ambiguityPolicy",
@@ -226,6 +227,10 @@
         "frameRole": {
           "type": "string",
           "enum": ["primary", "secondary", "caveat"]
+        },
+        "frameAggregationMode": {
+          "type": "string",
+          "enum": ["dominance_weighted", "balanced_composite", "no_topline"]
         },
         "admissibility": {
           "type": "string",

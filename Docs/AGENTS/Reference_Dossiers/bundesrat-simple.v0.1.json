@@ -72,6 +72,7 @@
       "interpretedTermOrFrame": "Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament entschieden haben",
       "interpretationDefinition": "The input is read as a chronology statement about the 2026 Switzerland-EU package/Bilaterals III: the relevant package agreements were signed before Swiss parliamentary approval and before any popular vote. The frame does not read the signature as final ratification, entry into force, or a completed democratic approval decision.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the Captain-expected literal reading for `bundesrat-simple`: the chronology is true, while a high-quality report must avoid implying that signature equals final approval or that a popular vote had already been required and held.",
       "ambiguityPolicy": "must_disclose",

@@ -132,6 +132,7 @@
       "interpretedTermOrFrame": "direito processual brasileiro, requisitos constitucionais, and sentencas justas",
       "interpretationDefinition": "The input is read as a claim about the STF criminal process against Bolsonaro for attempted coup/coup-related crimes. It asks whether the process respected Brazilian procedural law and constitutional safeguards and whether the resulting judgments/sentences were fair or just in the legal-process sense. It is not a claim that the sentence is politically/morally uncontestable.",
       "frameRole": "primary",
+      "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
       "admissibilityRationale": "This is the Captain-expected Portuguese variant: true-side with caveats. The official record supports legal basis and procedural safeguards, while defense claims, competence dissent, access/time objections, and sentence-proportionality arguments cap confidence. The sentence-justice clause must remain explicit.",
       "ambiguityPolicy": "must_cover_all",
