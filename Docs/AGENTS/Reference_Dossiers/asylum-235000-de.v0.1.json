@@ -1,0 +1,236 @@
+{
+  "id": "asylum-235000-de",
+  "version": "0.1.0",
+  "inputSlug": "asylum-235000-de",
+  "captainInputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+  "language": "de",
+  "status": "draft",
+  "expectedInputClassification": "ambiguous_single_claim",
+  "ambiguityPolicy": "must_disclose",
+  "ambiguityPolicyRationale": "The input is a single threshold claim, but both `Asylbereich` and `zurzeit` require definition. Reports must disclose the SEM umbrella reading, the source date, and the distinction from narrower `Asylprozess` or `Flüchtlinge` counts. A report must not silently replace the official SEM umbrella aggregate with a component-only or refugee-only count.",
+  "curation": {
+    "curator": "Codex GPT-5 (Lead Developer partial draft)",
+    "adjudicator": null,
+    "peerReviewer": null,
+    "createdAt": "2026-06-08T00:00:00Z",
+    "lastRevalidatedAt": "2026-06-08T06:04:47Z",
+    "revalidateAfter": "2026-07-15T00:00:00Z",
+    "roleSeparationMode": "multi_agent_draft"
+  },
+  "validityWindow": {
+    "referenceTime": "2026-06-08T00:00:00Z",
+    "validFrom": "2026-06-08T00:00:00Z",
+    "validThrough": "2026-07-15T00:00:00Z",
+    "currentSnapshot": true
+  },
+  "sourceSnapshots": [
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_MAIN_20260430",
+      "url": "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_MAIN_20260430.html",
+      "localHash": "sha256:438cef9bd45a5f9bec0d5748fbbd4d61f982e9207e7235945ec0db1922076f93",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM Asylstatistik landing page, captured 2026-06-08: it links `Aktuelle Zahlen (am 30. April 2026)`, establishing that the latest monthly current-statistics page available to the dossier is April 2026."
+    },
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_APRIL_2026_PAGE",
+      "url": "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/archiv/2026/04.html",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_APRIL_2026_PAGE.html",
+      "localHash": "sha256:7f63d8f895b77d9f98502cb0a5ebff0ebb26740441995908f0f8248ee18b7b1c",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM April 2026 archive page: in the captured relevant listing, it links current stock tables including 6-10 `Bestand im Asylprozess in der Schweiz nach Unterprozess` and 6-51 `Bestand Rückkehrunterstützung (RU) ohne offenen Asylprozess`, but the listing does not itself show a one-line clean umbrella total `Total Personen aus dem Asylbereich (inkl. RU)`."
+    },
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+      "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf.download.pdf/stat-jahr-2025-kommentar-d.pdf",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF.pdf",
+      "localHash": "sha256:6052f1fe77b6b0b3009a7ecd3d8f0ceec88a88281e08e4253546eb07db4e87b3",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM commented annual asylum statistics 2025: Table 1 gives `Total Personen aus dem Asylbereich (inkl. RU)` as 235 057 at end 2025, and narrative text says 235 057 people of the asylum area were in Switzerland at end December 2025. The same table shows components including 136 004 in the asylum process, 94 261 recognized refugees, and 4792 RU without pending asylum process."
+    },
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_LESEHINWEISE_PDF",
+      "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/asylstatistik-lesehinweise-d.pdf.download.pdf/asylstatistik-lesehinweise-d.pdf",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_LESEHINWEISE_PDF.pdf",
+      "localHash": "sha256:33865288397dbd2dcd2e53d3f47ccea3baab68709ff5b72dcbbd386050fdbdca",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM reading note: warns that total RU must not be added to the asylum-process stock because this double-counts people with open asylum processes; it also instructs that any total must use non-overlapping RU without pending asylum process. This source supports a no-unsupported-stitching guard, not a blanket ban on SEM-defined non-overlapping calculations."
+    },
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_APRIL_6_10_XLSX",
+      "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2026/04/6-10-best-asylprozess-2026-04.xlsx.download.xlsx/6-10-best-asylprozess-2026-04-d.xlsx",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_APRIL_6_10_XLSX.xlsx",
+      "localHash": "sha256:82a477c02032d929a4db2a742092a413117f202da497a8c27440ca6f5baacec3",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM April 2026 table 6-10: raw workbook XML shows row `Total` / column `Total Personen im Asylprozess in der Schweiz` = 135 078 as of 30.04.2026. This is a narrower current component, not the full `Personen aus dem Asylbereich (inkl. RU)` umbrella aggregate."
+    },
+    {
+      "id": "SRC_SEM_ASYLSTATISTIK_APRIL_6_51_XLSX",
+      "url": "https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2026/04/6-51-best-ru-2026-04.xlsx.download.xlsx/6-51-best-ru-2026-04-d.xlsx",
+      "archiveUrl": null,
+      "localPath": "Docs/AGENTS/Reference_Dossiers/snapshots/asylum-235000-de/v0.1/SRC_SEM_ASYLSTATISTIK_APRIL_6_51_XLSX.xlsx",
+      "localHash": "sha256:b0dee20eb6a90a36a15ed0a906e7d13ae80e76973d699e991d3eee91c176f9ec",
+      "retrievedAt": "2026-06-08T06:04:47Z",
+      "sourceType": "government_primary",
+      "notes": "SEM April 2026 table 6-51: captured workbook title/headers show `Bestand Rückkehrunterstützung (RU) ohne offenen Asylprozess` as of 30.04.2026. This is component context (non-overlapping RU, definition-only) and not a standalone full asylum-area aggregate."
+    }
+  ],
+  "interpretationFrames": [
+    {
+      "id": "FRAME_official_sem_asylbereich_umbrella",
+      "label": "Official SEM asylum-area umbrella threshold",
+      "interpretedTermOrFrame": "Asylbereich; zurzeit",
+      "interpretationDefinition": "The claim is read under the official SEM umbrella category `Total Personen aus dem Asylbereich (inkl. RU)`, with the time anchor disclosed as the latest clean SEM full aggregate available in the dossier. Narrower `Asylprozess`, `Flüchtlinge`, or component tables may be caveats/context but are not substitutes for the umbrella category.",
+      "admissibility": "defensible",
+      "admissibilityRationale": "This is the benchmark's required reading: one clean official SEM aggregate total, true-side but calibrated because the threshold is barely crossed and the clean umbrella aggregate is end-2025 rather than same-day live data.",
+      "ambiguityPolicy": "must_disclose",
+      "atomicityProfile": {
+        "determinability": "partial",
+        "determinabilityStatus": "settled",
+        "determinabilityRationale": "The official end-2025 umbrella aggregate is directly determined and above 235 000. The live-current April 2026 page exposes component tables, but this v0.1 packet does not contain a clean April 2026 annual-equivalent umbrella total; therefore current-snapshot use must pin the dossier version/date and avoid unsupported or incomplete current reconstructions.",
+        "distinctTruthConditions": [
+          {
+            "id": "TC_OFFICIAL_SEM_UMBRELLA_THRESHOLD",
+            "description": "Whether the clean official SEM umbrella aggregate `Total Personen aus dem Asylbereich (inkl. RU)` is above 235 000 in the latest clean full aggregate used by the dossier.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_SOURCE_DATE_DISCLOSURE",
+            "description": "Whether a report discloses the source date and freshness limits for the `zurzeit` wording instead of presenting the number as a same-day count.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_NO_COMPONENT_STITCHING",
+            "description": "Whether a report avoids unsupported or incomplete current umbrella totals from component tables, especially adding total RU to asylum-process stock despite SEM's double-counting warning.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_NARROW_PROCESS_NOT_EQUIVALENT",
+            "description": "Whether narrower `Asylprozess`, recognized-refugee, or refugee-only counts are distinguished from the broader SEM `Asylbereich` umbrella category.",
+            "independentAssessabilityRequired": true,
+            "mergeAllowedWith": []
+          }
+        ]
+      },
+      "referenceAssertions": [
+        {
+          "id": "RA_SEM_2025_UMBRELLA_ABOVE_235000",
+          "truthConditionId": "TC_OFFICIAL_SEM_UMBRELLA_THRESHOLD",
+          "text": "Under the official SEM umbrella reading and the latest clean full aggregate available in this v0.1 dossier, the threshold claim is true-side: SEM reported 235 057 `Personen aus dem Asylbereich (inkl. RU)` in Switzerland at end December 2025, which is just above 235 000.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": { "min": 58, "max": 75 },
+          "confidenceBand": { "min": 40, "max": 70 },
+          "acceptedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+            "SRC_SEM_ASYLSTATISTIK_MAIN_20260430"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Missing the clean SEM umbrella aggregate or replacing it with a narrower component count can flip the report false-side despite the benchmark's accepted true-side expectation.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The value is only 57 above the threshold and is dated end December 2025. That supports LEANING-TRUE/MOSTLY-TRUE with capped confidence, not near-certain TRUE."
+        },
+        {
+          "id": "RA_SOURCE_DATE_MUST_BE_DISCLOSED",
+          "truthConditionId": "TC_SOURCE_DATE_DISCLOSURE",
+          "text": "A valid report must disclose that the clean 235 057 umbrella total is an end-December-2025 SEM aggregate, while the SEM current-statistics landing page available on 2026-06-08 points to April 2026 current figures.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+            "SRC_SEM_ASYLSTATISTIK_MAIN_20260430",
+            "SRC_SEM_ASYLSTATISTIK_APRIL_2026_PAGE"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Suppressing the source date makes a near-threshold year-end aggregate look like a same-day live count and can produce overconfident calibration.",
+            "severity": "medium"
+          },
+          "contested": false,
+          "notes": "This assertion is procedural/report-quality guidance and should not be averaged into the top-line truth percentage."
+        },
+        {
+          "id": "RA_DO_NOT_STITCH_CURRENT_COMPONENT_TOTAL",
+          "truthConditionId": "TC_NO_COMPONENT_STITCHING",
+          "text": "For the April 2026 current-statistics page, a report should not present an unsupported or incomplete component calculation as the clean `Personen aus dem Asylbereich` umbrella total; it must not add total RU to asylum-process stock, and any component calculation must use SEM's non-overlapping categories and disclose that it is a reconstruction.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "procedural",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_LESEHINWEISE_PDF",
+            "SRC_SEM_ASYLSTATISTIK_APRIL_2026_PAGE",
+            "SRC_SEM_ASYLSTATISTIK_APRIL_6_10_XLSX",
+            "SRC_SEM_ASYLSTATISTIK_APRIL_6_51_XLSX"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Component-stitching is a known failure mode for this benchmark: it can create false contradictions, double counts, or unsupported current totals.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "The reading note specifically warns that total RU must not be added to the asylum-process stock because of double-counting, while also pointing to non-overlapping RU without pending asylum process for valid calculations. The annual commentary is the clean source for the umbrella aggregate in this v0.1 dossier. This is a report-quality/admissibility guard and should not be averaged into the top-line truth percentage."
+        },
+        {
+          "id": "RA_ASYLPROCESS_ONLY_NOT_EQUIVALENT",
+          "truthConditionId": "TC_NARROW_PROCESS_NOT_EQUIVALENT",
+          "text": "The April 2026 `Total Personen im Asylprozess in der Schweiz` value of 135 078 is a narrower current component and is not equivalent to the broader SEM `Total Personen aus dem Asylbereich (inkl. RU)` umbrella category.",
+          "role": "required",
+          "separability": "strict",
+          "kind": "factual",
+          "truthBand": { "min": 86, "max": 100 },
+          "confidenceBand": { "min": 75, "max": 95 },
+          "acceptedVerdictLabels": ["TRUE"],
+          "freshnessRequirement": "current_snapshot",
+          "relevantGeographies": ["Switzerland"],
+          "evidenceSourceIds": [
+            "SRC_SEM_ASYLSTATISTIK_2025_COMMENTARY_PDF",
+            "SRC_SEM_ASYLSTATISTIK_APRIL_6_10_XLSX"
+          ],
+          "knownCounterEvidenceSourceIds": [],
+          "harmfulMissCondition": {
+            "description": "Treating the narrower asylum-process total as the target category would incorrectly contradict the official umbrella-threshold claim.",
+            "severity": "high"
+          },
+          "contested": false,
+          "notes": "This is a definition guard and should not be averaged into the top-line truth percentage. It is not evidence that the umbrella claim is false; it explains why component-only current tables are not a substitute for the clean aggregate."
+        }
+      ]
+    }
+  ],
+  "benchmarkCoherence": {
+    "familyTruthBand": { "min": 58, "max": 75 },
+    "familyConfidenceBand": { "min": 40, "max": 70 },
+    "coherenceNote": "This partial current-snapshot dossier matches the benchmark's true-side expectation while preserving the calibration caveats: the decisive clean SEM aggregate is 235 057 at end December 2025, only 57 above the threshold; the latest SEM current page available on 2026-06-08 points to April 2026 component tables but the captured packet does not contain a clean annual-equivalent April umbrella total. Only `RA_SEM_2025_UMBRELLA_ABOVE_235000` sets the top-line truth band; procedural/definition guard assertions are report-quality/admissibility constraints and must not be averaged into the top-line truth percentage. Dossier-backed scoring must require source-date disclosure and must reject unsupported component-stitching or narrower-category substitution."
+  }
+}
