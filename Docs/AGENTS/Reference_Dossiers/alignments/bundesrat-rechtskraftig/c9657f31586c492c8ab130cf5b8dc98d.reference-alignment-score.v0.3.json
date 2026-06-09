@@ -1,0 +1,304 @@
+{
+  "schemaVersion": "reference-alignment-score.v0.3",
+  "dossierId": "bundesrat-rechtskraftig",
+  "dossierVersion": "0.3.0",
+  "inputSlug": "bundesrat-rechtskraftig",
+  "reportJobId": "c9657f31586c492c8ab130cf5b8dc98d",
+  "buildId": null,
+  "runWindowId": "manual-pilot-2026-06-09",
+  "scorerVersion": "manual-captain-confirmed-v0.3-2026-06-09",
+  "alignmentMode": "manual",
+  "goldUse": "manual_alignment_gold_positive",
+  "overallAlignmentStatus": "partial",
+  "benchmarkPass": true,
+  "manualGoldApproved": true,
+  "goldUseNotes": "Approved as a local, auditable positive C4 calibration artifact: the aggregate verdict is in the primary reference band and the three expected truth conditions are separately visible. It is not a perfect replacement for the unavailable Captain-accepted f8e72c84 comparator because inputClassification is wrong and the legal-force per-claim C3 fit is weak.",
+  "judge": {
+    "promptVersion": null,
+    "model": null,
+    "runId": null
+  },
+  "captainConfirmation": {
+    "confirmedAt": "2026-06-08",
+    "expectedAtomicClaimShape": [
+      "signature occurred before Parliament decision",
+      "signature occurred before people decision",
+      "signature was or was not legally in force/finally binding"
+    ],
+    "dominantTruthConditionId": "TC_FINAL_BINDING_NOT_REACHED",
+    "notes": "Captain confirmed that the ideal extraction for this input has three AtomicClaims. Signature occurrence is required coverage but may be visibly merged into the two chronology claims."
+  },
+  "reportSnapshot": {
+    "inputClassification": "single_atomic_claim",
+    "overallVerdict": "MIXED",
+    "truthPercentage": 48,
+    "confidence": 72,
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "canonicalInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "inputExactness": "exact",
+    "createdUtc": "2026-04-17 03:22:40.8524266",
+    "reportAtomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig.",
+        "checkWorthiness": "high",
+        "verdict": "LEANING-FALSE",
+        "truthPercentage": 38,
+        "confidence": 72,
+        "evidenceIds": [
+          "EV_004",
+          "EV_007",
+          "EV_005",
+          "EV_006",
+          "EV_008",
+          "EV_009"
+        ]
+      },
+      {
+        "id": "AC_02",
+        "statement": "Die Unterzeichnung des EU-Vertrags durch den Bundesrat erfolgte, bevor das Parlament darüber entschieden hat.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 95,
+        "confidence": 88,
+        "evidenceIds": [
+          "EV_1776398202377",
+          "EV_1776398202378",
+          "EV_1776398120354",
+          "EV_1776398202376"
+        ]
+      },
+      {
+        "id": "AC_03",
+        "statement": "Die Unterzeichnung des EU-Vertrags durch den Bundesrat erfolgte, bevor das Volk darüber entschieden hat.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 95,
+        "confidence": 80,
+        "evidenceIds": [
+          "EV_1776398293121",
+          "EV_1776398293122"
+        ]
+      }
+    ]
+  },
+  "c1": {
+    "activeFrameId": "FRAME_final_binding_entry_into_force",
+    "runnerUpFrameId": "FRAME_signed_text_fixed_not_in_force",
+    "activeFrameRole": "primary",
+    "activeFrameAggregationMode": "dominance_weighted",
+    "frameDecision": "active_clear",
+    "axisScores": {
+      "inputClassificationFit": 0.5,
+      "frameAdmissibility": 1,
+      "assertionCoverage": 1,
+      "atomicityFidelity": 1,
+      "disclosureFidelity": 0
+    },
+    "claimMappings": [
+      {
+        "reportClaimId": "AC_01",
+        "referenceAssertionIds": [
+          "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE"
+        ],
+        "truthConditionIds": [
+          "TC_FINAL_BINDING_NOT_REACHED"
+        ],
+        "status": "addressed",
+        "notes": "Clean separate dominant legal-force AtomicClaim, phrased positively by the report and rejected as leaning false."
+      },
+      {
+        "reportClaimId": "AC_02",
+        "referenceAssertionIds": [
+          "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE"
+        ],
+        "truthConditionIds": [
+          "TC_SIGNATURE_OCCURRED",
+          "TC_PARLIAMENT_DECISION_PENDING"
+        ],
+        "status": "addressed",
+        "notes": "Clean chronology AtomicClaim: signature before parliamentary decision. Signature occurrence is visibly merged and accepted under the v0.3 3-AtomicClaim expectation."
+      },
+      {
+        "reportClaimId": "AC_03",
+        "referenceAssertionIds": [
+          "RA_PACKAGE_SIGNATURE_OCCURRED",
+          "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE"
+        ],
+        "truthConditionIds": [
+          "TC_SIGNATURE_OCCURRED",
+          "TC_POPULAR_DECISION_PENDING"
+        ],
+        "status": "addressed",
+        "notes": "Clean chronology AtomicClaim: signature before popular decision. Signature occurrence is visibly merged and accepted under the v0.3 3-AtomicClaim expectation."
+      },
+      {
+        "reportClaimId": "AC_01+AC_02+AC_03",
+        "referenceAssertionIds": [
+          "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE"
+        ],
+        "truthConditionIds": [
+          "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE"
+        ],
+        "status": "addressed",
+        "notes": "Aggregate top-line route is represented by the three extracted claims, and overall C4 is in the primary expected band."
+      }
+    ],
+    "truthConditionMappings": [
+      {
+        "truthConditionId": "TC_SIGNATURE_OCCURRED",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.1,
+        "status": "waived",
+        "reportClaimIds": [
+          "AC_02",
+          "AC_03"
+        ],
+        "notes": "Required coverage, but no standalone AtomicClaim required after Captain-confirmed v0.3 atomicity."
+      },
+      {
+        "truthConditionId": "TC_PARLIAMENT_DECISION_PENDING",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.2,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "truthConditionId": "TC_POPULAR_DECISION_PENDING",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.2,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_03"
+        ]
+      },
+      {
+        "truthConditionId": "TC_FINAL_BINDING_NOT_REACHED",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.5,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The dominant legal-force truth condition is independently visible as its own AtomicClaim."
+      },
+      {
+        "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
+        "dominanceRole": "aggregate_topline",
+        "dominanceWeight": null,
+        "status": "waived",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ],
+        "notes": "Aggregate top-line is excluded from the AtomicClaim fidelity denominator."
+      }
+    ],
+    "assertionCoverage": [
+      {
+        "referenceAssertionId": "RA_PACKAGE_SIGNATURE_OCCURRED",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_02",
+          "AC_03"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_03"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_03"
+        ]
+      }
+    ],
+    "extraClaims": [],
+    "reviewFlags": [
+      "secondary_frame_not_disclosed"
+    ],
+    "notes": "Best local auditable positive C4 example found in the current DB: exact input, three visible expected truth conditions, and aggregate verdict in the primary band. Main caveats: persisted inputClassification is single_atomic_claim, secondary signed-text/not-in-force ambiguity is not disclosed, and C3 legal-force calibration is weak."
+  },
+  "c3": {
+    "assertionVerdictFits": [
+      {
+        "referenceAssertionId": "RA_PARLIAMENT_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "reportClaimId": "AC_02",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict TRUE 95/88 fits the reference chronology assertion."
+      },
+      {
+        "referenceAssertionId": "RA_PEOPLE_HAD_NOT_DECIDED_AT_SIGNATURE",
+        "reportClaimId": "AC_03",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict TRUE 95/80 fits the reference chronology assertion."
+      },
+      {
+        "referenceAssertionId": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "same_side_out_of_band",
+        "confidenceFit": "below_band",
+        "harmfulError": "none",
+        "notes": "Direction-normalized fit: the report's positive legal-force claim is LEANING-FALSE 38/72, which implies roughly 62% support for the reference assertion that signature was not final binding force. That is same-side but below the 86-100 reference truth band; confidence is 3 points below the 75-95 reference band."
+      }
+    ],
+    "evidenceMappings": [],
+    "harmFlags": [],
+    "reviewFlags": []
+  },
+  "c4Note": {
+    "primaryRouteFit": "pass",
+    "observed": {
+      "verdict": "MIXED",
+      "truthPercentage": 48,
+      "confidence": 72
+    },
+    "expectedPrimaryRoute": {
+      "acceptedVerdictLabels": [
+        "LEANING-FALSE",
+        "MIXED"
+      ],
+      "truthBand": {
+        "min": 29,
+        "max": 57
+      },
+      "confidenceBand": {
+        "min": 55,
+        "max": 85
+      }
+    },
+    "notes": "This report passes the primary aggregate C4 route: chronology is true-side, legal-force is false-side, and the final aggregate lands in the dossier's MIXED/LEANING-FALSE band. It remains only a partial alignment artifact because C1 input classification and C3 legal-force calibration are imperfect."
+  }
+}
