@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "reference-alignment-score.v0.3",
+  "dossierId": "plastic-en",
+  "dossierVersion": "0.1.0",
+  "inputSlug": "plastic-en",
+  "reportJobId": "4fc23d657b0f4fd6ae7b5bf937f6cd9f",
+  "buildId": "a57044256704edd160bc2b1ddaa6710f9f652a57+c4b5de6a",
+  "runWindowId": "manual-pilot-2026-06-09",
+  "scorerVersion": "manual-diverse-reviewed-v0.3-2026-06-09",
+  "alignmentMode": "manual",
+  "goldUse": "manual_alignment_calibration_only",
+  "overallAlignmentStatus": "partial",
+  "benchmarkPass": true,
+  "manualGoldApproved": false,
+  "goldUseNotes": "Approved only as a manual calibration artifact after GPT/Gemini/Opus review. It is a positive C4 example because MIXED 56/68 is inside the primary route, but it is not Captain-approved gold and it remains partial for C1/C3 because environmental-value balance, literal-zero disclosure, and material-specific context are imperfect.",
+  "judge": {
+    "promptVersion": null,
+    "model": null,
+    "runId": null
+  },
+  "reviewerConvergence": {
+    "reviewedAt": "2026-06-09",
+    "reviewers": [
+      "gpt-5.5",
+      "gemini-3.1-pro-preview",
+      "opus-4.8-1m-max"
+    ],
+    "verdict": "write after revisions",
+    "acceptedAdjustments": [
+      "Keep manual_alignment_calibration_only, not gold-positive.",
+      "Downgrade environmental mapping from full to partial.",
+      "Reduce assertionCoverage below 1.0.",
+      "Keep AC_03 as tolerated context rather than active-frame coverage.",
+      "Record the literal-zero guard and material-specific context caveats in notes/review flags."
+    ],
+    "rejectedAdjustments": [
+      "Do not add non-contract enum values such as minor_confirming_drift.",
+      "Do not add a c4 block; this artifact uses the established c4Note field.",
+      "Do not map active primary-frame C1 coverage to secondary-frame guard assertions."
+    ]
+  },
+  "reportSnapshot": {
+    "inputClassification": "ambiguous_single_claim",
+    "overallVerdict": "MIXED",
+    "truthPercentage": 56,
+    "confidence": 68,
+    "inputValue": "Plastic recycling is pointless",
+    "canonicalInputValue": "Plastic recycling is pointless",
+    "inputExactness": "exact",
+    "createdUtc": "2026-06-01 16:21:28",
+    "reportAtomicClaims": [
+      {
+        "id": "AC_04",
+        "statement": "Plastic recycling is pointless in terms of real-world system outcomes—collected plastic does not actually get recycled at scale, with low completion rates and high rates of export failure or environmental leakage.",
+        "checkWorthiness": "high",
+        "verdict": "MOSTLY-TRUE",
+        "truthPercentage": 74,
+        "confidence": 68,
+        "evidenceIds": [
+          "EV_001",
+          "EV_004",
+          "EV_029",
+          "EV_030",
+          "EV_102",
+          "EV_103",
+          "EV_104",
+          "EV_105",
+          "EV_106",
+          "EV_107",
+          "EV_108",
+          "EV_109",
+          "EV_110",
+          "EV_114",
+          "EV_115",
+          "EV_116",
+          "EV_117",
+          "EV_118",
+          "EV_121",
+          "EV_122",
+          "EV_123",
+          "EV_124",
+          "EV_125"
+        ]
+      },
+      {
+        "id": "AC_01",
+        "statement": "Plastic recycling is pointless in terms of environmental effectiveness—it does not meaningfully offset the accumulation of plastic waste or the impact of rising global plastic production.",
+        "checkWorthiness": "high",
+        "verdict": "LEANING-TRUE",
+        "truthPercentage": 68,
+        "confidence": 72,
+        "evidenceIds": [
+          "EV_031",
+          "EV_032",
+          "EV_033",
+          "EV_036",
+          "EV_037",
+          "EV_039",
+          "EV_040",
+          "EV_044",
+          "EV_045",
+          "EV_049",
+          "EV_050",
+          "EV_051",
+          "EV_053",
+          "EV_054"
+        ]
+      },
+      {
+        "id": "AC_02",
+        "statement": "Plastic recycling is pointless in terms of economic viability—recycling operations are economically unviable or unprofitable relative to virgin plastic production.",
+        "checkWorthiness": "high",
+        "verdict": "MIXED",
+        "truthPercentage": 52,
+        "confidence": 68,
+        "evidenceIds": [
+          "EV_071",
+          "EV_072",
+          "EV_073",
+          "EV_074",
+          "EV_059"
+        ]
+      },
+      {
+        "id": "AC_03",
+        "statement": "Plastic recycling is pointless in terms of technical feasibility—plastic materials cannot be recycled effectively due to material degradation, limited recycling cycles, or technological constraints.",
+        "checkWorthiness": "high",
+        "verdict": "LEANING-FALSE",
+        "truthPercentage": 30,
+        "confidence": 72,
+        "evidenceIds": [
+          "EV_096",
+          "EV_078",
+          "EV_079",
+          "EV_081",
+          "EV_082"
+        ]
+      }
+    ]
+  },
+  "c1": {
+    "activeFrameId": "FRAME_reasonable_effectiveness_worth",
+    "runnerUpFrameId": "FRAME_literal_zero_benefit",
+    "activeFrameRole": "primary",
+    "activeFrameAggregationMode": "dominance_weighted",
+    "frameDecision": "active_clear",
+    "axisScores": {
+      "inputClassificationFit": 1,
+      "frameAdmissibility": 1,
+      "assertionCoverage": 0.85,
+      "atomicityFidelity": 0.85,
+      "disclosureFidelity": 0.5
+    },
+    "claimMappings": [
+      {
+        "reportClaimId": "AC_04",
+        "referenceAssertionIds": [
+          "RA_EFFECTIVENESS_POINTLESS_REASONABLE"
+        ],
+        "truthConditionIds": [
+          "TC_EFFECTIVENESS_AT_SCALE"
+        ],
+        "status": "addressed",
+        "notes": "Clean mapping to the dominant scale-effectiveness truth condition. The report is slightly above the reference truth band in C3, but C1 coverage is direct."
+      },
+      {
+        "reportClaimId": "AC_01",
+        "referenceAssertionIds": [
+          "RA_ENVIRONMENTAL_POINTLESS_MIXED"
+        ],
+        "truthConditionIds": [
+          "TC_ENVIRONMENTAL_VALUE"
+        ],
+        "status": "partial",
+        "notes": "Addresses the environmental dimension, but emphasizes the negative scale-offset side more than the reference assertion's mixed balance of real environmental value plus aggregate limitations."
+      },
+      {
+        "reportClaimId": "AC_02",
+        "referenceAssertionIds": [
+          "RA_ECONOMIC_POINTLESS_MIXED"
+        ],
+        "truthConditionIds": [
+          "TC_ECONOMIC_VALUE"
+        ],
+        "status": "addressed",
+        "notes": "Clean mapping to the economic-value truth condition."
+      },
+      {
+        "reportClaimId": "AC_01+AC_02+AC_04",
+        "referenceAssertionIds": [
+          "RA_REASONABLE_POINTLESS_OVERALL_CENTERED"
+        ],
+        "truthConditionIds": [
+          "TC_REASONABLE_POINTLESS_OVERALL"
+        ],
+        "status": "addressed",
+        "notes": "The three mapped reasonable-reading dimensions support the primary centered top-line route. AC_03 is relevant context but is excluded from the top-line mapping because it is a separate technical-feasibility angle."
+      }
+    ],
+    "truthConditionMappings": [
+      {
+        "truthConditionId": "TC_EFFECTIVENESS_AT_SCALE",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.5,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_04"
+        ]
+      },
+      {
+        "truthConditionId": "TC_ENVIRONMENTAL_VALUE",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.25,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "Separately represented but directionally overstated in C3."
+      },
+      {
+        "truthConditionId": "TC_ECONOMIC_VALUE",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.25,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "truthConditionId": "TC_REASONABLE_POINTLESS_OVERALL",
+        "dominanceRole": "aggregate_topline",
+        "dominanceWeight": null,
+        "status": "waived",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_04"
+        ],
+        "notes": "Aggregate top-line is excluded from the AtomicClaim fidelity denominator."
+      }
+    ],
+    "assertionCoverage": [
+      {
+        "referenceAssertionId": "RA_EFFECTIVENESS_POINTLESS_REASONABLE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_04"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_ENVIRONMENTAL_POINTLESS_MIXED",
+        "status": "partial",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The report covers the environmental dimension but leans toward the negative scale-offset side rather than the reference assertion's explicitly mixed balance."
+      },
+      {
+        "referenceAssertionId": "RA_ECONOMIC_POINTLESS_MIXED",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_REASONABLE_POINTLESS_OVERALL_CENTERED",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01",
+          "AC_02",
+          "AC_04"
+        ]
+      }
+    ],
+    "extraClaims": [
+      {
+        "reportClaimId": "AC_03",
+        "status": "tolerated_context",
+        "notes": "Technical feasibility is relevant to the ambiguity around `pointless`, and its false-side verdict indirectly mitigates literal-zero readings, but it is not equivalent to the active-frame material-specific-variance context assertion or the secondary-frame literal-zero guard."
+      }
+    ],
+    "reviewFlags": [
+      "literal_zero_guard_not_separately_disclosed",
+      "material_specific_context_not_separately_represented",
+      "environmental_dimension_overstated"
+    ],
+    "notes": "Positive C4 calibration artifact with partial C1/C3 fit. The report chooses the primary reasonable effectiveness/worth frame and has a clean centered aggregate, but it does not explicitly contrast the literal zero-benefit reading and does not separately discuss material-specific variance."
+  },
+  "c3": {
+    "assertionVerdictFits": [
+      {
+        "referenceAssertionId": "RA_EFFECTIVENESS_POINTLESS_REASONABLE",
+        "reportClaimId": "AC_04",
+        "claimVerdictId": null,
+        "verdictBandFit": "adjacent",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict MOSTLY-TRUE 74/68 fits the accepted label shape but is 2 points above the reference 58-72 truth band."
+      },
+      {
+        "referenceAssertionId": "RA_ENVIRONMENTAL_POINTLESS_MIXED",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "adjacent",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict LEANING-TRUE 68/72 overstates the environmental-pointless assertion relative to the reference MIXED 43-57 band. This is recorded as adjacent/out-of-band drift rather than a harmful flip because the final aggregate remains centered and the claim captures the true aggregate-scale limitation."
+      },
+      {
+        "referenceAssertionId": "RA_ECONOMIC_POINTLESS_MIXED",
+        "reportClaimId": "AC_02",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "Report verdict MIXED 52/68 fits the reference economic-value assertion."
+      }
+    ],
+    "evidenceMappings": [],
+    "harmFlags": [],
+    "reviewFlags": [
+      "environmental_confirming_drift_not_contract_enum"
+    ]
+  },
+  "c4Note": {
+    "primaryRouteFit": "pass",
+    "observed": {
+      "verdict": "MIXED",
+      "truthPercentage": 56,
+      "confidence": 68
+    },
+    "expectedPrimaryRoute": {
+      "acceptedVerdictLabels": [
+        "LEANING-FALSE",
+        "MIXED",
+        "LEANING-TRUE"
+      ],
+      "truthBand": {
+        "min": 42,
+        "max": 65
+      },
+      "confidenceBand": {
+        "min": 50,
+        "max": 75
+      }
+    },
+    "notes": "The report passes the primary aggregate C4 route for the centered reasonable-reading dossier: MIXED 56/68 is inside the expected labels, truth band, and confidence band. It remains calibration-only because the dossier is draft and C1/C3 caveats are material."
+  }
+}
