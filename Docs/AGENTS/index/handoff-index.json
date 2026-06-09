@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-09T20:44:17.875Z",
-  "count": 312,
+  "generatedAt": "2026-06-09T21:34:55.748Z",
+  "count": 313,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6328,6 +6328,21 @@
       ],
       "files_touched": [],
       "summary": "Lead Developer Handoff — Reference Dossier Frame/Dominance Extension"
+    },
+    {
+      "file": "2026-06-09_Lead_Developer_Bolsonaro_EN_Manual_Alignment.md",
+      "date": "2026-06-09",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "bolsonaro",
+        "en",
+        "manual",
+        "alignment"
+      ],
+      "files_touched": [],
+      "summary": "Lead Developer Handoff — Bolsonaro EN Manual Alignment"
     },
     {
       "file": "2026-06-09_Lead_Developer_Bundesrat_Rechtskraftig_Diverse_Review_Remediation.md",

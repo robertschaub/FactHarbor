@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "reference-alignment-score.v0.3",
+  "dossierId": "bolsonaro-en",
+  "dossierVersion": "0.1.0",
+  "inputSlug": "bolsonaro-en",
+  "reportJobId": "4da55d6227f8487597b1ccd20cbd5693",
+  "buildId": "52af97af383208d0b6efa8a54721b9d4620defd8",
+  "runWindowId": "manual-pilot-2026-06-09",
+  "scorerVersion": "manual-diverse-reviewed-v0.3-2026-06-09",
+  "alignmentMode": "manual",
+  "goldUse": "manual_alignment_calibration_only",
+  "overallAlignmentStatus": "partial",
+  "benchmarkPass": true,
+  "manualGoldApproved": false,
+  "goldUseNotes": "Approved only as a manual calibration artifact after GPT/Gemini/Opus review. It is a positive C4 example because LEANING-TRUE 61/54 is inside the primary route, but it is not Captain-approved gold. The dossier's current top-line sentence-proportionality assertion is not addressed by this report, so C1/C3 remain partial and diagnostic.",
+  "judge": {
+    "promptVersion": null,
+    "model": null,
+    "runId": null
+  },
+  "reviewerConvergence": {
+    "reviewedAt": "2026-06-09",
+    "reviewers": [
+      "gpt-5.5",
+      "gemini-3.1-pro-preview",
+      "opus-4.8-1m-max"
+    ],
+    "verdict": "write after revisions",
+    "acceptedAdjustments": [
+      "Mark TC_SENTENCE_PROPORTIONALITY_FAIRNESS and RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE as not addressed.",
+      "Remove the proposed C3 row for RA_SENTENCE.",
+      "Lower assertionCoverage from 0.75 to 0.6.",
+      "Keep benchmarkPass as a mechanical C4 route pass only.",
+      "Record that MIXED versus true-side out-of-band C3 needs a future explicit enum."
+    ],
+    "dossierFollowUp": "Reviewers flagged that using sentence proportionality as bolsonaro-en topLineAssertionIds may be too narrow for the Captain wording, which asks about proceedings and verdicts. Treat this as a dossier-v0.2 review item, not a blocker for this calibration-only artifact."
+  },
+  "reportSnapshot": {
+    "inputClassification": "multi_assertion_input",
+    "overallVerdict": "LEANING-TRUE",
+    "truthPercentage": 61,
+    "confidence": 54,
+    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+    "canonicalInputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+    "inputExactness": "exact",
+    "createdUtc": "2026-05-29 10:18:15",
+    "reportAtomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "The legal proceedings against Jair Bolsonaro complied with Brazilian law.",
+        "checkWorthiness": "high",
+        "verdict": "MOSTLY-TRUE",
+        "truthPercentage": 74,
+        "confidence": 65,
+        "evidenceIds": [
+          "EV_013",
+          "EV_018",
+          "EV_022",
+          "EV_023",
+          "EV_050"
+        ]
+      },
+      {
+        "id": "AC_02",
+        "statement": "The proceedings against Jair Bolsonaro met international standards for a fair trial.",
+        "checkWorthiness": "high",
+        "verdict": "MIXED",
+        "truthPercentage": 50,
+        "confidence": 45,
+        "evidenceIds": [
+          "EV_027",
+          "EV_034"
+        ]
+      },
+      {
+        "id": "AC_03",
+        "statement": "The verdicts against Jair Bolsonaro met international standards for a fair trial.",
+        "checkWorthiness": "high",
+        "verdict": "MIXED",
+        "truthPercentage": 52,
+        "confidence": 52,
+        "evidenceIds": [
+          "EV_036",
+          "EV_037",
+          "EV_039",
+          "EV_040",
+          "EV_044",
+          "EV_048",
+          "EV_042",
+          "EV_043"
+        ]
+      }
+    ]
+  },
+  "c1": {
+    "activeFrameId": "FRAME_brazilian_law_fair_trial_verdicts",
+    "runnerUpFrameId": null,
+    "activeFrameRole": "primary",
+    "activeFrameAggregationMode": "dominance_weighted",
+    "frameDecision": "active_clear",
+    "axisScores": {
+      "inputClassificationFit": 1,
+      "frameAdmissibility": 1,
+      "assertionCoverage": 0.6,
+      "atomicityFidelity": 0.65,
+      "disclosureFidelity": 0.65
+    },
+    "claimMappings": [
+      {
+        "reportClaimId": "AC_01",
+        "referenceAssertionIds": [
+          "RA_TSE_INELEGIBILITY_LEGAL_BASIS_TRUE_WITH_DISSENT",
+          "RA_STF_AP2668_LEGAL_BASIS_TRUE",
+          "RA_DOMESTIC_DUE_PROCESS_LARGELY_SATISFIED"
+        ],
+        "truthConditionIds": [
+          "TC_TSE_ELECTORAL_PROCEEDING_LEGAL_BASIS",
+          "TC_STF_CRIMINAL_PROCEEDING_LEGAL_BASIS",
+          "TC_DOMESTIC_PROCEDURAL_SAFEGUARDS"
+        ],
+        "status": "partial",
+        "notes": "The broad domestic-law claim visibly covers the TSE background, STF/AP2668 legal basis, and domestic safeguards in the verdict reasoning, but it merges three dossier truth conditions into one AtomicClaim."
+      },
+      {
+        "reportClaimId": "AC_02",
+        "referenceAssertionIds": [
+          "RA_INTERNATIONAL_FAIR_TRIAL_SUBSTANTIALLY_MET_WITH_CAVEATS"
+        ],
+        "truthConditionIds": [
+          "TC_INTERNATIONAL_FAIR_TRIAL_STANDARDS"
+        ],
+        "status": "addressed",
+        "notes": "Clean mapping to the proceedings-level international fair-trial condition, albeit with a more cautious MIXED C3 verdict than the dossier reference."
+      },
+      {
+        "reportClaimId": "AC_03",
+        "referenceAssertionIds": [
+          "RA_VERDICTS_BROADLY_LEGALLY_SUPPORTABLE"
+        ],
+        "truthConditionIds": [
+          "TC_VERDICT_LEGAL_SUPPORTABILITY"
+        ],
+        "status": "partial",
+        "notes": "The report assesses verdict fair-trial standards, but does not cleanly assess broad legal supportability of the TSE and STF verdicts as the reference assertion frames it."
+      }
+    ],
+    "truthConditionMappings": [
+      {
+        "truthConditionId": "TC_TSE_ELECTORAL_PROCEEDING_LEGAL_BASIS",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.15,
+        "status": "merged_but_visible",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "TSE proceeding is mentioned in the AC_01 reasoning, but not extracted as a separate AtomicClaim."
+      },
+      {
+        "truthConditionId": "TC_STF_CRIMINAL_PROCEEDING_LEGAL_BASIS",
+        "dominanceRole": "supporting",
+        "dominanceWeight": 0.2,
+        "status": "merged_but_visible",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "STF/AP2668 legal basis is directly visible in AC_01 reasoning but merged into broad domestic-law compliance."
+      },
+      {
+        "truthConditionId": "TC_DOMESTIC_PROCEDURAL_SAFEGUARDS",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.2,
+        "status": "merged_but_visible",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "Domestic safeguards are directly visible in AC_01 reasoning but merged with legal-basis material."
+      },
+      {
+        "truthConditionId": "TC_INTERNATIONAL_FAIR_TRIAL_STANDARDS",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.2,
+        "status": "separately_represented",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "truthConditionId": "TC_VERDICT_LEGAL_SUPPORTABILITY",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.15,
+        "status": "merged_but_visible",
+        "reportClaimIds": [
+          "AC_03"
+        ],
+        "notes": "Verdict legality/supportability is only partially visible through a verdict-level fair-trial claim."
+      },
+      {
+        "truthConditionId": "TC_SENTENCE_PROPORTIONALITY_FAIRNESS",
+        "dominanceRole": "dominant",
+        "dominanceWeight": 0.1,
+        "status": "hidden_or_missing",
+        "reportClaimIds": [],
+        "notes": "Reviewer-confirmed correction: the report does not assess sentence proportionality or sentence fairness, even though this is the current dossier top-line assertion."
+      }
+    ],
+    "assertionCoverage": [
+      {
+        "referenceAssertionId": "RA_TSE_INELEGIBILITY_LEGAL_BASIS_TRUE_WITH_DISSENT",
+        "status": "partial",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The TSE proceeding is present in reasoning but not separately extracted, and dissent treatment is not independently developed."
+      },
+      {
+        "referenceAssertionId": "RA_STF_AP2668_LEGAL_BASIS_TRUE",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01"
+        ],
+        "notes": "The report directly discusses STF trial, statutory basis, appellate procedure, final appeals, res judicata, and enforcement."
+      },
+      {
+        "referenceAssertionId": "RA_DOMESTIC_DUE_PROCESS_LARGELY_SATISFIED",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_01"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_INTERNATIONAL_FAIR_TRIAL_SUBSTANTIALLY_MET_WITH_CAVEATS",
+        "status": "addressed",
+        "reportClaimIds": [
+          "AC_02"
+        ]
+      },
+      {
+        "referenceAssertionId": "RA_VERDICTS_BROADLY_LEGALLY_SUPPORTABLE",
+        "status": "partial",
+        "reportClaimIds": [
+          "AC_03"
+        ],
+        "notes": "The report addresses verdict fair-trial standards but not the full legal-supportability assertion for both TSE and STF verdicts."
+      },
+      {
+        "referenceAssertionId": "RA_SENTENCE_PROPORTIONALITY_FAIRNESS_CAVEATED_TRUE_SIDE",
+        "status": "not_addressed",
+        "reportClaimIds": [],
+        "notes": "The report does not separately assess sentence proportionality or fairness of the sentence."
+      }
+    ],
+    "extraClaims": [],
+    "reviewFlags": [
+      "topline_sentence_assertion_not_addressed",
+      "tse_background_merged",
+      "verdict_supportability_understated",
+      "mixed_true_side_c3_enum_gap"
+    ],
+    "notes": "Positive C4 calibration artifact with partial C1/C3 fit. The report lands in the expected true-side aggregate band and has a useful three-claim shape, but it does not cover the dossier's sentence-proportionality top-line assertion. Reviewers flagged this as both an artifact correction and a possible bolsonaro-en dossier-v0.2 design issue."
+  },
+  "c3": {
+    "assertionVerdictFits": [
+      {
+        "referenceAssertionId": "RA_TSE_INELEGIBILITY_LEGAL_BASIS_TRUE_WITH_DISSENT",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "below_band",
+        "harmfulError": "none",
+        "notes": "AC_01 is MOSTLY-TRUE 74/65. Truth and label fit the TSE reference band, but confidence is below the 70-90 band and the TSE subtopic is merged into a broad domestic-law claim."
+      },
+      {
+        "referenceAssertionId": "RA_STF_AP2668_LEGAL_BASIS_TRUE",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "adjacent",
+        "confidenceFit": "below_band",
+        "harmfulError": "none",
+        "notes": "AC_01 is MOSTLY-TRUE 74/65 against a TRUE 86-100 / 75-95 reference assertion. This is true-side but below the dossier's legal-basis strength."
+      },
+      {
+        "referenceAssertionId": "RA_DOMESTIC_DUE_PROCESS_LARGELY_SATISFIED",
+        "reportClaimId": "AC_01",
+        "claimVerdictId": null,
+        "verdictBandFit": "in_band",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "AC_01 MOSTLY-TRUE 74/65 fits the domestic-safeguards reference band."
+      },
+      {
+        "referenceAssertionId": "RA_INTERNATIONAL_FAIR_TRIAL_SUBSTANTIALLY_MET_WITH_CAVEATS",
+        "reportClaimId": "AC_02",
+        "claimVerdictId": null,
+        "verdictBandFit": "adjacent",
+        "confidenceFit": "in_band",
+        "harmfulError": "none",
+        "notes": "AC_02 MIXED 50/45 is below the reference true-side 58-85 band but adjacent to LEANING-TRUE and confidence is inside the 45-75 band. The report is more cautious than the reference, not direction-flipped."
+      },
+      {
+        "referenceAssertionId": "RA_VERDICTS_BROADLY_LEGALLY_SUPPORTABLE",
+        "reportClaimId": "AC_03",
+        "claimVerdictId": null,
+        "verdictBandFit": "same_side_out_of_band",
+        "confidenceFit": "below_band",
+        "harmfulError": "none",
+        "notes": "AC_03 MIXED 52/52 is materially below the MOSTLY-TRUE 72-85 / 55-75 reference band and only partially maps to verdict legal supportability. The v0.3 enum lacks an explicit neutral-out-of-band label, so this is encoded as the nearest non-flip out-of-band value and flagged in c3.reviewFlags."
+      }
+    ],
+    "evidenceMappings": [],
+    "harmFlags": [],
+    "reviewFlags": [
+      "neutral_out_of_band_encoded_as_same_side_out_of_band",
+      "sentence_proportionality_not_assessed"
+    ]
+  },
+  "c4Note": {
+    "primaryRouteFit": "pass",
+    "observed": {
+      "verdict": "LEANING-TRUE",
+      "truthPercentage": 61,
+      "confidence": 54
+    },
+    "expectedPrimaryRoute": {
+      "acceptedVerdictLabels": [
+        "LEANING-TRUE",
+        "MOSTLY-TRUE"
+      ],
+      "truthBand": {
+        "min": 58,
+        "max": 85
+      },
+      "confidenceBand": {
+        "min": 45,
+        "max": 75
+      }
+    },
+    "notes": "The report passes the primary aggregate C4 route mechanically: LEANING-TRUE 61/54 is inside the expected labels, truth band, and confidence band. This does not imply full C1/C3 alignment because the current dossier top-line assertion on sentence proportionality is not addressed."
+  }
+}
