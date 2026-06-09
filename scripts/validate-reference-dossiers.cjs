@@ -458,6 +458,30 @@ function validateAssertionRouting(dossier, assertionById, assertionContextById, 
         );
       }
     }
+
+    const routeGuardIds = Array.isArray(route.coverageGuardAssertionIds) ? route.coverageGuardAssertionIds : [];
+    const seenGuardAssertions = new Set();
+    for (const assertionId of routeGuardIds) {
+      if (seenGuardAssertions.has(assertionId)) {
+        errors.push(`${routeLabel}.coverageGuardAssertionIds contains duplicate assertion id: ${assertionId}`);
+      }
+      seenGuardAssertions.add(assertionId);
+      if (seenAssertions.has(assertionId)) {
+        errors.push(`${routeLabel}.coverageGuardAssertionIds must not overlap assertionIds: ${assertionId}`);
+      }
+      const assertion = assertionById.get(assertionId);
+      const context = assertionContextById.get(assertionId);
+      if (!assertion || !context) {
+        errors.push(`${routeLabel}.coverageGuardAssertionIds references unknown assertion id: ${assertionId}`);
+        continue;
+      }
+      if (context.frame?.id !== route.frameId) {
+        errors.push(`${routeLabel}.coverageGuardAssertionIds ${assertionId} does not belong to frame ${route.frameId}`);
+      }
+      if (assertion.role !== 'required') {
+        errors.push(`${routeLabel}.coverageGuardAssertionIds ${assertionId} must reference a required assertion`);
+      }
+    }
   }
 }
 
@@ -529,15 +553,18 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
       if ('coversReferenceAssertionIds' in truthCondition) {
         errors.push(`${truthLabel}.coversReferenceAssertionIds is forbidden; use referenceAssertions[].truthConditionId`);
       }
-      if (['dominant', 'supporting', 'aggregate_topline'].includes(truthCondition.dominanceRole)) {
+      if (['dominant', 'supporting'].includes(truthCondition.dominanceRole)) {
         if (!isPositiveNumber(truthCondition.dominanceWeight)) {
           errors.push(`${truthLabel}.dominanceWeight must be > 0 for dominanceRole=${truthCondition.dominanceRole}`);
         }
       }
-      if (['caveat', 'context'].includes(truthCondition.dominanceRole)) {
+      if (['caveat', 'context', 'aggregate_topline'].includes(truthCondition.dominanceRole)) {
         if (!(truthCondition.dominanceWeight === null || truthCondition.dominanceWeight === 0)) {
           errors.push(`${truthLabel}.dominanceWeight must be null or 0 for dominanceRole=${truthCondition.dominanceRole}`);
         }
+      }
+      if (truthCondition.dominanceRole === 'aggregate_topline' && truthCondition.independentAssessabilityRequired) {
+        errors.push(`${truthLabel}.independentAssessabilityRequired must be false for non-atomic aggregate_topline truth conditions`);
       }
       if (truthCondition.dominanceRole === 'aggregate_topline' && frame.frameRole === 'caveat') {
         errors.push(`${truthLabel}.dominanceRole=aggregate_topline is not allowed in a caveat frame`);
@@ -637,7 +664,12 @@ function validateCrossFields(dossier, benchmarkFamilies, file) {
         candidate.id === assertion.truthConditionId
       );
       assertionContextById.set(assertion.id, { frame, truthCondition });
-      if (assertion.separability === 'strict' && truthCondition?.independentAssessabilityRequired !== true) {
+      if (
+        assertion.separability === 'strict' &&
+        assertion.role === 'required' &&
+        truthCondition?.dominanceRole !== 'aggregate_topline' &&
+        truthCondition?.independentAssessabilityRequired !== true
+      ) {
         errors.push(`${assertionLabel}.separability=strict requires an independently assessable truth condition`);
       }
       if (assertion.role === 'required' && assertion.evidenceSourceIds.length === 0) {

@@ -8,6 +8,11 @@
   "runWindowId": "manual-pilot-2026-06-08",
   "scorerVersion": "manual-captain-confirmed-v0.3-2026-06-08",
   "alignmentMode": "manual",
+  "goldUse": "manual_alignment_gold_negative",
+  "overallAlignmentStatus": "partial",
+  "benchmarkPass": false,
+  "manualGoldApproved": true,
+  "goldUseNotes": "Approved only as a scored manual calibration artifact for good C1/C3 local handling plus a primary C4 aggregate miss; not a successful benchmark-output exemplar.",
   "judge": {
     "promptVersion": null,
     "model": null,
@@ -27,7 +32,69 @@
     "inputClassification": "ambiguous_single_claim",
     "overallVerdict": "MOSTLY-TRUE",
     "truthPercentage": 74,
-    "confidence": 81
+    "confidence": 81,
+    "inputValue": "Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden",
+    "canonicalInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "inputExactness": "variant",
+    "reportAtomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Der Bundesrat hat den EU-Vertrag (Paket Schweiz-EU) am 2. März 2026 unterzeichnet, bevor das Parlament die Botschaft zum Paket beraten und beschlossen hat.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 92,
+        "confidence": 88,
+        "evidenceIds": [
+          "EV_001",
+          "EV_006",
+          "EV_007",
+          "EV_008",
+          "EV_010",
+          "EV_011",
+          "EV_013",
+          "EV_1775580916453",
+          "EV_1775580916454",
+          "EV_1775580916456",
+          "EV_1775581159741",
+          "EV_1775581159742",
+          "EV_1775581199516",
+          "EV_1775581199518"
+        ]
+      },
+      {
+        "id": "AC_02",
+        "statement": "Der Bundesrat hat den EU-Vertrag (Paket Schweiz-EU) unterzeichnet, bevor das Schweizer Volk über das Paket in einer Abstimmung entschieden hat.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 95,
+        "confidence": 81,
+        "evidenceIds": [
+          "EV_1775580916453",
+          "EV_1775580916454",
+          "EV_1775580916455",
+          "EV_1775580916456",
+          "EV_1775580953817",
+          "EV_1775580953820",
+          "EV_1775581087080",
+          "EV_1775581087081",
+          "EV_1775581106587",
+          "EV_1775581106588",
+          "EV_1775581137710",
+          "EV_1775581137711",
+          "EV_1775581232010",
+          "EV_1775581232011"
+        ]
+      },
+      {
+        "id": "AC_03",
+        "statement": "Die Unterzeichnung des EU-Vertrags durch den Bundesrat am 2. März 2026 erfolgte rechtskräftig und bindend für die Schweiz.",
+        "checkWorthiness": "high",
+        "verdict": "MOSTLY-FALSE",
+        "truthPercentage": 18,
+        "confidence": 72,
+        "evidenceIds": []
+      }
+    ]
   },
   "c1": {
     "activeFrameId": "FRAME_final_binding_entry_into_force",
@@ -134,7 +201,7 @@
       {
         "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
         "dominanceRole": "aggregate_topline",
-        "dominanceWeight": 1,
+        "dominanceWeight": null,
         "status": "waived",
         "reportClaimIds": [
           "AC_01",
@@ -214,10 +281,10 @@
         "referenceAssertionId": "RA_SIGNATURE_WAS_NOT_FINAL_BINDING_FORCE",
         "reportClaimId": "AC_03",
         "claimVerdictId": null,
-        "verdictBandFit": "in_band",
+        "verdictBandFit": "adjacent",
         "confidenceFit": "below_band",
         "harmfulError": "none",
-        "notes": "Direction-normalized fit: the report's positive legal-force claim is MOSTLY-FALSE 18/72, which supports the reference assertion that signature was not final binding force. Confidence is 3 points below the reference 75-95 band."
+        "notes": "Direction-normalized fit: the report's positive legal-force claim is MOSTLY-FALSE 18/72, which implies roughly 82% support for the reference assertion that signature was not final binding force. That is adjacent to, not inside, the 86-100 reference truth band. Confidence is 3 points below the reference 75-95 band."
       }
     ],
     "evidenceMappings": [],

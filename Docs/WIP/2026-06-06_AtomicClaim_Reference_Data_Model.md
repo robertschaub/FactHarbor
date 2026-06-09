@@ -146,6 +146,14 @@ Current dossier shape:
             "dominanceWeight": 1.0,
             "independentAssessabilityRequired": true,
             "mergeAllowedWith": []
+          },
+          {
+            "id": "TC_TOPLINE",
+            "description": "Non-atomic C4 route condition for the frame top-line.",
+            "dominanceRole": "aggregate_topline",
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
+            "mergeAllowedWith": []
           }
         ]
       },
@@ -178,7 +186,18 @@ Current dossier shape:
     "familyTruthBand": { "min": null, "max": null },
     "familyConfidenceBand": { "min": null, "max": null },
     "topLineAssertionIds": [],
-    "alternativeTopLineRoutes": [],
+    "alternativeTopLineRoutes": [
+      {
+        "routeId": "ALT_001",
+        "frameId": "FRAME_SECONDARY",
+        "assertionIds": ["RA_ALT_TOPLINE"],
+        "coverageGuardAssertionIds": [],
+        "truthBand": { "min": null, "max": null },
+        "confidenceBand": { "min": null, "max": null },
+        "acceptedVerdictLabels": [],
+        "admissibilityCondition": "Plain-language route condition."
+      }
+    ],
     "coverageGuardAssertionIds": [],
     "contextAssertionIds": [],
     "coherenceNote": null
@@ -196,10 +215,10 @@ Validation rules:
 - `Docs/AGENTS/benchmark-expectations.json` must link each active dossier through `families[].referenceDossier` with matching dossier `id`, `version`, `status`, and repository-relative `path`.
 - Every interpretation frame has exactly one `frameRole`: `primary` (default route for the family), `secondary` (admissible alternative only when explicitly pursued and disclosed), or `caveat` (context/guard only). Every dossier must contain at least one primary frame; non-`must_cover_all` dossiers must contain exactly one primary frame. `interpretationFrames[]` is unbounded; when more than two readings are defensible, all material readings are listed and low-confidence/low-check-worthiness is handled through admissibility, disclosure, and review flags rather than by collapsing the readings.
 - Every interpretation frame has exactly one `frameAggregationMode`: `dominance_weighted` for frames where a strict subset of weighted AtomicClaims controls the top-line, `balanced_composite` for frames with zero dominant AtomicClaims, and `no_topline` for caveat/context frames. `dominance_weighted` frames require at least one dominant truth condition and fewer dominant conditions than weighted AtomicClaims. `balanced_composite` frames require zero dominant truth conditions and at least one supporting truth condition. `no_topline` frames must be `frameRole: caveat` and cannot contain dominant, supporting, or aggregate-topline conditions.
-- Every truth condition has `dominanceRole` and `dominanceWeight`. `dominant` and `supporting` truth conditions are the frame-level AtomicClaim weighting surface and their weights must sum to 1.0 within each `dominance_weighted` or `balanced_composite` primary/secondary frame. `caveat` and `context` conditions carry `null` or `0` weight. `aggregate_topline` is a non-atomic C4 route condition and is excluded from the AtomicClaim weight sum.
+- Every truth condition has `dominanceRole` and `dominanceWeight`. `dominant` and `supporting` truth conditions are the frame-level AtomicClaim weighting surface and their weights must sum to 1.0 within each `dominance_weighted` or `balanced_composite` primary/secondary frame. `caveat`, `context`, and `aggregate_topline` conditions carry `null` or `0` weight. `aggregate_topline` is a non-atomic C4 route condition, must set `independentAssessabilityRequired: false`, and is excluded from the AtomicClaim weight sum.
 - `benchmarkCoherence.topLineAssertionIds[]` is the authoritative primary/default route for the family-level C4 top-line. Top-line assertions must resolve from a primary frame, must be `role: required`, and their truth/confidence bands plus accepted verdict-label set must match the benchmark family contract. In `dominance_weighted` frames, top-line assertions attach to `dominant` or `aggregate_topline` truth conditions; in `balanced_composite` frames, they attach to `supporting` or `aggregate_topline` truth conditions. `no_topline` frames cannot supply top-line assertions.
-- `benchmarkCoherence.alternativeTopLineRoutes[]` lists conditional secondary top-line routes. Each route must reference a secondary frame, required assertions in that frame, a separate truth/confidence band, accepted labels, and a plain-language admissibility condition. These routes are not consumed by the legacy C4 scorer until Phase 0b frame alignment can select routes per report.
-- `benchmarkCoherence.coverageGuardAssertionIds[]` lists required guard/caveat assertions that prevent misleading passes but must not be averaged into the C4 top-line.
+- `benchmarkCoherence.alternativeTopLineRoutes[]` lists conditional secondary top-line routes. Each route must reference a secondary frame, required assertions in that frame, route-scoped `coverageGuardAssertionIds[]` when the route has required caveats, a separate truth/confidence band, accepted labels, and a plain-language admissibility condition. These routes are not consumed by the legacy C4 scorer until Phase 0b frame alignment can select routes per report.
+- Root `benchmarkCoherence.coverageGuardAssertionIds[]` lists family-level required guard/caveat assertions that prevent misleading passes but must not be averaged into the C4 top-line. Guards that apply only to an alternative route belong in that route's `coverageGuardAssertionIds[]`, not at root.
 - `benchmarkCoherence.contextAssertionIds[]` lists tolerated context assertions. They must reference `role: tolerated_context` assertions attached to `dominanceRole: context` truth conditions and must not overlap with top-line assertions.
 - If `sourceSnapshots[].localPath` is set, it must resolve inside the repository and `sourceSnapshots[].localHash` must be `sha256:<64 hex chars>` matching the committed file contents. A `localHash` without `localPath` is invalid.
 - Root-level `atomicityPolicy` is forbidden. Atomicity is frame-scoped through `interpretationFrames[].atomicityProfile`.
@@ -403,10 +422,21 @@ Each manual or LLM alignment run writes a score artifact with this shape:
   "runWindowId": null,
   "scorerVersion": null,
   "alignmentMode": "manual | llm_judge",
+  "goldUse": "manual_alignment_gold_positive | manual_alignment_gold_negative | manual_alignment_calibration_only",
+  "overallAlignmentStatus": "pass | partial | fail | needs_human_review",
+  "benchmarkPass": null,
+  "manualGoldApproved": false,
+  "goldUseNotes": null,
   "judge": {
     "promptVersion": null,
     "model": null,
     "runId": null
+  },
+  "reportSnapshot": {
+    "inputValue": null,
+    "canonicalInputValue": null,
+    "inputExactness": "exact | variant | unknown",
+    "reportAtomicClaims": []
   },
   "c1": {
     "activeFrameId": null,
@@ -435,7 +465,7 @@ Each manual or LLM alignment run writes a score artifact with this shape:
 }
 ```
 
-`null` is allowed only for unavailable metadata before scorer wiring, never for required IDs inside `claimMappings`, `truthConditionMappings`, `assertionVerdictFits`, or `evidenceMappings`.
+`null` is allowed only for unavailable metadata before scorer wiring or explicitly tri-state fields such as `benchmarkPass`, never for required IDs inside `claimMappings`, `truthConditionMappings`, `assertionVerdictFits`, or `evidenceMappings`.
 
 ## 8. Alignment Judge Requirements
 

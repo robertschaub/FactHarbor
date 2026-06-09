@@ -118,6 +118,10 @@ function resolveAlternativeTopLineRoutes(dossier, index) {
       .map((id) => index.assertionById.get(id))
       .filter(Boolean)
       .map((assertion) => summarizeAssertion(assertion, 'ALTERNATIVE_TOP_LINE', index)),
+    coverageGuardAssertions: (Array.isArray(route.coverageGuardAssertionIds) ? route.coverageGuardAssertionIds : [])
+      .map((id) => index.assertionById.get(id))
+      .filter(Boolean)
+      .map((assertion) => summarizeAssertion(assertion, 'ALTERNATIVE_ROUTE_GUARD', index)),
   }));
 }
 

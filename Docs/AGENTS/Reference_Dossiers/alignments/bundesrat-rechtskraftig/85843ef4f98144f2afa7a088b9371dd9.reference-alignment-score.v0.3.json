@@ -8,6 +8,11 @@
   "runWindowId": "manual-pilot-2026-06-08",
   "scorerVersion": "manual-captain-confirmed-v0.3-2026-06-08",
   "alignmentMode": "manual",
+  "goldUse": "manual_alignment_gold_negative",
+  "overallAlignmentStatus": "partial",
+  "benchmarkPass": false,
+  "manualGoldApproved": true,
+  "goldUseNotes": "Approved only as a scored manual calibration artifact for visible-but-merged dominant legal-force handling plus a primary C4 aggregate miss; not a successful benchmark-output exemplar.",
   "judge": {
     "promptVersion": null,
     "model": null,
@@ -27,7 +32,64 @@
     "inputClassification": "multi_assertion_input",
     "overallVerdict": "MOSTLY-TRUE",
     "truthPercentage": 75.3,
-    "confidence": 78
+    "confidence": 78,
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "canonicalInputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "inputExactness": "exact",
+    "reportAtomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+        "checkWorthiness": "high",
+        "verdict": "MIXED",
+        "truthPercentage": 55,
+        "confidence": 70,
+        "evidenceIds": [
+          "EV_001",
+          "EV_005",
+          "EV_012",
+          "EV_013",
+          "EV_1776242214597"
+        ]
+      },
+      {
+        "id": "AC_02",
+        "statement": "Die Unterzeichnung des EU-Vertrags durch den Bundesrat am 2. März 2026 erfolgte vor der Abstimmung des Schweizer Parlaments über das Paket Schweiz-EU.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 95,
+        "confidence": 90,
+        "evidenceIds": [
+          "EV_1776241989476",
+          "EV_1776241989477",
+          "EV_1776241989478",
+          "EV_1776241989479",
+          "EV_1776241989480",
+          "EV_1776242010544",
+          "EV_1776242010545",
+          "EV_1776242010546",
+          "EV_1776242010547",
+          "EV_1776242010548"
+        ]
+      },
+      {
+        "id": "AC_03",
+        "statement": "Die Unterzeichnung des EU-Vertrags durch den Bundesrat am 2. März 2026 erfolgte vor einem möglichen fakultativen Referendum durch das Schweizer Volk.",
+        "checkWorthiness": "high",
+        "verdict": "TRUE",
+        "truthPercentage": 97,
+        "confidence": 90,
+        "evidenceIds": [
+          "EV_1776242053825",
+          "EV_1776242148726",
+          "EV_1776242148727",
+          "EV_1776242148728",
+          "EV_1776242148729",
+          "EV_1776242148730",
+          "EV_1776242096513"
+        ]
+      }
+    ]
   },
   "c1": {
     "activeFrameId": "FRAME_final_binding_entry_into_force",
@@ -129,7 +191,7 @@
       {
         "truthConditionId": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
         "dominanceRole": "aggregate_topline",
-        "dominanceWeight": 1,
+        "dominanceWeight": null,
         "status": "waived",
         "reportClaimIds": [
           "AC_01",

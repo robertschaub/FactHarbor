@@ -125,8 +125,8 @@
             "id": "TC_SIMPLE_CHRONOLOGY_TOPLINE",
             "description": "Whether the literal chronology claim is true overall under the Switzerland-EU package/Bilaterals III referent, while distinguishing signature from final approval, ratification, or entry into force.",
             "dominanceRole": "aggregate_topline",
-            "dominanceWeight": 1,
-            "independentAssessabilityRequired": true,
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           }
         ]

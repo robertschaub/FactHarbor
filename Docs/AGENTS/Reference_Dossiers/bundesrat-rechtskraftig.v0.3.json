@@ -80,7 +80,7 @@
       "id": "FRAME_final_binding_entry_into_force",
       "label": "Rechtskräftig as final binding force / entry into force",
       "interpretedTermOrFrame": "rechtskräftig",
-      "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland. The input's 'EU-Vertrag' referent is treated in v0.1 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
+      "interpretationDefinition": "The term is read as final legal binding force for Switzerland: domestic approval is complete, ratification or equivalent consent has occurred where required, and the relevant international obligations are in force for Switzerland. The input's 'EU-Vertrag' referent is treated in v0.3 as the 2026 Switzerland-EU package/Bilaterals III, not as an EU membership treaty; a report using another referent must disclose that choice.",
       "frameRole": "primary",
       "frameAggregationMode": "dominance_weighted",
       "admissibility": "defensible",
@@ -138,8 +138,8 @@
             "id": "TC_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE",
             "description": "Whether the unqualified claim that the Federal Council signed the EU package rechtskräftig before Parliament and the people decided is true overall, given the true chronology, false final-binding reading, and limited-effect caveats.",
             "dominanceRole": "aggregate_topline",
-            "dominanceWeight": 1,
-            "independentAssessabilityRequired": true,
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           }
         ]
@@ -279,16 +279,13 @@
             "SRC_ADMIN_PACKAGE_OVERVIEW_20260313",
             "SRC_EDA_PACKAGE_TIMELINE_20260313"
           ],
-          "knownCounterEvidenceSourceIds": [
-            "SRC_ADMIN_EUPA_20250410",
-            "SRC_EDA_PACKAGE_TIMELINE_20260313"
-          ],
+          "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
             "description": "Treating signature as final binding force would invert the central legal/procedural claim.",
             "severity": "high"
           },
           "contested": false,
-          "notes": "The known counter-evidence sources are apparent counterevidence for a loose legal-effect reading only; they do not directly contradict the claim that signature was not final entry into force of the whole package."
+          "notes": "Limited-effect and ratification-timeline sources are evidence for caveats, not direct counterevidence to the claim that signature was not final entry into force of the whole package."
         },
         {
           "id": "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT",
@@ -323,7 +320,7 @@
             "severity": "low"
           },
           "contested": false,
-          "notes": "Colour/context only in v0.1; not a required atomicity condition."
+          "notes": "Colour/context only for the reference scorer; not a required atomicity condition."
         },
         {
           "id": "RA_UNQUALIFIED_RECHTSKRAEFTIG_TOPLINE_MIXED_FALSE_SIDE",
@@ -356,16 +353,13 @@
             "SRC_ADMIN_EUPA_20250410",
             "SRC_EDA_LAW_RELATION_20260201"
           ],
-          "knownCounterEvidenceSourceIds": [
-            "SRC_ADMIN_EUPA_20250410",
-            "SRC_EDA_PACKAGE_TIMELINE_20260313"
-          ],
+          "knownCounterEvidenceSourceIds": [],
           "harmfulMissCondition": {
             "description": "Without this aggregate assertion, consumers can mistakenly score the dossier as high-true by averaging only the true chronology and limited-effect subclaims.",
             "severity": "high"
           },
           "contested": false,
-          "notes": "Primary legacy C4 route. Chronology is true-side but supporting; the final legal-force condition is dominant. The secondary signed-text/authentication route is valid only when explicit and is represented in alternativeTopLineRoutes, not by averaging chronology or caveats into this primary route."
+          "notes": "Primary legacy C4 route. Chronology is true-side but supporting; the final legal-force condition is dominant. Limited-effect sources are caveats, not direct counterevidence. The secondary signed-text/authentication route is valid only when explicit and is represented in alternativeTopLineRoutes, not by averaging chronology or caveats into this primary route."
         }
       ]
     },
@@ -397,7 +391,7 @@
             "description": "Whether the programme agreement had provisional/retroactive association effects before final package ratification.",
             "dominanceRole": "caveat",
             "dominanceWeight": null,
-            "independentAssessabilityRequired": true,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           },
           {
@@ -405,7 +399,7 @@
             "description": "Whether Switzerland and the EU arranged cooperation during the period before package entry into force.",
             "dominanceRole": "caveat",
             "dominanceWeight": null,
-            "independentAssessabilityRequired": true,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           },
           {
@@ -420,8 +414,8 @@
             "id": "TC_SIGNED_TEXT_RECHTSKRAEFTIG_TOPLINE",
             "description": "Whether the unqualified claim can be true-side under the explicit secondary reading that `rechtskräftig` means the signed text is formally fixed/authenticated, while the treaty/package is not yet in force.",
             "dominanceRole": "aggregate_topline",
-            "dominanceWeight": 1,
-            "independentAssessabilityRequired": true,
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           }
         ]
@@ -467,7 +461,7 @@
           "id": "RA_EUPA_PROVISIONAL_APPLICATION",
           "truthConditionId": "TC_LIMITED_EFFECT_EUPA",
           "text": "The EU programme agreement, signed before the rest of the package, could be provisionally applied retroactively to selected EU programmes from 1 January 2025 before package ratification.",
-          "role": "required",
+          "role": "optional",
           "separability": "strict",
           "kind": "procedural",
           "truthBand": {
@@ -496,13 +490,13 @@
             "severity": "medium"
           },
           "contested": false,
-          "notes": "External verification before any status upgrade must confirm the exact legal mechanism and date for the retroactive/provisional EU programme association."
+          "notes": "Optional secondary-frame caveat. It can explain limited legal effects, but it is not part of the minimal signed-text/not-yet-in-force route condition."
         },
         {
           "id": "RA_RATIFICATION_PHASE_COOPERATION",
           "truthConditionId": "TC_RATIFICATION_PHASE_COOPERATION",
           "text": "Switzerland and the EU arranged cooperation for the period from the end of 2024 until package entry into force, especially for the next phases including ratification.",
-          "role": "required",
+          "role": "optional",
           "separability": "strict",
           "kind": "procedural",
           "truthBand": {
@@ -530,7 +524,7 @@
             "severity": "low"
           },
           "contested": false,
-          "notes": "This assertion is limited to transitional cooperation modalities; it does not assert final binding force of the package."
+          "notes": "Optional secondary-frame caveat. It explains transitional cooperation but does not assert final binding force and is not required for the secondary route."
         },
         {
           "id": "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE",
@@ -640,16 +634,17 @@
           "LEANING-TRUE",
           "MOSTLY-TRUE"
         ],
-        "admissibilityCondition": "Only when the report explicitly interprets `rechtskräftig` as the signed text being formally fixed/authenticated and also states that the treaty/package is not yet finally binding or in force for Switzerland."
+        "admissibilityCondition": "Only when the report explicitly interprets `rechtskräftig` as the signed text being formally fixed/authenticated and also states that the treaty/package is not yet finally binding or in force for Switzerland.",
+        "coverageGuardAssertionIds": [
+          "RA_SIGNATURE_VALID_PROCEDURAL_ACT",
+          "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE"
+        ]
       }
     ],
-    "coverageGuardAssertionIds": [
-      "RA_SIGNATURE_VALID_PROCEDURAL_ACT",
-      "RA_LIMITED_EFFECTS_ARE_NOT_FINAL_FORCE"
-    ],
+    "coverageGuardAssertionIds": [],
     "contextAssertionIds": [
       "RA_PACKAGE_IS_MULTI_AGREEMENT_CONTEXT"
     ],
-    "coherenceNote": "Primary/default C4 uses the legal-force/entry-into-force reading: the two chronology claims are true but supporting, while the dominant `rechtskräftig` legal-force claim is false, so the primary band is 29-57 with LEANING-FALSE/MIXED labels. Captain-confirmed v0.3 C1 shape expects three AtomicClaims: signature before Parliament, signature before the people, and legal-force/final-binding status. A less likely secondary signed-text/authentication reading can be true-side only when explicitly stated together with the not-yet-in-force caveat; that conditional route is recorded in alternativeTopLineRoutes and must not be obtained by averaging true chronology or limited-effect caveats into the primary route."
+    "coherenceNote": "Primary/default C4 uses the legal-force/entry-into-force reading: the two chronology claims are true but supporting, while the dominant `rechtskräftig` legal-force claim is false, so the primary band is 29-57 with LEANING-FALSE/MIXED labels. Captain-confirmed v0.3 C1 shape expects three AtomicClaims: signature before Parliament, signature before the people, and legal-force/final-binding status. A less likely secondary signed-text/authentication reading can be true-side only when explicitly stated together with the not-yet-in-force caveat; that conditional route is recorded in alternativeTopLineRoutes with route-scoped guards and must not be obtained by averaging true chronology or limited-effect caveats into the primary route."
   }
 }

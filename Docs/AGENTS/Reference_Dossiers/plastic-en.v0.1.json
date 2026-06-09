@@ -184,8 +184,8 @@
             "id": "TC_REASONABLE_POINTLESS_OVERALL",
             "description": "Whether the claim 'Plastic recycling is pointless' is overall mixed-to-leaning-true under the reasonable effectiveness/worth reading, while rejecting the literal zero-benefit reading.",
             "dominanceRole": "aggregate_topline",
-            "dominanceWeight": 1,
-            "independentAssessabilityRequired": true,
+            "dominanceWeight": null,
+            "independentAssessabilityRequired": false,
             "mergeAllowedWith": []
           }
         ]

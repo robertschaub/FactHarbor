@@ -112,7 +112,7 @@
             "id": "TC_HYDROGEN_EFFICIENCY_TOPLINE",
             "description": "The non-atomic C4 top-line route for the overall claim that hydrogen cars are more efficient than direct-electric cars.",
             "dominanceRole": "aggregate_topline",
-            "dominanceWeight": 1,
+            "dominanceWeight": null,
             "independentAssessabilityRequired": false,
             "mergeAllowedWith": [
               "TC_FULL_PATHWAY_WELL_TO_WHEEL",
