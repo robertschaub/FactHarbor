@@ -26,6 +26,7 @@
     "validate:compare": "node scripts/validation/compare-batches.js",
     "validate:quality-drift": "node scripts/validate-quality-expectations-drift.mjs",
     "validate:reference-dossiers": "node scripts/validate-reference-dossiers.cjs",
+    "validate:reference-alignments": "node scripts/validate-reference-alignments.cjs",
     "index": "node scripts/build-index.mjs",
     "index:tier1": "node scripts/build-index.mjs --tier=1",
     "index:tier2": "node scripts/build-index.mjs --tier=2",
