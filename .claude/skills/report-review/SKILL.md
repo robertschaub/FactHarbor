@@ -421,6 +421,8 @@ Spawn only the sub-agents whose dimension has findings. Do not spawn a panel for
 | Regression-Rollback Reviewer | 3i has findings (REGRESSION-FINDINGS is non-empty) | (a) Does `lastGoodJob` actually score higher on the bench rubric (recompute and cite)? (b) Does `regressionWindow` contain a commit that touched the implicated prompt section or stage file? (c) For each proposed `rollbackTarget`: would reverting it affect any OTHER family's qualityStatus? (grep the reverted section for neutral patterns that match other families' inputs) (d) Does the reverted wording pass rule 1 (no benchmark-specific vocabulary) and rule 7 (multilingual)? | Among candidate rollback targets, which one is most surgical — minimum diff, maximum regression-fix coverage? Or does the analysis point to MODIFICATION rather than revert? | `general-purpose` |
 | Devil's Advocate | always (when Phase 4 spawns at all) | (a) Each fix passes the Generic Test (helps inputs unlike the failing one)? (b) Any family in benchmark-expectations.json close enough to the fix's target behavior that it could regress? (c) Cheaper mechanism (UCM tunable, workflow gate) for the same outcome? (d) If 3i proposed a rollback, is there a forward-fix that gets the same effect without reverting? | Is the panel's "finding" actually correct behavior Captain would want preserved? | `general-purpose` |
 
+**Model pinning (mandatory):** pass `model: sonnet` explicitly on every panel spawn (including Devil's Advocate and the `Explore`-type panel). Panels do structured-check work, not top-tier synthesis. An omitted `model` makes the panel inherit the session's main model — on a Fable 5 session that runs every panel at the top price tier (~2× Opus 4.8). See `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.4/§6.5.
+
 **Sub-agent brief template — use verbatim for each spawned panel. Fill only the `<<...>>` placeholders.**
 
 ```
@@ -748,7 +750,7 @@ Emits the learning and improvement proposals Phase 9 produced. All entries are p
 
 For each surviving finding that is **CONFIRMED** and **prompt-related**:
 
-1. Spawn a single `general-purpose` sub-agent with this brief (verbatim; fill `<<...>>`):
+1. Spawn a single `general-purpose` sub-agent (`model: sonnet` — explicit, do not inherit the session model) with this brief (verbatim; fill `<<...>>`):
 
 ```
 You are a Prompt Issue Register reviewer for /report-review. You have no memory of prior runs.

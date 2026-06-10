@@ -40,6 +40,9 @@ The base procedure gives the underlying classification mechanics. This skill ext
 - Non-Claude tools on Windows: translate `find`→`Get-ChildItem`, `ls`→`Get-ChildItem`.
 - If your tool supports delegation or helper agents, use that capability in Step 3. If not,
   perform the same investigation yourself with the provided checklist.
+- Claude Code: pass an explicit `model: sonnet` (or `haiku` for pure status lookups) on every
+  helper-agent spawn — an omitted `model` inherits the session's main model, which on a
+  Fable 5 session runs helpers at the top price tier.
 - Ignore the YAML frontmatter if your tool does not support Claude skills natively; the body
   of this file is the canonical workflow.
 

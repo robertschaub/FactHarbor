@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
-**Version:** 2.1
-**Date:** 2026-03-23
+**Version:** 2.2
+**Date:** 2026-06-10
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -643,7 +643,7 @@ API endpoint, configuration parameter, or pipeline stage:
 
 **Context Budget — Lite Activation:**
 
-Lightweight models have smaller context windows. **This graduated loading is for lightweight / small-context models only — it does NOT apply to the 1M-context Opus main loop, which should follow the AGENTS.md mandate to read files fully before acting.** When activated with "As \<Role\>", use this graduated loading strategy instead of reading all Required Reading at once:
+Lightweight models have smaller context windows. **This graduated loading is for lightweight / small-context models only — it does NOT apply to the 1M-context main loop (Opus / Fable 5), which should follow the AGENTS.md mandate to read files fully before acting.** When activated with "As \<Role\>", use this graduated loading strategy instead of reading all Required Reading at once:
 
 1. **Always load:** `/AGENTS.md` (terminology + safety — non-negotiable)
 2. **Load the role entry** from §2 of this document (one subsection, ~40 lines)
@@ -661,8 +661,10 @@ The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversari
 |---|---|---|
 | Advocate, Challenger | Mid-tier (Sonnet) | Reasoning-intensive argument construction |
 | Consistency Probes, Validator | Lightweight (Haiku) | Classification and structural checking |
-| Reconciler (FULL only) | Top-tier (Opus) | High-stakes synthesis requiring nuanced judgment |
+| Reconciler (FULL only) | Top-tier (Opus; optionally Fable 5 when the session runs Fable and the decision is high-stakes/irreversible) | High-stakes synthesis requiring nuanced judgment |
 | Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
+
+**Tiers map to the Agent tool's `model` parameter and must be passed explicitly on every spawn:** lightweight → `haiku`, mid-tier → `sonnet`, top-tier → `opus` (or `fable` per the table above). An omitted `model` makes the subagent inherit the session's main model — on a Fable 5 session that silently runs every role at the top price tier (~2× Opus 4.8).
 
 Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
 
@@ -670,9 +672,9 @@ Any agent working on FactHarbor can invoke `/debate` when a decision needs adver
 
 ### 6.5 Effort & Fast-Mode Tiering (Claude Code)
 
-> Verified against `code.claude.com/docs` (model-config, env-vars) on 2026-05-30. Effort scales are calibrated per model, so the same level name is not the same underlying value across models.
+> Verified against `code.claude.com/docs` (model-config, env-vars) on 2026-05-30; Fable 5 specifics added 2026-06-10. Effort scales are calibrated per model, so the same level name is not the same underlying value across models.
 
-`CLAUDE_CODE_EFFORT_LEVEL` is the primary reasoning-depth control on adaptive-reasoning models (Opus 4.7+). Supported levels: **Opus 4.8 / 4.7** = `low/medium/high/xhigh/max`; **Opus 4.6 & Sonnet 4.6** = `low/medium/high/max` (no `xhigh`). An unsupported level falls back to the highest supported level at or below it (e.g., `xhigh` → `high` on Opus 4.6), so a single project default is safe across models.
+`CLAUDE_CODE_EFFORT_LEVEL` is the primary reasoning-depth control on adaptive-reasoning models (Opus 4.7+ and Fable 5). Supported levels: **Fable 5 / Opus 4.8 / 4.7** = `low/medium/high/xhigh/max`; **Opus 4.6 & Sonnet 4.6** = `low/medium/high/max` (no `xhigh`). An unsupported level falls back to the highest supported level at or below it (e.g., `xhigh` → `high` on Opus 4.6), so a single project default is safe across models.
 
 **Project default: `xhigh`** (env var) — deep reasoning where it matters without paying `max` on every call. Tier per task:
 
@@ -685,9 +687,16 @@ Any agent working on FactHarbor can invoke `/debate` when a decision needs adver
 
 **Precedence (matters for cost):** the `CLAUDE_CODE_EFFORT_LEVEL` env var takes precedence over the `effortLevel` setting, over skill/subagent frontmatter, and over model defaults. Because this project sets the env var, **every subagent and Workflow agent inherits the project effort level process-wide** — you cannot lower it per-subagent via frontmatter while the env var is set. Lowering the env var (or migrating to `effortLevel` + frontmatter) is the lever if per-task subagent tiering is wanted.
 
-**Fast mode (`/fast`):** same model, faster output, higher per-token price; orthogonal to effort. **`ultracode` (`/effort ultracode`):** sends `xhigh` and has Claude auto-orchestrate dynamic workflows for substantive tasks (session-only) — the low-friction way to try Workflow-style orchestration without scripting it.
+**Fast mode (`/fast`):** same model, faster output, higher per-token price; orthogonal to effort. **Not available on Fable 5** (fast mode covers Opus 4.8/4.7 only) — for fast-mode work, run the session on Opus 4.8. **`ultracode` (`/effort ultracode`):** sends `xhigh` and has Claude auto-orchestrate dynamic workflows for substantive tasks (session-only) — the low-friction way to try Workflow-style orchestration without scripting it.
 
-**Opus 4.6 compatibility:** `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` + `MAX_THINKING_TOKENS` in `settings.json` are inert on Opus 4.7+ but active on Opus 4.6 / Sonnet 4.6 (fixed thinking budget). They are kept **intentionally** for occasional 4.6 use — do not remove them.
+**Fable 5 sessions (tier above Opus, ~2× Opus 4.8 per token; verified 2026-06-10):**
+
+- **Switching:** use `/model fable` and verify with `/status` — the `model` key in `settings.json` has been observed NOT to control the live session model; do not rely on it.
+- **Advisor tier constraint:** the advisor model must be ≥ the main model, so a Fable 5 session 400s on every request unless the **user-level** `~/.claude/settings.json` sets `advisorModel: "fable"` (applied 2026-06-10) or the advisor is disabled. There is no cheaper valid advisor on a Fable session — a Fable advisor roughly doubles advisor cost; disable it if that spend isn't wanted.
+- **Subagent inheritance:** subagents spawned without an explicit `model` parameter inherit Fable 5. The explicit tier→model pinning in §6.4 is mandatory on Fable sessions — it is the main cost lever.
+- **Effort:** `xhigh` (project default) is fully supported on Fable 5 and remains the recommended coding/agentic setting. `/fast` is not available (see above).
+
+**Opus 4.6 compatibility:** `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` + `MAX_THINKING_TOKENS` in `settings.json` are inert on Fable 5 and Opus 4.7+ but active on Opus 4.6 / Sonnet 4.6 (fixed thinking budget). They are kept **intentionally** for occasional 4.6 use — do not remove them.
 
 ---
 

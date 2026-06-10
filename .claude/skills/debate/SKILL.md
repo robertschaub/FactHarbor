@@ -168,6 +168,8 @@ When calling `/debate` programmatically from another skill, always pass the tier
 
 Spawn roles according to the selected tier. **Independent roles run in parallel; dependent roles run sequentially.**
 
+**Model mapping (mandatory):** pass the Agent tool's `model` parameter explicitly on EVERY spawn — `lightweight` → `haiku`, `mid-tier` → `sonnet`, `top-tier` → `opus`. Exception: the FULL Reconciler may use `fable` when the session itself runs Fable 5 AND the decision is high-stakes/irreversible. An omitted `model` makes the role inherit the session's main model — on a Fable 5 session that silently runs every role at the top price tier. (See `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.4.)
+
 **Parallel group 1** (no dependencies):
 - Advocate (Tier 2+)
 - Challenger (all tiers)
