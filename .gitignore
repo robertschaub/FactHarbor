@@ -159,6 +159,11 @@ apps/web/scripts/tmp-sr-*
 /job_*.json
 /jobs_dump.json
 /jobs_dump.txt
+/sky_test.json
+/test-payload.json
+/test-question.json
+/test-venezuela.json
+/test-*.json
 
 # Local fhAgentKnowledge MCP cache (transient, per-machine, regenerable)
 /.cache/
