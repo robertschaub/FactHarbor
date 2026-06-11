@@ -20,13 +20,13 @@ V1.0 is the public launch with all production requirements:
 
 **MUST HAVE before public launch:**
 
-1. ✅ FR44: ClaimReview Schema Implementation
-2. ✅ FR45: Complete Corrections System
-3. ✅ NFR11: Hardened Quality Gates (<5% hallucinations sustained)
-4. ✅ NFR12: Full Security Audit (0 critical/high vulnerabilities)
-5. ✅ NFR13: Public Quality Metrics Dashboard
-6. ✅ IFCN Compliance Documentation
-7. ✅ Privacy Policy & Terms of Service
+1. FR44: ClaimReview Schema Implementation
+2. FR45: Complete Corrections System
+3. NFR11: Hardened Quality Gates (<5% hallucinations sustained)
+4. NFR12: Full Security Audit (0 critical/high vulnerabilities)
+5. NFR13: Public Quality Metrics Dashboard
+6. IFCN Compliance Documentation (open — not started; FactHarbor is not an IFCN signatory)
+7. Privacy Policy & Terms of Service (drafts exist; effective dates pending)
 
 **Cannot launch without ALL of these**
 
@@ -75,13 +75,13 @@ Public-facing metrics:
 
 == 4. Success Criteria ==
 
-* ✅ IFCN certified (or compliant)
-* ✅ Google Fact Check Explorer indexed
-* ✅ Security audit passed
-* ✅ <5% hallucination rate sustained
-* ✅ User satisfaction target met
-* ✅ System stability demonstrated
-* ✅ All launch blockers resolved
+* IFCN signatory status (aspirational — no application submitted yet; current posture: designed to align with IFCN principles)
+* Google Fact Check Explorer indexed
+* Security audit passed
+* <5% hallucination rate sustained
+* User satisfaction target met
+* System stability demonstrated
+* All launch blockers resolved
 
 == 5. Post-Launch Roadmap ==
 

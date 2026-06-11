@@ -6,6 +6,8 @@ Submit any claim. The system decomposes it into atomic assertions, retrieves evi
 
 FactHarbor is being developed as a Swiss nonprofit (Verein). The full source code is available on GitHub.
 
+*(Update June 2026: the FactHarbor Verein has since been founded — April 23, 2026 — and is registered in the Commercial Register of the Canton of Zürich, UID CHE-448.446.098.)*
+
 Try it: [https://app.factharbor.ch](https://app.factharbor.ch/)
 
 Feedback, collaboration ideas, and referrals to researchers in NLP, computational social science, or fact-checking are welcome.

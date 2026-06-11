@@ -2,7 +2,7 @@
 == 1. Purpose and Scope ==
 This checklist documents prerequisite tasks that must be completed before FactHarbor can launch to the public.
 **Organization Reality:** Starting as a solo project with team growth expected within the first year. 
-**Status as of:** February 25, 2026 
+**Status as of:** June 11, 2026
 **Target Launch Date:** [To be determined]
 **Important:** Initially, one person handles multiple functions. This is normal and legal. As the team grows, responsibilities can be distributed.
 == 2. Critical Tasks (MUST Complete Before Launch) ==
@@ -24,7 +24,7 @@ These tasks are mandatory for legal compliance and core functionality.
 | **Build account deletion functionality** | ⬜ Not Started | With grace period |
 | **Implement data retention automation** | ⬜ Not Started | Automated cleanup |
 | **Set up breach notification procedures** | ⬜ Not Started | Document + FDPIC contact |
-| **Implement TLS/HTTPS encryption** | ⬜ Not Started | Let's Encrypt or similar |
+| **Implement TLS/HTTPS encryption** | ✅ Done | app.factharbor.ch serves HTTPS |
 | **Set up security logging** | ⬜ Not Started | One year retention |
 === 2.3 Organisational Infrastructure ===
 |= Task |= Status |= Notes |
@@ -38,7 +38,7 @@ These tasks are strongly recommended before launch.
 === 3.1 Governance & Policy ===
 |= Task |= Status |= Priority |
 | **Appoint DPO (if serving EU users from day 1)** | ⬜ Not Started | HIGH - Can be yourself |
-| **Create Terms of Service** | ⬜ Not Started | HIGH - Adapt templates |
+| **Create Terms of Service** | 🟡 Draft | HIGH - Draft written (June 2026); review and effective date pending |
 | **Create basic Security Policy** | ⬜ Not Started | MEDIUM |
 | **Create simple CLA** | ⬜ Not Started | HIGH - Adapt existing |
 | **Document internal escalation** | ⬜ Not Started | LOW |
@@ -48,13 +48,13 @@ These tasks are strongly recommended before launch.
 | **Implement 2FA** | ⬜ Not Started | MEDIUM |
 | **Create user documentation** | ⬜ Not Started | HIGH |
 | **Set up monitoring** | ⬜ Not Started | HIGH |
-| **Set up backup systems** | ⬜ Not Started | HIGH |
+| **Set up backup systems** | ✅ Done | HIGH - Daily DB backups, 14-day retention (see scripts/DEPLOYMENT.md) |
 === 3.3 Licensing & Open Source ===
 |= Task |= Status |= Priority |
-| **Decide: Code licensing model** | ⬜ Not Started | HIGH - MIT vs MIT+AGPL |
-| **Create LICENSE files** | ⬜ Not Started | HIGH |
-| **Set up code repository** | ⬜ Not Started | HIGH |
-| **Create CONTRIBUTING.md** | ⬜ Not Started | MEDIUM |
+| **Decide: Code licensing model** | ✅ Done | HIGH - Multi-license model, see LICENSE.md |
+| **Create LICENSE files** | ✅ Done | HIGH - LICENSE.md at repository root |
+| **Set up code repository** | ✅ Done | HIGH - github.com/robertschaub/FactHarbor (public) |
+| **Create CONTRIBUTING.md** | ✅ Done | MEDIUM |
 == 4. Recommended Tasks (Can Be Post-Launch) ==
 These can wait until after launch or until team grows.
 |= Task |= Priority |= Notes |
@@ -131,7 +131,7 @@ Strategic decisions needed before implementation:
 - [ ] Processing activities register created
 - [ ] Initial DPIA completed
 **Technical:**
-- [ ] HTTPS encryption implemented
+- [x] HTTPS encryption implemented
 - [ ] Cookie consent (opt-in) working
 - [ ] Data export functionality working
 - [ ] Account deletion working
@@ -255,5 +255,5 @@ You do need:
 * [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
 * [[Finance & Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]]
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]]
-**Last Updated:** February 25, 2026 
+**Last Updated:** June 11, 2026
 **Status:** Adapted for solo start with team growth expected

@@ -67,7 +67,7 @@ The sector needs independent, sustainable infrastructure. FactHarbor is built fo
 
 == How It Works ==
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — different AI providers argue for and against a claim. Only evidence-backed objections count.
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections count.
 
 {{mermaid}}
 flowchart TD
@@ -188,7 +188,7 @@ Every claim, every source, every reasoning step is logged — defensible against
 
 |=Area|=Status
 |**Full pipeline**|5 stages operational: extract claims → research evidence → cluster → AI debate → aggregation
-|**Multi-provider AI debate**|Different AI providers argue against each other (Anthropic vs. OpenAI)
+|**Independent AI challenger**|Claude-led debate, challenged on every claim by a model from a second provider (OpenAI)
 |**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin
 |**Source evaluation**|Automatic per-domain scoring (peer-reviewed study vs. social media post)
 |**Multilingual**|German, English, French, Portuguese tested

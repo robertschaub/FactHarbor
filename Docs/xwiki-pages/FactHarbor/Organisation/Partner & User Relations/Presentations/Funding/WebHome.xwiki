@@ -66,7 +66,7 @@ The sector needs independent, sustainable infrastructure that no single platform
 
 == How It Works ==
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — different AI providers argue for and against a claim, and only evidence-backed objections can change the verdict.
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI), and only evidence-backed objections can change the verdict.
 
 {{mermaid}}
 flowchart TD
@@ -155,7 +155,7 @@ The value is not just a verdict — it's the structured reasoning, cited evidenc
 
 |=Area|=Status
 |**Full pipeline**|5 stages operational: extract claims, research evidence, cluster, AI debate, aggregation
-|**Multi-provider debate**|Different AI providers argue against each other (Anthropic vs. OpenAI)
+|**Independent AI challenger**|Claude-led debate, challenged on every claim by a model from a second provider (OpenAI)
 |**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin
 |**Source evaluation**|Automatic per-domain credibility scoring
 |**Multilingual**|German, English, French, Portuguese tested — multilingual by design
@@ -222,7 +222,7 @@ FactHarbor's governance ensures that funding never compromises editorial indepen
 |**Full transparency**|All funders above CHF 5,000 published by name and amount. Annual financial report.
 |**Mission lock**|Swiss Verein statutes prohibit profit distribution — surplus is irrevocably reinvested
 |**Editorial firewall**|Donors have zero influence on claims analyzed, verdicts produced, or methodology used
-|**IFCN alignment**|Governance aligns with the International Fact-Checking Network Code of Principles
+|**IFCN alignment**|Governance is designed to align with the International Fact-Checking Network Code of Principles (FactHarbor is not an IFCN signatory)
 
 |=Aspect|=Detail
 |**Legal form**|Swiss Verein (Association) under Art. 60 ff. ZGB

@@ -177,9 +177,9 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 
 == Where We Stand ==
 
-**Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
+**Working in Alpha:** Full 5-stage pipeline operational end-to-end — Claude-led adversarial debate with an independent OpenAI challenger, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
 
-**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.20-0.55 per analysis depending on depth, target < $0.10).
+**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction (≈ $1.00 per analysis on current measurements, target < $0.10).
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -190,7 +190,7 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 
 |=Metric|=Value
 |Pipeline stages|5 + optional Stage 4.5 (SR Calibration), with 2 mandatory quality gates
-|Debate steps per claim|5 (adversarial, multi-provider)
+|Debate steps per claim|5 (adversarial; Claude-led with an independent OpenAI challenger step)
 |LLM providers|4 integrated (Anthropic Sonnet 4.5 + OpenAI GPT-4.1 active in debate; Google Gemini + Mistral available)
 |Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
 |Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
@@ -870,7 +870,7 @@ flowchart TB
 
 == Structured AI Debate ==
 
-Every claim goes through a **adversarial debate**. Different providers argue against each other. An objection only counts as "contested" if it cites specific counter-evidence — unsupported criticism is classified as "doubted" and cannot change a verdict.
+Every claim goes through an **adversarial debate** — Claude-led, contested by an independent challenger from a second provider (OpenAI). An objection only counts as "contested" if it cites specific counter-evidence — unsupported criticism is classified as "doubted" and cannot change a verdict.
 
 {{mermaid}}
 flowchart LR

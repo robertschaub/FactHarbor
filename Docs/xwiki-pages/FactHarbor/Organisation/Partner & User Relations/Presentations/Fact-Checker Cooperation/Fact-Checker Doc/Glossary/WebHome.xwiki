@@ -146,7 +146,7 @@ Hinweise auf Einschränkungen im Report:
 
 === Structured AI Debate (Strukturierte KI-Debatte) ===
 
-Der Kernprozess: Nicht eine einzelne KI-Antwort, sondern 5 Schritte mit verschiedenen Rollen und verschiedenen KI-Anbietern die gegeneinander argumentieren. Analog zu einem redaktionellen Review-Prozess.
+Der Kernprozess: Nicht eine einzelne KI-Antwort, sondern 5 Schritte mit verschiedenen Rollen — eine von Claude (Anthropic) geführte Debatte, herausgefordert durch einen unabhängigen Challenger eines zweiten Anbieters (OpenAI). Analog zu einem redaktionellen Review-Prozess.
 
 === Multi-Provider ===
 

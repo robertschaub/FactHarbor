@@ -7,7 +7,7 @@
 
 **Why:** Editorial independence is the foundation of fact-checking credibility. Large donations create perception of bias, even when none exists.
 
-**IFCN Requirement:** International Fact-Checking Network demands full funding transparency and proven independence.
+**IFCN Context:** The International Fact-Checking Network demands full funding transparency and proven independence from its signatories. FactHarbor is not an IFCN signatory; this policy is designed to align with those principles.
 {{/info}}
 
 **Quick Decision Guide:**
@@ -347,7 +347,7 @@ Consult 2-3 external advisors minimum
 **REJECT!**
 
 Rejection letter:
-"Thank you for your interest. Unfortunately, we cannot accept as pharmaceutical companies are regularly subject to fact-checks. We must avoid any appearance of conflict of interest (IFCN Code of Principles). Our editorial independence is non-negotiable."
+"Thank you for your interest. Unfortunately, we cannot accept as pharmaceutical companies are regularly subject to fact-checks. We must avoid any appearance of conflict of interest, in line with the IFCN Code of Principles our policies are designed to align with. Our editorial independence is non-negotiable."
 {{/error}}
 
 === Scenario 3: Anonymous Donor - CHF 50,000 ===
@@ -363,14 +363,14 @@ Rejection letter:
 "We must know your identity internally (due diligence), but can list you publicly as 'Private individual, CHF 50K'."
 
 **Option B: Fully Transparent**
-"For IFCN compliance, we must publish all donors >CHF 5K. Can we list you as '[Name], CHF 50K'?"
+"Our funding policy is designed to align with IFCN transparency principles, so we publish all donors >CHF 5K. Can we list you as '[Name], CHF 50K'?"
 
 **Option C: Below Threshold**
 "Would you donate CHF 4,500? Then it's not published."
 {{/success}}
 
 {{error}}
-**DO NOT:** Accept CHF 50K anonymously without internal verification → AML risk, IFCN violation
+**DO NOT:** Accept CHF 50K anonymously without internal verification → AML risk, contrary to the IFCN transparency principles this policy follows
 {{/error}}
 
 === Scenario 4: Government - CHF 200,000 ===
@@ -463,7 +463,7 @@ Donor President FactHarbor
 * Name, Amount, Percentage of budget
 
 **3. Independence Statement**
-"FactHarbor is independent. No funder influences our fact-checks. We follow IFCN Code of Principles."
+"FactHarbor is independent. No funder influences our fact-checks. Our governance is designed to align with the IFCN Code of Principles (we are not an IFCN signatory)."
 {{/info}}
 
 === Website: "Our Funding" Page ===
@@ -553,7 +553,8 @@ Donor President FactHarbor
 
 For credibility as an independent fact-checking organization,
 no single funder may finance more than 20% of our budget
-(IFCN Code of Principles).
+(our own statutory rule, designed to align with IFCN
+funding-independence principles).
 
 With our current budget of CHF [X], we can accept maximum
 CHF [20%] as direct donation.
@@ -590,7 +591,7 @@ All checked? → ACCEPT ✅
 **Related Pages:**
 * FactHarbor Bylaws
 * Funding Sources
-* IFCN Signatory Application
+* IFCN Signatory Application (planned — not yet submitted)
 * Governance Structure
 * Transparency Policy
 
