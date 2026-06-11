@@ -394,6 +394,21 @@ For non-Claude tools: read the relevant `.claude/skills/<name>/SKILL.md` and exe
 
 ---
 
+## Advisor Consultation
+
+The built-in **advisor** tool gives a fresh-context second opinion from a reviewer model (set by `advisorModel`, currently Fable 5). It is **scoped, on-demand consultation — not a standing reviewer layer** (§Named Workflows); the model consults it autonomously by default, and this section sets the project norm for *when*. Use the advisor for a quick single second opinion; escalate to `/debate` only for high-impact, contested, or materially-disputed decisions where one reviewer isn't enough. Agents **should** consult it at the judgment moments below — and **MUST** before a destructive or irreversible step:
+
+- **Root cause & fix selection** — when the root cause is unclear or you are choosing among **materially different** fixes (not obvious one-line changes).
+- **Pipeline-regression risk** — before finalizing a pipeline change that touches **prompts, quality gates, model-tier routing, scoring/aggregation, or pipeline-bound config (§Configuration Placement)**, or that is **cross-stage** (mirrors §Bugfix Complexity Heuristic — trivial single-site changes need only its short note, not a consult). The advisor is a **reasoning gate, NOT proof of non-regression** — `/report-review` or `/validate` against §Report Quality Baseline Comparison (`benchmark-expectations.json` + Captain comparators) is the empirical check.
+- **User-facing / warning-severity changes** — before changing what users see or how it is classified (warning severity per §Report Quality & Event Communication, user-facing report wording, or any public-surface output). Mis-severity hides or over-shows quality signals — a trust-critical judgment call.
+- **Revert vs. pile-on** — when a fix has failed and you are about to **add complexity instead of amending or reverting** (§Failed-Attempt Recovery): repeated failed validation, or stacking a new mechanism on a change that just failed. Treat reverting to the named last-known-good and the lower-complexity route as the leading option for the advisor to confirm or refute — undoing is weighed as seriously as adding.
+- **Destructive or irreversible steps (MUST)** — before any (§Safety — `factharbor.db` writes, `git reset --hard` / `push --force` / `clean -f` / `checkout -- .`, mass edits, deletions).
+- **Task completion** — before declaring a **non-trivial, correctness-critical** task done (pairs with the Exchange Protocol completion step).
+
+**Do NOT** consult the advisor for routine work — single-file reads, mechanical edits, formatting, doc tweaks, obvious one-liners — where a second opinion adds nothing. Each call runs at the session's advisor tier (always ≥ the main model), so it has real cost; it is highest-value and relatively cheapest when the main model is **Opus 4.8 / Sonnet** (the advisor escalates *upward*). **When running Fable 5 as main, the advisor is a same-tier second opinion at top cost — consult sparingly there, and lean on `/report-review` / `/validate` for empirical regression checks rather than repeat advisor calls.**
+
+---
+
 ## Tool Strengths Reference
 
 Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
