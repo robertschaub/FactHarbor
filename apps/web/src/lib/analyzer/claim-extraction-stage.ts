@@ -139,6 +139,19 @@ const ContractRepairOutputSchema = z.object({
   atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
 });
 
+// F2: surgical per-claim contract repair. The LLM returns ONLY replacement
+// groups for validator-flagged claims; unflagged claims never round-trip
+// through the model, so they are preserved by construction.
+const SurgicalContractRepairGroupSchema = z.object({
+  replacesClaimIds: z.array(z.string()).catch([]),
+  reasoning: z.string().catch(""),
+  claims: z.array(Pass2AtomicClaimSchema).catch([]),
+});
+
+const SurgicalContractRepairOutputSchema = z.object({
+  repairs: z.array(SurgicalContractRepairGroupSchema).catch([]),
+});
+
 const ContractCompletionOmittedPropositionSchema = z.object({
   id: z.string().catch(""),
   description: z.string().catch(""),
@@ -351,12 +364,18 @@ export async function extractClaims(
   // or if validation returns no usable structured result.
   // ------------------------------------------------------------------
   let activePass2 = pass2;
-  let stageAttribution: "initial" | "retry" | "repair" | "completion" = "initial";
+  let stageAttribution: "initial" | "retry" | "repair" | "surgical_repair" | "completion" = "initial";
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
   let contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"] = undefined;
   let lastContractValidatedClaims: AtomicClaim[] | undefined;
+  // F2 (surgical repair): latest usable raw validator result whose per-claim
+  // assessments correspond to the CURRENT activePass2 claim set. Updated at
+  // every adoption site that runs BEFORE the surgical pass; the completion
+  // pass and the final post-Gate-1 revalidation do NOT refresh it, so do not
+  // add readers after the surgical block.
+  let latestContractCritique: ClaimContractValidationResult | undefined;
 
   if (contractValidationEnabled) {
     state.onEvent?.("Validating claim contract fidelity...", 24);
@@ -408,6 +427,7 @@ export async function extractClaims(
         salienceCommitment,
       );
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
+      latestContractCritique = contractResult;
       anchorRetryReason = evaluatedContract.anchorRetryReason;
       atomicityRetryReason = evaluatedContract.atomicityRetryReason;
       contractValidationSummary = evaluatedContract.summary;
@@ -584,6 +604,7 @@ export async function extractClaims(
           activePass2 = retryPass2;
           stageAttribution = "retry";
           lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
+          latestContractCritique = retryContractResult;
           contractValidationSummary = evaluatedRetryContract.summary;
           contractValidationSummary.stageAttribution = stageAttribution;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
@@ -591,6 +612,7 @@ export async function extractClaims(
           activePass2 = retryPass2;
           stageAttribution = "retry";
           lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
+          latestContractCritique = undefined;
           console.warn("[Stage1] Claim contract retry could not be re-validated either; using conservative retry output but contract state remains degraded.");
         } else {
           console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
@@ -708,6 +730,7 @@ export async function extractClaims(
                 activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
                 stageAttribution = "repair";
                 lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
+                latestContractCritique = repairValidationResult;
                 contractValidationSummary = evaluatedRepair.summary;
                 contractValidationSummary.stageAttribution = stageAttribution;
                 console.info(
@@ -796,6 +819,7 @@ export async function extractClaims(
         contractValidationSummary = evaluatedAvailability.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
         lastContractValidatedClaims = currentClaims;
+        latestContractCritique = availabilityValidationResult;
         console.info(
           evaluatedAvailability.effectiveRePromptRequired
             ? "[Stage1] Contract validator availability recovered and confirmed contract violation."
@@ -803,6 +827,154 @@ export async function extractClaims(
         );
       } else {
         console.warn("[Stage1] Contract validator availability recovery returned no usable result.");
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // F2: surgical per-claim contract repair.
+    // The whole-set corrective retry regenerates every claim under full
+    // global-constraint load, which empirically re-introduces violations
+    // and ends in report_damaged. When the validator produced usable
+    // per-claim critiques, apply a bounded repair to ONLY the flagged
+    // claims (split bundling, rewrite proxy drift, collapse
+    // over-decomposition); unflagged claims are preserved by construction
+    // because they never round-trip through the model. The ordinary
+    // validator must authorize the merged set — the gate is unchanged.
+    // Coverage boundary (intentional): challenge-driven violations
+    // (single-claim atomicity, binding challenge, anchor-provenance,
+    // normative injection) carry no per-claim critique, so this pass
+    // gracefully skips them and they fall through to contract completion.
+    // ------------------------------------------------------------------
+    const surgicalRepairEnabled = calcConfig.claimContractValidation?.surgicalRepairEnabled ?? true;
+    const surgicalRepairMaxClaimsPerGroup = calcConfig.claimContractValidation?.surgicalRepairMaxClaimsPerGroup ?? 4;
+    const shouldAttemptSurgicalRepair =
+      surgicalRepairEnabled &&
+      contractValidationSummary?.failureMode === "contract_violated" &&
+      (
+        contractValidationSummary.preservesContract === false ||
+        contractValidationSummary.rePromptRequired === true
+      );
+
+    if (shouldAttemptSurgicalRepair) {
+      const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+      const flaggedAssessments = selectFlaggedContractAssessments(latestContractCritique, currentClaims);
+
+      if (flaggedAssessments.length === 0) {
+        console.info("[Stage1] Surgical contract repair skipped: no per-claim critique matches the active claim set.");
+      } else {
+        const validatorSummaryText = [
+          contractValidationSummary?.summary,
+          contractValidationSummary?.anchorRetryReason,
+          contractValidationSummary?.atomicityRetryReason,
+        ].filter(Boolean).join("; ");
+
+        state.onEvent?.(`Surgically repairing ${flaggedAssessments.length} flagged claim(s)...`, 25);
+        state.warnings.push({
+          type: "contract_surgical_repair_fired",
+          severity: "info",
+          message: `Stage 1: surgical contract repair invoked for ${flaggedAssessments.length} flagged claim(s).`,
+          details: {
+            stage: "stage1_surgical_repair",
+            flaggedClaimIds: flaggedAssessments.map((assessment) => assessment.claimId),
+          },
+        });
+
+        // Outcome telemetry: makes the F2 rescue/rejection rate measurable
+        // from stored reports (prod deploy verification depends on this —
+        // a missing prompt blob shows up as outcome=rejected here).
+        const claimsBefore = currentClaims.length;
+        const emitSurgicalDiagnostic = (
+          outcome: "adopted" | "rejected" | "validation_failed" | "not_validated_cleanly",
+          details: Record<string, unknown>,
+        ) => {
+          state.warnings.push({
+            type: "contract_surgical_repair_diagnostic",
+            severity: "info",
+            message: `Stage 1: surgical contract repair ${outcome}.`,
+            details: {
+              stage: "stage1_surgical_repair",
+              outcome,
+              claimsBefore,
+              ...details,
+            },
+          });
+        };
+
+        const surgical = await runSurgicalContractRepair(
+          currentClaims,
+          flaggedAssessments,
+          validatorSummaryText,
+          state.originalInput,
+          activePass2.impliedClaim ?? "",
+          activePass2.articleThesis ?? "",
+          surgicalRepairMaxClaimsPerGroup,
+          pipelineConfig,
+          state,
+        );
+        state.llmCalls++;
+
+        if (!surgical.repairedClaims) {
+          emitSurgicalDiagnostic("rejected", { reason: surgical.rejectionReason });
+          console.info(`[Stage1] Surgical contract repair rejected: ${surgical.rejectionReason}`);
+        } else {
+          const repairedClaims = surgical.repairedClaims;
+          const {
+            result: surgicalValidationResult,
+            attempts: surgicalValidationAttempts,
+          } = await runClaimContractValidationWithRetry(() =>
+            validateClaimContract(
+              repairedClaims,
+              state.originalInput,
+              activePass2.impliedClaim ?? "",
+              activePass2.articleThesis ?? "",
+              activePass2.inputClassification ?? "single_atomic_claim",
+              pipelineConfig,
+              salienceCommitment,
+            )
+          );
+          state.llmCalls += surgicalValidationAttempts;
+
+          if (!surgicalValidationResult) {
+            emitSurgicalDiagnostic("validation_failed", {
+              reason: "validator_unavailable_after_surgical_repair",
+              claimsAfter: repairedClaims.length,
+            });
+            console.warn("[Stage1] Surgical contract repair could not be re-validated; keeping pre-repair set.");
+          } else {
+            const evaluatedSurgical = await applyApprovedSingleClaimChallenges(
+              repairedClaims,
+              evaluateClaimContractValidation(
+                surgicalValidationResult,
+                repairedClaims,
+                activePass2.inputClassification,
+              ),
+              state.originalInput,
+              activePass2.impliedClaim ?? "",
+              activePass2.articleThesis ?? "",
+              activePass2.inputClassification ?? "single_atomic_claim",
+              pipelineConfig,
+              state,
+              25,
+              salienceCommitment,
+            );
+
+            if (!evaluatedSurgical.effectiveRePromptRequired) {
+              activePass2 = { ...activePass2, atomicClaims: repairedClaims };
+              stageAttribution = "surgical_repair";
+              lastContractValidatedClaims = repairedClaims;
+              latestContractCritique = surgicalValidationResult;
+              contractValidationSummary = evaluatedSurgical.summary;
+              contractValidationSummary.stageAttribution = stageAttribution;
+              emitSurgicalDiagnostic("adopted", { claimsAfter: repairedClaims.length });
+              console.info(
+                `[Stage1] Surgical contract repair adopted after re-validation: ${currentClaims.length} -> ${repairedClaims.length} claim(s).`,
+              );
+            } else {
+              emitSurgicalDiagnostic("not_validated_cleanly", { claimsAfter: repairedClaims.length });
+              console.info("[Stage1] Surgical contract repair did not validate cleanly; keeping pre-repair set.");
+            }
+          }
+        }
       }
     }
 
@@ -2498,6 +2670,289 @@ async function runContractCompletion(
       schemaCompliant: false,
       retries: 0,
       errorMessage: `Contract completion failed: ${errorMessage}`,
+      timestamp: new Date(),
+    });
+    return { rejectionReason: errorMessage };
+  }
+}
+
+type SurgicalContractRepairResult =
+  | { repairedClaims: AtomicClaim[]; rejectionReason?: undefined }
+  | { repairedClaims?: undefined; rejectionReason: string };
+
+/**
+ * F2: select the validator's per-claim critiques that (a) refer to claims
+ * present in the CURRENT active claim set and (b) flag a contract violation.
+ * Pure structural filter over LLM-provided labels — no semantic judgment.
+ */
+export function selectFlaggedContractAssessments(
+  critique: ClaimContractValidationResult | undefined,
+  claims: AtomicClaim[],
+): Array<z.infer<typeof ClaimContractClaimSchema>> {
+  if (!critique) return [];
+  const currentIds = new Set(claims.map((claim) => claim.id));
+  return (critique.claims ?? []).filter((assessment) =>
+    currentIds.has(assessment.claimId) && (
+      assessment.recommendedAction === "retry" ||
+      assessment.proxyDriftSeverity === "material" ||
+      assessment.preservesEvaluativeMeaning === false
+    ),
+  );
+}
+
+/**
+ * F2: deterministic merge of surgical repair groups into the current claim
+ * set. Structural guards only:
+ * - every repair group must target flagged ids exclusively, with no overlap;
+ * - every flagged id must be covered by exactly one group;
+ * - group size is capped; statements must be non-empty;
+ * - unflagged claims pass through verbatim (they never reach the LLM);
+ * - replacement claims splice in at the position of the group's first
+ *   replaced claim, preserving downstream ordering;
+ * - a no-op result is rejected so a failed repair cannot masquerade as one.
+ */
+export function normalizeSurgicalContractRepairSet(
+  currentClaims: AtomicClaim[],
+  flaggedClaimIds: string[],
+  repairs: Array<z.infer<typeof SurgicalContractRepairGroupSchema>>,
+  maxClaimsPerGroup: number,
+): SurgicalContractRepairResult {
+  if (repairs.length === 0) {
+    return { rejectionReason: "surgical repair returned no repair groups" };
+  }
+
+  const flaggedIdSet = new Set(flaggedClaimIds);
+  const currentIndexById = new Map(currentClaims.map((claim, index) => [claim.id, index] as const));
+  const coveredIds = new Set<string>();
+  type PlacedGroup = {
+    anchorIndex: number;
+    replacesClaimIds: string[];
+    claims: Array<z.infer<typeof Pass2AtomicClaimSchema>>;
+  };
+  const placedGroups: PlacedGroup[] = [];
+
+  for (const group of repairs) {
+    const replaces = (group.replacesClaimIds ?? [])
+      .map((id) => (typeof id === "string" ? id.trim() : ""))
+      .filter((id) => id.length > 0);
+    if (replaces.length === 0) {
+      return { rejectionReason: "surgical repair group lists no replacesClaimIds" };
+    }
+    for (const id of replaces) {
+      if (!flaggedIdSet.has(id)) {
+        return { rejectionReason: `surgical repair group targets non-flagged claim id ${id}` };
+      }
+      if (coveredIds.has(id)) {
+        return { rejectionReason: `surgical repair covers claim id ${id} more than once` };
+      }
+      coveredIds.add(id);
+    }
+    if (!group.claims || group.claims.length === 0) {
+      return { rejectionReason: `surgical repair group for [${replaces.join(",")}] returned no replacement claims` };
+    }
+    if (group.claims.length > maxClaimsPerGroup) {
+      return { rejectionReason: `surgical repair group for [${replaces.join(",")}] returned ${group.claims.length} claims, exceeding max ${maxClaimsPerGroup}` };
+    }
+    for (const claim of group.claims) {
+      if (!claim.statement?.trim()) {
+        return { rejectionReason: "surgical repair returned a replacement claim without a statement" };
+      }
+    }
+    const anchorIndex = Math.min(
+      ...replaces.map((id) => currentIndexById.get(id) ?? Number.MAX_SAFE_INTEGER),
+    );
+    placedGroups.push({ anchorIndex, replacesClaimIds: replaces, claims: group.claims });
+  }
+
+  const uncoveredIds = flaggedClaimIds.filter((id) => !coveredIds.has(id));
+  if (uncoveredIds.length > 0) {
+    return { rejectionReason: `surgical repair left flagged claim id(s) [${uncoveredIds.join(",")}] unrepaired` };
+  }
+
+  // Id assignment: a 1:1 replacement may keep the replaced claim's id;
+  // everything else gets a fresh id on emptiness or collision.
+  const nextAtomicClaimId = getNextAtomicClaimIdFactory(currentClaims);
+  const assignedIds = new Set<string>(
+    currentClaims.filter((claim) => !flaggedIdSet.has(claim.id)).map((claim) => claim.id),
+  );
+  for (const group of placedGroups) {
+    for (const claim of group.claims) {
+      const requestedId = typeof claim.id === "string" ? claim.id.trim() : "";
+      const isOneToOneKeep =
+        group.claims.length === 1 &&
+        group.replacesClaimIds.length === 1 &&
+        requestedId === group.replacesClaimIds[0];
+      const requestedIsFreshAndUnused =
+        requestedId.length > 0 &&
+        !assignedIds.has(requestedId) &&
+        !currentIndexById.has(requestedId);
+      let id: string;
+      if ((isOneToOneKeep && !assignedIds.has(requestedId)) || requestedIsFreshAndUnused) {
+        id = requestedId;
+      } else {
+        // The factory only knows currentClaims ids; a kept LLM-requested fresh
+        // id (e.g. "AC_04") can collide with the factory's next output, so
+        // re-draw until clear. The factory never repeats its own outputs.
+        id = nextAtomicClaimId();
+        while (assignedIds.has(id)) id = nextAtomicClaimId();
+      }
+      claim.id = id;
+      assignedIds.add(id);
+    }
+  }
+
+  const groupsByAnchorIndex = new Map<number, PlacedGroup[]>();
+  for (const group of placedGroups) {
+    const list = groupsByAnchorIndex.get(group.anchorIndex) ?? [];
+    list.push(group);
+    groupsByAnchorIndex.set(group.anchorIndex, list);
+  }
+
+  const repairedClaims: AtomicClaim[] = [];
+  currentClaims.forEach((claim, index) => {
+    const groupsHere = groupsByAnchorIndex.get(index);
+    if (groupsHere) {
+      for (const group of groupsHere) {
+        repairedClaims.push(...(group.claims as unknown as AtomicClaim[]));
+      }
+      return;
+    }
+    if (flaggedIdSet.has(claim.id)) {
+      return;
+    }
+    repairedClaims.push(claim);
+  });
+
+  if (repairedClaims.length === 0) {
+    return { rejectionReason: "surgical repair produced an empty claim set" };
+  }
+
+  // Terminal uniqueness guard: duplicate ids would silently break every
+  // id-keyed downstream structure (Gate 1 dedupe, evidence joins, verdicts).
+  const repairedIdSet = new Set(repairedClaims.map((claim) => claim.id));
+  if (repairedIdSet.size !== repairedClaims.length) {
+    return { rejectionReason: "surgical repair produced duplicate claim ids" };
+  }
+
+  // No-op guard on STATEMENTS (exact trimmed equality, order-sensitive): an
+  // id-relabelled but textually identical set is still a failed repair.
+  const statementFingerprint = (claims: Array<Pick<AtomicClaim, "statement">>) =>
+    claims.map((claim) => (claim.statement ?? "").trim()).join("\n");
+  if (statementFingerprint(currentClaims) === statementFingerprint(repairedClaims)) {
+    return { rejectionReason: "surgical repair returned the claim set unchanged" };
+  }
+
+  return { repairedClaims };
+}
+
+/**
+ * F2: surgical per-claim contract repair LLM call. Bounded task: the model
+ * sees the full claim set for context but may only emit replacement groups
+ * for the flagged claims; the deterministic merge above enforces that
+ * boundary. Uses `context_refinement` tier like the sibling repair and
+ * completion passes. The ordinary validator must approve the merged set
+ * before it can reach Gate 1.
+ */
+async function runSurgicalContractRepair(
+  claims: AtomicClaim[],
+  flaggedAssessments: Array<z.infer<typeof ClaimContractClaimSchema>>,
+  validatorSummary: string,
+  inputText: string,
+  impliedClaim: string,
+  articleThesis: string,
+  maxClaimsPerGroup: number,
+  pipelineConfig: PipelineConfig,
+  state: Pick<CBResearchState, "onEvent"> | undefined,
+): Promise<SurgicalContractRepairResult> {
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  state?.onEvent?.(`LLM call: surgical contract repair — ${model.modelName}`, -1);
+
+  const claimById = new Map(claims.map((claim) => [claim.id, claim] as const));
+  const flaggedForPrompt = flaggedAssessments.map((assessment) => ({
+    claimId: assessment.claimId,
+    statement: claimById.get(assessment.claimId)?.statement ?? "",
+    critique: assessment.reasoning,
+    proxyDriftSeverity: assessment.proxyDriftSeverity,
+    preservesEvaluativeMeaning: assessment.preservesEvaluativeMeaning,
+    recommendedAction: assessment.recommendedAction,
+  }));
+
+  const llmCallStartedAt = Date.now();
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_SURGICAL_REPAIR", {
+      analysisInput: inputText,
+      impliedClaim,
+      articleThesis,
+      validatorSummary,
+      currentClaimsJson: JSON.stringify(claims, null, 2),
+      flaggedAssessmentsJson: JSON.stringify(flaggedForPrompt, null, 2),
+      maxReplacementClaims: String(maxClaimsPerGroup),
+    });
+
+    if (!rendered) {
+      return { rejectionReason: "CLAIM_CONTRACT_SURGICAL_REPAIR prompt section not found" };
+    }
+
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user" as const,
+          content: "Return the surgical repair JSON for the flagged claims.",
+        },
+      ],
+      temperature: 0,
+      output: Output.object({ schema: SurgicalContractRepairOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      return { rejectionReason: "surgical repair returned no structured output" };
+    }
+
+    const repair = SurgicalContractRepairOutputSchema.parse(parsed);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return normalizeSurgicalContractRepairSet(
+      claims,
+      flaggedAssessments.map((assessment) => assessment.claimId),
+      repair.repairs,
+      maxClaimsPerGroup,
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `Surgical contract repair failed: ${errorMessage}`,
       timestamp: new Date(),
     });
     return { rejectionReason: errorMessage };

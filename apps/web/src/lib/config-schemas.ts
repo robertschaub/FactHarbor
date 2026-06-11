@@ -1602,6 +1602,17 @@ export const CalcConfigSchema = z.object({
      */
     repairPassEnabled: z.boolean().optional(),
     /**
+     * F2: surgical per-claim contract repair. When the validator returns a
+     * usable contract-violated result with per-claim critiques and the
+     * whole-set retry still failed, repair ONLY the flagged claims (split
+     * bundling, rewrite proxy drift, collapse over-decomposition); unflagged
+     * claims are preserved by construction because they never round-trip
+     * through the model. The ordinary validator must authorize the merged
+     * set. Runs after the anchor repair pass and before contract completion.
+     */
+    surgicalRepairEnabled: z.boolean().optional(),
+    surgicalRepairMaxClaimsPerGroup: z.number().int().min(1).max(8).optional(),
+    /**
      * Contract completion runs after the validator returns a usable
      * contract-violated result and the ordinary retry/repair path still
      * failed. It asks a dedicated LLM comparison prompt to add only omitted
@@ -1979,6 +1990,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     enabled: true,
     maxRetries: 1,
     repairPassEnabled: true,
+    surgicalRepairEnabled: true,
+    surgicalRepairMaxClaimsPerGroup: 4,
     completionEnabled: true,
     completionMaxAttempts: 1,
     completionMaxAddedClaims: 4,

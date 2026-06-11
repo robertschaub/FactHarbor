@@ -790,6 +790,8 @@ export type AnalysisWarningType =
   | "per_source_evidence_cap"                // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
   | "contract_validation_retry_triggered"   // Stage 1: claim-contract validation flagged drift and triggered a Pass 2 retry
   | "contract_repair_pass_fired"            // Stage 1: anchor-gated targeted repair pass was invoked after contract retry
+  | "contract_surgical_repair_fired"        // Stage 1: F2 surgical per-claim repair was invoked on validator-flagged claims
+  | "contract_surgical_repair_diagnostic"   // Stage 1: F2 surgical repair outcome (adopted/rejected/validation_failed) with claim counts
   | "contract_completion_diagnostic";       // Stage 1: contract-completion recovery attempted, rejected, or skipped
 
 /**
@@ -1294,7 +1296,7 @@ export interface CBClaimUnderstanding {
      * Phase 7: which recovery stage produced the final accepted claim set.
      * Helps distinguish raw extraction quality from recovery-mediated success.
      */
-    stageAttribution?: "initial" | "retry" | "repair" | "completion";
+    stageAttribution?: "initial" | "retry" | "repair" | "surgical_repair" | "completion";
     /**
      * C9 (Phase 5): diagnostic discriminant for Phase B reporting.
      * Absent when the contract is preserved (success). Set to "contract_violated"

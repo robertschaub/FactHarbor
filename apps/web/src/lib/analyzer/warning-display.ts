@@ -73,6 +73,8 @@ const WARNING_CLASSIFICATION = {
   per_source_evidence_cap: { bucket: "analysis", impact: "informational" },
   contract_validation_retry_triggered: { bucket: "analysis", impact: "informational" },
   contract_repair_pass_fired: { bucket: "analysis", impact: "informational" },
+  contract_surgical_repair_fired: { bucket: "analysis", impact: "informational" },
+  contract_surgical_repair_diagnostic: { bucket: "analysis", impact: "informational" },
   contract_completion_diagnostic: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 

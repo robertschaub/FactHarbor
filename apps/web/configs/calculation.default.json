@@ -115,6 +115,8 @@
     "enabled": true,
     "maxRetries": 1,
     "repairPassEnabled": true,
+    "surgicalRepairEnabled": true,
+    "surgicalRepairMaxClaimsPerGroup": 4,
     "completionEnabled": true,
     "completionMaxAttempts": 1,
     "completionMaxAddedClaims": 4,

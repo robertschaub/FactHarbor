@@ -1,8 +1,8 @@
 ---
-version: "1.0.11"
+version: "1.0.12"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-06-01T00:00:00Z"
+lastModified: "2026-06-11T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -24,6 +24,9 @@ variables:
   - currentClaimsJson
   - maxAddedClaims
   - salienceBindingContextJson
+  - flaggedAssessmentsJson
+  - validatorSummary
+  - maxReplacementClaims
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_SALIENCE_COMMITMENT"
@@ -34,6 +37,7 @@ requiredSections:
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_REPAIR"
   - "CLAIM_CONTRACT_COMPLETION"
+  - "CLAIM_CONTRACT_SURGICAL_REPAIR"
   - "CLAIM_SELECTION_RECOMMENDATION"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
@@ -2634,6 +2638,93 @@ If completion is not eligible, return:
     }
   ],
   "rationale": "The current claims already cover the thesis, or the omission is unclear."
+}
+```
+
+Return only the JSON object. Do not include explanation text.
+
+## CLAIM_CONTRACT_SURGICAL_REPAIR
+
+You are an expert editor specializing in structural claim fidelity.
+
+A separate contract validator reviewed the current atomic claims against the user's original input and flagged specific claims as violating the original claim contract. Your task is a bounded, surgical repair: correct ONLY the flagged claims, following the validator's critique. Every claim that is not flagged is locked — the system preserves locked claims automatically, so they must NOT appear in your output.
+
+### Input
+
+**Original Input:**
+${analysisInput}
+
+**Implied Claim:**
+${impliedClaim}
+
+**Article Thesis:**
+${articleThesis}
+
+**Validator Critique Summary:**
+${validatorSummary}
+
+**Current Claims (full set; locked claims included for context only):**
+${currentClaimsJson}
+
+**Flagged Claims (repair ONLY these), with the validator's per-claim critique:**
+${flaggedAssessmentsJson}
+
+**Maximum Claims Per Repair Group:**
+${maxReplacementClaims}
+
+### Repair Operations
+
+Choose the operation per repair group based on the validator's critique:
+
+1. **Split (bundling):** If a flagged claim bundles multiple independently verifiable assertions (coordinated actors, acts, branches, or comparison sides), replace it with one claim per assertion. Each split claim must preserve the original predicate and any truth-condition-bearing modifier that applies to its branch. Do not keep a bundled whole-claim version alongside the splits.
+2. **Rewrite (proxy drift):** If a flagged claim replaced the user's original predicate with a proxy formulation (such as feasibility, contribution, cost-effectiveness, technical success, or another subsystem-specific metric the input did not use), rewrite it to preserve the user's original predicate, presenting any dimension as a neutral qualifier such as `in terms of [dimension]` tied to the original predicate.
+3. **Collapse (over-decomposition):** If several flagged claims are proxy-dimension fragments of one holistic proposition the user actually stated, replace them together — in a single repair group listing all of their ids — with one claim that restates the user's original proposition faithfully.
+
+### Rules
+
+1. Repair only the flagged claims. Locked claims must NOT appear in your output.
+2. Every flagged claim id must appear in exactly one repair group's `replacesClaimIds`. No flagged id may be left unrepaired, and no id may appear in two groups.
+3. Replacement statements must stay within the meaning of the original input: no new inference, chronology, causality, legality, or verdict language; no narrowing with stage labels, methodology windows, measurement frames, or proxy metrics the input did not use.
+4. Keep the original language of the input's proposition. Do not translate merely because these instructions are in English.
+5. Each repair group may produce at most ${maxReplacementClaims} replacement claims.
+6. Fill every schema field for replacement claims. Where a metadata field of the replaced claim remains true for the replacement (e.g. `keyEntities`, `relevantGeographies`), carry it over.
+7. Replacement claim ids: when one claim replaces one claim, reuse the replaced claim's id. Otherwise set `id` to an empty string and the system will assign fresh ids.
+
+### Output Format
+
+Return a JSON object matching this schema:
+
+```json
+{
+  "repairs": [
+    {
+      "replacesClaimIds": ["AC_02"],
+      "reasoning": "One sentence stating which critique this repair resolves and how.",
+      "claims": [
+        {
+          "id": "AC_02",
+          "statement": "Repaired statement preserving the user's original predicate...",
+          "category": "factual",
+          "verifiability": "high",
+          "centrality": "high",
+          "harmPotential": "medium",
+          "isCentral": true,
+          "claimDirection": "supports_thesis",
+          "thesisRelevance": "direct",
+          "keyEntities": ["Entity A"],
+          "relevantGeographies": [],
+          "checkWorthiness": "high",
+          "specificityScore": 0.8,
+          "groundingQuality": "strong",
+          "expectedEvidenceProfile": {
+            "methodologies": [],
+            "expectedMetrics": [],
+            "expectedSourceTypes": []
+          }
+        }
+      ]
+    }
+  ]
 }
 ```
 
