@@ -11,6 +11,18 @@ $ErrorActionPreference = "Stop"
 Write-Host "== FactHarbor POC1 Clean Restart =="
 Write-Host ""
 
+# Guard: AI coding harnesses (e.g. Claude Code) inject ANTHROPIC_BASE_URL /
+# ANTHROPIC_MODEL into their tool shells. Services spawned from such a shell
+# inherit them, and @ai-sdk/anthropic prefers ANTHROPIC_BASE_URL over its
+# correct default (https://api.anthropic.com/v1) — the harness value lacks
+# /v1, so every pipeline LLM call 404s. Strip both before spawning services.
+foreach ($leak in "ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL") {
+    if (Test-Path "Env:$leak") {
+        Write-Host "WARNING: removing inherited $leak ('$((Get-Item Env:$leak).Value)') from service environment (harness leak guard)." -ForegroundColor Yellow
+        Remove-Item "Env:$leak"
+    }
+}
+
 Write-Host "Validating configuration..."
 powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
 Write-Host ""
