@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-09T21:34:55.748Z",
-  "count": 313,
+  "generatedAt": "2026-06-11T15:53:16.651Z",
+  "count": 314,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -6404,6 +6404,21 @@
       ],
       "files_touched": [],
       "summary": "Lead Developer Handoff — Reference Alignment Validator"
+    },
+    {
+      "file": "2026-06-11_Lead_Developer_F2_Surgical_Contract_Repair.md",
+      "date": "2026-06-11",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "f2",
+        "surgical",
+        "contract",
+        "repair"
+      ],
+      "files_touched": [],
+      "summary": "2026-06-11 | Lead Developer | Claude (Fable 5) | F2 Surgical Per-Claim Contract Repair — [Significant] [open-items: yes]"
     }
   ]
 }
