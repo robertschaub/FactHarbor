@@ -840,10 +840,11 @@ export async function extractClaims(
     // over-decomposition); unflagged claims are preserved by construction
     // because they never round-trip through the model. The ordinary
     // validator must authorize the merged set — the gate is unchanged.
-    // Coverage boundary (intentional): challenge-driven violations
-    // (single-claim atomicity, binding challenge, anchor-provenance,
-    // normative injection) carry no per-claim critique, so this pass
-    // gracefully skips them and they fall through to contract completion.
+    // Coverage: per-claim validator critiques are the primary source; the
+    // single-claim atomicity challenge (bundling on one-claim sets) is
+    // covered via a synthesized assessment. Remaining intentional skips:
+    // binding-challenge, anchor-provenance (C11b owns anchors), and
+    // normative-injection violations fall through to contract completion.
     // ------------------------------------------------------------------
     const surgicalRepairEnabled = calcConfig.claimContractValidation?.surgicalRepairEnabled ?? true;
     const surgicalRepairMaxClaimsPerGroup = calcConfig.claimContractValidation?.surgicalRepairMaxClaimsPerGroup ?? 4;
@@ -857,7 +858,15 @@ export async function extractClaims(
 
     if (shouldAttemptSurgicalRepair) {
       const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
-      const flaggedAssessments = selectFlaggedContractAssessments(latestContractCritique, currentClaims);
+      let critiqueSource: "validator_per_claim" | "atomicity_challenge" = "validator_per_claim";
+      let flaggedAssessments = selectFlaggedContractAssessments(latestContractCritique, currentClaims);
+      if (flaggedAssessments.length === 0) {
+        const synthesized = synthesizeAtomicityFlaggedAssessments(contractValidationSummary, currentClaims);
+        if (synthesized.length > 0) {
+          flaggedAssessments = synthesized;
+          critiqueSource = "atomicity_challenge";
+        }
+      }
 
       if (flaggedAssessments.length === 0) {
         console.info("[Stage1] Surgical contract repair skipped: no per-claim critique matches the active claim set.");
@@ -875,6 +884,7 @@ export async function extractClaims(
           message: `Stage 1: surgical contract repair invoked for ${flaggedAssessments.length} flagged claim(s).`,
           details: {
             stage: "stage1_surgical_repair",
+            critiqueSource,
             flaggedClaimIds: flaggedAssessments.map((assessment) => assessment.claimId),
           },
         });
@@ -894,6 +904,7 @@ export async function extractClaims(
             details: {
               stage: "stage1_surgical_repair",
               outcome,
+              critiqueSource,
               claimsBefore,
               ...details,
             },
@@ -2698,6 +2709,34 @@ export function selectFlaggedContractAssessments(
       assessment.preservesEvaluativeMeaning === false
     ),
   );
+}
+
+/**
+ * F2 extension: when the primary validator's per-claim critique is clean (or
+ * stale) but the single-claim atomicity challenge flagged bundling — the
+ * summary carries `atomicityRetryReason` and `failureMode` is
+ * `contract_violated` (set by applySingleClaimAtomicityValidation) — there is
+ * no per-claim assessment for the surgical pass to key off. Synthesize one
+ * for the single claim so a split repair can run. Strictly scoped: fires only
+ * for a one-claim active set, where the atomicity critique unambiguously
+ * refers to that claim. Pure structural mapping of LLM-provided judgment.
+ */
+export function synthesizeAtomicityFlaggedAssessments(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+  claims: AtomicClaim[],
+): Array<z.infer<typeof ClaimContractClaimSchema>> {
+  const reason = contractValidationSummary?.atomicityRetryReason?.trim();
+  if (!reason || claims.length !== 1 || !claims[0]?.id) {
+    return [];
+  }
+  return [{
+    claimId: claims[0].id,
+    preservesEvaluativeMeaning: true,
+    usesNeutralDimensionQualifier: true,
+    proxyDriftSeverity: "none",
+    recommendedAction: "retry",
+    reasoning: reason,
+  }];
 }
 
 /**

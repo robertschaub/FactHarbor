@@ -15,9 +15,10 @@ import { describe, it, expect } from "vitest";
 import {
   normalizeSurgicalContractRepairSet,
   selectFlaggedContractAssessments,
+  synthesizeAtomicityFlaggedAssessments,
   type ClaimContractValidationResult,
 } from "@/lib/analyzer/claim-extraction-stage";
-import type { AtomicClaim } from "@/lib/analyzer/types";
+import type { AtomicClaim, CBClaimUnderstanding } from "@/lib/analyzer/types";
 
 function makeClaim(id: string, statement: string): AtomicClaim {
   return {
@@ -312,5 +313,51 @@ describe("selectFlaggedContractAssessments", () => {
     );
     expect(stale).toHaveLength(0);
     expect(selectFlaggedContractAssessments(undefined, claims)).toHaveLength(0);
+  });
+});
+
+describe("synthesizeAtomicityFlaggedAssessments", () => {
+  type Summary = CBClaimUnderstanding["contractValidationSummary"];
+
+  function summary(overrides: Partial<NonNullable<Summary>> = {}): Summary {
+    return {
+      ran: true,
+      preservesContract: false,
+      rePromptRequired: true,
+      failureMode: "contract_violated",
+      summary: "atomicity challenge flagged bundling",
+      ...overrides,
+    } as Summary;
+  }
+
+  const single = [makeClaim("AC_01", "Entity A's process is better than Entity B's process.")];
+
+  it("synthesizes one flagged assessment for a single-claim set with an atomicity retry reason", () => {
+    const flagged = synthesizeAtomicityFlaggedAssessments(
+      summary({ atomicityRetryReason: "single_claim_atomicity_failed: bundles two coordinated branches" }),
+      single,
+    );
+    expect(flagged).toHaveLength(1);
+    expect(flagged[0].claimId).toBe("AC_01");
+    expect(flagged[0].recommendedAction).toBe("retry");
+    expect(flagged[0].reasoning).toContain("coordinated branches");
+  });
+
+  it("returns nothing for multi-claim sets, missing reason, blank reason, or missing summary", () => {
+    const multi = [
+      makeClaim("AC_01", "Entity A performed action X."),
+      makeClaim("AC_02", "Entity B performed action Y."),
+    ];
+    expect(
+      synthesizeAtomicityFlaggedAssessments(
+        summary({ atomicityRetryReason: "single_claim_atomicity_failed: bundled" }),
+        multi,
+      ),
+    ).toHaveLength(0);
+    expect(synthesizeAtomicityFlaggedAssessments(summary(), single)).toHaveLength(0);
+    expect(
+      synthesizeAtomicityFlaggedAssessments(summary({ atomicityRetryReason: "   " }), single),
+    ).toHaveLength(0);
+    expect(synthesizeAtomicityFlaggedAssessments(undefined, single)).toHaveLength(0);
   });
 });
