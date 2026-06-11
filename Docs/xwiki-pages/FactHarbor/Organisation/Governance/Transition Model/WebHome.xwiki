@@ -1,9 +1,9 @@
 = Transition Model =
 
-(% class="box warningmessage" %)
+(% class="box infomessage" %)
 (((
-**Current Status: Phase 1 (Alpha / Founder Mode)**
-FactHarbor is currently in an early setup phase. Processes described here are being established.
+**Current Status: Transitioning from Phase 1 (Founder Mode) to Phase 2 (Verein Mode)**
+The legal founding step is complete — FactHarbor was incorporated as a Swiss Verein on April 23, 2026 and entered in the Commercial Register (UID CHE-448.446.098). Operational role separation and more formal governance processes are still being established.
 )))
 
 == 1. Purpose ==
@@ -13,8 +13,8 @@ The Transition Model explains how FactHarbor evolves from an early experimental 
 == 2. Phases (Illustrative) ==
 
 * **Phase 1: Alpha (Founder Mode)** – Current phase. Very small core team; focus on validating the basic approach and achieving multi-agent debate reliability. The Founder inhabits multiple operational domains.
-* **Phase 2: Beta (Verein Mode)** – Legal incorporation complete. More users and community members; governance and processes become clearer and more formal. Separation of Legal (Board) and Operational (Domains) roles begins.
-  * **Current Status:** [[Draft Statutes>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome||anchor="H7.DraftStatutes"]] are ready for board/legal review.
+* **Phase 2: Beta (Verein Mode)** – Legal incorporation complete. More users and community members; governance and processes become clearer and more formal. Separation of Legal (Governing Team) and Operational (Domains) roles begins.
+  * **Current Status:** The statutes were adopted and the association registered following the founding assembly on April 23, 2026 (see [[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]]). Operational role separation is now underway.
 
 * **Phase 3: Release 1.x (Scale Mode)** – Stable operation, documented contributor processes, and full separation of roles with dedicated domain leads.
 * **Phase 4: Federated Phase** – Multiple instances or partners adopt the model; shared governance principles across a network.
@@ -25,13 +25,13 @@ To maintain progress during the startup phase, roles are mapped as follows:
 
 |=Governance Layer|=Role / Domain|=Phase 1 (Current)|=Phase 2 (Target)
 |**Legal (Verein)**|**President**|Robert Schaub|Elected Member
-|**Legal (Verein)**|**Treasurer**|*Vacant (Blocked)*|Elected Member
+|**Legal (Verein)**|**Treasurer**|Appointed|Elected Member
 |**Operations**|**R&D Domain**|Robert Schaub|R&D Lead
 |**Operations**|**Operations Domain**|Robert Schaub|Operations Lead
 |**Operations**|**Partner & User Relations Domain**|Robert Schaub|Relations Lead
 |**Operations**|**Finance Domain**|Robert Schaub|Finance Lead
 
-**Transition Trigger:** Founding the Swiss Verein requires at least two people (President & Treasurer). Finding a Treasurer is the immediate priority to move to Phase 2.
+**Status:** The Swiss Verein was founded on April 23, 2026 with a President and Treasurer, and registered in the Commercial Register (UID CHE-448.446.098). This completes the pre-formation phase. Operational role separation, a recurring governance cadence, and broader staffing are the next steps toward full Phase 2.
 
 == 4. Transition Principles ==
 

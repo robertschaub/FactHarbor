@@ -1,8 +1,10 @@
 = Legal Framework =
 
-== 1. Current Focus: Founding the Swiss Verein ==
+== 1. Legal Status: Registered Swiss Verein ==
 
-FactHarbor is currently transitioning from a solo-founder project to a formal non-profit organization. The chosen legal vehicle is a **Swiss Verein** (Association) based in Switzerland (Canton of Zürich).
+FactHarbor is a **Swiss Verein** (non-profit association) under Art. 60 ff. of the Swiss Civil Code (ZGB), based in the Canton of Zürich. The association was **founded on April 23, 2026** at its founding assembly, where the statutes were adopted and the Governing Team elected.
+
+FactHarbor is entered in the **Commercial Register (Handelsregister)** of the Canton of Zürich under **UID CHE-448.446.098**; the entry is publicly visible on [[Zefix>>https://www.zefix.ch]].
 
 This structure was selected for its simplicity, flexibility, and strong alignment with FactHarbor's mission-driven, automation-first philosophy.
 
@@ -16,12 +18,12 @@ Regardless of its stage, the organization is bound by several "mission-lock" pri
 *   **Asset Stewardship**: Domains, code repositories, and trademarks are held by the Verein for the benefit of the public.
 *   **Dissolution Clause**: Upon dissolution, remaining assets must be transferred to another mission-compatible non-profit.
 
-== 3. Draft Statutes (Bylaws) ==
+== 3. Statutes (Bylaws) ==
 
-The formal statutes (Vereinsstatuten) are **complete and ready for final review** by the founding members and legal counsel:
+The statutes (Vereinsstatuten) were **adopted at the founding assembly on April 23, 2026** and govern the association. The documents linked below are the pre-founding draft versions, kept for public reference:
 
-*   **[[Draft Vereinsstatuten (German)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]**
-*   **[[Draft Verein Statutes (English)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md]]**
+*   **[[Vereinsstatuten — draft (German)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]**
+*   **[[Verein Statutes — draft (English)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md]]**
 
 == 4. Intellectual Property & Privacy ==
 
@@ -31,14 +33,15 @@ Detailed legal policies for day-to-day operations are maintained in dedicated do
 *   **[[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]**: Compliance with Swiss FADP and EU GDPR.
 *   **[[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]**: Our commitment to open finances and decision-making.
 
-== 5. Formation Roadmap ==
+== 5. Formation & Recognition Status ==
 
-|=Step|=Status|=Notes
-|**Draft Statutes**|✅ Complete|Ready for review
-|**Find Co-Founder**|⏳ In Progress|Need Treasurer/Board member
-|**Founding Assembly**|⬜ Pending|Sign minutes, adopt statutes
-|**Official Registration**|⬜ Pending|Commercial Register (Zefix)
-|**NPO Verification**|⬜ Pending|Apply for Claude for Nonprofits
+|=Milestone|=Status|=Notes
+|**Statutes adopted**|✅ Complete|Founding assembly, April 23, 2026
+|**Governing Team appointed**|✅ Complete|President and Treasurer (statutory minimum of two members)
+|**Founding assembly held**|✅ Complete|April 23, 2026
+|**Commercial Register (Handelsregister)**|✅ Complete|UID CHE-448.446.098; visible on Zefix since May 7, 2026
+|**Nonprofit verification (Goodstack)**|✅ Complete|Verified May 2026; basis for nonprofit software programs (Claude for Nonprofits and OpenAI for Nonprofits, active since May 10, 2026)
+|**Tax exemption (Steuerbefreiung)**|🟡 Applied for|Application submitted May 6, 2026 to the Canton of Zürich tax office; decision pending (typical processing 4–12 weeks)
 
 For a detailed task list, see the **[[Operational Readiness Checklist>>FactHarbor.Organisation.Governance.Operational Readiness.WebHome]]**.
 
@@ -47,7 +50,7 @@ For a detailed task list, see the **[[Operational Readiness Checklist>>FactHarbo
 (% class="box" %)
 (((
 **Analysis Metadata**
-* **Analysis Date:** February 25, 2026
-* **Sources:** FactHarbor Internal Governance Documents, Swiss Civil Code (Art. 60-79)
-* **Author:** Gemini CLI (AI Assistant)
+* **Last Updated:** June 11, 2026
+* **Sources:** FactHarbor founding minutes (April 23, 2026), Commercial Register / Zefix entry (UID CHE-448.446.098), Swiss Civil Code (Art. 60-79)
+* **Author:** AI Assistant (Technical Writer)
 )))

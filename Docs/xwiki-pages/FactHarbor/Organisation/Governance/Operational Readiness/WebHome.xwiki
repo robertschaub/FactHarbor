@@ -10,9 +10,9 @@ These tasks are mandatory for legal compliance and core functionality.
 === 2.1 Legal & Compliance ===
 |= Task |= Status |= Notes |
 | **Engage Swiss legal advisor for policy review** | ⬜ Not Started | Review all policies, bylaws |
-| **Draft and adopt Verein bylaws (statutes)** | ✅ Draft Ready | Required for legal existence |
-| **Appoint founding board (minimum two members)** | ⬜ Not Started | Can include yourself |
-| **Apply for Swiss tax-exempt status** | ⬜ Not Started | Cantonal tax authority |
+| **Draft and adopt Verein bylaws (statutes)** | ✅ Complete | Adopted at founding assembly, April 23, 2026 |
+| **Appoint founding Governing Team (minimum two members)** | ✅ Complete | President and Treasurer appointed, April 23, 2026 |
+| **Apply for Swiss tax-exempt status** | 🟡 Submitted | Submitted May 6, 2026 to the Canton of Zürich tax office; decision pending |
 | **Designate Swiss representative** | ⬜ Not Started | Can be yourself with Swiss address |
 | **Create processing activities register** | ⬜ Not Started | Internal document |
 | **Conduct initial DPIA for AKEL system** | ⬜ Not Started | Can use templates |
@@ -123,8 +123,9 @@ Strategic decisions needed before implementation:
 == 7. Launch Blockers - Go/No-Go Checklist ==
 **Cannot launch until ALL are complete:**
 **Legal:**
-- [x] Verein bylaws drafted (adoption pending)
-- [ ] Governing Team appointed (two members minimum)
+- [x] Verein bylaws adopted (founding assembly, April 23, 2026)
+- [x] Verein registered in Commercial Register (UID CHE-448.446.098, visible on Zefix since May 7, 2026)
+- [x] Governing Team appointed (two members minimum)
 - [ ] Swiss representative designated
 - [ ] Privacy Policy effective date set
 - [ ] Processing activities register created
