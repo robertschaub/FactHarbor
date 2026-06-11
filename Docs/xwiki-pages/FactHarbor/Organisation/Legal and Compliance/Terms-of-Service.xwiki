@@ -1,78 +1,111 @@
 = Terms of Service =
-**Effective Date:** [To be determined before production launch] 
-**Last Updated:** December 17, 2025
+**Effective Date:** [NEEDS DECISION: set before the alpha is exposed to any user not personally known to the team — align with the Privacy Policy effective date]
+**Last Updated:** June 11, 2026 (V0.2.2 — Alpha-Reality Rewrite, advisor- + counsel-reviewed)
+
+{{info}}
+**Status: DRAFT — not yet effective.** Rewritten to match the service FactHarbor **actually operates today**: an invite-gated, AI-assisted claim-analysis service in **alpha**, not a community-contribution platform with user accounts. Items marked **[NEEDS DECISION: …]** require a human/legal decision before publication. Reviewed internally and by a GPT-5.5 counsel-style pass; not yet signed off by retained Swiss counsel (a launch blocker — see [[Operational Readiness>>FactHarbor.Organisation.Governance.Operational Readiness.WebHome]] §2.1).
+{{/info}}
+
 == 1. Acceptance of Terms ==
-By accessing or using FactHarbor, you agree to be bound by these Terms of Service and our [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]].
-== 2. Description of Service ==
-FactHarbor is a platform for collaborative evaluation of factual claims using transparent, community-driven processes.
-== 3. User Accounts ==
-=== 3.1 Registration ===
-* You must provide accurate information when registering
-* You are responsible for maintaining the security of your account
-* You must be at least the minimum age required by applicable law
-=== 3.2 Account Responsibilities ===
-* You are responsible for all activity under your account
-* Notify us immediately of any unauthorized use
-* Do not share your account credentials
-== 4. User Conduct ==
-=== 4.1 Acceptable Use ===
+These Terms of Service and our [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]] govern your use of FactHarbor. To ensure these Terms are validly incorporated, we present them — together with the third-party-processing and visibility notices (Privacy Policy §§3.3, 5–7) — **for your acceptance before you submit a claim**; by submitting, you confirm you accept them. If you do not agree, do not use the service. **[NEEDS DECISION: implement a click-through/checkbox acceptance ("Submit claim and accept Terms") — mere "by using" (browsewrap) is weak for incorporating the liability, indemnity, public-visibility, and third-party-transfer clauses, and weaker still for consumers. For current known testers, obtain acceptance in writing via the invitation flow.]**
+
+== 2. Description of the Service ==
+FactHarbor is operated by a Swiss non-profit association (Verein), UID CHE-448.446.098, Canton of Zürich.
+
+**Current (alpha) functionality:** FactHarbor is an **AI-assisted claim-analysis service**. Using an invite code, you submit a factual claim (as text or a URL); our automated pipeline researches it using web search and large-language-model (LLM) reasoning and returns a structured analysis report.
+
+**Important — how the analysis works:** to produce a report, FactHarbor **sends content derived from your submission to third-party AI and search providers** and fetches third-party web pages. See [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]] §5 for the providers involved and §6 for the sensitive-data warning. **Do not submit content you are unwilling to have processed this way.**
+
+The account-based community features (public contributions, profiles, collaborative editing) described in earlier drafts are **planned for a later phase and are not active**. These Terms will be updated before those features launch.
+
+== 3. Alpha / Experimental Status ==
+The service is provided on a **pre-release, experimental basis** for evaluation:
+* Features may change, break, or be withdrawn at any time without notice.
+* We do not guarantee availability, performance, or that data (including your submissions and generated reports) will be retained or preserved.
+* There is **no service-level agreement** and no commitment of support response times during alpha.
+
+== 4. Access and Invite Codes ==
+* Access requires a valid **invite code** that we issue. Invite codes are subject to usage quotas.
+* Invite codes may be used by the people we issue them to; you may **not** publish, sell, or pass them to unauthorised persons, or attempt to circumvent quotas, rate limits, or other access controls.
+* We may revoke or disable any invite code, or suspend or terminate access, at any time — including for violation of these Terms, abuse, security risk, or where required by law.
+* The alpha does **not** use accounts; you do not register credentials, and we do not authenticate you as an identified individual.
+
+== 5. Acceptable Use ==
 You agree to:
-* Contribute in good faith
-* Respect other users
-* Follow community guidelines
-* Respect intellectual property rights
-=== 4.2 Prohibited Activities ===
-You may not:
-* Submit false or misleading information
-* Harass or abuse other users
-* Attempt to manipulate the platform
-* Violate any applicable laws
-* Circumvent security measures
-* Use automated tools to abuse the system
-== 5. Content and Intellectual Property ==
-=== 5.1 Your Content ===
-* You retain ownership of content you submit
-* You grant FactHarbor a license to use, display, and distribute your contributions
-* You represent that you have the right to submit your content
-* Your contributions are licensed under [[our licensing terms>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
-=== 5.2 Public Nature of Contributions ===
-* Contributions are public and permanent
-* Submission history is maintained for transparency
-* Deletion requests may result in anonymization rather than removal
-=== 5.3 Platform Content ===
-* Platform code and documentation are open source under our specified licenses
-* FactHarbor trademarks remain our property
-== 6. Privacy ==
-Your privacy is important. Please review our [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]] to understand how we collect, use, and protect your data.
-== 7. Termination ==
-=== 7.1 By You ===
-You may delete your account at any time through account settings.
-=== 7.2 By Us ===
-We may suspend or terminate accounts that:
-* Violate these Terms
-* Engage in abusive behavior
-* Pose security risks
-* Are required to be terminated by law
+* Use the service in good faith and for its intended purpose (evaluating factual claims).
+* Comply with all applicable laws.
+
+You may **not**:
+* Submit content that is unlawful, infringing, or that you do not have the right to submit.
+* Submit personal or sensitive data about yourself or others except as essential to the claim, understanding it will be processed as described in the Privacy Policy (§5–§6). If you submit a claim about an identifiable person, you are responsible for having a lawful basis to do so.
+* Submit claims that unlawfully infringe a third party's **personality rights** (ZGB Art. 28) or are defamatory, or use the service to harass, defame, or harm others, or to generate or launder disinformation.
+* Attempt to manipulate, overload, reverse-engineer, or abuse the analysis pipeline, or circumvent access/rate controls.
+* Use automated tools to submit at scale beyond your invite quota.
+
+== 6. Content, Submissions, and Intellectual Property ==
+=== 6.1 Your Submissions ===
+* You retain ownership of the content you submit.
+* You represent that you have the right to submit it and to permit its processing as described.
+* You grant FactHarbor a limited, non-exclusive licence to **use, reproduce, transmit, and process** your submission — including transmitting it to the third-party AI/search providers and source-fetching described in the Privacy Policy — **solely to provide and improve the analysis service**. We do **not** permit providers to use your submissions to train their models except where a provider's configured terms allow it. **[NEEDS DECISION: confirm provider training/retention settings per provider; if "improve" ever includes our own training/evaluation datasets, say so explicitly here.]**
+
+=== 6.2 Analysis Reports ===
+* Analysis reports are **generated by FactHarbor's automated pipeline**. See the disclaimer in §7.
+* Reports may concern identifiable persons or organisations; we apply the personality-rights safeguards and complaint/takedown route in **Privacy Policy §6.2**.
+* Submissions and generated reports **may be visible to other users of the service** (e.g., via a job list or shared link), and during the alpha the job list/view may be reachable without an invite code. **[NEEDS DECISION: confirm the intended visibility (private to the submitter / shareable by link / public) and restrict the endpoints accordingly. Disclosed in Privacy Policy §3.3, flagged time-sensitive in Privacy Policy §20.1 — resolve before more submissions are made.]**
+* If reports are shareable, you must **preserve their disclaimers, not edit them misleadingly, and not use them to harass, defame, or mislead**. **[NEEDS DECISION: confirm whether and how users may copy/publish reports.]**
+
+=== 6.3 Platform and Trademarks ===
+* FactHarbor's source code and documentation **will be released** under the project's open-source licences (see [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]). **[NEEDS DECISION: finalise the code-licensing model — listed as not-yet-decided in Operational Readiness §3.3.]**
+* The FactHarbor name and marks remain our property.
+
+== 7. AI-Generated Output — No Guarantee of Accuracy ==
+**This is critical to understand:**
+* Analysis reports are produced by **automated AI reasoning over automatically retrieved sources**. They may contain **errors, omissions, outdated information, or fabricated/“hallucinated” statements**, and may misattribute or misinterpret sources.
+* A report is **an automated assessment, not a definitive determination of truth**, and does **not** constitute professional, legal, medical, financial, or any other expert advice.
+* **You must exercise your own judgment** and independently verify anything you rely on. Do not make consequential decisions based solely on a FactHarbor report.
+* Verdicts, truth percentages, and confidence figures are **machine-generated indicators**, not authoritative rulings on any person, organisation, or statement.
+
 == 8. Disclaimers ==
-=== 8.1 "As Is" Service ===
-FactHarbor is provided "as is" without warranties of any kind, express or implied.
+=== 8.1 "As Is" ===
+The service is provided **"as is" and "as available"**, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, accuracy, and non-infringement.
 === 8.2 Content Accuracy ===
-* We do not guarantee the accuracy of user-submitted content
-* Evaluations represent community assessments, not absolute truth
-* Use your own judgment when relying on information
+We do not guarantee the accuracy, completeness, or reliability of any analysis report or of user-submitted content (see §7).
 === 8.3 Availability ===
-We do not guarantee uninterrupted or error-free service.
+We do not guarantee uninterrupted or error-free operation (see §3).
+
 == 9. Limitation of Liability ==
-To the maximum extent permitted by law, FactHarbor and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages.
-== 10. Governing Law ==
-These Terms are governed by Swiss law. Disputes will be resolved under Swiss jurisdiction.
-== 11. Changes to Terms ==
-We may update these Terms from time to time. Material changes will be announced with reasonable notice.
-== 12. Contact ==
-For questions about these Terms: [Contact information to be established]
-== 13. Related Policies ==
+To the maximum extent permitted by Swiss law, FactHarbor and its officers, members, and operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss of data, arising from your use of (or inability to use) the service or from reliance on any analysis report. **Nothing in these Terms excludes or limits liability for intent or gross negligence (OR Art. 100), for death or personal injury, or any other liability that cannot be excluded under mandatory law. For consumers, the limitations apply only to the extent permitted by mandatory consumer-protection law.**
+
+== 10. Indemnity ==
+You agree to indemnify and hold FactHarbor harmless from third-party claims arising out of content you submit in **culpable** breach of §5 or §6.1 (e.g., unlawful, infringing, defamatory, or unauthorised personal data). For consumers, this applies only to the extent permitted by mandatory law. **[NEEDS DECISION: confirm whether to retain this clause for an alpha with known testers, or defer to launch.]**
+
+== 11. Age and Capacity ==
+You must have the capacity to enter these Terms under the law applicable to you. The service is not intended for children: under **Swiss law** a minor may agree only if capable of judgment (*Urteilsfähigkeit*, ZGB Art. 16); where the **GDPR** applies and consent is the basis, the age is 16 (Art. 8; a member state may lower it, but not below 13); **US COPPA** uses 13. See [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]] §15. **[NEEDS DECISION: consider requiring a minimum age of 16 or 18 for a public consumer launch for simplicity.]**
+
+== 12. Termination ==
+You may stop using the service at any time. We may suspend or terminate your access (including invite codes) at any time as described in §4. Provisions that by their nature should survive termination (§§6–10, 13) survive.
+
+== 13. Governing Law and Jurisdiction ==
+These Terms are governed by **Swiss law**. The place of jurisdiction for disputes is the **Canton of Zürich, Switzerland**, subject to any mandatory consumer-protection jurisdiction and law that applies to EU/EEA (or other) consumers. If any provision is held invalid, the remaining provisions continue in full force.
+
+== 14. Changes to These Terms ==
+We may update these Terms. Material changes will be announced with reasonable notice via a prominent notice on the site (and by email where we hold one). Continued use after a change takes effect constitutes acceptance. Previous versions will be archived.
+
+== 15. Contact ==
+For questions about these Terms: **info@factharbor.ch** (postal address available on request).
+
+== 16. Version ==
+* **Version:** 0.2.2 (Alpha-Reality Rewrite, advisor- + counsel-reviewed), superseding the unnumbered December 17, 2025 draft.
+* **Last Updated:** June 11, 2026
+* **Effective Date:** [NEEDS DECISION — see header]
+
+**Changelog:**
+* **0.2.1 → 0.2.2 (GPT-5.5 counsel review):** added a click-through-incorporation requirement (§1); preserved mandatory liability under OR Art. 100 + consumer caveat (§9); narrowed the indemnity to *culpable* breach + consumer caveat (§10); added a personality-rights/no-defamation duty (§5) and a cross-reference to the Privacy Policy §6.2 takedown route (§6.2); added report-use rules for shared reports (§6.2); made the provider-training position explicit (§6.1); flagged a possible 16/18 minimum age for public launch (§11).
+* **0.2.0 → 0.2.1 (Fable-5 advisor review):** children's-age clause fixed; invite-code wording aligned to Privacy Policy §3.1; §6.3 "will be released"; visibility pointer to Privacy Policy §3.3.
+
+**Open decisions before publication:** §1 click-through acceptance; §6.1 provider training/retention; §6.2 report visibility (time-sensitive) + report-use; §6.3 code-licensing model; §10 indemnity scope; §11 minimum age; effective date. The broader compliance checklist lives in the [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]] §20.
+
+== 17. Related Policies ==
 * [[Privacy Policy>>FactHarbor.Organisation.Legal and Compliance.Privacy-Policy]]
-* [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
 * [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]
-**Version:** Draft 
-**Status:** To be finalized before launch
+* [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
