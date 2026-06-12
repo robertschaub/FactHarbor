@@ -1,7 +1,8 @@
 {
   "_schemaVersion": "1.0.0",
   "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/ARCHIVE/PipelineV1/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
-  "_lastUpdated": "2026-06-08",
+  "_lastUpdated": "2026-06-12",
+  "_comparatorEraNote": "PROVIDER-ERA CONFOUND (added 2026-06-12): every family's latestVerifiedJobId comparator predates the 2026-06-01 stack changes (search provider priority swap Serper->P1, output-token reduction). Band deltas measured on the post-2026-06-01 stack are provider-confounded until an isolated re-baseline run lands for that family. Comparator protocol: comparator-bearing benchmark runs MUST be submitted ISOLATED (one job at a time) — every Captain-accepted comparator was produced that way, and two _failed_rerun notes in this file document concurrent-submission degradation. Concurrent batches are smoke tests only, never band evidence.",
   "_sourceHandoffs": [
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
@@ -202,11 +203,16 @@
         "status": "draft",
         "path": "Docs/AGENTS/Reference_Dossiers/hydrogen-en.v0.1.json"
       },
-      "qualityStatus": "SOLVED",
-      "qualityStatusNote": "TTW/WTW conflation fixed. Report now correctly exposes distinct full-pathway and tank-to-wheel claims/boundaries. Cleanup territory — no active firefighting needed.",
+      "qualityStatus": "IMPROVED-NOT-CLOSED-SINGLE-ATOMIC-TAIL-WATCH",
+      "qualityStatusNote": "Re-statused 2026-06-12 (Captain-approved, from the 2026-05-30 cross-stage audit + 2026-05-31 classification-determinism proposal + 2026-06-11 run 697ed11e). The TTW/WTW conflation fix HOLDS when Stage-1 decomposition succeeds, but a Stage-1 classification tail (~1 in 5 runs) classifies the input single_atomic and produces a structurally incomplete report: one undecomposed claim, no distinct tank-to-wheel vs full-pathway frames, depressed confidence. 2026-05-30 live variance test: only 2/5 runs met the full documented bar. Designed fix C4(a) (expectedEvidenceProfile enumeration extension, generic) is awaiting Captain decision — see Docs/WIP/2026-05-31_Stage1_Classification_Determinism_Proposal.md.",
       "latestVerifiedJobId": "1f838f8b81804aa6997601507a46da07",
       "latestObserved": { "verdictLabel": "FALSE", "truthPercentage": 8, "confidence": 78 },
-      "knownOpenIssues": []
+      "_observed_2026-06-11": "Run 697ed11e0769 (concurrent batch, post-provider-era, NOT band evidence): MOSTLY-FALSE 25/35 with 1 claim, 4 boundaries (no TTW/full-pathway split), 6 evidence items — the documented single_atomic tail shape. Confidence 30pp below band floor.",
+      "knownOpenIssues": [
+        "Stage-1 single_atomic classification tail (~1/5 runs): input not decomposed into TTW + full-pathway claims; report passes verdict band while structurally incomplete and low-confidence",
+        "designed fix C4(a) (EEP enumeration extension for comparative-efficiency predicates, generic) parked awaiting Captain decision since 2026-05-31",
+        "comparator 1f838f8b predates the 2026-06-01 provider-era change and is 42+ analyzer/prompt commits old — family needs an isolated re-baseline at current HEAD"
+      ]
     },
     {
       "slug": "plastic-en",

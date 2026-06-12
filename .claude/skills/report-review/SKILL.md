@@ -322,7 +322,7 @@ Before filing any finding against a prompt or stage, rule out infrastructure cau
 - Model fallback cascade: if meta.runtimeRoleModels has fallbackUsed true for verdict or reconciler, note it in the report block. The verdict came from the fallback model, not the configured one, so the quality baseline shifts.
 - Prompt rollout drift: query apps/web/config.db for the active claimboundary prompt hash and activated_utc. If the active hash does not match any in-scope meta.promptContentHash and the activated_utc predates HEAD's prompt commits, flag PROMPT-ROLLOUT-DRIFT. Fix mechanism is prompt-rollout (reseed), never a prompt edit.
 
-**3i. Historical regression analysis (conditional — run when 3a filed a regression finding against a family whose `qualityStatus` is `SOLVED`, `SOLVED-MAIN-BLOCKER`, `SOLVED-VISIBLE-CONTAMINATION`, `PARSE-FAILURE-FIXED`, or `CONFIRMED-ON-CURRENT-HEAD`. Skip for families whose status indicates they are not yet proven at HEAD — there is nothing to regress from.):**
+**3i. Historical regression analysis (conditional — run when 3a filed a regression finding against a family whose `qualityStatus` is `SOLVED`, `SOLVED-MAIN-BLOCKER`, `SOLVED-VISIBLE-CONTAMINATION`, `PARSE-FAILURE-FIXED`, `CONFIRMED-ON-CURRENT-HEAD`, or `CONFIRMED-ON-CURRENT-STACK`. Skip for families whose status indicates they are not yet proven at HEAD — there is nothing to regress from.):**
 
 Goal: find whether a prior run of the same input scored better, identify the commit(s) that could explain the drop, and assess whether rollback is a viable fix class.
 
