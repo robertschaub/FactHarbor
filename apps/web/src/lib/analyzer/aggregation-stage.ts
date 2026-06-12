@@ -138,7 +138,6 @@ export async function aggregateAssessment(
 
   const aggregation = calcConfig.aggregation ?? {
     centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
-    harmPotentialMultiplier: 1.5,
     derivativeMultiplier: 0.5,
   };
   const harmMultipliers = calcConfig.aggregation?.harmPotentialMultipliers ?? {
