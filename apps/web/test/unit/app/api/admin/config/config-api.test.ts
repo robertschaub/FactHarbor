@@ -9,6 +9,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+import { GET, PUT } from "@/app/api/admin/config/[type]/[profile]/route";
+import { POST } from "@/app/api/admin/config/[type]/[profile]/validate/route";
+
 // ============================================================================
 // MOCK SETUP
 // ============================================================================
@@ -78,12 +81,6 @@ describe("Admin Config API - Authentication", () => {
     });
 
     it("rejects requests without x-admin-key header", async () => {
-      // Import fresh to pick up env changes
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({ headers: {} });
       const response = await GET(req, createRouteParams("search", "default"));
 
@@ -93,11 +90,6 @@ describe("Admin Config API - Authentication", () => {
     });
 
     it("rejects requests with wrong x-admin-key", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({
         headers: { "x-admin-key": "wrong-key" },
       });
@@ -107,11 +99,6 @@ describe("Admin Config API - Authentication", () => {
     });
 
     it("accepts requests with correct x-admin-key", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockGetActiveConfig.mockResolvedValue({
         configType: "search",
         profileKey: "default",
@@ -136,11 +123,6 @@ describe("Admin Config API - Authentication", () => {
     });
 
     it("allows requests without x-admin-key in development", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockGetActiveConfig.mockResolvedValue({
         configType: "search",
         profileKey: "default",
@@ -175,11 +157,6 @@ describe("Admin Config API - Input Validation", () => {
 
   describe("GET /api/admin/config/:type/:profile", () => {
     it("rejects invalid config type", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({});
       const response = await GET(req, createRouteParams("invalid-type", "default"));
 
@@ -190,11 +167,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("accepts valid config types: prompt, search, calculation", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockGetActiveConfig.mockResolvedValue(null);
 
       for (const validType of ["prompt", "search", "calculation"]) {
@@ -206,11 +178,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("returns 404 when no active config exists", async () => {
-      vi.resetModules();
-      const { GET } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockGetActiveConfig.mockResolvedValue(null);
 
       const req = createMockRequest({});
@@ -226,11 +193,6 @@ describe("Admin Config API - Input Validation", () => {
 
   describe("PUT /api/admin/config/:type/:profile", () => {
     it("rejects invalid config type", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({
         method: "PUT",
         body: { content: '{"enabled":true}' },
@@ -243,11 +205,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("rejects invalid JSON body", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = {
         method: "PUT",
         headers: { get: () => null },
@@ -262,11 +219,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("rejects missing content field", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({
         method: "PUT",
         body: { versionLabel: "v1.0" }, // missing content
@@ -279,11 +231,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("rejects non-string content field", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       const req = createMockRequest({
         method: "PUT",
         body: { content: { enabled: true } }, // object instead of string
@@ -296,11 +243,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("accepts valid request and returns blob info", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockSaveConfigBlob.mockResolvedValue({
         blob: {
           contentHash: "hash123",
@@ -328,11 +270,6 @@ describe("Admin Config API - Input Validation", () => {
     });
 
     it("returns 400 for validation failures", async () => {
-      vi.resetModules();
-      const { PUT } = await import(
-        "@/app/api/admin/config/[type]/[profile]/route"
-      );
-
       mockSaveConfigBlob.mockRejectedValue(
         new Error("Validation failed: Missing required field 'enabled'")
       );
@@ -369,11 +306,6 @@ describe("Admin Config API - Validation Endpoint", () => {
 
   describe("POST /api/admin/config/:type/:profile/validate", () => {
     it("rejects invalid config type", async () => {
-      vi.resetModules();
-      const { POST } = await import(
-        "@/app/api/admin/config/[type]/[profile]/validate/route"
-      );
-
       const req = createMockRequest({
         method: "POST",
         body: { content: '{}' },
@@ -384,11 +316,6 @@ describe("Admin Config API - Validation Endpoint", () => {
     });
 
     it("rejects missing content field", async () => {
-      vi.resetModules();
-      const { POST } = await import(
-        "@/app/api/admin/config/[type]/[profile]/validate/route"
-      );
-
       const req = createMockRequest({
         method: "POST",
         body: {},
@@ -401,11 +328,6 @@ describe("Admin Config API - Validation Endpoint", () => {
     });
 
     it("returns validation result for valid content", async () => {
-      vi.resetModules();
-      const { POST } = await import(
-        "@/app/api/admin/config/[type]/[profile]/validate/route"
-      );
-
       mockValidateConfigContent.mockResolvedValue({
         valid: true,
         errors: [],
@@ -428,11 +350,6 @@ describe("Admin Config API - Validation Endpoint", () => {
     });
 
     it("returns validation errors for invalid content", async () => {
-      vi.resetModules();
-      const { POST } = await import(
-        "@/app/api/admin/config/[type]/[profile]/validate/route"
-      );
-
       mockValidateConfigContent.mockResolvedValue({
         valid: false,
         errors: ["Missing required field: enabled", "Invalid provider value"],
@@ -471,11 +388,6 @@ describe("Admin Config API - Error Handling", () => {
   });
 
   it("handles database errors gracefully on GET", async () => {
-    vi.resetModules();
-    const { GET } = await import(
-      "@/app/api/admin/config/[type]/[profile]/route"
-    );
-
     mockGetActiveConfig.mockRejectedValue(new Error("SQLITE_BUSY: database is locked"));
 
     const req = createMockRequest({});
@@ -488,11 +400,6 @@ describe("Admin Config API - Error Handling", () => {
   });
 
   it("handles database errors gracefully on PUT", async () => {
-    vi.resetModules();
-    const { PUT } = await import(
-      "@/app/api/admin/config/[type]/[profile]/route"
-    );
-
     mockSaveConfigBlob.mockRejectedValue(new Error("Disk full"));
 
     const req = createMockRequest({
@@ -507,11 +414,6 @@ describe("Admin Config API - Error Handling", () => {
   });
 
   it("handles validation errors gracefully", async () => {
-    vi.resetModules();
-    const { POST } = await import(
-      "@/app/api/admin/config/[type]/[profile]/validate/route"
-    );
-
     mockValidateConfigContent.mockRejectedValue(new Error("Schema not found"));
 
     const req = createMockRequest({
@@ -543,11 +445,6 @@ describe("Admin Config API - Prompt Validation", () => {
   });
 
   it("validates prompt frontmatter requirements", async () => {
-    vi.resetModules();
-    const { POST } = await import(
-      "@/app/api/admin/config/[type]/[profile]/validate/route"
-    );
-
     mockValidateConfigContent.mockResolvedValue({
       valid: false,
       errors: [

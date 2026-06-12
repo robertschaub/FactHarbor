@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { GET } from "@/app/api/admin/test-config/route";
+
 const mockGenerateText = vi.fn();
 const mockLoadPipelineConfig = vi.fn();
 const mockLoadSearchConfig = vi.fn();
@@ -69,8 +71,6 @@ function createPipelineConfig(overrides: Record<string, unknown> = {}) {
 }
 
 async function runRouteGet() {
-  vi.resetModules();
-  const { GET } = await import("@/app/api/admin/test-config/route");
   return GET(new Request("http://localhost/api/admin/test-config") as never);
 }
 
