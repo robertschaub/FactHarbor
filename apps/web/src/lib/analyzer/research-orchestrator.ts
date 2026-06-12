@@ -6,8 +6,6 @@ import {
   ClaimAcquisitionIterationEntry,
   ClaimAcquisitionLedgerEntry,
   EvidenceItem,
-  FetchedSource,
-  EvidenceScope,
 } from "./types";
 import {
   loadPipelineConfig,
@@ -22,7 +20,6 @@ import {
   checkAbortSignal,
   extractDomain,
   mapSourceType,
-  classifySourceFetchFailure,
 } from "./pipeline-utils";
 import { debugLog } from "./debug";
 import {
@@ -53,9 +50,7 @@ import { fetchSources, reconcileEvidenceSourceIds } from "./research-acquisition
 import {
   classifyRelevance,
   extractResearchEvidence,
-  assessEvidenceApplicability,
   assessScopeQuality,
-  assessEvidenceBalance,
   applyPerSourceCap,
 } from "./research-extraction-stage";
 import { upsertSearchProviderWarning } from "./claim-extraction-stage";
