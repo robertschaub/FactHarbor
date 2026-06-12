@@ -3497,12 +3497,6 @@ const ClaimContractTruthConditionAnchorSchema = z.object({
   preservedByQuotes: z.array(z.string()).catch([]),
 });
 
-const ClaimContractLegacyAntiInferenceSchema = z.object({
-  normativeInferenceDetected: z.boolean(),
-  inferredClaimIds: z.array(z.string()).catch([]),
-  reasoning: z.string().catch(""),
-});
-
 const ClaimContractAntiInferenceSchema = z.object({
   normativeClaimInjected: z.boolean(),
   injectedClaimIds: z.array(z.string()).catch([]),
@@ -3514,7 +3508,6 @@ const ClaimContractInputAssessmentSchema = z.object({
   rePromptRequired: z.boolean(),
   summary: z.string().catch(""),
   truthConditionAnchor: ClaimContractTruthConditionAnchorSchema.optional(),
-  antiInferenceCheck: ClaimContractLegacyAntiInferenceSchema.optional(),
 });
 
 const ClaimContractClaimSchema = z.object({
@@ -3736,13 +3729,7 @@ function normalizeClaimContractValidationResult(
   raw: ClaimContractRawOutput,
 ): ClaimContractValidationResult {
   const truthConditionAnchor = raw.truthConditionAnchor ?? raw.inputAssessment.truthConditionAnchor;
-  const antiInferenceCheck = raw.antiInferenceCheck ?? (raw.inputAssessment.antiInferenceCheck
-    ? {
-      normativeClaimInjected: raw.inputAssessment.antiInferenceCheck.normativeInferenceDetected,
-      injectedClaimIds: raw.inputAssessment.antiInferenceCheck.inferredClaimIds ?? [],
-      reasoning: raw.inputAssessment.antiInferenceCheck.reasoning ?? "",
-    }
-    : undefined);
+  const antiInferenceCheck = raw.antiInferenceCheck;
 
   return {
     inputAssessment: {
@@ -3750,7 +3737,6 @@ function normalizeClaimContractValidationResult(
       rePromptRequired: raw.inputAssessment.rePromptRequired,
       summary: raw.inputAssessment.summary ?? "",
       ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
-      ...(raw.inputAssessment.antiInferenceCheck ? { antiInferenceCheck: raw.inputAssessment.antiInferenceCheck } : {}),
     },
     claims: raw.claims,
     ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
@@ -4942,7 +4928,6 @@ export async function runGate1Validation(
     // destroying a contract-approved claim set and triggering a reprompt
     // loop that lost the anchor. `failedFidelityIds` is still computed from
     // the Gate 1 output for telemetry/logging only.
-    let fidelityFiltered = 0;
     let bothFiltered = 0;
     let specificityFiltered = 0;
     const rescuedThesisDirect: string[] = [];
@@ -4991,15 +4976,6 @@ export async function runGate1Validation(
     if (filteredCount > 0 || fidelityTelemetry > 0) {
       console.info(
         `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${bothFiltered} failed both opinion+specificity, ${specificityFiltered} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter). C13: Gate 1 fidelity is telemetry-only; ${fidelityTelemetry} claim(s) flagged by Gate 1 fidelity but NOT filtered (CONTRACT_VALIDATION is the sole fidelity authority).`,
-      );
-    }
-
-    // Check if retry threshold exceeded (v1: warn only, no retry)
-    const gate1Threshold = pipelineConfig.gate1GroundingRetryThreshold ?? 0.5;
-    const failRate = 1 - (passedSpecificity / claims.length);
-    if (failRate > gate1Threshold) {
-      console.warn(
-        `[Stage1] Gate 1: ${Math.round(failRate * 100)}% of claims failed specificity (threshold: ${Math.round(gate1Threshold * 100)}%). Retry deferred to v1.1.`,
       );
     }
 
