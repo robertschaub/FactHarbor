@@ -5,9 +5,10 @@ description: >
   failing test/build fix, failed-validation recovery, or defect repair —
   BEFORE editing code. Decides whether the best fix is reverting or amending
   a previous change, quarantining/deleting obsolete code, or adding new code.
-  Also use when about to add a fallback, flag, retry, helper, guard, or
-  parallel mechanism in response to a failure, or when reviewing a diff for
-  workaround stacking / additive repair drift.
+  Also use when about to add a fallback, flag, retry, helper, guard,
+  diagnostic, or parallel mechanism — in response to a failure or proactively
+  (even with no failing test) — or when reviewing a diff for workaround
+  stacking / additive repair drift.
 allowed-tools: Read Glob Grep Bash Agent
 ---
 
@@ -66,6 +67,15 @@ Rules for filling it honestly:
 5. **Ownership check before reverting** — never revert user-authored or
    ambiguous work without asking; restore hunks with `Edit`, never
    `git reset`/`checkout` (safety hook blocks them anyway).
+6. **Safeguards count too.** Before adding any guard, containment,
+   diagnostic, governance, or proof mechanism — even with no failing test —
+   compare amending, narrowing, deleting, or quarantining an existing
+   mechanism first. Add only when nothing existing can carry the risk at
+   lower net complexity, and name an owner and a removal/merge trigger.
+7. **Classify accepted debt honestly.** If the chosen fix deliberately
+   leaves a compromise: `planned-temporary-debt` needs a bound, an owner,
+   and a removal trigger; anything else is `unplanned-mess` — clean it now,
+   do not normalize it as debt.
 
 ## Post-edit reconciliation
 
