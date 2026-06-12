@@ -147,6 +147,8 @@ then persist it: `node scripts/hooks/revert-classify.cjs --choice <choice> --sym
 
 This is **bounded backtracking** — weigh undoing as seriously as adding. It is *not* blanket rollback-first.
 
+The **`/debt-guard` skill** (`.claude/skills/debt-guard/SKILL.md`) is the activation wrapper for this rule and §Bugfix Complexity Heuristic: it fires automatically on bugfix/recovery tasks and requires a written `DEBT-GUARD` block before each edit attempt. (Restored 2026-06-12 — slim version — after pile-up recurrence; rehome carve-out exercised with Captain approval.)
+
 ### Bugfix Complexity Heuristic
 
 For bugfixes, regressions, failing tests/builds, runtime defects, review findings, and failed-validation recovery, keep the repair path explicit but lightweight before editing:
