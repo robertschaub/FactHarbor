@@ -36,6 +36,10 @@ Two apps + one tool:
 - Platform: Windows. Use PowerShell-compatible commands.
 - Solo developer + AI agents. Direct push to main is normal.
 
+## Documentation Discipline
+
+Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`): state the reader need, existing home, chosen option, and lean test; prefer tightening or merging over adding. Use `/docs-update` afterward when indexes, status labels, backlog/changelog records, or links need reconciliation.
+
 ## Roles
 
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.

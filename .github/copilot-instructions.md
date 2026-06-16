@@ -55,6 +55,10 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 
 When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
 
+## Documentation Discipline
+
+Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`): state the reader need, existing home, chosen option, and lean test; prefer tightening/merging over adding. Use `/docs-update` when indexes, status labels, backlog/changelog records, or links need reconciliation.
+
 ## Index-First Lookup
 
 Before scanning `Docs/AGENTS/Handoffs/` by filename, query the generated indexes under

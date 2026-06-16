@@ -324,6 +324,16 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 
 ---
 
+## Documentation Discipline
+
+Use the **`/doc-guard` skill** (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`) before adding a new document, substantially expanding or rewriting Markdown/xWiki content, adding explanatory/background sections, adding FAQs/glossaries/templates, introducing repeated framing, or reviewing a documentation diff for clutter.
+
+For substantial documentation edits, write the `DOC-GUARD` block before editing: reader, need, existing home, chosen option (`tighten | amend | merge | move | delete | add`), rejected path, lean test, readability check, and whether `/docs-update` is needed afterward. Prefer tightening, amending, merging, moving, or deleting before adding. Cut filler, duplicated background, placeholder sections, and broad claims that are not concrete or sourceable.
+
+Use **`/docs-update`** after documentation changes when status labels, README/index entries, links, changelog/backlog records, or handoff references need to stay in sync.
+
+---
+
 ## Safety
 
 - Do not access production systems or real customer data
@@ -389,6 +399,7 @@ Pipeline_V2 coordination lessons are retained as principles only, not as restore
 | `/explain-code` | `.claude/skills/explain-code/SKILL.md` | Explain how code works — uses analogies, mermaid diagrams, and step-by-step walkthroughs |
 | `/prompt-diagnosis` | `.claude/skills/prompt-diagnosis/SKILL.md` | RAG-augmented diagnosis of prompting deficiencies; correlates failures with runtime prompt hashes plus execution commit context |
 | `/report-review` | `.claude/skills/report-review/SKILL.md` | Holistic job-report analysis: expectation deltas vs. `benchmark-expectations.json`, evidence health, boundary sanity, verdict reasoning, warning severity. Multi-agent debate, AGENTS.md-compliant fix proposals. Scopes to HEAD by default or to specific jobs/commit/family. |
+| `/doc-guard` | `.claude/skills/doc-guard/SKILL.md` | Lean documentation guardrail before adding, expanding, restructuring, or reviewing Markdown/xWiki content |
 | `/docs-update` | `.claude/skills/docs-update/SKILL.md` | Update-first cleanup for living docs across `Docs/`, with archive handling only for clearly obsolete material |
 | `/wip-update` | `.claude/skills/wip-update/SKILL.md` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP material |
 

@@ -37,6 +37,7 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 ## Cline-Specific Notes
 
 - Prefer reading files before editing — do not guess at code structure.
+- Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`) and write the `DOC-GUARD` reader/need/lean-test block.
 - All DB writes must go through `JobService` (not direct DbContext access).
 - Internal endpoints use header auth: `X-Admin-Key`, `X-Runner-Key`.
 

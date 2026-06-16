@@ -19,3 +19,4 @@ Read `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full xWiki syntax rule
 - Preserve existing syntax when editing.
 - Each document lives in ONE authoritative format (`.md` or `.xwiki`, not both).
 - Follow terminology from `/AGENTS.md` (ClaimAssessmentBoundary, EvidenceScope, EvidenceItem).
+- For substantial documentation edits, use `/doc-guard` before editing and reconcile affected indexes/status/links with `/docs-update` when needed.
