@@ -20,30 +20,46 @@
 import type {
   AnalysisWarning,
   AtomicClaim,
+  ArticleVerdict7Point,
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
   ClaimAutoSelectionMetadata,
   ClaimSelectionRecommendationAssessment,
+  ClaimVerdict7Point,
   ClaimAssessmentBoundary,
   CoverageMatrix,
   EvidenceItem,
+  EvidenceScope,
   ExplanationQualityCheck,
   FetchedSource,
   AnalysisInput,
   OverallAssessment,
+  SourceType,
 } from "./types";
 
 // Shared modules — reused from existing codebase (no orchestrated.ts imports)
-import { applyEvidenceWeighting } from "./source-reliability";
+import { filterByProbativeValue } from "./evidence-filter";
+import { prefetchSourceReliability, getTrackRecordData, applyEvidenceWeighting } from "./source-reliability";
 import {
   applySourceReliabilityCalibrationResults,
   buildSourceReliabilityCalibrationInput,
   callSRCalibrationLLM,
 } from "./source-reliability-calibration";
+import { debugLog } from "./debug";
 
 // LLM call infrastructure
-import { getModelForTask } from "./llm";
+import { generateText, Output } from "ai";
+import { z } from "zod";
+import {
+  getModelForTask,
+  extractStructuredOutput,
+  getStructuredOutputProviderOptions,
+  getPromptCachingOptions,
+  type ModelTask,
+} from "./llm";
+import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
+import { loadAndRenderSection } from "./prompt-loader";
 import { getClaimRelevantGeographies, getClaimsRelevantGeographies } from "./jurisdiction-context";
 import { classifyError } from "@/lib/error-classification";
 import {
@@ -54,8 +70,15 @@ import {
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import {
   checkAbortSignal,
+  classifySourceFetchFailure,
   createErrorFingerprint,
   createUnverifiedFallbackVerdict,
+  detectInputType,
+  extractDomain,
+  mapCategory,
+  mapSourceType,
+  normalizeExtractedSourceType,
+  selectTopSources,
 } from "./pipeline-utils";
 import {
   buildCoverageMatrix,
@@ -85,6 +108,7 @@ import {
   getProtectedContractCarrierIds,
   getAtomicityGuidance,
   generateSearchQueries,
+  upsertSearchProviderWarning,
   type PreliminaryEvidenceItem,
   ClaimContractOutputSchema,
 } from "./claim-extraction-stage";
@@ -93,14 +117,32 @@ import {
   recordApplicabilityRemovalTelemetry,
   researchEvidence,
   runResearchIteration,
+  allClaimsSufficient,
+  consumeClaimQueryBudget,
+  claimNeedsMoreResearchForSufficiency,
   evaluateEvidenceSufficiency,
+  findLeastContradictedClaim,
+  findLeastResearchedClaim,
+  getClaimQueryBudgetRemaining,
+  getClaimQueryBudgetUsed,
+  getPerClaimQueryBudget,
   claimRequiresDirectApplicability,
 } from "./research-orchestrator";
 import {
+  classifyRelevance,
+  extractResearchEvidence,
   assessEvidenceApplicability,
+  assessScopeQuality,
   assessEvidenceBalance,
   type EvidenceBalanceMetrics,
 } from "./research-extraction-stage";
+import {
+  fetchSources,
+  reconcileEvidenceSourceIds,
+} from "./research-acquisition-stage";
+import {
+  generateResearchQueries,
+} from "./research-query-stage";
 import {
   generateClaimSelectionRecommendation,
   getClaimAutoSelectionCap,
@@ -111,6 +153,7 @@ import { filterClaimUnderstandingForSelectedClaims } from "./claim-selection-fil
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig, loadPromptConfig } from "@/lib/config-loader";
 import type { PipelineConfig } from "@/lib/config-schemas";
+import type { LLMProviderType } from "@/lib/analyzer/types";
 import { getConfig } from "@/lib/config-storage";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
 
@@ -119,6 +162,7 @@ import {
   runWithMetrics,
   startPhase,
   endPhase,
+  recordLLMCall,
   recordGate1Stats,
   recordGate4Stats,
   recordOutputQuality,
@@ -126,7 +170,9 @@ import {
 } from "./metrics-integration";
 
 // Search and retrieval
+import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
+import { recordFailure as recordSearchFailure } from "@/lib/search-circuit-breaker";
 
 // Job cancellation detection
 import { clearAbortSignal } from "@/lib/job-abort";
@@ -641,7 +687,7 @@ export async function runClaimBoundaryAnalysis(
     async () => {
 
   try {
-    // --- URL content pre-fetch ---
+    // --- URL content pre-fetch (restored from v2.x pipeline) ---
     let analysisText = input.inputValue;
     let detectedUrl: string | undefined; // populated when auto-fetch fires on a URL-looking text input
     if (input.inputType === "url") {
@@ -1043,9 +1089,7 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // Invariant: state.understanding is set non-null at job start and only ever
-    // overwritten with filtered non-null subsets during claim auto-selection.
-    const researchUnderstanding = state.understanding!;
+    const researchUnderstanding = state.understanding ?? understanding;
 
     // Stage 2: Research
     checkAbortSignal(input.jobId);
@@ -1686,3 +1730,28 @@ export async function runVerdictStageWithPreflight({
     endPhase("verdict");
   }
 }
+
+// Stage 1 (claim extraction) extracted to claim-extraction-stage.ts
+
+// ============================================================================
+// STAGE 2: RESEARCH (§8.2) — remaining in orchestrator pending future extraction
+// ============================================================================
+
+// Stage 2 query generation logic and schemas extracted to research-query-stage.ts
+
+// Stages 1, 3, 4, 5 and parts of Stage 2 extracted to modular files.
+// Orchestrator keeps Stage 2 research loop (query generation and source acquisition) for now.
+
+// Stage 2 research orchestration (researchEvidence, runResearchIteration, seedEvidenceFromPreliminarySearch) moved to research-orchestrator.ts
+
+// generateResearchQueries extracted to research-query-stage.ts
+
+// Helper functions like classifyRelevance, extractResearchEvidence, etc. extracted to research-extraction-stage.ts
+
+// fetchSources extracted to research-acquisition-stage.ts
+
+// extractResearchEvidence extracted to research-extraction-stage.ts
+
+// assessScopeQuality and assessEvidenceBalance extracted to research-extraction-stage.ts
+
+// Stage 4 (verdict generation + debate config checks) extracted to verdict-generation-stage.ts

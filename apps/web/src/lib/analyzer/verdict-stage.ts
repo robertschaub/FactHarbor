@@ -33,12 +33,14 @@ import {
   type ChallengeResponse,
   type ChallengeValidation,
   type ClaimAssessmentBoundary,
+  type ClaimVerdict7Point,
   type ConsistencyResult,
   type CoverageMatrix,
   type EvidenceItem,
   type FetchedSource,
   type LLMProviderType,
   type SourceType,
+  type TriangulationScore,
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
@@ -1073,6 +1075,16 @@ export async function reconcileVerdicts(
 // STEP 5: VERDICT VALIDATION (§8.4 Step 5)
 // ============================================================================
 
+/**
+ * Validation result for a single verdict.
+ */
+export interface VerdictValidation {
+  claimId: string;
+  groundingValid: boolean;
+  directionValid: boolean;
+  issues: string[];
+}
+
 export interface VerdictRepairRequest {
   verdict: CBClaimVerdict;
   directionIssues: string[];
@@ -1083,8 +1095,14 @@ export interface VerdictRepairRequest {
 }
 
 type IntrinsicDirectionSummary = {
+  weightedSupports: number;
+  weightedContradicts: number;
   directSupportingCount: number;
   directContradictingCount: number;
+  misbucketedSupportingIds: string[];
+  misbucketedContradictingIds: string[];
+  nonDirectSupportingIds: string[];
+  nonDirectContradictingIds: string[];
 };
 
 export interface VerdictValidationRepairContext {
@@ -1368,7 +1386,11 @@ export async function validateVerdicts(
     }
 
     const hardCitationIntegrityIssues = getHardCitationIntegrityIssues(current, evidence);
-    const deterministicDirectionIssues = getDeterministicDirectionIssues(current, evidence);
+    const deterministicDirectionIssues = getDeterministicDirectionIssues(
+      current,
+      evidence,
+      repairContext?.calculationConfig,
+    );
     const mergedDirectionIssues = Array.from(new Set([
       ...(direction?.valid === false ? direction.issues : []),
       ...deterministicDirectionIssues,
@@ -1377,7 +1399,7 @@ export async function validateVerdicts(
     if (mergedDirectionIssues.length > 0) {
       // Deterministic safety net: if the LLM flags a direction issue, check if the
       // truth percentage is actually mathematically plausible given the evidence ratio.
-      const isPlausible = isVerdictDirectionPlausible(current, evidence);
+      const isPlausible = isVerdictDirectionPlausible(current, evidence, repairContext?.calculationConfig);
 
       if (isPlausible) {
         const rescuedByConsistency = current.consistencyResult?.stable === true && current.consistencyResult?.assessed === true;
@@ -1495,7 +1517,7 @@ export async function validateVerdicts(
           );
           const normalizedStructurallyCitable = hasStructuralCitationIntegrity(repairSeedVerdict, evidence);
           const normalizedPlausible = normalizedStructurallyCitable
-            && isVerdictDirectionPlausible(repairSeedVerdict, evidence);
+            && isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1585,7 +1607,7 @@ export async function validateVerdicts(
           );
           const repairedStructurallyCitable = hasStructuralCitationIntegrity(normalizedRepaired, evidence);
           const repairedPlausible = repairedStructurallyCitable
-            && isVerdictDirectionPlausible(normalizedRepaired, evidence);
+            && isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(
@@ -2036,12 +2058,13 @@ function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: Evide
 export function isVerdictDirectionPlausible(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
+  calcConfig?: CalcConfig,
 ): boolean {
   if (!hasStructuralCitationIntegrity(verdict, evidence)) {
     return false;
   }
 
-  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence);
+  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
 
   if (
     (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
@@ -2063,34 +2086,70 @@ export function isVerdictDirectionPlausible(
 function summarizeBucketWeightedEvidenceDirection(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
+  calcConfig?: CalcConfig,
 ): IntrinsicDirectionSummary {
   const evidenceById = new Map(evidence.map((e) => [e.id, e]));
+  const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
   const supportIds = Array.from(new Set(verdict.supportingEvidenceIds ?? []));
   const contradictIds = Array.from(new Set(verdict.contradictingEvidenceIds ?? []));
 
+  let weightedSupports = 0;
+  let weightedContradicts = 0;
   let directSupportingCount = 0;
   let directContradictingCount = 0;
+  const misbucketedSupportingIds: string[] = [];
+  const misbucketedContradictingIds: string[] = [];
+  const nonDirectSupportingIds: string[] = [];
+  const nonDirectContradictingIds: string[] = [];
 
   for (const id of supportIds) {
-    if (isDirectForCitation(evidenceById.get(id))) {
+    const item = evidenceById.get(id);
+    const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
+    if (isDirectForCitation(item)) {
+      weightedSupports += weight;
       directSupportingCount += 1;
+    }
+    if (item?.claimDirection === "contradicts") {
+      misbucketedSupportingIds.push(id);
+    }
+    if (isNonDirectForCitation(item)) {
+      nonDirectSupportingIds.push(id);
     }
   }
 
   for (const id of contradictIds) {
-    if (isDirectForCitation(evidenceById.get(id))) {
+    const item = evidenceById.get(id);
+    const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
+    if (isDirectForCitation(item)) {
+      weightedContradicts += weight;
       directContradictingCount += 1;
+    }
+    if (item?.claimDirection === "supports") {
+      misbucketedContradictingIds.push(id);
+    }
+    if (isNonDirectForCitation(item)) {
+      nonDirectContradictingIds.push(id);
     }
   }
 
-  return { directSupportingCount, directContradictingCount };
+  return {
+    weightedSupports,
+    weightedContradicts,
+    directSupportingCount,
+    directContradictingCount,
+    misbucketedSupportingIds,
+    misbucketedContradictingIds,
+    nonDirectSupportingIds,
+    nonDirectContradictingIds,
+  };
 }
 
 function getDeterministicDirectionIssues(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
+  calcConfig?: CalcConfig,
 ): string[] {
-  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence);
+  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
   const issues = getHardCitationIntegrityIssues(verdict, evidence);
   if (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0) {
     issues.push(
@@ -3172,6 +3231,11 @@ export function validateChallengeEvidence(
       }),
     })),
   };
+}
+
+export interface BaselessEnforcementResult {
+  blockedCount: number;
+  baselessAdjustmentRate: number;
 }
 
 /**
