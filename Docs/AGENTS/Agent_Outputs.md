@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-17 | Senior Developer | Codex (GPT-5) | Stage 4 Citation/Grounding Reviewed Plan -- [Significant] [open-items: yes]
+**For next agent:** Start with `Docs/WIP/2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md`. First implementation step is a Stage 4 validator-payload capture fixture in `verdict-stage.test.ts`; do not edit prompts without Captain approval; do not spend extra live jobs unless Captain approves.
+→ Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Stage4_Citation_Grounding_Plan.md
+
+---
 ### 2026-06-17 | Senior Developer | Codex (GPT-5) | Clean Main WIP + F2 Smoke + Reviewed Plan -- [Significant] [open-items: yes]
 **For next agent:** Start with `Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md`; first code target is Stage 4 citation/grounding integrity (`verdict-stage.ts`, `grounding-check.ts`), not a Stage 1 F2 rewrite. Fresh smoke jobs: `efa8c4e8`, `d8dcec2f`, `24e71d7e`.
 → Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Clean_Main_WIP_F2_Plan.md

@@ -89,6 +89,10 @@ Verifier:
 Goal: remove the current highest-risk quality blocker before tuning verdict
 semantics or confidence.
 
+Focused execution plan:
+
+- `Docs/WIP/2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md`
+
 Initial target files to read before editing:
 
 - `apps/web/src/lib/analyzer/verdict-stage.ts`
