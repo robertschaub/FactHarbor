@@ -8,7 +8,7 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 
 ---
 ### 2026-06-18 | Senior Developer | Codex (GPT-5) | Stage 2/D5 Recovery Fix -- [Significant] [open-items: yes]
-**For next agent:** Structural scheduler and D5 fixes are implemented and safe-suite/build verified, but not live-rerun. Commit/restart before rerunning English Bolsonaro and asylum-current Captain inputs; reciprocal/source-native retrieval remains a separate unresolved design item.
+**For next agent:** Structural scheduler and D5 fixes are implemented and safe-suite/build verified. Live rerun after commit `0396ea47` still produced 2/2 top-level `UNVERIFIED`, so the corrected stop rule fired; next edit must start as failed-attempt recovery and focus source-native retrieval plus decisive authoritative metric sufficiency.
 → Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Stage2_D5_Recovery.md
 
 ---

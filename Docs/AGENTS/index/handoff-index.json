@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T22:18:18.009Z",
+  "generatedAt": "2026-06-17T22:34:24.649Z",
   "count": 23,
   "entries": [
     {
@@ -402,7 +402,7 @@
         "apps/web/src/lib/config-schemas.ts",
         "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
       ],
-      "summary": "After commit/restart, rerun the Captain-defined failing jobs first: English Bolsonaro `6444d2a0125f4450a18a07d0446f6c0d` input and asylum-current `d87c9174c5d94ed297e75ea654eff9bc` input. Apply the clarified stop rule only across completed rerun jobs: after more than one job, stop if top-level `UNVE"
+      "summary": "Start by recording `ATTEMPT 2` with baseline `0396ea47` before editing. Do not rerun the rest of the Captain batch; the stop criterion already fired on the two-job rerun. Focus local diagnosis on retrieval-language planning for English Bolsonaro and decisive authoritative metric sufficiency for asyl"
     }
   ]
 }
