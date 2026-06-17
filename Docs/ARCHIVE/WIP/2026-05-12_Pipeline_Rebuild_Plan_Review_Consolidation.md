@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-12
 **Status:** Consolidated review result
-**Reviewed plan:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`
+**Reviewed plan:** `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`
 **Outcome:** MODIFY
 
 ---

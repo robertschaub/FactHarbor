@@ -27,13 +27,13 @@ Archived entries from 2026-04. Handoff links point to Docs/ARCHIVE/Handoffs/2026
 ---
 
 ### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Additive Repair Drift Grounded Review -- [Standard] [open-items: yes]
-**For next agent:** [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) was tightened to better match the evidence bundle behind it: the problem is locally relevant, but prevalence remains unquantified and the “broader than one repo” claim now rests explicitly on external signals rather than repo-local proof.
+**For next agent:** [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/ARCHIVE/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) was tightened to better match the evidence bundle behind it: the problem is locally relevant, but prevalence remains unquantified and the “broader than one repo” claim now rests explicitly on external signals rather than repo-local proof.
 → Docs/ARCHIVE/Handoffs/2026-04/2026-04-21_Lead_Architect_Additive_Repair_Drift_Grounded_Review.md
 
 ---
 
 ### 2026-04-21 | Lead Architect | Codex (GPT-5) | Additive Repair Drift Problem Statement -- [Standard] [open-items: yes]
-**For next agent:** New reference doc at [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) explains the workflow failure mode behind agents stacking failed code/prompt attempts instead of retiring them. Keep the final framing precise: the problem is real, but the better-supported response is verifier-gated bounded backtracking, hunk quarantine, and explicit scope-approval controls, not automatic rollback-first behavior.
+**For next agent:** New reference doc at [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/ARCHIVE/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) explains the workflow failure mode behind agents stacking failed code/prompt attempts instead of retiring them. Keep the final framing precise: the problem is real, but the better-supported response is verifier-gated bounded backtracking, hunk quarantine, and explicit scope-approval controls, not automatic rollback-first behavior.
 → Docs/ARCHIVE/Handoffs/2026-04/2026-04-21_Lead_Architect_Additive_Repair_Drift_Problem_Statement.md
 
 ---

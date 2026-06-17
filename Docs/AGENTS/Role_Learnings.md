@@ -100,7 +100,7 @@ After completing a task, if you discovered something that would help future agen
 **Role:** Lead Architect  **Agent/Tool:** Codex (GPT-5) + Claude/Gemini review
 **Category:** wrong-assumption
 **Learning:** The abandoned `Pipeline_V2` branch preserved useful target architecture, but the implementation workstream became dominated by Captain-Deputy orchestration, slice/tranche paperwork, HighJump status packets, and hidden readiness machinery. Future pipeline rebuild attempts should start from the May 12 target specification and factual baselines, then use small direct implementation increments with targeted review. Do not recreate the old Captain-Deputy/HighJump process unless a concrete current risk truly requires it.
-**Files:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`, `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`, `Pipeline_V2` branch
+**Files:** `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`, `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`, `Pipeline_V2` branch
 
 ### 2026-05-24 — Preserve Pipeline V2 coordination lessons as principles, not workflows
 **Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5) + Claude Opus 4.6 review
@@ -124,7 +124,7 @@ After completing a task, if you discovered something that would help future agen
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.8 1M)
 **Category:** gotcha
 **Learning:** (1) The Hydrogen instability root was stochastic Stage-1 `single_atomic` ↔ `ambiguous_single_claim` classification at `understandTemperature 0.15`. A prompt tiebreaker (Fix A: broad comparative efficiency/optimization/resource-use predicates with frame-dependent answers → `ambiguous`) was Captain-approved, LLM-Expert-reviewed, landed (`ed7698a8`), and **FAILED live validation** — 2/3 Hydrogen runs still classified `single_atomic` (one UNVERIFIED), only 1/3 met the full bar; reverted (`1c790a05`). Lesson: a prompt instruction cannot reliably override a *stochastic* classification at temp>0 — the lever for classification *stability* is temperature reduction or a structural determinism change, not prompt wording. Always validate a prompt fix with **live runs scored against the FULL documented bar** (classification + ≥2 distinct-dimension boundaries + verdict band), not verdict bands alone, before trusting it. (2) **Operating gotcha (cost me many cycles):** launching the FactHarbor web dev server (`npm run dev`) from the Claude Code agent shell silently breaks analysis — the harness injects `ANTHROPIC_API_KEY` (empty), `ANTHROPIC_BASE_URL`, and `ANTHROPIC_MODEL`, and Next.js does NOT override an already-set `process.env` var with `.env.local`, so every LLM call 404s. `unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_MODEL OPENAI_API_KEY GOOGLE_GENERATIVE_AI_API_KEY MISTRAL_API_KEY` before `npm run dev` (or launch from a non-agent shell). Also `scripts/restart-clean.ps1` corrupts keys via a CRLF `$env:` prefix. And: surface a broken runtime to the Captain sooner instead of repeatedly restarting.
-**Files:** `Docs/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` §11, `apps/web/prompts/claimboundary.prompt.md`, `scripts/restart-clean.ps1`
+**Files:** `Docs/ARCHIVE/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` §11, `apps/web/prompts/claimboundary.prompt.md`, `scripts/restart-clean.ps1`
 
 ## Lead Developer
 

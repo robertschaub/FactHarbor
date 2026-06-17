@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-21
-**Status**: Consolidation #12 complete. 48 files archived. 43 active markdown docs remain.
+**Last Updated**: 2026-06-17
+**Status**: Consolidation #13 complete. 26 WIP files archived. 66 active files remain.
 
 ---
 
@@ -28,6 +28,19 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ## Active Engineering / Quality Tracks
 
+### Current June quality / cleanup tracks
+- [2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md](2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md) — current consolidated best-report/regression findings; supersedes the May 31 best-commit strategy
+- [2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md](2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md) — near-term era-comparison path; preferred over the deferred in-tree variant capability
+- [2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md](2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md) — report-quality measurement concept
+- [2026-06-04_Report_Quality_Measurement_Implementation_Plan.md](2026-06-04_Report_Quality_Measurement_Implementation_Plan.md) — implementation plan for report-quality measurement
+- [2026-06-06_AtomicClaim_Reference_Data_Model.md](2026-06-06_AtomicClaim_Reference_Data_Model.md) and [2026-06-06_AtomicClaim_Reference_Data_Consolidated_Decision.md](2026-06-06_AtomicClaim_Reference_Data_Consolidated_Decision.md) — reference-data model and decision record
+- [2026-05-31_Stage1_Classification_Determinism_Proposal.md](2026-05-31_Stage1_Classification_Determinism_Proposal.md) — current hydrogen structural-intent proposal; predecessor archived
+- [2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md](2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md) and [2026-05-26_Telemetry_Observation_Plan_First_4_Jobs.md](2026-05-26_Telemetry_Observation_Plan_First_4_Jobs.md) — telemetry plan and first observation window
+
+### Deferred capability
+- [2026-06-04_Multi_Variant_Pipeline_Architecture.md](2026-06-04_Multi_Variant_Pipeline_Architecture.md), [Specification](2026-06-04_Multi_Variant_Pipeline_Specification.md), and [Implementation Plan](2026-06-04_Multi_Variant_Pipeline_Implementation_Plan.md) — deferred in-tree multi-variant capability; do not implement unless revived
+- [2026-06-04_Multi_Variant_Pipeline_Codex_Review_Prompt.md](2026-06-04_Multi_Variant_Pipeline_Codex_Review_Prompt.md) and [2026-06-04_Multi_Variant_Pipeline_Gemini_Scoped_Review_Prompt.md](2026-06-04_Multi_Variant_Pipeline_Gemini_Scoped_Review_Prompt.md) — companion review prompts retained with the deferred capability
+
 ### Currently active (Phase 7 / Report Quality Restoration)
 - [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — current benchmark-family status matrix after the April 16 fix wave
 - [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter (Fix A/C landed, Fix B residual gap)
@@ -48,7 +61,6 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ### Prompt governance / architecture
 - [2026-04-15_Prompt_System_Architecture_Issues_Report.md](2026-04-15_Prompt_System_Architecture_Issues_Report.md) — 4 unresolved prompt governance issues (PSA-1 through PSA-4)
 - [2026-04-16_Prompt_Genericity_Pass_Plan.md](2026-04-16_Prompt_Genericity_Pass_Plan.md) — items 7-10 awaiting Captain approval; items 1-6 possibly landed
-- [2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md](2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md) — v3 rule draft awaiting Captain review; 3 open questions
 - [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) — adjudicated execution plan after GPT + Claude Opus prompt-audit consolidation
 - [2026-04-20_Dominant_Proposition_Architecture_Plan.md](2026-04-20_Dominant_Proposition_Architecture_Plan.md) — consolidated reviewed plan for optional parent/top-level proposition semantics, `all_must_hold` aggregation, and UCM-flagged alpha rollout
 
@@ -58,9 +70,6 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ### Agent tooling
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; partially executed (JSON artifacts exist, MCP layer pending)
-- [2026-04-13_Agent_Outputs_Purpose_Review.md](2026-04-13_Agent_Outputs_Purpose_Review.md) — Agent_Outputs migration design (approved, migration PR not yet executed)
-- [2026-04-13_Migration_Case_C_Review.md](2026-04-13_Migration_Case_C_Review.md) — Case-C decision record for Agent_Outputs migration (decisions made, execution pending)
-- [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](2026-04-21_Additive_Repair_Drift_Problem_Statement.md) — problem framing for additive repair drift in agent workflows; explains why agents keep stacking failed changes and why bounded backtracking is preferred over blanket rollback
 
 ### Other partially-done tracks
 - [2026-04-09_Deterministic_Analysis_Hotspots_Review.md](2026-04-09_Deterministic_Analysis_Hotspots_Review.md) — top-5 deterministic hotspots; 2 highest partially addressed, 3 still open
@@ -129,6 +138,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-06-17 | **#13** | 26 files archived (superseded May pipeline-rebuild packet, applied/rejected quality proposals, completed Agent_Outputs migration design, and ignored V2 evidence-lifecycle artifacts moved locally) | 66 |
 | 2026-04-18 | **#12** | 48 files archived (Phase 2-6 execution artefacts, completed investigations, historical reviews, event prep, superseded proposals, abandoned MCP investigation) | 37 |
 | 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |
 | 2026-04-04 | **#10** | 28 historical/completed files archived (investigations, decided debates, implemented reviews, subagent reports) | 38 |

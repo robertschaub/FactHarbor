@@ -1,7 +1,7 @@
 # Stage-1 Classification Determinism — Design Proposal (the "Fix C / structural" lever)
 
 **Author:** Lead Architect (Claude Code, Opus 4.8 1M) · **Date:** 2026-05-31 · **Status:** PROPOSAL — design + trade-offs only; needs LLM Expert review + Captain approval; no code.
-**Predecessors:** `Docs/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` (§9 mechanism, §11 Fix A+B reverted as ineffective); `Docs/AGENTS/Handoffs/2026-05-30_Lead_Architect_Cross_Stage_Contract_Audit.md`.
+**Predecessors:** `Docs/ARCHIVE/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` (§9 mechanism, §11 Fix A+B reverted as ineffective); `Docs/AGENTS/Handoffs/2026-05-30_Lead_Architect_Cross_Stage_Contract_Audit.md`.
 
 ---
 

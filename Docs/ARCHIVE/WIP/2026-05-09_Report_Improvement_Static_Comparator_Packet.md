@@ -171,7 +171,7 @@ Do not spend the remaining budget on repeated canaries before the first hypothes
 Use this prompt for a Sonnet Lead Architect + LLM Expert review before editing:
 
 ```text
-As Lead Architect and LLM Expert, review Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md, Docs/ARCHIVE/PipelineV1/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md, and the referenced authority files.
+As Lead Architect and LLM Expert, review Docs/ARCHIVE/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md, Docs/ARCHIVE/PipelineV1/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md, and the referenced authority files.
 
 Goal: decide whether the next report-improvement change should target Stage 2 applicability/direction, another narrower mechanism, or no change yet.
 

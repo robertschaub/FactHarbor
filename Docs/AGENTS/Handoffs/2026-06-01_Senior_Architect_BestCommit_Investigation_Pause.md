@@ -3,7 +3,7 @@
 **Task:** Identify which commit (or commit-range) produced the best ClaimBoundary reports "so far," better than prior attempts. **Status: PAUSED at user request; likely to continue.** This handoff is the resumption point.
 
 **Primary artifacts (read these to resume):**
-- `Docs/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md` (v2; §1–§14) — full strategy, Phase-1 results, deployed integration, harness, batch-1 result.
+- `Docs/ARCHIVE/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md` (v2; §1–§14) — full strategy, Phase-1 results, deployed integration, harness, batch-1 result.
 - `Docs/WIP/2026-06-01_V1_Quality_Decline_Attribution_and_RecA_Refutation.md` (companion; Lead Architect, 3-reviewer) — the decline is misattributed; do NOT revert Rec-A.
 
 **Repo state at pause:** HEAD `f51d5bb4` (10 commits past `68d8b61a` where this session's runs were taken). The other agent has consolidated and moved on to **mechanism-specific** work: `2026-06-01_Pass2_Model_AB_Test_Design.md` (Rec-A output-level A/B), `2026-06-01_Verdict_Direction_Instability_Phase1_Findings.md` (lever-b), prompt-audit fixes (F01–F09, S5/S6, per-claim D5 gate). Coordinate with these on resume.

@@ -35,7 +35,7 @@ Adds a multi-variant pipeline capability: an **in-tree variant registry** (decla
 - **C. Fingerprint sufficiency.** Is `sha256(variantId + commit + stage1.logicFingerprint + downstream prompt hashes + effective-config hashes + models)` the right set for "same reproducible setup"? Anything missing that would make two equal fingerprints behave differently (search-provider env/keys, source-reliability DB state, a model *version* drifting behind a tier alias, current-date)?
 - **D. Config-DB removal blast radius.** Beyond wrapped `loadXConfig`, what else reads/writes `config_blobs`/`config_active`/`config_usage` or depends on admin config write/activate/reseed/rollback/history endpoints? Any test/script/UI that breaks?
 - **E. Historical-report compatibility.** Does any diag script, report viewer, metrics, or calibration code assume the config DB / `job_config_snapshots` exists, or break when `meta.provenance` is present/absent or when new nullable Job columns appear?
-- **F. Lean check.** Is this drifting toward the abandoned Pipeline_V2 "process machinery becomes the product" failure (see `Docs/WIP/2026-05-12_Pipeline_Rebuild_*` and project memory), or appropriately scoped? Flag any over-built phase.
+- **F. Lean check.** Is this drifting toward the abandoned Pipeline_V2 "process machinery becomes the product" failure (see `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_*` and project memory), or appropriately scoped? Flag any over-built phase.
 - **G. Rebuild semantics.** Variants are "tag X's Stages 2–5 on HEAD's claim-selection logic." Does the `ClaimContract` adapter (HEAD claim shape → era-X expected shape) introduce a confound that undermines the cross-era comparison? Is there a cleaner way to hold claim-selection constant?
 
 ## Also check

@@ -54,7 +54,7 @@ The codebase was originally built for **multiple variants** and later collapsed 
 | Per-pipeline prompt loading | `apps/web/src/lib/analyzer/prompt-loader.ts` (`loadPromptFile(pipeline)`, SHA-256 `hashContent`) | Keyed by "pipeline" name — generalizes to "profile" |
 | Per-task model routing | `apps/web/src/lib/analyzer/llm.ts` `getModelForTask` | Config-driven (`modelUnderstand`, `modelExtractEvidence`, `modelVerdict`) |
 | Commit provenance | `apps/web/src/lib/build-info.ts`, `apps/api/Helpers/AppBuildInfo.cs` | `GIT_COMMIT` env → `git rev-parse HEAD`; dirty tree → `<hash>+<wt8>` |
-| V2 isolation pattern | `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` §4.2, §6 | `analyzer-v2/` isolation + `ReportResult` provenance skeleton → **becomes one entry in the registry below** |
+| V2 isolation pattern | `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` §4.2, §6 | `analyzer-v2/` isolation + `ReportResult` provenance skeleton → **becomes one entry in the registry below** |
 
 > **Relationship to the May-12 Pipeline-Rebuild spec.** That spec proposed *one* clean V2 replacing V1 in an isolated `analyzer-v2/` namespace. This proposal **generalizes** it: the isolated-namespace-with-stable-entry pattern becomes the *general* variant model, and `analyzer-v2`'s `runClaimBoundaryPipelineV2(context)` is simply one more registry entry. Its `ReportResult` run-metadata skeleton ("prompt/config/model hashes when available") and config-snapshot concept are adopted as the provenance manifest in §6. The dropped *implementation* of V2 (per project memory) is not ported.
 

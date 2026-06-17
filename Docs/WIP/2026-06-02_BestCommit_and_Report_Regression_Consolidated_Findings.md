@@ -4,7 +4,7 @@
 - **Author role:** Lead Architect (Claude Opus 4.8, 1M)
 - **Question (user / Captain):** *Which commit — or commit range — produced the best ClaimBoundary reports so far? Rate report quality against Captain's documented + recently-discussed expectations. Investigate the whole local + deployed job history, build on earlier analysis, and document the changes we made along the way that caused report regressions.*
 - **Status:** CONSOLIDATION (resumes the paused best-commit investigation). Read-only — no analysis jobs run, no code/config changed. Scored stored reports in `apps/api/factharbor.db` (n = 1,589 SUCCEEDED, 1,041 commit-tagged, 2026-03-01 → 06-02) + deployed public job list.
-- **Supersedes/extends:** `Docs/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md` (v2) and its companion `Docs/WIP/2026-06-01_V1_Quality_Decline_Attribution_and_RecA_Refutation.md`; resumes `Docs/AGENTS/Handoffs/2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md`.
+- **Supersedes/extends:** `Docs/ARCHIVE/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md` (v2) and its companion `Docs/WIP/2026-06-01_V1_Quality_Decline_Attribution_and_RecA_Refutation.md`; resumes `Docs/AGENTS/Handoffs/2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md`.
 
 ---
 

@@ -27,15 +27,15 @@ The cleaned target specification must build from this document and the Phase 2 b
 
 Primary Phase 2 baseline documents:
 
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md`
 
 Deputy-team inputs:
 

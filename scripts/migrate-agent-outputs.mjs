@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * One-off migration for the Agent_Outputs.md redesign (2026-04-13).
- * See Docs/WIP/2026-04-13_Agent_Outputs_Purpose_Review.md for the full design.
+ * See Docs/ARCHIVE/WIP/2026-04-13_Agent_Outputs_Purpose_Review.md for the full design.
  *
  * Usage:
  *   node scripts/migrate-agent-outputs.mjs --dry-run

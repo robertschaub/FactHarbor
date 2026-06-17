@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-01 · **Author:** Lead Architect (Claude Opus 4.8, 1M) · **Status:** investigation complete; conclusion reviewed (3 independent reviewers).
 - **Question:** Which commits produced the best ClaimBoundary V1 reports, and is the apparent quality decline since the Feb–Mar window caused by a recoverable lever (specifically the Pass-2 model downgrade, "Rec-A")?
-- **Method:** read-only only — no jobs run, scored stored reports in `apps/api/factharbor.db` (n≈1565 SUCCEEDED). Companion: the concurrent Best-Commit study `Docs/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md`.
+- **Method:** read-only only — no jobs run, scored stored reports in `apps/api/factharbor.db` (n≈1565 SUCCEEDED). Companion: the concurrent Best-Commit study `Docs/ARCHIVE/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md`.
 
 ## TL;DR
 A measured report-health decline over calendar time is **real in the raw numbers but misattributed**. It is **not** caused by a Pass-2 model downgrade. The dominant drivers are **(1) input mix** (recent load is ~half intrinsically-hard Bolsonaro legal-prediction inputs), **(2) an Apr-10 instrumentation change** that started *emitting/aborting* on `report_damaged`, and **(3) the recent degraded source-fetch layer**. **Do not revert Rec-A** — it was a bug-fix, and reverting is net-harmful. The Captain's subjective "Feb Sonnet quality window" memory cannot be tested from this DB and cannot be attributed to the Pass-2 model.

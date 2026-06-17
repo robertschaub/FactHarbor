@@ -18,9 +18,9 @@ No analyzer source, prompt, config, API, UI, test, or validation behavior was ch
 
 Primary governing inputs:
 
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md`
-- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md`
+- `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`
 - `Docs/AGENTS/Captain_Quality_Expectations.md`
 - `Docs/AGENTS/benchmark-expectations.json`
 - `Docs/AGENTS/report-quality-expectations.json`

@@ -5,7 +5,7 @@
  * Scores every stored report for the 8 scoreable benchmark families against the
  * CURRENT Captain Q-code bands, maps each to the report-affecting code-epoch active
  * at its CreatedUtc, aggregates per (epoch x family) with n>=3, ranks, shortlists.
- * Strategy: Docs/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md
+ * Strategy: Docs/ARCHIVE/WIP/2026-05-31_Best_Commit_Identification_Strategy_Proposal.md
  */
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');

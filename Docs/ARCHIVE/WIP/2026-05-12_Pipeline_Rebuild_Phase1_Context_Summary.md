@@ -9,7 +9,7 @@
 
 ## 1. Phase 0 Decision State
 
-The original Phase 0 review approved the plan with notes, and those notes were folded into `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`.
+The original Phase 0 review approved the plan with notes, and those notes were folded into `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`.
 
 Phase 1 was authorized for the original rebuild track. No analyzer source, prompt, config, UI, validation, benchmark, or validation-job work had started at this checkpoint.
 

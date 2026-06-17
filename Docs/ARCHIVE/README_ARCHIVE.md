@@ -2,7 +2,44 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-04-18 (WIP Consolidation #12)
+**Last Updated**: 2026-06-17 (WIP Consolidation #13)
+
+---
+
+### WIP Consolidation #13 (2026-06-17)
+
+**Description**: Post-recovery WIP consolidation after the project was restored to a clean `main`. Archived superseded pipeline-rebuild baselines, applied/rejected quality proposals, completed agent-log migration design documents, and local ignored V2 evidence-lifecycle artifacts. Active June planning and validation documents remain in `Docs/WIP/`.
+
+**WIP files archived** (26):
+
+| File | Reason |
+|------|--------|
+| `2026-04-13_Agent_Outputs_Purpose_Review.md` | DONE — Agent_Outputs/Handoffs index and archive workflow is now implemented |
+| `2026-04-13_Migration_Case_C_Review.md` | DONE — one-off migration decision record; no longer active execution work |
+| `2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md` | SUPERSEDED — current root `AGENTS.md` now carries the binding LLM-intelligence/string-boundary rules |
+| `2026-04-21_Additive_Repair_Drift_Problem_Statement.md` | SUPERSEDED — current failed-attempt recovery and debt-guard rules carry the operative policy |
+| `2026-05-09_Report_Improvement_Static_Comparator_Packet.md` | HISTORICAL — comparator lessons consumed by later Captain expectations and best-commit consolidation |
+| `2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Mechanism_Registry_and_Complexity_Diagnosis.md` | HISTORICAL — abandoned rebuild-track synthesis; later recovery rejected this path as an execution mandate |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md` | HISTORICAL — abandoned rebuild-track baseline |
+| `2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md` | HISTORICAL — abandoned rebuild-track planning review |
+| `2026-05-12_Pipeline_Rebuild_Specification_Plan.md` | HISTORICAL — abandoned rebuild-track plan |
+| `2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` | HISTORICAL — abandoned rebuild-track target spec; current multi-variant doc references it only as a pattern source |
+| `2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` | SUPERSEDED — Fix A+B was tried, failed, and reverted; later Stage-1 determinism/F2 work carries active decisions |
+| `2026-05-31_Best_Commit_Identification_Strategy_Proposal.md` | SUPERSEDED — June 2 best-commit/regression consolidation is the current artifact |
+| `2026-05-31_Captain_Criteria_V2_vs_Main_Reconciliation.md` | DONE — decisions applied or superseded by current Captain expectations |
+| `2026-05-31_Plastic_Pointless_AtomicClaim_Independent_Proposal.md` | DONE — centered plastic band applied to Captain/benchmark expectations |
+| `2026-05-31_Plastic_Reasonable_Reading_Execution_Plan.md` | CLOSED — reviewed as no-go; redirected to population-defect work |
+| `2026-05-31_Quality_Gap_Analysis_vs_Updated_Bar.md` | HISTORICAL — gap analysis superseded by later quality/regression consolidation |
+| `v2fixed_el-bounded-evidence-extraction-artifacts.json` | LOCAL IGNORED ARTIFACT — moved out of active WIP locally; not tracked by git |
+| `v2fixed_el-extraction-input-artifacts.json` | LOCAL IGNORED ARTIFACT — moved out of active WIP locally; not tracked by git |
 
 ---
 

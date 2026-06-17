@@ -65,7 +65,7 @@ Answered as a **per-family ranking table** + a **transparent composite**, every 
 - **Replay harness:** worktree checkout + dev server + `scripts/run-validation-matrix.js` (N reruns, JSONL).
 - **Decomposition/rating extractor:** `scripts/diag/plastic-ac-extract.cjs <input>` — per-claim statements + verdicts across all stored reports for any input (generalized from the plastic study).
 - **Confound attribution:** `scripts/diag/compare-evidence-pools.cjs` (source-set Jaccard → evidence-drift vs sampling).
-- **Gold comparators:** `Captain_Quality_Expectations.md` comparator tables + `Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md`.
+- **Gold comparators:** `Captain_Quality_Expectations.md` comparator tables + `Docs/ARCHIVE/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md`.
 - **Variance policy:** `Docs/ARCHIVE/2026-03-25_EVD1_Acceptable_Variance_Policy.md`.
 - **Determinism:** `config.deterministic = true` → temp 0.
 
