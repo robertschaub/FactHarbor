@@ -94,8 +94,13 @@ All text that goes into LLM prompts or Web search must be managed in UCM (Admin-
 
 Exception: Structural constants are allowed in code (e.g., enum-like labels, schema literals, status/type keys) when they define data contracts rather than analysis meaning.
 
+### Change Approval Boundary
+This approval rule applies to code, prompts, UCM/configuration, tests, validation plans, and other analysis-affecting changes:
+- **Allowed without explicit Captain approval:** carefully investigated, justified, and diverse-team-reviewed changes with a concrete failure mode or quality objective and an appropriate verification plan.
+- **Requires explicit Captain approval:** speculative, trial-and-error, teaching-to-test, or exploratory changes.
+
 ### Analysis Prompt Rules
-These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is allowed like code edits when the change is carefully investigated, justified by a concrete failure mode or quality objective, and verified appropriately. Explicit Captain approval is required for speculative, trial-and-error, teaching-to-test, or purely exploratory prompt edits.
+These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Prompt edits follow the same approval boundary as code and UCM/configuration changes.
 - **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
 - **Diagnosis is not wording license.** Concrete failing analyses may be used to identify the abstract failure mechanism, but landed prompt changes must be phrased in topic-neutral terms and must not reuse trigger vocabulary merely because it appeared in the analysis that exposed the issue.
 - **Do not enforce** finding ClaimAssessmentBoundaries or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
