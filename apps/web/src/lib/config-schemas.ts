@@ -1788,7 +1788,7 @@ export const CalcConfigSchema = z.object({
   /**
    * D5 Control 1: authoritative directional sufficiency shortcut.
    * Minimum directional evidence items required before a claim may bypass
-   * source-diversity thresholds using only authoritative same-direction evidence.
+   * source-diversity thresholds using authoritative directional evidence.
    * Default 2.
    */
   evidenceSufficiencyAuthoritativeDirectionalMinItems: z.number().int().min(1).max(10).optional(),

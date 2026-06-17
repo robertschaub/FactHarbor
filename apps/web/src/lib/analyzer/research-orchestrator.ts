@@ -641,7 +641,13 @@ export async function researchEvidence(
       candidateClaims = budgetEligibleClaims;
     }
 
-    const targetClaim = findLeastResearchedClaim(candidateClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
+    const floorTargetClaims = filterClaimsBelowResearchFloor(
+      candidateClaims,
+      state.researchedIterationsByClaim,
+      sufficiencyMinResearchedIterationsPerClaim,
+    );
+    const targetCandidates = floorTargetClaims.length > 0 ? floorTargetClaims : candidateClaims;
+    const targetClaim = findLeastResearchedClaim(targetCandidates, state.evidenceItems, diversityConfig, sufficiencyThreshold);
     if (!targetClaim) break;
 
     // Emit progress update for this iteration (30% → 55%)
@@ -670,7 +676,12 @@ export async function researchEvidence(
     const newItems = state.evidenceItems.length - beforeCount;
     if (newItems === 0) {
       consecutiveZeroYield++;
-      if (consecutiveZeroYield >= zeroYieldBreakThreshold) {
+      const remainingFloorClaims = filterClaimsBelowResearchFloor(
+        candidateClaims,
+        state.researchedIterationsByClaim,
+        sufficiencyMinResearchedIterationsPerClaim,
+      );
+      if (consecutiveZeroYield >= zeroYieldBreakThreshold && remainingFloorClaims.length === 0) {
         state.onEvent?.(`No new evidence found in ${consecutiveZeroYield} consecutive iterations, proceeding...`, 55);
         break;
       }
@@ -1840,6 +1851,17 @@ export function findLeastResearchedClaim(
   return target;
 }
 
+export function filterClaimsBelowResearchFloor(
+  claims: AtomicClaim[],
+  researchedIterationsByClaim: Record<string, number> | undefined,
+  minResearchedIterationsPerClaim: number,
+): AtomicClaim[] {
+  if (minResearchedIterationsPerClaim <= 0) return [];
+  return claims.filter(
+    (claim) => (researchedIterationsByClaim?.[claim.id] ?? 0) < minResearchedIterationsPerClaim,
+  );
+}
+
 /**
  * Find the claim with the fewest contradicting evidence items.
  */
@@ -1881,9 +1903,9 @@ export interface DiversitySufficiencyConfig {
   minItems: number;
   /** Minimum supporting/contradicting evidence items before a claim is verdict-ready. */
   minDirectionalItems?: number;
-  /** Minimum same-direction authoritative evidence items for the diversity shortcut. */
+  /** Minimum authoritative directional evidence items for the diversity shortcut. */
   authoritativeDirectionalMinItems?: number;
-  /** Source types eligible for the authoritative same-direction shortcut. */
+  /** Source types eligible for the authoritative directional shortcut. */
   authoritativeDirectionalSourceTypes?: string[];
   /** When true, count seeded evidence toward sufficiency (matching D5 behavior). */
   includeSeeded: boolean;
@@ -2000,8 +2022,7 @@ export function evaluateEvidenceSufficiency(
     hasSufficientItems &&
     directionalEvidence.length >= authoritativeDirectionalMinItems &&
     directionalEvidence.every((e) => Boolean(e.sourceType) && authoritativeSourceTypes.has(e.sourceType!)) &&
-    directionalEvidence.every((e) => e.probativeValue !== "low") &&
-    new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
+    directionalEvidence.every((e) => e.probativeValue !== "low");
 
   return {
     sufficient:

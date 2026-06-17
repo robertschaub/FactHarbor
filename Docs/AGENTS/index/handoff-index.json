@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-17T14:01:38.554Z",
-  "count": 21,
+  "generatedAt": "2026-06-17T22:18:18.009Z",
+  "count": 23,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -315,6 +315,24 @@
       "summary": "Start with `Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md`. Do not turn this into a Stage 1 F2 rewrite unless fresh triage shows Stage 1 contract recovery is causal. Do not edit `apps/web/prompts/` without Captain approval. Commit before any live jobs and rerun only Captain-defined inputs unle"
     },
     {
+      "file": "2026-06-17_Senior_Developer_Live_Validation_Stop_Rule.md",
+      "date": "2026-06-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "live",
+        "validation",
+        "stop",
+        "rule"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Live_Validation_Stop_Rule.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Job IDs: Portuguese Bolsonaro `338a2065c33b49e7bf2575c4db6cd0f0`; plastic recycling `546a1b6d17814dd3ae4fd9afb8bbdf60`; hydrogen cars `a3d8d8af68e745358bb4baa2f2340872`; English Bolsonaro `6444d2a0125f4450a18a07d0446f6c0d`; Bundesrat rechtskraeftig `638a1dfa437a46658d784518445387ed`; Bundesrat plain"
+    },
+    {
       "file": "2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md",
       "date": "2026-06-17",
       "roles": [
@@ -366,6 +384,25 @@
       ],
       "files_touched": [],
       "summary": "Senior Developer Handoff - Stage 4 Citation/Grounding Execution Plan"
+    },
+    {
+      "file": "2026-06-18_Senior_Developer_Stage2_D5_Recovery.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage2",
+        "d5",
+        "recovery"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
+      ],
+      "summary": "After commit/restart, rerun the Captain-defined failing jobs first: English Bolsonaro `6444d2a0125f4450a18a07d0446f6c0d` input and asylum-current `d87c9174c5d94ed297e75ea654eff9bc` input. Apply the clarified stop rule only across completed rerun jobs: after more than one job, stop if top-level `UNVE"
     }
   ]
 }

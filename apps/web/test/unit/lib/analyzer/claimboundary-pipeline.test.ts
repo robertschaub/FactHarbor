@@ -27,6 +27,7 @@ import {
   remapUnresolvedSeededEvidence,
   reconcileEvidenceSourceIds,
   findLeastResearchedClaim,
+  filterClaimsBelowResearchFloor,
   findLeastContradictedClaim,
   allClaimsSufficient,
   claimNeedsMoreResearchForSufficiency,
@@ -2890,6 +2891,41 @@ describe("findLeastResearchedClaim", () => {
   });
 });
 
+describe("filterClaimsBelowResearchFloor", () => {
+  it("returns only claims below the configured research floor", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+      createAtomicClaim({ id: "AC_03", statement: "Claim 3" }),
+    ];
+
+    const result = filterClaimsBelowResearchFloor(claims, { AC_01: 1 }, 1);
+
+    expect(result.map((claim) => claim.id)).toEqual(["AC_02", "AC_03"]);
+  });
+
+  it("lets the existing selector target unresearched claims before zero-yield termination can stop coverage", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+      createAtomicClaim({ id: "AC_03", statement: "Claim 3" }),
+    ];
+    const evidence = [] as any[];
+    const floorClaims = filterClaimsBelowResearchFloor(claims, { AC_01: 1 }, 1);
+
+    expect(findLeastResearchedClaim(floorClaims, evidence)?.id).toBe("AC_02");
+  });
+
+  it("returns no floor claims when the floor is disabled", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+
+    expect(filterClaimsBelowResearchFloor(claims, {}, 0)).toEqual([]);
+  });
+});
+
 describe("findLeastContradictedClaim", () => {
   it("should return claim with fewest contradicting evidence", () => {
     const claims = [
@@ -3207,15 +3243,15 @@ describe("D5-aligned evidence sufficiency", () => {
     expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(true);
   });
 
-  it("fails low-diversity authoritative evidence when direction is mixed", () => {
+  it("passes low-diversity mixed-direction authoritative evidence so Stage 4 can resolve it", () => {
     const evidence = [
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "legal_document", sourceUrl: "https://court.example/a", claimDirection: "supports", probativeValue: "high" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "legal_document", sourceUrl: "https://court.example/b", claimDirection: "contradicts", probativeValue: "high" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "legal_document", sourceUrl: "https://court.example/c", claimDirection: "supports", probativeValue: "high" },
     ] as any[];
 
-    expect(evaluateEvidenceSufficiency(evidence, d5Config).hasAuthoritativeDirectionalSufficiency).toBe(false);
-    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(false);
+    expect(evaluateEvidenceSufficiency(evidence, d5Config).hasAuthoritativeDirectionalSufficiency).toBe(true);
+    expect(allClaimsSufficient([createAtomicClaim({ id: "AC_01" })], evidence, 3, 1, 1, 0, d5Config)).toBe(true);
   });
 
   it("fails low-diversity authoritative evidence when any directional item is low probative", () => {

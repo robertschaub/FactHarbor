@@ -7,6 +7,16 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Stage 2/D5 Recovery Fix -- [Significant] [open-items: yes]
+**For next agent:** Structural scheduler and D5 fixes are implemented and safe-suite/build verified, but not live-rerun. Commit/restart before rerunning English Bolsonaro and asylum-current Captain inputs; reciprocal/source-native retrieval remains a separate unresolved design item.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Stage2_D5_Recovery.md
+
+---
+### 2026-06-17 | Senior Developer | Codex (GPT-5) | Live Validation Stop-Rule Pass -- [Standard] [open-items: yes]
+**For next agent:** All 8 Captain-defined live jobs ran on commit `6b9c562f`; stop thresholds did not trigger. Top-level `UNVERIFIED`: 2/8. Non-exempt AC `UNVERIFIED`: 4/17. Diagnose jobs `6444d2a0125f4450a18a07d0446f6c0d` and `d87c9174c5d94ed297e75ea654eff9bc` first.
+→ Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Live_Validation_Stop_Rule.md
+
+---
 ### 2026-06-17 | Senior Developer | Codex (GPT-5) | Stage 4 Citation/Grounding Fix -- [Significant] [open-items: yes]
 **For next agent:** Structural Stage 4 fix is implemented and unit/safe-suite/build verified. No prompt files changed and no live smoke rerun yet; commit first and refresh runtime before any Captain-input live validation.
 → Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Stage4_Citation_Grounding_Fix.md
