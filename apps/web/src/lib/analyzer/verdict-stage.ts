@@ -2442,18 +2442,23 @@ function buildClaimChallengeContext(
   if (!challengeDoc) return [];
   const claimChallenge = challengeDoc.challenges.find((challenge) => challenge.claimId === claimId);
   if (!claimChallenge) return [];
-  return claimChallenge.challengePoints.map((challengePoint) => ({
-    challengeId: challengePoint.id,
-    challengeType: challengePoint.type,
-    citedEvidenceIds: challengePoint.evidenceIds,
-    ...(challengePoint.challengeValidation ? {
-      challengeValidation: {
-        evidenceIdsValid: challengePoint.challengeValidation.evidenceIdsValid,
-        validIds: challengePoint.challengeValidation.validIds,
-        invalidIds: challengePoint.challengeValidation.invalidIds,
-      },
-    } : {}),
-  }));
+  return claimChallenge.challengePoints.map((challengePoint) => {
+    const citedEvidenceIds = challengePoint.challengeValidation
+      ? challengePoint.challengeValidation.validIds
+      : challengePoint.evidenceIds;
+    return {
+      challengeId: challengePoint.id,
+      challengeType: challengePoint.type,
+      citedEvidenceIds,
+      ...(challengePoint.challengeValidation ? {
+        challengeValidation: {
+          evidenceIdsValid: challengePoint.challengeValidation.evidenceIdsValid,
+          validIds: challengePoint.challengeValidation.validIds,
+          invalidIds: challengePoint.challengeValidation.invalidIds,
+        },
+      } : {}),
+    };
+  });
 }
 
 function buildBoundaryContext(

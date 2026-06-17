@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-17T13:03:25.895Z",
-  "count": 20,
+  "generatedAt": "2026-06-17T14:01:38.554Z",
+  "count": 21,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -336,6 +336,21 @@
         "Docs/AGENTS/index/"
       ],
       "summary": "Clean baseline is `main` after recovery commits `a56fed6f4` and `209eca35d`, plus docs cleanup `688ef241` and this follow-up handoff/index cleanup. Verification already passed after the revert: targeted diff against baseline `6d76b28a4` was empty for analyzer/prompts/configs/target test, `npm test` "
+    },
+    {
+      "file": "2026-06-17_Senior_Developer_Stage4_Citation_Grounding_Fix.md",
+      "date": "2026-06-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage4",
+        "citation",
+        "grounding",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Senior Developer Handoff -- Stage 4 Citation/Grounding Fix"
     },
     {
       "file": "2026-06-17_Senior_Developer_Stage4_Citation_Grounding_Plan.md",

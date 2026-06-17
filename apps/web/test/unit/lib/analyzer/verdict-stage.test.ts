@@ -5430,12 +5430,13 @@ describe("claim-local direction validation (cross-claim contamination prevention
 
     // Boundary IDs are NOT aliased — only evidence IDs are.
     expect(groundingBoundaryIds).toEqual(["CB_04", "CB_07"]);
-    // Evidence IDs in challenge context are aliased (EVG_xxx).
+    // Only evidence IDs validated for this claim are advertised as cited challenge
+    // evidence. Invalid IDs remain visible under challengeValidation.invalidIds.
     expect(groundingChallengeContext).toEqual([
       expect.objectContaining({
         challengeId: "CP_AC_02_0",
         challengeType: "methodology_weakness",
-        citedEvidenceIds: [expect.stringMatching(/^EVG_\d{3}$/)],
+        citedEvidenceIds: [],
         challengeValidation: {
           evidenceIdsValid: false,
           validIds: [],
@@ -5443,6 +5444,148 @@ describe("claim-local direction validation (cross-claim contamination prevention
         },
       }),
     ]);
+  });
+
+  it("grounding validation separates sibling challenge IDs from current-claim cited evidence", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_004", "EV_005", "EV_006"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_004", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_005", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_006", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_029", relevantClaimIds: ["AC_02"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+    ];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const validatedChallengeDoc = validateChallengeEvidence({
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "methodology_weakness",
+          description: "Challenge references evidence mapped only to a sibling claim",
+          evidenceIds: ["EV_029"],
+          severity: "medium",
+        }],
+      }],
+    }, evidence);
+
+    const validatedPoint = validatedChallengeDoc.challenges[0].challengePoints[0];
+    expect(validatedPoint.challengeValidation?.validIds).toEqual([]);
+    expect(validatedPoint.challengeValidation?.invalidIds).toEqual(["EV_029"]);
+
+    let groundingEvidencePool: Array<{ id: string }> | undefined;
+    let groundingCitedRegistry: Array<{ id: string }> | undefined;
+    let groundingChallengeContext: Array<{
+      citedEvidenceIds: string[];
+      challengeValidation?: { invalidIds: string[] };
+    }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingEvidencePool = verdictInput?.evidencePool as Array<{ id: string }>;
+        groundingCitedRegistry = verdictInput?.citedEvidenceRegistry as Array<{ id: string }>;
+        groundingChallengeContext = verdictInput?.challengeContext as typeof groundingChallengeContext;
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM, undefined, undefined, {
+      claims,
+      boundaries,
+      coverageMatrix,
+      validatedChallengeDoc,
+    });
+
+    expect(groundingEvidencePool).toHaveLength(3);
+    expect(groundingEvidencePool!.every((item) => /^EVG_\d{3}$/.test(item.id))).toBe(true);
+    expect(groundingCitedRegistry).toHaveLength(3);
+    expect(groundingCitedRegistry!.every((item) => /^EVG_\d{3}$/.test(item.id))).toBe(true);
+
+    expect(groundingChallengeContext).toHaveLength(1);
+    expect(groundingChallengeContext![0].citedEvidenceIds).toEqual([]);
+    expect(groundingChallengeContext![0].challengeValidation?.invalidIds).toHaveLength(1);
+    expect(groundingCitedRegistry!.map((item) => item.id)).not.toContain(
+      groundingChallengeContext![0].challengeValidation!.invalidIds[0],
+    );
+  });
+
+  it("grounding validation preserves valid challenge IDs while excluding invalid sibling IDs", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_004"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_004", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_029", relevantClaimIds: ["AC_02"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+    ];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const validatedChallengeDoc = validateChallengeEvidence({
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "methodology_weakness",
+          description: "Challenge mixes current-claim and sibling-claim evidence",
+          evidenceIds: ["EV_004", "EV_029"],
+          severity: "medium",
+        }],
+      }],
+    }, evidence);
+
+    const validatedPoint = validatedChallengeDoc.challenges[0].challengePoints[0];
+    expect(validatedPoint.challengeValidation?.validIds).toEqual(["EV_004"]);
+    expect(validatedPoint.challengeValidation?.invalidIds).toEqual(["EV_029"]);
+
+    let groundingCitedRegistry: Array<{ id: string }> | undefined;
+    let groundingChallengeContext: Array<{
+      citedEvidenceIds: string[];
+      challengeValidation?: { invalidIds: string[] };
+    }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingCitedRegistry = verdictInput?.citedEvidenceRegistry as Array<{ id: string }>;
+        groundingChallengeContext = verdictInput?.challengeContext as typeof groundingChallengeContext;
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM, undefined, undefined, {
+      claims,
+      boundaries,
+      coverageMatrix,
+      validatedChallengeDoc,
+    });
+
+    const registryIds = groundingCitedRegistry!.map((item) => item.id);
+    const citedIds = groundingChallengeContext![0].citedEvidenceIds;
+    const invalidIds = groundingChallengeContext![0].challengeValidation!.invalidIds;
+    expect(citedIds).toHaveLength(1);
+    expect(invalidIds).toHaveLength(1);
+    expect(registryIds).toContain(citedIds[0]);
+    expect(registryIds).not.toContain(invalidIds[0]);
   });
 
   it("standard single-claim validation still works (no regression)", async () => {
