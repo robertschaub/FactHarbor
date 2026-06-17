@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-17T09:24:24.219Z",
-  "count": 17,
+  "generatedAt": "2026-06-17T09:33:07.262Z",
+  "count": 18,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -292,6 +292,29 @@
       ],
       "files_touched": [],
       "summary": "2026-06-11 | Lead Developer | Claude (Fable 5) | F2 Surgical Per-Claim Contract Repair — [Significant] [open-items: yes]"
+    },
+    {
+      "file": "2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md",
+      "date": "2026-06-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "project",
+        "cleanup",
+        "recovery"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/",
+        "apps/web/prompts/",
+        "apps/web/configs/",
+        "apps/web/test/unit/lib/analyzer/aggregation.test.ts",
+        "Docs/ARCHIVE/",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md",
+        "Docs/AGENTS/index/"
+      ],
+      "summary": "Clean baseline is `main` after recovery commits `a56fed6f4` and `209eca35d`, plus docs cleanup `688ef241` and this follow-up handoff/index cleanup. Verification already passed after the revert: targeted diff against baseline `6d76b28a4` was empty for analyzer/prompts/configs/target test, `npm test` "
     }
   ]
 }
