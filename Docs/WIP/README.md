@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-06-17
-**Status**: Consolidation #13 complete. 26 WIP files archived. 66 active files remain.
+**Status**: Consolidation #13 complete. 26 WIP files archived. 67 active files remain.
 
 ---
 
@@ -29,6 +29,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Active Engineering / Quality Tracks
 
 ### Current June quality / cleanup tracks
+- [2026-06-17_Clean_Main_Next_Cleanup_Plan.md](2026-06-17_Clean_Main_Next_Cleanup_Plan.md) — post-consolidation execution plan after F2 smoke validation; current recommended sequence for clean-main recovery
 - [2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md](2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md) — current consolidated best-report/regression findings; supersedes the May 31 best-commit strategy
 - [2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md](2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md) — near-term era-comparison path; preferred over the deferred in-tree variant capability
 - [2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md](2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md) — report-quality measurement concept

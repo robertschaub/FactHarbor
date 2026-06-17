@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-17T09:57:54.298Z",
-  "count": 18,
+  "generatedAt": "2026-06-17T11:50:17.043Z",
+  "count": 19,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -292,6 +292,27 @@
       ],
       "files_touched": [],
       "summary": "2026-06-11 | Lead Developer | Claude (Fable 5) | F2 Surgical Per-Claim Contract Repair — [Significant] [open-items: yes]"
+    },
+    {
+      "file": "2026-06-17_Senior_Developer_Clean_Main_WIP_F2_Plan.md",
+      "date": "2026-06-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "clean",
+        "main",
+        "wip",
+        "f2",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/README.md",
+        "Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md",
+        "9931f468",
+        "Docs/ARCHIVE/WIP/"
+      ],
+      "summary": "Start with `Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md`. Do not turn this into a Stage 1 F2 rewrite unless fresh triage shows Stage 1 contract recovery is causal. Do not edit `apps/web/prompts/` without Captain approval. Commit before any live jobs and rerun only Captain-defined inputs unle"
     },
     {
       "file": "2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md",
