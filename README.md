@@ -20,6 +20,8 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[One-Pager](ONEPAGER.md)** — Vision, mission, and why FactHarbor exists in one page.
 
+**[Program map](https://github.com/robertschaub/our-ai-charter/blob/main/PROGRAM.md)** — how FactHarbor relates to the public Our AI Charter normative framework.
+
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
 ## Getting Started
