@@ -23,33 +23,30 @@ import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 
 const GATE_PROMPT_PROFILE = "input-policy-gate";
 
-export type PolicyDecision = "allow" | "reject" | "review";
+export const POLICY_DECISIONS = ["allow", "reject", "review"] as const;
+export type PolicyDecision = typeof POLICY_DECISIONS[number];
+
+export const POLICY_MESSAGE_KEYS = [
+  "legitimate_claim",
+  "invalid_input",
+  "policy_violation",
+  // System fallback only; the LLM prompt should not emit this key.
+  "gate_unavailable",
+] as const;
+export type PolicyMessageKey = typeof POLICY_MESSAGE_KEYS[number];
 
 export interface PolicyGateResult {
   decision: PolicyDecision;
   reasonCode: string;
-  messageKey: string;
+  messageKey: PolicyMessageKey;
   confidence: number;
   /** Set when the gate failed and fell back to allow (fail-open). */
   error?: string;
 }
 
-const VALID_REASON_CODES = new Set([
-  "legitimate_claim",
-  "prompt_injection",
-  "no_factual_content",
-  "jailbreak_attempt",
-  "harmful_content",
-  "spam_seo",
-  "personal_data_extraction",
-]);
-
-const VALID_MESSAGE_KEYS = new Set([
-  "legitimate_claim",
-  "invalid_input",
-  "policy_violation",
-  "gate_unavailable",
-]);
+const VALID_DECISIONS = new Set<string>(POLICY_DECISIONS);
+const VALID_MESSAGE_KEYS = new Set<string>(POLICY_MESSAGE_KEYS);
+const REASON_CODE_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 
 function escapeXmlText(value: string): string {
   return value
@@ -58,6 +55,54 @@ function escapeXmlText(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function normalizeDecision(value: unknown): { decision: PolicyDecision; valid: boolean } {
+  return typeof value === "string" && VALID_DECISIONS.has(value)
+    ? { decision: value as PolicyDecision, valid: true }
+    : { decision: "allow", valid: false };
+}
+
+function normalizeReasonCode(value: unknown): string {
+  if (typeof value !== "string") return "unknown";
+  const normalized = value.trim();
+  return REASON_CODE_PATTERN.test(normalized) ? normalized : "unknown";
+}
+
+function fallbackMessageKey(decision: PolicyDecision): PolicyMessageKey {
+  return decision === "reject" ? "policy_violation" : "legitimate_claim";
+}
+
+function normalizeMessageKey(value: unknown, decision: PolicyDecision): PolicyMessageKey {
+  if (typeof value === "string" && VALID_MESSAGE_KEYS.has(value)) {
+    return value as PolicyMessageKey;
+  }
+  return fallbackMessageKey(decision);
+}
+
+function normalizeConfidence(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : 0.5;
+}
+
+export function normalizePolicyGateResponse(parsed: unknown): PolicyGateResult {
+  const record = asRecord(parsed);
+  const { decision, valid: decisionValid } = normalizeDecision(record.decision);
+  return {
+    decision,
+    reasonCode: normalizeReasonCode(record.reasonCode),
+    messageKey: decisionValid
+      ? normalizeMessageKey(record.messageKey, decision)
+      : fallbackMessageKey(decision),
+    confidence: normalizeConfidence(record.confidence),
+  };
 }
 
 /**
@@ -110,7 +155,7 @@ export async function evaluateInputPolicy(
     const text = result.text.trim();
 
     // Parse structured JSON response
-    let parsed: { decision: string; reasonCode: string; messageKey: string; confidence: number };
+    let parsed: unknown;
     try {
       const cleaned = text
         .replace(/^```json\s*/i, "")
@@ -128,34 +173,14 @@ export async function evaluateInputPolicy(
       };
     }
 
-    // Validate decision value — fall back to allow if unexpected
-    const validDecisions: PolicyDecision[] = ["allow", "reject", "review"];
-    const decision: PolicyDecision = validDecisions.includes(parsed.decision as PolicyDecision)
-      ? (parsed.decision as PolicyDecision)
-      : "allow";
-
-    const reasonCode = VALID_REASON_CODES.has(parsed.reasonCode)
-      ? parsed.reasonCode
-      : "unknown";
-
-    const messageKey = VALID_MESSAGE_KEYS.has(parsed.messageKey)
-      ? parsed.messageKey
-      : "unknown";
-
-    const confidenceRaw = typeof parsed.confidence === "number" ? parsed.confidence : 0.5;
-    const confidence = Math.max(0, Math.min(1, confidenceRaw));
+    const normalized = normalizePolicyGateResponse(parsed);
 
     // L2: Log metadata only AFTER validation to ensure high signal
     console.log(
-      `[InputGate] decision=${decision} reasonCode=${reasonCode} inputType=${inputType} confidence=${confidence}`,
+      `[InputGate] decision=${normalized.decision} reasonCode=${normalized.reasonCode} inputType=${inputType} confidence=${normalized.confidence}`,
     );
 
-    return {
-      decision,
-      reasonCode,
-      messageKey,
-      confidence,
-    };
+    return normalized;
   } catch (err: any) {
     console.error("[InputGate] POLICY_DEGRADED: Gate error — failing open:", err?.message);
     return {

@@ -62,8 +62,8 @@ Respond with a single JSON object and nothing else:
 ```json
 {
   "decision": "allow" | "reject" | "review",
-  "reasonCode": "string",
-  "messageKey": "string",
+  "reasonCode": "snake_case_code",
+  "messageKey": "legitimate_claim" | "invalid_input" | "policy_violation",
   "confidence": 0.0
 }
 ```
@@ -71,7 +71,7 @@ Respond with a single JSON object and nothing else:
 Field definitions:
 - `decision`: Your classification
 - `reasonCode`: Short programmatic code describing the reason in snake_case (e.g., `legitimate_claim`, `prompt_injection`, `no_factual_content`). For `allow`, use `legitimate_claim` unless there is a more specific reason
-- `messageKey`: A generic user-facing message category used only for display; must not reveal system internals (e.g., `invalid_input`, `policy_violation`, `legitimate_claim`)
+- `messageKey`: A generic user-facing message category used only for display; use exactly one of `legitimate_claim`, `invalid_input`, or `policy_violation`. Do not reveal system internals
 - `confidence`: Your confidence in the decision from 0.0 (very uncertain) to 1.0 (certain)
 
 Return ONLY the JSON object. No explanatory text before or after.

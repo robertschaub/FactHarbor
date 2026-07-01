@@ -28,17 +28,18 @@ export const DEFAULT_CONFIDENCE_THRESHOLD = DEFAULT_SR_CONFIG.confidenceThreshol
 export const DEFAULT_CONSENSUS_THRESHOLD = DEFAULT_SR_CONFIG.consensusThreshold;
 
 // ============================================================================
-// SOURCE TYPE SCORE CAPS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)
+// SOURCE TYPE SCORE CAPS (RUNTIME POST-PROCESSING)
 // ============================================================================
 
 /**
- * Expected score caps for source types.
+ * Runtime score caps for source types.
  *
- * IMPORTANT (v2.8.3): These values are REFERENCE ONLY for validation warnings.
- * The authoritative source for caps is the source-reliability.prompt.md file.
- * Edit the prompt to change evaluation criteria - do NOT change these values.
+ * Current ownership note: the main SR evaluation prompt is TypeScript-owned
+ * (`source-reliability/sr-eval-prompts.ts`) and these caps are enforced after
+ * LLM output by `sr-eval-engine.ts`. Keep this table, the TS prompt text, and
+ * prompt/profile documentation aligned when changing source-type cap behavior.
  *
- * See: prompts/source-reliability.prompt.md section "SOURCE TYPE SCORE CAPS"
+ * See: prompts/README.md "Source Reliability".
  */
 export const SOURCE_TYPE_EXPECTED_CAPS: Record<string, number> = {
   propaganda_outlet: 0.14,      // highly_unreliable band
@@ -49,17 +50,19 @@ export const SOURCE_TYPE_EXPECTED_CAPS: Record<string, number> = {
 };
 
 // ============================================================================
-// RATING BANDS (REFERENCE ONLY - PROMPT IS AUTHORITATIVE)
+// RATING BANDS (RUNTIME SCORE/RATING ALIGNMENT)
 // ============================================================================
 
 /**
- * Rating band boundaries for reference and validation.
+ * Rating band boundaries used to align post-processed numeric scores with
+ * factualRating labels.
  *
- * IMPORTANT (v2.8.3): The authoritative source for rating bands is the
- * source-reliability.prompt.md file. These are kept for scoreToFactualRating()
- * to ensure score↔rating alignment after LLM evaluation.
+ * Current ownership note: the main SR evaluation prompt is TypeScript-owned
+ * (`source-reliability/sr-eval-prompts.ts`), and `sr-eval-engine.ts` calls
+ * `scoreToFactualRating()` after post-processing. Keep this mapping and the TS
+ * prompt text aligned when changing rating bands.
  *
- * See: prompts/source-reliability.prompt.md section "RATING SCALE"
+ * See: prompts/README.md "Source Reliability".
  */
 
 export type FactualRating =

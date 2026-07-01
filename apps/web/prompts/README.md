@@ -1,15 +1,15 @@
 # FactHarbor Prompts
 
-This directory contains LLM prompt source files. Prompts are stored in the database (`config_blobs`) for versioning and tracked by content hash. The files here are the authoritative source that gets reseeded into the database.
+This directory contains LLM prompt source files. Prompts are stored in the database (`config_blobs`) for versioning and tracked by content hash. A file is authoritative only for runtime paths that actually load that profile and section; check the ownership notes below before editing.
 
 ## Prompt Architecture
 
-**Prompts are the single source of truth** for evaluation criteria. Code should NOT duplicate or override prompt logic.
+**Prompts should be the single source of truth** for LLM evaluation criteria where the runtime loads them. Some legacy surfaces still have TypeScript-owned prompt builders; those are called out below.
 
 | Principle | Description |
 |-----------|-------------|
-| **Prompt Authoritative** | All evaluation criteria, bands, caps, and patterns are defined in prompts |
-| **Code Validates** | Code ensures structural alignment but does NOT override LLM decisions |
+| **Prompt Authoritative** | Runtime-loaded prompt sections define the LLM instructions for that path |
+| **Code Validates** | Code ensures structural alignment; any intentional post-processing must be documented with the runtime owner |
 | **Database Versioned** | Prompts stored in `config_blobs` with content hashes for tracking |
 | **Admin Editable** | Edit via Admin UI at `/admin/config?type=prompt` |
 
@@ -18,7 +18,7 @@ This directory contains LLM prompt source files. Prompts are stored in the datab
 | Profile | File | Purpose |
 |---------|------|---------|
 | `claimboundary` | `claimboundary.prompt.md` | **Primary pipeline.** All five ClaimBoundary stages (extraction, contract validation, research, clustering, verdict, narrative, article adjudication, grouping). Single source of truth for the live pipeline. |
-| `source-reliability` | `source-reliability.prompt.md` | Source reliability evaluation prompts (per-source rating). |
+| `source-reliability` | `source-reliability.prompt.md` | Runtime-read for source-reliability evidence-quality assessment sections. Main SR evaluation/refinement prompts are currently TypeScript-owned; see below. |
 | `text-analysis-*` | `text-analysis/*.prompt.md` | Lightweight LLM text analysis helpers used outside the main pipeline. |
 | `input-policy-gate` | `input-policy-gate.prompt.md` | Input policy gate prompts. |
 
@@ -36,16 +36,13 @@ The `claimboundary.prompt.md` frontmatter `requiredSections` list is the contrac
 
 ## Source Reliability
 
-The source-reliability prompt is **fully authoritative** for:
-- Rating scale bands (0.86–1.00 = highly_reliable, etc.)
-- Source type score caps
-- Source type classification criteria
-- Evidence quality hierarchy
-- Recognized assessor tiers
+Current ownership is split:
 
-To change evaluation criteria, edit `source-reliability.prompt.md` and reseed the database.
+- Main SR evaluation and refinement prompts are TypeScript-owned in `src/lib/source-reliability/sr-eval-prompts.ts` and invoked by `sr-eval-engine.ts`.
+- `source-reliability.prompt.md` is runtime-read by `sr-eval-enrichment.ts` for `EVIDENCE QUALITY ASSESSMENT TASK`, `EVIDENCE QUALITY ASSESSMENT OUTPUT FORMAT`, and the recognized-assessor section reused by that task.
+- Source-type caps and score/rating alignment are enforced after LLM output by `source-reliability-config.ts` and `sr-eval-engine.ts`.
 
-Code reference values in `source-reliability-config.ts` are for validation warnings only and do NOT override LLM output.
+Do not edit `source-reliability.prompt.md` expecting the main SR evaluation prompt to change unless the runtime is first migrated to load that profile for the main evaluation path. Until that migration, behavior changes to main SR criteria must update the TypeScript prompt builder, post-processing code, and tests together.
 
 ## Text Analysis
 
