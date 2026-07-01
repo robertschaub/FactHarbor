@@ -8,6 +8,7 @@ import {
   EvidenceItem,
   FetchedSource,
   EvidenceScope,
+  RetrievalLanguageLaneId,
 } from "./types";
 import {
   loadPipelineConfig,
@@ -125,11 +126,12 @@ function createClaimIterationTelemetryEntry(
   generatedQueries: string[],
   freshnessRequirement?: ClaimFreshnessRequirement,
   laneReason?: string,
+  languageLane: RetrievalLanguageLaneId = "primary",
 ): ClaimAcquisitionIterationEntry {
   return {
     iteration,
     iterationType,
-    languageLane: "primary",
+    languageLane,
     freshnessRequirement,
     generatedQueries,
     searchResults: 0,
@@ -1549,8 +1551,12 @@ export async function runResearchIteration(
     targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
     totalResultsThisIteration, newEvidenceThisIteration,
   );
+  await maybeRunSourceNativeSupplementaryLane(
+    targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
+    totalResultsThisIteration, newEvidenceThisIteration,
+  );
 
-  // Late-stage additions (contrarian iterations and supplementary EN lane) can
+  // Late-stage additions (contrarian iterations and supplementary lanes) can
   // append evidence after the batch Stage-2 reconciliation pass. Reconcile
   // source links at the end of every iteration so final evidence items retain
   // canonical sourceId/sourceTitle before clustering and verdict validation.
@@ -1560,6 +1566,223 @@ export async function runResearchIteration(
       `[Stage2] Iteration-level source reconciliation updated ${reconciledSourceIdsCount}/${state.evidenceItems.length} evidence items after late additions`,
     );
   }
+}
+
+// ============================================================================
+// SUPPLEMENTARY LANGUAGE LANES
+// ============================================================================
+
+type SupplementaryLanguageLaneId = Exclude<RetrievalLanguageLaneId, "primary">;
+type SupplementaryIterationType = Extract<
+  ClaimAcquisitionIterationEntry["iterationType"],
+  "main" | "contradiction" | "contrarian"
+>;
+
+interface SupplementaryLanguageLanePlan {
+  iterationIndex: number;
+  iterationType: SupplementaryIterationType;
+  language: string;
+  languageLane: SupplementaryLanguageLaneId;
+  laneReason: string;
+  retrievalLanguageReason?: string;
+  eventLabel: string;
+  queries: GeneratedResearchQuery[];
+}
+
+function upsertRetrievalLanguageLane(
+  state: CBResearchState,
+  language: string,
+  lane: SupplementaryLanguageLaneId,
+  reason: string,
+): void {
+  if (!state.languageIntent) return;
+  if (
+    state.languageIntent.retrievalLanguages.some(
+      (entry) => entry.language === language && entry.lane === lane,
+    )
+  ) {
+    return;
+  }
+  state.languageIntent.retrievalLanguages.push({ language, lane, reason });
+}
+
+export async function executeSupplementaryLanguageLane(
+  targetClaim: AtomicClaim,
+  searchConfig: SearchConfig,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+  state: CBResearchState,
+  plan: SupplementaryLanguageLanePlan,
+): Promise<void> {
+  if (plan.queries.length === 0) return;
+
+  const telemetry = createClaimIterationTelemetryEntry(
+    plan.iterationIndex,
+    plan.iterationType,
+    plan.queries.map((query) => query.query),
+    targetClaim.freshnessRequirement,
+    plan.laneReason,
+    plan.languageLane,
+  );
+
+  let telemetryRecorded = false;
+  const recordTelemetryOnce = () => {
+    if (telemetryRecorded) return;
+    recordClaimIterationTelemetry(state, targetClaim.id, telemetry);
+    telemetryRecorded = true;
+  };
+
+  const relevantGeographies = getClaimRelevantGeographies(
+    targetClaim,
+    searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
+  );
+
+  for (const query of plan.queries) {
+    try {
+      const response = await searchWebWithProvider({
+        query: query.query,
+        maxResults: searchConfig.maxSourcesPerIteration ?? 5,
+        config: searchConfig,
+        detectedLanguage: plan.language,
+        claimFreshnessRequirement: targetClaim.freshnessRequirement,
+      });
+
+      state.searchQueries.push({
+        query: query.query,
+        iteration: plan.iterationIndex,
+        focus: plan.iterationType,
+        resultsCount: response.results.length,
+        timestamp: new Date().toISOString(),
+        searchProvider: response.providersUsed.join(", "),
+        language: plan.language,
+        languageLane: plan.languageLane,
+        laneReason: plan.laneReason,
+      });
+      telemetry.searchResults += response.results.length;
+
+      if (response.results.length > 0) {
+        state.onEvent?.(`${plan.eventLabel}: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+      }
+
+      upsertRetrievalLanguageLane(
+        state,
+        plan.language,
+        plan.languageLane,
+        plan.retrievalLanguageReason ?? `${plan.laneReason} for claim ${targetClaim.id}`,
+      );
+
+      if (response.errors && response.errors.length > 0) {
+        for (const provErr of response.errors) {
+          if (provErr.provider) {
+            recordSearchFailure(provErr.provider, provErr.message);
+          }
+          upsertSearchProviderWarning(state, {
+            provider: provErr.provider,
+            status: provErr.status,
+            message: provErr.message,
+            query: query.query,
+            stage: "research_search",
+          });
+        }
+      }
+
+      const relevantSources = await classifyRelevance(
+        targetClaim,
+        response.results,
+        pipelineConfig,
+        currentDate,
+        state.understanding?.inferredGeography ?? null,
+        relevantGeographies,
+      );
+      state.llmCalls++;
+      telemetry.relevanceAccepted += relevantSources.length;
+      telemetry.losses.relevanceRejected += Math.max(
+        response.results.length - relevantSources.length,
+        0,
+      );
+
+      const fetchedSources = await fetchSources(
+        relevantSources,
+        query.query,
+        state,
+        pipelineConfig,
+        {
+          classifyDiscoveredSources: async (discoveredSources) => {
+            const discoveredRelevant = await classifyRelevance(
+              targetClaim,
+              discoveredSources,
+              pipelineConfig,
+              currentDate,
+              state.understanding?.inferredGeography ?? null,
+              relevantGeographies,
+            );
+            state.llmCalls++;
+            return discoveredRelevant;
+          },
+        },
+      );
+      telemetry.sourcesFetched += fetchedSources.length;
+      telemetry.losses.fetchRejected += Math.max(
+        relevantSources.length - fetchedSources.length,
+        0,
+      );
+      if (fetchedSources.length === 0) {
+        recordTelemetryOnce();
+        return;
+      }
+
+      const rawEvidence = await extractResearchEvidence(
+        targetClaim,
+        fetchedSources,
+        pipelineConfig,
+        currentDate,
+        state,
+      );
+      state.llmCalls++;
+      telemetry.rawEvidenceItems += rawEvidence.length;
+      const extractedSourceUrls = new Set(
+        rawEvidence
+          .map((item) => item.sourceUrl)
+          .filter((url): url is string => Boolean(url)),
+      );
+      telemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
+        (source) => !extractedSourceUrls.has(source.url),
+      ).length;
+
+      const { kept } = filterByProbativeValue(rawEvidence);
+      telemetry.losses.probativeFilteredOut += Math.max(
+        rawEvidence.length - kept.length,
+        0,
+      );
+      const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
+      const {
+        kept: cappedItems,
+        capped: cappedCount,
+        evictedIds,
+      } = applyPerSourceCap(kept, state.evidenceItems, maxPerSource);
+      telemetry.losses.perSourceCapDroppedNew += cappedCount;
+      telemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
+      if (evictedIds.length > 0) {
+        const evictedSet = new Set(evictedIds);
+        state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
+      }
+      state.evidenceItems.push(...cappedItems);
+      const claimLocalCappedItems = cappedItems.filter(
+        (item) => item.relevantClaimIds?.includes(targetClaim.id),
+      );
+      telemetry.admittedEvidenceItems += claimLocalCappedItems.length;
+      for (const item of claimLocalCappedItems) {
+        incrementDirectionCounts(telemetry.directionCounts, item.claimDirection);
+      }
+    } catch (err) {
+      console.warn(`[Stage2] ${plan.languageLane} supplementary query failed for "${query.query}":`, err);
+      telemetry.incomplete = true;
+      recordTelemetryOnce();
+      return;
+    }
+  }
+
+  recordTelemetryOnce();
 }
 
 // ============================================================================
@@ -1626,172 +1849,75 @@ export async function maybeRunSupplementaryEnglishLane(
   state.llmCalls++;
 
   if (enQueries.length === 0) return;
-  const enTelemetry: ClaimAcquisitionIterationEntry = {
-    iteration: iterationIndex,
-    iterationType: iterationType as "main" | "contradiction" | "contrarian",
-    languageLane: "supplementary_en",
-    freshnessRequirement: targetClaim.freshnessRequirement,
-    generatedQueries: enQueries.map((query) => query.query),
-    searchResults: 0,
-    relevanceAccepted: 0,
-    sourcesFetched: 0,
-    rawEvidenceItems: 0,
-    admittedEvidenceItems: 0,
-    directionCounts: createEmptyDirectionCounts(),
-    losses: {
-      relevanceRejected: 0,
-      fetchRejected: 0,
-      sourcesWithoutEvidence: 0,
-      probativeFilteredOut: 0,
-      perSourceCapDroppedNew: 0,
-      perSourceCapEvictedExisting: 0,
-    },
-    laneReason,
-  };
 
-  const enQuery = enQueries[0];
-  try {
-    const response = await searchWebWithProvider({
-      query: enQuery.query,
-      maxResults: searchConfig.maxSourcesPerIteration ?? 5,
-      config: searchConfig,
-      detectedLanguage: "en", // EN lane forces English for language-aware supplementary providers
-      claimFreshnessRequirement: targetClaim.freshnessRequirement,
-    });
-
-    state.searchQueries.push({
-      query: enQuery.query,
-      iteration: iterationIndex,
-      focus: iterationType,
-      resultsCount: response.results.length,
-      timestamp: new Date().toISOString(),
-      searchProvider: response.providersUsed.join(", "),
+  await executeSupplementaryLanguageLane(
+    targetClaim,
+    searchConfig,
+    pipelineConfig,
+    currentDate,
+    state,
+    {
+      iterationIndex,
+      iterationType: iterationType as SupplementaryIterationType,
       language: "en",
       languageLane: "supplementary_en",
       laneReason,
-    });
-    enTelemetry.searchResults += response.results.length;
+      retrievalLanguageReason: `native_scarcity for claim ${targetClaim.id}`,
+      eventLabel: "EN supplementary",
+      queries: enQueries.slice(0, 1),
+    },
+  );
+}
 
-    if (response.results.length > 0) {
-      state.onEvent?.(`EN supplementary: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
-    }
+/**
+ * Source-native supplementary lane scaffold.
+ *
+ * This slice intentionally does not choose a source-native language or query.
+ * That semantic planning must be LLM-backed and lands in a later reviewed
+ * planner slice. If enabled before the planner exists, record an explicit
+ * no-op telemetry entry so the flag cannot silently masquerade as active.
+ */
+export async function maybeRunSourceNativeSupplementaryLane(
+  targetClaim: AtomicClaim,
+  iterationType: string,
+  searchConfig: SearchConfig,
+  _pipelineConfig: PipelineConfig,
+  _currentDate: string,
+  state: CBResearchState,
+  primaryResultsCount: number,
+  primaryNewEvidenceCount: number,
+): Promise<void> {
+  const sourceNativeLane = searchConfig.sourceNativeSupplementaryLane;
+  if (!sourceNativeLane?.enabled) return;
 
-    // Update retrieval languages if not already present
-    if (state.languageIntent && !state.languageIntent.retrievalLanguages.some((l) => l.lane === "supplementary_en")) {
-      state.languageIntent.retrievalLanguages.push({
-        language: "en",
-        lane: "supplementary_en",
-        reason: `native_scarcity for claim ${targetClaim.id}`,
-      });
-    }
+  const allowedTypes = sourceNativeLane.applyInIterationTypes ?? ["main"];
+  if (!allowedTypes.includes(iterationType as any)) return;
 
-    // Report EN-lane provider errors through the same warning + circuit-breaker path as primary lane
-    if (response.errors && response.errors.length > 0) {
-      for (const provErr of response.errors) {
-        if (provErr.provider) {
-          recordSearchFailure(provErr.provider, provErr.message);
-        }
-        upsertSearchProviderWarning(state, {
-          provider: provErr.provider, status: provErr.status, message: provErr.message,
-          query: enQuery.query, stage: "research_search",
-        });
-      }
-    }
+  const minEvidence = sourceNativeLane.minPrimaryEvidenceItems ?? 2;
+  if (primaryNewEvidenceCount >= minEvidence) return;
 
-    // Classify relevance through the same LLM path as primary lane (no fixed relevanceScore bypass)
-    const enLaneRelevantGeographies = getClaimRelevantGeographies(
-      targetClaim,
-      searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
-    );
-    const relevantSources = await classifyRelevance(
-      targetClaim, response.results, pipelineConfig, currentDate,
-      state.understanding?.inferredGeography ?? null, enLaneRelevantGeographies,
-    );
-    state.llmCalls++;
-    enTelemetry.relevanceAccepted += relevantSources.length;
-    enTelemetry.losses.relevanceRejected += Math.max(
-      response.results.length - relevantSources.length,
-      0,
-    );
+  const maxQueries = sourceNativeLane.maxAdditionalQueriesPerClaim ?? 1;
+  if (maxQueries <= 0) return;
 
-    const fetchedSources = await fetchSources(
-      relevantSources,
-      enQuery.query,
-      state,
-      pipelineConfig,
-      {
-        classifyDiscoveredSources: async (discoveredSources) => {
-          const discoveredRelevant = await classifyRelevance(
-            targetClaim,
-            discoveredSources,
-            pipelineConfig,
-            currentDate,
-            state.understanding?.inferredGeography ?? null,
-            enLaneRelevantGeographies,
-          );
-          state.llmCalls++;
-          return discoveredRelevant;
-        },
-      },
-    );
-    enTelemetry.sourcesFetched += fetchedSources.length;
-    enTelemetry.losses.fetchRejected += Math.max(
-      relevantSources.length - fetchedSources.length,
-      0,
-    );
-    if (fetchedSources.length === 0) {
-      recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
-      return;
-    }
+  const iterationIndex = state.mainIterationsUsed + state.contradictionIterationsUsed;
+  const laneReason =
+    `source_native:planner_unavailable (${primaryResultsCount} results / ` +
+    `${primaryNewEvidenceCount} evidence below thresholds)`;
 
-    const rawEvidence = await extractResearchEvidence(
-      targetClaim, fetchedSources, pipelineConfig, currentDate, state,
-    );
-    state.llmCalls++;
-    enTelemetry.rawEvidenceItems += rawEvidence.length;
-    const extractedSourceUrls = new Set(
-      rawEvidence
-        .map((item) => item.sourceUrl)
-        .filter((url): url is string => Boolean(url)),
-    );
-    enTelemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
-      (source) => !extractedSourceUrls.has(source.url),
-    ).length;
+  debugLog(
+    `[Stage2] Source-native supplementary lane enabled for claim ${targetClaim.id}, ` +
+    "but no LLM planner is registered in this slice; recording no-op telemetry.",
+  );
 
-    // EN lane evidence is traceable via searchQuery.languageLane="supplementary_en"
-    // and the source's searchQuery field — no separate tag needed on evidence items.
-
-    const { kept } = filterByProbativeValue(rawEvidence);
-    enTelemetry.losses.probativeFilteredOut += Math.max(
-      rawEvidence.length - kept.length,
-      0,
-    );
-    const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
-    const {
-      kept: cappedItems,
-      capped: cappedCount,
-      evictedIds,
-    } = applyPerSourceCap(kept, state.evidenceItems, maxPerSource);
-    enTelemetry.losses.perSourceCapDroppedNew += cappedCount;
-    enTelemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
-    if (evictedIds.length > 0) {
-      const evictedSet = new Set(evictedIds);
-      state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
-    }
-    state.evidenceItems.push(...cappedItems);
-    const claimLocalCappedItems = cappedItems.filter(
-      (item) => item.relevantClaimIds?.includes(targetClaim.id),
-    );
-    enTelemetry.admittedEvidenceItems += claimLocalCappedItems.length;
-    for (const item of claimLocalCappedItems) {
-      incrementDirectionCounts(enTelemetry.directionCounts, item.claimDirection);
-    }
-    recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
-  } catch (err) {
-    console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
-    enTelemetry.incomplete = true;
-    recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
-  }
+  const telemetry = createClaimIterationTelemetryEntry(
+    iterationIndex,
+    iterationType as SupplementaryIterationType,
+    [],
+    targetClaim.freshnessRequirement,
+    laneReason,
+    "source_native",
+  );
+  recordClaimIterationTelemetry(state, targetClaim.id, telemetry);
 }
 
 // ============================================================================

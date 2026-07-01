@@ -89,5 +89,11 @@
     "maxAdditionalQueriesPerClaim": 1,
     "minPrimaryEvidenceItems": 2,
     "applyInIterationTypes": ["main"]
+  },
+  "sourceNativeSupplementaryLane": {
+    "enabled": false,
+    "maxAdditionalQueriesPerClaim": 1,
+    "minPrimaryEvidenceItems": 2,
+    "applyInIterationTypes": ["main"]
   }
 }

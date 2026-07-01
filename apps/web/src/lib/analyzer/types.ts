@@ -309,10 +309,12 @@ export interface FactorAnalysis {
 // SEARCH & RESEARCH TYPES
 // ============================================================================
 
+export type RetrievalLanguageLaneId = "primary" | "supplementary_en" | "source_native";
+
 /** Describes a single retrieval language lane. */
 export interface RetrievalLanguageLane {
   language: string;
-  lane: "primary" | "supplementary_en";
+  lane: RetrievalLanguageLaneId;
   reason?: string;
 }
 
@@ -334,7 +336,7 @@ export interface SearchQuery {
   /** Error message if the search provider returned a fatal error (429, quota exhaustion) */
   error?: string;
   language?: string;
-  languageLane?: "primary" | "supplementary_en";
+  languageLane?: RetrievalLanguageLaneId;
   laneReason?: string;
 }
 
@@ -356,7 +358,7 @@ export interface ClaimAcquisitionIterationLosses {
 export interface ClaimAcquisitionIterationEntry {
   iteration: number;
   iterationType: "main" | "contradiction" | "contrarian" | "refinement";
-  languageLane: "primary" | "supplementary_en";
+  languageLane: RetrievalLanguageLaneId;
   freshnessRequirement?: ClaimFreshnessRequirement;
   generatedQueries: string[];
   searchResults: number;

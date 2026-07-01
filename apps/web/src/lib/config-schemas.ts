@@ -156,6 +156,15 @@ export const SearchConfigSchema = z.object({
     minPrimaryEvidenceItems: z.number().int().min(0).max(20).describe("Minimum evidence items from primary lane before EN lane activates (default 2)."),
     applyInIterationTypes: z.array(z.enum(["main", "contradiction", "contrarian"])).describe("Iteration types where EN lane is allowed (default: ['main'])."),
   }).optional().describe("Experimental English supplementary retrieval for non-English inputs. Default off."),
+
+  // Source-native supplementary retrieval lane scaffold. The LLM planner that
+  // selects target source languages/queries lands in a later reviewed slice.
+  sourceNativeSupplementaryLane: z.object({
+    enabled: z.boolean().describe("Enable source-native supplementary retrieval lane. Requires an LLM planner; current default is off."),
+    maxAdditionalQueriesPerClaim: z.number().int().min(0).max(3).describe("Max source-native queries to add per claim when a planner is available (default 1)."),
+    minPrimaryEvidenceItems: z.number().int().min(0).max(20).describe("Minimum primary-lane evidence items before source-native no-op/planner gating is considered (default 2)."),
+    applyInIterationTypes: z.array(z.enum(["main", "contradiction", "contrarian"])).describe("Iteration types where source-native supplementary retrieval is allowed (default: ['main'])."),
+  }).optional().describe("Default-off scaffold for future LLM-planned source-native retrieval."),
 });
 
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
@@ -247,6 +256,12 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   supplementaryEnglishLane: {
     enabled: false, // Default off — experimental
     triggerMode: "native_scarcity_only",
+    maxAdditionalQueriesPerClaim: 1,
+    minPrimaryEvidenceItems: 2,
+    applyInIterationTypes: ["main"],
+  },
+  sourceNativeSupplementaryLane: {
+    enabled: false,
     maxAdditionalQueriesPerClaim: 1,
     minPrimaryEvidenceItems: 2,
     applyInIterationTypes: ["main"],

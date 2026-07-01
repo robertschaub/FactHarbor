@@ -10,6 +10,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockClassifyRelevance = vi.fn().mockResolvedValue([]);
 const mockExtractResearchEvidence = vi.fn().mockResolvedValue([]);
+const mockSearchWebWithProvider = vi.fn().mockResolvedValue({
+  results: [{ url: "https://en.example.com/1", title: "EN Result", snippet: "s" }],
+  providersUsed: ["mock"],
+  errors: [],
+});
 
 vi.mock("@/lib/analyzer/research-extraction-stage", () => ({
   classifyRelevance: (...args: unknown[]) => mockClassifyRelevance(...args),
@@ -25,11 +30,7 @@ vi.mock("@/lib/analyzer/research-query-stage", () => ({
 }));
 
 vi.mock("@/lib/web-search", () => ({
-  searchWebWithProvider: vi.fn().mockResolvedValue({
-    results: [{ url: "https://en.example.com/1", title: "EN Result", snippet: "s" }],
-    providersUsed: ["mock"],
-    errors: [],
-  }),
+  searchWebWithProvider: (...args: unknown[]) => mockSearchWebWithProvider(...args),
 }));
 
 vi.mock("@/lib/analyzer/research-acquisition-stage", () => ({
@@ -96,7 +97,10 @@ vi.mock("@/lib/analyzer/debug", () => ({
 // IMPORT UNDER TEST
 // ============================================================================
 
-import { maybeRunSupplementaryEnglishLane } from "@/lib/analyzer/research-orchestrator";
+import {
+  maybeRunSupplementaryEnglishLane,
+  maybeRunSourceNativeSupplementaryLane,
+} from "@/lib/analyzer/research-orchestrator";
 import type { CBResearchState } from "@/lib/analyzer/types";
 
 // ============================================================================
@@ -209,5 +213,175 @@ describe("EN supplementary lane — geography argument (Fix 1)", () => {
     expect(callArgs).toHaveLength(6);
     // Falls back to inferredGeography "DE"
     expect(callArgs[5]).toEqual(["DE"]);
+  });
+});
+
+describe("source-native supplementary lane scaffold", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("accepts source_native as a typed retrieval lane", () => {
+    const query: import("@/lib/analyzer/types").SearchQuery = {
+      query: "source native query",
+      iteration: 1,
+      focus: "main",
+      resultsCount: 0,
+      timestamp: new Date().toISOString(),
+      language: "pt",
+      languageLane: "source_native",
+      laneReason: "source_native:planner_unavailable",
+    };
+
+    const iteration: import("@/lib/analyzer/types").ClaimAcquisitionIterationEntry = {
+      iteration: 1,
+      iterationType: "main",
+      languageLane: "source_native",
+      generatedQueries: [],
+      searchResults: 0,
+      relevanceAccepted: 0,
+      sourcesFetched: 0,
+      rawEvidenceItems: 0,
+      admittedEvidenceItems: 0,
+      directionCounts: { supports: 0, contradicts: 0, neutral: 0 },
+      losses: {
+        relevanceRejected: 0,
+        fetchRejected: 0,
+        sourcesWithoutEvidence: 0,
+        probativeFilteredOut: 0,
+        perSourceCapDroppedNew: 0,
+        perSourceCapEvictedExisting: 0,
+      },
+      laneReason: "source_native:planner_unavailable",
+    };
+
+    expect(query.languageLane).toBe("source_native");
+    expect(iteration.languageLane).toBe("source_native");
+  });
+
+  it("does nothing while source-native lane is disabled by default", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "A claim needing more evidence",
+      relevantGeographies: ["BR"],
+    } as any;
+    const state = makeState();
+
+    await maybeRunSourceNativeSupplementaryLane(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5, sourceNativeSupplementaryLane: { enabled: false } } as any,
+      makePipelineConfig(),
+      "2026-04-05",
+      state,
+      0,
+      0,
+    );
+
+    expect(mockSearchWebWithProvider).not.toHaveBeenCalled();
+    expect(state.searchQueries).toHaveLength(0);
+    expect(state.claimAcquisitionLedger?.AC_01?.iterations ?? []).toHaveLength(0);
+  });
+
+  it("records an explicit no-op telemetry entry when enabled before planner exists", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "A claim needing source-native evidence",
+      relevantGeographies: ["BR"],
+    } as any;
+    const state = makeState();
+    const llmCallsBefore = state.llmCalls;
+    const queryBudgetBefore = JSON.stringify(state.queryBudgetUsageByClaim ?? {});
+
+    await maybeRunSourceNativeSupplementaryLane(
+      claim,
+      "main",
+      {
+        maxSourcesPerIteration: 5,
+        sourceNativeSupplementaryLane: {
+          enabled: true,
+          applyInIterationTypes: ["main"],
+          minPrimaryEvidenceItems: 2,
+          maxAdditionalQueriesPerClaim: 1,
+        },
+      } as any,
+      makePipelineConfig(),
+      "2026-04-05",
+      state,
+      1,
+      0,
+    );
+
+    expect(mockSearchWebWithProvider).not.toHaveBeenCalled();
+    expect(state.searchQueries).toHaveLength(0);
+    expect(state.llmCalls).toBe(llmCallsBefore);
+    expect(JSON.stringify(state.queryBudgetUsageByClaim ?? {})).toBe(queryBudgetBefore);
+    const iterations = state.claimAcquisitionLedger.AC_01.iterations;
+    expect(iterations).toHaveLength(1);
+    expect(iterations[0]).toEqual(
+      expect.objectContaining({
+        languageLane: "source_native",
+        generatedQueries: [],
+        searchResults: 0,
+        admittedEvidenceItems: 0,
+      }),
+    );
+    expect(iterations[0].laneReason).toContain("source_native:planner_unavailable");
+  });
+
+  it("round-trips source_native and legacy missing languageLane through report JSON", () => {
+    const reportFragment = {
+      searchQueries: [
+        {
+          query: "legacy query",
+          iteration: 0,
+          focus: "main",
+          resultsCount: 0,
+          timestamp: "2026-04-05T00:00:00.000Z",
+        },
+        {
+          query: "source-native query",
+          iteration: 1,
+          focus: "main",
+          resultsCount: 0,
+          timestamp: "2026-04-05T00:00:00.000Z",
+          language: "pt",
+          languageLane: "source_native",
+          laneReason: "source_native:planner_unavailable",
+        },
+      ],
+      claimAcquisitionLedger: {
+        AC_01: {
+          iterations: [
+            {
+              iteration: 1,
+              iterationType: "main",
+              languageLane: "source_native",
+              generatedQueries: [],
+              searchResults: 0,
+              relevanceAccepted: 0,
+              sourcesFetched: 0,
+              rawEvidenceItems: 0,
+              admittedEvidenceItems: 0,
+              directionCounts: { supports: 0, contradicts: 0, neutral: 0 },
+              losses: {
+                relevanceRejected: 0,
+                fetchRejected: 0,
+                sourcesWithoutEvidence: 0,
+                probativeFilteredOut: 0,
+                perSourceCapDroppedNew: 0,
+                perSourceCapEvictedExisting: 0,
+              },
+              laneReason: "source_native:planner_unavailable",
+            },
+          ],
+        },
+      },
+    };
+
+    const parsed = JSON.parse(JSON.stringify(reportFragment));
+    expect(parsed.searchQueries[0].languageLane).toBeUndefined();
+    expect(parsed.searchQueries[1].languageLane).toBe("source_native");
+    expect(parsed.claimAcquisitionLedger.AC_01.iterations[0].languageLane).toBe("source_native");
   });
 });
