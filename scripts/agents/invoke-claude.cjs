@@ -83,15 +83,22 @@ function withDefaultArgs(args, settingsPath, env) {
   if (!hasFlag(finalArgs, '--effort')) finalArgs.unshift('--effort', defaults.effort || String(env.CLAUDE_CODE_EFFORT_LEVEL || 'xhigh'));
   if (!hasFlag(finalArgs, '--model')) finalArgs.unshift('--model', defaults.model);
   const effectiveEffort = getFlagValue(finalArgs, '--effort') || defaults.effort || null;
+  // Effort is passed only as the CLI session default via --effort (set above).
+  // It is deliberately NOT injected as the CLAUDE_CODE_EFFORT_LEVEL env var:
+  // that env var is a HARD FLOOR that overrides subagent/skill frontmatter and
+  // would defeat per-agent effort routing (scout=low, routine-dev=medium,
+  // long-haul/verify=high). --effort sets the session default, which frontmatter
+  // can still lower per task. Do NOT reintroduce a CLAUDE_CODE_EFFORT_LEVEL
+  // override here.
   return {
     profile: selected.profile,
     profileContract: {
       model: defaults.model,
       effort: defaults.effort,
+      effectiveEffort,
       contextWindow: defaults.contextWindow,
       contextResolution: defaults.contextResolution,
     },
-    envOverrides: effectiveEffort ? { CLAUDE_CODE_EFFORT_LEVEL: effectiveEffort } : {},
     args: finalArgs,
   };
 }
@@ -103,7 +110,6 @@ function main() {
   const finalArgs = invocation.args;
   const childEnv = { ...process.env };
   for (const [key, value] of Object.entries(env)) childEnv[key] = String(value);
-  for (const [key, value] of Object.entries(invocation.envOverrides)) childEnv[key] = String(value);
 
   if (process.env.FH_INVOKE_CLAUDE_DRY_RUN === '1') {
     process.stdout.write(`${JSON.stringify({
