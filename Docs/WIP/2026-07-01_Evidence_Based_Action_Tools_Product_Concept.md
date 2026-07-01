@@ -1,8 +1,8 @@
 # Evidence-Based Action Tools Product Concept
 
-**Status:** DRAFT — current design is the 3 consolidated tools in the "2026-07-01 refinement" section below. Session 2 (2026-07-01) also pruned superseded forward-looking content: the MVP 1/2/3 build sequence, the stale next-work packet, concept #10, and the #2 auth-gate framing. Session 3 (2026-07-01) restored three constraints that must survive the consolidation: non-surveilling agent enforcement for mutating actions, explicit outcome-learning closure, and the parked workplace/team-practice track.
+**Status:** DRAFT — current design is the 3 consolidated tools in the "2026-07-01 current concept" section below. Session 2 pruned superseded forward-looking content. Session 3 restored non-surveilling agent enforcement, outcome-learning closure, and the parked workplace/team track. Session 4 incorporated Estuarine Mapping: participatory domain orientation, substrate mapping, intervention portfolios, volatility/counterfactual boundaries, and map-based learning. Session 5 added concept diagrams only. Session 6 documented conceptual gaps and removed roadmap/spec-level forward planning.
 **Created:** 2026-07-01
-**Last Updated:** 2026-07-01 (session 3, Codex)
+**Last Updated:** 2026-07-01 (session 6, Codex)
 **Author Role:** Product Strategist + LLM Expert
 
 ---
@@ -13,7 +13,7 @@ This WIP captures a product direction proposed after the LinkedIn discussion abo
 
 > Decisions and actions should be evidence-based, whether they are human actions or AI-agent actions.
 
-The extension is the important part: if evidence is missing, the system should not pretend certainty or proceed by intuition alone. It should create evidence through bounded, reversible, observable probes before committing to higher-impact action.
+The extension is the important part: if evidence is missing, the system should not pretend certainty or proceed by intuition alone. It should create evidence through bounded, reversible, observable interventions before committing to higher-impact action.
 
 This is product discovery, not an approved roadmap. Any implementation path still needs Product Strategist, Lead Architect, and LLM Expert review.
 
@@ -22,7 +22,8 @@ This is product discovery, not an approved roadmap. Any implementation path stil
 - FactHarbor role in the broader program: evidence modelling, contested-claim analysis, reasoning transparency, and verifiable reports.
 - FactHarbor user needs: evidence transparency, source provenance, understanding uncertainty/consensus, professional API access, and social-media fact-checking.
 - FactHarbor quality model: quality gates, evidence quality defence, source reliability, source provenance tracking, and confidence calibration.
-- Cynefin: choose action mode based on situation type: clear, complicated, complex, chaotic, or disorder.
+- Cynefin: orient each coherent part of a situation before choosing an action mode; mixed situations should be decomposed rather than forced into one domain.
+- Estuarine Mapping: for complex situations, map the substrate (actors, constraints, and constructors), energy/time to change, counterfactual and volatile boundaries, then design a portfolio of micro-interventions.
 - BestWorkplace: iterate, make work visible, build psychological safety, empower teams, and use feedback loops instead of top-down certainty.
 - Evidence-based management: combine scientific evidence, organizational data, practitioner expertise, and stakeholder values/concerns.
 - Improvement science/PDSA: treat uncertain changes as small tests with explicit learning criteria.
@@ -32,68 +33,153 @@ This is product discovery, not an approved roadmap. Any implementation path stil
 Public references:
 
 - https://thecynefin.co/about-us/about-cynefin-framework
+- https://www.linkedin.com/posts/strategy-cynefin-decisionmaking-share-7478037566621982720-k4T7
+- https://thecynefin.co/effective-decision-making-support-tool/
+- https://cynefin.io/wiki/Estuarine_framework
+- https://cynefin.io/wiki/Constraint_mapping
+- https://cynefin.io/wiki/Vector_theory_of_change
+- https://thecynefin.co/sensemaker-algorithms-ai/
+- https://www.nature.com/articles/s44159-024-00305-0
 - https://hbr.org/2007/11/a-leaders-framework-for-decision-making
 - https://robertschaub.github.io/BestWorkplace
 - https://cebma.org/resources-and-tools/what-is-evidence-based-management/
 - https://www.ihi.org/resources/how-to-improve
 - https://www.nist.gov/itl/ai-risk-management-framework
 
-## 2026-07-01 refinement — debated, consolidated, plain-language, first live application
+## 2026-07-01 current concept
 
-*This section is the current state. It took the concept catalog below through two adversarial debates (`/debate`, FULL tier), consolidated it, translated it to plain language, and applied it to one real decision. Read this first; the fuller catalog further down is the raw material it draws on.*
+*This section is the current state. It took the original concept catalog through two adversarial debates (`/debate`, FULL tier), consolidated it to three tools, translated it to plain language, and later corrected the design with Estuarine Mapping. Read this first; later sections keep only supporting provenance, risks, and known gaps.*
 
 ### Two debates run
 
 1. **General design — "are these the right tools?"** → **MODIFY: consolidate to 3** (confidence INFERRED). Both consistency probes broke the larger set: failure-mode coverage only justifies ~3 tools, and a Decision Ledger + Agent Firewall pairing *reads as surveillance* — failing the human-psychology / agency-and-dignity requirement as a **design** flaw, not a deployment risk.
-2. **FactHarbor-specific — "build it during alpha?"** → **MODIFY: defer, dogfood only** (confidence INFERRED). Keep capacity on core analysis quality; the "non-rival dogfood" case rests on an unmeasured assumption (does the work compete for the same solo-founder hours?). Proposed gate: quality tripwires (calibrate against the n=1550 UNVERIFIED census, do not pin invented numbers) **+** a ≤2-founder-day internal probe with no new UX, before any product build. *This is a roadmap conclusion, separate from whether the tools are the right general design.*
+2. **FactHarbor-specific — "build it during alpha?"** → **MODIFY: defer build** (confidence INFERRED). Keep capacity on core analysis quality. Any future dogfood probe must be treated as evidence creation for the concept, not as an implicit commitment to product build.
+
+### Evidence assessment for the Estuarine revision
+
+- The supplied LinkedIn post (The Cynefin Company, 2026-07-01) links to Beth Smith's 2024 article distinguishing **Cynefin as orientation** from **Estuarine Mapping as action design in complexity**. The official Cynefin wiki adds the operational detail used here: decomposition, energy/time mapping, counterfactual and volatile boundaries, and intervention portfolios.
+- These are practitioner frameworks, not evidence that this product has demand or will improve decisions. They justify design hypotheses; KG1 demand and product-effectiveness claims still require direct probes.
+- A 2024 *Nature Reviews Psychology* review provides a narrower empirical anchor: across the synthesized domains, interventions targeting access and social support had stronger average effects than those targeting knowledge or beliefs; among individual determinants, habit-focused interventions also ranked above knowledge and beliefs. This supports designing beyond information-only or belief-correction interventions, but it does not validate Estuarine Mapping software or guarantee an effect in a specific context.
 
 ### The consolidated design — 3 tools (down from the component catalog below)
 
 | Tool | Absorbs (from catalog below) | Human face | Agent face |
 |---|---|---|---|
-| **Evidence Compass** | #1 Card, #4 Cynefin room, #5 Ledger, #7 Claim radar | guided intake infers the situation type → returns a regime (use-evidence / create-evidence→probe / decompose); records decision, load-bearing claims, assumptions, revisit trigger | regime-classification call + machine-readable claim ledger |
-| **Honest Inquiry Engine** | #3 Experiment Designer, #6 Emotional radar, #9 Dissent room | one pre-commit ritual: steelman + disconfirming-evidence hunt + bias-naming + premortem + calibrated/emotion-aware presentation + anonymous dissent — with a **named, separable Probe Designer sub-module** (hypothesis, stop-rule, reversibility, provenance) that fires on the create-evidence regime | disconfirming-evidence checks, named-bias flags, probe specs as discrete callable steps |
-| **Agent Provenance Contract** | #2 Firewall (scoped down), #8 Provenance graph | reader sees each agent claim's provenance block or a `no-evidence / probe-required` flag; the **human** decides high-impact gating via the Compass regime | declaration protocol: attach provenance or the honest no-evidence flag to every output — **no autonomous auth-gate** |
+| **Evidence Compass** | #1 Card, #4 Cynefin room, #5 Ledger, #7 Claim radar | participatory intake decomposes mixed situations into coherent parts, maps each part to a Cynefin domain, flags confusion/aporia and domain dissonance, and records claims, assumptions, evidence, and revisit triggers; a human confirms consequential orientations | proposes domain mappings with evidence, rationale, alternatives, and uncertainty; emits a machine-readable orientation ledger, not an opaque whole-system classification |
+| **Honest Inquiry & Intervention Engine** | #3 Experiment Designer, #6 Emotional radar, #9 Dissent room | combines the pre-commit inquiry ritual with two separable modules: an **Estuarine Action Mapper** (actors; constraints that shape possibilities; constructors that create repeatable transformations; energy/time; boundaries; intervention portfolio) and a **Probe Designer** (hypothesis or directional intent, stop rule, reversibility, harms, provenance, sensing plan) | surfaces disconfirming evidence and unattributed effects; proposes substrate maps and portfolios for human review; creates callable probe, monitoring, amplification, and dampening specifications |
+| **Agent Provenance Contract** | #2 Firewall (scoped down), #8 Provenance graph | readers see provenance or a `no-evidence / probe-required` flag; action proposals also expose domain, map item, authority boundary, reversibility, and learning triggers | declaration protocol for outputs; a separate capability-side guard checks mutating/external actions against the approved map and escalates high-impact, cross-boundary, or domain-shifted actions to a human |
 
-Key design rulings: (a) keep the Probe Designer hard-edged and separable — it is the only generator of *created* evidence and must never dissolve into soft ritual; (b) replace the "firewall" with a **declaration protocol** to remove the surveillance substrate the red line forbids; (c) embed the Cynefin triage *inside* Compass intake rather than as a standalone router (a standalone classifier is a single point of cascade failure — misroute once and everything downstream runs on the wrong evidence regime). Surveillance of people is not the same as gating an AI agent's high-impact tool use: the red line forbids the first, while AI-risk control requires the second. A workplace-practice-coach concept was dropped as out of core for FactHarbor alpha, not invalidated as a future or adjacent product track.
+Key design rulings:
+
+- **Orient, do not label.** Cynefin intake must decompose mixed situations and preserve alternative perspectives. AI may propose an orientation, but it must not silently assign one domain to an entire consequential situation.
+- **Keep Cynefin and Estuarine roles distinct.** Compass identifies the kind of response needed. The Estuarine Action Mapper turns a complex situation into an actionable substrate map. Every resulting intervention is mapped back to Cynefin because a portfolio can contain clear, complicated, complex, and chaotic actions.
+- **Map before prioritising.** Identify actors, constraints, constructors, energy/time to change, the currently counterfactual area (not changeable from the present perspective), external-authority/liminal area, and volatile area before selecting work. Easy and fast to change can mean fragile or dangerous, not "low-hanging fruit."
+- **Use portfolios, not a single bet.** Complex contexts require multiple small, coherent interventions with sensing, containment, and explicit conditions to amplify, dampen, stop, stabilise, or monitor.
+- **Change conditions before trying to change people.** Prefer changes to access, roles, connections, constraints, incentives, and support. Stakeholders remain interpreters of their own experience; the system must not infer hidden emotions or treat people as optimisation targets.
+- **Keep the Probe Designer hard-edged and separable.** It creates evidence, while inquiry protects against motivated reasoning and the Estuarine map determines where probes are coherent.
+- **Separate observation from enforcement.** Surveillance of people is forbidden; capability control for high-impact agent actions is required. Output provenance remains declarative, while mutating/external actions use a non-surveilling, risk-aware guard and human escalation.
+
+A workplace-practice-coach concept remains out of core for FactHarbor alpha, not invalidated as a future or adjacent product track.
 
 Preserved constraints from the original proposal:
 
 - **Agent action enforcement is still needed for mutating/external actions.** The lighter Agent Provenance Contract is right for agent outputs and human-facing review, but declaration alone may be too weak when an agent can spend money, publish, modify production state, change configuration, send messages, or create irreversible side effects. The next design pass must find a non-surveilling capability-side guard: risk/reversibility-aware, evidence-aware, and human-escalating for high-impact actions.
-- **Outcome-learning closure is non-negotiable.** Every accepted action or probe should record the expected outcome, revisit trigger, observed result, and what changed in the evidence base. Without this loop, the product degrades into decision justification rather than evidence-based learning.
+- **Outcome-learning closure is non-negotiable.** Every accepted action or probe should record the expected directional shift, sensing/revisit trigger, observed effects (including harms and surprises), relevant context, the response taken (amplify/dampen/stop/stabilise), and what changed in the evidence base and substrate map. In complex settings, an observed shift is contextual evidence, not automatic proof of a universal causal rule.
 - **BestWorkplace remains a parked adjacent track.** The workplace-practice coach is out of core for the current FactHarbor alpha build, but the underlying need remains: help teams improve psychological safety, transparency, iteration, and decision quality through evidence and bounded experiments rather than slogans or surveillance.
 
 ### Plain-language version (the "explain it to anyone" cut)
 
-The whole idea in three sentences:
+The whole idea in four steps:
 
-> People — and AI agents — make most decisions on shaky ground. These tools (1) make the *evidence behind a decision* visible and honest before you act, and (2) when the evidence isn't there, help you run a *small, cheap, safe test* to get it instead of guessing or freezing.
+> Make the evidence and uncertainty visible. Work out what kind of situation each part belongs to. In complex situations, map what shapes the system and run a small portfolio of safe-to-fail changes rather than betting on one solution. Watch what shifts, contain harm, and update the map before deciding what to amplify or stop.
 
-Make-or-break principle: **they must feel like a teammate ("let's figure this out together"), not a watchdog ("prove you followed the process").** The watchdog version gets routed around — which is the human-psychology requirement failing in practice.
+Make-or-break principles: **the tools must feel like a teammate ("let's figure this out together"), not a watchdog ("prove you followed the process"), and they should improve the conditions around people before attempting to correct people.** A watchdog or personality-scoring product will be routed around and will damage the psychological safety needed for honest evidence.
+
+### Concept diagrams
+
+These diagrams show the concept boundary. They are not a UI flow, data model, or implementation specification.
+
+**1. Evidence-based action loop**
+
+```mermaid
+flowchart TD
+    A["Proposed action or decision"] --> B["Make evidence, uncertainty, risk, and reversibility visible"]
+    B --> C["Orient the situation part by part"]
+    C --> D{"Evidence sufficient for current risk?"}
+    D -->|Yes| E["Approve, guard, or execute"]
+    D -->|No| F["Create evidence through bounded interventions"]
+    F --> G{"Complex uncertainty?"}
+    G -->|Yes| H["Map substrate: actors, constraints, constructors, energy/time, boundaries"]
+    G -->|No| I["Design a bounded probe"]
+    H --> J["Run a small intervention portfolio"]
+    I --> J
+    E --> K["Sense intended, unintended, and harmful effects"]
+    J --> K
+    K --> L["Update evidence, decision memory, and substrate map"]
+    L --> B
+```
+
+**2. Three-tool relationship**
+
+```mermaid
+flowchart LR
+    H["Humans<br/>decide, contest, confirm meaning"] <--> EC["Evidence Compass<br/>claims, assumptions, evidence, uncertainty, orientation"]
+    EC --> HI["Honest Inquiry & Intervention Engine<br/>Estuarine map, probe portfolio, dissent"]
+    HI --> AP["Agent Provenance Contract<br/>output provenance, authority boundary, action guard"]
+    A["AI agents<br/>propose, document, request authority"] --> EC
+    A --> HI
+    A --> AP
+    EC --> M["Decision memory and learning ledger"]
+    HI --> M
+    AP --> M
+    M --> EC
+```
+
+**3. Human dignity and agent control boundary**
+
+```mermaid
+flowchart LR
+    subgraph HumanSide["Human side"]
+        H1["Participant-provided or self-signified signals"] --> H2["Summarize with provenance and uncertainty"]
+        H2 --> H3["Use to protect stakeholders and improve conditions"]
+        H2 -.-> H4["Red line: no passive surveillance or hidden emotion/personality scoring"]
+    end
+
+    subgraph AgentSide["Agent side"]
+        A1["Mutating or external agent action"] --> A2["Check evidence, reversibility, authority, and map fit"]
+        A2 --> A3{"Low-risk and within approved boundary?"}
+        A3 -->|Yes| A4["Proceed and log provenance"]
+        A3 -->|No| A5["Escalate to human"]
+    end
+
+    H3 -.->|separate from| A2
+```
 
 Worked examples used to explain it (rendered as in-session visuals, not embedded here):
 - **Hiring:** "should we hire X?" → name the bet (a good interview ≈ weak proof) → create evidence with a small paid trial task → the AI shows why it ranked a CV and never rejects a person on its own (dignity).
 - (Earlier, discarded as too generic: a live-chat-button decision.)
 
-### First live application — "which path for Our AI Charter?"
+### Charter application caveat
 
-Ran the founder's real decision through the three tools as the first test. The charter itself lives in `Docs/Initiatives/our-ai-charter/` and `github.com/robertschaub/our-ai-charter`; this is only the *tools applied* to the path decision, not charter strategy.
+The founder's Our AI Charter path decision was used as an early teaching example. **Session 4 correction:** this was an orientation and probe sketch, not a complete live application, because it did not map the substrate, energy/time to change, counterfactual/volatile boundaries, or intervention dependencies. Do not treat its provisional recommendation as validated by the revised design. The charter itself lives in `Docs/Initiatives/our-ai-charter/` and `github.com/robertschaub/our-ai-charter`; this note is only about the tools, not charter strategy.
 
-- **The three paths** (from the initiative's own records): **A** movement/manifesto (resonance + coalition); **B** the audit standard (grounding-faithfulness + contestability — the landscape finding that factual-*output* certification is unclaimed white space); **C** author + federate (write the standard as IP, hand execution to a host — RSF/JTI annex or AI Alliance Trust & Safety WG).
-- **Tool 1 (classify):** a *complex* / "we don't know yet" decision, not a "think harder" one. The desk analysis is already done (multiple landscape investigations + GPT/Gemini red-teams); the missing input is real-world traction signal.
-- **Tool 2 (create evidence):** don't commit — run one small time-boxed probe per path (~3 weeks, success signal set in advance) and let traction pick. Cheapest first = take the existing 1-page GFC protocol to **one real door** (AI Alliance WG / RSF–JTI), because it's cheapest to test and rests on the strongest existing evidence (open white space).
-- **Tool 3 (honesty):** the two facts that should decide it — how the published manifesto was actually received, and whether any door has opened — are not in hand. Getting them *is* the test; do not guess them.
-- **Recommendation:** don't pick from the chair; **probe B/C first**, read Path A's already-running signal (the published-manifesto response), let traction decide.
+What the example still preserves: the tools should expose that a decision is genuinely uncertain, identify the missing evidence, and prevent the team from turning an early probe sketch into a validated strategy.
 
-### Revised open items / next steps
+### Conceptual gaps before spec
 
-1. **Close the two design gaps before any build:** KG1 (real demand for these tools vs lighter alternatives?) and KG4 (the shared human/agent evidence substrate is asserted, not designed). Both are themselves create-evidence (probe) questions.
-2. **Validator caveats to resolve:** R3 "feels like a teammate" is asserted, not validated; guard the Probe Designer against atrophying into ceremony; find a non-surveilling way to verify agent provenance honesty.
-3. **FactHarbor track:** hold to the defer-and-dogfood gate (quality tripwires calibrated to the census + ≤2-day no-UX internal probe) before committing build capacity.
-4. **Charter track (if pursued):** draft the three path-probes with pre-set success signals + dates, or narrow now if the manifesto-response signal already exists.
-5. **Agent enforcement boundary:** distinguish output provenance from mutating-action capability control. Do not ship an autonomous auth-gate that feels like surveillance, but also do not rely on pure declaration for high-impact agent tool use.
-6. **Learning-loop acceptance criterion:** define the minimum ledger fields for prediction, follow-up, observed outcome, and evidence-base update before any dogfood probe counts as successful.
-7. **Workplace/team track:** keep BestWorkplace as a parked future concept unless Captain explicitly pulls it into scope; if revived, design it as team learning support, not employee monitoring.
+These are concept gaps, not a build backlog. They should be resolved only if the concept is deliberately moved into discovery, spec, or implementation.
+
+| Gap | Why it matters |
+|---|---|
+| **First wedge / first user** | "Humans and AI agents" is directionally right but too broad for a first product. The concept does not yet choose between founder/PM, leadership team, AI-agent builder, compliance/audit, or FactHarbor-internal dogfood as the first wedge. |
+| **Evidence threshold by risk** | The rule "actions must be evidence-based" still needs a risk-sensitive interpretation. Low-risk reversible actions, high-impact external actions, and irreversible actions cannot require the same evidence standard. |
+| **Evidence creation boundary** | Bounded interventions create contextual evidence, not universal proof. The concept must prevent small probes from becoming pseudo-certainty or post-hoc justification. |
+| **Minimum usable Estuarine map** | The current map is faithful to complexity but may be too heavy without facilitation. The unresolved concept question is the smallest non-expert map that changes a decision without importing the whole method. |
+| **Authority and override model** | The concept names human escalation but does not yet define who can approve, override, contest, stop, or reopen a consequential action. |
+| **Anti-evidence-theatre mechanism** | Users and agents can attach evidence-looking artifacts to pre-decided actions. The concept needs a stronger challengeability rule: evidence must be contestable, provenance-visible, and able to change the action. |
+| **Agent failure modes** | The concept needs explicit treatment of fabricated provenance, stale evidence, hidden tool calls, action drift after approval, and overconfident extrapolation from local observations. |
+| **Adoption psychology** | The tool must feel like a teammate, not a watchdog. The concept still needs evidence that the workflow lowers cognitive/emotional load instead of adding bureaucracy. |
+| **Workplace/team boundary** | BestWorkplace remains a valid adjacent track, but any team-facing product must stay participant-owned and environmental, not emotion inference, employee scoring, or surveillance. |
 
 ---
 
@@ -111,11 +197,14 @@ The core workflow:
 
 ```text
 Proposed action
--> evidence check
--> risk / reversibility / confidence assessment
--> act, experiment, escalate, or stop
--> measure outcome
--> update decision memory
+-> expose claims, evidence, uncertainty, risk, and reversibility
+-> decompose the situation and orient each coherent part with Cynefin
+-> if complex: map substrate, energy/time, and operating boundaries
+-> design a portfolio; map each intervention back to Cynefin
+-> approve, guard, execute, or escalate each action
+-> sense intended, unintended, and harmful effects
+-> amplify, dampen, stop, stabilise, or monitor
+-> update evidence, decision memory, and the substrate map
 ```
 
 ## Primary Users
@@ -128,153 +217,22 @@ Proposed action
 | Reviewer / auditor | Trace what evidence supported an action and whether the outcome matched the prediction. |
 | Contributor / employee | Raise concerns without being dismissed as negative or emotional. |
 
-## Component detail (feeds the 3 consolidated tools)
+## Component provenance
 
-*The current top-level design is the three tools in the 2026-07-01 section above. The items below are the build-level detail each tool draws on — kept as raw material, not as the current design. (#2 is scoped down; a #10 workplace-practice-coach concept was dropped as out of core.)*
+The original catalog has been compressed so this WIP remains a concept, not a specification. The current design is the three-tool model above.
 
-### 1. Evidence-to-Action Card
-
-A compact object attached to every meaningful decision or action.
-
-Minimum fields:
-
-- Proposed action
-- Decision owner
-- Claim or assumption being relied on
-- Evidence items and source links
-- Confidence and uncertainty drivers
-- Risk level and affected stakeholders
-- Reversibility
-- Expected outcome
-- What would change our mind
-- Follow-up date or measurement event
-
-For AI agents, this becomes a machine-readable pre-action contract.
-
-### 2. Agent Evidence Firewall
-
-> **Superseded 2026-07-01:** the hard auth-gate / risk-tier framing below is **not** adopted — it read as surveillance. The forward design is the lighter **Agent Provenance Contract** (declaration protocol) in the current-design section above. Kept only as the origin of that idea.
-
-A guard layer for agent actions.
-
-Purpose:
-
-- Permit low-risk actions with light evidence.
-- Require evidence, rollback plan, and expected outcome for high-impact actions.
-- Switch the agent into evidence-creation mode when evidence is missing.
-- Block or escalate actions whose impact exceeds evidence quality.
-
-Example policy shape:
-
-| Action risk | Evidence requirement | Allowed outcome |
-|---|---|---|
-| Low, reversible | Basic rationale and local context | Act and log. |
-| Medium | Evidence-to-Action Card + rollback | Act after review or bounded autonomy. |
-| High | Strong evidence + human approval + monitoring | Escalate before acting. |
-| Unknown evidence | Evidence gap record | Create evidence first. |
-
-### 3. Evidence Gap & Experiment Designer
-
-When evidence is missing, this tool designs the smallest responsible way to create it.
-
-Outputs:
-
-- Hypothesis
-- Evidence gap
-- Probe type: interview, benchmark, simulation, A/B test, PDSA cycle, prototype, red-team test, or operational dry run
-- Metric
-- Minimum useful sample
-- Stop rule
-- Harm guard
-- Decision threshold
-
-This is the product expression of “no evidence, then create evidence.”
-
-### 4. Cynefin Sensemaking Room
-
-A team and agent workspace that first classifies the situation before prescribing action.
-
-| Domain | Product behavior |
+| Original idea | Current status |
 |---|---|
-| Clear | Apply known practice; verify the relevant facts. |
-| Complicated | Gather expertise; compare options and trade-offs. |
-| Complex | Run multiple safe-to-fail probes before committing. |
-| Chaotic | Stabilize first; defer optimization and learning until the situation is safe enough. |
-| Disorder | Split the problem until domains can be separated. |
-
-This prevents teams and agents from using a “best practice” mode when the situation is actually complex.
-
-### 5. Decision Memory & Learning Ledger
-
-A durable log of decisions, evidence, predictions, actions, and outcomes.
-
-Key value:
-
-- Turns decisions into learnable assets.
-- Lets teams compare predicted versus observed outcomes.
-- Gives agents auditable memory without relying on hidden context.
-- Helps identify where evidence rules are too strict, too loose, or missing.
-
-### 6. Emotional & Stakeholder Signal Radar
-
-Emotions should be treated as evidence about human impact, not as proof of factual truth.
-
-Signals to capture:
-
-- Fear or perceived threat
-- Trust level
-- Perceived fairness
-- Shame or blame risk
-- Psychological safety
-- Motivation and resistance
-- Stakeholder incentives
-
-Product rule:
-
-> Emotional evidence should shape action design and stakeholder protection, but it should not replace factual evidence for factual claims.
-
-### 7. Claim / Assumption Radar
-
-A scanner for strategy docs, meeting notes, PRs, product specs, and agent plans.
-
-It extracts:
-
-- Actionable claims
-- Hidden assumptions
-- Predictions
-- Unsupported causal statements
-- Risk claims
-- Evidence gaps
-
-Each item is routed to FactHarbor verification or to the Experiment Designer.
-
-### 8. Evidence Provenance & Independence Graph
-
-Extends source reliability from “where was it published?” to “who originated it, and how independent is the evidence?”
-
-Relevant patterns:
-
-- Single-source amplification
-- Attribution washing
-- Wire-service repetition
-- Advocacy or vendor-originated claims repeated by neutral-looking outlets
-- Agent overconfidence caused by non-independent sources
-
-This aligns with the existing planned source provenance direction in FactHarbor.
-
-### 9. Evidence-Backed Dissent Room
-
-A structured review surface for disagreement.
-
-Objections should be classified as:
-
-- Evidence-backed counterevidence
-- Risk concern
-- Stakeholder concern
-- Values conflict
-- Unsupported doubt
-
-Only evidence-backed counterevidence changes factual confidence. Risk, stakeholder, and values concerns still affect whether and how to act.
+| Evidence-to-Action Card | Absorbed into **Evidence Compass** as the decision/evidence object. Field-level schema is intentionally deferred. |
+| Agent Evidence Firewall | Superseded as a hard auth-gate framing because it read as surveillance. The retained need is a separate, non-surveilling capability guard for mutating/external agent actions. |
+| Evidence Gap / Experiment Designer | Absorbed into **Honest Inquiry & Intervention Engine** as bounded evidence creation and intervention portfolio design. |
+| Cynefin Sensemaking Room | Absorbed into **Evidence Compass** as participatory orientation and decomposition. |
+| Decision Memory & Learning Ledger | Retained as the learning substrate across all three tools. |
+| Emotional & Stakeholder Signal Radar | Retained only as participant-provided or self-signified impact data; no passive inference, scoring, or surveillance. |
+| Claim / Assumption Radar | Absorbed into **Evidence Compass** as load-bearing claim and assumption capture. |
+| Evidence Provenance & Independence Graph | Absorbed into **Agent Provenance Contract** and the shared evidence substrate. |
+| Evidence-Backed Dissent Room | Absorbed into **Honest Inquiry & Intervention Engine** as contestation and dissent handling. |
+| Workplace-practice coach | Parked as an adjacent future track, not part of the FactHarbor alpha concept. |
 
 ## Product Risks
 
@@ -283,23 +241,44 @@ Only evidence-backed counterevidence changes factual confidence. Risk, stakehold
 | Evidence theatre: users attach weak evidence to justify pre-decided action. | Require counterevidence search, source independence checks, and “what would change our mind.” |
 | Agent blockage: evidence requirements make agents too slow. | Tier requirements by risk and reversibility. |
 | Emotional signals become manipulative or over-weighted. | Treat emotions as impact and adoption evidence, not as factual truth. |
-| Complex situations are forced into simple scoring. | Use Cynefin routing and safe-to-fail probes. |
-| Tool becomes bureaucracy. | Keep the card compact and auto-fill from existing reports where possible. |
+| Complex situations are forced into simple scoring. | Use Cynefin orientation, decomposition, and safe-to-fail probes. |
+| Tool becomes bureaucracy. | Keep the evidence object compact; require proof that extra structure changes decisions. |
 | Privacy or workplace surveillance concerns. | Use aggregation, consent, minimization, and strict access controls before any team/emotion feature. |
+| Domain cascade: one wrong orientation corrupts downstream action. | Decompose mixed situations, preserve alternatives, require human confirmation for consequential work, and reopen orientation when conditions shift. |
+| The easiest item is treated as low-hanging fruit although it is volatile. | Draw the volatile boundary and assess impact before prioritisation; stabilise high-impact volatile items first. |
+| A map is mistaken for objective reality. | Record perspective, evidence, uncertainty, dissent, and version; treat the map as a guide to attention, not a substitute for lived observation. |
+| A successful local probe is presented as universal causal proof. | Record context and observed pattern shifts; require stronger designs before making general causal claims. |
+| Facilitation or AI framing suppresses minority knowledge. | Gather perspectives independently where practical, expose unattributed effects, and use disagreement as a decomposition signal rather than forcing consensus. |
 
-## Open Questions
+## Resolved concept choices (2026-07-01 wizard)
 
-1. Should the first product be a standalone “Decision Ledger” app, or a layer inside the existing FactHarbor job/report UI?
-2. Which actions should be guarded first: code changes, product decisions, public claims, team/workplace changes, or AI-agent tool calls?
-3. What risk taxonomy should control evidence requirements?
-4. How much autonomy should agents have to create evidence without human approval?
-5. Which source of evidence should be accepted first beyond documents: interviews, telemetry, benchmarks, incident logs, surveys, or experiments?
-6. Should Cynefin classification be LLM-assessed, human-selected, or hybrid?
-7. How should psychological safety and emotional signals be captured without creating surveillance or performative compliance?
+Seven of the open questions were resolved with the founder via a guided wizard (recommendation-first, with alternatives):
 
-## Next steps
+| # | Question | Decision |
+|---|---|---|
+| 1 | First form | **Standalone Decision Ledger app + service** remains the possible long-run product shape; no build sequence is committed in this concept. |
+| 2 | Which actions to guard first | **Any** — action-type-agnostic; a Card can wrap an agent call, a public claim, a code change, or a roadmap decision. |
+| 3 | Risk model | **Reversibility + blast-radius** — one uniform model for any action; irreversible/external side-effects auto-escalate. This is what makes "any" (#2) tractable without per-type rules. |
+| 4 | Agent autonomy | **Autonomous only if the probe is safe-to-fail** (reversible, bounded, no external side-effects); anything that spends/publishes/mutates escalates to a human. |
+| 5 | Evidence sources | **All** — the evidence-item shape (source + provenance + independence) is source-agnostic, so new source types are data, not new code. Bootstrap with telemetry + probe results (already available). |
+| 6 | Cynefin orientation | **Hybrid** — a short guided question sequence; the LLM proposes an orientation, the human inspects, contests, and confirms or overrides. No opaque auto-classifier (avoids cascade failure). |
+| 7 | Emotion / psych-safety signals | **Voluntary, anonymous, aggregate, decision-attached** — participant-provided, never per-person, never a score. The only form consistent with agency/dignity and the no-surveillance red line. |
 
-See **Revised open items / next steps** in the 2026-07-01 current-design section above. (The earlier "build MVP 1 = Card + Firewall now" packet was removed: the debate concluded defer-and-dogfood, and the Firewall was scoped down.)
+**Shape of these answers:** broad on what the concept could become, disciplined on the boundaries that protect trust: uniform risk model, safe-to-fail autonomy bound, human-confirmable orientation, and anonymised/participant-owned human signals.
+
+### Starting hypothesis, if this graduates to a spec (non-binding)
+
+Not a build commitment (see Spec boundary) — just the founder's preferred way to *start*, captured from the wizard so it isn't lost. Use the tool on itself, smallest step first:
+
+1. **Define the Card schema, not an app** (~1 day) — the one object the app and service both revolve around.
+2. **Dogfood it as a plain-file / CLI log for ~3 weeks** — the safe-to-fail probe that tests the schema and produces the demand/feasibility evidence (KG1) at near-zero cost.
+3. **Then a thin service / API, then the thinnest app** — each only if the prior step earns it.
+
+Stages 1+ wait for both a dogfood signal and the FactHarbor quality gate (same solo-founder hours).
+
+## Spec boundary
+
+This document is intentionally not a product specification. It does not define screens, schemas, prompts, API contracts, data retention, acceptance criteria, or a committed build sequence (the starting hypothesis above is explicitly non-binding). The concept should only move into specification after the gaps above are deliberately accepted, narrowed, or tested.
 
 ## Related Local Docs
 
