@@ -80,6 +80,10 @@ Thumbs.db
 /config.db-shm
 /config.db-wal
 /config.db-journal
+/search-cache.db
+/search-cache.db-shm
+/search-cache.db-wal
+/search-cache.db-journal
 apps/api/*.db
 apps/api/*.db-shm
 apps/api/*.db-wal
