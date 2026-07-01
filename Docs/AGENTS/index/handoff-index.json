@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-17T22:34:24.649Z",
-  "count": 23,
+  "generatedAt": "2026-07-01T19:46:53.448Z",
+  "count": 34,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -386,6 +386,107 @@
       "summary": "Senior Developer Handoff - Stage 4 Citation/Grounding Execution Plan"
     },
     {
+      "file": "2026-06-18_Senior_Developer_Analysis_Improvement_Strategy.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "analysis",
+        "improvement",
+        "strategy"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat this as the execution order: (1) diagnostic attribution baseline over stored reports/current builds; (2) stage isolation for retrieval vs D5/Stage4; (3) source-reliability/input-policy ownership fixes; (4) generic retrieval-language planner; (5) measured D5/Stage4 sufficiency path; (6) selecti"
+    },
+    {
+      "file": "2026-06-18_Senior_Developer_Analysis_Quality_Consolidated_Plan.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "analysis",
+        "quality",
+        "consolidated",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Analysis_Quality_Consolidated_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start at `Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md`. Use only Captain-defined inputs. Do not run paid live jobs before a committed, locally verified fix and runtime refresh."
+    },
+    {
+      "file": "2026-06-18_Senior_Developer_Phase1_Attribution_Diagnostic.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "phase1",
+        "attribution",
+        "diagnostic"
+      ],
+      "files_touched": [
+        "scripts/diag/current-build-failure-attribution.cjs",
+        "Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Phase1_Attribution_Diagnostic.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Run `node scripts/diag/current-build-failure-attribution.cjs --build 0396ea47`, `--build 6b9c562f`, or `--latest-verified`. Use the diagnostic to route Phase 2 fixture construction, not to authorize behavior edits. Stage2/D5 behavior edits still require failed-attempt recovery from baseline `0396ea4"
+    },
+    {
+      "file": "2026-06-18_Senior_Developer_Phase4_Source_Native_Scaffold.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "phase4",
+        "source",
+        "native",
+        "scaffold"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/search.default.json",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/en-supplementary-lane-geography.test.ts",
+        "apps/web/test/unit/lib/analyzer/analysis-stage-fixtures.test.ts",
+        "Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Phase4_Source_Native_Scaffold.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Start from `Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md` Phase 4 Status. Use the shared `executeSupplementaryLanguageLane` path for any future source-native planner output. Verification already passed: focused supplementary lane, fixture D5 isolation, config drift, primary-so"
+    },
+    {
+      "file": "2026-06-18_Senior_Developer_Prompt_History_Audit_Plan.md",
+      "date": "2026-06-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "prompt",
+        "history",
+        "audit",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Prompt_History_Audit_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with P0-A: inspect `apps/web/src/lib/source-reliability/sr-eval-engine.ts`, `apps/web/src/lib/source-reliability/sr-eval-prompts.ts`, `apps/web/src/lib/source-reliability/sr-eval-enrichment.ts`, and `apps/web/prompts/source-reliability.prompt.md`; choose a single prompt owner or explicitly mar"
+    },
+    {
       "file": "2026-06-18_Senior_Developer_Stage2_D5_Recovery.md",
       "date": "2026-06-18",
       "roles": [
@@ -403,6 +504,140 @@
         "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
       ],
       "summary": "Start by recording `ATTEMPT 2` with baseline `0396ea47` before editing. Do not rerun the rest of the Captain batch; the stop criterion already fired on the two-job rerun. Focus local diagnosis on retrieval-language planning for English Bolsonaro and decisive authoritative metric sufficiency for asyl"
+    },
+    {
+      "file": "2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md",
+      "date": "2026-06-30",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "evidence",
+        "action",
+        "tools",
+        "proposal"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Main product thesis: FactHarbor can expand from \"is this claim supported?\" to \"is this decision/action justified, and if not, what evidence should we create next?\" Preserve the distinction between using evidence, creating evidence, and blocking/escalating high-impact action."
+    },
+    {
+      "file": "2026-07-01_Agents_Supervisor_Codex_Model_Routing_Investigation.md",
+      "date": "2026-07-01",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "codex",
+        "model",
+        "routing",
+        "investigation"
+      ],
+      "files_touched": [
+        ".codex/agents/scout.toml",
+        ".codex/agents/routine-dev.toml",
+        ".codex/agents/long-haul.toml",
+        ".codex/agents/verify.toml",
+        "Docs/AGENTS/Handoffs/2026-07-01_Agents_Supervisor_Codex_Model_Routing_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "If these agents need adjustment, keep them standalone unless there is a concrete need for `.codex/config.toml`. Keep model names unset by default; tune `model_reasoning_effort` first. `verify` should remain adversarial and non-mutating; if tests cannot run in read-only mode, report the command as a "
+    },
+    {
+      "file": "2026-07-01_Product_Strategist_LLM_Expert_Concept_Diagrams.md",
+      "date": "2026-07-01",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "concept",
+        "diagrams"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
+        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Diagrams.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/"
+      ],
+      "summary": "Start at the \"Concept diagrams\" subsection in `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. Preserve the diagram intent: clarify the concept, keep the 3-tool count, and avoid spec-level detail."
+    },
+    {
+      "file": "2026-07-01_Product_Strategist_LLM_Expert_Concept_Gaps_Consolidation.md",
+      "date": "2026-07-01",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "concept",
+        "gaps",
+        "consolidation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Gaps_Consolidation.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/"
+      ],
+      "summary": "Start at `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` sections \"2026-07-01 current concept\", \"Conceptual gaps before spec\", and \"Spec boundary\". Treat this as concept documentation only."
+    },
+    {
+      "file": "2026-07-01_Product_Strategist_LLM_Expert_Estuarine_Product_Revision.md",
+      "date": "2026-07-01",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "estuarine",
+        "product",
+        "revision"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Estuarine_Product_Revision.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/"
+      ],
+      "summary": "Start with the current-state section of `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. Preserve these requirements: decompose mixed situations; map before prioritising; treat easy/fast change as potentially volatile; use intervention portfolios; remap each intervention to Cyne"
+    },
+    {
+      "file": "2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md",
+      "date": "2026-07-01",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "evidence",
+        "action",
+        "wip",
+        "documentation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start at `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`; the recommended next work packet is already listed near the end of that file."
     }
   ]
 }

@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-06-17
-**Status**: Consolidation #13 complete. 26 WIP files archived. 68 active files remain.
+**Last Updated**: 2026-07-01
+**Status**: Consolidation #13 complete. 26 WIP files archived. 70 active files remain.
 
 ---
 
@@ -29,6 +29,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Active Engineering / Quality Tracks
 
 ### Current June quality / cleanup tracks
+- [2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md](2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md) — current consolidated execution order for analysis-quality improvement after the June 18 failed rerun; start here before further pipeline, prompt, UCM, or live-validation work
 - [2026-06-17_Clean_Main_Next_Cleanup_Plan.md](2026-06-17_Clean_Main_Next_Cleanup_Plan.md) — post-consolidation execution plan after F2 smoke validation; current recommended sequence for clean-main recovery
 - [2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md](2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md) — reviewed first implementation slice for Stage 4 citation/grounding integrity; start here before code edits
 - [2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md](2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md) — current consolidated best-report/regression findings; supersedes the May 31 best-commit strategy
@@ -82,6 +83,9 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ---
 
 ## Future Plans / Design Proposals
+
+### Product / agent action tools
+- [2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md](2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md) — draft product concept for evidence-based human and AI-agent actions; current 3-tool design: Evidence Compass, Honest Inquiry & Intervention Engine, and Agent Provenance Contract; includes Estuarine substrate mapping, intervention portfolios, concept diagrams, and a consolidated "conceptual gaps before spec" table; no build path or product specification is currently committed
 
 ### Quality / analyzer
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md) — Stage 4.5 SR calibration. Feature-flagged/off.

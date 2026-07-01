@@ -7,6 +7,62 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-07-01 | Agents Supervisor | Codex (GPT-5) | Codex Model Routing Investigation + Agent Setup -- [Standard] [open-items: yes]
+**For next agent:** Added standalone `.codex/agents/{scout,routine-dev,long-haul,verify}.toml`; model names are intentionally unpinned, only `model_reasoning_effort` is set. No `.codex/config.toml` and no prompt-classifier hook; validate discovery in a fresh Codex session before relying on these agents.
+→ Docs/AGENTS/Handoffs/2026-07-01_Agents_Supervisor_Codex_Model_Routing_Investigation.md
+
+---
+### 2026-07-01 | Product Strategist + LLM Expert | Codex (GPT-5) | Evidence-Based Action Concept Gaps Consolidation -- [Standard] [open-items: yes]
+**For next agent:** WIP remains concept-only. `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` now has a consolidated "Conceptual gaps before spec" table, compressed component provenance, and a hard spec boundary; staged app/service roadmap and Charter recommendation language were removed.
+→ Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Gaps_Consolidation.md
+
+---
+### 2026-07-01 | Product Strategist + LLM Expert | Codex (GPT-5) | Evidence-Based Action Concept Diagrams -- [Standard] [open-items: yes]
+**For next agent:** Added concept-level Mermaid diagrams to `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`: action loop, 3-tool relationship, and human dignity vs agent capability-control boundary. Diagram pass is explicitly not a spec conversion.
+→ Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Diagrams.md
+
+---
+### 2026-07-01 | Product Strategist + LLM Expert | Codex (GPT-5) | Estuarine Product Revision -- [Significant] [open-items: yes]
+**For next agent:** The 3-tool draft now separates Cynefin orientation from Estuarine action design: participatory decomposition, substrate/energy-time boundaries, intervention portfolios, contextual learning, self-signified human meaning, and separate capability control for consequential agent actions.
+→ Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Estuarine_Product_Revision.md
+
+---
+### 2026-07-01 | Product Strategist + LLM Expert | Codex (GPT-5) | Evidence-Based Action Tools WIP Documentation -- [Standard] [open-items: yes]
+**For next agent:** Start at `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. It is a draft product concept, not approved roadmap; next work is MVP 1 scoping for Evidence-to-Action Card + Agent Evidence Firewall with Product Strategist + Lead Architect + LLM Expert.
+**Update 2026-07-01 (session 2, Opus 4.8):** Superseded — debated (`/debate`, FULL tier) and consolidated to 3 tools (Evidence Compass, Honest Inquiry Engine, Agent Provenance Contract); FactHarbor build deferred (defer-and-dogfood). The "MVP 1 = Card + Firewall" next step no longer applies — read the "2026-07-01 refinement" section of the concept doc.
+→ Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md
+
+---
+### 2026-06-30 | Product Strategist + LLM Expert | Codex (GPT-5) | Evidence-Based Human/Agent Tools Proposal -- [Standard] [open-items: yes]
+**For next agent:** Treat the proposal as product discovery, not approved roadmap. Strongest direction: Evidence-to-Action layer, Evidence Gap/Experiment Designer, Decision Ledger, Cynefin Sensemaking Room, and Agent Evidence Firewall; use bounded probes when evidence is missing and escalate/block high-impact unsupported actions.
+→ Docs/AGENTS/Handoffs/2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md
+
+---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Phase 4 Source-Native Retrieval Scaffold -- [Significant] [open-items: yes]
+**For next agent:** Source-native retrieval is scaffolded only, not behavior-complete. Use `executeSupplementaryLanguageLane` for the future LLM planner output; `sourceNativeSupplementaryLane` is UCM-visible/default-off and enabled-without-planner records zero-count `source_native:planner_unavailable` telemetry with no search, LLM call, or query-budget consumption.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Phase4_Source_Native_Scaffold.md
+
+---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Phase 1 Attribution Diagnostic -- [Standard] [open-items: yes]
+**For next agent:** Use `node scripts/diag/current-build-failure-attribution.cjs` for read-only Phase 1 attribution. Current rows route `bolsonaro-en` toward research extraction/relevance and `asylum-235000-de` toward research budget/D5 sufficiency, but all current family/build cells are low-confidence blockers, not behavior greenlights.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Phase1_Attribution_Diagnostic.md
+
+---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Analysis Quality Consolidated Plan -- [Significant] [open-items: yes]
+**For next agent:** Start at `Docs/WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md`. Gemini/Claude conditions are incorporated: Phase 1 attribution and Phase 2 fixture isolation before behavior edits, with scorer-noise/minimum-N gates, lane-bloat/cost checks, negative sufficiency fixtures, and Q-HF1/Q-BE/verdict-integrity stop signals.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Analysis_Quality_Consolidated_Plan.md
+
+---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Analysis Improvement Strategy Reset -- [Significant] [open-items: yes]
+**For next agent:** Strategy reset after repeated pipeline attempts. Start with current-build Q-code/failure-cause attribution and stage isolation; then source-reliability/input-policy ownership, generic source-native retrieval planning, and measured D5/Stage4 sufficiency. Do not prune `claimboundary.prompt.md` or run more live jobs first.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Analysis_Improvement_Strategy.md
+
+---
+### 2026-06-18 | Senior Developer | Codex (GPT-5) | Prompt History Audit + Reviewed Cleanup Plan -- [Standard] [open-items: yes]
+**For next agent:** Read-only prompt-history audit with Huygens/James plus Claude/Gemini review. Start P0 with source-reliability prompt ownership and input-policy-gate schema alignment; do not prune `claimboundary.prompt.md` before F2/report_damaged measurement and code/UCM enablers for source-native retrieval / decisive current metrics.
+→ Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Prompt_History_Audit_Plan.md
+
+---
 ### 2026-06-18 | Senior Developer | Codex (GPT-5) | Stage 2/D5 Recovery Fix -- [Significant] [open-items: yes]
 **For next agent:** Structural scheduler and D5 fixes are implemented and safe-suite/build verified. Live rerun after commit `0396ea47` still produced 2/2 top-level `UNVERIFIED`, so the corrected stop rule fired; next edit must start as failed-attempt recovery and focus source-native retrieval plus decisive authoritative metric sufficiency.
 → Docs/AGENTS/Handoffs/2026-06-18_Senior_Developer_Stage2_D5_Recovery.md
