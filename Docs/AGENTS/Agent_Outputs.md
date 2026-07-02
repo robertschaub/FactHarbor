@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-07-01 | Product Strategist + LLM Expert | Claude Code (Opus 4.8) | Evidence-Action Debates, Wizard, and Consolidation -- [Significant] [open-items: yes]
+**For next agent:** Full session record for Codex continuity: two FULL `/debate` runs (3-tool consolidation; defer-and-dogfood), the 7-question founder wizard, supersession banners, and the founder-mandated non-binding starting hypothesis in `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` (commits `7cd90803`, `ccf43df9f`). Do not re-remove the starting hypothesis without discussion; next pass = minimum no-facilitator Estuarine map.
+→ Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_Debates_Wizard_Consolidation.md
+
+---
 ### 2026-07-01 | Agents Supervisor | Codex (GPT-5) | Codex Model Routing Investigation + Agent Setup -- [Standard] [open-items: yes]
 **For next agent:** Added standalone `.codex/agents/{scout,routine-dev,long-haul,verify}.toml`; model names are intentionally unpinned, only `model_reasoning_effort` is set. No `.codex/config.toml` and no prompt-classifier hook; validate discovery in a fresh Codex session before relying on these agents.
 → Docs/AGENTS/Handoffs/2026-07-01_Agents_Supervisor_Codex_Model_Routing_Investigation.md

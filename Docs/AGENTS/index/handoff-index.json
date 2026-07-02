@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-01T19:46:53.448Z",
-  "count": 34,
+  "generatedAt": "2026-07-01T20:37:09.679Z",
+  "count": 35,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -615,6 +615,30 @@
         "Docs/AGENTS/index/"
       ],
       "summary": "Start with the current-state section of `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. Preserve these requirements: decompose mixed situations; map before prioritising; treat easy/fast change as potentially volatile; use intervention portfolios; remap each intervention to Cyne"
+    },
+    {
+      "file": "2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_Debates_Wizard_Consolidation.md",
+      "date": "2026-07-01",
+      "roles": [
+        "product_strategist",
+        "llm_expert"
+      ],
+      "topics": [
+        "evidence_based_tools",
+        "debate",
+        "wizard_decisions",
+        "estuarine",
+        "decision_ledger",
+        "agent_provenance"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
+        "Docs/AGENTS/Handoffs/2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md",
+        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/WIP/README.md"
+      ],
+      "summary": "Read `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` top-to-bottom first (it changed under every session). Highest-value next pass: the open gap **\"minimum Estuarine map without expert facilitation\"** (the sophistication-vs-adoption crux), then the remaining \"Conceptual gaps bef"
     },
     {
       "file": "2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md",
