@@ -282,6 +282,7 @@ This document is intentionally not a product specification. It does not define s
 
 ## Related Local Docs
 
+- `Docs/WIP/2026-07-02_Evidence_Based_Action_Tools_Competitive_Landscape.md` (grounded market sweep: what exists, what's commoditized, where the white space is)
 - `Docs/xwiki-pages/FactHarbor/Product Development/Requirements/User Needs/WebHome.xwiki`
 - `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Quality and Trust/WebHome.xwiki`
 - `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md`
