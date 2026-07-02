@@ -14,16 +14,6 @@
     ]
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/hooks/task-tier-advisor.cjs"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write",
