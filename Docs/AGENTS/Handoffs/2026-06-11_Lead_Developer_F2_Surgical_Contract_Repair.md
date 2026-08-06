@@ -14,9 +14,33 @@ Implemented and committed (`bb4de5f7`) the F2 surgical per-claim contract repair
 
 **Verification:** full safe suite 1,966 passed / 0 failed; build clean; local prompt reseed done (claimboundary 1.0.12). 3-lens adversarial review (correctness/compliance/regression) run pre-commit; both should-fix findings fixed (duplicate-id collision in the merge; missing outcome telemetry); compliance lens verified LLM-Intelligence-mandate conformance (all new deterministic checks are identity/plumbing) and prompt-section genericity (abstract examples only).
 
+## Live validation run 2026-06-11 (4 jobs) — REGRESSION-CLEAR, EFFICACY UNPROVEN
+
+> **Superseded on efficacy (2026-06-12):** F2 fired for the first time on job `b84ebbfe` (hydrogen-en) — validator flagged all 3 proxy-drift claims, F2 collapsed 3→1 holistic claim, re-validated clean, adopted (`stageAttribution=surgical_repair`), job finished MOSTLY-FALSE 15/78 in band. The section below remains the accurate record of the 2026-06-11 batch only.
+
+Four Captain-defined inputs, one job each, on `3fc2b26b` (post-F2, post-extension):
+
+| family | job | verdict / truth / conf | contract stage | vs benchmark band |
+|---|---|---|---|---|
+| plastic-en | `c47c40c8` | MOSTLY-FALSE 28 / 75 | retry | MISS (label out of set; truth 28 vs 42–65) |
+| bolsonaro-en | `283cbad2` | UNVERIFIED 50 / 0 | initial | MISS (insufficient evidence; 2 boundaries vs min 3) |
+| hydrogen-en | `697ed11e` | MOSTLY-FALSE 25 / 35 | initial | PARTIAL (label+truth in band; conf 35 vs 65–85) |
+| bundesrat-rechtskraftig | `bea5ad75` | MOSTLY-FALSE 25 / 24 | retry | MISS (label one step too false; conf 24 vs 55–85) |
+
+**What this run does establish:**
+- **0/4 `report_damaged`** — no hard aborts, all four reached a report. No regression introduced by F2 or its extension.
+- Contract state healthy in all four: `preservesContract=true`, `rePromptRequired=false`. Two jobs were rescued by the *ordinary* whole-set retry (`stageAttribution=retry`), two passed at initial validation.
+- Telemetry plumbing verified end to end: `contract_validation_retry_triggered` is persisted in `ResultJson` for exactly the two `stage=retry` jobs.
+
+**What this run does NOT establish — F2 never executed.** Zero `contract_surgical_repair_fired` / `_diagnostic` warnings across all four jobs (verified by substring scan of stored `ResultJson`). The surgical pass only triggers on `failureMode=contract_violated` *after* the ordinary retry fails, and that state never occurred. With a ~13% base rate, expected hits in 4 jobs ≈ 0.5, so this is statistically unsurprising and says nothing about F2's efficacy. **The 13%→~0 claim remains unmeasured.**
+
+**Separate finding (NOT attributable to F2 — the pass did not run and Stage 1 was clean in every job):** confidence collapsed far below band in 3 of 4 jobs (0, 24, 35 against band minima of 45/55/65). bolsonaro-en produced 6 evidence items from 14 sources across 21 searches with 0 publishable claims at Gate 4 — the `insufficient_evidence` / source-scarcity family, not the contract family. One run per family cannot separate this from known evidence-pool variance; it needs N≥5 per arm before anyone acts on it.
+
+**Environment trap hit during this run:** the first 4-job batch failed 4/4 within ~30s with `AI_APICallError: Not Found`. Root cause was NOT the pipeline — the AI-harness tool shell injects `ANTHROPIC_BASE_URL` without `/v1`, services spawned from it inherit it, and `@ai-sdk/anthropic` prefers it over its correct default. Fixed in `scripts/restart-clean.ps1` (`3fc2b26b`); always start services through that script.
+
 ## For next agent
 
-1. **Live validation is NOT done** (no jobs were submitted). Expected effect per the design: report_damaged rate 13% → ~0 on the affected families; same-input bimodal complete/abort behavior disappears. Measure with `scripts/diag/checkworthy-unverified-census.cjs` after fresh runs on Captain-defined inputs (e.g. the plastic/bolsonaro/hydrogen families that produced the 3 known failure shapes). Per the fail-fast cost rule, 3 jobs showing clear regression = stop.
+1. **F2 efficacy is still unmeasured** (the 2026-06-11 run did not exercise the path — see table above). Expected effect per the design: report_damaged rate 13% → ~0 on the affected families; same-input bimodal complete/abort behavior disappears. Measure with `scripts/diag/checkworthy-unverified-census.cjs` after fresh runs on Captain-defined inputs (e.g. the plastic/bolsonaro/hydrogen families that produced the 3 known failure shapes). Per the fail-fast cost rule, 3 jobs showing clear regression = stop.
 2. **Production rollout requires UCM verification:** admin-owned prompt blobs do NOT auto-refresh. After deploying, verify the active prod claimboundary prompt is version 1.0.12 / contains `CLAIM_CONTRACT_SURGICAL_REPAIR`. If the section is missing in prod, F2 silently no-ops — visible as `contract_surgical_repair_diagnostic` outcome=rejected, reason "prompt section not found".
 3. **Coverage boundary (UPDATED — extension landed same day, Captain-commissioned):** the single-claim atomicity path (bundling on one-claim sets, the comparative "more efficient" shape) is now covered via `synthesizeAtomicityFlaggedAssessments` — when the per-claim critique is empty but the summary carries `atomicityRetryReason` and the active set is exactly one claim, a flagged assessment is synthesized so F2 runs a split repair. Telemetry distinguishes the sources via `critiqueSource: "validator_per_claim" | "atomicity_challenge"` in both warnings. Remaining intentional skips: binding-challenge, anchor-provenance (C11b owns anchors), normative injection — these fall through to completion.
 
