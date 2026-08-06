@@ -177,3 +177,6 @@ apps/web/scripts/tmp-sr-*
 .claude/state/
 .claude/revert-telemetry.jsonl
 .aider*
+
+# Obsidian workspace settings (machine-local)
+.obsidian/
