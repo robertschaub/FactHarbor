@@ -357,72 +357,61 @@ Implement rich HTML formatting for reports (if desired).
 
 **Note**: These are LOW priority for local POC, but HIGH priority before public deployment.
 
-### S1. SSRF Protection Missing
+### S1. SSRF Protection
 
-**Status**: ❌ NOT IMPLEMENTED  
-**Severity**: LOW (POC), HIGH (Production)
+**Status**: ✅ IMPLEMENTED (`retrieval.ts` v1.3.0) — one residual gap  
+**Severity**: LOW  
+**Verified**: 2026-08-06 (audit re-check)
 
-**Description**:
-URL fetching has no SSRF protections:
-- No IP range blocking (internal IPs, localhost)
-- No size limits
-- No redirect count caps
-- Could be exploited to scan internal networks or fetch large files
+**Implemented**: private/RFC1918, loopback, link-local, cloud-metadata and IPv6-variant blocking; scheme enforcement; redirect validation; 30 MB streaming size cap.
 
-**Impact** (Production):
-- Security vulnerability
-- Potential for abuse
-- Resource exhaustion
+**Residual gap**: the address check runs at connection time, so an adversarial host could in principle DNS-rebind between resolution and connect. Reachable only via the follow-up link-discovery path in `research-acquisition-stage.ts`, which re-checks each discovered URL. Low priority; fix would pin resolved addresses.
 
-**Solution**:
-Implement before public deployment:
-- Block private IP ranges
-- Limit response size
-- Cap redirect count
-- Add user-agent restrictions
-
-**Files to Modify**:
+**Files**:
 - `apps/web/src/lib/retrieval.ts`
 
 ---
 
-### S2. Admin Endpoint Security Missing
+### S2. Admin Endpoint Security — PARTIAL
 
-**Status**: ❌ NOT IMPLEMENTED  
-**Severity**: LOW (POC), HIGH (Production)
+**Status**: 🟡 PARTIAL  
+**Severity**: LOW (invite-gated alpha), HIGH (before open signup)  
+**Verified**: 2026-08-06 (audit re-check)
 
-**Description**:
-`/admin/test-config` and other admin endpoints are publicly accessible and can trigger paid LLM API calls.
+**Implemented**: API admin endpoints require `X-Admin-Key`, compared in fixed time (`apps/api/Helpers/AuthHelper.cs`); the web admin area is behind a login gate.
 
-**Impact** (Production):
-- Unauthorized API usage
-- Cost abuse
-- Configuration exposure
+**Still open**: `/admin/source-reliability` is exempted from that gate (`apps/web/src/app/admin/layout.tsx:46`, `isPublicAdminRoute`), so source track-record data is readable without authentication. Read-only, no paid calls, no personal data — but inconsistent with the rest of the admin area.
 
-**Solution**:
-Implement authentication for admin endpoints before public deployment.
-
-**Files to Modify**:
-- Admin page components
-- API middleware
+**Solution**: remove the exemption, or move the page out of `/admin` if public exposure is intended.
 
 ---
 
-### S3. Rate Limiting Missing
+### S3. Rate Limiting
+
+**Status**: ✅ IMPLEMENTED  
+**Severity**: LOW  
+**Verified**: 2026-08-06 (audit re-check)
+
+Fixed-window per-IP limiter in `apps/api/Program.cs`: 5 analyze requests/min and 120 read requests/min, with an admin-key bypass. No per-user quotas beyond invite-code job caps.
+
+---
+
+### S4. Invite-Code Brute Force — No Lockout
 
 **Status**: ❌ NOT IMPLEMENTED  
-**Severity**: LOW (POC), HIGH (Production)
+**Severity**: LOW (current alpha), MEDIUM (before wider rollout)  
+**Identified**: 2026-06-10 advisory audit; re-verified 2026-08-06
 
 **Description**:
-No per-IP or per-user rate limits on analysis requests or admin endpoints.
+Submitting an invalid invite code returns a distinguishable `404 Invalid invite code` (`apps/api/Controllers/AnalyzeController.cs:45`) and no failed-attempt tracking exists, so codes can be probed. The per-IP rate limiter (S3) caps this at 5 attempts/min/IP, which makes guessing slow but not impossible from rotating IPs.
 
-**Impact** (Production):
-- Cost abuse
-- Resource exhaustion
-- DDoS vulnerability
+**Impact**: a guessed code permits real analysis jobs, each costing roughly $1 in LLM spend — cost amplification rather than data exposure.
 
-**Solution**:
-Implement rate limiting middleware before public deployment.
+**Solution**: track failed attempts per IP and stop responding distinguishably after a threshold; consider raising code entropy.
+
+**Files to Modify**:
+- `apps/api/Controllers/AnalyzeController.cs`
+- `apps/api/Services/JobService.cs`
 
 ---
 
