@@ -52,7 +52,7 @@ As Senior Developer and UCM Expert,
 Investigate issues with UCM and fix them, so that UCM does not anymore contain unstructured nested items that cannot really be configured, like the configuration shown in the attachement. Make all UCM elements nicely editable for a human administrator. First investigate find potential issues (in  both pipelines ant in all UCM items), investigate potential solutions and make proposals, for things where a second opinion is desired, automatically ask an other AI Agent Expert as Claude Opus 4.6. To make final decisions Guide the human caption by promping him to select from alternatives.
 All implementation work shall be made on a new worktree.
 ---
-As Lead Arcchitect,
+As Lead Architect,
 Consolidate all documentation in WIP.
 To do so, request assistance from other agents to investigate implementation status for specific topics.
 
@@ -103,7 +103,7 @@ Documentation update incl xWiki Specs, Make a plan:
    Docs\WIP\Storage_DB_Caching_Strategy.md.
 2. After this is done, do a full update and cleanup of all the .xwiki files below Docs\xwiki-pages\FactHarbor_Spec_and_Impl\FactHarbor. But leave all requirements and "license and disclaimer" and FactHarbor Webhome untouched. Update The planning as just discussed,
    Important: Make sure Entities, types and diagrams and their explanations reflect the curren state as in source-code. Keep future enhancements, but update everything to be an enhancemen or improvement based on current implementation - we don't have a plan for a major re-design, but to extend and adjust as discussed earlier in some oft the files.
-   Now analyze and make a plan and write it to docs\wip.
+   Now analyze and make a plan and write it to docs\w
 
 ---
 
