@@ -22,7 +22,12 @@ Paused since **2026-07-02**. The pause is a funding decision, not a technical on
 1. **Cost inside budget**: nonprofit API pricing or credits; routing the lower-judgment extraction share of spend to a cheaper model behind an audit gate; Batch API for the eval bucket; and completing the two pending production config verifications, one of which — Serper as search priority 1 — is a roughly **$170/month** lever already shipped to `main` but not yet re-seeded in production.
 2. **External money**: a sponsor, a grant, or one supervised paid pilot.
 
-Until one of those lands, work stays confined to zero-spend activities. The engineering plan is sequenced accordingly: its Phases 4–5 are fixture- and dry-run-based, and Phase 6 is the first step that needs the funding question answered.
+**Production stays live during the pause.** The deployed alpha at `app.factharbor.ch` keeps serving and keeps accepting jobs — the pause applies to development, not to the service. Two consequences follow:
+
+- **Per-job API spend continues at alpha volume.** So the cost levers that do not depend on new development are live actions, not resume-time ones: provider spend caps, the pending Serper search-priority re-seed, and stopping non-production consumption (local development jobs and eval/diagnostic batches, which accounted for the larger share of measured spend).
+- **The service runs unattended.** That gives `SEC-INVITE` and `OPS-MONITOR` more weight than their `med` backlog urgency suggests: invite-code probing converts directly into LLM spend, and there is no monitoring to notice either that or an outage.
+
+Until funding or cost resolves, development work stays confined to zero-spend activities. The engineering plan is sequenced accordingly: its Phases 4–5 are fixture- and dry-run-based, and Phase 6 is the first step that needs the funding question answered.
 
 Cost accounting, funding correspondence and the organizational record live in the private operations repository, not here.
 
@@ -38,7 +43,7 @@ Cost accounting, funding correspondence and the organizational record live in th
 - **Two production config verifications are still pending**, both the same class of risk — a shipped change that a stale admin-owned DB blob silently ignores: the F2 prompt blob above, and the Serper→P1 search-priority re-seed (`362a9312`, 2026-06-01; local DB live, production outstanding). The second is also the cost lever named above.
 - **Selective prune is the ratified debt approach; rebuild-from-POC was rejected.** The plan's non-negotiable stands: do not prune `claimboundary.prompt.md` before measurement and stage isolation exist.
 - **Cross-linguistic neutrality remains the largest comparative quality gap.** Multilingual/report-language groundwork is shipped; the EN and source-native supplementary lanes are both experimental and default-off, awaiting validation and a promotion decision. Mechanism reference: [Multilingual_Language_Handling.md](../ARCHITECTURE/Multilingual_Language_Handling.md).
-- **Volume measurement is out of scope while paused.** Repeated-run statistics (N≥5 reps/arm) and population censuses need paid runs, so they wait on the funding question — including the F2 efficacy re-measurement, whose read-only census can run but whose fresh-job input cannot accumulate without live traffic.
+- **Volume measurement is out of scope while paused.** Repeated-run statistics (N≥5 reps/arm) and population censuses need paid runs, so they wait on the funding question. The F2 efficacy re-measurement is the exception worth watching: its census is read-only and free, and because production stays live its input accumulates on its own — just slowly, at real alpha traffic rates rather than batch rates.
 
 ---
 
@@ -145,20 +150,21 @@ Grouped by theme rather than by day. Full commit history in git; dated sections 
 | No uptime monitoring or error aggregation | Production failures are found when a user reports them (`OPS-MONITOR`) |
 | No claim caching; no normalized data model | Results are JSON blobs; every analysis recomputes from scratch |
 
-Stale entries still to reconcile in `KNOWN_ISSUES.md`: issue #2 claims metrics are not wired (they are — `metrics-integration.ts` is imported by `claimboundary-pipeline.ts` and `claim-extraction-stage.ts`), and P1 references `parallel-verdicts.ts`, which no longer exists.
+`KNOWN_ISSUES.md` and `Backlog.md` were reconciled against code and git on 2026-08-10: no open entry there is CRITICAL or HIGH severity, and the previously stale claims (metrics not wired, `parallel-verdicts.ts`, 8 skipped budget tests, Phase 7 / Shape B as the active track) are corrected with file/line or commit evidence.
 
 ---
 
 ## Current Priorities
 
-[Backlog.md](Backlog.md) is the canonical prioritized list. Priorities 1–2 are the cost-side prerequisites; everything after them is the engineering sequence on resume:
+[Backlog.md](Backlog.md) is the canonical prioritized list. Priorities 1–3 apply **now**, because production keeps running and spending while development is paused. Priorities 4 onward are the engineering sequence on resume:
 
-1. **Verify production runtime state before spending anything** — F2 prompt blob 1.0.12 active, Serper P1 priority re-seeded, `SERPER_API_KEY` present, model-role config pins audited (a drifted premium-tier pin is a multiple-times overspend). A stale blob both wastes the spend and makes the validation meaningless.
-2. **Re-measure the standing burn split** — production vs local development vs eval scripts — before committing to live jobs. Standing burn has previously consumed most of the available budget on its own, independent of any new validation runs.
-3. **Execute plan Phase 4** — generic LLM retrieval-language / source-native route planning behind the shipped default-off scaffold. Zero-spend: planner unit tests, dry-run plan snapshots, lane-bloat checks.
-4. **Execute plan Phase 5** — authoritative-evidence sufficiency admission for D5/Stage-4, validated against frozen fixtures including negative fixtures that must stay `UNVERIFIED`.
-5. **Then Phase 6 live validation** — one Captain-defined job at a time, starting with an accepted comparator as regression sentinel, under the documented stop rules.
-6. **Re-measure F2 efficacy at volume** (`F2-CENSUS`) once accumulated jobs exist — read-only, no new spend.
+1. **Audit the live production runtime** — Serper P1 priority actually re-seeded and `SERPER_API_KEY` present (else provider selection silently falls back to the pricier Google CSE and the bill never moves), model-role config pins not drifted to a premium tier, F2 prompt blob 1.0.12 active. These are live cost and correctness facts today, not resume-time checks.
+2. **Cap the downside while unattended** — lower the provider monthly spend limit to something an alpha can justify, and close or accept the two open cost-amplification paths (`SEC-INVITE` invite-code probing, `SEC-ADMIN-SR`). A free uptime ping on `/api/health` (`OPS-MONITOR`) is the cheapest way to stop discovering outages by email.
+3. **Re-measure the standing burn split** — production vs local development vs eval scripts. Standing burn has previously consumed most of the available budget on its own, independent of any validation runs, and the non-production share is the part a development pause should already have removed.
+4. **Execute plan Phase 4** — generic LLM retrieval-language / source-native route planning behind the shipped default-off scaffold. Zero-spend: planner unit tests, dry-run plan snapshots, lane-bloat checks.
+5. **Execute plan Phase 5** — authoritative-evidence sufficiency admission for D5/Stage-4, validated against frozen fixtures including negative fixtures that must stay `UNVERIFIED`.
+6. **Then Phase 6 live validation** — one Captain-defined job at a time, starting with an accepted comparator as regression sentinel, under the documented stop rules.
+7. **Re-measure F2 efficacy at volume** (`F2-CENSUS`) once accumulated jobs exist — read-only, no new spend.
 
 Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume statistics and population censuses, Gemini provider swap during alpha, foundation applications before Q1 2027.
 
