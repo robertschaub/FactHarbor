@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-07-01
-**Status**: Consolidation #13 complete. 26 WIP files archived. 70 active files remain.
+**Last Updated**: 2026-08-10
+**Status**: Consolidation #13 complete. 26 WIP files archived. 73 active files remain.
 
 ---
 
@@ -44,17 +44,20 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-06-04_Multi_Variant_Pipeline_Architecture.md](2026-06-04_Multi_Variant_Pipeline_Architecture.md), [Specification](2026-06-04_Multi_Variant_Pipeline_Specification.md), and [Implementation Plan](2026-06-04_Multi_Variant_Pipeline_Implementation_Plan.md) — deferred in-tree multi-variant capability; do not implement unless revived
 - [2026-06-04_Multi_Variant_Pipeline_Codex_Review_Prompt.md](2026-06-04_Multi_Variant_Pipeline_Codex_Review_Prompt.md) and [2026-06-04_Multi_Variant_Pipeline_Gemini_Scoped_Review_Prompt.md](2026-06-04_Multi_Variant_Pipeline_Gemini_Scoped_Review_Prompt.md) — companion review prompts retained with the deferred capability
 
-### Currently active (Phase 7 / Report Quality Restoration)
-- [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — current benchmark-family status matrix after the April 16 fix wave
-- [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter (Fix A/C landed, Fix B residual gap)
-- [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — current Phase 7 problem framing, implementation plan, and verification checklist
-- [2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md](2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md) — current Phase 7 code/prompt issue inventory (2 forward items remain)
-- [2026-04-13_Phase7_Salience_First_Charter.md](2026-04-13_Phase7_Salience_First_Charter.md) — Phase 7 E1/E2/Shape B decision tree; E1 not yet landed
-- [2026-04-11_Report_Quality_Restoration_Master_Plan.md](2026-04-11_Report_Quality_Restoration_Master_Plan.md) — master plan spanning Phases 0-7; Phase 7 active
+### Phase 7 / Report Quality Restoration — SUPERSEDED, reference only
 
-### UPQ-1 (Stage 2/3 upstream quality)
-- [2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md](2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md) — UPQ-1 proposal; Phase A+B done, Phase C (boundary concentration) is next
-- [2026-04-07_UPQ1_Phase_B_Canary_Measurement.md](2026-04-07_UPQ1_Phase_B_Canary_Measurement.md) — Phase B validated and shipped; opens Phase C as next step
+Superseded by the 2026-06-18 consolidated execution plan above (verified 2026-08-10: no active handoff references Phase 7 or Shape B, and backlog `PHASE7B-1` is closed-superseded). Read these for the problem framing and the reasoning behind landed Stage-1 behavior — **not** as a queue of next steps. Do not open a new slice from them without re-checking against the consolidated plan's non-negotiables.
+
+- [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — benchmark-family status matrix as of the April 16 fix wave; superseded as a status source by the Phase-1 attribution diagnostic (`scripts/diag/current-build-failure-attribution.cjs`)
+- [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — the prompt slice is landed; the charter's own §1 says "do **not** open a fresh prompt-implementation slice from this charter". Residual is verification-only
+- [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — Phase 7 problem framing and verification checklist; historical
+- [2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md](2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md) — Phase 7 code/prompt issue inventory; forward items not re-verified since April, so treat them as leads rather than known gaps
+- [2026-04-13_Phase7_Salience_First_Charter.md](2026-04-13_Phase7_Salience_First_Charter.md) — E1/E2/Shape B decision tree. E2 (upstream salience commitment) **did** land and runs default-on in `audit` mode (`salienceCommitment` in `config-schemas.ts`); the Shape B branch was not taken
+- [2026-04-11_Report_Quality_Restoration_Master_Plan.md](2026-04-11_Report_Quality_Restoration_Master_Plan.md) — master plan spanning Phases 0-7; its Phase 7 is not the active track
+
+### UPQ-1 (Stage 2/3 upstream quality) — Phase C deferred
+- [2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md](2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md) — UPQ-1 proposal; Phase A+B done. Phase C (boundary concentration) is confirmed **unstarted** — concentration is detection-only, emitting `boundary_evidence_concentration` (`boundary-clustering-stage.ts:215-241`) — but it is no longer "next": the consolidated plan sequences its Phases 4–5 first and forbids D5-adjacent behavior work before stage isolation exists. See backlog `UPQ-1` (OPEN-DEFERRED)
+- [2026-04-07_UPQ1_Phase_B_Canary_Measurement.md](2026-04-07_UPQ1_Phase_B_Canary_Measurement.md) — Phase B validated and shipped; its "Phase C is next" conclusion is superseded by the consolidated plan
 - [2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md](2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md) — consolidated quality investigation with active forward items (Stage 1 blocker)
 - [2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md](2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md) — adversarial cross-review sharpening the consolidated investigation
 
@@ -98,6 +101,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — Wikipedia shipped; deeper Semantic Scholar / Fact Check integration future scope
 
 ### Infrastructure / optimization
+- [2026-08-10_Latency_and_Versioned_Assessment_Registry_Roadmap.md](2026-08-10_Latency_and_Versioned_Assessment_Registry_Roadmap.md) — future two-speed assessment architecture: offline latency census, definition-only exact-match registry ADR, and post-phase cold-path options; no implementation or live-run authorization
 - [2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md](2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md) — reviewed/source-refreshed plan for narrow first-class pipeline telemetry separate from warnings; Phase 1 scoped to contract validation, claim-scoped verdict direction, and challenger model guard counters with explicit availability/denominator rules; D5/direct-publishability follow-up stays in `qualityHealth`
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md) — residual WS-5/6/7
 - [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — residual P1-A, P2-*, P3-* (require fresh baseline)
