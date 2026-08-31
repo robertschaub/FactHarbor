@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-06T19:12:36.474Z",
-  "count": 35,
+  "generatedAt": "2026-08-31T20:45:39.132Z",
+  "count": 36,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -662,6 +662,27 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start at `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`; the recommended next work packet is already listed near the end of that file."
+    },
+    {
+      "file": "2026-08-31_Technical_Writer_Prototype_Fund_Provisional_Video.md",
+      "date": "2026-08-31",
+      "roles": [
+        "technical_writer"
+      ],
+      "topics": [
+        "prototype",
+        "fund",
+        "provisional",
+        "video"
+      ],
+      "files_touched": [
+        "Docs/prototype-fund-pitch/index.html",
+        "Docs/prototype-fund-pitch/README.txt",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.en.vtt",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Follow `Docs/prototype-fund-pitch/README.txt`. Do not rename the public page or the MP4. The provisional cut is 169.067 seconds and uses `?v=provisional-20260831`; update that query string when publishing the final media."
     }
   ]
 }
