@@ -9,15 +9,38 @@
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
     body { margin: 0; background: #f6f7f8; color: #17191c; }
-    main { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 56px; }
-    header { margin-bottom: 22px; }
-    h1 { margin: 0 0 8px; font-size: clamp(1.65rem, 4vw, 2.5rem); line-height: 1.15; }
+    main { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 54px; }
+    header { margin-bottom: 18px; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.65rem, 4vw, 2.45rem); line-height: 1.15; }
     .subtitle { margin: 0; color: #5c626b; font-size: 1.05rem; }
     .notice { margin: 18px 0 22px; padding: 13px 15px; border: 1px solid #d8dce1; border-radius: 10px; background: #fff; line-height: 1.45; }
-    .video-wrap { overflow: hidden; border-radius: 14px; background: #111; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
-    video { display: block; width: 100%; height: auto; background: #111; }
+    .stage { position: relative; overflow: hidden; aspect-ratio: 16/9; border-radius: 14px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.08); border: 1px solid #e0e2e5; }
+    #finalVideo { display: none; width: 100%; height: 100%; object-fit: contain; background: #111; }
+    #placeholder { height: 100%; display: grid; grid-template-columns: 34% 66%; }
+    .portrait { padding: 5.5% 4% 4%; border-right: 1px solid #e1e3e6; background: #fafafa; display: flex; flex-direction: column; align-items: center; }
+    .portrait img { width: min(88%, 330px); aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; background: #eee; }
+    .name { margin-top: 16px; font-weight: 700; font-size: clamp(1rem, 2vw, 1.35rem); text-align: center; }
+    .role { margin-top: 4px; color: #686e77; text-align: center; font-size: clamp(.75rem, 1.4vw, .95rem); }
+    .script-window { position: relative; overflow: hidden; padding: 5.5% 5% 4%; }
+    .script-window:before, .script-window:after { content: ""; position: absolute; left: 0; right: 0; height: 12%; z-index: 2; pointer-events: none; }
+    .script-window:before { top: 0; background: linear-gradient(#fff, rgba(255,255,255,0)); }
+    .script-window:after { bottom: 0; background: linear-gradient(rgba(255,255,255,0), #fff); }
+    .script { line-height: 1.52; font-size: clamp(.78rem, 1.55vw, 1.12rem); animation: scrollPitch 55s linear infinite; padding-bottom: 35%; }
+    .script p { margin: 0 0 1.15em; }
+    .script strong { font-weight: 700; }
+    @keyframes scrollPitch { from { transform: translateY(70%); } to { transform: translateY(-100%); } }
+    .stage-label { position: absolute; z-index: 3; left: 18px; top: 16px; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,.92); border: 1px solid #d7dadd; font-size: .82rem; font-weight: 650; }
     footer { margin-top: 18px; color: #686e77; font-size: .94rem; }
-    a { color: inherit; }
+    @media (max-width: 680px) {
+      main { width: min(100% - 20px, 1080px); padding-top: 22px; }
+      #placeholder { grid-template-columns: 38% 62%; }
+      .portrait { padding-top: 12%; }
+      .script-window { padding-top: 12%; }
+      .stage-label { left: 10px; top: 9px; font-size: .7rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .script { animation: none; transform: none; overflow: auto; }
+    }
   </style>
 </head>
 <body>
@@ -27,18 +50,53 @@
       <p class="subtitle">Application video · Robert Schaub, FactHarbor Verein</p>
     </header>
 
-    <p class="notice"><strong>Draft preview:</strong> the final application video will replace this version by September 6, 2026. This page URL will remain unchanged.</p>
+    <p class="notice"><strong>Draft preview:</strong> the final application video will replace this preview by September 6, 2026. <strong>This page URL will remain unchanged.</strong></p>
 
-    <div class="video-wrap">
-      <video controls playsinline preload="metadata">
+    <div class="stage">
+      <video id="finalVideo" controls playsinline preload="metadata" aria-label="FactHarbor Prototype Fund application video">
         <source src="factharbor-prototype-fund-pitch.mp4" type="video/mp4">
-        Your browser does not support HTML5 video.
       </video>
+
+      <div id="placeholder">
+        <div class="stage-label">Draft pitch preview</div>
+        <section class="portrait">
+          <img src="https://avatars.githubusercontent.com/u/249681394?v=4" alt="Robert Schaub">
+          <div class="name">Robert Schaub</div>
+          <div class="role">Founder, FactHarbor Verein</div>
+        </section>
+        <section class="script-window" aria-label="Pitch text preview">
+          <div class="script">
+            <p>Hello, I’m Robert Schaub. I spent <strong>38 years in software engineering and project leadership</strong>—30 years at Phonak/Sonova. I founded FactHarbor Verein, a Swiss non-profit, and built FactHarbor’s working Alpha and the ai-charter-runtime proof of concept.</p>
+            <p>My motivation is societal: <strong>facts are a foundation of democracy.</strong> I want AI to strengthen, not weaken, responsibility for decisions. Evidence is essential, but a consequential answer also needs valid authority, a decision before effect, and a record affected people can inspect and challenge.</p>
+            <p>FactHarbor has already analysed a public claim that a heat pump can be recommended for an existing residential building in Winterthur without first checking the building. The Alpha judged that claim false and showed supporting and opposing evidence, sources, limitations and uncertainty.</p>
+            <p><strong>Evidence-Gated Agents</strong> will test the next step. For the prototype, FactHarbor will prepare assessed claims. An AI may draft an exact answer from them, but a gateway outside the model decides whether current authority and declared evidence support its release. If it stops, a different answer cannot inherit approval: it must be prepared and checked as a new proposal. If released, the recipient receives an inspectable receipt linking the answer, authority, evidence, decision and outcome.</p>
+            <p>Beyond the prototype, I want to develop evidence-gated decision-making applications and services for companies, public bodies, newsrooms and civil society. With permission, they could weigh an organisation’s policies, contracts and records alongside public evidence. People affected by an answer should be able to understand it, challenge it, and seek correction or independent review.</p>
+            <p>I built both foundations and can integrate them directly. The Prototype Fund’s coaches and cohort can challenge my assumptions, improve the recipient experience, and help me reach practitioners who can test whether the receipt is understandable and where AI adds justified value over simpler methods.</p>
+            <p>My vision is a <strong>free and fair society</strong> in which technology strengthens democracy because consequential decisions remain authorised, evidence-grounded and open to challenge.</p>
+          </div>
+        </section>
+      </div>
     </div>
 
-    <footer>
-      FactHarbor Verein · Swiss non-profit association
-    </footer>
+    <footer>FactHarbor Verein · Swiss non-profit association</footer>
   </main>
+
+  <script>
+    (function () {
+      const video = document.getElementById('finalVideo');
+      const placeholder = document.getElementById('placeholder');
+      const revealVideo = () => {
+        placeholder.style.display = 'none';
+        video.style.display = 'block';
+      };
+      video.addEventListener('loadedmetadata', revealVideo, { once: true });
+      video.addEventListener('canplay', revealVideo, { once: true });
+      video.addEventListener('error', () => {
+        video.style.display = 'none';
+        placeholder.style.display = 'grid';
+      });
+      video.load();
+    })();
+  </script>
 </body>
 </html>
