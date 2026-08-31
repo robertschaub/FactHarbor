@@ -8,6 +8,7 @@ on:
       - 'Docs/xwiki-pages/viewer-impl/**'
       - 'Docs/xwiki-pages/scripts/*.py'
       - 'Docs/TESTREPORTS/*.html'
+      - 'Docs/prototype-fund-pitch/**'
   workflow_dispatch:
 
 permissions:
@@ -32,6 +33,7 @@ jobs:
             ANALYTICS_FLAG="--analytics-url $ANALYTICS_URL --site-id FH"
           fi
           python Docs/xwiki-pages/scripts/build_ghpages.py $ANALYTICS_FLAG
+          cp -a Docs/prototype-fund-pitch gh-pages-build/prototype-fund-pitch
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
