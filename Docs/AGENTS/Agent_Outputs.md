@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-09-01 | Technical Writer | Codex (GPT-5) | Pitch Script v13 — [Standard] [open-items: yes]
+**For next agent:** The stable pitch page now mirrors the approved 353-word v13 script. The final Teams recording must show the Winterthur report at F24's internal `SHOW REPORT` cue while keeping the qualifying claim visible; replace the same MP4 filename and keep F23's URL unchanged.
+→ Docs/AGENTS/Handoffs/2026-09-01_Technical_Writer_Pitch_Script_v13.md
+
+---
 ### 2026-09-01 | Technical Writer | Codex (GPT-5) | Faster Scrolling Pitch — [Standard] [open-items: yes]
 **For next agent:** The silent portrait-and-scrolling-text placeholder now runs 2:30, with proportionally retimed VTT captions. Replace the same MP4 filename with the final Teams recording and keep F23’s public page URL unchanged.
 → Docs/AGENTS/Handoffs/2026-09-01_Technical_Writer_Faster_Scrolling_Pitch.md

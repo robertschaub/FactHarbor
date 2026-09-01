@@ -1,118 +1,141 @@
 WEBVTT
 
 1
-00:00:00.000 --> 00:00:02.618
+00:00:00.000 --> 00:00:01.932
 Hello, I’m Robert Schaub.
 
 2
-00:00:02.760 --> 00:00:07.275
-I spent 38 years in software engineering and project leadership—
+00:00:02.072 --> 00:00:07.208
+I spent 38 years in software engineering and project leadership—30 years at Phonak/Sonova.
 
 3
-00:00:07.416 --> 00:00:10.335
-30 years at Phonak/Sonova.
+00:00:07.348 --> 00:00:10.348
+I founded FactHarbor Verein, a Swiss non-profit,
 
 4
-00:00:10.477 --> 00:00:19.863
-I founded FactHarbor Verein, a Swiss non-profit, and built FactHarbor’s working Alpha and Our AI Charter Runtime, a proof of concept.
+00:00:10.488 --> 00:00:12.421
+and built two foundations:
 
 5
-00:00:20.005 --> 00:00:24.909
-My motivation is societal: facts are a foundation of democracy.
+00:00:12.561 --> 00:00:15.561
+FactHarbor’s evidence-based fact-checking application, now in Alpha,
 
 6
-00:00:25.051 --> 00:00:30.341
-I want AI to strengthen, not weaken, responsibility for decisions.
+00:00:15.701 --> 00:00:19.769
+and Our AI Charter Runtime’s runnable decision-gateway proof of concept.
 
 7
-00:00:30.483 --> 00:00:35.573
-Evidence is essential, but a consequential answer also needs valid authority,
+00:00:19.909 --> 00:00:23.977
+My motivation is societal: facts are a foundation of democracy.
 
 8
-00:00:35.714 --> 00:00:40.863
-a decision before effect, and a record affected people can inspect and challenge.
+00:00:24.117 --> 00:00:28.185
+I want AI to strengthen, not weaken, responsibility for decisions.
 
 9
-00:00:41.004 --> 00:00:48.466
-FactHarbor has already analysed a public claim that a heat pump can be recommended for an existing residential building in Winterthur
+00:00:28.325 --> 00:00:32.749
+Evidence is essential, but a consequential answer also needs valid authority,
 
 10
-00:00:48.607 --> 00:00:51.000
-without first checking the building.
+00:00:32.889 --> 00:00:38.025
+a decision before effect, and a record affected people can inspect and challenge.
 
 11
-00:00:51.141 --> 00:00:58.258
-The Alpha judged that claim false and showed supporting and opposing evidence, sources, limitations and uncertainty.
+00:00:38.165 --> 00:00:42.233
+FactHarbor’s Alpha assesses public claims against supporting and opposing evidence.
 
 12
-00:00:58.399 --> 00:01:01.637
-Evidence-Gated Agents will test the next step.
+00:00:42.373 --> 00:00:46.441
+Here is one report already produced by the public Alpha.
 
 13
-00:01:01.778 --> 00:01:06.188
-For the prototype, FactHarbor will prepare assessed claims.
+00:00:46.581 --> 00:00:50.649
+It examines a blanket heat-pump recommendation for a Winterthur home
 
 14
-00:01:06.329 --> 00:01:09.539
-An AI may draft an exact answer from them,
+00:00:50.789 --> 00:00:55.924
+and records evidence for and against, sources, limitations, uncertainty and the resulting verdict.
 
 15
-00:01:09.681 --> 00:01:15.599
-but a gateway outside the model decides whether current authority and declared evidence support its release.
+00:00:56.064 --> 00:01:00.132
+For the prototype, selected claims will be analysed in advance
 
 16
-00:01:15.741 --> 00:01:19.894
-If it stops, a different answer cannot inherit approval:
+00:01:00.272 --> 00:01:03.629
+and their reports stored for the decision gateway.
 
 17
-00:01:20.036 --> 00:01:23.198
-it must be prepared and checked as a new proposal.
+00:01:03.769 --> 00:01:06.769
+Evidence-Gated Agents will test the next step.
 
 18
-00:01:23.339 --> 00:01:31.009
-If released, the recipient receives an inspectable receipt linking the answer, authority, evidence, decision and outcome.
+00:01:06.909 --> 00:01:11.333
+An AI may draft an exact answer from those stored reports,
 
 19
-00:01:31.150 --> 00:01:37.483
-Beyond the prototype, I want to develop evidence-gated decision-making applications and services
+00:01:11.473 --> 00:01:17.676
+but a gateway outside the model decides whether current authority and declared evidence support its release.
 
 20
-00:01:37.625 --> 00:01:42.185
-for companies, public bodies, newsrooms and civil society.
+00:01:17.816 --> 00:01:20.817
+If the gateway blocks a proposed answer,
 
 21
-00:01:42.327 --> 00:01:49.257
-With permission, they could weigh an organisation’s policies, contracts and records alongside public evidence.
+00:01:20.957 --> 00:01:26.804
+the request may be narrowed and a new answer prepared from current authority and evidence.
 
 22
-00:01:49.399 --> 00:01:54.184
-People affected by an answer should be able to understand it, challenge it,
+00:01:26.944 --> 00:01:31.012
+The new proposal must pass every check again before release.
 
 23
-00:01:54.325 --> 00:01:57.253
-and seek correction or independent review.
+00:01:31.152 --> 00:01:34.508
+If released, the recipient receives an inspectable receipt
 
 24
-00:01:57.395 --> 00:02:01.145
-I built both foundations and can integrate them directly.
+00:01:34.648 --> 00:01:38.004
+linking the answer, authority, evidence, decision and outcome.
 
 25
-00:02:01.287 --> 00:02:07.912
-The Prototype Fund’s coaches and cohort can challenge my assumptions, improve the recipient experience,
+00:01:38.144 --> 00:01:42.924
+Beyond the prototype, I want to develop evidence-gated decision-making applications and services
 
 26
-00:02:08.054 --> 00:02:12.729
-and help me reach practitioners who can test whether the receipt is understandable
+00:01:43.064 --> 00:01:46.421
+for companies, public bodies, newsrooms and civil society.
 
 27
-00:02:12.870 --> 00:02:16.832
-and where AI adds justified value over simpler methods.
+00:01:46.561 --> 00:01:52.052
+With permission, they could weigh an organisation’s policies, contracts and records alongside public evidence.
 
 28
-00:02:16.974 --> 00:02:22.092
-My vision is a free and fair society in which technology strengthens democracy
+00:01:52.192 --> 00:01:57.328
+People affected by an answer should be able to understand it, challenge it,
 
 29
-00:02:22.233 --> 00:02:28.208
-because consequential decisions remain authorised, evidence-grounded and open to challenge.
+00:01:57.468 --> 00:02:00.112
+and seek correction or independent review.
 
+30
+00:02:00.252 --> 00:02:03.964
+I built both foundations and can integrate them directly.
+
+31
+00:02:04.104 --> 00:02:09.596
+The Prototype Fund’s coaches and cohort can challenge my assumptions, improve the recipient experience,
+
+32
+00:02:09.736 --> 00:02:14.872
+and help me reach practitioners who can test whether the receipt is understandable
+
+33
+00:02:15.012 --> 00:02:18.724
+and where AI adds justified value over simpler methods.
+
+34
+00:02:18.864 --> 00:02:24.000
+My vision is a free and fair society in which technology strengthens democracy
+
+35
+00:02:24.140 --> 00:02:28.208
+because consequential decisions remain authorised, evidence-grounded and open to challenge.

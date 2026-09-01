@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-01T20:19:26.247Z",
-  "count": 39,
+  "generatedAt": "2026-09-01T21:05:59.748Z",
+  "count": 40,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -702,6 +702,25 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "The current silent placeholder is 150 seconds, H.264, and seekable. Follow `Docs/prototype-fund-pitch/README.txt` and replace the same MP4 filename for the final Teams recording."
+    },
+    {
+      "file": "2026-09-01_Technical_Writer_Pitch_Script_v13.md",
+      "date": "2026-09-01",
+      "roles": [
+        "technical_writer"
+      ],
+      "topics": [
+        "pitch",
+        "script",
+        "v13"
+      ],
+      "files_touched": [
+        "Docs/prototype-fund-pitch/index.html",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.en.vtt",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Follow `Docs/prototype-fund-pitch/README.txt`. The public transcript, scrolling MP4 and VTT now contain identical v13 spoken text; the stage direction is intentionally internal only."
     },
     {
       "file": "2026-09-01_Technical_Writer_Scrolling_Pitch_Placeholder.md",
