@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-09-01 | Technical Writer | Codex (GPT-5) | Faster Scrolling Pitch — [Standard] [open-items: yes]
+**For next agent:** The silent portrait-and-scrolling-text placeholder now runs 2:30, with proportionally retimed VTT captions. Replace the same MP4 filename with the final Teams recording and keep F23’s public page URL unchanged.
+→ Docs/AGENTS/Handoffs/2026-09-01_Technical_Writer_Faster_Scrolling_Pitch.md
+
+---
 ### 2026-09-01 | Technical Writer | Codex (GPT-5) | Scrolling Pitch Placeholder — [Standard] [open-items: yes]
 **For next agent:** The stable pitch page now serves a silent MP4 with Robert’s portrait fixed left and the approved F24 text scrolling right. Replace the same media filename with the final Teams recording and update notice, transcript, captions and cache token without changing F23’s URL.
 → Docs/AGENTS/Handoffs/2026-09-01_Technical_Writer_Scrolling_Pitch_Placeholder.md
