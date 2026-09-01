@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-09-01 | Technical Writer | Codex (GPT-5) | Silent Provisional Video -- [Standard] [open-items: yes]
+**For next agent:** The stable pitch page now serves an audio-free provisional MP4 with burned/VTT captions. Replace the same media filename with Robert's final Teams recording and update notice, transcript, captions and cache token without changing the application URL.
+→ Docs/AGENTS/Handoffs/2026-09-01_Technical_Writer_Silent_Provisional_Video.md
+
+---
 ### 2026-08-31 | Technical Writer | Codex (GPT-5) | Prototype Fund Provisional Video -- [Standard] [open-items: yes]
 **For next agent:** The stable public page is `Docs/prototype-fund-pitch/index.html`; replace the same MP4 with Robert's final Microsoft Teams recording, then update captions, transcript, notice, and cache-busting query string without changing the application URL.
 → Docs/AGENTS/Handoffs/2026-08-31_Technical_Writer_Prototype_Fund_Provisional_Video.md
