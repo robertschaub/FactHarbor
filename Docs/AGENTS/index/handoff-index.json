@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-01T01:28:30.188Z",
-  "count": 37,
+  "generatedAt": "2026-09-01T20:07:11.173Z",
+  "count": 38,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -683,6 +683,25 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Follow `Docs/prototype-fund-pitch/README.txt`. Do not rename the public page or the MP4. The provisional cut is 169.067 seconds and uses `?v=provisional-20260831`; update that query string when publishing the final media."
+    },
+    {
+      "file": "2026-09-01_Technical_Writer_Scrolling_Pitch_Placeholder.md",
+      "date": "2026-09-01",
+      "roles": [
+        "technical_writer"
+      ],
+      "topics": [
+        "scrolling",
+        "pitch",
+        "placeholder"
+      ],
+      "files_touched": [
+        "Docs/prototype-fund-pitch/index.html",
+        "Docs/prototype-fund-pitch/README.txt",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Follow `Docs/prototype-fund-pitch/README.txt`. The current 2:50 placeholder has one H.264 video stream and no audio stream; replace the same MP4 filename so F23 remains valid."
     },
     {
       "file": "2026-09-01_Technical_Writer_Silent_Provisional_Video.md",
