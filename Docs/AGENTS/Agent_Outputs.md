@@ -211,3 +211,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-06-01 | Lead Architect | Codex/Claude | Lead Architect — Quality-Lever Consolidation (2026-06-01) -- [Standard] [open-items: yes]
 **For next agent:** Lead Architect — Quality-Lever Consolidation (2026-06-01)
 → Docs/AGENTS/Handoffs/2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md
+
+---
+### 2026-09-05 | Technical Writer | Codex | Shortened Prototype Fund Pitch — [Standard] [open-items: yes]
+**For next agent:** The approved 188.750-second pitch keeps the stable URL and transcript with retimed English captions; it remains 8.750 seconds above the three-minute guidance.
+→ Docs/AGENTS/Handoffs/2026-09-05_Technical_Writer_Shortened_Prototype_Fund_Pitch.md

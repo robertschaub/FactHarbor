@@ -1,152 +1,152 @@
 WEBVTT
 
-00:00:00.760 --> 00:00:03.400
+00:00:00.000 --> 00:00:02.460
 Hello, I’m Robert Schaub.
 
-00:00:04.150 --> 00:00:09.280
+00:00:02.900 --> 00:00:07.720
 I spent 38 years in software engineering
 and project leadership—
 
-00:00:09.400 --> 00:00:13.850
+00:00:07.980 --> 00:00:12.260
 30 at Phonak/Sonova,
 helping people hear better.
 
-00:00:14.830 --> 00:00:18.460
+00:00:12.540 --> 00:00:15.960
 I founded FactHarbor Verein,
 a Swiss non-profit,
 
-00:00:18.460 --> 00:00:22.350
+00:00:15.960 --> 00:00:19.860
 and built FactHarbor’s evidence-based
 fact-checking Alpha
 
-00:00:22.950 --> 00:00:28.550
+00:00:20.340 --> 00:00:25.840
 and Our AI Charter Runtime, a runnable
 decision-gateway proof of concept.
 
-00:00:30.930 --> 00:00:33.100
+00:00:26.067 --> 00:00:28.220
 My motivation is societal:
 
-00:00:34.100 --> 00:00:38.050
+00:00:29.000 --> 00:00:32.840
 facts are an essential foundation
 of democracy and justice.
 
-00:00:39.500 --> 00:00:44.850
+00:00:33.200 --> 00:00:38.580
 I want AI systems to strengthen evidence-based
 decision-making and accountability.
 
-00:00:45.610 --> 00:00:51.980
+00:00:39.080 --> 00:00:45.400
 For consequential answers, that means checking
 authority and evidence before release
 
-00:00:52.280 --> 00:00:56.400
+00:00:45.700 --> 00:00:49.720
 and giving affected people a record
 they can inspect and challenge.
 
-00:00:58.560 --> 00:01:03.620
+00:00:49.880 --> 00:00:55.720
 The FactHarbor Alpha assesses public claims
 against supporting and opposing evidence.
 
-00:01:03.620 --> 00:01:06.600
+00:00:55.780 --> 00:00:58.780
 Here is a report from the public Alpha.
 
-00:01:07.480 --> 00:01:12.380
+00:00:59.440 --> 00:01:04.360
 It examines a blanket heat-pump recommendation
 for a Winterthur home
 
-00:01:12.530 --> 00:01:15.100
+00:01:04.460 --> 00:01:07.080
 and records supporting
 and opposing evidence,
 
-00:01:15.430 --> 00:01:19.450
+00:01:07.380 --> 00:01:11.400
 sources, limitations, uncertainty
 and its verdict.
 
-00:01:20.510 --> 00:01:26.820
+00:01:11.780 --> 00:01:17.980
 For the prototype, selected claim reports will be
 prepared in advance for the decision gateway.
 
-00:01:27.210 --> 00:01:33.080
+00:01:18.495 --> 00:01:24.260
 A later product could acquire new evidence
 under explicit authority and limits.
 
-00:01:36.080 --> 00:01:39.280
+00:01:24.767 --> 00:01:28.260
 Evidence-Gated Agents will test this path.
 
-00:01:40.380 --> 00:01:45.200
+00:01:28.920 --> 00:01:33.700
 An AI may draft a consequential answer,
 but the gateway outside the model
 
-00:01:45.200 --> 00:01:52.250
+00:01:33.700 --> 00:01:40.880
 decides whether current authority and declared
 evidence support releasing that exact answer.
 
-00:01:53.060 --> 00:01:59.550
+00:01:41.720 --> 00:01:47.520
 If the gateway blocks it, the request may be
 narrowed—or the person may decline.
 
-00:02:00.000 --> 00:02:04.350
+00:01:48.007 --> 00:01:52.240
 Any new answer must be based
 on current authority and evidence
 
-00:02:04.350 --> 00:02:07.030
+00:01:52.240 --> 00:01:55.040
 and pass every check again before release.
 
-00:02:07.780 --> 00:02:11.850
+00:01:55.760 --> 00:01:59.980
 If released, the recipient receives
 an inspectable receipt
 
-00:02:11.850 --> 00:02:16.820
+00:02:00.420 --> 00:02:04.780
 linking the answer, authority, evidence,
 decision and outcome.
 
-00:02:19.800 --> 00:02:25.980
+00:02:05.340 --> 00:02:11.400
 Beyond the prototype, I want to develop
 evidence-gated decision-making applications and services
 
-00:02:25.980 --> 00:02:30.850
+00:02:11.400 --> 00:02:16.320
 for companies, public bodies,
 newsrooms and civil society.
 
-00:02:31.500 --> 00:02:37.150
+00:02:16.780 --> 00:02:22.560
 With permission, they could weigh an organisation’s
 policies, contracts and records
 
-00:02:37.150 --> 00:02:38.900
+00:02:22.560 --> 00:02:24.360
 alongside public evidence.
 
-00:02:39.650 --> 00:02:43.200
+00:02:24.900 --> 00:02:28.340
 People affected by an answer should be able
 to understand it,
 
-00:02:43.250 --> 00:02:47.300
+00:02:28.340 --> 00:02:32.380
 challenge it, and seek correction
 or independent review.
 
-00:02:48.280 --> 00:02:52.680
+00:02:32.900 --> 00:02:36.960
 I built both foundations
 and can integrate them directly.
 
-00:02:53.420 --> 00:02:58.780
+00:02:37.200 --> 00:02:42.440
 The Prototype Fund’s coaches and other participants
 can challenge my assumptions,
 
-00:02:59.140 --> 00:03:03.860
+00:02:42.790 --> 00:02:48.860
 improve the recipient experience, and connect me
 with practitioners who can test
 
-00:03:03.860 --> 00:03:07.800
+00:02:48.860 --> 00:02:54.080
 whether the receipt is understandable
 and whether AI is justified.
 
-00:03:11.780 --> 00:03:14.880
+00:02:54.520 --> 00:02:57.420
 My vision is a free and fair society
 
-00:03:14.880 --> 00:03:19.020
+00:02:57.420 --> 00:03:02.800
 in which technology strengthens democracy
 because consequential decisions
 
-00:03:19.020 --> 00:03:23.350
+00:03:02.800 --> 00:03:05.880
 remain authorised, evidence-grounded
 
-00:03:23.450 --> 00:03:25.180
+00:03:06.045 --> 00:03:07.660
 and open to challenge.
