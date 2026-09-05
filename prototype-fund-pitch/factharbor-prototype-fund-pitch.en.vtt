@@ -1,0 +1,207 @@
+WEBVTT
+
+1
+00:00:00.210 --> 00:00:02.900
+Hello, I’m Robert Schaub.
+
+2
+00:00:03.790 --> 00:00:06.550
+Facts and evidence
+are an essential foundation
+
+3
+00:00:06.570 --> 00:00:11.620
+for democracy, justice
+and good business decisions.
+
+4
+00:00:12.230 --> 00:00:15.100
+I’m working on Evidence-Gated Agents.
+
+5
+00:00:16.110 --> 00:00:18.990
+Before AI acts, it must have permission
+
+6
+00:00:19.010 --> 00:00:22.020
+and enough evidence
+to justify the action.
+
+7
+00:00:22.890 --> 00:00:27.880
+I spent 39 years in software engineering
+and project leadership.
+
+8
+00:00:28.210 --> 00:00:32.500
+I founded FactHarbor,
+a Swiss non-profit association.
+
+9
+00:00:33.690 --> 00:00:36.000
+I’ve built two separate projects:
+
+10
+00:00:36.370 --> 00:00:38.960
+the FactHarbor fact-checking application.
+
+11
+00:00:39.390 --> 00:00:43.200
+It assesses claims against
+supporting and opposing evidence.
+
+12
+00:00:43.860 --> 00:00:48.600
+And Our AI Charter Runtime,
+an early prototype.
+
+13
+00:00:48.990 --> 00:00:52.820
+It checks permission and evidence
+before allowing an AI action.
+
+14
+00:00:53.250 --> 00:00:57.610
+With funding, I will be able to build
+and test a working
+
+15
+00:00:57.630 --> 00:01:01.980
+Evidence-Gated Agents prototype
+using these two foundations.
+
+16
+00:01:02.570 --> 00:01:04.820
+Here is a practical example:
+
+17
+00:01:05.730 --> 00:01:10.200
+replacing oil heating
+with an air-to-water heat pump.
+
+18
+00:01:10.660 --> 00:01:12.710
+Can this be generally recommended
+
+19
+00:01:12.730 --> 00:01:15.800
+without first checking
+the building’s specific conditions?
+
+20
+00:01:17.170 --> 00:01:20.360
+This FactHarbor report
+weighs the evidence.
+
+21
+00:01:20.730 --> 00:01:23.600
+Here you can inspect
+the evidence and its source.
+
+22
+00:01:26.590 --> 00:01:31.530
+Now, in the Evidence-Gated Agents
+prototype,
+
+23
+00:01:31.860 --> 00:01:35.050
+a user submits a question or claim.
+
+24
+00:01:35.560 --> 00:01:39.890
+The AI drafts an answer
+using evidence from FactHarbor reports.
+
+25
+00:01:40.380 --> 00:01:44.220
+A separate gateway will check
+current authority and evidence
+
+26
+00:01:44.240 --> 00:01:46.670
+for that exact answer.
+
+27
+00:01:47.140 --> 00:01:49.980
+The gateway can allow or block the answer,
+
+28
+00:01:50.000 --> 00:01:54.870
+or ask a human reviewer
+to narrow or decline the request.
+
+29
+00:01:55.700 --> 00:01:58.770
+Every revision must pass all checks again.
+
+30
+00:02:00.100 --> 00:02:03.680
+If the answer is released,
+it comes with a receipt you can inspect.
+
+31
+00:02:03.700 --> 00:02:07.450
+It links the answer, authority, evidence,
+
+32
+00:02:07.680 --> 00:02:09.970
+reasoning, decision and outcome.
+
+33
+00:02:12.460 --> 00:02:14.460
+Beyond the prototype, I want to develop
+
+34
+00:02:14.480 --> 00:02:18.690
+evidence-gated decision-making
+applications and services.
+
+35
+00:02:19.140 --> 00:02:23.220
+With permission, a future product
+could also gather and use
+
+36
+00:02:23.240 --> 00:02:26.210
+an organisation’s non-public evidence.
+
+37
+00:02:26.700 --> 00:02:28.620
+Consequential AI-based decisions
+
+38
+00:02:28.640 --> 00:02:32.190
+must always be open
+to inspection and challenge.
+
+39
+00:02:32.980 --> 00:02:36.580
+I want to work with the Prototype Fund’s
+coaches and participants
+
+40
+00:02:36.600 --> 00:02:40.810
+to challenge my assumptions
+and develop the project further.
+
+41
+00:02:41.600 --> 00:02:44.020
+Through its network, I’d like to involve
+
+42
+00:02:44.040 --> 00:02:47.030
+potential users in testing the prototype.
+
+43
+00:02:47.580 --> 00:02:50.460
+My vision is a free and fair society
+
+44
+00:02:50.480 --> 00:02:54.390
+where consequential decisions
+must remain authorised,
+
+45
+00:02:54.820 --> 00:02:57.630
+grounded in evidence
+and open to challenge.
