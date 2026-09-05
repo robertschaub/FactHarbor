@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-04T22:46:40.255Z",
-  "count": 42,
+  "generatedAt": "2026-09-05T14:10:45.403Z",
+  "count": 43,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -781,6 +781,26 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Preserve `https://robertschaub.github.io/FactHarbor/prototype-fund-pitch/`. The final MP4 is H.264/AAC, 1920x1080, fast-start, and SHA-256 `F6F210EF10B1902B23BE4575873FD6A84AAFAF7E8B090DC88797B006B4698FC3`; captions end after the retained word “challenge”."
+    },
+    {
+      "file": "2026-09-05_Technical_Writer_Replacement_Prototype_Fund_Pitch.md",
+      "date": "2026-09-05",
+      "roles": [
+        "technical_writer"
+      ],
+      "topics": [
+        "replacement",
+        "prototype",
+        "fund",
+        "pitch"
+      ],
+      "files_touched": [
+        "Docs/prototype-fund-pitch/index.html",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.en.vtt",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Keep the stable URL and use the replacement transcript and captions together. The previous pitch handoffs are historical; see the replacement duration above."
     },
     {
       "file": "2026-09-05_Technical_Writer_Shortened_Prototype_Fund_Pitch.md",

@@ -1,0 +1,8 @@
+---
+### 2026-09-05 | Technical Writer | Codex | Replacement Prototype Fund Pitch
+**Task:** Publish Robert's approved replacement recording at the existing application URL, with its actual spoken transcript, English captions and the three approved public links.
+**Files touched:** `Docs/prototype-fund-pitch/index.html`, `Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4`, `Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.en.vtt`, this handoff, `Docs/AGENTS/Agent_Outputs.md`, and the generated handoff index.
+**Key decisions:** Preserve https://robertschaub.github.io/FactHarbor/prototype-fund-pitch/ and both media filenames. The replacement is 179.563 seconds (under three minutes), 1920×1080 H.264/AAC with fast-start metadata. SHA-256: `6c6aa77d1fd5e568a8a1bce8c49f6a82f4b85a069f4d1fe0cf7c5ad101d92b84`. The page uses the actual 324-word take, 45 caption cues, and cache token `take2-20260905`. The Alpha, diagram PDF and Charter links follow the transcript. No production cues are included.
+**Validation:** Full media decode, retained-speech alignment, audio continuity, visual cut checks and image-quality comparison passed before approval. Transcript/caption word alignment and independent publication review passed; the local browser renders the replacement with a 2:59 duration. The earlier 188.750-second recording and its duration warning are superseded by this replacement.
+**Open items:** Verify the GitHub Pages deployment and live player after pushing this publication commit.
+**For next agent:** Keep the stable URL and use the replacement transcript and captions together. The previous pitch handoffs are historical; see the replacement duration above.
