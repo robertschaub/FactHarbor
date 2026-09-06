@@ -231,3 +231,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-05 | Agents Supervisor | Codex | Prototype Preparation Plan Revision 3 — [Significant] [open-items: yes]
 **For next agent:** Supersedes the revision-2 readiness entry: user-supplied Claude findings are incorporated and one focused Codex reviewer finds revision 3 ready for Captain approval. Check its pinned hash in the handoff; local network safeguards do not establish confinement, and setup/adoption remain pending.
 → Docs/AGENTS/Handoffs/2026-09-05_Agents_Supervisor_Preparation_Plan_Review.md
+
+---
+### 2026-09-05 | Technical Writer | Codex | Replacement Prototype Fund Pitch — [Standard] [open-items: no]
+**For next agent:** The approved replacement is published and verified: 179.563 seconds, actual transcript, 45 captions and three public links at the stable pitch URL. It supersedes the older recording and duration warning.
+→ Docs/AGENTS/Handoffs/2026-09-05_Technical_Writer_Replacement_Prototype_Fund_Pitch.md

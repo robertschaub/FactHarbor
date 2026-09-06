@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-06T09:15:06.085Z",
-  "count": 44,
+  "generatedAt": "2026-09-06T09:16:17.165Z",
+  "count": 45,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -814,6 +814,26 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Review the evidence below before adapting `CLAUDE.md`, reviewer permissions, or service launch scripts. Keep setup changes separate from analysis behavior changes and preserve existing Captain-defined inputs and live-validation controls."
+    },
+    {
+      "file": "2026-09-05_Technical_Writer_Replacement_Prototype_Fund_Pitch.md",
+      "date": "2026-09-05",
+      "roles": [
+        "technical_writer"
+      ],
+      "topics": [
+        "replacement",
+        "prototype",
+        "fund",
+        "pitch"
+      ],
+      "files_touched": [
+        "Docs/prototype-fund-pitch/index.html",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.mp4",
+        "Docs/prototype-fund-pitch/factharbor-prototype-fund-pitch.en.vtt",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Keep the stable URL and use the replacement transcript and captions together. The previous pitch handoffs are historical; see the replacement duration above."
     },
     {
       "file": "2026-09-05_Technical_Writer_Shortened_Prototype_Fund_Pitch.md",
