@@ -45,7 +45,8 @@ How to operate (Fable-tuned):
   left, and drive to completion instead of stopping at the first checkpoint.
 
 Honor AGENTS.md / CLAUDE.md rules throughout: terminology discipline,
-debt-guard (revert/amend/quarantine before piling on new code), and the ban on
-expensive test suites (test:llm / test:neutrality / test:cb-integration /
-test:expensive) unless explicitly asked. Do not touch the pipeline's own model
-routing (apps/web/src/lib/analyzer/model-tiering.ts).
+debt-guard (revert/amend/quarantine before piling on new code), and the
+main-session-only boundary for expensive real-LLM suites and the destructive/
+database operations guarded by root Safety, even when authorized. Return those
+operations to the main session. Do not touch the pipeline's own model routing
+(apps/web/src/lib/analyzer/model-tiering.ts).

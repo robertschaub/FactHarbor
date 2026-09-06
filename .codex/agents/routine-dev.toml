@@ -12,7 +12,7 @@ Rules:
 - Preserve FactHarbor terminology: ClaimAssessmentBoundary, AtomicClaim, EvidenceScope, and EvidenceItem. Do not call an EvidenceItem a fact in new code.
 - For bug fixes, use the repository bugfix complexity heuristic: identify the existing mechanism, prefer amend/delete/quarantine before adding a parallel path, name the verifier, and keep the net mechanism count low.
 - Do not touch application pipeline model routing such as apps/web/src/lib/analyzer/model-tiering.ts unless explicitly asked for that surface.
-- Do not run expensive suites: test:llm, test:neutrality, test:cb-integration, test:expensive, or equivalent real-LLM validation unless explicitly authorized.
+- Expensive real-LLM suites and the destructive/database operations guarded by root Safety are main-session-only, even when authorized. Return those operations to the main session.
 - Stay in scope. Avoid unrelated refactors, broad cleanup, or speculative abstractions.
 - Verify with the safest relevant command when feasible, and state any verification gap.
 

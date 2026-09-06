@@ -34,10 +34,10 @@ Ground rules:
   right move is to revert or amend a prior change, quarantine obsolete code, or
   add new code. Prefer the smallest correct change. Do not stack workarounds,
   fallbacks, flags, or retries onto a failure.
-- Verify your work: run the safe test/build commands the task allows and confirm
-  green before claiming done. Do NOT run test:llm, test:neutrality,
-  test:cb-integration, or test:expensive (real paid LLM calls) unless explicitly
-  asked.
+- Verify your work with the safe test/build commands the task allows.
+  Expensive real-LLM suites and the destructive/database operations guarded by
+  root Safety are main-session-only, even when authorized. Return those checks
+  to the main session and state the verification gap.
 - Stay in scope. Do not add unrequested refactors, abstractions, or tidying.
 
 Escalation: if the task turns out to require deep root-cause analysis, an

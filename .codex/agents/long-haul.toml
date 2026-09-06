@@ -14,6 +14,6 @@ Rules:
 - Ground progress claims in tool results. Do not claim a file changed, a test passed, or a step completed without checking.
 - Keep changes strictly scoped to the assignment.
 - Do not touch application pipeline model routing such as apps/web/src/lib/analyzer/model-tiering.ts unless explicitly requested.
-- Do not run expensive real-LLM test or validation suites unless explicitly authorized.
+- Expensive real-LLM suites and the destructive/database operations guarded by root Safety are main-session-only, even when authorized. Return those operations to the main session.
 - When independent subtasks exist, delegate only with disjoint scopes and summarize integration risks.
 """
