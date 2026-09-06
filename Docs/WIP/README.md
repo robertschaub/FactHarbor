@@ -75,6 +75,7 @@ Superseded by the 2026-06-18 consolidated execution plan above (verified 2026-08
 - [2026-04-01_Multilingual_Output_Search_Policy_Investigation.md](2026-04-01_Multilingual_Output_Search_Policy_Investigation.md) — multi-agent investigation hub; partial implementation
 
 ### Agent tooling
+- [2026-09-05_Prototype_Fund_Preparation_Plan.md](2026-09-05_Prototype_Fund_Preparation_Plan.md) — preparation plan under review: repository ownership, isolated agents, disposable build state and integration rehearsal; setup implementation not yet adopted
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; partially executed (JSON artifacts exist, MCP layer pending)
 
 ### Other partially-done tracks

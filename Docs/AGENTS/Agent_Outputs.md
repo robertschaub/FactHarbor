@@ -216,3 +216,18 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-05 | Technical Writer | Codex | Shortened Prototype Fund Pitch — [Standard] [open-items: yes]
 **For next agent:** The approved 188.750-second pitch keeps the stable URL and transcript with retimed English captions; it remains 8.750 seconds above the three-minute guidance.
 → Docs/AGENTS/Handoffs/2026-09-05_Technical_Writer_Shortened_Prototype_Fund_Pitch.md
+
+---
+### 2026-09-05 | Agents Supervisor | Codex | Prototype Implementation Setup Advice — [Standard] [open-items: yes]
+**For next agent:** Proposal only: retain repository boundaries, isolate writing worktrees, constrain reviewers and assign one integration owner. Resolve the `.claude/agents/verify.md` hook contradiction and service ownership in `scripts/restart-clean.ps1` before broader parallel operation.
+→ Docs/AGENTS/Handoffs/2026-09-05_Agents_Supervisor_Prototype_Implementation_Setup_Advice.md
+
+---
+### 2026-09-05 | Agents Supervisor | Codex | Prototype Preparation Plan and Review — [Significant] [open-items: yes]
+**For next agent:** Preparation plan revision 2 is ready for Captain approval after two independent Codex reviews; setup remains unimplemented. Check the pinned SHA-256 in the handoff; Claude handover is in `Docs/WIP/2026-09-05_Prototype_Fund_Preparation_Plan.md`.
+→ Docs/AGENTS/Handoffs/2026-09-05_Agents_Supervisor_Preparation_Plan_Review.md
+
+---
+### 2026-09-05 | Agents Supervisor | Codex | Prototype Preparation Plan Revision 3 — [Significant] [open-items: yes]
+**For next agent:** Supersedes the revision-2 readiness entry: user-supplied Claude findings are incorporated and one focused Codex reviewer finds revision 3 ready for Captain approval. Check its pinned hash in the handoff; local network safeguards do not establish confinement, and setup/adoption remain pending.
+→ Docs/AGENTS/Handoffs/2026-09-05_Agents_Supervisor_Preparation_Plan_Review.md
