@@ -121,7 +121,8 @@ $taskRelative = 'test-output/preparation/worker-checks-01'
 $taskRoot = New-WorkerDirectory $taskRelative -Fresh
 foreach ($dir in @('app', 'cache/npm', 'cache/node-gyp', 'cache/nuget/packages',
     'cache/nuget/http', 'cache/nuget/plugins', 'dotnet-home', 'tmp', 'logs', 'evidence',
-    'config', 'profile', 'profile/AppData/Roaming', 'profile/AppData/Local')) {
+    'config', 'profile', 'profile/AppData/Roaming', 'profile/AppData/Local',
+    'profile/ProgramFiles', 'profile/ProgramFilesX86')) {
   New-WorkerDirectory "$taskRelative/$dir" | Out-Null
 }
 [System.IO.File]::WriteAllText((Join-Path $taskRoot 'config/npm-user.npmrc'), '')
@@ -159,6 +160,8 @@ $workerEnv = @{
   PATHEXT = '.COM;.EXE;.BAT;.CMD'
   PATH = "$nodeDir;$dotnetDir;$gitDir;$windowsRoot\System32;$windowsRoot;$windowsRoot\System32\WindowsPowerShell\v1.0"
   PSModulePath = (Join-Path $windowsRoot 'System32/WindowsPowerShell/v1.0/Modules')
+  PROGRAMFILES = (Join-Path $taskRoot 'profile/ProgramFiles')
+  'PROGRAMFILES(X86)' = (Join-Path $taskRoot 'profile/ProgramFilesX86')
   USERPROFILE = (Join-Path $taskRoot 'profile')
   HOME = (Join-Path $taskRoot 'profile')
   APPDATA = (Join-Path $taskRoot 'profile/AppData/Roaming')
@@ -206,7 +209,7 @@ $worker = [System.Diagnostics.Process]::Start($start)
 $worker.WaitForExit() # Parent yields the console until the worker exits.
 ```
 
-Run the launcher from an interactive PowerShell console and all remaining commands in its child process; use `exit` to return to the parent after closeout. Save the names-only environment report; unexpected or missing names are a stop condition, not permission to expand the allowlist automatically. Verify the two local npm files are empty and NuGet.Config matches the literal above; never dump user/global configuration or environment values. npm uses the explicit empty user/global files, with project `.npmrc` absent. Both restores must use `--configfile` so NuGet does not merge user/machine/repository configuration or their authenticated sources. Trusted tool installations and the OS identity remain outside this procedure's credential boundary; it is not an OS credential-access sandbox.
+The empty task-local `PROGRAMFILES` paths satisfy NuGet's Windows path initialization without selecting the host's machine-wide NuGet configuration directories. Run the launcher from an interactive PowerShell console and all remaining commands in its child process; use `exit` to return to the parent after closeout. Save the names-only environment report; unexpected or missing names are a stop condition, not permission to expand the allowlist automatically. Verify the two local npm files are empty and NuGet.Config matches the literal above; never dump user/global configuration or environment values. npm uses the explicit empty user/global files, with project `.npmrc` absent. Both restores must use `--configfile` so NuGet does not merge user/machine/repository configuration or their authenticated sources. Trusted tool installations and the OS identity remain outside this procedure's credential boundary; it is not an OS credential-access sandbox.
 
 **Record versions only now**, after local state, profile and first-use controls are in the child environment. Capture each command's output and exit code in `$taskRoot/evidence`; stop on failure:
 
