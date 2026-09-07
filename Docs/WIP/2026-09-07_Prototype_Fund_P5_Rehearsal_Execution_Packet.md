@@ -1,6 +1,6 @@
 # Prototype Fund P5 rehearsal — execution packet
 
-**Status:** READY_FOR_REVIEW — preparation only; no writer or reviewer launched
+**Status:** IN PROGRESS — P1/P3 integrated and reviewed; isolated P3 runner stopped at NuGet acquisition; Captain retry decision pending
 **Created:** 2026-09-07
 **Owner:** Lead Developer/integrator; Captain approves dispatch and final acceptance
 **Scope:** FactHarbor only

@@ -241,3 +241,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-07 | Agents Supervisor | Cursor (GPT-5.6 Sol) | P2 Closure and P5 Preparation — [Significant] [open-items: yes]
 **For next agent:** P2 is formally closed for demonstrated FactHarbor sessions. Review and obtain Captain approval for `Docs/WIP/2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md` before dispatching its proposed P1/P3 writers; do not re-run P2 probes.
 → Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P2_Closure_And_P5_Preparation.md
+
+---
+### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Rehearsal Stop and Next Decision — [Significant] [open-items: yes]
+**For next agent:** P1/P3 are integrated and reviewed at `ed7f9fa6`; the isolated runner passed `npm ci` but stopped at the first NuGet restore with `NU1301`. Keep P5 incomplete, do not repeat P2, and obtain a Captain decision before one fresh network retry.
+→ Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md

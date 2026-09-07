@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-07T09:02:51.064Z",
-  "count": 46,
+  "generatedAt": "2026-09-07T10:25:43.988Z",
+  "count": 47,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -875,6 +875,27 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start at `Docs/WIP/2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md`. Obtain Captain approval for its explicit P1/P3 assignment substitution, commit the packet, pin that clean `main` SHA, then follow the dispatch and stop conditions exactly. Do not re-run P2 probes."
+    },
+    {
+      "file": "2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md",
+      "date": "2026-09-07",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "p5",
+        "rehearsal",
+        "stop",
+        "and",
+        "next",
+        "decision"
+      ],
+      "files_touched": [
+        "CONTRIBUTING.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "test-output/preparation/p5-rehearsal/"
+      ],
+      "summary": "Do not repeat P2. Start from exact commit `ed7f9fa648753cd4dbe3dfa6dd6ed9ff8bfc4a4a` and this handoff. Obtain an explicit Captain retry decision. On approval, amend only the ignored runner identities, recheck ports and clean state, run once, and send the resulting evidence to a fresh read-only revie"
     }
   ]
 }
