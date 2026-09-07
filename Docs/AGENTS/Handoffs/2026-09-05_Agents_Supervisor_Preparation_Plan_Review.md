@@ -63,3 +63,36 @@ The Windows platform-wide impossibility claim in the supplied review was not ado
 **Review limitation:** This Codex reviewer also inherited workspace-write permissions and mutation-capable tools. It performed read-only operations under instruction; its review does not demonstrate P2 containment.
 
 **Documentation verification:** Relative links and trailing whitespace checked; completion index rebuilt. No setup tests, builds, installs, service operations, analyses, commits, pushes or remote changes performed. The revision-3 plan remained unchanged after the pinned review.
+
+## Captain acceptance and formal P2 closure — 2026-09-07
+
+The Captain accepted P2 reviewer/writer readiness after reading
+`test-output/preparation/p2-effective-checks/HANDOVER-to-Codex-Native-2026-09-06.md`
+and `P2-CAPTAIN-DECISION-MEMO.md`. The integrator independently checked the consolidated
+parent-process result at `p2-native-results-2026-09-07.json` and the clean, synchronized
+FactHarbor checkout.
+
+**Accepted evidence:**
+
+- Codex `verify` and `scout` writes were denied by the read-only OS sandbox.
+- The Codex writer could write inside its worktree and was denied outside it.
+- The Claude verifier had no mutation-capable tool.
+- A child spawned by an ephemeral read-only Codex parent inherited the sandbox; its sentinel
+  write was OS-denied and the parent confirmed that the sentinel did not exist.
+- A real outbound request was blocked. No retry or payload was used.
+- P2 implementation commit `c9fb85241` is integrated on `main`; the acceptance checkout was
+  clean and synchronized at `9f07b4ea4`.
+
+**Closure:** P2 is **CLOSED for the demonstrated FactHarbor tool/session combinations**.
+Restricted sessions must use a fresh
+`codex exec --ignore-user-config --ephemeral --sandbox read-only|workspace-write` launch with
+`windows.sandbox=elevated`, no additional writable roots, network disabled, and inherited
+`CODEX_*` variables removed except `CODEX_HOME`. The desktop-collaboration-child path is not
+an approved restricted-session launcher. Parent-process observations remain authoritative
+over agent self-report.
+
+This acceptance covers FactHarbor OS-sandbox enforcement, not other repositories or
+prompt-injection resistance. It does not authorize cross-repository work, production access,
+application services, paid tests, or destructive operations. The reviewed revision-3 plan
+and SHA-256 remain unchanged. P5 preparation continues in
+[`2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md`](../../WIP/2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md).

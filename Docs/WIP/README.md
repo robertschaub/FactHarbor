@@ -75,7 +75,8 @@ Superseded by the 2026-06-18 consolidated execution plan above (verified 2026-08
 - [2026-04-01_Multilingual_Output_Search_Policy_Investigation.md](2026-04-01_Multilingual_Output_Search_Policy_Investigation.md) — multi-agent investigation hub; partial implementation
 
 ### Agent tooling
-- [2026-09-05_Prototype_Fund_Preparation_Plan.md](2026-09-05_Prototype_Fund_Preparation_Plan.md) — preparation plan under review: repository ownership, isolated agents, disposable build state and integration rehearsal; setup implementation not yet adopted
+- [2026-09-05_Prototype_Fund_Preparation_Plan.md](2026-09-05_Prototype_Fund_Preparation_Plan.md) — reviewed revision-3 preparation plan retained byte-for-byte; P2 containment is formally closed for demonstrated FactHarbor sessions
+- [2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md](2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md) — ready-for-review FactHarbor-only dispatch packet for the two-writer P5 rehearsal; no writer launched
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; partially executed (JSON artifacts exist, MCP layer pending)
 
 ### Other partially-done tracks

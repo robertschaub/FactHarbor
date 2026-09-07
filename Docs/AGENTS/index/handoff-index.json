@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-06T13:01:23.791Z",
-  "count": 45,
+  "generatedAt": "2026-09-07T07:58:09.193Z",
+  "count": 46,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -854,6 +854,27 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Keep https://robertschaub.github.io/FactHarbor/prototype-fund-pitch/ stable. MP4: H.264/AAC, 1920x1080, fast-start; SHA-256 `12A46476A188120E1D6FE055BA6FEACA72F7792575285525F6B5F18B7E79C2D1`. Local audio continuity, full decoding, image-quality comparison and visual cut checks passed. Verify GitHub "
+    },
+    {
+      "file": "2026-09-07_Agents_Supervisor_P2_Closure_And_P5_Preparation.md",
+      "date": "2026-09-07",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "p2",
+        "closure",
+        "and",
+        "p5",
+        "preparation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-09-05_Agents_Supervisor_Preparation_Plan_Review.md",
+        "Docs/WIP/2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start at `Docs/WIP/2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md`. Obtain Captain approval for its explicit P1/P3 assignment substitution, commit the packet, pin that clean `main` SHA, then follow the dispatch and stop conditions exactly. Do not re-run P2 probes."
     }
   ]
 }
