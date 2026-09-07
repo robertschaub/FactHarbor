@@ -256,3 +256,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Process Acceptance and Runner Qualification — [Significant] [open-items: yes]
 **For next agent:** Supersedes the earlier P5-incomplete disposition: the Captain accepted the demonstrated collaboration/process rehearsal. Keep the NuGet-stopped isolated P3 runner as a separate open environmental qualification; do not repeat P2 or infer a source/trust fix from bare `NU1301`.
 → Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md
+
+---
+### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Completion and Sandboxed Runner Descope — [Significant] [open-items: no]
+**For next agent:** Supersedes the earlier P5 runner-qualification entries: P5 is complete on the Captain-approved two-writer process basis. The worker-check recipe belongs in the ordinary developer/integrator environment; command 07 onward in the hardened runner and the NU1301 diagnosis are descoped. Revisit only for a future workflow that genuinely requires hardened-sandbox builds.
+→ Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md

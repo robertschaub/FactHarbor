@@ -1,6 +1,6 @@
 # Prototype Fund P5 rehearsal — execution packet
 
-**Status:** PROCESS REHEARSAL ACCEPTED — isolated P3 runner qualification remains open after the repeated NuGet acquisition stop
+**Status:** COMPLETE — Captain accepted the demonstrated two-writer collaboration rehearsal; hardened-sandbox build and test execution is descoped
 **Created:** 2026-09-07
 **Owner:** Lead Developer/integrator; Captain approves dispatch and final acceptance
 **Scope:** FactHarbor only
@@ -158,11 +158,11 @@ recipe is an integrator-owned later rehearsal step.
    changed commit/diff is reviewed again.
 5. The integrator incorporates the approved commits sequentially into the integration
    checkout and records conflict resolutions. The reviewer checks the final combined diff.
-6. Only after the final documentation is approved, an authorized isolated runner executes
-   the documented P3 recipe once. It records selected/excluded tests, commands, exit codes,
-   listener observations, tracked status, state paths, cache exceptions and network limits.
-7. The integrator writes the P5 completion handoff. Captain acceptance is limited to the
+6. The integrator writes the P5 completion handoff. Captain acceptance is limited to the
    FactHarbor tools, hook paths and checks actually exercised.
+7. The P3 worker-check recipe runs in the ordinary developer/integrator environment. Running
+   dependency installation, restore, tests or builds inside the hardened credential-free,
+   network-confined elevated restricted-token runner is outside P5.
 
 ## Stop conditions
 
@@ -173,10 +173,6 @@ Stop before further edits or checks if any of the following occurs:
 - a writer's diff touches an unowned file or another checkout changes;
 - a reviewer has an effective mutation, deployment, job-submission or admin path;
 - a task sees private-repository material, credentials or development settings;
-- ports 3000/5000 are occupied during the reserved check window;
-- test discovery cannot prove all expensive and lifecycle exclusions;
-- a check requires provider access, live credentials, shared application state or network
-  confinement unavailable to the runner;
 - an installed hook fails or writes outside its task-local path;
 - the integration result differs from the reviewed commits without renewed review.
 
@@ -192,24 +188,22 @@ The completion handoff must include:
 - writer diffs and integrator-created commit SHAs;
 - reviewer identities, exact reviewed revisions and dispositions;
 - hook paths actually exercised;
-- P3 discovery, selection and command evidence;
+- P3 documentation integration and its review evidence;
 - proof that tracked files and protected application state remained clean;
 - all unexecuted combinations and the standing limits on other repositories, networking,
   prompt injection and product integration.
 
-The Captain accepted the demonstrated P5 collaboration/process rehearsal on 2026-09-07: two
-isolated writers with disjoint ownership, enforced containment checks, sequential integration and
-fresh read-only review. Acceptance is limited to those exercised combinations. It does not claim
-that the isolated P3 runner completed dependency restoration, discovery, selected tests or builds.
-Those commands remain a separate open environmental qualification rather than reopening the
-accepted collaboration rehearsal.
+The Captain accepted and closed P5 on 2026-09-07 on the demonstrated basis: two isolated writers
+with disjoint ownership, enforced containment checks, sequential integration, fresh read-only
+review, and integration of the P1 and P3 documentation packages. Acceptance is limited to those
+exercised combinations.
 
-Attempts seven and nine both stopped at command 07 with `NU1301` after commands 00 through 06
-passed. Attempt nine was the sole actual Captain-authorized retry; a pre-task identity guard
-stopped attempt eight before any worker command ran. A fresh read-only reviewer returned
-`CONFIRMED_STOP / ACCEPT_CLASSIFICATION`. The failed run already used an explicit task-local
-`NuGet.Config` that declared the nuget.org v3 service index, while a separate host-side request
-returned HTTP 200. The host result establishes reachability only from that host at that later time;
-it does not localize the earlier runner failures or exclude timing-dependent or upstream causes.
-Missing machine-level configuration, certificate trust and the runner's inner cause all remain
-unproven. No additional restore or runner launch is authorized by this packet.
+The documented P3 worker-check recipe belongs in the ordinary developer/integrator environment.
+Running `npm ci`, `dotnet restore`, tests or builds inside the hardened credential-free,
+network-confined elevated restricted-token runner is not a P5 acceptance criterion; command 07
+onward in that runner is descoped.
+
+Attempts seven and nine, which stopped at command 07 with `NU1301`, remain historical evidence
+only. The in-sandbox NuGet diagnosis is stopped, and no further hardened-sandbox .NET transport
+session is required for P5. Revisit only if a future workflow genuinely requires agents to build
+inside a hardened sandbox, under a separate scope limited to a time-boxed certificate-access fix.

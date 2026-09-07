@@ -76,7 +76,7 @@ Superseded by the 2026-06-18 consolidated execution plan above (verified 2026-08
 
 ### Agent tooling
 - [2026-09-05_Prototype_Fund_Preparation_Plan.md](2026-09-05_Prototype_Fund_Preparation_Plan.md) — reviewed revision-3 preparation plan retained byte-for-byte; P2 containment is formally closed for demonstrated FactHarbor sessions
-- [2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md](2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md) — P5 collaboration/process rehearsal accepted; isolated P3 runner qualification remains open after repeated NuGet acquisition failure
+- [2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md](2026-09-07_Prototype_Fund_P5_Rehearsal_Execution_Packet.md) — **COMPLETE** on the Captain-accepted two-writer process basis; hardened-sandbox build execution and the NU1301 diagnosis are descoped
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; partially executed (JSON artifacts exist, MCP layer pending)
 
 ### Other partially-done tracks
