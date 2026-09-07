@@ -66,11 +66,7 @@ When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), f
 
 ## Agent Exchange Protocol
 
-On task completion, write output so other agents can pick up your work:
-
-- **Trivial** (typo, quick fix): no file needed.
-- **Standard** (bug fix, feature, config change): append entry to `Docs/AGENTS/Agent_Outputs.md`.
-- **Significant** (multi-file, design decision): create `Docs/AGENTS/Handoffs/YYYY-MM-DD_<Role>_<Description>.md` + cross-reference in `Agent_Outputs.md`.
+On task completion, follow `Docs/AGENTS/Policies/Handoff_Protocol.md` for output tiers and the restricted-reviewer/scoped-worker exception; shared writes follow the root §Scoped Task Worktrees rule.
 
 Template and full rules: `/AGENTS.md` § Agent Exchange Protocol.
 
@@ -84,8 +80,8 @@ Then use the generated indexes in `Docs/AGENTS/index/` before scanning
 - `stage-manifest.json` — look up model-tier mappings without grepping code
 
 `handoff-index.json` is for agent task history only. For source code locations, use
-normal code search/grep. If the indexes are missing, run `npm run index` once or fall
-back to direct file scanning.
+normal code search/grep. If indexes are missing during concurrent work, report the
+rebuild need to the integrator; otherwise follow `/AGENTS.md` §Generated indexes.
 
 ## Agent Handoff
 
@@ -98,4 +94,4 @@ See `/AGENTS.md` Agent Handoff Protocol for full reference.
 ## Conventions
 
 - Commit messages: conventional commits `type(scope): description`.
-- Solo developer + AI agents. Direct push to main is normal.
+- Follow [AGENTS.md §Scoped Task Worktrees](../AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs.

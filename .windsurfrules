@@ -40,4 +40,4 @@ When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS
 ## Conventions
 
 - Commits: `type(scope): description`
-- Solo developer + AI agents. Direct push to main is normal.
+- Follow [AGENTS.md §Scoped Task Worktrees](AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs.

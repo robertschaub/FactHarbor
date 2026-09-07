@@ -11,7 +11,7 @@ Two options depending on task complexity:
 
 ### Quick-Start (for simple/moderate tasks)
 
-Most tasks only need a one-liner. The "As \<Role\>" pattern triggers the Role Activation Protocol in AGENTS.md:
+Most solo tasks only need a one-liner. Concurrent writing requires the assignment boundaries in the full template below, even for simple tasks. The "As \<Role\>" pattern triggers the Role Activation Protocol in AGENTS.md:
 
 ```
 As {ROLE}, {one-sentence task}.
@@ -110,6 +110,16 @@ Example:
 
 ## Constraints & Context
 
+**Repository / base revision:** {REPOSITORY_ID / FULL_BASE_SHA}
+**Branch / worktree:** {TASK_BRANCH / ASSIGNED_WORKTREE — session-local path only}
+**Owned files:** {EXPLICIT_REPOSITORY_RELATIVE_PATHS}
+**Boundaries:** {IN_SCOPE / OUT_OF_SCOPE / READ_OR_WRITE_RESTRICTIONS}
+**Permitted commands / state paths:** {COMMANDS / WRITABLE_OUTPUT_CACHE_TEMP_DB_PATHS_OR_NONE}
+**Checks:** {REQUIRED_CHECKS / EXPECTED_RESULTS / OMISSIONS_AND_REASONS}
+**Reviewer / integrator:** {REVIEWER / ONE_DESIGNATED_INTEGRATOR}
+**Stop conditions:** {TASK_SPECIFIC_CONDITIONS; include Collaboration Rules §4.3}
+**Reviewed-revision evidence:** {FULL_REVIEWED_SHA or BASE_SHA + CAPTURED_DIFF_AND_CHANGED_FILE_HASHES; reviewer/outcome/check results; integrator records resulting SHA}
+
 {CONSTRAINTS}
 <!--
 Any specific constraints, deadlines, or context.
@@ -128,6 +138,7 @@ Example:
 What outputs are expected. Two categories:
 - Formal documents (design, review, investigation) → Docs/WIP/
 - Task completion outputs → per Agent Exchange Protocol (AGENTS.md)
+- Restricted reviewers return findings/evidence in chat; the integrator writes completion artifacts and serializes shared-index updates (Collaboration Rules §4.3).
 Example:
 - Architecture document in Docs/WIP/
 - Mermaid diagrams showing data flow

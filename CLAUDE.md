@@ -33,4 +33,4 @@ Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) �
 
 ## Workflow
 
-Solo developer + AI agents. Direct push to main is normal. Commits follow conventional commits: `type(scope): description`.
+Follow [AGENTS.md §Scoped Task Worktrees](AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs. Commits follow conventional commits: `type(scope): description`.

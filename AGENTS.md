@@ -365,7 +365,11 @@ Use **`/docs-update`** after documentation changes when status labels, README/in
 - Do not overwrite `apps/api/factharbor.db` unless asked
 - Platform is Windows. Use PowerShell-compatible commands.
 - **PreToolUse hooks** (`.claude/settings.json`) block destructive Bash commands: `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs. **These hooks fire for the MAIN SESSION ONLY — they do NOT fire for subagent or Workflow-agent tool calls.** This is confirmed current behavior: anthropics/claude-code#34692 was closed (not-planned / stale-labeled) on 2026-05-30, so do not expect a fix. Under this repo's `bypassPermissions` mode, a subagent's destructive command is caught by **neither** the hook **nor** a permission prompt.
-- **Destructive or irreversible operations are main-session-only and MUST NEVER be delegated to a subagent or Workflow agent** — specifically `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs (the exact set the hook guards). For agents that mutate files in parallel, prefer **worktree isolation** to bound blast radius. Read-only fan-out (e.g., the Explore agent) is inherently safe.
+- **Destructive or irreversible operations are main-session-only and MUST NEVER be delegated to a subagent or Workflow agent** — specifically `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs (the exact set the hook guards). Read-only fan-out (e.g., the Explore agent) is inherently safe.
+
+### Scoped Task Worktrees
+
+Ordinary solo work retains the direct-to-`main` norm. During concurrent writing, use scoped task branches/worktrees with explicit file ownership and one designated integrator for shared writes and integration; follow [Collaboration Rules §4.3](Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing). Restricted reviewers return findings in chat; the integrator writes their completion artifacts and serializes shared-index changes. Documentation deployment remains triggered from `main` as described in §Commands.
 
 ---
 
@@ -376,12 +380,14 @@ All agents MUST follow the Exchange Protocol on non-trivial task completion. Ful
 **Quick summary (do not skip the full file):**
 1. **Before starting a task**: assess role/model-tier fit. If `fhAgentKnowledge` is available, call `preflight_task` before manual handoff/index scanning. Otherwise **query `Docs/AGENTS/index/handoff-index.json`** (filter by `role` + `topics`) to find relevant prior work — read only the matched files, not the full directory.
 2. **Role activation** ("As \<Role\>"): treat `As <Role>,` / `As <Role>:` as a preflight trigger when `fhAgentKnowledge` is available. Otherwise look up role in alias table → read `Docs/AGENTS/Roles/<RoleName>.md` → scan `Role_Learnings.md` → acknowledge → stay in role.
-3. **On completion**: write output per tier — Trivial = chat only, Standard = append to `Docs/AGENTS/Agent_Outputs.md`, Significant = new file in `Docs/AGENTS/Handoffs/`. Role handoffs require at least Standard + `Warnings` + `Learnings`.
+3. **On completion**: use the output tiers in `Docs/AGENTS/Policies/Handoff_Protocol.md`. Role handoffs require at least Standard + `Warnings` + `Learnings`. Restricted reviewers return these in chat for the integrator to persist (§Scoped Task Worktrees).
 4. **Append, don't overwrite** `Agent_Outputs.md`. `Docs/WIP/` is NEVER for completion outputs.
 
 ## Generated indexes (do not edit manually)
 
 Auto-rebuilt by PostToolUse hooks and workflow scripts. Run `npm run index` for a full rebuild.
+
+During concurrent writing, the designated integrator serializes shared-index rebuilds and updates (§Scoped Task Worktrees); workers report needed updates instead of running them.
 
 | Index | File | Use for |
 |-------|------|---------|

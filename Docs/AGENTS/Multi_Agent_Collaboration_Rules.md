@@ -210,7 +210,7 @@ flowchart TB
 1. Send the **INVESTIGATE** command to the **first agent** and wait for confirmation that the hub document has been created
 2. Once confirmed, send **INVESTIGATE** to the remaining agents — they can all run in parallel
 
-This two-step dispatch eliminates the document-creation race condition. No other manual preparation is needed.
+Use §4.3 to assign task worktrees and one integrator before parallel writing. This two-step dispatch sequences hub creation; the integrator serializes subsequent hub updates.
 
 **Phase 1 — Independent Investigation (each agent)**
 
@@ -220,10 +220,10 @@ This two-step dispatch eliminates the document-creation race condition. No other
    c. Add your row to the **Participant Tracker** with your spoke file path
 2. **If the hub document exists** (subsequent agents):
    a. Read the Investigation Brief
-   b. Add your row to the **Participant Tracker** with your spoke file path
+   b. Report your role and spoke file path to the integrator for the **Participant Tracker**
 3. **Create your spoke file**: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
 4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file**
-5. When done: update your Participant Tracker row to `DONE`
+5. When done: report `DONE` to the integrator for your Participant Tracker row
 6. Do NOT read other agents' spoke files (anti-anchoring rule — reports are in separate files, making this naturally enforced)
 7. Do NOT attempt consolidation — that is Phase 2
 
@@ -252,7 +252,7 @@ This two-step dispatch eliminates the document-creation race condition. No other
 - The consolidator must not discard minority findings — disagreements are valuable signal
 - If an agent discovers something outside the investigation scope, it flags it in an `**Out of Scope**` note in their spoke file but does not investigate further
 - The hub document is the single source of truth for the downstream reviewer/implementer
-- Agents MUST update their row in the **Participant Tracker** when changing state
+- Agents MUST report state changes to the integrator, who alone updates the shared **Participant Tracker** during concurrent writing
 - If a participant remains in `INVESTIGATING` or `WRITING` status and their agent session is no longer active, the Captain may set their status to `ABANDONED` and proceed with consolidation using available reports. The consolidator should note the missing perspective.
 
 #### Decision Authority & Escalation
@@ -276,7 +276,7 @@ Decisions during investigation and consolidation follow a tiered authority model
 
 #### Captain Commands
 
-The Captain uses these standardized prompts to direct agents. Copy, fill in the blanks, and paste to the agent.
+The Captain uses these standardized prompts to direct agents. Copy, fill in the blanks, and paste to the agent. For concurrent work, attach the assignment boundaries from the [Meta-Prompt Template](Multi_Agent_Meta_Prompt.md); §4.3 governs all shared writes below. Restricted reviewers return reviews in chat for the integrator to record.
 
 **INVESTIGATE** — Assign an agent to investigate (Phase 1):
 ```
@@ -288,7 +288,7 @@ Scope: {what is NOT in scope}
 Focus on: {optional specific focus area or questions for this agent}
 
 If the hub document does not exist, create it from the §4.5 template and populate the Investigation Brief.
-Add yourself to the Participant Tracker, create your spoke file (§4.5), and write your report there.
+Report your role and spoke path to the integrator for the Participant Tracker; create your assigned spoke file (§4.5) and write your report there.
 ```
 
 **CONSOLIDATE** — Assign the consolidator (Phase 2):
@@ -346,7 +346,7 @@ Paste the **INVESTIGATE** command into the first agent. Wait for confirmation th
 
 **Step 2 — Dispatch remaining agents** (in parallel)
 
-Paste the **INVESTIGATE** command into each additional agent. They find the hub document, self-register in the Participant Tracker, and create their own spoke files. All agents write to their own files — no contention.
+Paste the **INVESTIGATE** command into each additional agent in its assigned worktree. They read the hub brief, report registration to the integrator, and create their assigned spoke files.
 
 **Step 3 — Monitor progress**
 
@@ -366,7 +366,7 @@ Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go t
 
 Role handoffs follow the **Agent Exchange Protocol** in `Docs/AGENTS/Policies/Handoff_Protocol.md` (Role Handoff mode).
 
-- **Outgoing role:** Write a completion output using the unified template. The **Warnings** and **Learnings** fields are required (not optional). Always append learnings to `/Docs/AGENTS/Role_Learnings.md`.
+- **Outgoing role:** Supply a completion output using the unified template, including **Warnings** and **Learnings**. Persistence follows the restricted-reviewer exception and shared-write ownership in §4.3 and the Handoff Protocol.
 - **Incoming role:** Follow the incoming-role checklist in `Docs/AGENTS/Policies/Handoff_Protocol.md` § Role Handoff.
 
 See `Docs/AGENTS/Policies/Handoff_Protocol.md` for the full template, output tiers, and file locations.
@@ -431,8 +431,14 @@ Every collaborative document MUST include:
 
 ### 4.3 Concurrent Editing
 
-- **§3.4 investigations:** No contention — each agent writes to their own spoke file. Only the Participant Tracker in the hub is shared, and updates are brief appends.
-- **Other shared documents:** One writer at a time. If two agents need to edit the same document, the Captain sequences them. Always re-read a shared file before editing it — another agent may have changed it since you last read it.
+Implements [AGENTS.md §Scoped Task Worktrees](../../AGENTS.md#scoped-task-worktrees); ordinary solo work remains direct-to-`main`.
+
+1. **Assign before writing.** Record repository identity and base commit, task branch/worktree, owned files, scope boundaries, permitted commands and writable state paths, required checks, reviewer, one designated integrator, and stop conditions in the existing [assignment template](Multi_Agent_Meta_Prompt.md). Worktree paths are session-local; public artifacts use repository-relative paths and branch/revision identifiers.
+2. **Isolate writers.** Give each concurrent writer a task branch/worktree and disjoint owned files. Sequence overlapping ownership through the integrator. Worktrees share Git metadata and do not themselves enforce filesystem or command restrictions; include generated output, caches, databases, and temporary paths in the assignment's state boundaries. Workers do not change Git settings/hooks or perform integration; restricted writers return edits for the integrator to commit.
+3. **Serialize shared writes.** The integrator alone updates shared plans/trackers, `Agent_Outputs.md`, `Role_Learnings.md`, and shared indexes during concurrent work, including any rebuilds. In §3.4, participants report tracker changes; the integrator records them. The consolidator may also be the integrator, but that assignment must be explicit. Re-read shared files before updating them.
+4. **Review exact content.** Record the reviewer, outcome, repository/base SHA, and full reviewed commit SHA. For uncommitted edits, record the base SHA plus an immutable captured diff and content hashes for all changed files (including new files). A branch name or “latest” alone is insufficient. Record check commands, results, and the revision/content they checked; mark omitted checks and reasons. Restricted reviewers return findings and this evidence in chat; the integrator persists their completion artifacts per the [Handoff Protocol](Policies/Handoff_Protocol.md#restricted-reviewers-and-scoped-workers).
+5. **Integrate serially.** The designated integrator checks ownership and review evidence, commits restricted-writer edits, and integrates one package at a time. Compare integrated content to reviewed content; changes from conflict resolution or subsequent edits need renewed review and affected checks. Record the resulting integration SHA and its mapping to reviewed evidence in the PR/handoff. Root Safety's main-session-only operations stay main-session-only. Documentation publishing continues through `main` and its existing CI workflow.
+6. **Stop and report** a repository/base/worktree mismatch, unexpected edits or ownership overlap, a needed command/state write outside the assignment, a failed containment check, unresolved review findings, or drift from reviewed content. Return the gap to the integrator/Captain; do not broaden permissions or silently repair another writer's work.
 
 ### 4.4 Review Comment Format
 
@@ -442,6 +448,8 @@ When adding review comments:
 ### Review: {Reviewer Role} - {Date}
 
 **Overall Assessment:** {APPROVE | REQUEST_CHANGES | COMMENT_ONLY}
+**Reviewed content:** {repository, base SHA, full reviewed SHA; or captured diff + changed-file hashes per §4.3}
+**Checks:** {commands/results and checked revision; omissions with reasons}
 
 #### Strengths
 - {positive observation}
@@ -472,7 +480,7 @@ Used with the Multi-Agent Investigation Workflow (§3.4). File naming: `Docs/WIP
 
 ## Participant Tracker
 
-Each agent adds their own row when joining. No manual setup needed.
+The integrator records each agent's registration and state changes (§4.3).
 
 | # | Role | Agent/Tool/Model | Report File | Status | Updated |
 |---|------|-----------------|-------------|--------|---------|

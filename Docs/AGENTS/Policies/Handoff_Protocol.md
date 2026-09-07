@@ -63,6 +63,10 @@ Full role definitions: `Docs/AGENTS/Roles/`. Shared workflows, area-to-document 
 
 One protocol for all agent-to-agent communication. Three modes, one template.
 
+#### Restricted reviewers and scoped workers
+
+Restricted reviewers return findings, warnings, learnings, and exact reviewed-revision evidence in chat without writing completion files or indexes. The designated integrator writes their completion artifacts under the normal tiers below, preserving reviewer attribution and outcome. For scoped workers, file ownership governs where they may write; return out-of-scope completion material in chat for the integrator. During concurrent writing, the integrator serializes shared output/log/index changes and rebuilds, including `Role_Learnings.md`; this exception applies to the persistence instructions throughout this protocol. See [Collaboration Rules §4.3](../Multi_Agent_Collaboration_Rules.md#43-concurrent-editing).
+
 #### Modes
 
 | Mode | When | Where Output Lives |
@@ -94,6 +98,14 @@ Use for both Standard and Significant outputs — both go into dated `Handoffs/`
 ### YYYY-MM-DD | <Role> | <Agent/Tool> | <Short Task Title>
 **Task:** One-line description of what was requested.
 **Files touched:** List of files created/modified.
+**Repository / base revision:** Repository identity and full base SHA.
+**Branch / worktree:** Task branch and worktree identifier (omit local machine paths from public artifacts).
+**Owned files / boundaries:** Assigned paths, in/out of scope, and read/write restrictions.
+**Permitted commands / state paths:** Commands and writable output/cache/temp/database paths, or none.
+**Checks:** Required checks, actual commands/results and checked revision/content; omissions with reasons.
+**Reviewer / integrator:** Reviewer and one designated integrator.
+**Stop conditions:** Assigned conditions and any triggered/unresolved blockers.
+**Reviewed-revision evidence:** Full reviewed SHA, or base SHA plus immutable captured diff and changed/new-file hashes; reviewer outcome/findings reference. Integrator adds resulting SHA and mapping to reviewed content, with renewed review/checks for content changes.
 **Key decisions:** What was decided and why (brief).
 **Open items:** Unfinished, blocked, or deferred items.
 **Warnings:** Gotchas, fragile areas, things to verify.
@@ -102,6 +114,8 @@ Use for both Standard and Significant outputs — both go into dated `Handoffs/`
 ```
 
 Field requirements by mode:
+
+The assignment and reviewed-revision fields above are required for concurrent work; for other tasks, include applicable evidence and mark unavailable review/integration evidence as pending rather than implying approval.
 
 | Field | Completion | Role Handoff |
 |-------|-----------|-------------|
