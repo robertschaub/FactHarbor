@@ -1,6 +1,6 @@
 # Prototype Fund P5 rehearsal — execution packet
 
-**Status:** IN PROGRESS — P1/P3 integrated and reviewed; authorized P3 retry repeated the NuGet acquisition stop; Captain disposition pending
+**Status:** PROCESS REHEARSAL ACCEPTED — isolated P3 runner qualification remains open after the repeated NuGet acquisition stop
 **Created:** 2026-09-07
 **Owner:** Lead Developer/integrator; Captain approves dispatch and final acceptance
 **Scope:** FactHarbor only
@@ -19,9 +19,9 @@ Authoritative inputs:
 - Local parent-process evidence under
   `test-output/preparation/p2-effective-checks/` (ignored, machine-local).
 
-## Decision required before dispatch
+## Historical dispatch decision (completed)
 
-Approve the two remaining disjoint writer packages below:
+The Captain approved the two disjoint writer packages below before launch:
 
 1. **Writer A — P1 governance alignment.**
 2. **Writer B — P3 credential-free worker-check documentation.**
@@ -29,7 +29,7 @@ Approve the two remaining disjoint writer packages below:
 Revision 3 originally paired P1 with a P2 reviewer-definition edit. P2 is now implemented and
 integrated at `c9fb85241`; the plan also prohibits replaying completed changes. P1 and P3 are
 therefore the smallest real, disjoint remaining packages that can exercise two writers. This
-substitution must be approved before launch; preparing this packet does not approve it.
+substitution was approved before launch; this record does not authorize another dispatch.
 
 The sandbox's enforced boundary is the assigned worktree root, not the narrower owned-file
 list. Owned files are additionally controlled through the assignment, parent-captured diff,
@@ -197,10 +197,19 @@ The completion handoff must include:
 - all unexecuted combinations and the standing limits on other repositories, networking,
   prompt injection and product integration.
 
-Until that record exists and the Captain accepts it, P5 remains incomplete.
+The Captain accepted the demonstrated P5 collaboration/process rehearsal on 2026-09-07: two
+isolated writers with disjoint ownership, enforced containment checks, sequential integration and
+fresh read-only review. Acceptance is limited to those exercised combinations. It does not claim
+that the isolated P3 runner completed dependency restoration, discovery, selected tests or builds.
+Those commands remain a separate open environmental qualification rather than reopening the
+accepted collaboration rehearsal.
 
-Current rehearsal evidence confirms that attempts seven and nine both stopped at command 07 with
-`NU1301` after commands 00 through 06 passed. Attempt nine was the sole actual Captain-authorized
-retry; a pre-task identity guard stopped attempt eight before any worker command ran. Locked
-restore, discovery, selected tests and both builds remain unexecuted. A fresh read-only reviewer
-returned `CONFIRMED_STOP / ACCEPT_CLASSIFICATION`; no additional retry is authorized by this packet.
+Attempts seven and nine both stopped at command 07 with `NU1301` after commands 00 through 06
+passed. Attempt nine was the sole actual Captain-authorized retry; a pre-task identity guard
+stopped attempt eight before any worker command ran. A fresh read-only reviewer returned
+`CONFIRMED_STOP / ACCEPT_CLASSIFICATION`. The failed run already used an explicit task-local
+`NuGet.Config` that declared the nuget.org v3 service index, while a separate host-side request
+returned HTTP 200. The host result establishes reachability only from that host at that later time;
+it does not localize the earlier runner failures or exclude timing-dependent or upstream causes.
+Missing machine-level configuration, certificate trust and the runner's inner cause all remain
+unproven. No additional restore or runner launch is authorized by this packet.
