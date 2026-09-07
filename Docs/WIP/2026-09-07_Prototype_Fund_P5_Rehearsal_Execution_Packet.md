@@ -1,6 +1,6 @@
 # Prototype Fund P5 rehearsal — execution packet
 
-**Status:** IN PROGRESS — P1/P3 integrated and reviewed; isolated P3 runner stopped at NuGet acquisition; Captain retry decision pending
+**Status:** IN PROGRESS — P1/P3 integrated and reviewed; authorized P3 retry repeated the NuGet acquisition stop; Captain disposition pending
 **Created:** 2026-09-07
 **Owner:** Lead Developer/integrator; Captain approves dispatch and final acceptance
 **Scope:** FactHarbor only
@@ -198,3 +198,9 @@ The completion handoff must include:
   prompt injection and product integration.
 
 Until that record exists and the Captain accepts it, P5 remains incomplete.
+
+Current rehearsal evidence confirms that attempts seven and nine both stopped at command 07 with
+`NU1301` after commands 00 through 06 passed. Attempt nine was the sole actual Captain-authorized
+retry; a pre-task identity guard stopped attempt eight before any worker command ran. Locked
+restore, discovery, selected tests and both builds remain unexecuted. A fresh read-only reviewer
+returned `CONFIRMED_STOP / ACCEPT_CLASSIFICATION`; no additional retry is authorized by this packet.

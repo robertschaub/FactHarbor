@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T10:30:31.777Z",
+  "generatedAt": "2026-09-07T14:05:04.970Z",
   "count": 47,
   "entries": [
     {
@@ -895,7 +895,7 @@
         "Docs/AGENTS/Agent_Outputs.md",
         "test-output/preparation/p5-rehearsal/"
       ],
-      "summary": "Do not repeat P2. Start from exact commit `ed7f9fa648753cd4dbe3dfa6dd6ed9ff8bfc4a4a` and this handoff. Obtain an explicit Captain retry decision. On approval, amend only the ignored runner identities, recheck ports and clean state, run once, and send the resulting evidence to a fresh read-only revie"
+      "summary": "Do not repeat P2 or launch the same runner again. Start from exact commit `ed7f9fa648753cd4dbe3dfa6dd6ed9ff8bfc4a4a` and this handoff. Keep P5 incomplete and return the repeated NuGet acquisition stop to the Captain. Scope and authorize any diagnosis or changed execution route separately before acti"
     }
   ]
 }

@@ -246,3 +246,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Rehearsal Stop and Next Decision — [Significant] [open-items: yes]
 **For next agent:** P1/P3 are integrated and reviewed at `ed7f9fa6`; the isolated runner passed `npm ci` but stopped at the first NuGet restore with `NU1301`. Keep P5 incomplete, do not repeat P2, and obtain a Captain decision before one fresh network retry.
 → Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md
+
+---
+### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Authorized Retry Stop — [Significant] [open-items: yes]
+**For next agent:** Supersedes the preceding retry instruction: the sole authorized retry again passed commands 00–06 and stopped at NuGet restore with `NU1301`; a fresh reviewer confirmed the stop. Keep P5 incomplete, do not repeat P2 or the same runner, and return disposition to the Captain.
+→ Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md
