@@ -109,6 +109,8 @@ apps/web/prompts/*Test*.prompt.md
 /DataModel.txt
 /AKEL.txt
 /.claude/settings.local.json
+/.gemini/settings.json
+/.gemini/settings.pre-agent-instructions.json
 /nul
 
 /job-*.json
