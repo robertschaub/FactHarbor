@@ -13,7 +13,7 @@ import {
 } from "../index.mjs";
 
 function loadQueryKnowledgeContext() {
-  return loadKnowledgeContext({ allowFallback: true, refreshIfStale: true });
+  return loadKnowledgeContext({ allowFallback: true });
 }
 
 function buildQueryResult(command, project) {
@@ -21,6 +21,7 @@ function buildQueryResult(command, project) {
   return buildCommandResult(command, {
     cacheSource: knowledgeContext.source,
     cacheRefreshed: knowledgeContext.refreshed,
+    cacheStale: knowledgeContext.freshness.isStale,
     ...project(knowledgeContext),
   }, knowledgeContext.warnings);
 }

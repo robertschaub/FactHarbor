@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -114,7 +114,40 @@ async function withStdioClient(run) {
 }
 
 const VOLATILE_BOOTSTRAP_FIELDS = new Set(["builtAt"]);
-const VOLATILE_QUERY_FIELDS = new Set(["cacheRefreshed"]);
+const VOLATILE_QUERY_FIELDS = new Set();
+
+function cacheSnapshot() {
+  return readdirSync(TEST_CACHE_DIR).sort().map((name) => ({
+    name,
+    bytes: readFileSync(join(TEST_CACHE_DIR, name)),
+    mtimeMs: statSync(join(TEST_CACHE_DIR, name)).mtimeMs,
+  }));
+}
+
+test("stdio and CLI queries preserve missing and stale cache states", async () => {
+  const manifestPath = join(TEST_CACHE_DIR, "manifest.json");
+  assert.equal(existsSync(manifestPath), false);
+  const args = ["search-handoffs", "--query", "knowledge"];
+  const missingBefore = cacheSnapshot();
+  const cliMissing = runCliJson(args);
+  const mcpMissing = await withStdioClient(async (client) =>
+    (await client.callTool({ name: "search_handoffs", arguments: { query: "knowledge" } })).structuredContent);
+  assert.equal(cliMissing.cacheSource, "fallback");
+  assert.deepEqual(stripScores(mcpMissing), stripScores(cliMissing));
+  assert.deepEqual(cacheSnapshot(), missingBefore);
+
+  ensureFreshCache();
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  writeFileSync(manifestPath, JSON.stringify({ ...manifest, repoHead: "__stale__" }));
+  const staleBefore = cacheSnapshot();
+  const cliStale = runCliJson(args);
+  const mcpStale = await withStdioClient(async (client) =>
+    (await client.callTool({ name: "search_handoffs", arguments: { query: "knowledge" } })).structuredContent);
+  assert.equal(cliStale.cacheStale, true);
+  assert.equal(cliStale.cacheRefreshed, false);
+  assert.deepEqual(stripScores(mcpStale), stripScores(cliStale));
+  assert.deepEqual(cacheSnapshot(), staleBefore);
+});
 
 test("mcp server exposes the exact frozen tool set", async () => {
   const server = createKnowledgeMcpServer();

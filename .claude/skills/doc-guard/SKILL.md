@@ -3,9 +3,12 @@ name: doc-guard
 description: Keep repository documentation lean, clear, and readable. Use automatically before adding a new document, substantially expanding or rewriting Markdown/xWiki content, adding explanatory/background sections, adding FAQs/glossaries/templates, introducing repeated framing, or reviewing a documentation diff for clutter, filler, duplication, over-broad prose, stale links, or readability problems.
 ---
 
+Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
+
+
 # /doc-guard - keep documentation lean and readable
 
-Apply documentation guardrails to: $ARGUMENTS
+Apply documentation guardrails to: TASK_ARGUMENTS
 
 ## Purpose
 
@@ -79,7 +82,4 @@ clear documentation.
 
 ## Hard stops
 
-Ask the maintainer before deleting or materially changing published normative
-text, changing a document's maturity label, retiring or moving a public
-document, adding material that may need private context, or publishing claims
-whose sources or licensing are uncertain.
+Preserve meaning, sources, obligations and maturity claims while tightening authorized text. Existing authorization for the named edit remains valid. Ask only when needed authority is missing for a substantive normative/maturity change, public retirement/move, private-context use or publication with uncertain sources/licensing. Word-count preservation is not a substitute for semantic preservation.

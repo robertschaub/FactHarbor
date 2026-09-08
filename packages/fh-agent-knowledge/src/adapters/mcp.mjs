@@ -11,7 +11,8 @@ const SERVER_INFO = {
 
 const SERVER_INSTRUCTIONS = [
   "FactHarbor internal knowledge query server.",
-  "Local-only and read-only except for local cache bootstrap or refresh.",
+  "Queries never write, including when the cache is stale or missing. Only explicit bootstrap_knowledge and refresh_knowledge operations write local cache state and require a writable assignment.",
+  "Startup suggestions are advisory. Historical matches may be superseded; check current authority before acting.",
   "Do not use this server for job submission, report mutation, config writes, database writes, or arbitrary shell access.",
   "Tool outputs mirror the existing fh-knowledge CLI JSON responses via structuredContent.",
 ].join(" ");

@@ -1,36 +1,23 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-13 -->
+# Claude Code — FactHarbor
 
-# Claude Code instructions — FactHarbor
+@AGENTS.md
 
-**Primary rules live in [/AGENTS.md](AGENTS.md)** (auto-loaded via `@AGENTS.md`). If your tool does not follow `@`-imports, read `/AGENTS.md` directly — it is authoritative. Do not duplicate its content here.
+The root is canonical. If the import was not loaded, read AGENTS.md directly. Before web/API work, read the applicable nested AGENTS.md even when launched from the root. `.claude/rules/factharbor-web.md` and `factharbor-api.md` provide path routing, not duplicate policy; do not rely on a prior read to trigger rules before a write.
 
-## Project snapshot
+## Client controls
 
-- `apps/api` — ASP.NET Core API (SQLite, port 5000). Entry: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`.
-- `apps/web` — Next.js UI + runner/orchestrator (port 3000). Pipeline entry: `src/lib/analyzer/claimboundary-pipeline.ts`. Runner route: `src/app/api/internal/run-job/route.ts`.
-- `tools/vscode-xwiki-preview` — VS Code extension for xWiki previews.
+Shared skills are authoritative in `.claude/skills`; the declared `.agents/skills` copies are checked by `node scripts/agents/check-skill-mirrors.mjs`. `validate` and `report-review` declare `disable-model-invocation: true`. Selection is not permission to reseed, submit jobs, spend on providers, publish or deploy.
 
-Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) → `runClaimBoundaryAnalysis` → writes progress back to API.
+`.claude/settings.json` contains repository hooks and uses `bypassPermissions`. This setting is not a restricted reviewer/writer profile. Preserve the destructive-command guard and recovery hooks. Automatic index rebuilding on Write/Edit is removed; the integrator owns existing builders and effective Git-hook output.
 
-## Terminology cheat sheet (full table in AGENTS.md)
+A repository observation dated 2026-05-30 reported hooks missing from subagent tool calls. Recheck the installed client's documented behavior before relying on hook coverage; the observation does not establish current enforcement. Destructive/irreversible operations remain main-session-only regardless of coverage.
 
-**ClaimAssessmentBoundary / AtomicClaim / EvidenceScope / EvidenceItem** — the four core analytical types. **NEVER** call any of these "context". **NEVER** call EvidenceItem a "fact" in new code.
+Agent definitions omit `tools` for ordinary documented tool inheritance and may retain `model: inherit`; inherited tools do not create a restricted profile. Before dispatch, record the actual tools/commands, writable state, configuration scope, trust/activation and unverified controls. A session whose required restriction cannot be established must not be dispatched as a writer. Read-only reviews use supplied evidence or verified read-only tools and return findings in chat.
 
-## Run commands
+## Model and advisor use
 
-- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
-- Web: `cd apps/web && npm run dev` (3000) · API: `cd apps/api && dotnet run` (5000)
-- Tests (safe): `npm test` · Build: `npm -w apps/web run build`
-- **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive` unless asked — real LLM calls at $1-5+/run.
+Choose the configured model/effort for the task; confirm supported settings in the installed client. Existing legacy thinking environment values are retained for compatible clients; their effect varies by model. Do not infer the live model or effective effort from an old repository snapshot, and do not modify user-level settings as part of routine work.
 
-## Pointers
+If an advisor is available, use it for a material uncertainty or an independent reasoning check required by root policy. It is an optional client route, not a standing review committee or an empirical regression test. Respect current provider-spend authority and use a compatible available reviewer when that tool is absent. Do not assume Claude model aliases, prices or effort settings apply to another client.
 
-- **Safety, hooks, destructive-git rules**: see `AGENTS.md` §Safety (authoritative).
-- **Documentation discipline**: use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`) before substantial Markdown/xWiki edits; use `/docs-update` afterward when indexes, status labels, backlog/changelog records, or links need reconciliation.
-- **Roles** ("As \<Role\>"): `Docs/AGENTS/Roles/` — activation protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md`.
-- **Multi-agent workflows & collaboration**: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
-- **Permissions mode**: `.claude/settings.json` uses `bypassPermissions` because this repo relies on local safety hooks plus a solo-maintainer workflow where agents are expected to make direct code changes without repeated approval prompts.
-
-## Workflow
-
-Follow [AGENTS.md §Scoped Task Worktrees](AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs. Commits follow conventional commits: `type(scope): description`.
+Follow root Scoped Task Worktrees and Collaboration Rules §4.3 for ownership and Git authority. Small read-only lookups can stay in the main session; the repository does not declare a Claude scout role. Use conventional commit messages for authorized integrator commits.

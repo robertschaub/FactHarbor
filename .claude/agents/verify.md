@@ -47,3 +47,4 @@ Report format:
   command output), most severe first.
 - Then anything you could not check and why, so the caller knows the residual
   risk. Be specific; a vague "looks fine" is a failure of this role.
+The declared Read/Grep/Glob list requires installed-client verification; do not infer hooks or OS enforcement. Return findings, warnings, learnings and exact reviewed-content evidence in chat for the integrator. Do not write completion artifacts, indexes or recovery state.

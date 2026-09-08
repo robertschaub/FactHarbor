@@ -1,71 +1,14 @@
 ---
-description: FactHarbor core project rules — applies to all files
+description: FactHarbor canonical instruction routing
 alwaysApply: true
 ---
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
 
-# FactHarbor — Core Rules
+Read repository-root `AGENTS.md` before work. It owns domain invariants, exact Captain-defined inputs, authorization, recovery, verification and completion rules. Before any nested target work, read the applicable `apps/web/AGENTS.md` or `apps/api/AGENTS.md` and any closer instructions, including when launched at the root. This adapter is subordinate to canonical instructions.
 
-> **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.
+Use one accountable implementer and proportionate checks. Trivial tasks need no role choreography or mandatory history lookup. For relevant non-trivial work, knowledge queries are read-only and advisory; stale/missing indexes are reported to the integrator, not rebuilt by restricted sessions. Source search locates code; historical handoffs may be superseded.
 
-Read `/AGENTS.md` for full project rules, architecture, and domain knowledge.
+Follow root Scoped Task Worktrees and Collaboration Rules §4.3. Restricted writers return owned edits/evidence without Git mutations; restricted reviewers return chat findings. The integrator owns shared records/indexes. Recover failed attempts under root policy; do not discard another owner's changes.
 
-## Project Overview
-Two apps + one tool:
-- `apps/api` — ASP.NET Core API (.NET 8, SQLite)
-- `apps/web` — Next.js app (UI + analysis pipeline)
-- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews
+Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Client metadata is not universal enforcement; declare unsupported controls before dispatch.
 
-## Critical Terminology (ALWAYS follow)
-- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame. NEVER call this "context" or "scope".
-- **AtomicClaim** = Single verifiable assertion extracted from user input. NEVER call this "context" or "fact".
-- **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
-- **EvidenceItem** = Extracted evidence from a source. NEVER call these "facts".
-- **probativeValue** = Quality assessment (high/medium/low).
-- **No hardcoded keywords**: Code, prompts, logic must be generic for ANY topic.
-- **Input neutrality**: "Was X fair?" must yield same analysis as "X was fair" (≤4% tolerance).
-
-## Safety
-- Do not access production systems or real customer data.
-- Do not change secrets/credentials or commit them.
-- Avoid destructive git commands unless explicitly asked.
-- Do not overwrite `apps/api/factharbor.db` unless asked.
-
-## Conventions
-- Commit messages: conventional commits `type(scope): description`.
-- Platform: Windows. Use PowerShell-compatible commands.
-- Follow [AGENTS.md §Scoped Task Worktrees](../../AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs.
-
-## Documentation Discipline
-
-Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`): state the reader need, existing home, chosen option, and lean test; prefer tightening or merging over adding. Use `/docs-update` afterward when indexes, status labels, backlog/changelog records, or links need reconciliation.
-
-## Roles
-
-When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
-
-**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role file and defer document reads until needed for the specific task.
-
-## Agent Exchange Protocol
-
-On task completion, follow `Docs/AGENTS/Policies/Handoff_Protocol.md` for output tiers and the restricted-reviewer/scoped-worker exception; shared writes follow the root §Scoped Task Worktrees rule.
-
-When **starting** a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context. Full rules: `/AGENTS.md` § Agent Exchange Protocol.
-
-Then use the generated indexes in `Docs/AGENTS/index/` before scanning
-`Docs/AGENTS/Handoffs/` by filename:
-
-- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
-- `stage-map.json` — locate which analyzer stage file owns a behavior
-- `stage-manifest.json` — look up model-tier mappings without grepping code
-
-`handoff-index.json` is for agent task history only. For source code locations, use
-normal code search/grep. If indexes are missing during concurrent work, report the
-rebuild need to the integrator; otherwise follow `/AGENTS.md` §Generated indexes.
-
-## Agent Handoff
-If another tool would be better for the task, say so:
-- Claude Code (Opus): complex architecture, deep reasoning, plan mode
-- GitHub Copilot: inline code completions
-- Cline: autonomous multi-step workflows
-See `/AGENTS.md` Agent Handoff Protocol for full reference.
+Use shared workflow bodies only when relevant, bound to the current task and explicit arguments. `/doc-guard` governs substantial documentation edits; `/docs-update` reconciles affected status/links. Do not duplicate Captain input lists in adapters.

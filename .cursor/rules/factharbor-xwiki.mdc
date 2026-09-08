@@ -5,7 +5,7 @@ globs: Docs/xwiki-pages/**/*.xwiki
 
 # FactHarbor — xWiki Editing Rules
 
-Read `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full xWiki syntax rules.
+Read root `AGENTS.md` and applicable nested instructions, then `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md` for full xWiki syntax rules.
 
 ## Quick Syntax Reference (xWiki 2.1)
 - Headings: `= H1 =`, `== H2 ==`, `=== H3 ===`

@@ -19,15 +19,11 @@ Why?
 
 ## Verification
 
-Required checks and expected results (mark non-applicable checks with reasons):
+Relevant checks, expected results, actual commands/results and omissions with reasons:
 
-- [ ] `npm test`
-- [ ] `npm -w apps/web run build`
-- [ ] `dotnet build apps/api -c Release`
-- [ ] I did not run expensive live LLM tests
-- [ ] I intentionally ran expensive live LLM tests and documented why
+Provider-spending/live operations, if any: current action/scope authorization and results.
 
-Expensive live tests run, if any:
+For concurrent work, identify the §4.3 writer mode. Restricted writers return edits; the integrator stages/commits only owned reviewed content. List pre-applied integrator-owned hunks separately from worker diffs.
 
 Exact reviewed-revision evidence ([Collaboration Rules §4.3](../Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing)):
 

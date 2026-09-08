@@ -16,24 +16,6 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/hooks/rebuild-index-on-change.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/hooks/rebuild-index-on-change.cjs"
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {

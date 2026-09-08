@@ -6,15 +6,22 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
 
-import { bootstrapKnowledgeCache, loadKnowledgeContext } from "../src/cache/build-cache.mjs";
-import { readCurrentSourceSnapshot, readCacheManifest, writeCacheManifest } from "../src/cache/manifest.mjs";
-import { PATHS } from "../src/utils/paths.mjs";
-import { getFileStatOrNull, writeJsonAtomic } from "../src/utils/fs.mjs";
+// Set the existing override before loading modules that capture cache paths.
+const TEST_ROOT = mkdtempSync(join(tmpdir(), "fh-knowledge-query-"));
+process.env.FH_AGENT_KNOWLEDGE_CACHE_DIR = join(TEST_ROOT, "cache");
+const { getFileStatOrNull, writeJsonAtomic } = await import("../src/utils/fs.mjs");
+const { loadKnowledgeContext } = await import("../src/cache/build-cache.mjs");
+const { readCurrentSourceSnapshot, readCacheManifest, writeCacheManifest } = await import("../src/cache/manifest.mjs");
+const { PATHS } = await import("../src/utils/paths.mjs");
+assert.equal(PATHS.cacheDir, join(TEST_ROOT, "cache"), "Cache fixture must be isolated before any operation");
+const { executeKnowledgeOperation } = await import("../src/adapters/operations.mjs");
+test.after(() => rmSync(TEST_ROOT, { recursive: true, force: true }));
 
 function collectDirectorySnapshot(rootPath) {
   if (!existsSync(rootPath)) {
@@ -37,23 +44,12 @@ function collectDirectorySnapshot(rootPath) {
       files.push({
         relativePath: relative(rootPath, entryPath),
         content: readFileSync(entryPath),
+        mtimeMs: statSync(entryPath).mtimeMs,
       });
     }
   }
 
   return files;
-}
-
-function restoreDirectorySnapshot(rootPath, snapshot) {
-  rmSync(rootPath, { recursive: true, force: true });
-  if (!snapshot) {
-    return;
-  }
-
-  for (const file of snapshot) {
-    const absolutePath = join(rootPath, file.relativePath);
-    writeJsonAtomic(absolutePath, JSON.parse(file.content.toString("utf8")));
-  }
 }
 
 test("writeJsonAtomic overwrites existing files directly on win32 without leaking temp files", () => {
@@ -101,33 +97,48 @@ test("readCurrentSourceSnapshot tolerates missing optional source files", () => 
   }
 });
 
-test("loadKnowledgeContext auto-refreshes stale cache for query callers", () => {
-  const cacheSnapshot = collectDirectorySnapshot(PATHS.cacheDir);
+const QUERIES = [
+  ["preflight-task", { task: "Review knowledge cache query behavior" }],
+  ["search-handoffs", { query: "knowledge" }],
+  ["lookup-stage", { name: "research" }],
+  ["lookup-model-task", { task: "extract" }],
+  ["get-role-context", { role: "Senior Developer" }],
+  ["get-doc-section", { file: "AGENTS.md", section: "Safety" }],
+];
 
-  try {
-    bootstrapKnowledgeCache();
-    const manifest = readCacheManifest();
-    writeCacheManifest({
-      ...manifest,
-      repoHead: "__stale_cache_marker__",
-    });
-
-    const staleContext = loadKnowledgeContext({
-      allowFallback: true,
-      refreshIfStale: false,
-    });
-    assert.equal(staleContext.freshness.isStale, true);
-
-    const refreshedContext = loadKnowledgeContext({
-      allowFallback: true,
-      refreshIfStale: true,
-    });
-
-    assert.equal(refreshedContext.source, "cache");
-    assert.equal(refreshedContext.refreshed, true);
-    assert.equal(refreshedContext.freshness.isStale, false);
-    assert.notEqual(readCacheManifest()?.repoHead, "__stale_cache_marker__");
-  } finally {
-    restoreDirectorySnapshot(PATHS.cacheDir, cacheSnapshot);
+test("all queries use missing-cache fallback without creating cache state", () => {
+  assert.equal(existsSync(PATHS.cacheDir), false);
+  for (const [command, input] of QUERIES) {
+    const result = executeKnowledgeOperation(command, input);
+    assert.equal(result.cacheSource, "fallback", command);
+    assert.equal(result.cacheStale, true, command);
+    assert.equal(result.cacheRefreshed, false, command);
+    assert.ok(result.warnings.some((warning) => warning.code === "cache_served_from_repo"), command);
+    assert.equal(existsSync(PATHS.cacheDir), false, command);
   }
+  const context = loadKnowledgeContext({ allowFallback: false });
+  assert.equal(context.source, "none");
+  assert.equal(existsSync(PATHS.cacheDir), false);
+});
+
+test("stale queries preserve cache bytes and mtimes; explicit refresh rebuilds", () => {
+  executeKnowledgeOperation("bootstrap");
+  writeCacheManifest({ ...readCacheManifest(), repoHead: "__stale_cache_marker__" });
+  const before = collectDirectorySnapshot(PATHS.cacheDir);
+  for (const [command, input] of QUERIES) {
+    const result = executeKnowledgeOperation(command, input);
+    assert.equal(result.cacheSource, "cache", command);
+    assert.equal(result.cacheStale, true, command);
+    assert.equal(result.cacheRefreshed, false, command);
+    assert.ok(result.warnings.length > 0, command);
+    assert.deepEqual(collectDirectorySnapshot(PATHS.cacheDir), before, command);
+  }
+  // Even a legacy caller cannot opt a query into mutation.
+  const legacy = loadKnowledgeContext({ refreshIfStale: true });
+  assert.equal(legacy.freshness.isStale, true);
+  assert.equal(legacy.refreshed, false);
+  assert.deepEqual(collectDirectorySnapshot(PATHS.cacheDir), before);
+  executeKnowledgeOperation("refresh");
+  assert.notEqual(readCacheManifest().repoHead, "__stale_cache_marker__");
+  assert.equal(loadKnowledgeContext().freshness.isStale, false);
 });

@@ -1,97 +1,13 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+# FactHarbor — Cline
 
-# FactHarbor — Cline Rules
+Read root `AGENTS.md` and applicable nested instructions before target work, including `apps/web/AGENTS.md` for web/prompt/config paths and `apps/api/AGENTS.md` for API paths. These canonical files own domain, authorization, recovery and ownership rules. A model choice does not change which client controls apply.
 
-> **Canonical source:** `/AGENTS.md`. This file is a summary. If rules diverge, follow AGENTS.md.
+Cline can discover shared workflows under `.claude/skills`; that directory owns their bodies. Bind a workflow to the current authorized task and explicit arguments, never an assumed variable expansion or active editor. `GEMINI.md` describes Gemini CLI context loading; do not assume that loading it configures Cline.
 
-**Read `/AGENTS.md` first** — it contains all project rules, terminology, architecture, and safety rules. This file adds Cline-specific notes.
+Keep `validate` and `report-review` visibly toggled off in ordinary restricted Cline sessions. The integrator or maintainer records the actual toggle state; enable only for a task that explicitly calls for that skill. Enabled skills may be selected automatically. Claude's `disable-model-invocation` and Codex's policy metadata are not Cline controls. If required restrictions cannot be verified, narrow permitted operations and report the limitation; do not dispatch a writer depending on them.
 
-## Project Overview
+Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Skill loading, UI toggles and prompt instructions are not filesystem containment.
 
-Two apps + one tool:
-- `apps/api` — ASP.NET Core API (.NET 8, SQLite). Run: `cd apps/api && dotnet watch run` (port 5000).
-- `apps/web` — Next.js app (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000).
-- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews.
+Strict read-only reviewers inspect source and captured output and return findings in chat: no tests/builds, cache refresh, recovery logging, shared records or Git mutations. Authorized reproduction has declared writable state; follow root recovery discipline without disabling safety hooks. Restricted writers return owned edits and evidence under collaboration §4.3; only the integrator performs shared writes and integration. Destructive or irreversible operations remain main-session-only.
 
-Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
-
-## Critical Terminology (ALWAYS follow)
-
-- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame. NEVER call this "context" or "scope".
-- **AtomicClaim** = Single verifiable assertion extracted from user input. NEVER call this "context" or "fact".
-- **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
-- **EvidenceItem** = Extracted evidence from a source. NEVER call these "facts" in new code.
-- **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.
-- **Input neutrality**: "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%).
-
-## Safety (Critical for Autonomous Operation)
-
-- **Always confirm destructive actions with the user** before executing.
-- Do not access production systems or real customer data.
-- Do not change secrets/credentials or commit them.
-- Do not modify `node_modules/` or generated files unless asked.
-- Do not overwrite `apps/api/factharbor.db` unless asked.
-- Avoid destructive git commands unless explicitly asked.
-- Platform: Windows. Use PowerShell-compatible commands.
-
-## Cline-Specific Notes
-
-- Prefer reading files before editing — do not guess at code structure.
-- Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`) and write the `DOC-GUARD` reader/need/lean-test block.
-- All DB writes must go through `JobService` (not direct DbContext access).
-- Internal endpoints use header auth: `X-Admin-Key`, `X-Runner-Key`.
-
-## Commands
-
-- Test: `npm test` (runs vitest)
-- Build: `npm -w apps/web run build`
-- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
-
-## When Using Kimi K2 as the Model
-
-Kimi K2 may not know FactHarbor conventions. Follow the terminology section above strictly. When in doubt, read `/AGENTS.md` for the authoritative glossary.
-
-## When Using Gemini 3.1 Pro Preview as the Model
-
-Gemini 3.1 Pro Preview has advanced reasoning capabilities. When using this model:
-- Read `GEMINI.md` for specific Gemini instructions and behavioral guidelines.
-- Strictly adhere to the FactHarbor terminology mentioned above.
-- Leverage the large context window, but follow the **Context-budget note** below to remain efficient.
-
-## Roles
-
-When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
-
-**Context-budget note:** If loading all Required Reading exceeds your context window, load only the role file and defer document reads until needed for the specific task.
-
-## Agent Exchange Protocol
-
-On task completion, follow `Docs/AGENTS/Policies/Handoff_Protocol.md` for output tiers and the restricted-reviewer/scoped-worker exception; shared writes follow the root §Scoped Task Worktrees rule.
-
-Template and full rules: `/AGENTS.md` § Agent Exchange Protocol.
-
-When **starting** a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context from other agents.
-
-Then use the generated indexes in `Docs/AGENTS/index/` before scanning
-`Docs/AGENTS/Handoffs/` by filename:
-
-- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
-- `stage-map.json` — locate which analyzer stage file owns a behavior
-- `stage-manifest.json` — look up model-tier mappings without grepping code
-
-`handoff-index.json` is for agent task history only. For source code locations, use
-normal code search/grep. If indexes are missing during concurrent work, report the
-rebuild need to the integrator; otherwise follow `/AGENTS.md` §Generated indexes.
-
-## Agent Handoff
-
-If a task would be better handled by another tool, say so:
-- **Claude Code (Opus)**: complex architecture, deep reasoning, plan mode.
-- **Cursor Composer**: multi-file refactors with visual diff.
-- **GitHub Copilot**: inline code completions.
-See `/AGENTS.md` Agent Handoff Protocol for full reference.
-
-## Conventions
-
-- Commit messages: conventional commits `type(scope): description`.
-- Follow [AGENTS.md §Scoped Task Worktrees](../AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs.
+Use root task/role routing and `Docs/AGENTS/Policies/Handoff_Protocol.md` proportionately. The shared `handoff` skill replaces any bespoke completion logger. Windows / PowerShell; conventional commits when integration is authorized.

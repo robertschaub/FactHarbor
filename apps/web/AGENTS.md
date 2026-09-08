@@ -1,4 +1,3 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
 # AGENTS.md — FactHarbor Web (Next.js)
 
 Applies to all files under `apps/web/`. For project-wide rules, see `/AGENTS.md`.
@@ -45,12 +44,12 @@ Applies to all files under `apps/web/`. For project-wide rules, see `/AGENTS.md`
 | Action | Command |
 |--------|---------|
 | Dev (hot reload) | `npm run dev` |
-| Test (safe) | `npm test` |
+| Focused offline tests | Select the relevant Vitest files; follow root test/state boundaries |
 | Build | `npm run build` |
-| Calibration | `npm run calibration:smoke` |
+| Calibration (provider calls) | `npm run calibration:smoke` — requires current action/scope authorization |
 
 ## Safety
 
-- **Test Costs.** Never run `npm run test:expensive` without explicit user permission.
+- **Test Costs.** Expensive tests and other provider calls require current authorization for that action and scope; existing task authorization persists.
 - **Config Integrity.** Do not modify `config.db` directly; use UCM APIs or Admin UI.
-- **Prompt Seeds.** Changes to `prompts/` require running `npm run reseed:prompts` to update UCM storage.
+- **Prompt Seeds.** Before an authorized live run against changed prompts, the assigned writer activates them with `npm run reseed:prompts` in the intended local stack. Editing/reviewing prompt files alone does not authorize reseeding or live jobs.

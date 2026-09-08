@@ -150,18 +150,16 @@ This document overrides any default AI behaviors regarding formatting, file gene
 - Exception: If you explicitly request “full export” / “full snapshot” / “print full page”, then full is allowed.
 
 **GLOBAL-R-016 – Non-Lossy Editing Contract (mandatory)**
-- Do not summarize, shorten, merge, or remove content unless you explicitly request it.
-- Any deletion must be:
-  1) explicitly requested by you, and
-  2) reported in a **Deletions List** with the reason.
-- If uncertain, prefer **adding clarifying text** over rewriting existing text.
-- Target length per edited page: **not shorter than 98%** of the original unless you explicitly request reduction.
+- Preserve substantive meaning, normative obligations, qualifications, sources and useful historical evidence.
+- Authorized cleanup may tighten, merge or remove repetition; do not preserve a fixed percentage of words or replace cuts with filler.
+- Report substantive removals and their reasons in the change summary. Existing scope-specific authorization remains valid; ask only when a material meaning/scope change is not covered.
+- When uncertain about meaning, investigate the source/context and retain the qualification rather than silently changing it.
 
 **GLOBAL-R-017 – No changes without explicit request**
 - Do not change any page or diagram unless you explicitly requested the change (page/diagram-specific, or via an explicit batch instruction).
 - If the scope is unclear, ask for confirmation before applying edits.
 - Batch instructions (e.g., “apply X change across pages Y”) count as explicit requests **only if the scope and intent are unambiguous**.
-  - If there is any reasonable risk of misinterpretation (scope, meaning, side effects, deletions, or format breakage), the chat must **ask the user to confirm** before applying changes.
+  - Clarify material uncertainty about meaning, destructive effects or scope before the dependent change. Reuse existing batch authority; routine semantic-preserving edits and format repairs within that scope need no repeated confirmation.
 
 **GLOBAL-R-018 – Fulltree JSON must be returned via generator script (no raw JSON)**
 - When returning a “fulltree” JSON snapshot, do **not** paste raw JSON into chat.
@@ -195,12 +193,12 @@ This document overrides any default AI behaviors regarding formatting, file gene
 - The assistant may change pages/diagrams only if:
   1) the user explicitly requests the change, or
   2) the user confirms a previously proposed change.
-- If there is any reasonable risk of misinterpretation (scope, meaning, side effects, deletions, or format breakage), the assistant must ask for confirmation before applying changes.
+- Clarify material uncertainty about meaning, destructive effects or scope before the dependent change. Existing authorization persists; routine semantic-preserving edits and format repairs within that scope do not require repeated confirmation.
 
 **GLOBAL-R-024 – Non-Lossy Editing scope**
-- The ≥98% non-lossy constraint applies by default to requests like “cleanup”, “reformat”, “improve wording”, “make it clearer”, etc.
-- It does not override a specific, explicit change the user requests/confirms (e.g., shorter, replaced, moved to a different page, etc.).
-- Deletions still require explicit user intent and must be reported in a deletions list with reason if requested/required by the ruleset.
+- Cleanup, reformatting and wording improvements preserve semantics under GLOBAL-R-016 while allowing authorized shortening/merging.
+- Specific user-approved replacement, movement or reduction governs the named scope. Do not re-request the same authority at each step.
+- Normative changes, maturity/status changes, public retirement or disclosure still require authority covering the actual action.
 
 
 **GLOBAL-R-030 – Structural integrity guardrails (XWiki fulltree)**

@@ -1,43 +1,11 @@
-# Sync with /AGENTS.md. Last synced: 2026-03-24
+# Windsurf — FactHarbor
 
-# FactHarbor — Windsurf Rules
+Read repository-root `AGENTS.md` before work. It owns domain invariants, exact Captain-defined inputs, authorization, recovery, verification and completion rules. Before any nested target work, read the applicable `apps/web/AGENTS.md` or `apps/api/AGENTS.md` and any closer instructions, including when launched at the root. This adapter is subordinate to canonical instructions.
 
-Full rules in `/AGENTS.md`. Read it for any domain-heavy task (pipeline, prompts, terminology).
+Use one accountable implementer and proportionate checks. Trivial tasks need no role choreography or mandatory history lookup. For relevant non-trivial work, knowledge queries are read-only and advisory; stale/missing indexes are reported to the integrator, not rebuilt by restricted sessions. Source search locates code; historical handoffs may be superseded.
 
-## Project
+Follow root Scoped Task Worktrees and Collaboration Rules §4.3. Restricted writers return owned edits/evidence without Git mutations; restricted reviewers return chat findings. The integrator owns shared records/indexes. Recover failed attempts under root policy; do not discard another owner's changes.
 
-Two apps + one tool:
-- `apps/api`: ASP.NET Core (.NET 8) + SQLite. Run: `cd apps/api && dotnet watch run` (port 5000)
-- `apps/web`: Next.js (UI + analysis pipeline). Run: `cd apps/web && npm run dev` (port 3000)
-- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews
+Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Client metadata is not universal enforcement; declare unsupported controls before dispatch.
 
-Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pipeline -> Results back to API.
-
-## Critical Terminology
-
-- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. NEVER call "context"/"scope".
-- **AtomicClaim** = Single verifiable assertion from user input. NEVER call "context"/"fact".
-- **EvidenceScope** = Per-evidence source metadata. NEVER call "context".
-- **EvidenceItem** = Extracted evidence. NEVER call "fact" in new code.
-- **No hardcoded keywords** in code/prompts. Generic for ANY topic.
-
-## Commands
-
-- Test: `npm test` (vitest). Build: `npm -w apps/web run build`.
-- Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
-
-## Safety
-
-- No production data access. No secrets in commits. No destructive git without explicit ask.
-- Platform: Windows. PowerShell-compatible commands.
-
-## Roles
-
-When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
-
-**Context-budget note:** If loading all Required Reading exceeds Cascade's context window, load only the role file and defer document reads until needed.
-
-## Conventions
-
-- Commits: `type(scope): description`
-- Follow [AGENTS.md §Scoped Task Worktrees](AGENTS.md#scoped-task-worktrees) for solo and concurrent writing, integration, and restricted-reviewer outputs.
+Use shared workflow bodies only when relevant, bound to the current task and explicit arguments. `/doc-guard` governs substantial documentation edits; `/docs-update` reconciles affected status/links. Do not duplicate Captain input lists in adapters.

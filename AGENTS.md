@@ -7,14 +7,14 @@ Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/A
 
 ## Instruction Precedence
 
-When instructions conflict, apply this order (highest first):
+Repository instructions remain subordinate to system/developer instructions and the current user task. Within repository guidance, apply this order (highest first):
 1. Closest path-specific `AGENTS.md` (e.g., `apps/api/AGENTS.md`)
 2. Repository root `/AGENTS.md`
 3. Active role file in `Docs/AGENTS/Roles/`
 4. `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and other collaboration docs
 5. Tool-specific config wrappers (`GEMINI.md`, `CLAUDE.md`, Copilot/Cursor/Cline rules)
 
-If still ambiguous, ask the active human user before proceeding.
+Nested guidance specializes its area; it does not silently waive root safety or domain invariants. Resolve routine choices within existing task authority; ask the active user only if a material conflict remains.
 
 ---
 
@@ -35,27 +35,19 @@ Boundary rules for agents:
 
 ---
 
-## System Prompt Override
+## Reading and task routing
 
-Claude Code's built-in system prompt includes directives to "try the simplest approach first" and "do not overdo it." **These are explicitly overridden for this project.**
+Read enough source and surrounding context to understand behavior before editing. Full-file reading is required when the change depends on the whole file, not for every task. For prompt files over 100KB in `apps/web/prompts/`, locate section boundaries and read the target section plus 20 surrounding lines; keep the working set focused even with a large context window.
 
-For FactHarbor, correctness and completeness take priority over speed and brevity. Always:
-- Read files fully before editing (see Large File Exception below)
-- Reason deeply before acting — do not shortcut to the first plausible answer
-- Prefer thorough analysis over fast output
+Before working on any target path, all clients must read the applicable nested AGENTS.md, even when launched from the root: `apps/web/AGENTS.md` for web work and `apps/api/AGENTS.md` for API work. Check for closer instructions along the target path. These supplement the root invariants. Reference architecture/status documents are loaded only when relevant.
 
-### Large File Exception — Prompt Files
+## Task authority and review
 
-For prompt files over 100KB (currently: `claimboundary.prompt.md` at 212KB), use targeted reads instead of reading the full file:
+Use one accountable implementer with proportionate verification. Trivial fixes need no role choreography, mandatory preflight, broad test suite or completion file. Add independent review for materially risky, cross-stage, prompt/config, security or public-surface decisions, unclear root cause, repeated failed validation, or when requested. Resolve findings on evidence; unanimity and model count are not correctness tests.
 
-1. Grep for the `## SECTION_NAME` header to find the line number
-2. Grep for the next `## ` header to find the section end
-3. Read only the needed section using offset/limit
-4. When editing: read the target section + 20 lines of surrounding context
+Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Preserve existing authority for reversible work; ask only for a missing decision or scope expansion.
 
-This exception applies ONLY to prompt files in `apps/web/prompts/` that exceed 100KB. Full reads remain required for all other files and for prompt files under 100KB.
-
-> With a 1M-token context window the constraint is **cost and signal-to-noise, not capacity** — the file fits, but targeted reads keep the working set focused and cheap. Do not "optimize away" this exception (or the handoff/stage indexes) on the assumption that the large window made them unnecessary.
+Strict read-only diagnosis uses existing failure output and source reads. If reproduction is needed and authorized, assign diagnosis and reproduction together with explicit writable output/cache/temp paths. Read-only sessions do not run builds, tests, bootstrap/refresh operations or recovery log writers. They return findings and recovery choices in chat for the integrator; writing/validation sessions retain their assigned recovery behavior.
 
 ---
 
@@ -68,29 +60,12 @@ This exception applies ONLY to prompt files in `apps/web/prompts/` that exceed 1
 - **No new code for removed/replaced things.** If something has been removed, replaced, or renamed (e.g., Monolithic Canonical pipeline [removed], `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
 
 ### LLM Intelligence (MANDATORY)
-**Priority: CRITICAL | Scope: Entire analysis codebase | Exceptions: NONE**
 
-Deterministic text-analysis logic that makes analytical decisions MUST be replaced with LLM-powered intelligence. **New deterministic text-analysis decision logic MUST NOT be created.** When implementing any feature that requires understanding, classifying, comparing, or interpreting text meaning — use an LLM call, never regex, keywords, heuristics, or rules.
+All semantic decisions in the analysis codebase must use LLM intelligence: understanding, classifying, scoring, comparing, routing by meaning, entity extraction and semantic matching. Never create deterministic keyword/regex, similarity-heuristic or rule-based NLP substitutes. When existing semantic decision logic is encountered, flag it for LLM replacement; do not extend or optimize it.
 
-**NEVER CREATE** (deterministic logic making analytical decisions about text):
-- Regex/pattern/keyword-based classification, scoring, or routing that interprets meaning
-- Text similarity heuristics that influence analytical outcomes
-- Rule-based NLP, entity extraction, or semantic matching driving analysis
-- Any hardcoded decision tree that determines what text *means*
+Keep deterministic structural plumbing: null/empty/format/length checks, schemas/type guards, IDs/hashing/normalization/formatting, retry/timeout/concurrency and routing that does not interpret meaning.
 
-**KEEP** (deterministic structural plumbing):
-- Input validation (null/empty, format, length), type coercion, schema guards
-- ID generation, hashing, normalization, formatting
-- Routing, retry, timeout, concurrency limits — anything that doesn't interpret meaning
-
-**Efficiency mandates** (intelligence must not be wasteful):
-- **Batch aggressively.** One structured prompt over 10 separate calls.
-- **Cache ruthlessly.** Identical/equivalent inputs hit cache before LLM. No repeated reasoning.
-- **Tier intelligently.** Lightweight models for simple decisions; powerful models for complex reasoning only.
-- **Minimize tokens.** Lean prompts, bounded outputs, no redundant context.
-- **Pre-filter before calling.** Trivial validation stays deterministic.
-
-**When writing or reviewing analysis code:** If you encounter existing deterministic logic making semantic decisions, flag it for replacement. Do not extend, optimize, or build on it — migrate it to LLM. If you are about to write new text-analysis logic, it MUST use LLM intelligence from the start.
+Use intelligence efficiently: batch structured decisions, cache identical/equivalent inputs, use capable lower-cost tiers for simple work, bound prompts/outputs and avoid redundant context/reasoning. Pre-filter trivial validation deterministically.
 
 ### Multilingual Robustness (MANDATORY)
 Analysis behavior must be robust across languages (e.g., English, French, German, and others), not just English.
@@ -159,7 +134,7 @@ A fix has **failed** when, after your change, a focused test/build fails, a live
 
 **Before your next edit, record and log one line:**
 `ATTEMPT <n> · symptom: … · last-known-good: <commit/ref> · choice: keep | amend | revert | quarantine | add — because …`
-then persist it: `node scripts/hooks/revert-classify.cjs --choice <choice> --symptom "<symptom>" --baseline <ref>`
+then persist it in an assigned writing session: `node scripts/hooks/revert-classify.cjs --choice <choice> --symptom "<symptom>" --baseline <ref>`. A read-only reviewer returns the line in chat for the integrator instead of writing recovery state.
 
 - **Name the last-known-good** (state before this fix chain began). Revert = restore those hunks with `Edit`; never `git reset`/`checkout` (blocked by the safety hook).
 - **Revert and amend are first-class options, not fallbacks.** Undoing recent work is not a failure; it is often the lowest-net-complexity correction. State why the rejected options are worse.
@@ -199,134 +174,61 @@ State whether each comparator is exact vs. variant, local vs. deployed, and curr
 
 ### Report Quality & Event Communication
 
-> **TL;DR:** Severity = verdict impact. Routine ops → silent/info. System failures → warning+. Evidence scarcity (analytical reality) → info/warning, never error/severe. If the verdict wouldn't change, it's silent or info.
+Before emitting/displaying a warning, ask: **Would the verdict be materially different without this event?** No: silent/info (admin only); maybe: warning at most; yes: error/severe. Severity measures verdict impact, not internal event type. Register every warning in `warning-display.ts`; do not classify inline in UI components.
 
-**MANDATORY — before emitting or displaying any warning to users, apply this test:**
-*"Would the verdict be materially different if this event hadn't occurred?"*
-- **No** → `silent` or `info` (admin-only). Never show to users.
-- **Maybe** → `warning` at most.
-- **Yes** → `error` or `severe`.
+| Severity | Impact and visibility |
+|---|---|
+| silent | None; recovered; emit no warning |
+| info | None, but worth administrator tuning; admin only |
+| warning | Noticeable, same verdict direction/confidence tier; user sees a low-emphasis caveat |
+| error | Verdict direction or confidence tier may change; prominently visible to users |
+| severe | No trustworthy report; error plus `report_damaged`, blocking user notice |
 
-All warning types MUST be registered in `warning-display.ts`. Do not classify warnings inline in UI components.
-
-Three warning categories, five severity levels. Severity reflects **verdict impact**, not what happened internally.
-
-**Categories:**
-- **Routine operations → silent/info.** Plumbing working as designed (retries, fallbacks, cache misses, default values applied). Never shown to users unless aggregate effect degrades quality. **If a fallback or default fully recovers the situation (e.g., SR lookup fails → uses neutral 0.45, search provider fails → fallback provider succeeds), it is `silent` — not even `info`.** Only emit `info` if admins should tune something.
-- **System-level failures → warning/error/severe.** Problems we could fix (all search providers down with no fallback, verdict crash, budget exhaustion). MUST be surfaced — never silenced or hidden. Suppressing a real quality signal is worse than a false alarm.
-- **Analytical reality → info/warning.** The real world lacks accessible evidence — not a bug. Sources behind paywalls, domains returning 404, insufficient published research — these are facts about the world, not system failures. Present as factual context, not a system error. Never `error` or `severe` (the system worked correctly; reality is just sparse). Examples: `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation`.
-- **Internal diagnostics → info.** Post-hoc validation checks that verify internal consistency (grounding checks, direction checks). These are developer tools, not user-facing quality signals. A heuristic disagreeing with an LLM judgment does not mean the verdict is wrong. Always `info` (admin-only).
-
-**Severity levels:**
-
-| Severity | Verdict impact | Visible to | User action |
-|----------|---------------|------------|-------------|
-| *silent* | None — recovered | Nobody | — |
-| `info` | None — worth knowing | Admins only | Tune system later |
-| `warning` | Noticeable, but same verdict direction and confidence tier | User (low emphasis) | Note the caveat |
-| `error` | Confidence tier or verdict direction may differ | User (prominent) | Assess if verdict is reliable enough |
-| *severe* | No valid report possible | User (blocking) | Do not rely; re-run |
-
-*Code: `silent` = no warning emitted. `severe` = `error` + `report_damaged` flag.*
-
-**Escalation thresholds:**
-- **→ `warning`:** Degradation exceeds normal run-to-run variation AND a reasonable user would want to know.
-- **→ `error`:** Could change confidence tier (HIGH → MEDIUM) or verdict direction ("Mostly True" → "Mixed").
-- **→ `severe`:** No trustworthy verdict can be produced.
-- Showing warnings too often trains users to ignore them; showing too few hides real problems. Both erode trust.
-- **Degrading issues must be visible.** When warnings genuinely indicate reduced report quality (insufficient evidence, failed verdict generation, source acquisition collapse, budget exhaustion), they MUST be surfaced prominently to the user — never silenced, downgraded to `info`, or hidden behind admin-only toggles. The user must be able to assess whether the report's conclusions are trustworthy. Suppressing a real quality signal is worse than a false alarm.
+- Routine retries, fallbacks, cache misses and defaults are silent/info. Fully recovered fallbacks are silent, not even info. Only surface aggregated degradation that affects quality.
+- System failures we could fix (source-provider collapse, verdict crash, budget exhaustion) must surface at warning/error/severe according to impact. Do not hide a real quality signal.
+- Analytical reality (sparse/inaccessible evidence, paywalls, 404s) is info/warning, never error/severe merely because evidence is scarce. `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation` follow that distinction.
+- Internal post-hoc diagnostics and heuristic consistency disagreements are info/admin-only; they do not establish a wrong verdict.
+- Escalate to warning when degradation exceeds ordinary run variance and a reasonable user needs to know; to error when direction/confidence tier could change; to severe when no trustworthy report remains.
+- Degradation that genuinely reduces report quality, including inadequate evidence, failed verdict generation, source-acquisition collapse or budget exhaustion, must remain visible at its appropriate level. Do not suppress it or hide it as admin-only. Frequent irrelevant warnings and missing material warnings both erode trust.
 
 ### Configuration Placement
-When introducing a tunable parameter, place it in the correct tier:
 
-| Tier | When | Examples |
-|------|------|----------|
-| **UCM** (Admin UI, runtime) | Anything that affects analysis behavior or quality and may need tuning without redeployment | Thresholds, weights, limits, model selection, prompt profiles, search parameters, SR weights |
-| **Env var** (startup, infra) | Infrastructure, secrets, paths, concurrency — things set once per environment | `FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, DB paths |
-| **Hardcoded** (code change) | Structural constants, fixed design decisions that should not be tunable | Status enum values, API route paths, field names, confidence band boundaries (7-band scale), mathematical constants |
+- **UCM:** analysis behavior/quality tunables that may need adjustment without redeployment: thresholds, weights, limits, model selection, prompts, search and source-reliability settings. Default to UCM when unsure.
+- **Environment:** infrastructure, secrets, paths and startup concurrency (`FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, database paths).
+- **Code:** structural constants and fixed data contracts, such as status/type keys, API paths, field names, the fixed seven-band scale and mathematical constants.
 
-**Default to UCM.** If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable. Never hardcode a value that an admin might need to tune.
-
-**JSON is Authoritative for Defaults:**
-File-backed defaults in `apps/web/configs/*.default.json` are the authoritative source for initial system configuration.
-- **MUST remain in sync** with TypeScript constants in `config-schemas.ts`.
-- **Verified by tests**: `apps/web/test/unit/lib/config-drift.test.ts` fails the build if JSON drifts from TS.
-- **Admin Visibility**: All tunable parameters must be present in the JSON files to be visible and editable in the Admin UI comparison views.
-
-UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-Documents mapping for "Configuration" in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2.
+File-backed `apps/web/configs/*.default.json` defaults are authoritative. Keep `config-schemas.ts` defaults synchronized; `apps/web/test/unit/lib/config-drift.test.ts` checks drift. All tunables must appear in JSON for Admin comparison/editing. UCM implementation: `apps/web/src/lib/config-storage.ts`; relevant manuals are mapped in Collaboration Rules §1.2.
 
 ---
 
-## Architecture
+## Architecture references
 
-```
-User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port 5000)
-             ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
-             │  ├─ claimboundary-pipeline.ts       ├─ Services/ (JobService, RunnerClient)
-             │  │  (CB Orchestrator)               ├─ Data/ (Entities, FhDbContext)
-             │  ├─ claim-extraction-stage.ts       └─ SQLite: factharbor.db
-             │  ├─ research-orchestrator.ts        Swagger: http://localhost:5000/swagger
-             │  ├─ research-query-stage.ts
-             │  ├─ research-acquisition-stage.ts
-             │  ├─ research-extraction-stage.ts
-             │  ├─ boundary-clustering-stage.ts 
-             │  ├─ verdict-generation-stage.ts
-             │  └─ aggregation-stage.ts
-             ├─ src/app/api/internal/run-job/     Tools:
-             └─ LLM calls via AI SDK              └─ tools/vscode-xwiki-preview
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `.../analyzer/claimboundary-pipeline.ts` | **CB Pipeline Orchestrator**: Main entry and high-level stage sequencing. |
-| `.../analyzer/claim-extraction-stage.ts` | **Stage 1**: Claim extraction, Gate 1, and preliminary search. |
-| `.../analyzer/research-orchestrator.ts` | **Stage 2 Orchestrator**: Iterative research loop control and budget management. |
-| `.../analyzer/research-query-stage.ts` | **Stage 2 Queries**: LLM-based search query generation. |
-| `.../analyzer/research-acquisition-stage.ts` | **Stage 2 Acquisition**: Multi-source fetching and retry logic. |
-| `.../analyzer/research-extraction-stage.ts` | **Stage 2 Extraction**: Relevance check and evidence extraction. |
-| `.../analyzer/boundary-clustering-stage.ts` | **Stage 3**: Cluster evidence scopes into ClaimAssessmentBoundaries. |
-| `.../analyzer/verdict-generation-stage.ts` | **Stage 4**: Multi-step LLM debate and initial verdict generation. |
-| `.../analyzer/aggregation-stage.ts` | **Stage 5**: Verdict aggregation, claim weighting, and quality gates. |
-| `.../analyzer/types.ts` | TypeScript types and interfaces for the entire pipeline. |
-| `.../analyzer/pipeline-utils.ts` | Shared pure helper functions for all pipeline stages. |
-| `.../analyzer/source-reliability.ts` | Source reliability logic: prefetch, lookup, and weighting. |
-| `.../analyzer/evidence-filter.ts` | Deterministic evidence quality filtering (probativeValue). |
-| `.../config-storage.ts` | Unified Config Management: SQLite storage & UCM logic. |
-| `.../api/internal/run-job/route.ts` | Runner route: Job execution entry point. |
-| `apps/api/Services/JobService.cs` | API side: Database persistence and event-audit trails. |
-
-**Pattern references:** When adding new code, study existing patterns first. For controller patterns follow `JobsController.cs`, for service patterns follow `JobService.cs`, for pipeline modules study how `evidence-filter.ts` and `aggregation.ts` are structured.
-
-Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` for .NET details.
+The web UI/runner is under `apps/web/`; the ASP.NET API and SQLite persistence are under `apps/api/`. The ClaimAssessmentBoundary entry point is `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`. Read the applicable nested AGENTS.md for patterns and structure. Source search is authoritative for exact code locations; the stage indexes below are navigation aids.
 
 ---
 
 ## Commands
 
-| Action | Command |
-|--------|---------|
-| Quick start | `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1` |
-| Restart / Stop services | `.\scripts\restart-clean.ps1` / `.\scripts\stop-services.ps1` |
-| Web dev server | `cd apps/web; npm run dev` (port 3000) |
-| API dev server | `cd apps/api; dotnet watch run` (port 5000) |
-| Build web | `npm -w apps/web run build` |
-| Tests (safe) | `npm test` — runs vitest, excludes expensive LLM tests |
-| Tests (expensive) | `npm -w apps/web run test:expensive` — runs ALL tests including real LLM calls |
-| Test: LLM integration | `npm -w apps/web run test:llm` — real LLM calls to multiple providers |
-| Test: input neutrality | `npm -w apps/web run test:neutrality` — full analysis x2 per pair |
-| Test: CB integration | `npm -w apps/web run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios) |
-| Lint | `npm run lint` — placeholder (not yet configured) |
-| Validation: run batch | `npm run validate:run -- <batchLabel>` — submits 16 families, writes JSON summaries to `test-output/validation/` |
-| Validation: compare | `npm run validate:compare -- <oldDir> <newDir>` — regression detection with markdown table |
-| **Publish docs (gh-pages)** | `git push` to `main` — CI deploys automatically |
+Run from repository root unless noted; these commands remain subject to task/state authorization.
 
-> **⚠ AGENTS: Never push to the `gh-pages` branch directly.** CI owns gh-pages and injects `DOCS_ANALYTICS_URL`. Manual pushes overwrite the CI build and break analytics. To publish: push to `main`. To re-trigger CI: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`.
+| Action | Command |
+|---|---|
+| Quick start | `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1` |
+| Restart / stop local services | `./scripts/restart-clean.ps1` / `./scripts/stop-services.ps1` |
+| Web build | `npm -w apps/web run build` |
+| Default tests | `npm test` — excludes designated real-LLM suites; inspect focused tests' state/service needs |
+| Full index rebuild (integrator) | `npm run index` |
+| Validation batch / compare | `npm run validate:run -- <batchLabel>` / `npm run validate:compare -- <oldDir> <newDir>` |
+
+Dev/API commands are in their nested AGENTS.md. Lint is currently a placeholder, not verification evidence. Validation writes summaries under `test-output/validation/` and may submit live jobs.
+
+Documentation publication is triggered by pushing `main`; CI owns `gh-pages`. Never push to `gh-pages` directly. An authorized docs redeploy can use `gh workflow run "Deploy Docs to GitHub Pages" --ref main`. A local commit is not deployment authority.
 
 ### Test Cost Warning
 
-**`npm test` is safe** (excludes real-LLM tests). **NEVER run expensive tests routinely** — they call real APIs at $1-5+/run: `test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive`. Run only when explicitly asked, validating a quality-affecting change, or collecting optimization baselines. Use `npm test` for verification and `npm -w apps/web run build` for compilation.
+Select focused offline checks for the actual change. `npm test` excludes the designated real-LLM suites, but individual local tests can still contact services or write state: inspect the selected commands for restricted assignments. Broad suites/builds are not prerequisites for documentation edits.
+
+`test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive`, calibration and live validation can call real providers. Run them only under the current action/scope authorization above; being a quality-affecting change or loading a skill does not supply that authority.
 
 ### Live Job Submission Discipline
 
@@ -348,11 +250,7 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 
 ## Documentation Discipline
 
-Use the **`/doc-guard` skill** (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`) before adding a new document, substantially expanding or rewriting Markdown/xWiki content, adding explanatory/background sections, adding FAQs/glossaries/templates, introducing repeated framing, or reviewing a documentation diff for clutter.
-
-For substantial documentation edits, write the `DOC-GUARD` block before editing: reader, need, existing home, chosen option (`tighten | amend | merge | move | delete | add`), rejected path, lean test, readability check, and whether `/docs-update` is needed afterward. Prefer tightening, amending, merging, moving, or deleting before adding. Cut filler, duplicated background, placeholder sections, and broad claims that are not concrete or sourceable.
-
-Use **`/docs-update`** after documentation changes when status labels, README/index entries, links, changelog/backlog records, or handoff references need to stay in sync.
+Use `/doc-guard` before adding or substantially rewriting Markdown/xWiki, explanatory sections, FAQs/templates, or reviewing documentation clutter. Write its DOC-GUARD block: reader, need, existing home, chosen option, rejected path, lean test, readability and whether `/docs-update` is needed. Prefer tightening, merging, moving or deleting before adding; preserve semantics, sources and normative controls. Use `/docs-update` when status, indexes, links, backlog/changelog or handoff references need reconciliation.
 
 ---
 
@@ -364,28 +262,27 @@ Use **`/docs-update`** after documentation changes when status labels, README/in
 - Avoid destructive git commands unless explicitly asked
 - Do not overwrite `apps/api/factharbor.db` unless asked
 - Platform is Windows. Use PowerShell-compatible commands.
-- **PreToolUse hooks** (`.claude/settings.json`) block destructive Bash commands: `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs. **These hooks fire for the MAIN SESSION ONLY — they do NOT fire for subagent or Workflow-agent tool calls.** This is confirmed current behavior: anthropics/claude-code#34692 was closed (not-planned / stale-labeled) on 2026-05-30, so do not expect a fix. Under this repo's `bypassPermissions` mode, a subagent's destructive command is caught by **neither** the hook **nor** a permission prompt.
+- Claude hook coverage is client/version-dependent. A repository note dated 2026-05-30 reported main-session-only coverage; this is not a verified claim about every installed version. Inspect the effective supported controls for each assigned session and record unknowns. Prompt instructions, model strength, role names and task worktrees are not filesystem isolation. See `CLAUDE.md` for client-specific guidance.
 - **Destructive or irreversible operations are main-session-only and MUST NEVER be delegated to a subagent or Workflow agent** — specifically `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs (the exact set the hook guards). Read-only fan-out (e.g., the Explore agent) is inherently safe.
 
 ### Scoped Task Worktrees
 
-Ordinary solo work retains the direct-to-`main` norm. During concurrent writing, use scoped task branches/worktrees with explicit file ownership and one designated integrator for shared writes and integration; follow [Collaboration Rules §4.3](Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing). Restricted reviewers return findings in chat; the integrator writes their completion artifacts and serializes shared-index changes. Documentation deployment remains triggered from `main` as described in §Commands.
+Ordinary solo work retains the direct-to-`main` norm. During concurrent writing, use scoped task branches/worktrees with explicit file ownership and one designated integrator for shared writes and integration; follow [Collaboration Rules §4.3](Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing). Restricted reviewers return findings in chat. For the adopted instruction-system rollout, every concurrent writer uses the restricted-writer return-edits definition in Collaboration Rules §4.3; the integrator alone performs Git mutations and shared writes. The designation is a handoff model, not evidence of verified restrictions. Ordinary authorized worker-commit modes outside that rollout remain available. Documentation deployment remains triggered from `main` as described in §Commands.
 
 ---
 
 ## Agent Handoff & Exchange Protocol (MANDATORY)
 
-All agents MUST follow the Exchange Protocol on non-trivial task completion. Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md` (task fit check, role activation + alias table, Agent Exchange Protocol with three modes, output tiers, unified template, incoming-role checklist, archival thresholds, Consolidate WIP pointer).
+Use `Docs/AGENTS/Policies/Handoff_Protocol.md` when transferring work or preserving significant completion evidence. It owns role activation, output tiers and the incoming-role checklist.
 
-**Quick summary (do not skip the full file):**
-1. **Before starting a task**: assess role/model-tier fit. If `fhAgentKnowledge` is available, call `preflight_task` before manual handoff/index scanning. Otherwise **query `Docs/AGENTS/index/handoff-index.json`** (filter by `role` + `topics`) to find relevant prior work — read only the matched files, not the full directory.
-2. **Role activation** ("As \<Role\>"): treat `As <Role>,` / `As <Role>:` as a preflight trigger when `fhAgentKnowledge` is available. Otherwise look up role in alias table → read `Docs/AGENTS/Roles/<RoleName>.md` → scan `Role_Learnings.md` → acknowledge → stay in role.
-3. **On completion**: use the output tiers in `Docs/AGENTS/Policies/Handoff_Protocol.md`. Role handoffs require at least Standard + `Warnings` + `Learnings`. Restricted reviewers return these in chat for the integrator to persist (§Scoped Task Worktrees).
-4. **Append, don't overwrite** `Agent_Outputs.md`. `Docs/WIP/` is NEVER for completion outputs.
+- For relevant non-trivial tasks, query the handoff index or the read-only knowledge preflight to locate useful prior work; skip it when history adds no value. Suggestions are advisory, and historical matches may be superseded by current decisions. Bootstrap/refresh are explicit cache mutations, reserved for an assigned writer/integrator.
+- For an assigned role, read its role file and relevant learnings; do not load unrelated reference collections.
+- Trivial work closes in chat. Reuse an existing task record when it preserves needed evidence; create a handoff only when continuity needs it. Restricted reviewers return findings, warnings, learnings and reviewed-content evidence in chat for the integrator to record.
+- Append to `Agent_Outputs.md` when an output entry is needed; do not overwrite prior entries. `Docs/WIP/` is not a completion-output home.
 
 ## Generated indexes (do not edit manually)
 
-Auto-rebuilt by PostToolUse hooks and workflow scripts. Run `npm run index` for a full rebuild.
+The integrator owns index writes. Automatic PostToolUse Write/Edit rebuilding is removed; existing index builders and Git hooks remain. Inspect effective installed hooks and their worktree-local outputs before integration, and review generated changes.
 
 During concurrent writing, the designated integrator serializes shared-index rebuilds and updates (§Scoped Task Worktrees); workers report needed updates instead of running them.
 
@@ -395,58 +292,19 @@ During concurrent writing, the designated integrator serializes shared-index reb
 | Pipeline stage → file → function | `Docs/AGENTS/index/stage-map.json` | Locating which file implements a given stage |
 | LLM task → model tier | `Docs/AGENTS/index/stage-manifest.json` | Model tier lookups without grepping code |
 
-If these files do not exist yet, run `npm run index` to seed them.
+If these files are absent or stale, read-only sessions report that limitation and use source reads. The authorized integrator may run `npm run index` when a rebuild is needed.
 
-**After bulk Bash file operations** (mv, rm, git checkout, git pull) that touch `Docs/AGENTS/Handoffs/` or `apps/web/src/lib/analyzer/`, run `npm run index` manually — PostToolUse hooks do not fire for Bash commands.
+After relevant file changes, the integrator checks whether existing Git hooks already rebuilt the required index; avoid duplicate rebuilds. Workers report needed updates instead of running builders or changing shared settings.
 
 ---
 
 ## Named Workflows
 
-Documented workflows for recurring tasks. **Claude Code** users invoke them as slash commands. **All other tools** (Gemini, GPT, Copilot, Cline, etc.) read the file directly and follow its instructions — the content is plain markdown.
+Use a workflow only when it fits the current task. Shared bodies are authoritative in `.claude/skills/<name>/SKILL.md`; `.agents/skills` holds the declared Codex/Gemini discovery copies. The fourteen names are: audit, debt-guard, debate, debug, doc-guard, docs-update, explain-code, handoff, pipeline, prompt-audit, prompt-diagnosis, report-review, validate, wip-update. Binding comes from the authorized task and any explicit invocation arguments, not an assumed editor selection.
 
-Default to one accountable implementer. Add an independent reviewer only for high-risk, cross-stage, prompt/config, live-job, or public-surface decisions; repeated failed validation; unclear root cause; or explicit user request. Do not create standing deputy or committee layers unless the Captain explicitly asks.
+`validate` and `report-review` require explicit selection. Client invocation controls differ: see the client adapter and record actual session support; reading a skill never grants operational authority. Use independent review for material risk, not a standing committee. Failed reviews need evidence-based disposition, not a vote or unanimous quorum.
 
-Pipeline_V2 coordination lessons are retained as principles only, not as restored workflow machinery:
-- Route reasoning effort by concrete task state, verifier results, reversibility, and reviewer disagreement; do not escalate model effort by preference.
-- Use premium Claude/Gemini sidecars only when they have a distinct written question to answer.
-- Use Steer-Co or committee-style review only for high-impact steering, unresolved material dissent, or decisions whose wrong answer would be expensive to undo.
-- Keep Captain Deputy out of the default path unless the Captain explicitly requests that front-door role.
-- Treat debt sensors as advisory-first if they are ever restored; they should inform steering, not block routine work by default.
-- Do not treat session functions or model-pinned helper invocations as durable role aliases.
-
-| Slash command | Workflow file | When to use |
-|---|---|---|
-| `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |
-| `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |
-| `/audit` | `.claude/skills/audit/SKILL.md` | Full prompt + code quality audit; pre-release or after major changes |
-| `/prompt-audit` | `.claude/skills/prompt-audit/SKILL.md` | Static prompt-only audit against a 9-criterion rubric (rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, failure-mode coverage); linter-style, no runs, no writes |
-| `/validate` | `.claude/skills/validate/SKILL.md` | Post-change validation on benchmark families (runs real jobs — use deliberately) |
-| `/handoff` | `.claude/skills/handoff/SKILL.md` | Generate a handoff document at end of any significant task |
-| `/debug` | `.claude/skills/debug/SKILL.md` | Analyze `debug-analyzer.log` + test results; standard post-change check |
-| `/explain-code` | `.claude/skills/explain-code/SKILL.md` | Explain how code works — uses analogies, mermaid diagrams, and step-by-step walkthroughs |
-| `/prompt-diagnosis` | `.claude/skills/prompt-diagnosis/SKILL.md` | RAG-augmented diagnosis of prompting deficiencies; correlates failures with runtime prompt hashes plus execution commit context |
-| `/report-review` | `.claude/skills/report-review/SKILL.md` | Holistic job-report analysis: expectation deltas vs. `benchmark-expectations.json`, evidence health, boundary sanity, verdict reasoning, warning severity. Multi-agent debate, AGENTS.md-compliant fix proposals. Scopes to HEAD by default or to specific jobs/commit/family. |
-| `/doc-guard` | `.claude/skills/doc-guard/SKILL.md` | Lean documentation guardrail before adding, expanding, restructuring, or reviewing Markdown/xWiki content |
-| `/docs-update` | `.claude/skills/docs-update/SKILL.md` | Update-first cleanup for living docs across `Docs/`, with archive handling only for clearly obsolete material |
-| `/wip-update` | `.claude/skills/wip-update/SKILL.md` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP material |
-
-For non-Claude tools: read the relevant `.claude/skills/<name>/SKILL.md` and execute the procedure described. Ignore the YAML frontmatter.
-
----
-
-## Advisor Consultation
-
-The built-in **advisor** tool gives a fresh-context second opinion from a reviewer model (set by `advisorModel`, currently Fable 5). It is **scoped, on-demand consultation — not a standing reviewer layer** (§Named Workflows); the model consults it autonomously by default, and this section sets the project norm for *when*. Use the advisor for a quick single second opinion; escalate to `/debate` only for high-impact, contested, or materially-disputed decisions where one reviewer isn't enough. Agents **should** consult it at the judgment moments below — and **MUST** before a destructive or irreversible step:
-
-- **Root cause & fix selection** — when the root cause is unclear or you are choosing among **materially different** fixes (not obvious one-line changes).
-- **Pipeline-regression risk** — before finalizing a pipeline change that touches **prompts, quality gates, model-tier routing, scoring/aggregation, or pipeline-bound config (§Configuration Placement)**, or that is **cross-stage** (mirrors §Bugfix Complexity Heuristic — trivial single-site changes need only its short note, not a consult). The advisor is a **reasoning gate, NOT proof of non-regression** — `/report-review` or `/validate` against §Report Quality Baseline Comparison (`benchmark-expectations.json` + Captain comparators) is the empirical check.
-- **User-facing / warning-severity changes** — before changing what users see or how it is classified (warning severity per §Report Quality & Event Communication, user-facing report wording, or any public-surface output). Mis-severity hides or over-shows quality signals — a trust-critical judgment call.
-- **Revert vs. pile-on** — when a fix has failed and you are about to **add complexity instead of amending or reverting** (§Failed-Attempt Recovery): repeated failed validation, or stacking a new mechanism on a change that just failed. Treat reverting to the named last-known-good and the lower-complexity route as the leading option for the advisor to confirm or refute — undoing is weighed as seriously as adding.
-- **Destructive or irreversible steps (MUST)** — before any (§Safety — `factharbor.db` writes, `git reset --hard` / `push --force` / `clean -f` / `checkout -- .`, mass edits, deletions).
-- **Task completion** — before declaring a **non-trivial, correctness-critical** task done (pairs with the Exchange Protocol completion step).
-
-**Do NOT** consult the advisor for routine work — single-file reads, mechanical edits, formatting, doc tweaks, obvious one-liners — where a second opinion adds nothing. Each call runs at the session's advisor tier (always ≥ the main model), so it has real cost; it is highest-value and relatively cheapest when the main model is **Opus 4.8 / Sonnet** (the advisor escalates *upward*). **When running Fable 5 as main, the advisor is a same-tier second opinion at top cost — consult sparingly there, and lean on `/report-review` / `/validate` for empirical regression checks rather than repeat advisor calls.**
+When skills change, run the read-only `node scripts/agents/check-skill-mirrors.mjs`. It checks declared copies and Claude/Codex metadata; it does not attest Gemini/Cline session state.
 
 ---
 
@@ -456,29 +314,6 @@ Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-ti
 
 ---
 
-## Authentication
+## Current implementation
 
-| Header / Variable | Purpose |
-|-------------------|---------|
-| `X-Admin-Key` / `FH_ADMIN_KEY` | Internal API endpoints |
-| `X-Runner-Key` / `FH_INTERNAL_RUNNER_KEY` | Runner → Next.js trigger |
-
-Config: `apps/api/appsettings.Development.json` (from `.example`). Web: `apps/web/.env.local` (from `.env.example`).
-
----
-
-## Current State (Pre-release, targeting v1.0)
-
-Pipeline: ClaimAssessmentBoundary (single production pipeline). Monolithic Dynamic removed pre-release. Orchestrated removed in v2.11.0. Monolithic Canonical removed in v2.10.x.
-
-LLM Tiering: Haiku 4.5 (extract/understand), Sonnet 4.5 (verdict/context refinement).
-
-For full feature list and known issues, see `Docs/STATUS/Current_Status.md`.
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `FH_RUNNER_MAX_CONCURRENCY` | `3` | Max parallel analysis jobs |
-| `FH_CONFIG_DB_PATH` | `./config.db` | UCM SQLite location |
-| `FH_SR_CACHE_PATH` | `./source-reliability.db` | SR cache database path |
-
-Analysis configuration (pipeline/search/calculation/SR) is managed in UCM (Admin → Config). Env vars are for infra/runtime only.
+Use `Docs/STATUS/Current_Status.md` and current code/configuration for status, runtime defaults and model selection. Do not treat an adapter snapshot or historical handoff as the current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.

@@ -125,45 +125,14 @@ export function loadKnowledgeCache() {
   };
 }
 
-export function loadKnowledgeContext({ allowFallback = true, refreshIfStale = false } = {}) {
+// Query loading never writes. Bootstrap/refresh are separate mutation operations.
+export function loadKnowledgeContext({ allowFallback = true } = {}) {
   const cached = loadKnowledgeCache();
   const indexes = loadCompatibilityIndexes();
   const currentSnapshot = readCurrentSourceSnapshot(indexes);
   const freshness = evaluateCacheFreshness(cached?.manifest ?? null, currentSnapshot);
 
   if (cached) {
-    if (refreshIfStale && freshness.isStale) {
-      try {
-        const payload = bootstrapKnowledgeCache();
-        return buildKnowledgeContext({
-          source: "cache",
-          manifest: payload.manifest,
-          data: payload.data,
-          // The cache was rebuilt from the current repo snapshot just above, so
-          // comparing the manifest to itself is the intentional "fresh baseline"
-          // for the returned context rather than a second repo read.
-          freshness: evaluateCacheFreshness(payload.manifest, payload.manifest),
-          refreshed: true,
-        });
-      } catch (error) {
-        return buildKnowledgeContext({
-          source: "cache",
-          manifest: cached.manifest,
-          data: cached.data,
-          freshness,
-          warnings: [
-            ...freshness.warnings,
-            buildWarning(
-              "cache_refresh_failed",
-              `Failed to refresh stale knowledge cache automatically: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            ),
-          ],
-        });
-      }
-    }
-
     return buildKnowledgeContext({
       source: "cache",
       manifest: cached.manifest,

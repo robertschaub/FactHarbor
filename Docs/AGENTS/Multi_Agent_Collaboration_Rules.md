@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
-**Version:** 2.2
-**Date:** 2026-06-10
+**Version:** 2.3
+**Date:** 2026-09-08
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -15,14 +15,14 @@ This document defines the rules, roles, and workflow for multi-agent collaborati
 
 ## 1. Global References
 
-All agents MUST read and adhere to these foundational documents before starting any task:
+Root AGENTS.md is mandatory. Read only the reference sections needed for the current task; client adapters apply to their own client and remain subordinate to canonical policy. Relevant prior-work lookup is for non-trivial tasks, not every typo.
 
-### 1.1 Mandatory Knowledge Sources
+### 1.1 Knowledge Sources
 
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **AGENTS.md** | `/AGENTS.md` | Fundamental coding rules, architecture reference, safety rules |
-| **GEMINI.md** | `/GEMINI.md` | Gemini CLI-specific instructions and foundational mandates |
+| **GEMINI.md** | `/GEMINI.md` | Gemini CLI discovery and session-specific limitations |
 | **Coding Guidelines** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards, testing requirements, prompt engineering |
 | **Terminology Reference** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki` | Authoritative glossary for all technical terms |
 | **Architecture Overview** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System Design/WebHome.xwiki` | System architecture, data models, component interactions |
@@ -107,63 +107,28 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 
 ## 3. Workflow Patterns
 
-> **Usage:** The 5-phase workflow below is active for complex or risky tasks. For simple changes, use the Quick Fix Workflow (3.2).
+> **Usage:** Use one accountable implementer and proportionate verification. For complex or materially risky tasks, use the phases below with relevant independent review. Roles describe responsibilities; they do not mandate separate sessions or every listed specialist.
 >
 > **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role and LLM model tier are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` and Model-Class Guidelines in §6.
 
 ### 3.1 Standard Feature Workflow
 
-```mermaid
-flowchart TB
-    subgraph Phase1["Phase 1: Planning"]
-        P1[Lead Architect<br/>Creates Design Proposal]
-        P2[Lead Developer<br/>Reviews Feasibility]
-        P3[LLM Expert<br/>Reviews Prompt Impact]
-    end
+1. Investigate the mechanism and affected scope; make the implementation and verification plan concrete.
+2. Obtain relevant independent review when required by root risk criteria or the task. Resolve findings using evidence and current authority.
+3. Implement the owned change and run focused checks with declared writable state. Preserve recovery baselines.
+4. Review material implementation changes, correct supported findings, then integrate under the existing task authority and §4.3 when concurrent.
 
-    subgraph Phase2["Phase 2: Review Round 1"]
-        R1[All Reviewers<br/>Add Comments to Plan]
-        R2[Lead Architect<br/>Revises Based on Feedback]
-    end
-
-    subgraph Phase3["Phase 3: Implementation"]
-        I1[Senior Developer<br/>Implements Changes]
-        I2[Senior Developer<br/>Writes Tests]
-    end
-
-    subgraph Phase4["Phase 4: Code Review"]
-        CR1[Lead Developer<br/>Code Review]
-        CR2[Technical Writer<br/>Doc Review]
-    end
-
-    subgraph Phase5["Phase 5: Finalization"]
-        F1[Senior Developer<br/>Applies Fixes]
-        F2[Lead Developer<br/>Final Approval]
-    end
-
-    P1 --> P2 --> P3 --> R1 --> R2 --> I1 --> I2 --> CR1 --> CR2 --> F1 --> F2
-```
+Planning, review and implementation may be stages in one session; they are not a mandatory queue of agents. Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it.
 
 ### 3.2 Quick Fix Workflow
 
-For small, well-understood changes:
-
-1. **Senior Developer** proposes fix with rationale
-2. **Lead Developer** reviews and approves
-3. **Senior Developer** implements
-4. **Lead Developer** verifies
+For a small, well-understood reversible change, the assigned implementer investigates, edits and verifies proportionately. An obvious single-site fix or documentation typo needs no mandatory second agent, preflight, broad suite or completion file. Add review only when the actual risk or user request calls for it.
 
 ### 3.3 Complex Investigation Workflow
 
-For issues requiring deep analysis by a **single investigator** with sequential review:
+Use one investigator when that fits the question. Start with source and captured failure output; an authorized reproduction assignment declares its writable state up front. When root cause or alternative mechanisms remain materially uncertain, obtain independent review of the evidence/options. Do not require a separate reproduction session when the original assignment already covers it.
 
-1. **LLM Expert** or **Lead Architect** investigates root cause
-2. **Lead Developer** validates findings
-3. **Lead Architect** proposes solution options
-4. **All roles** discuss trade-offs (async via document)
-5. Proceed to Standard Feature Workflow
-
-> **§3.3 vs §3.4:** Use §3.3 when one expert can investigate and the team reviews sequentially. Use §3.4 when you want **independent parallel perspectives** from multiple agents on the same problem.
+Use §3.4 only when the Captain requests multiple independent perspectives.
 
 ### 3.4 Multi-Agent Investigation Workflow
 
@@ -224,7 +189,7 @@ Use §4.3 to assign task worktrees and one integrator before parallel writing. T
 3. **Create your spoke file**: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
 4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file**
 5. When done: report `DONE` to the integrator for your Participant Tracker row
-6. Do NOT read other agents' spoke files (anti-anchoring rule — reports are in separate files, making this naturally enforced)
+6. Do NOT read other agents' spoke files (anti-anchoring instruction; separate files aid discipline but do not enforce read isolation)
 7. Do NOT attempt consolidation — that is Phase 2
 
 **Phase 2 — Consolidation (designated agent)**
@@ -248,7 +213,7 @@ Use §4.3 to assign task worktrees and one integrator before parallel writing. T
 **Rules:**
 - Participants, their roles, and their number vary per task — the Captain decides who participates
 - Each agent writes to their own spoke file — no shared-file contention during Phase 1
-- Anti-anchoring: agents must NOT read other agents' spoke files during Phase 1 (file separation makes this naturally enforced)
+- Anti-anchoring: agents must NOT read other agents' spoke files during Phase 1 (file separation does not enforce read isolation)
 - The consolidator must not discard minority findings — disagreements are valuable signal
 - If an agent discovers something outside the investigation scope, it flags it in an `**Out of Scope**` note in their spoke file but does not investigate further
 - The hub document is the single source of truth for the downstream reviewer/implementer
@@ -257,22 +222,7 @@ Use §4.3 to assign task worktrees and one integrator before parallel writing. T
 
 #### Decision Authority & Escalation
 
-Decisions during investigation and consolidation follow a tiered authority model based on impact and risk. Escalate upward when the threshold is exceeded. See also the general Escalation Protocol (§7).
-
-| Level | Who decides | Scope | When applicable | Examples |
-|-------|------------|-------|-----------------|---------|
-| **1 — Lead agent** | The individual agent decides alone | Low impact, easily reversible, within own report | All phases | Investigation methodology, which files to analyze, report structure, internal findings |
-| **2 — Agent consent** | Lead agent + one relevant agent agree | Medium impact, affects shared output | Phase 2–3 only (agents cannot communicate during Phase 1) | Proposing a specific fix approach, recommending a tool/library, flagging a finding as critical |
-| **3 — Agent consensus** | All participating agents agree (via document) | High impact, affects multiple areas | Phase 2–3, orchestrated by Captain | Consolidation priorities, plan phasing, recommending architectural changes, disagreement resolution between agents |
-| **4 — Captain approval** | Captain must explicitly approve | Very high impact, irreversible, or outside investigation scope | Any phase | Schema migrations, prompt modifications, security-related changes, removing functionality, expanding investigation scope, approving the final plan |
-
-**Escalation rules:**
-- When in doubt, escalate one level up — over-escalating is safer than under-escalating
-- An agent who identifies a Level 4 decision must flag it in **Open Questions** and NOT proceed without Captain approval
-- The consolidator operates at Level 3: they synthesize and structure, but cannot make Level 4 decisions unilaterally
-- Level 2–3 decisions must be documented in the report or consolidated plan with rationale
-- The Captain can override any lower-level decision
-- If no Captain is assigned in the session, escalate Level 4 decisions to the active human user and wait for explicit approval
+The accountable lead resolves findings on evidence, records accepted/rejected findings with reasons and preserves material dissent. Reviewer count or unanimity does not decide correctness. Bring unresolved material trade-offs, scope expansions or missing authority to the Captain; do not reopen an approval already granted. Root policy governs risky changes and external actions. Planning/review authority alone does not authorize implementation or operational actions.
 
 #### Captain Commands
 
@@ -332,7 +282,7 @@ Do NOT write into the # CONSOLIDATED OUTPUT sections — those are reserved for 
 ```
 As {Role}, implement the approved plan in Docs/WIP/{filename}.md
 Read ## Consolidated Plan and execute it phase by phase.
-After each phase: run tests/build, update the document status, and report progress.
+After each phase: run only the assigned relevant checks within permitted writable state, and report progress/status to the integrator. The integrator updates shared documents; a restricted reviewer runs no tests/builds.
 If you encounter blockers or deviations from the plan, stop and report to the Captain.
 ```
 
@@ -432,6 +382,12 @@ Every collaborative document MUST include:
 ### 4.3 Concurrent Editing
 
 Implements [AGENTS.md §Scoped Task Worktrees](../../AGENTS.md#scoped-task-worktrees); ordinary solo work remains direct-to-`main`.
+
+A **restricted writer** edits only assigned files in an integrator-supplied worktree and returns working-tree edits plus evidence. It performs no staging, commit, merge, pull, branch/worktree creation or switch, or shared-settings/hook changes. Include this definition in each such assignment. This is a handoff designation, not evidence of an established tool or filesystem restriction. Broader scoped workers may deliver commits only under an assignment that explicitly permits that mode. Ordinary solo and authorized worker-commit modes remain available outside the adopted instruction-system rollout; every concurrent writer in that rollout uses restricted-writer mode.
+
+The integrator records any pre-applied, integrator-owned changes (including paired root-index guidance and hook edits) with exact hunks/content hashes as expected baseline differences. Workers exclude these from captured owned diffs; the integrator stages only the reviewed owned paths/hunks. A supplied branch is not permission to manage Git.
+
+For each client/session, record client/model, role, permitted tools/commands and state paths; tracked config versus owned ignored settings versus UI/session state; trust/activation and effective-workspace checks; documented support versus installed verification and unknowns. Never infer one client's controls from another's metadata. If a required restriction cannot be established, do not dispatch that session as a writer. Read-only reviewers return evidence in chat; their assignment must state whether they inspect source or only supplied captures. Prompt restrictions/worktrees are not OS containment.
 
 1. **Assign before writing.** Record repository identity and base commit, task branch/worktree, owned files, scope boundaries, permitted commands and writable state paths, required checks, reviewer, one designated integrator, and stop conditions in the existing [assignment template](Multi_Agent_Meta_Prompt.md). Worktree paths are session-local; public artifacts use repository-relative paths and branch/revision identifiers.
 2. **Isolate writers.** Give each concurrent writer a task branch/worktree and disjoint owned files. Sequence overlapping ownership through the integrator. Worktrees share Git metadata and do not themselves enforce filesystem or command restrictions; include generated output, caches, databases, and temporary paths in the assignment's state boundaries. Workers do not change Git settings/hooks or perform integration; restricted writers return edits for the integrator to commit.
@@ -618,7 +574,7 @@ API endpoint, configuration parameter, or pipeline stage:
 
 ## 6. Model-Class Guidelines
 
-> **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve. Claude Code effort-level and fast-mode specifics (dated) live in §6.5.
+> **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve. Claude-specific model/effort guidance lives in CLAUDE.md.
 
 ### 6.1 High-Capability Models
 
@@ -628,7 +584,7 @@ API endpoint, configuration parameter, or pipeline stage:
 - Reserve for high-stakes decisions and ambiguous problem spaces
 - Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
-- Claude Code: effort-level and fast-mode tiering is covered in §6.5
+- Check the selected client for supported model/effort controls.
 
 ### 6.2 Mid-Tier Models
 
@@ -638,7 +594,7 @@ API endpoint, configuration parameter, or pipeline stage:
 - Well-suited for following structured protocols
 - Efficient for documentation tasks
 - Good default for most development work
-- Claude Code default for this project: `CLAUDE_CODE_EFFORT_LEVEL=xhigh` (env var; see §6.5)
+- Use the actual configured model/effort rather than assuming a repository-wide runtime value.
 
 ### 6.3 Lightweight Models
 
@@ -649,62 +605,15 @@ API endpoint, configuration parameter, or pipeline stage:
 - When using Kimi K2 via Cline: be aware it may not know FactHarbor conventions
 - Best paired with clear, structured instructions
 
-**Context Budget — Lite Activation:**
-
-Lightweight models have smaller context windows. **This graduated loading is for lightweight / small-context models only — it does NOT apply to the 1M-context main loop (Opus / Fable 5), which should follow the AGENTS.md mandate to read files fully before acting.** When activated with "As \<Role\>", use this graduated loading strategy instead of reading all Required Reading at once:
-
-1. **Always load:** `/AGENTS.md` (terminology + safety — non-negotiable)
-2. **Load the role entry** from §2 of this document (one subsection, ~40 lines)
-3. **Scan** your role's section in `Docs/AGENTS/Role_Learnings.md` (brief)
-4. **Defer** remaining Required Reading — load specific documents only when the task requires them
-5. **State what you deferred:** In your acknowledgment, list which Required Reading you have NOT loaded yet so the human knows
-
-This avoids consuming 60%+ of context on upfront reads that may not be relevant to a simple task.
+**Context loading for all models:** Always read root and applicable nested instructions. Read the assigned role and relevant learnings once, then load reference sections as needed. Large context capacity does not justify unrelated reads; lower-cost models do not get weaker invariants.
 
 ### 6.4 Model Tiers in `/debate` Skill
 
-The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversarial roles with model tiers aligned to §6.1–6.3:
+Use only models/roles actually supported by the active client. Select capacity appropriate to each reasoning responsibility and preserve independent evidence. The shared skill does not assume Claude aliases or prices. Client-specific controls are in `CLAUDE.md`, `GEMINI.md` and the selected client's definitions. Debate is a targeted tool for material uncertainty, not an automatic quorum.
 
-| Role | Tier | Rationale |
-|---|---|---|
-| Advocate, Challenger | Mid-tier (Sonnet) | Reasoning-intensive argument construction |
-| Consistency Probes, Validator | Lightweight (Haiku) | Classification and structural checking |
-| Reconciler (FULL only) | Top-tier (Opus; optionally Fable 5 when the session runs Fable and the decision is high-stakes/irreversible) | High-stakes synthesis requiring nuanced judgment |
-| Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
+### 6.5 Client settings
 
-**Tiers map to the Agent tool's `model` parameter and must be passed explicitly on every spawn:** lightweight → `haiku`, mid-tier → `sonnet`, top-tier → `opus` (or `fable` per the table above). An omitted `model` makes the subagent inherit the session's main model — on a Fable 5 session that silently runs every role at the top price tier (~2× Opus 4.8).
-
-Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
-
----
-
-### 6.5 Effort & Fast-Mode Tiering (Claude Code)
-
-> Verified against `code.claude.com/docs` (model-config, env-vars) on 2026-05-30; Fable 5 specifics added 2026-06-10. Effort scales are calibrated per model, so the same level name is not the same underlying value across models.
-
-`CLAUDE_CODE_EFFORT_LEVEL` is the primary reasoning-depth control on adaptive-reasoning models (Opus 4.7+ and Fable 5). Supported levels: **Fable 5 / Opus 4.8 / 4.7** = `low/medium/high/xhigh/max`; **Opus 4.6 & Sonnet 4.6** = `low/medium/high/max` (no `xhigh`). An unsupported level falls back to the highest supported level at or below it (e.g., `xhigh` → `high` on Opus 4.6), so a single project default is safe across models.
-
-**Project default: `xhigh`** (env var) — deep reasoning where it matters without paying `max` on every call. Tier per task:
-
-| Task class | How to run it |
-|---|---|
-| Pipeline root-cause, architecture, quality gates, `/audit`, `/pipeline`, `/debate` reconciliation | `ultrathink` in the prompt (one-off deep reasoning), or `/effort max` for a deep session |
-| Routine implementation, code review, tests | default `xhigh` |
-| Mechanical edits, renames, doc sync, formatting | `/effort medium` (or `low`) for the session; optionally `/fast` |
-| Bulk read-only fan-out (search, discovery) | use the Explore agent |
-
-**Precedence (matters for cost):** the `CLAUDE_CODE_EFFORT_LEVEL` env var takes precedence over the `effortLevel` setting, over skill/subagent frontmatter, and over model defaults. Because this project sets the env var, **every subagent and Workflow agent inherits the project effort level process-wide** — you cannot lower it per-subagent via frontmatter while the env var is set. Lowering the env var (or migrating to `effortLevel` + frontmatter) is the lever if per-task subagent tiering is wanted.
-
-**Fast mode (`/fast`):** same model, faster output, higher per-token price; orthogonal to effort. **Not available on Fable 5** (fast mode covers Opus 4.8/4.7 only) — for fast-mode work, run the session on Opus 4.8. **`ultracode` (`/effort ultracode`):** sends `xhigh` and has Claude auto-orchestrate dynamic workflows for substantive tasks (session-only) — the low-friction way to try Workflow-style orchestration without scripting it.
-
-**Fable 5 sessions (tier above Opus, ~2× Opus 4.8 per token; verified 2026-06-10):**
-
-- **Switching:** use `/model fable` and verify with `/status` — the `model` key in `settings.json` has been observed NOT to control the live session model; do not rely on it.
-- **Advisor tier constraint:** the advisor model must be ≥ the main model, so a Fable 5 session 400s on every request unless the **user-level** `~/.claude/settings.json` sets `advisorModel: "fable"` (applied 2026-06-10) or the advisor is disabled. There is no cheaper valid advisor on a Fable session — a Fable advisor roughly doubles advisor cost; disable it if that spend isn't wanted.
-- **Subagent inheritance:** subagents spawned without an explicit `model` parameter inherit Fable 5. The explicit tier→model pinning in §6.4 is mandatory on Fable sessions — it is the main cost lever.
-- **Effort:** `xhigh` (project default) is fully supported on Fable 5 and remains the recommended coding/agentic setting. `/fast` is not available (see above).
-
-**Opus 4.6 compatibility:** `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` + `MAX_THINKING_TOKENS` in `settings.json` are inert on Fable 5 and Opus 4.7+ but active on Opus 4.6 / Sonnet 4.6 (fixed thinking budget). They are kept **intentionally** for occasional 4.6 use — do not remove them.
+See the root client adapter for supported discovery and session-control guidance. Confirm effective workspace settings before relying on them; do not inspect or modify excluded user profiles to settle uncertainty.
 
 ---
 
@@ -751,16 +660,16 @@ Any agent working on FactHarbor can invoke `/debate` when a decision needs adver
 
 ## 8. Quality Checklist
 
-Before marking any task complete:
+Before completion, apply only the checks relevant to the task and report material omissions:
 
 - [ ] Code follows `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`
 - [ ] Terminology matches `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki`
 - [ ] No hardcoded domain-specific terms
-- [ ] Verification run completed (`npm test` safe suite and/or `npm -w apps/web run build`)
-- [ ] Expensive LLM tests run only when explicitly requested or required for quality-critical changes (see `/AGENTS.md` Test Cost Warning)
+- [ ] Focused verification completed within the assignment; broad suites/builds only when justified
+- [ ] Any provider-spending/live operation had current authorization for its action and scope
 - [ ] Documentation updated
 - [ ] Cross-references verified
-- [ ] Review log complete in WIP document
+- [ ] Required independent findings and dispositions recorded in the existing task home or permitted chat output
 - [ ] WIP document moved to appropriate location or archived
 
 ---
@@ -775,4 +684,4 @@ Before marking any task complete:
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-03-23
+**Last Reviewed:** 2026-09-08

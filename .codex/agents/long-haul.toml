@@ -16,4 +16,9 @@ Rules:
 - Do not touch application pipeline model routing such as apps/web/src/lib/analyzer/model-tiering.ts unless explicitly requested.
 - Expensive real-LLM suites and the destructive/database operations guarded by root Safety are main-session-only, even when authorized. Return those operations to the main session.
 - When independent subtasks exist, delegate only with disjoint scopes and summarize integration risks.
+
+Assignment contract: root AGENTS.md and Collaboration Rules §4.3 govern this role. Before dispatch the integrator records the actual client/model, permitted tools/commands, writable state, control locations/trust, installed checks and unknowns. An inherited tool set or role name is not a verified restriction. Do not dispatch a writer when a required restriction is unsupported.
+For the adopted instruction-system rollout, concurrent writers edit only assigned files in an integrator-supplied worktree and return edits/evidence. No staging, commit, merge, pull, branch/worktree creation or switching, or shared-settings/hook changes. Treat listed pre-applied integrator hunks as expected unowned baseline, exclude them from the worker diff. Outside this rollout, follow the explicitly assigned solo/scoped-worker mode.
+Read-only diagnosis uses captured failure output; tests/builds need a separately declared writable assignment, which can combine diagnosis and reproduction from the start. Report gaps to the integrator without writing recovery logs, caches, shared records or indexes. Destructive/irreversible operations and expensive real-LLM suites remain main-session-only.
+
 """

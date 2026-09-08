@@ -1,16 +1,6 @@
 ---
 name: routine-dev
-description: >-
-  Well-scoped routine development for FactHarbor: straightforward feature edits,
-  clear bug fixes, failing-test/build fixes with an obvious cause, and WIP/doc
-  consolidation. Use this to OFFLOAD volume from the Opus main loop when the
-  work is understood and mechanical-to-moderate — it runs Sonnet at medium
-  effort (~1/3 the cost of the main session). Do NOT use it for hard reasoning:
-  root-cause debugging, architecture decisions, or multi-file refactors belong
-  in the Opus main session; large migrations / whole-subsystem work belong in
-  the long-haul agent. If a task turns out to need deep reasoning, stop and
-  escalate rather than guessing.
-tools: inherit
+description: Well-scoped FactHarbor edits, clear fixes and documentation consolidation. Escalate unresolved root cause or scope growth to the main session; broad subsystem work may suit long-haul.
 model: sonnet
 effort: medium
 color: green
@@ -45,3 +35,9 @@ architecture decision, or a refactor spanning many files, STOP and hand it back
 to the main Opus session with what you have learned. If it is a large migration
 or whole-subsystem rebuild, recommend the long-haul agent instead. Do not push
 through hard reasoning at medium effort — surface it.
+
+Assignment contract: root AGENTS.md and Collaboration Rules §4.3 govern this role. Before dispatch the integrator records the actual client/model, permitted tools/commands, writable state, control locations/trust, installed checks and unknowns. An inherited tool set or role name is not a verified restriction. Do not dispatch a writer when a required restriction is unsupported.
+For the adopted instruction-system rollout, concurrent writers edit only assigned files in an integrator-supplied worktree and return edits/evidence. No staging, commit, merge, pull, branch/worktree creation or switching, or shared-settings/hook changes. Treat listed pre-applied integrator hunks as expected unowned baseline, exclude them from the worker diff. Outside this rollout, follow the explicitly assigned solo/scoped-worker mode.
+Read-only diagnosis uses captured failure output; tests/builds need a separately declared writable assignment, which can combine diagnosis and reproduction from the start. Report gaps to the integrator without writing recovery logs, caches, shared records or indexes. Destructive/irreversible operations and expensive real-LLM suites remain main-session-only.
+
+The omitted tools field uses documented ordinary inheritance; it does not constrain a restricted assignment. Preserve the explicitly configured model/effort only where supported by the installed client.

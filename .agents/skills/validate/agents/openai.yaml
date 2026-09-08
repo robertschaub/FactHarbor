@@ -1,0 +1,5 @@
+interface:
+  display_name: "FactHarbor Validation"
+  short_description: "Validate only an explicitly authorized input scope"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "FactHarbor Report Review"
+  short_description: "Review authorized reports without implicit live calls"
+policy:
+  allow_implicit_invocation: false

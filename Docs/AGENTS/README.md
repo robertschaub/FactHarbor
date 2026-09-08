@@ -45,11 +45,11 @@ Per-role definition files. Each contains mission, focus areas, authority, requir
 
 | Document | Purpose |
 |----------|---------|
-| [Agent_Outputs.md](Agent_Outputs.md) | Rolling log of agent task completions (Standard tier) |
+| [Agent_Outputs.md](Agent_Outputs.md) | Index of persisted agent completions |
 | [Handoffs/](Handoffs/) | Dedicated output files for significant tasks |
 | [Role_Learnings.md](Role_Learnings.md) | Tips and gotchas from previous agents, organized by role |
 
-See AGENTS.md § Agent Exchange Protocol for when and how to write outputs.
+See [Handoff Protocol](Policies/Handoff_Protocol.md) for proportional output tiers and restricted-session exceptions.
 
 ---
 
@@ -59,13 +59,13 @@ All tool configs reference `/AGENTS.md` as the single source of truth. Most are 
 
 | Tool | Config Location | Notes |
 |------|----------------|-------|
-| Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md`; mirrors the shared Named Workflows table |
-| Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly; use its Named Workflows table for shared skills |
-| Claude Code | `/CLAUDE.md` | Auto-loaded into system prompt alongside `AGENTS.md` |
+| Gemini CLI | `/GEMINI.md` | Root entry point imports canonical AGENTS.md when effective discovery permits; verify loaded context in a fresh session |
+| Codex (GPT) | `/AGENTS.md` (native) | Loads the root-to-working-directory instruction chain; explicitly read nested instructions for other targets; skills in `.agents/skills` |
+| Claude Code | `/CLAUDE.md` | CLAUDE.md imports AGENTS.md; path rules route to canonical nested instructions |
 | GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code |
 | Cursor | `/.cursor/rules/*.mdc` | Glob-scoped rules, auto-attached per file type |
 | Cline / RooCode | `/.clinerules/*.md` | Inserted into system prompt |
-| Windsurf | `/.windsurfrules` | 6000 char limit, condensed rules inline |
+| Windsurf | `/.windsurfrules` | Portable root/nested instruction routing; verify client loading |
 
 ---
 
@@ -81,3 +81,5 @@ The first three rows form the **quality-expectations triad** consumed by `/repor
 | [GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md) | Core rules and document handling for xWiki work |
 | [InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md) | Chat initialization prompt for xWiki-focused sessions |
 | [Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md) | Syntax reference for Mermaid diagrams in documentation |
+
+Shared FactHarbor skills are authoritative under `.claude/skills`, with fourteen declared `.agents/skills` copies. Run `node scripts/agents/check-skill-mirrors.mjs` after changes. Invocation metadata is client-specific; Gemini workspace disabled-skill settings and Cline visible skill toggles require separate session verification. A clone does not contain ignored local settings.

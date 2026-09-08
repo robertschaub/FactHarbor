@@ -1,10 +1,11 @@
 ---
 description: FactHarbor TypeScript/Next.js rules for apps/web
-globs: apps/web/**/*.ts,apps/web/**/*.tsx
+globs: apps/web/**
 ---
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
 
 # FactHarbor — TypeScript / Next.js Rules
+
+Read root `AGENTS.md` and `apps/web/AGENTS.md` before target work. The nested file is canonical for area requirements; this adapter supplements routing. Commands below require assigned state and current task authority.
 
 ## Key Context
 - Orchestrator: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
@@ -29,7 +30,7 @@ globs: apps/web/**/*.ts,apps/web/**/*.tsx
 ## Commands
 - Test: `npm test` (vitest, runs from repo root)
 - Build: `npm -w apps/web run build`
-- Dev: `cd apps/web && npm run dev` (port 3000)
+- Dev: `npm run dev` (from `apps/web`) (port 3000)
 
 ## Auth Headers
 - `X-Runner-Key`: runner -> Next.js internal routes

@@ -52,6 +52,7 @@ function rankSkills(skillEntries, task, skillInput) {
 
   const queryTokens = tokenize(task);
   return skillEntries
+    .filter((entry) => !entry.disableModelInvocation)
     .map((entry) => ({
       ...entry,
       score: scoreTokenOverlap(
@@ -116,6 +117,7 @@ function buildHandoffsToInspect(matchedHandoffs) {
     date: entry.date,
     roles: entry.roles,
     topics: entry.topics,
+    authority: "historical; verify current status and supersession before use",
     reason: (entry.reasons ?? []).join("; ") || "Matched the current task.",
     score: entry.score,
   }));
@@ -231,7 +233,7 @@ function buildFirstActions({ recommendedRole, recommendedSkills, docsToRead, han
 
   if (recommendedSkills.length > 0) {
     actions.push({
-      action: `Read and follow ${recommendedSkills[0].command}.`,
+      action: `Consider ${recommendedSkills[0].command} within the current task authorization. Skill selection grants no operation permissions.`,
       refs: [recommendedSkills[0].file],
       reason: recommendedSkills[0].reason,
     });
@@ -239,7 +241,7 @@ function buildFirstActions({ recommendedRole, recommendedSkills, docsToRead, han
 
   if (handoffsToInspect.length > 0) {
     actions.push({
-      action: "Open the top matched handoff before designing or editing.",
+      action: "Inspect relevant historical handoffs and check whether current instructions or decisions supersede them.",
       refs: [handoffsToInspect[0].file],
       reason: handoffsToInspect[0].reason,
     });
@@ -263,7 +265,7 @@ function buildFirstActions({ recommendedRole, recommendedSkills, docsToRead, han
   }
 
   actions.push({
-    action: "Choose verification from the workflow and repo commands, avoiding expensive suites unless required.",
+    action: "Choose proportionate verification within current authorization; live analyses and provider-spending operations need authorization covering that action and scope.",
     refs: ["AGENTS.md"],
     reason: "FactHarbor separates safe tests from real-LLM validation runs.",
   });
@@ -293,6 +295,8 @@ export function buildStartupAdvice(
   const codeSearchHints = buildCodeSearchHints({ stageAnchors, matchedHandoffs });
 
   return {
+    advisory: true,
+    authority: "Current task authorization and applicable instructions take precedence over suggestions and historical matches.",
     recommendedRole,
     recommendedSkills,
     firstActions: buildFirstActions({

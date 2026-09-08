@@ -28,7 +28,7 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 ## Key Patterns
 
 - **DB bootstrap + manual schema updates.** `db.Database.EnsureCreated()` in `Program.cs` creates new DBs, but does not alter existing tables.
-- **Manual SQL migration scripts live in `apps/api/migrations/`.** Apply relevant scripts for existing databases after entity/schema changes (e.g., `004_add_verdict_summary_columns.sql` adds `VerdictLabel` and `TruthPercentage`).
+- **Manual SQL migration scripts live in `apps/api/migrations/`.** Only an authorized main-session database task may apply relevant scripts for existing databases after entity/schema changes (e.g., `004_add_verdict_summary_columns.sql` adds `VerdictLabel` and `TruthPercentage`).
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for history/audit. Never write to DbContext directly from controllers.
 - **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`. This is a shared-secret mechanism, not full AuthN/AuthZ.
 - **RunnerClient has built-in retry.** Exponential backoff with jitter.
@@ -48,10 +48,10 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 
 | Action | Command |
 |--------|---------|
-| Run (hot reload) | `cd apps/api && dotnet watch run` |
-| Build | `cd apps/api && dotnet build` |
+| Run (hot reload) | `dotnet watch run` (from `apps/api`) |
+| Build | `dotnet build` (from `apps/api`) |
 | Swagger | http://localhost:5000/swagger |
-| Reset DB | Delete `factharbor.db`, restart (auto-recreated) |
+| Reset DB | Destructive main-session operation only when explicitly authorized; preserve the assigned backup/recovery plan |
 
 ## Status Values
 

@@ -19,6 +19,8 @@ This procedure prevents false conclusions caused by mixing:
 
 ## 1. Classify the Change First
 
+These are readiness checks, not action permission. Live analyses, reseeds, service changes and provider-spending runs need current authorization covering their action, scope, exact Captain-defined inputs and writable state. Existing authorization persists; a review/skill selection alone does not grant it. Restricted reviewers inspect captured results and propose missing steps in chat.
+
 Before interpreting any live run, decide which category the change belongs to:
 
 1. **Code change**
@@ -165,7 +167,7 @@ activation timestamp manually in the handoff.
   - whether the flag was active
   - whether the feature actually triggered
 - For code-change validation, a restart is safer than assuming hot reload.
-- If there is any doubt, rerun a small control batch rather than over-interpreting one ambiguous job.
+- If evidence is ambiguous, propose a small control batch within current exact-input/cost authority; do not turn uncertainty into automatic provider spend.
 
 ---
 
@@ -173,7 +175,7 @@ activation timestamp manually in the handoff.
 
 For any non-trivial localhost quality experiment:
 
-1. Apply the change.
+1. Apply the authorized change and have the integrator commit the relevant source/prompt/config baseline before live submission.
 2. Restart the relevant service(s) if the change touched runtime code.
 3. Activate/reseed UCM or prompts if needed.
 4. Start only fresh jobs after the change is definitely live.

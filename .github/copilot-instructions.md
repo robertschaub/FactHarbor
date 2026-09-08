@@ -1,79 +1,11 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-21 -->
+# Copilot — FactHarbor
 
-# Copilot / AI agent instructions — FactHarbor
+Read repository-root `AGENTS.md` before work. It owns domain invariants, exact Captain-defined inputs, authorization, recovery, verification and completion rules. Before any nested target work, read the applicable `apps/web/AGENTS.md` or `apps/api/AGENTS.md` and any closer instructions, including when launched at the root. This adapter is subordinate to canonical instructions.
 
-> **Canonical source:** `/AGENTS.md`. This file is a summary for inline completions. If rules diverge, follow AGENTS.md.
+Use one accountable implementer and proportionate checks. Trivial tasks need no role choreography or mandatory history lookup. For relevant non-trivial work, knowledge queries are read-only and advisory; stale/missing indexes are reported to the integrator, not rebuilt by restricted sessions. Source search locates code; historical handoffs may be superseded.
 
-## Project
+Follow root Scoped Task Worktrees and Collaboration Rules §4.3. Restricted writers return owned edits/evidence without Git mutations; restricted reviewers return chat findings. The integrator owns shared records/indexes. Recover failed attempts under root policy; do not discard another owner's changes.
 
-Two apps + one tool:
-- `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + analysis pipeline). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts`.
-- `tools/vscode-xwiki-preview` — VS Code extension for XWiki previews.
+Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Client metadata is not universal enforcement; declare unsupported controls before dispatch.
 
-Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `runClaimBoundaryAnalysis` -> Results back to API.
-
-## Critical Terminology
-
-- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. NEVER call "context"/"scope".
-- **AtomicClaim** = Single verifiable assertion from user input. NEVER call "context"/"fact".
-- **EvidenceScope** = Per-evidence source metadata. NEVER call "context".
-- **EvidenceItem** = Extracted evidence. NEVER call "fact" in new code.
-- **No hardcoded keywords** in code/prompts. Generic for ANY topic.
-
-## Captain-Defined Analysis Inputs
-
-- Do not invent, paraphrase, translate, or substitute analysis inputs.
-- Use Captain-defined wording exactly. If a needed input is missing, ask Captain before proceeding.
-- Current approved inputs:
-	- `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
-	- `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
-	- `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
-	- `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
-	- `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
-	- `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
-	- `Using hydrogen for cars is more efficient than using electricity`
-	- `Plastic recycling is pointless`
-
-## Failed-Attempt Recovery
-
-- After a code or prompt change fails focused validation (for example: `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not automatically stack broader edits on top.
-- First classify the earlier attempt: `keep`, `quarantine`, or `revert`.
-- Broaden scope only with a verifier-backed reason; if ownership of the earlier change is unclear, ask Captain before reverting.
-
-## Commands
-
-- Test: `npm test` (vitest, safe). Build: `npm -w apps/web run build`.
-- Web: `cd apps/web && npm run dev` (port 3000). API: `cd apps/api && dotnet run` (port 5000).
-
-## Auth
-
-- `X-Runner-Key`: Runner -> Next.js. `X-Admin-Key`: Runner -> API.
-- Config: `apps/api/appsettings.Development.json` (from `.example`), `apps/web/.env.local` (from `.env.example`).
-
-## Roles
-
-When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
-
-## Documentation Discipline
-
-Before substantial Markdown/xWiki edits, use `/doc-guard` (`.claude/skills/doc-guard/SKILL.md`, mirrored at `.agents/skills/doc-guard/SKILL.md`): state the reader need, existing home, chosen option, and lean test; prefer tightening/merging over adding. Use `/docs-update` when indexes, status labels, backlog/changelog records, or links need reconciliation.
-
-## Index-First Lookup
-
-Before scanning `Docs/AGENTS/Handoffs/` by filename, query the generated indexes under
-`Docs/AGENTS/index/`:
-
-- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
-- `stage-map.json` — locate which analyzer stage file owns a behavior
-- `stage-manifest.json` — look up model-tier mappings without grepping code
-
-`handoff-index.json` is for agent task history only. For source code locations, use
-normal code search/grep. If the indexes are missing, run `npm run index` once or fall
-back to direct file scanning.
-
-## Behavior Examples
-
-- Runner trigger: `apps/api/Services/RunnerClient.cs`
-- Runner implementation: `apps/web/src/app/api/internal/run-job/route.ts`
-- Job lifecycle: `apps/api/Services/JobService.cs` and `apps/api/Controllers/InternalJobsController.cs`
+Use shared workflow bodies only when relevant, bound to the current task and explicit arguments. `/doc-guard` governs substantial documentation edits; `/docs-update` reconciles affected status/links. Do not duplicate Captain input lists in adapters.

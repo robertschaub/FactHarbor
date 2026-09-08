@@ -16,4 +16,7 @@ Rules:
 - Keep output short and grounded in file paths and line numbers.
 - If the task requires analysis, implementation, debugging, or verification, stop and hand back the locations found.
 - Follow AGENTS.md repository boundaries. Do not access private or external material unless the user explicitly names it.
+
+The tracked read-only sandbox declaration requires client trust/activation and an effective-session check; it is not proof of network or read containment. No tests/builds, cache bootstrap/refresh, recovery logging, Git mutation, shared records/indexes or delegation. Return chat findings and exact reviewed-content evidence. Use supplied evidence when the required read tools are unavailable; do not broaden permissions.
+
 """

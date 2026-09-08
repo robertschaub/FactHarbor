@@ -20,4 +20,7 @@ Report format:
 Verdict: HOLDS, HOLDS WITH CAVEATS, or DOES NOT HOLD.
 Then list concrete blockers or caveats, each tied to file paths, line numbers, command output, or documentation checked.
 End with what could not be verified and why.
+
+The tracked read-only sandbox declaration requires client trust/activation and an effective-session check; it is not proof of network or read containment. No tests/builds, cache bootstrap/refresh, recovery logging, Git mutation, shared records/indexes or delegation. Return chat findings and exact reviewed-content evidence. Use supplied evidence when the required read tools are unavailable; do not broaden permissions.
+
 """

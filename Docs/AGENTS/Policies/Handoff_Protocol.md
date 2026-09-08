@@ -6,7 +6,7 @@
 
 ## Agent Handoff Protocol
 
-When starting any new task, every agent MUST:
+For a non-trivial task or a role handoff, assess fit without imposing extra sessions on routine work:
 
 1. **Assess fit**: Is this task best suited for the current agent/tool, or would another be more effective?
 2. **Check role and model**: Identify your current role and underlying LLM model. If either is a poor match for the task (e.g., a lightweight model assigned deep architectural reasoning, or a Technical Writer role asked to implement code), inform the Captain and propose a better-suited role, model tier, or both. Reference the Model-Class Guidelines in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6 for tier strengths.
@@ -23,7 +23,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
 4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
 5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
-6. **On handoff/completion**: Follow the Agent Exchange Protocol using the appropriate mode (`Completion` or `Role Handoff`). For role handoffs, include `Warnings` and `Learnings`, and append learnings to `Role_Learnings.md`.
+6. **On handoff/completion**: Follow the Agent Exchange Protocol using the appropriate mode (`Completion` or `Role Handoff`). For role handoffs, include `Warnings` and `Learnings`, and return durable new learnings for the authorized integrator to persist only when useful.
 
 **Role Alias Quick-Reference:**
 
@@ -57,7 +57,7 @@ Full role definitions: `Docs/AGENTS/Roles/`. Shared workflows, area-to-document 
 - **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
 - **Don't gold-plate.** Deliver what was requested — don't also refactor the file, add comments, and update docs unrequested. But DO report issues, inconsistencies, or improvement opportunities you notice along the way — just flag them, don't act on them without asking.
 - **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/xwiki-pages/FactHarbor/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
-- **Summarize when done.** Follow the Agent Exchange Protocol below — write a completion output to `Agent_Outputs.md` or `Handoffs/` (unless the task is trivial).
+- **Summarize when done.** Follow the Agent Exchange Protocol below — use chat or the existing task record when sufficient; create a handoff only when continuity needs it, under the output tiers below.
 
 ### Agent Exchange Protocol (MANDATORY)
 
@@ -65,14 +65,16 @@ One protocol for all agent-to-agent communication. Three modes, one template.
 
 #### Restricted reviewers and scoped workers
 
+The restricted-writer definition is canonical in [Collaboration Rules §4.3](../Multi_Agent_Collaboration_Rules.md#43-concurrent-editing): assigned-file edits in an integrator-supplied worktree, return edits/evidence, no Git mutation or shared-setting/hook changes. Include it in each rollout assignment. It differs from a scoped worker explicitly authorized to deliver commits; a role label alone proves no restriction.
+
 Restricted reviewers return findings, warnings, learnings, and exact reviewed-revision evidence in chat without writing completion files or indexes. The designated integrator writes their completion artifacts under the normal tiers below, preserving reviewer attribution and outcome. For scoped workers, file ownership governs where they may write; return out-of-scope completion material in chat for the integrator. During concurrent writing, the integrator serializes shared output/log/index changes and rebuilds, including `Role_Learnings.md`; this exception applies to the persistence instructions throughout this protocol. See [Collaboration Rules §4.3](../Multi_Agent_Collaboration_Rules.md#43-concurrent-editing).
 
 #### Modes
 
 | Mode | When | Where Output Lives |
 |------|------|-------------------|
-| **Completion** | Any agent finishing a non-trivial task | `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/` |
-| **Role Handoff** | Switching from one role to another | Same as Completion + incoming-role checklist |
+| **Completion** | Finishing a task | Chat, existing task record, or a warranted handoff/index entry under the tiers below |
+| **Role Handoff** | Switching from one role to another | Same as Completion, with Warnings/Learnings and the relevant incoming-role checklist |
 | **Investigation** | Multi-agent parallel research (Captain-directed) | `Docs/WIP/` hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
 
 #### Output tiers (Completion and Role Handoff modes)
@@ -80,18 +82,18 @@ Restricted reviewers return findings, warnings, learnings, and exact reviewed-re
 | Task Tier | Criteria | Output Action |
 |-----------|----------|---------------|
 | **Trivial** | Single-file tweak, typo fix, quick answer, < 3 minutes of work | No file. Chat summary is sufficient. |
-| **Standard** | Bug fix, small feature, config change, investigation with clear outcome | **Dedicated .md file** in `Docs/AGENTS/Handoffs/` + **index row** in `Docs/AGENTS/Agent_Outputs.md` |
+| **Standard** | Bounded change or investigation | Concise chat completion or amend an existing task record. Create a handoff + index row only if needed for continuation or explicitly requested. |
 | **Significant** | Multi-file change, design decision, new module, investigation with findings that other agents need | **Dedicated .md file** in `Docs/AGENTS/Handoffs/` + **index row** in `Docs/AGENTS/Agent_Outputs.md` |
 
-Both Standard and Significant tiers produce the same artifact shape — a dated file in `Handoffs/` plus a triage-weight index row in `Agent_Outputs.md`. Tier distinction now affects only the depth of the handoff body (Standard = concise, Significant = full detail with code, diagrams, analysis).
+A significant task may use an existing authoritative task record when it already holds the required evidence; avoid a second completion narrative. Restricted sessions never write artifacts: the integrator persists needed evidence and attribution.
 
-**Tier is determined by task scope, not by role activation.** Working under a role (e.g., "As Lead Developer, fix this typo") does not automatically elevate the tier. A trivial task stays trivial regardless of role. However, a Role Handoff (switching from one role to another mid-project) always requires at least a Standard entry so the incoming role has context.
+**Tier is determined by task scope, not by role activation.** Working under a role (e.g., "As Lead Developer, fix this typo") does not automatically elevate the tier. A trivial task stays trivial regardless of role. However, a Role Handoff (switching from one role to another mid-project) requires a concise handoff with Warnings and Learnings; an existing record or supplied chat may carry it.
 
-**When in doubt, write it.** The cost of an unnecessary entry is near zero; the cost of lost context between agents is high.
+Preserve decisions and evidence needed by the next agent. Do not create an artifact whose only purpose is satisfying a format.
 
 #### Unified template
 
-Use for both Standard and Significant outputs — both go into dated `Handoffs/` files:
+Use the applicable fields when recording a handoff or significant completion; omit irrelevant fields for ordinary solo work:
 
 ```markdown
 ---
@@ -122,7 +124,7 @@ The assignment and reviewed-revision fields above are required for concurrent wo
 | Task, Files touched, Key decisions | Required | Required |
 | Open items, For next agent | Required | Required |
 | Warnings | Optional | **Required** |
-| Learnings | Optional | **Required** — always check and append to `Role_Learnings.md` |
+| Learnings | Optional | **Required in handoff** — persist only durable new learning under ownership rules |
 
 #### Handoff file placement (Standard and Significant)
 
@@ -141,12 +143,12 @@ The assignment and reviewed-revision fields above are required for concurrent wo
 
 When you are the **incoming** role (receiving a handoff or starting a role mid-project), **self-serve context before asking the Captain**:
 
-1. Read `Docs/AGENTS/Agent_Outputs.md` — find the most recent entries relevant to your task
-2. **Query `Docs/AGENTS/index/handoff-index.json`** — filter by `role` and `topics` to find prior handoffs related to your task; read the matched files. (If the file does not exist yet, fall back to step 2b.)
+1. For relevant non-trivial work, inspect the current task record or query the handoff index for prior context; skip history lookup when it adds no value
+2. **Only when step 1 identifies a useful history lookup:** query `Docs/AGENTS/index/handoff-index.json`, filter by `roles` and `topics`, and read relevant matches. If the index is absent, use step 2b; otherwise skip this step.
    - 2b. *(fallback)* Scan filenames in `Docs/AGENTS/Handoffs/` directly
-3. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
+3. Read your role brief and only the task-relevant sections of its references
 4. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
-5. Check `Docs/WIP/` for active task documents related to the current work
+5. Check the specific active task document when relevant. Historical output and startup advice may be superseded; current authority controls.
 6. Acknowledge role activation, summarizing the context you found — only ask the Captain for what's missing
 
 #### Rules
@@ -157,7 +159,7 @@ When you are the **incoming** role (receiving a handoff or starting a role mid-p
 
 ### Archival Thresholds — Calendar-month procedure
 
-Run on the 1st of each month (or any day after, during Consolidate WIP). The procedure is fully deterministic and implemented in `scripts/monthly-prune-handoffs.mjs`:
+Only an authorized integrator performs archival as part of assigned maintenance, typically on or after the 1st of each month. It is not a read-only or ordinary completion side effect. The procedure is fully deterministic and implemented in `scripts/monthly-prune-handoffs.mjs`:
 
 1. Identify the previous calendar month (e.g., on 2026-06-01 → 2026-05).
 2. Move every `Docs/AGENTS/Handoffs/<YYYY-MM>-*.md` file whose date prefix falls in the previous month → `Docs/ARCHIVE/Handoffs/<YYYY-MM>/` (preserving filenames).

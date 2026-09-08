@@ -1,9 +1,11 @@
 ---
 description: FactHarbor .NET API rules for apps/api
-globs: apps/api/**/*.cs
+globs: apps/api/**
 ---
 
 # FactHarbor — .NET API Rules
+
+Read root `AGENTS.md` and `apps/api/AGENTS.md` before target work. The nested file is canonical for area requirements; this adapter supplements routing. Commands below require assigned state and current task authority.
 
 ## Technology
 - .NET 8, ASP.NET Core with controllers
@@ -11,7 +13,7 @@ globs: apps/api/**/*.cs
 - Swagger at `http://localhost:5000/swagger`
 
 ## Key Patterns
-- **No EF migrations.** DB auto-created via `db.Database.EnsureCreated()` in `Program.cs`.
+- **Database lifecycle:** `EnsureCreated()` only bootstraps a new DB; existing schemas use the authorized manual migration procedure in `apps/api/AGENTS.md`. Never infer permission to reset a database.
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for audit history. Never write to DbContext directly from controllers.
 - **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`.
 - **RunnerClient has built-in retry** with exponential backoff.
@@ -22,5 +24,5 @@ globs: apps/api/**/*.cs
 - `Data/`: Entities.cs (JobEntity, JobEventEntity), FhDbContext.cs
 
 ## Commands
-- Run: `cd apps/api && dotnet watch run` (hot reload)
-- Build: `cd apps/api && dotnet build`
+- Run: `dotnet watch run` (from `apps/api`) (hot reload)
+- Build: `dotnet build` (from `apps/api`)

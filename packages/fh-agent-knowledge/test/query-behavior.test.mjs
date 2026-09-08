@@ -132,6 +132,9 @@ test("preflight-task keeps query-relevant handoffs and filters utility docs from
     result.docAnchors.every((doc) => doc.file !== "Docs/AGENTS/Roles/Lead_Architect.md"),
   );
   assert.equal(result.startupAdvice.recommendedRole.name, "Lead Architect");
+  assert.equal(result.startupAdvice.advisory, true);
+  assert.match(result.startupAdvice.authority, /current task authorization/i);
+  assert.match(result.startupAdvice.handoffsToInspect[0].authority, /historical.*supersession/);
   assert.ok(result.startupAdvice.firstActions.length > 0);
   assert.ok(
     result.startupAdvice.toolPlan.some((entry) => entry.tool === "get_role_context"),
@@ -153,6 +156,16 @@ test("preflight-task returns skill-aware startup advice", () => {
   assert.ok(
     result.startupAdvice.firstActions.some((entry) => entry.refs.includes(".claude/skills/pipeline/SKILL.md")),
   );
+});
+
+test("sensitive skills require explicit selection and selection grants no authority", () => {
+  const context = createKnowledgeContext();
+  const implicit = preflightTask(context, { task: "Run post-change validation benchmark families validate" });
+  assert.ok(implicit.startupAdvice.recommendedSkills.every((entry) => entry.name !== "validate"));
+  const explicit = preflightTask(context, { task: "Inspect validation workflow", skill: "validate" });
+  assert.equal(explicit.startupAdvice.recommendedSkills[0].name, "validate");
+  assert.ok(explicit.startupAdvice.warnings.some((entry) => entry.source === "skill-frontmatter"));
+  assert.ok(explicit.startupAdvice.firstActions.some((entry) => /grants no operation permissions/.test(entry.action)));
 });
 
 test("preflight-task extracts role and primary skill from role-prefixed prompts", () => {
