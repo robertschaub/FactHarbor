@@ -1,8 +1,12 @@
 ---
 name: validate
-description: Run an explicitly authorized FactHarbor validation scope on exact Captain-defined inputs, or inspect existing validation results without submitting jobs.
+description: >-
+  Run an explicitly authorized FactHarbor validation scope on exact
+  Captain-defined inputs, or inspect existing validation results without
+  submitting jobs.
 allowed-tools: Bash Read
 disable-model-invocation: true
+disabled: true
 ---
 
 Bind scope to the current task and explicit invocation arguments, not an assumed client variable, editor file or last commit. Reading/choosing this skill alone grants no reseed, live-job, provider-spend or file-write authority.

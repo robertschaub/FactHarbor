@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// Read-only, repository-local checker. No frontmatter/body exceptions are allowed;
-// CRLF/LF is normalized. Codex-only agents/openai.yaml files are separate metadata.
+// Read-only, repository-local checker. Bodies match after CRLF/LF normalization.
+// Only the two sensitive .agents copies may add Cline's disabled: true metadata.
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 const root = process.argv[2]
   ? resolve(process.argv[2])
@@ -25,13 +26,73 @@ function read(relativePath) {
   }
 }
 
+// Parse only these skills' flat header schema, not arbitrary YAML. Cline's
+// serializer may wrap description as >-. Reject unsupported forms and duplicate
+// keys rather than silently discarding metadata. Other skills still match bytes.
+function parseSensitiveSkill(content, path, mirror) {
+  const parts = content.match(/^---\n([\s\S]*?)\n---(?:\n|$)([\s\S]*)$/);
+  const reject = (reason) => {
+    failures.push(`${path}: ${reason}`);
+    return null;
+  };
+  if (!parts || !parts[2].trim()) return reject("missing header or instruction body");
+  const allowed = new Set(["name", "description", "allowed-tools", "disable-model-invocation"]);
+  if (mirror) allowed.add("disabled");
+  const fields = {};
+  const lines = parts[1].split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const entry = lines[i].match(/^([a-z][a-z-]*): (.+)$/);
+    if (!entry) return reject("unsupported sensitive-skill header syntax");
+    const [, key, scalar] = entry;
+    if (!allowed.has(key) || Object.hasOwn(fields, key)) {
+      return reject(`unexpected or duplicate metadata: ${key}`);
+    }
+    let value = scalar;
+    if (key === "description" && scalar === ">-") {
+      const folded = [];
+      while (i + 1 < lines.length && lines[i + 1].startsWith("  ")) {
+        const line = lines[++i].slice(2);
+        if (!line || line.trim() !== line) return reject("unsupported folded description indentation/whitespace");
+        folded.push(line);
+      }
+      if (!folded.length) return reject("empty folded description");
+      value = folded.join(" ");
+    } else if (key === "disable-model-invocation" || key === "disabled") {
+      if (scalar !== "true") return reject(`${key} must be the boolean true`);
+      value = true;
+    } else if (scalar.trim() !== scalar
+        || !/^\p{L}/u.test(scalar)
+        || /:(?:\s|$)|\s#/.test(scalar)
+        || /^(?:true|false|null|yes|no|on|off)$/i.test(scalar)) {
+      return reject(`unsupported plain string: ${key}`);
+    }
+    fields[key] = value;
+  }
+  for (const key of ["name", "description", "allowed-tools", "disable-model-invocation"]) {
+    if (!Object.hasOwn(fields, key)) return reject(`missing metadata: ${key}`);
+  }
+  // Absence permits the original copy or an authorized Cline enablement. This
+  // checker does not certify an active session's disabled state.
+  delete fields.disabled;
+  return { fields, body: parts[2] };
+}
+
 for (const name of names) {
   const canonicalPath = `.claude/skills/${name}/SKILL.md`;
   const mirrorPath = `.agents/skills/${name}/SKILL.md`;
   const canonical = read(canonicalPath);
   const mirror = read(mirrorPath);
-  if (canonical !== null && mirror !== null && canonical !== mirror) {
-    failures.push(`${name}: shared body/frontmatter drift`);
+  if (canonical !== null && mirror !== null) {
+    if (sensitive.has(name)) {
+      const left = parseSensitiveSkill(canonical, canonicalPath, false);
+      const right = parseSensitiveSkill(mirror, mirrorPath, true);
+      if (left && right) {
+        if (left.body !== right.body) failures.push(`${name}: shared body drift`);
+        if (!isDeepStrictEqual(left.fields, right.fields)) failures.push(`${name}: shared metadata drift`);
+      }
+    } else if (canonical !== mirror) {
+      failures.push(`${name}: shared body/frontmatter drift`);
+    }
   }
   for (const [path, content] of [[canonicalPath, canonical], [mirrorPath, mirror]]) {
     if (content === null) continue;

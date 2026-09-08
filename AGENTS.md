@@ -304,7 +304,7 @@ Use a workflow only when it fits the current task. Shared bodies are authoritati
 
 `validate` and `report-review` require explicit selection. Client invocation controls differ: see the client adapter and record actual session support; reading a skill never grants operational authority. Use independent review for material risk, not a standing committee. Failed reviews need evidence-based disposition, not a vote or unanimous quorum.
 
-When skills change, run the read-only `node scripts/agents/check-skill-mirrors.mjs`. It checks declared copies and Claude/Codex metadata; it does not attest Gemini/Cline session state.
+When skills change, run the read-only `node scripts/agents/check-skill-mirrors.mjs`. Bodies match with normalized line endings. For validate/report-review, equivalent flat shared headers and folded descriptions are accepted; only their `.agents` copies may add `disabled: true`. Other pairs remain identical. Claude/Codex invocation controls are checked; Gemini/Cline session state is not attested.
 
 ---
 

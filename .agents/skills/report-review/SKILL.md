@@ -1,8 +1,17 @@
 ---
 name: report-review
-description: Analyze local job reports from the most recent build/commit (HEAD by default), detect quality issues, and propose AGENTS.md-compliant fixes. Scopes to HEAD by default, or to specific job URLs / job IDs / commit / input slug passed as argument. Uses RAG (static register + handoffs + machine-readable benchmark expectations, plus dynamic follow-up scans) and uses independent review when material findings warrant it. Complements `/prompt-diagnosis` (which is narrower — prompt provenance only) by covering evidence, boundaries, verdict reasoning, and warning severity end to end.
+description: >-
+  Analyze local job reports from the most recent build/commit (HEAD by default),
+  detect quality issues, and propose AGENTS.md-compliant fixes. Scopes to HEAD
+  by default, or to specific job URLs / job IDs / commit / input slug passed as
+  argument. Uses RAG (static register + handoffs + machine-readable benchmark
+  expectations, plus dynamic follow-up scans) and uses independent review when
+  material findings warrant it. Complements `/prompt-diagnosis` (which is
+  narrower — prompt provenance only) by covering evidence, boundaries, verdict
+  reasoning, and warning severity end to end.
 allowed-tools: Read Glob Grep Bash Agent
 disable-model-invocation: true
+disabled: true
 ---
 
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
