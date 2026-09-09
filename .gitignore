@@ -110,6 +110,7 @@ apps/web/prompts/*Test*.prompt.md
 /AKEL.txt
 /.claude/settings.local.json
 /.gemini/settings.json
+/.codex/config.toml
 /.gemini/settings.pre-agent-instructions.json
 /nul
 

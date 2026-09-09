@@ -28,10 +28,10 @@ The public program map is maintained in [Our AI Charter PROGRAM.md](https://gith
 
 Boundary rules for agents:
 
-- Treat this as a public repository. Stay inside this repository root unless the maintainer explicitly names an external repository or path in the current task.
-- Do not read, import, summarize, or reference private operational material, private repository names or paths, secrets, personal data, finance/legal records, or partner records in this repository or any public artifact produced from it.
-- Public documentation should link only to public URLs and public files. Do not create dependencies on private repositories, local machine paths, or unpublished operational context.
-- When in doubt, ask before crossing a repository or disclosure boundary.
+- Use the task's authorized repositories and read/write scope. If another is needed, ask once for its name, purpose and read/write access; continue independent work while waiting. Approval persists through task handoffs until changed; do not ask again for the same scope.
+- Approved reads may include private material; access is not disclosure permission. Keep private names/paths, operational records, secrets, personal data and finance/legal/partner records out of this public repository and public artifacts.
+- Public links and dependencies must use public URLs or files, never private repositories, local paths or unpublished operational context.
+- Use MCP only for its identified source; availability grants no authority. If unavailable or unqualified, use authorized direct reads. Ask only for missing scope or disclosure authority.
 
 ---
 
