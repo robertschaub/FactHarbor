@@ -266,3 +266,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-09 | LLM Expert | Claude Code (Fable 5.1) | F-35 Fixed-Price Retrieval Diagnosis — [Significant] [open-items: yes]
 **For next agent:** Four local runs (jobs `141e822b`, `49162721`, `b4a596f0`, `259f55a4`) show the omitted qualification lands in per-claim `misleadingness`, not truth %, and that decisive official/oversight sources are fetched in Stage 1 then discarded by `filterClaimUnderstandingForSelectedClaims` and skipped by `fetchSources` (already-fetched filter); the relevance gate dropped contradicting sources at 0.10–0.20 in a refuting pass. No code/prompt/config changed.
 → Docs/AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md
+
+---
+### 2026-09-09 | Lead Developer | Claude Code (Fable 5.1) | F-35 Retrieval Fix and Live Verification — [Significant] [open-items: yes]
+**For next agent:** Commit `e29773c71` amends `filterClaimUnderstandingForSelectedClaims` (keep unresolved preliminary evidence) and `fetchSources` (reuse already-fetched sources), adds the `boundary_clustering_failed` warning and recomputes `meta.evidenceBalance`. Verified on jobs `14ceff6d`, `886ec603`, `ec2c0b2b`: seeded evidence 15–23 per run, Stage 1 sources cited 5/6, 6/7, 11/13, fixed-price sentence 72 % → 48 %. Not pushed or deployed. Open: Stage 3 output ceiling above ~50 unique scopes, contract-validation schema aborts, production check.
+→ Docs/AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md
