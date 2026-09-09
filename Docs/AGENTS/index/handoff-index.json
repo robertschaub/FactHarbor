@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-07T17:15:41.492Z",
-  "count": 47,
+  "generatedAt": "2026-09-09T11:47:27.457Z",
+  "count": 48,
   "entries": [
     {
       "file": "2026-06-01_Lead_Architect_Quality_Lever_Consolidation.md",
@@ -896,6 +896,26 @@
         "test-output/preparation/p5-rehearsal/"
       ],
       "summary": "Treat P5 as complete. Do not repeat P2, resume the NU1301 diagnosis, or run the hardened build sequence. Continue with the next authorized preparation-plan item from this committed closure record."
+    },
+    {
+      "file": "2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md",
+      "date": "2026-09-09",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "f35",
+        "fixed",
+        "price",
+        "retrieval",
+        "diagnosis"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md",
+        "FactHarbor_F35-Festpreis_R3_VBS-URL-input_UNVERIFIED-54pct_2026-09-09_job-b4a596f0.pdf",
+        "test-output/review/"
+      ],
+      "summary": "Job ids above are in the local `apps/api/factharbor.db`; report pages at `http://localhost:3000/jobs/<id>`; per-job cost in table `AnalysisMetrics` or `GET /api/fh/metrics/<id>` (admin key). The most instructive report (R3) is exported as the PDF named above. Start with mechanisms 1 and 2; they expl"
     }
   ]
 }
