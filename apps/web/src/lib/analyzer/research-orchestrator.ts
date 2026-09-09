@@ -1307,12 +1307,18 @@ export async function runResearchIteration(
           score: s.relevanceScore,
           rank: s.originalRank,
         })));
+        const alreadyExtractedForClaim = new Set(
+          state.evidenceItems
+            .filter((item) => item.relevantClaimIds?.includes(targetClaim.id))
+            .map((item) => item.sourceUrl),
+        );
         const fetchedSources = await fetchSources(
           selectedForFetch,
           queryObj.query,
           state,
           pipelineConfig,
           {
+            excludeReusedUrls: alreadyExtractedForClaim,
             classifyDiscoveredSources: async (discoveredSources) => {
               const discoveredRelevant = await classifyRelevance(
                 targetClaim,
@@ -1701,12 +1707,18 @@ export async function executeSupplementaryLanguageLane(
         0,
       );
 
+      const alreadyExtractedForClaim = new Set(
+        state.evidenceItems
+          .filter((item) => item.relevantClaimIds?.includes(targetClaim.id))
+          .map((item) => item.sourceUrl),
+      );
       const fetchedSources = await fetchSources(
         relevantSources,
         query.query,
         state,
         pipelineConfig,
         {
+          excludeReusedUrls: alreadyExtractedForClaim,
           classifyDiscoveredSources: async (discoveredSources) => {
             const discoveredRelevant = await classifyRelevance(
               targetClaim,

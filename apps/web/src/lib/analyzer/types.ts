@@ -790,6 +790,7 @@ export type AnalysisWarningType =
   | "no_checkworthy_claims"                  // Stage 1.5: automatic claim selection found no claims worth researching
   | "claim_selection_truncated"              // Stage 1.5: candidate set exceeded configured auto-selection candidate cap
   | "per_source_evidence_cap"                // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
+  | "boundary_clustering_failed"             // Stage 3: LLM clustering failed or returned no valid boundaries; single fallback boundary used
   | "contract_validation_retry_triggered"   // Stage 1: claim-contract validation flagged drift and triggered a Pass 2 retry
   | "contract_repair_pass_fired"            // Stage 1: anchor-gated targeted repair pass was invoked after contract retry
   | "contract_surgical_repair_fired"        // Stage 1: F2 surgical per-claim repair was invoked on validator-flagged claims

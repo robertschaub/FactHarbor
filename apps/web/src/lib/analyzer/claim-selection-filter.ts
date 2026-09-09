@@ -101,7 +101,16 @@ export function filterClaimUnderstandingForSelectedClaims(
         };
       }
 
-      return null;
+      // Drop only evidence explicitly mapped to claims that exist but were not selected.
+      // Preliminary extraction runs before atomic-claim IDs exist, so items with no
+      // recognizable claim reference stay unresolved for the Stage 2 remap and seeding
+      // fallbacks; dropping them here left every auto-selected run with zero seeded evidence.
+      const referencedIds = [
+        evidence.claimId,
+        ...(Array.isArray(evidence.relevantClaimIds) ? evidence.relevantClaimIds : []),
+      ].filter((id): id is string => Boolean(id));
+      const referencesKnownClaim = referencedIds.some((id) => availableIds.has(id));
+      return referencesKnownClaim ? null : evidence;
     })
     .filter((evidence): evidence is PreliminaryEvidenceEntry => evidence !== null);
 

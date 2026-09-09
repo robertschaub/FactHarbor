@@ -134,3 +134,26 @@ describe("claim-selection filter", () => {
     expect(filtered.contractValidationSummary?.contractCarrierClaimIds).toEqual(["AC_03", "AC_01"]);
   });
 });
+
+describe("claim-selection filter — unresolved preliminary evidence", () => {
+  it("keeps unresolved preliminary evidence and drops evidence mapped only to deselected claims", () => {
+    const input = understanding();
+    input.preliminaryEvidence = [
+      { sourceUrl: "https://example.test/unresolved-empty", snippet: "no claim reference", claimId: "", relevantClaimIds: [] },
+      { sourceUrl: "https://example.test/unresolved-legacy", snippet: "legacy id format", claimId: "claim_1", relevantClaimIds: ["claim_1"] },
+      { sourceUrl: "https://example.test/deselected", snippet: "AC_02 only", claimId: "AC_02", relevantClaimIds: ["AC_02"] },
+      { sourceUrl: "https://example.test/selected", snippet: "AC_01", claimId: "AC_01", relevantClaimIds: ["AC_01"] },
+    ];
+
+    const filtered = filterClaimUnderstandingForSelectedClaims(input, ["AC_03", "AC_01"]);
+
+    expect(filtered.preliminaryEvidence.map((evidence) => evidence.sourceUrl)).toEqual([
+      "https://example.test/unresolved-empty",
+      "https://example.test/unresolved-legacy",
+      "https://example.test/selected",
+    ]);
+    // Unresolved entries pass through unchanged so the Stage 2 remap and seeding
+    // fallbacks (single-claim fallback, claim_NN heuristic, LLM remap) can attribute them.
+    expect(filtered.preliminaryEvidence[1]).toMatchObject({ claimId: "claim_1", relevantClaimIds: ["claim_1"] });
+  });
+});

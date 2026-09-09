@@ -277,3 +277,10 @@ describe("warning-display classification", () => {
     expect(result.displaySeverity).toBe("info");
   });
 });
+
+describe("boundary_clustering_failed registration", () => {
+  it("is a report-degrading analysis warning displayed at warning severity", () => {
+    const result = classifyWarningForDisplay(warning({ type: "boundary_clustering_failed", severity: "warning" }));
+    expect(result).toMatchObject({ isProviderIssue: false, isReportDegrading: true, displaySeverity: "warning" });
+  });
+});

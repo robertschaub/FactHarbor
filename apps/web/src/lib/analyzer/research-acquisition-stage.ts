@@ -27,6 +27,13 @@ interface FetchSourcesOptions {
   classifyDiscoveredSources?: (
     discoveredSources: DiscoveredSourceCandidate[],
   ) => Promise<DiscoveredSourceClassificationResult[]>;
+  /**
+   * URLs whose stored text must not be returned again because the calling claim already
+   * extracted evidence from them. Other already-fetched sources are returned from
+   * `state.sources` without a network fetch so Stage 2 can extract them against the
+   * current claim (Stage 1 fills `state.sources` before any Stage 2 iteration).
+   */
+  excludeReusedUrls?: Set<string>;
 }
 
 function isDocumentLikeDiscoveredUrl(url: string): boolean {
@@ -168,10 +175,29 @@ export async function fetchSources(
   const domainSkipThreshold = pipelineConfig?.fetchDomainSkipThreshold ?? 2;
   const domainFailureCounts = new Map<string, number>();
 
-  // Filter out already-fetched URLs
+  // Split relevant sources into new fetches and already-fetched sources whose stored text
+  // is reused. Dropping already-fetched URLs outright left Stage 1 sources unextracted
+  // against the final claims even when they ranked first in Stage 2.
+  const fetchedByUrl = new Map(state.sources.map((source) => [source.url, source] as const));
   const toFetch: FetchCandidate[] = relevantSources
-    .filter((source) => !state.sources.some((s) => s.url === source.url))
+    .filter((source) => !fetchedByUrl.has(source.url))
     .map((source) => ({ ...source, depth: 0 }));
+  const reused: Array<{ url: string; title: string; text: string }> = [];
+  for (const source of relevantSources) {
+    const existing = fetchedByUrl.get(source.url);
+    if (!existing || !existing.fetchSuccess) continue;
+    if (options?.excludeReusedUrls?.has(source.url)) continue;
+    if (existing.fullText.length < minContentLength) continue;
+    if (reused.some((entry) => entry.url === source.url)) continue;
+    reused.push({
+      url: existing.url,
+      title: existing.title || existing.url,
+      text: existing.fullText.slice(0, 8000), // Same prompt-size cap as fresh fetches
+    });
+  }
+  if (reused.length > 0) {
+    debugLog(`[Acquisition] Reusing ${reused.length} already-fetched source(s) for extraction without refetch`);
+  }
   const queuedUrls = new Set<string>([
     ...state.sources.map((source) => source.url),
     ...toFetch.map((source) => source.url),
@@ -510,7 +536,7 @@ export async function fetchSources(
     }
   }
 
-  return fetched;
+  return [...fetched, ...reused];
 }
 
 /**

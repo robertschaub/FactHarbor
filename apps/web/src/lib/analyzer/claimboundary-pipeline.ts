@@ -1571,6 +1571,10 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
+    // Recompute after the post-research applicability filter so meta.evidenceBalance
+    // matches the final evidence array; the earlier value only drives the skew check.
+    const finalEvidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
+
     // Wrap assessment in resultJson structure (no AnalysisContext references)
     const resultJson = buildClaimBoundaryResultJson({
       assessment,
@@ -1585,7 +1589,7 @@ export async function runClaimBoundaryAnalysis(
       runtimeRoleModels,
       searchProvider: initialSearchConfig.provider,
       searchProviders,
-      evidenceBalance,
+      evidenceBalance: finalEvidenceBalance,
       promptContentHash,
       boundaryCount: boundaries.length,
     });

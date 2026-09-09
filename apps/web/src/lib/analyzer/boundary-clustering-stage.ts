@@ -117,6 +117,7 @@ export async function clusterBoundaries(
     state.llmCalls++;
   } catch (err) {
     console.warn("[Stage3] LLM clustering failed, using fallback:", err);
+    pushClusteringFallbackWarning(state, uniqueScopes.length, err instanceof Error ? err.message : String(err));
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
     return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
@@ -136,6 +137,7 @@ export async function clusterBoundaries(
 
   if (boundaries.length === 0) {
     console.warn("[Stage3] All boundaries invalid after filtering — using fallback");
+    pushClusteringFallbackWarning(state, uniqueScopes.length, "clustering returned no valid boundaries");
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
     return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
@@ -184,6 +186,31 @@ export async function clusterBoundaries(
   }
 
   return finalizeClusterBoundaries(state, boundaries, uniqueScopes, pipelineConfig);
+}
+
+/**
+ * Stage 3 degradation is user-relevant: a single fallback boundary removes the
+ * per-boundary findings the verdict stage reasons over, without changing verdict
+ * direction on its own (Report Quality: warning, not error).
+ */
+function pushClusteringFallbackWarning(
+  state: Pick<CBResearchState, "evidenceItems" | "warnings">,
+  uniqueScopeCount: number,
+  reason: string,
+): void {
+  state.warnings?.push({
+    type: "boundary_clustering_failed",
+    severity: "warning",
+    message:
+      `Boundary clustering failed (${reason.slice(0, 160)}); all ${state.evidenceItems.length} evidence items ` +
+      `were placed in a single fallback boundary, so per-boundary findings are unavailable.`,
+    details: {
+      stage: "boundary_clustering",
+      evidenceCount: state.evidenceItems.length,
+      uniqueScopeCount,
+      reason: reason.slice(0, 240),
+    },
+  });
 }
 
 export function scopeFingerprint(scope: EvidenceScope): string {

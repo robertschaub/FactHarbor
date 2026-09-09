@@ -602,3 +602,75 @@ describe("research-acquisition-stage", () => {
     });
   });
 });
+
+describe("fetchSources — reuse of already-fetched sources", () => {
+  function stateWithFetchedSource(url: string, fullText: string): CBResearchState {
+    return {
+      originalInput: "test",
+      sources: [{
+        id: "S_001",
+        url,
+        title: "Stage 1 source",
+        trackRecordScore: null,
+        fullText,
+        fetchedAt: new Date().toISOString(),
+        category: "text/html",
+        fetchSuccess: true,
+        searchQuery: "preliminary query",
+      }],
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      contradictionIterationsUsed: 0,
+      llmCalls: 0,
+    } as unknown as CBResearchState;
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
+
+  it("returns the stored text of an already-fetched source without refetching it", async () => {
+    const { extractTextFromUrl } = await import("@/lib/retrieval");
+    vi.mocked(extractTextFromUrl).mockImplementation(async () => ({
+      text: "Fresh content from a new source. ".repeat(10),
+      title: "Fresh",
+      contentType: "text/html",
+    }));
+    const reusedUrl = "https://official.example/release";
+    const state = stateWithFetchedSource(reusedUrl, "Official release text. ".repeat(20));
+
+    const result = await fetchSources(
+      [{ url: reusedUrl, relevanceScore: 0.95 }, { url: "https://news.example/a", relevanceScore: 0.8 }],
+      "test query",
+      state,
+      { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+    );
+
+    expect(result.map((source) => source.url).sort()).toEqual(["https://news.example/a", reusedUrl].sort());
+    expect(result.find((source) => source.url === reusedUrl)?.text).toContain("Official release text.");
+    expect(vi.mocked(extractTextFromUrl)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(extractTextFromUrl).mock.calls[0][0]).toBe("https://news.example/a");
+    // The reused source is not re-registered in state.sources
+    expect(state.sources.filter((source) => source.url === reusedUrl)).toHaveLength(1);
+  });
+
+  it("does not return sources the caller already extracted for the target claim", async () => {
+    const { extractTextFromUrl } = await import("@/lib/retrieval");
+    vi.mocked(extractTextFromUrl).mockRejectedValue(new Error("must not fetch"));
+    const reusedUrl = "https://official.example/release";
+    const state = stateWithFetchedSource(reusedUrl, "Official release text. ".repeat(20));
+
+    const result = await fetchSources(
+      [{ url: reusedUrl, relevanceScore: 0.95 }],
+      "test query",
+      state,
+      { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      { excludeReusedUrls: new Set([reusedUrl]) },
+    );
+
+    expect(result).toEqual([]);
+    expect(vi.mocked(extractTextFromUrl)).not.toHaveBeenCalled();
+  });
+});
