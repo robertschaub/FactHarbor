@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-08-10
+**Last Updated**: 2026-09-09 (pause decision and F-35 work reconciled; earlier measurements retain their dates)
 **Phase**: **Alpha** — development paused since 2026-07-02 for funding reasons
-**Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development is paused for one reason: the metered third-party API cost of running analyses exceeds what the project can fund.** It is not paused for technical reasons — the safe test suite is green at **1,986 passing / 1 skipped across 102 files** (verified 2026-08-10), and the active engineering plan is intact with its next step unstarted rather than blocked. No pipeline or application code has changed since **2026-07-02**; the work since then has been documentation, security re-verification, and funding/product-concept work. See [Why development is paused](#why-development-is-paused) below.
+**Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development remains paused because the metered third-party API cost of running analyses exceeds what the project can fund.** The active engineering plan remains intact. A separately authorized local F-35 repair (`e29773c71`, 2026-09-09) changed pipeline code and ran paid verification; its implementation session recorded **1,991 passing / 1 skipped across 103 files**. That bounded work does not resume the broader plan. See the [F-35 handoff](../AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md) for its evidence and remaining issues, and [Why development is paused](#why-development-is-paused) below.
 
 ---
 
@@ -22,6 +22,16 @@ Paused since **2026-07-02**. The pause is a funding decision, not a technical on
 1. **Cost inside budget**: nonprofit API pricing or credits; routing the lower-judgment extraction share of spend to a cheaper model behind an audit gate; Batch API for the eval bucket; and the Serper search-priority re-seed, already shipped to `main` but not yet applied in production — worth roughly **$170/month at 2026-05 development volume**, and correspondingly less until that volume returns.
 2. **External money**: a sponsor, a grant, or one supervised paid pilot.
 
+**Before unpausing (2026-09-09 conclusion):** choose and authorize one affordable development cycle with a clear finish line:
+
+1. **Budget and time:** cover investigation, failed attempts and validation. The F-35 implementation session reported $6.68 for verification against a $4 estimate; do not budget only for successful runs.
+2. **One outcome:** use the existing engineering plan and decide whether reviewing or completing the F-35 repair is a prerequisite. Do not open a separate optimization track by default.
+3. **Success evidence:** define the mechanism and report-quality checks before editing. For the F-35 handoff, require retained evidence to reach the correct final claim without contaminating sibling claims, with no regression on Captain-approved controls. A changed truth percentage alone is insufficient.
+4. **Stopping rule:** set a time/spend ceiling and a review point at which work either meets its acceptance criteria or pauses again.
+5. **Recoverable, verified baseline:** confirm backups and access, then record the actual code, prompt and configuration versions before any paid validation.
+
+Further F-35 repairs and the repeated wording experiment are deferred to that decision. This conclusion preserves the existing allowance for authorized zero-spend work; it supplies no new live-run or deployment authority.
+
 **Production stays live during the pause.** The deployed alpha at `app.factharbor.ch` keeps serving and keeps accepting jobs — the pause applies to development, not to the service. Two consequences follow:
 
 - **Metered spend from production is minimal, because the deployed app is very rarely used** — roughly **1–2 jobs per week**. The measured 2026-05/06 API bill was dominated by development and by eval/diagnostic batches, not by production traffic — so pausing development should already have removed most of it on its own. The residual monthly cost is standing subscriptions and hosting rather than per-job API spend. The search-priority re-seed and the model-routing cost levers only pay off once search and analysis volume returns, which makes them resume-time items, not live ones.
@@ -33,8 +43,9 @@ Cost accounting, funding correspondence and the organizational record live in th
 
 ---
 
-## Current Focus (2026-08-10)
+## Current Focus (2026-09-09)
 
+- **F-35 review concluded; broader development stays paused.** The diagnosis review identified actionable evidence-handoff losses but did not establish wording as the dominant cause. A later implementation session recorded local repairs and verification, including increased cost, a clustering fallback and one damaged report. Independent review of the code fix and its deployment decision remain open under backlog `F35-FOLLOWUP`; no further experiment is queued by this conclusion.
 - **The engineering plan is paused mid-sequence, not stuck.** The active track is the **[Analysis Quality Consolidated Execution Plan](../WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md)** (2026-06-18). Phases 0–3 and the Phase-4 scaffold are shipped; the Phase-4 LLM retrieval-language planner slice is simply unstarted. Two mid-June live-validation attempts did fail their gates — the Cycle-1 prune (reverted, `a56fed6f4`) and the Stage2/D5 recovery chain (`0396ea47`) — but both were classified as failed attempts with baselines recorded, and `main` was left green. Resuming means executing the plan, not re-planning it.
 - **The measured problem is failure *attribution*, not a single known bug.** Read-only censuses on 2026-06-18 over 1,640 `SUCCEEDED` jobs: Q-HF1 hard failures **8.2%** (135 jobs), top-level `UNVERIFIED` **15.4%** (253), checkworthy-AtomicClaim `UNVERIFIED` **24.6%** (992/4,038). These rates are why narrow prompt tuning was ruled a low-confidence next move.
 - **Two failure classes are isolated and unfixed**: (1) English-Bolsonaro source-native retrieval gap — evidence exists but not in the input language's likely source routes; (2) asylum-current D5/Stage-4 decisive-metric sufficiency gap — authoritative evidence is present but not admitted to verdict reasoning. Phases 4 and 5 of the plan target these respectively.

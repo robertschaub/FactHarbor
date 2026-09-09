@@ -271,3 +271,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-09 | Lead Developer | Claude Code (Fable 5.1) | F-35 Retrieval Fix and Live Verification — [Significant] [open-items: yes]
 **For next agent:** Commit `e29773c71` amends `filterClaimUnderstandingForSelectedClaims` (keep unresolved preliminary evidence) and `fetchSources` (reuse already-fetched sources), adds the `boundary_clustering_failed` warning and recomputes `meta.evidenceBalance`. Verified on jobs `14ceff6d`, `886ec603`, `ec2c0b2b`: seeded evidence 15–23 per run, Stage 1 sources cited 5/6, 6/7, 11/13, fixed-price sentence 72 % → 48 %. Not pushed or deployed. Open: Stage 3 output ceiling above ~50 unique scopes, contract-validation schema aborts, production check.
 → Docs/AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md
+
+---
+### 2026-09-09 | Unassigned | Codex | F-35 Review Closure and Restart Conditions — [Standard] [open-items: yes]
+**For next agent:** Diagnosis review complete at `cef2f88f8`; closure reconciled against `8f072ed7f`, which includes another session's local fix and validation. Broader development remains paused. Use the restart conditions in `Docs/STATUS/Current_Status.md` and deferred backlog `F35-FOLLOWUP`; this supersedes earlier instructions to start further repairs or a wording experiment. Independent code review and deployment remain open. This session changed documentation only.
+→ Docs/AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md
