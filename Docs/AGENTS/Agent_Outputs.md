@@ -261,3 +261,8 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-09-07 | Agents Supervisor | Codex Native (GPT-6) | P5 Completion and Sandboxed Runner Descope — [Significant] [open-items: no]
 **For next agent:** Supersedes the earlier P5 runner-qualification entries: P5 is complete on the Captain-approved two-writer process basis. The worker-check recipe belongs in the ordinary developer/integrator environment; command 07 onward in the hardened runner and the NU1301 diagnosis are descoped. Revisit only for a future workflow that genuinely requires hardened-sandbox builds.
 → Docs/AGENTS/Handoffs/2026-09-07_Agents_Supervisor_P5_Rehearsal_Stop_And_Next_Decision.md
+
+---
+### 2026-09-09 | LLM Expert | Claude Code (Fable 5.1) | F-35 Fixed-Price Retrieval Diagnosis — [Significant] [open-items: yes]
+**For next agent:** Four local runs (jobs `141e822b`, `49162721`, `b4a596f0`, `259f55a4`) show the omitted qualification lands in per-claim `misleadingness`, not truth %, and that decisive official/oversight sources are fetched in Stage 1 then discarded by `filterClaimUnderstandingForSelectedClaims` and skipped by `fetchSources` (already-fetched filter); the relevance gate dropped contradicting sources at 0.10–0.20 in a refuting pass. No code/prompt/config changed.
+→ Docs/AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md
