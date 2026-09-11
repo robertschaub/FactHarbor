@@ -33,7 +33,7 @@
     "install-hooks": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
-    "next": "16.2.11",
+    "next": "16.3.3",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.0"
   },
