@@ -20,7 +20,9 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[One-Pager](ONEPAGER.md)** — Vision, mission, and why FactHarbor exists in one page.
 
-**[Program map](https://github.com/robertschaub/our-ai-charter/blob/main/PROGRAM.md)** — how FactHarbor relates to the public Our AI Charter normative framework.
+**[Evidence-Gated Agents](https://github.com/robertschaub/our-ai-charter/blob/main/docs/Assurance/Concepts/evidence-gated-agents.md)** — proposed use of FactHarbor’s prepared assessments in a separate, authority-and-evidence-controlled answer-delivery prototype, subject to funding and agreed scope.
+
+**[Project context and stewardship](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance)** — how FactHarbor and Our AI Charter relate and are stewarded.
 
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 

@@ -24,7 +24,7 @@ FactHarbor is the public technical infrastructure in a broader research program:
 
 > Researching how we can build a fair, stable, and sustainable society that uses new technologies responsibly.
 
-The public program map is maintained in [Our AI Charter PROGRAM.md](https://github.com/robertschaub/our-ai-charter/blob/main/PROGRAM.md). FactHarbor's role is the technical layer: evidence modelling, contested-claim analysis, reasoning transparency, and verifiable reports.
+The public project context is described in [Our AI Charter: stewardship and governance](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance). FactHarbor's role is the technical layer: evidence modelling, contested-claim analysis, reasoning transparency, and verifiable reports.
 
 Boundary rules for agents:
 
