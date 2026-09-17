@@ -2,8 +2,8 @@
 # Builds xWiki documentation for local preview of the GitHub Pages output.
 #
 # NOTE: Actual deployment to gh-pages is handled by CI (.github/workflows/deploy-docs.yml).
-#       CI injects the DOCS_ANALYTICS_URL secret so the stats button works.
-#       Do NOT push to gh-pages manually — it will overwrite the CI build and break analytics.
+#       The public FactHarbor documentation build intentionally has no audience analytics.
+#       Do NOT push to gh-pages manually — CI owns the published branch.
 #
 # Usage (from repo root):
 #   powershell Docs/xwiki-pages/scripts/deploy-ghpages.ps1
@@ -86,7 +86,7 @@ try {
     if ($hasStaged) {
         git commit -m $msg
         Write-Host "`nCommitted: $msg" -ForegroundColor Green
-        Write-Host "NOTE: Not pushing — CI handles gh-pages deployment with analytics." -ForegroundColor Yellow
+        Write-Host "NOTE: Not pushing — CI handles gh-pages deployment." -ForegroundColor Yellow
         Write-Host "      Push to main and CI will deploy automatically." -ForegroundColor Yellow
     } else {
         Write-Host "`nNo changes to commit." -ForegroundColor Yellow
@@ -110,5 +110,5 @@ if (Test-Path $buildDir) {
 }
 
 Write-Host "`n--- Done! ---" -ForegroundColor Green
-Write-Host "Local build complete. To publish, push to main — CI deploys with analytics." -ForegroundColor Cyan
+Write-Host "Local build complete. To publish, push to main — CI deploys without audience analytics." -ForegroundColor Cyan
 Write-Host "Live site: https://robertschaub.github.io/FactHarbor/" -ForegroundColor Gray

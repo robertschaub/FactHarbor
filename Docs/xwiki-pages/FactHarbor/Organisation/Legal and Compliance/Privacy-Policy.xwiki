@@ -1,15 +1,17 @@
 = Privacy Policy =
-**Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §19 and §20.2]
-**Last Updated:** June 11, 2026 (V0.10.2 — Alpha-Reality Rewrite, advisor- + counsel-reviewed)
+**Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §19 and §20]
+**Last Updated:** September 17, 2026 (V0.12.0 — controller and publication decisions)
 
 {{info}}
-**Status: DRAFT — not yet effective.** This version was rewritten to describe the system FactHarbor **actually operates today**: an invite-gated claim-analysis service, not a community-contribution platform. Items marked **[NEEDS DECISION: …]** require a human/legal decision before this policy is published. This draft has been reviewed internally and by an external-counsel-style AI pass (GPT-5.5); it has **not** been signed off by retained Swiss counsel, which remains a launch blocker (see [[Operational Readiness>>FactHarbor.Organisation.Governance.Operational Readiness.WebHome]] §2.1).
+**Status: DRAFT — not yet effective.** This version describes the systems FactHarbor **actually operates today**: an invite-gated claim-analysis service and a public documentation site, not a community-contribution platform. Items marked **[NEEDS DECISION: …]** require a human/legal decision before this policy is made effective. The September 2026 update was checked against the current public code and documentation, but it has **not** been signed off by retained Swiss counsel. The open operational decisions in §20 remain adoption and effectiveness gates; the draft may be published for review without implying approval.
 {{/info}}
 
 == 1. Introduction ==
 FactHarbor is committed to protecting your privacy while maintaining the transparency necessary for our mission of supporting well-grounded, manipulation-resistant judgments.
 
 **What FactHarbor currently is:** During this **alpha phase**, FactHarbor is a claim-analysis service. You submit a factual claim (as text or a URL) using an invite code; our pipeline researches it using web search and large-language-model (LLM) reasoning and returns a structured analysis report. **There are no user accounts in the alpha** — no registration, username, or profile.
+
+This Privacy Policy covers the claim-analysis application at **app.factharbor.ch**, the separate testing deployment at **test.factharbor.ch** when it is reachable, the public FactHarbor documentation site on GitHub Pages, the public source repository, and direct communications with FactHarbor. GitHub controls its own platform processing under its privacy statement.
 
 This Privacy Policy explains:
 * What information we collect and why
@@ -20,20 +22,20 @@ This Privacy Policy explains:
 **Important:** This policy is a transparency notice explaining how we process data; your agreement with us is governed by the [[Terms of Service>>FactHarbor.Organisation.Legal and Compliance.Terms-of-Service]]. Because the analysis works by **sending what you submit to third-party AI and search providers**, please read §5 and §6 before submitting anything.
 
 == 2. Who We Are ==
-FactHarbor is a Swiss non-profit association (Verein) under Swiss law, registered in the Commercial Register of the Canton of Zürich (UID **CHE-448.446.098**, visible on Zefix since May 7, 2026). Our statutes were adopted at the founding assembly on April 23, 2026. An application for tax-exempt status was submitted to the cantonal tax authority on May 6, 2026 and is pending. Our long-term mission is to create a transparent, community-driven platform for evaluating factual claims (this is **not** the current alpha — see §3).
+FactHarbor is a Swiss non-profit association (Verein) under Swiss law, registered in the Commercial Register of the Canton of Zürich (UID **CHE-448.446.098**; daily-register entry April 27, 2026; SOGC publication April 30, 2026). Our statutes are dated April 23, 2026. An application for tax-exempt status was submitted to the cantonal tax authority on May 6, 2026 and is pending. Our long-term mission is to create a transparent, community-driven platform for evaluating factual claims (this is **not** the current alpha — see §3).
 
 **Governance:** A founding Governing Team (President and Treasurer) was appointed on April 23, 2026. FactHarbor remains a small organization; one person may handle several functions, but statutory response times and procedures are met.
 
-**Data Controller:** FactHarbor (Verein), Canton of Zürich, Switzerland. As a Swiss-domiciled controller, FactHarbor does **not** require a representative in Switzerland (FADP Art. 14 applies only to controllers domiciled abroad). **[NEEDS DECISION: add the registered seat / postal (c/o) address — "available on request" is weak for the FADP Art. 19 controller-identity requirement.]**
+**Data Controller:** **FactHarbor (Verein), c/o Robert Schaub, In Lederäcker 11, 8305 Dietlikon, Switzerland.** As a Swiss-domiciled controller, FactHarbor does **not** require a representative in Switzerland (FADP Art. 14 applies only to controllers domiciled abroad).
 
 **Contact:**
-* General inquiries and privacy/data requests: **info@factharbor.ch** (postal address available on request)
+* General inquiries and privacy/data requests: **info@factharbor.ch** or the postal address above
 * Privacy contact / Data Protection Officer: **[NEEDS DECISION: a DPO is not legally required (see §11.5); decide whether to name a privacy contact]**
 * EU/EEA Representative (GDPR Art. 27): **[NEEDS DECISION: required only if we target or monitor EU/EEA residents — see §11.5]**
 
 == 3. The Service and What You Submit ==
 === 3.1 How the Alpha Works ===
-* Access is **invite-code gated**. Invite codes are **reusable, quota-limited tokens** that are **not tied to your identity**; a single code may be used by several authorized testers, and we do not link submissions to a named person.
+* Access is **invite-code gated**. Invite codes are reusable, quota-limited tokens and may be shared by a group. The code used is stored with each job, and its administrative description is a free-text field. A code is not inherently anonymous if it is issued to a named person or described using personal data. **[NEEDS DECISION: keep code assignment and descriptions group-based and name-free, or update the operating process and this notice.]**
 * You submit **one of**:
 ** **Claim text** (up to ~32,000 characters), or
 ** **a URL** (up to ~2,000 characters) whose content we fetch and analyze.
@@ -44,7 +46,7 @@ FactHarbor is a Swiss non-profit association (Verein) under Swiss law, registere
 The alpha has **no registration, login, username, email collection, or profile**. The account-based features described in earlier versions of this policy (public contributions, edit histories, profiles) are **planned for a later phase and are not active**. This policy will be updated *before* any such feature begins collecting data.
 
 === 3.3 Visibility of Submissions and Reports ===
-Submissions and the reports generated from them **may be visible to others**. During the alpha, the job-listing and job-view interfaces may be reachable **without an invite code**, so anyone able to reach the service may be able to read submitted claim previews and reports. **Do not submit anything you would not want others to see.** **[NEEDS DECISION: confirm the intended visibility — private to the submitter / shareable by link / public — and restrict the job list/view accordingly. This is time-sensitive; see §20.1.]**
+FactHarbor deliberately publishes submissions and the reports generated from them through job-listing and job-view interfaces that are reachable **without an invite code**. Anyone able to reach the service may therefore read the **full submitted text or URL and the full generated report**, not only a preview. This public-by-design model supports transparent scrutiny of claims, evidence and reasoning; it also means FactHarbor is **not a place for confidential, private or unnecessary personal information**. **Do not submit anything you would not want made public.**
 
 == 4. What Information We Collect ==
 === 4.1 Information You Provide ===
@@ -53,10 +55,13 @@ Submissions and the reports generated from them **may be visible to others**. Du
 
 === 4.2 Information We Collect Automatically ===
 * **IP address — transient, for abuse prevention only.** Your IP is used in memory to enforce rate limits (a small number of analyses per minute per IP). It is **not written to the analysis database or to persistent event logs** by the application.
-* **Server/operational logs** may be generated by our hosting layer for security and troubleshooting. **[NEEDS DECISION: confirm what the production host logs (IP, user-agent), and for how long — align with §7.]**
+* **Application hosting logs.** The live service uses a VPS with Caddy/TLS. Caddy and the host may record request metadata such as IP address, time, requested path, status, and user agent for security and troubleshooting. **[NEEDS DECISION: verify the live fields and actual deletion schedule; do not rely on the historical deployment-plan value.]**
+* **Documentation page views.** The FactHarbor GitHub Pages build does **not** configure project-controlled audience analytics and does not send page references or a visitor identifier to the former documentation-analytics Worker. GitHub still receives the request information needed to serve the site, as described below. Historical analytics records created before measurement was disabled may remain in Workers KV until they are deleted or appropriately minimized under the operational follow-up in §20.
+* **GitHub Pages logs.** GitHub states that it logs visitor IP addresses for security purposes when a GitHub Pages site is visited. GitHub processes this data under its own privacy statement.
+* **Third-party assets.** The documentation viewer automatically requests fonts from Google Fonts and Mermaid JavaScript from cdnjs/Cloudflare. Pages using the repository-file macro may also call the GitHub API, and embedded remote images may contact their source host. Those providers receive ordinary request metadata such as IP address and user agent under their own terms.
 
 === 4.3 Cookies and Tracking ===
-The alpha web application **does not use analytics cookies, advertising cookies, third-party trackers, or any analytics service** (e.g., no Google Analytics). Only strictly necessary cookies (if any) required for the service to function may be used. Because we run no non-essential cookies, **no consent banner is required**. See §10.
+The claim-analysis application does not currently initialize advertising or behavioural analytics. It does store the entered invite code persistently in browser `localStorage` without an automatic expiry or user-facing removal control; administrative pages store the entered admin key in `sessionStorage` for the browser tab. The FactHarbor documentation build does not configure audience analytics. **[NEEDS DECISION: define removal/expiry handling for application credentials and delete or appropriately minimize historical documentation-analytics records.]** See §10.
 
 === 4.4 Information We DO NOT Collect ===
 * Account credentials, usernames, or profiles (no accounts in alpha)
@@ -64,15 +69,16 @@ The alpha web application **does not use analytics cookies, advertising cookies,
 * Biometric data
 * Precise geolocation
 * Government IDs or social-security numbers
-* Analytics/advertising tracking data
+* Advertising profiles or cross-site marketing data. Historical page-level reading data described above was collected, but was not used for advertising or to profile people for marketing.
 
 == 5. How Your Submission Is Processed — Third-Party Providers ==
 **This is the most important section.** To analyze a claim, FactHarbor **sends content derived from your submission to external service providers**. By submitting, you understand that:
 
 === 5.1 AI / Large-Language-Model Providers ===
 Your submitted **claim text (and content fetched from a submitted URL) is sent to an LLM provider** for reasoning and report generation.
-* **Default provider: Anthropic (Claude)** — processing occurs on infrastructure that may be located in the **United States**.
-* Optional providers (used only if FactHarbor configures them): **OpenAI**, **Google (Gemini)**, **Mistral**.
+* **Anthropic (Claude)** is configured for most current pipeline roles.
+* **OpenAI** is configured for the current challenger role and may therefore receive derived claim, evidence, and reasoning context during a normal run.
+* **Google (Gemini)** and **Mistral** are supported providers but are used only if FactHarbor configures a role to use them.
 
 **Their role:** some providers act as our **processors** (processing only on our instructions under a data-processing agreement); others may act as **independent controllers** under their own terms. **[NEEDS DECISION: complete a per-provider matrix — role (processor / independent controller / recipient), purpose, data categories, location, retention/training settings, DPA/terms, transfer mechanism — and confirm whether each provider may retain inputs or use them to train or improve its models.]**
 
@@ -84,7 +90,7 @@ Search queries **derived from your claim** are sent to search providers to gathe
 (Other providers such as Brave, SerpAPI, Semantic Scholar, and Google Fact Check are available but disabled by default.) Public search APIs and Wikipedia generally act as **independent controllers** under their own terms, not as our processors.
 
 === 5.3 Source Fetching ===
-When you submit a URL, or when search returns candidate sources, the pipeline **fetches those public web pages** to extract evidence. Our servers make HTTP requests to **third-party publishers**, who see a request originating from FactHarbor's infrastructure (not from you directly). **The destination website may be located in any country** and may receive request metadata. We block requests to private/internal network addresses, store only the **short source excerpts necessary for the analysis**, and do not circumvent paywalls or access controls. **[NEEDS DECISION: confirm source-excerpt and copyright handling (quotation limits, attribution, robots/terms, takedown).]**
+When you submit a URL, or when search returns candidate sources, the pipeline **fetches those public web pages** to extract evidence. The request comes from FactHarbor's infrastructure rather than your device, but the current browser-like user agent does not reliably identify FactHarbor to the publisher. **The destination website may be located in any country** and receives ordinary request metadata. We block requests to private/internal network addresses, store only the **short source excerpts necessary for the analysis**, and do not attempt to bypass paywalls or access controls. The current fetcher does **not** evaluate `robots.txt`. **[NEEDS DECISION: confirm source-excerpt and copyright handling (quotation limits, attribution, robots/terms, takedown) and adopt a consistent, accurate outbound identity; current Wikipedia/evaluation contact strings use outdated `factharbor.com` details.]**
 
 === 5.4 What We Never Do ===
 * We never **sell** or **rent** your information.
@@ -122,11 +128,14 @@ We follow **data-minimization** principles. Note the alpha-specific reality for 
 | **Third-party content embedded in stored reports** (fetched source excerpts, which may include personal data of people mentioned) | Same as the report (indefinite during alpha) | Part of the analysis record; see §5.3 and §6.1 |
 | **Backups** | **[NEEDS DECISION: confirm backup retention and deletion-propagation timing]** | Deletion of a submission may persist in backups until they expire |
 | **IP address (rate limiting)** | Transient (in memory) | Not persisted by the application |
-| **Server / hosting logs** | **[NEEDS DECISION: confirm with host]** | Security and troubleshooting |
-| **Support emails** | 2 years | Service improvement, follow-up |
-| **Financial records / tax documents** | 10 years | Swiss legal requirement (OR Art. 958f) |
+| **Server / hosting logs** | **[NEEDS DECISION: verify live configuration and set a short deletion period]** | Security and troubleshooting |
+| **Historical documentation analytics UUID and page-level reading profile** | **No automatic expiry was configured in Workers KV** | New FactHarbor page views are no longer sent to the Worker. Historical per-page, per-identifier records require a deletion or minimization decision. A browser may still hold the former `fh_vid` because storage is shared across the `robertschaub.github.io` origin. |
+| **Web-search cache** | Up to 7 days under the current default configuration | Cached search-provider responses used by the analysis pipeline |
+| **GitHub Pages and third-party asset logs** | Set by GitHub, Google, Cloudflare/cdnjs, and any remote image host | See the respective provider notices; FactHarbor does not control those providers' independent log retention |
+| **Support emails** | Proposed maximum of 2 years after closure | Service improvement and follow-up. **[NEEDS DECISION: approve and implement a deletion routine.]** |
+| **Association accounting and tax records** | 10 years | Organisational records retained under Swiss accounting law (OR Art. 958f); the alpha does not collect user payment data |
 
-Hosting, database, email, and error-monitoring providers act as infrastructure processors; these will be disclosed (or categorised) before launch. When the account-based community features launch, a fuller retention schedule will be added to this policy *before* those features go live.
+Hosting and email providers may act as infrastructure processors and will be disclosed (or categorised) before launch. The analysis database is currently local SQLite storage on the VPS, not a separate database provider, and no separate error-monitoring service was found in the reviewed configuration. When the account-based community features launch, a fuller retention schedule will be added to this policy *before* those features go live.
 
 == 8. How We Use Your Information ==
 We use collected information only to:
@@ -149,13 +158,13 @@ Depending on the applicable law and circumstances, you may have rights to **acce
 You may also lodge a complaint with the Swiss FDPIC (www.edoeb.admin.ch) or, for EU/EEA residents, your local data protection authority.
 
 == 10. Cookies ==
-The alpha uses **no analytics, advertising, or third-party tracking cookies**, and integrates no analytics service. Only strictly necessary cookies required for core functionality (if any) may be used; these do not require consent. Should FactHarbor introduce non-essential cookies, we will provide the appropriate consent mechanism — under EU ePrivacy, analytics/marketing cookies generally require **opt-in** — and update this section *before* doing so.
+The claim-analysis application does not currently initialize advertising or behavioural-analytics cookies. It uses `localStorage` for the invite code and `sessionStorage` for an entered admin key as described in §4.3. The FactHarbor documentation build does not configure project-controlled audience analytics, but it loads third-party assets from Google Fonts and cdnjs/Cloudflare when a page opens. Clearing site data for `robertschaub.github.io` removes any browser copy of the former analytics UUID; it does not delete historical Workers KV entries. Privacy requests may be sent to info@factharbor.ch.
 
 == 11. Data Security and Compliance ==
 === 11.1 Technical Measures ===
-* **Encryption in transit:** TLS/HTTPS for connections. **[NEEDS DECISION: confirm HTTPS is enforced on the production deployment — Operational Readiness lists this as not-yet-done.]**
+* **Encryption in transit:** the production status documentation records a VPS deployment with Caddy/TLS, and the public application is served over HTTPS. **[NEEDS DECISION: add recurring operational verification rather than relying only on documentation.]**
 * **SSRF protection:** URL fetching blocks private/internal network ranges.
-* **Access controls:** administrative functions are key-protected. **[NEEDS DECISION: the public job list/view endpoints are not access-controlled — a privacy-by-design/default and data-security concern (FADP Art. 7–8; GDPR Art. 25/32 where applicable). See §3.3 and §20.1.]**
+* **Access controls:** administrative functions are key-protected. Job-list and job-view endpoints are intentionally public as described in §3.3; users must therefore be warned before submission not to provide confidential, private or unnecessary personal information.
 * **Secure development:** code review and security checks.
 
 === 11.2 Organisational Measures ===
@@ -182,7 +191,7 @@ No system is 100% secure. We implement strong protections but cannot guarantee a
 If we experience a data breach, we will, without undue delay, contain it, assess scope and impact, and **notify the Swiss FDPIC** if the breach is likely to result in a high risk to data subjects (FADP Art. 24). **Where the GDPR applies, we notify the competent supervisory authority within 72 hours of becoming aware of the breach (GDPR Art. 33).** We notify affected individuals **where needed for their protection or where the FDPIC requires it** (FADP), and, where the GDPR applies, where the breach is likely to result in a high risk to them (Art. 34) — **in each case where we have a means to contact them; otherwise via a prominent notice on the service**. We **may** publish a sanitized incident report after resolution where appropriate.
 
 == 13. International Data Transfers ==
-As described in §5, processing your submission **necessarily involves transfers outside Switzerland**, including to providers in the **United States** (AI and search providers), and — when we fetch sources — to publishers in any country.
+As described in §4 and §5, processing can involve transfers outside Switzerland: submissions and derived content go to AI and search providers, documentation requests go to GitHub, Google and Cloudflare/cdnjs, historical documentation analytics records may remain in Cloudflare Workers/KV, and source fetching can contact publishers in any country.
 
 === 13.1 Legal Basis for Transfers ===
 * **EEA:** Switzerland holds an EU adequacy decision (confirmed January 15, 2024), allowing data flow between Switzerland and the EEA without additional safeguards.
@@ -202,34 +211,37 @@ FactHarbor is not intended for children. We do not knowingly collect personal da
 We may update this Privacy Policy. Material changes will be announced via a prominent notice on the site (and by email where we hold one). Previous versions will be archived and remain accessible. An updated policy applies from its effective date; your agreement with us remains governed by the [[Terms of Service>>FactHarbor.Organisation.Legal and Compliance.Terms-of-Service]].
 
 == 17. Contact Us ==
-**Contact:** info@factharbor.ch (postal address available on request — see the §2 [NEEDS DECISION] to add a registered seat/postal address). As a small organization, multiple contact functions may initially be handled by the same individual, but legal requirements for response times and procedures are met. An EU representative (if required, per §11.5) and a named privacy contact will be added as needed.
+**Contact:** FactHarbor (Verein), c/o Robert Schaub, In Lederäcker 11, 8305 Dietlikon, Switzerland; info@factharbor.ch. As a small organization, multiple contact functions may initially be handled by the same individual, but legal requirements for response times and procedures are met. An EU representative (if required, per §11.5) and a named privacy contact will be added as needed.
 
 == 18. Governing Law and Jurisdiction ==
 This Privacy Policy is governed primarily by the **Swiss Federal Act on Data Protection (FADP)**, by the **Swiss Civil Code (ZGB)** for Verein and personality-rights matters, and by the **EU GDPR** when processing data of EU/EEA residents. The primary jurisdiction for disputes is the Swiss courts (Canton of Zürich). EU/EEA residents may also pursue rights with their local data protection authority. If any provision is found invalid, the remaining provisions continue in full force.
 
 == 19. Version and Effective Date ==
-* **Version:** 0.10.2 (Alpha-Reality Rewrite, advisor- + counsel-reviewed)
-* **Last Updated:** June 11, 2026
-* **Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §20.2]
+* **Version:** 0.12.0 (controller and publication decisions)
+* **Last Updated:** September 17, 2026
+* **Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §20]
 
 **Changelog:**
+* **0.12.0 (2026-09-17):** added the serviceable controller address; recorded the deliberate public-by-design visibility of full submissions and reports; disabled project-controlled audience analytics in the FactHarbor documentation deployment; and retained deletion/minimization of historical analytics records as an operational follow-up.
+* **0.11.1 (2026-09-17):** corrected the controller seat, official registration/publication dates and test-deployment scope; described full public job content, invite/admin browser storage, Cloudflare IP receipt, public aggregate statistics, unauthenticated tracking writes and the cross-project page-level reading profile; corrected source-fetch identification/robots wording, infrastructure-provider categories, correspondence status, accounting-record context and search-cache retention; and kept technical remedies as open publication gates.
+* **0.11.0 (2026-09-17):** expanded scope to the public documentation site and repository; disclosed the persistent `fh_vid` documentation identifier, Cloudflare Worker/KV page-view storage, GitHub Pages logs, Google Fonts, cdnjs/Mermaid, GitHub API and remote-asset requests; removed the inaccurate no-analytics/no-banner conclusion; added the missing no-expiry retention reality and consent/withdrawal decision; aligned current model-provider wording with Anthropic roles plus the enabled OpenAI challenger; and updated the TLS statement to the recorded live deployment.
 * **0.10.2 (2026-06-11):** GPT-5.5 counsel-style review applied — reframed lawful basis to the Swiss principles-based model (not a GDPR-style catalogue) with a separate GDPR Art. 6/9 statement (§6); corrected third-party providers to distinguish **processors vs. independent controllers** and added a provider-matrix decision (§5.1–5.2); qualified data-subject rights and added a 30-day response + identity verification (§9); added a **personality-rights / ZGB Art. 28** section with a complaint/takedown commitment (§6.2, §5.5); refined breach notice for the Swiss vs. GDPR distinction and softened the incident-report commitment to "may" (§12); fixed the over-broad cookie statement (§10); added backups and infrastructure-processor treatment and an alpha retention-cap decision (§7); added source-excerpt/copyright handling and global-destination wording (§5.3); strengthened the transfer wording (§13.1); added a registered-address decision (§2).
 * **0.10.1 (2026-06-11):** Fable-5 advisor review — DPO/Art. 37 + EU-rep/Art. 27 correction; removed inapplicable Swiss representative; children's-age fix; GDPR Art. 33 72-hour breach notice; SCC-recognition body corrected to the FDPIC; automated-processing statement; people-mentioned section; contactability caveats; softened consent-by-use.
 * **0.10.0 (2026-06-11):** Rewritten from the account/contribution-platform draft (0.9.29) to describe the actual invite-gated analysis service.
 
-== 20. Open Decisions Before Publication ==
-To be resolved (ideally with retained Swiss counsel) before this policy is set effective. **#1 is time-sensitive and independent of the launch timeline.**
-1. **⚠ TIME-SENSITIVE — public readability of submissions/reports.** Unauthenticated `GET /v1/jobs` and `/v1/jobs/{id}` mean submitted claims and reports may be readable by anyone who can reach the service. Make reports private by default (or a deliberate public/share-link design), restrict the list endpoint, and stop accepting submissions with personal/confidential content until fixed (§3.3, §11.1).
-2. Alpha exposure status: **confirmed (2026-06-11) reachable by ~3 personally-known testers, ~8 jobs, no privacy-relevant inputs** — low risk. Publish and set this policy effective **before access is widened to any user not personally known to the team**; until then, give those testers the policy + a written warning.
-3. Lawful basis confirmation, especially sensitive-data handling (§6).
-4. Per-provider matrix — role (processor vs independent controller), transfer mechanism (DPF/SCC), and retention/training settings (§5.1, §13.1).
-5. EU/EEA users in scope? → GDPR Art. 6/9 analysis + EU representative under Art. 27 (§11.5).
-6. Submission **retention cap** + deletion workflow/SLA + backup-deletion propagation (§7, §9).
-7. Production hosting: location, HTTPS enforcement, host log contents/retention, infrastructure-processor disclosure (§4.2, §7, §11.1).
-8. Initial (lightweight) DPIA now; full DPIA before public launch; processing-activities register (§11.3, §11.4).
-9. **Personality-rights / takedown workflow** for reports about identifiable persons (§6.2); source-excerpt/copyright safeguards (§5.3).
-10. **Pre-submission click-through acceptance** of the Terms + Privacy Policy (see Terms of Service §1) — browsewrap is weak for the liability/indemnity/visibility/transfer clauses.
-11. Effective date; EU-representative designation if in scope; **formal approval of these policies and the alpha risk acceptance by the competent Verein body** (§2, §11.5, §19).
+== 20. Open Decisions Before Adoption ==
+To be resolved (ideally with retained Swiss counsel) before this policy is set effective.
+1. Delete or appropriately minimize the historical FactHarbor documentation-analytics records and document completion; keep audience analytics disabled unless a separately reviewed lawful design is adopted (§4.2, §7, §10).
+2. Re-verify current alpha exposure and submitted-data inventory. The 2026-06-11 count is historical and must not be treated as current.
+3. Publish and set this policy effective before widening access and confirm the competent Verein approval (§2, §19).
+4. Confirm the lawful basis, especially for sensitive-data handling and the deliberate publication of full submissions and reports (§3.3, §6).
+5. Complete the per-provider matrix — role (processor vs independent controller), transfer mechanism (DPF/SCC), configured retention/training settings, and current service terms for Anthropic, OpenAI, Serper/Google, Wikipedia, GitHub, Cloudflare/cdnjs, Google Fonts, Infomaniak and optional providers (§4–5, §13.1).
+6. Decide whether EU/EEA users are in scope and, if so, complete the GDPR Art. 6/9 analysis and appoint an EU representative under Art. 27 (§11.5).
+7. Set a submission **retention cap**, deletion workflow/SLA and backup-deletion propagation (§7, §9).
+8. Verify production-hosting location, host-log fields/retention, backup retention and infrastructure-processor disclosure (§4.2, §7, §11.1).
+9. Complete an initial DPIA now, a full DPIA before wider public launch, and the processing-activities register (§11.3, §11.4).
+10. Implement the **personality-rights / takedown workflow** for reports about identifiable persons (§6.2) and the source-excerpt/copyright safeguards (§5.3).
+11. Decide whether to require pre-submission click-through acceptance (see Terms of Service §1) rather than relying on browsewrap for the liability, indemnity, visibility and transfer clauses. The visible Privacy Policy and Terms links are already present at the collection point.
 
 == 21. Related Policies ==
 * [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]

@@ -26,6 +26,8 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
+**[Privacy Policy (draft for review)](Docs/xwiki-pages/FactHarbor/Organisation/Legal%20and%20Compliance/Privacy-Policy.xwiki)** — current data-processing notice and unresolved publication gates.
+
 ## Getting Started
 
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites, setup, and how to run the application locally.
