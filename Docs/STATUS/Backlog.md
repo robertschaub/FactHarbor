@@ -548,6 +548,7 @@ All 5 UCM gaps identified in the 2026-03-13 audit are now implemented (`fb5395b0
   - ✅ Evidence field trimming: ~20-25% verdict stage input reduction (2026-02-27)
   - ✅ Search Serper→P1 swap: roughly $170/month (`362a9312`; **production re-seed pending**)
   - ✅ Output-token reduction (`871cbf24`): dropped generated-then-discarded fields (cluster `congruenceDecisions`/`scopeToBoundaryMapping` rationale, applicability `reasoning`) + `maxOutputTokens` guard caps + prompt brevity; output ≈ 50% of the Claude bill. Schema/cap cuts are live on deploy; **prompt-brevity prod re-seed needs verification** (`reseed-all-prompts.ts --prompts`, same as the search swap). The aggressive cluster-array drop stays audit-gated. See [WIP §9/§10](../WIP/2026-06-01_LLM_API_Cost_Reduction_and_NPO_Discounts.md)
+  - ↳ **How to clear the two prod re-seeds above:** [Prod Prompt/Config Re-seed](../AGENTS/Procedures/Prod_Prompt_Config_Reseed.md) — prod deploys don't reseed the persistent prod config DB; run `npm -w apps/web run reseed` on the prod server (watch admin-owned blobs)
   - Batch API: ~20% discount — realistic only for the eval/diagnostic bucket, not the sequential debate calls
   - Routing the lower-judgment extraction share to a cheaper model behind an audit gate: open lever
   - NPO/OSS API credits: requested from Anthropic sales 2026-06-11, **no reply as of 2026-08-06**; the active nonprofit programs cover seats only, not API runtime
