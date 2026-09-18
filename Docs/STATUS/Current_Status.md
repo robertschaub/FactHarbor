@@ -106,7 +106,7 @@ Grouped by theme rather than by day. Full commit history in git; dated sections 
 - ✅ **Harness environment leak fixed** (`3fc2b26b`): `restart-clean.ps1` strips the injected `ANTHROPIC_BASE_URL`/`MODEL` that made every agent-started pipeline LLM call return 404.
 - ✅ **DB write-guard hook scoped to writes only** (`f1afdeef`), so read-only `sqlite3` inspection works while destructive statements stay blocked.
 - ✅ **Admin job annotations + job search** (`6444126d`, `34f009f8`) and automatic claim selection (`d2d06f83`).
-- ✅ **Legal documents rewritten to match the live product** (`62f894a8`, `45df14fd`, 2026-06-11): the prior Privacy Policy and ToS described a community wiki and omitted all third-party LLM/search sub-processors. Both remain DRAFT with open `[NEEDS DECISION]` items.
+- ✅ **Privacy Policy effective for the restricted alpha** (2026-09-18): the notice now matches the current invite-gated service, public report visibility, provider flows, retention decisions, absence of a private-person pre-publication gate, and manual rights/takedown process. The Terms of Service remains a separate document; wider public access is still blocked by the policy's expansion gates.
 - ✅ **Verein founded and registered; NPO status verified** (`a48feedd`, `bfd466f5`); Steuerbefreiung applied for, pending.
 
 ### Documentation and process
@@ -139,7 +139,7 @@ Grouped by theme rather than by day. Full commit history in git; dated sections 
 - Unified Configuration Management: DB-backed config for prompt/search/calculation/pipeline/sr/lexicons with validation, history, rollback, import/export, per-job snapshots, hot reload
 - SSRF protection and per-IP rate limiting; invite-code access control with daily and lifetime quotas
 - Per-job metrics isolation via `AsyncLocalStorage`; metrics wired into the CB pipeline; `pipelineTelemetry` + `qualityHealth.d5` aggregates persisted
-- SQLite locally, PostgreSQL in production; automated retry with exponential backoff; VPS deployment with Caddy/TLS and backup cron
+- SQLite locally and in the documented production/test VPS deployment; automated retry with exponential backoff; VPS deployment with Caddy/TLS and backup cron
 
 **UI:**
 
@@ -187,7 +187,7 @@ Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume stati
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Next.js Web App** | ✅ Operational | Runner + orchestrator, port 3000 |
-| **.NET API** | ✅ Operational | SQLite local, PostgreSQL production; no automated test coverage in CI |
+| **.NET API** | ✅ Operational | SQLite locally and in the documented VPS deployment; no automated test coverage in CI |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff, orphan re-queue |
 | **Analysis Pipeline** | ✅ Operational | ClaimAssessmentBoundary only — Orchestrated, Monolithic Canonical and Monolithic Dynamic all removed |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (default), OpenAI, Google, Mistral |

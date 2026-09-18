@@ -29,7 +29,7 @@ export function Footer() {
         rel="noopener noreferrer"
         style={{ color: "#6b7280", textDecoration: "underline" }}
       >
-        Privacy Policy (draft)
+        Privacy Policy
       </a>
       {" "}&middot;{" "}
       <a

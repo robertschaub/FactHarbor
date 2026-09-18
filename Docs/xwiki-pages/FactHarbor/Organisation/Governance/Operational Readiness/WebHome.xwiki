@@ -2,7 +2,7 @@
 == 1. Purpose and Scope ==
 This checklist documents prerequisite tasks that must be completed before FactHarbor can launch to the public.
 **Organization Reality:** Starting as a solo project with team growth expected within the first year. 
-**Status as of:** June 11, 2026
+**Status as of:** September 18, 2026
 **Target Launch Date:** [To be determined]
 **Important:** Initially, one person handles multiple functions. This is normal and legal. As the team grows, responsibilities can be distributed.
 == 2. Critical Tasks (MUST Complete Before Launch) ==
@@ -13,10 +13,10 @@ These tasks are mandatory for legal compliance and core functionality.
 | **Draft and adopt Verein bylaws (statutes)** | ✅ Complete | Adopted at founding assembly, April 23, 2026 |
 | **Appoint founding Governing Team (minimum two members)** | ✅ Complete | President and Treasurer appointed, April 23, 2026 |
 | **Apply for Swiss tax-exempt status** | 🟡 Submitted | Submitted May 6, 2026 to the Canton of Zürich tax office; decision pending |
-| **Designate Swiss representative** | ⬜ Not Started | Can be yourself with Swiss address |
+| **Swiss representative** | ➖ Not Applicable | FactHarbor is domiciled in Switzerland; Robert Schaub is the privacy contact. EU/EEA targeting would trigger a separate GDPR Art. 27 review. |
 | **Create processing activities register** | ⬜ Not Started | Internal document |
 | **Conduct initial DPIA for AKEL system** | ⬜ Not Started | Can use templates |
-| **Set effective dates for policies** | ⬜ Not Started | Privacy & Transparency |
+| **Set Privacy Policy effective date** | ✅ Complete | Governing Team approval confirmed; effective 18 September 2026 for the restricted alpha; expansion gates remain in Privacy Policy §20 |
 === 2.2 Technical Implementation ===
 |= Task |= Status |= Notes |
 | **Implement opt-in cookie consent banner** | ⬜ Not Started | Open source libraries available |
@@ -84,7 +84,7 @@ At minimum, you need contact methods for:
 * Processing activities register (internal)
 * Initial DPIA for AKEL (internal)
 * Breach response procedure
-* Privacy Policy (done, set effective date)
+* Privacy Policy (effective for the restricted alpha; wider access remains gated)
 * Transparency Policy (done, set effective date)
 **Should Exist:**
 * Terms of Service
@@ -126,8 +126,8 @@ Strategic decisions needed before implementation:
 - [x] Verein bylaws adopted (founding assembly, April 23, 2026)
 - [x] Verein registered in Commercial Register (UID CHE-448.446.098, visible on Zefix since May 7, 2026)
 - [x] Governing Team appointed (two members minimum)
-- [ ] Swiss representative designated
-- [ ] Privacy Policy effective date set
+- [x] Swiss controller and privacy contact identified
+- [x] Privacy Policy effective date set (restricted alpha)
 - [ ] Processing activities register created
 - [ ] Initial DPIA completed
 **Technical:**
@@ -255,5 +255,5 @@ You do need:
 * [[Open Source Model and Licensing>>FactHarbor.Organisation.Legal and Compliance.Open Source Model and Licensing.WebHome]]
 * [[Finance & Compliance>>FactHarbor.Organisation.Legal and Compliance.Finance and Compliance.WebHome]]
 * [[Governance>>FactHarbor.Organisation.Governance.WebHome]]
-**Last Updated:** June 11, 2026
+**Last Updated:** September 18, 2026
 **Status:** Adapted for solo start with team growth expected
