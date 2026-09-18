@@ -19,8 +19,6 @@ The consolidated conceptual change is to add narrow first-class `pipelineTelemet
 
 This keeps warning semantics clean while making the parked routing questions measurable. D5 partition health remains owned by `qualityHealth` for now to avoid duplicating the existing F6 surface.
 
-2026-06-01 source refresh: `pipelineTelemetry` is still not implemented in source. Current source already changed the D5/direct-publishability path: D5 sufficiency can emit `insufficient_direct_evidence` with per-claim directional counts, and `qualityHealth.f4_*` now counts both `insufficient_evidence` and `insufficient_direct_evidence`. Treat this document as the implementation plan and current-source alignment note, not as a description of a shipped `pipelineTelemetry` schema.
-
 ---
 
 ## 2. What This Telemetry Addresses
@@ -457,10 +455,6 @@ This revision addresses those findings by requiring:
 - claim-ID sets for direction flags, rescues, downgrades, and unresolved claims;
 - separate `challengerRoleInvocationCount` and `challengerPhysicalCallCount`;
 - a concrete D5 quality-health follow-up telemetry shape and manual review thresholds.
-
-### 2026-06-01 Source Refresh
-
-The plan was rechecked against current source after the direct-publishability sufficiency work landed. No `AnalysisMetrics.pipelineTelemetry` field or aggregate `pipelineTelemetry` API exists yet. The important drift is in adjacent health telemetry: current source emits `insufficient_direct_evidence`, records direct/non-direct directional counts on that warning, registers `evidence_applicability_assessment_degraded`, and folds both insufficiency warning types into `qualityHealth.f4_*`. The plan now treats those shipped facts as the baseline for the D5 follow-up, not as new Phase 1 `pipelineTelemetry` scope.
 
 ---
 
