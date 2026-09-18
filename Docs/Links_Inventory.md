@@ -109,7 +109,7 @@ The original script included `git push origin gh-pages` as step 6. AI agents ran
 
 **Why the push was removed:**
 - CI (`.github/workflows/deploy-docs.yml`) uses `peaceiris/actions-gh-pages@v4` with `force_orphan: true`, which replaces the entire `gh-pages` branch on every deploy.
-- The FactHarbor CI build intentionally passes no analytics endpoint, so the viewer does not track page views and the Stats button remains hidden.
+- The FactHarbor CI build intentionally passes no analytics endpoint, so the viewer does not track page views.
 - A manual `git push origin gh-pages` from the local script would bypass this controlled publication path.
 - BestWorkplace uses the same viewer architecture but makes its own deployment and analytics decision.
 

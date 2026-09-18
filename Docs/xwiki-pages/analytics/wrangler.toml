@@ -19,3 +19,7 @@ compatibility_date = "2024-12-01"
 [[kv_namespaces]]
 binding = "ANALYTICS"
 id = "7107113738734bb2bf7279519a901899"
+
+[vars]
+ALLOWED_ORIGIN = "https://robertschaub.github.io"
+ALLOWED_SITE_ID = "BW"

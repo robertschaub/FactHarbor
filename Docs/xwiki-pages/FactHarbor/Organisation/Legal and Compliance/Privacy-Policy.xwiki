@@ -1,6 +1,6 @@
 = Privacy Policy =
 **Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §19 and §20]
-**Last Updated:** September 17, 2026 (V0.12.0 — controller and publication decisions)
+**Last Updated:** September 18, 2026 (V0.12.1 — historical analytics minimization)
 
 {{info}}
 **Status: DRAFT — not yet effective.** This version describes the systems FactHarbor **actually operates today**: an invite-gated claim-analysis service and a public documentation site, not a community-contribution platform. Items marked **[NEEDS DECISION: …]** require a human/legal decision before this policy is made effective. The September 2026 update was checked against the current public code and documentation, but it has **not** been signed off by retained Swiss counsel. The open operational decisions in §20 remain adoption and effectiveness gates; the draft may be published for review without implying approval.
@@ -56,12 +56,12 @@ FactHarbor deliberately publishes submissions and the reports generated from the
 === 4.2 Information We Collect Automatically ===
 * **IP address — transient, for abuse prevention only.** Your IP is used in memory to enforce rate limits (a small number of analyses per minute per IP). It is **not written to the analysis database or to persistent event logs** by the application.
 * **Application hosting logs.** The live service uses a VPS with Caddy/TLS. Caddy and the host may record request metadata such as IP address, time, requested path, status, and user agent for security and troubleshooting. **[NEEDS DECISION: verify the live fields and actual deletion schedule; do not rely on the historical deployment-plan value.]**
-* **Documentation page views.** The FactHarbor GitHub Pages build does **not** configure project-controlled audience analytics and does not send page references or a visitor identifier to the former documentation-analytics Worker. GitHub still receives the request information needed to serve the site, as described below. Historical analytics records created before measurement was disabled may remain in Workers KV until they are deleted or appropriately minimized under the operational follow-up in §20.
+* **Documentation page views.** The FactHarbor GitHub Pages build does **not** configure project-controlled audience analytics and does not send page references or a visitor identifier to the former documentation-analytics Worker. GitHub still receives the request information needed to serve the site, as described below. On September 18, 2026, the historical per-browser UUID maps were removed from Workers KV; only private aggregate page-view totals were retained.
 * **GitHub Pages logs.** GitHub states that it logs visitor IP addresses for security purposes when a GitHub Pages site is visited. GitHub processes this data under its own privacy statement.
 * **Third-party assets.** The documentation viewer automatically requests fonts from Google Fonts and Mermaid JavaScript from cdnjs/Cloudflare. Pages using the repository-file macro may also call the GitHub API, and embedded remote images may contact their source host. Those providers receive ordinary request metadata such as IP address and user agent under their own terms.
 
 === 4.3 Cookies and Tracking ===
-The claim-analysis application does not currently initialize advertising or behavioural analytics. It does store the entered invite code persistently in browser `localStorage` without an automatic expiry or user-facing removal control; administrative pages store the entered admin key in `sessionStorage` for the browser tab. The FactHarbor documentation build does not configure audience analytics. **[NEEDS DECISION: define removal/expiry handling for application credentials and delete or appropriately minimize historical documentation-analytics records.]** See §10.
+The claim-analysis application does not currently initialize advertising or behavioural analytics. It does store the entered invite code persistently in browser `localStorage` without an automatic expiry or user-facing removal control; administrative pages store the entered admin key in `sessionStorage` for the browser tab. The FactHarbor documentation build does not configure audience analytics. **[NEEDS DECISION: define removal/expiry handling for application credentials.]** See §10.
 
 === 4.4 Information We DO NOT Collect ===
 * Account credentials, usernames, or profiles (no accounts in alpha)
@@ -69,7 +69,7 @@ The claim-analysis application does not currently initialize advertising or beha
 * Biometric data
 * Precise geolocation
 * Government IDs or social-security numbers
-* Advertising profiles or cross-site marketing data. Historical page-level reading data described above was collected, but was not used for advertising or to profile people for marketing.
+* Advertising profiles or cross-site marketing data. Historical page-level reading data described above was collected, but was not used for advertising or to profile people for marketing; its per-browser UUID maps have now been removed.
 
 == 5. How Your Submission Is Processed — Third-Party Providers ==
 **This is the most important section.** To analyze a claim, FactHarbor **sends content derived from your submission to external service providers**. By submitting, you understand that:
@@ -129,7 +129,7 @@ We follow **data-minimization** principles. Note the alpha-specific reality for 
 | **Backups** | **[NEEDS DECISION: confirm backup retention and deletion-propagation timing]** | Deletion of a submission may persist in backups until they expire |
 | **IP address (rate limiting)** | Transient (in memory) | Not persisted by the application |
 | **Server / hosting logs** | **[NEEDS DECISION: verify live configuration and set a short deletion period]** | Security and troubleshooting |
-| **Historical documentation analytics UUID and page-level reading profile** | **No automatic expiry was configured in Workers KV** | New FactHarbor page views are no longer sent to the Worker. Historical per-page, per-identifier records require a deletion or minimization decision. A browser may still hold the former `fh_vid` because storage is shared across the `robertschaub.github.io` origin. |
+| **Historical aggregate documentation page-view totals** | Retained while operationally useful, subject to periodic review | New FactHarbor page views are no longer sent to the Worker. Historical per-browser UUID maps were removed from Workers KV on September 18, 2026. The documentation viewer removes the former `fh_vid` from shared `robertschaub.github.io` browser storage on the next visit. |
 | **Web-search cache** | Up to 7 days under the current default configuration | Cached search-provider responses used by the analysis pipeline |
 | **GitHub Pages and third-party asset logs** | Set by GitHub, Google, Cloudflare/cdnjs, and any remote image host | See the respective provider notices; FactHarbor does not control those providers' independent log retention |
 | **Support emails** | Proposed maximum of 2 years after closure | Service improvement and follow-up. **[NEEDS DECISION: approve and implement a deletion routine.]** |
@@ -158,7 +158,7 @@ Depending on the applicable law and circumstances, you may have rights to **acce
 You may also lodge a complaint with the Swiss FDPIC (www.edoeb.admin.ch) or, for EU/EEA residents, your local data protection authority.
 
 == 10. Cookies ==
-The claim-analysis application does not currently initialize advertising or behavioural-analytics cookies. It uses `localStorage` for the invite code and `sessionStorage` for an entered admin key as described in §4.3. The FactHarbor documentation build does not configure project-controlled audience analytics, but it loads third-party assets from Google Fonts and cdnjs/Cloudflare when a page opens. Clearing site data for `robertschaub.github.io` removes any browser copy of the former analytics UUID; it does not delete historical Workers KV entries. Privacy requests may be sent to info@factharbor.ch.
+The claim-analysis application does not currently initialize advertising or behavioural-analytics cookies. It uses `localStorage` for the invite code and `sessionStorage` for an entered admin key as described in §4.3. The FactHarbor documentation build does not configure project-controlled audience analytics, but it loads third-party assets from Google Fonts and cdnjs/Cloudflare when a page opens. The current documentation viewer removes the former `fh_vid` from shared `robertschaub.github.io` browser storage on the next visit; clearing site data also removes it. Historical Workers KV values no longer contain that identifier. Privacy requests may be sent to info@factharbor.ch.
 
 == 11. Data Security and Compliance ==
 === 11.1 Technical Measures ===
@@ -191,7 +191,7 @@ No system is 100% secure. We implement strong protections but cannot guarantee a
 If we experience a data breach, we will, without undue delay, contain it, assess scope and impact, and **notify the Swiss FDPIC** if the breach is likely to result in a high risk to data subjects (FADP Art. 24). **Where the GDPR applies, we notify the competent supervisory authority within 72 hours of becoming aware of the breach (GDPR Art. 33).** We notify affected individuals **where needed for their protection or where the FDPIC requires it** (FADP), and, where the GDPR applies, where the breach is likely to result in a high risk to them (Art. 34) — **in each case where we have a means to contact them; otherwise via a prominent notice on the service**. We **may** publish a sanitized incident report after resolution where appropriate.
 
 == 13. International Data Transfers ==
-As described in §4 and §5, processing can involve transfers outside Switzerland: submissions and derived content go to AI and search providers, documentation requests go to GitHub, Google and Cloudflare/cdnjs, historical documentation analytics records may remain in Cloudflare Workers/KV, and source fetching can contact publishers in any country.
+As described in §4 and §5, processing can involve transfers outside Switzerland: submissions and derived content go to AI and search providers, documentation requests go to GitHub, Google and Cloudflare/cdnjs, private aggregate documentation page-view totals remain in Cloudflare Workers/KV without the former per-browser UUID maps, and source fetching can contact publishers in any country.
 
 === 13.1 Legal Basis for Transfers ===
 * **EEA:** Switzerland holds an EU adequacy decision (confirmed January 15, 2024), allowing data flow between Switzerland and the EEA without additional safeguards.
@@ -217,11 +217,12 @@ We may update this Privacy Policy. Material changes will be announced via a prom
 This Privacy Policy is governed primarily by the **Swiss Federal Act on Data Protection (FADP)**, by the **Swiss Civil Code (ZGB)** for Verein and personality-rights matters, and by the **EU GDPR** when processing data of EU/EEA residents. The primary jurisdiction for disputes is the Swiss courts (Canton of Zürich). EU/EEA residents may also pursue rights with their local data protection authority. If any provision is found invalid, the remaining provisions continue in full force.
 
 == 19. Version and Effective Date ==
-* **Version:** 0.12.0 (controller and publication decisions)
-* **Last Updated:** September 17, 2026
+* **Version:** 0.12.1 (historical analytics minimization)
+* **Last Updated:** September 18, 2026
 * **Effective Date:** [NEEDS DECISION: set before access is widened beyond users personally known to the team — see §20]
 
 **Changelog:**
+* **0.12.1 (2026-09-18):** documented completion of the Workers KV minimization: all historical per-browser UUID maps were removed while aggregate page-view totals were retained privately; documented removal of the former browser identifier by the current viewer; and closed the corresponding adoption gate.
 * **0.12.0 (2026-09-17):** added the serviceable controller address; recorded the deliberate public-by-design visibility of full submissions and reports; disabled project-controlled audience analytics in the FactHarbor documentation deployment; and retained deletion/minimization of historical analytics records as an operational follow-up.
 * **0.11.1 (2026-09-17):** corrected the controller seat, official registration/publication dates and test-deployment scope; described full public job content, invite/admin browser storage, Cloudflare IP receipt, public aggregate statistics, unauthenticated tracking writes and the cross-project page-level reading profile; corrected source-fetch identification/robots wording, infrastructure-provider categories, correspondence status, accounting-record context and search-cache retention; and kept technical remedies as open publication gates.
 * **0.11.0 (2026-09-17):** expanded scope to the public documentation site and repository; disclosed the persistent `fh_vid` documentation identifier, Cloudflare Worker/KV page-view storage, GitHub Pages logs, Google Fonts, cdnjs/Mermaid, GitHub API and remote-asset requests; removed the inaccurate no-analytics/no-banner conclusion; added the missing no-expiry retention reality and consent/withdrawal decision; aligned current model-provider wording with Anthropic roles plus the enabled OpenAI challenger; and updated the TLS statement to the recorded live deployment.
@@ -231,17 +232,16 @@ This Privacy Policy is governed primarily by the **Swiss Federal Act on Data Pro
 
 == 20. Open Decisions Before Adoption ==
 To be resolved (ideally with retained Swiss counsel) before this policy is set effective.
-1. Delete or appropriately minimize the historical FactHarbor documentation-analytics records and document completion; keep audience analytics disabled unless a separately reviewed lawful design is adopted (§4.2, §7, §10).
-2. Re-verify current alpha exposure and submitted-data inventory. The 2026-06-11 count is historical and must not be treated as current.
-3. Publish and set this policy effective before widening access and confirm the competent Verein approval (§2, §19).
-4. Confirm the lawful basis, especially for sensitive-data handling and the deliberate publication of full submissions and reports (§3.3, §6).
-5. Complete the per-provider matrix — role (processor vs independent controller), transfer mechanism (DPF/SCC), configured retention/training settings, and current service terms for Anthropic, OpenAI, Serper/Google, Wikipedia, GitHub, Cloudflare/cdnjs, Google Fonts, Infomaniak and optional providers (§4–5, §13.1).
-6. Decide whether EU/EEA users are in scope and, if so, complete the GDPR Art. 6/9 analysis and appoint an EU representative under Art. 27 (§11.5).
-7. Set a submission **retention cap**, deletion workflow/SLA and backup-deletion propagation (§7, §9).
-8. Verify production-hosting location, host-log fields/retention, backup retention and infrastructure-processor disclosure (§4.2, §7, §11.1).
-9. Complete an initial DPIA now, a full DPIA before wider public launch, and the processing-activities register (§11.3, §11.4).
-10. Implement the **personality-rights / takedown workflow** for reports about identifiable persons (§6.2) and the source-excerpt/copyright safeguards (§5.3).
-11. Decide whether to require pre-submission click-through acceptance (see Terms of Service §1) rather than relying on browsewrap for the liability, indemnity, visibility and transfer clauses. The visible Privacy Policy and Terms links are already present at the collection point.
+1. Re-verify current alpha exposure and submitted-data inventory. The 2026-06-11 count is historical and must not be treated as current.
+2. Publish and set this policy effective before widening access and confirm the competent Verein approval (§2, §19).
+3. Confirm the lawful basis, especially for sensitive-data handling and the deliberate publication of full submissions and reports (§3.3, §6).
+4. Complete the per-provider matrix — role (processor vs independent controller), transfer mechanism (DPF/SCC), configured retention/training settings, and current service terms for Anthropic, OpenAI, Serper/Google, Wikipedia, GitHub, Cloudflare/cdnjs, Google Fonts, Infomaniak and optional providers (§4–5, §13.1).
+5. Decide whether EU/EEA users are in scope and, if so, complete the GDPR Art. 6/9 analysis and appoint an EU representative under Art. 27 (§11.5).
+6. Set a submission **retention cap**, deletion workflow/SLA and backup-deletion propagation (§7, §9).
+7. Verify production-hosting location, host-log fields/retention, backup retention and infrastructure-processor disclosure (§4.2, §7, §11.1).
+8. Complete an initial DPIA now, a full DPIA before wider public launch, and the processing-activities register (§11.3, §11.4).
+9. Implement the **personality-rights / takedown workflow** for reports about identifiable persons (§6.2) and the source-excerpt/copyright safeguards (§5.3).
+10. Decide whether to require pre-submission click-through acceptance (see Terms of Service §1) rather than relying on browsewrap for the liability, indemnity, visibility and transfer clauses. The visible Privacy Policy and Terms links are already present at the collection point.
 
 == 21. Related Policies ==
 * [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]]

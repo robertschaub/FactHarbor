@@ -1,20 +1,20 @@
-# FactHarbor Docs Analytics
+# Documentation Page-View Counter
 
-Privacy-preserving page view tracking for the gh-pages xWiki documentation viewer.
+Aggregate page-view counting for the BestWorkplace gh-pages xWiki documentation viewer.
 
 ## How It Works
 
 ```
 gh-pages viewer (static)           Cloudflare Worker + KV
   │                                  │
-  ├─ loadPage() ──POST /track──────► page:{ref} → { v, u:{id:count} }
-  │   { p: pageRef, id: visitorId }  │
-  └─ Stats btn ───GET /stats───────► [{ p, v, u }]  (sorted by views)
+  └─ loadPage() ──POST /track──────► page:BW:{ref} → { v: totalViews }
+      { p: "BW:" + pageRef }         │
 ```
 
-- **No cookies, no PII** — visitor ID is a random UUID in localStorage
-- **2 endpoints** — `POST /track` to record, `GET /stats` to read
-- **1 KV key pattern** — `page:{ref}` stores views + anonymous visitor counts
+- **No cookies or browser identifier** — the viewer sends only the site-prefixed page reference
+- **No public statistics endpoint** — counts are visible only in the authenticated Cloudflare account
+- **1 endpoint** — `POST /track` records an aggregate page view
+- **1 KV key pattern** — `page:{siteId}:{ref}` stores only the total view count
 - **Data persists** across gh-pages rebuilds (lives in Cloudflare KV)
 
 ## Setup
@@ -41,13 +41,13 @@ Paste the `id` into [wrangler.toml](wrangler.toml).
 wrangler deploy
 ```
 
-Note the Worker URL (e.g. `https://factharbor-docs-analytics.YOUR.workers.dev`).
+Note the Worker URL (e.g. `https://factharbor-docs-analytics.YOUR.workers.dev`). The deployed configuration accepts browser writes only from the configured GitHub Pages origin and only for the configured site ID.
 
 ### 4. Configure GitHub Actions
 
 Add repo secret: **Settings > Secrets > Actions > `DOCS_ANALYTICS_URL`** = your Worker URL.
 
-Next docs deployment will include analytics automatically.
+The next BestWorkplace docs deployment will include aggregate page-view counting automatically.
 
 ### 5. Local build with analytics
 
@@ -55,7 +55,7 @@ Next docs deployment will include analytics automatically.
 python Docs/xwiki-pages/scripts/build_ghpages.py --analytics-url https://your-worker.workers.dev
 ```
 
-Without `--analytics-url`, analytics is disabled (Stats button hidden).
+Without `--analytics-url`, aggregate page-view counting is disabled.
 
 ## Files
 

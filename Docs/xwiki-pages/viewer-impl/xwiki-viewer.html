@@ -316,35 +316,9 @@ body.view-preview .preview-pane{width:100%}
   .preview-wrap{padding:14px 16px 32px}
   #editControls .btn:not(#btnToggleTree){display:none}
   .file-info{display:none !important}
-  #btnStats{display:none !important}
   .tree-item{padding-top:4px;padding-bottom:4px;min-height:36px;display:flex;align-items:center}
   .toolbar .btn{min-width:36px;min-height:36px}
 }
-
-/* ── ANALYTICS MODAL ── */
-.analytics-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);align-items:center;justify-content:center}
-.analytics-overlay.active{display:flex}
-.analytics-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:90vw;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4)}
-.am-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
-.am-header h2{font-family:'Crimson Pro',serif;font-size:18px;font-weight:600;color:var(--accent)}
-.am-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px}
-.am-close:hover{color:var(--text);background:var(--surface-2)}
-.am-close svg{width:18px;height:18px;display:block}
-.am-body{flex:1;overflow-y:auto;padding:12px 16px 16px}
-.am-body::-webkit-scrollbar{width:6px}
-.am-body::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
-.am-summary{display:flex;gap:10px;margin-bottom:12px}
-.am-stat{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;text-align:center}
-.am-stat b{font-family:'Crimson Pro',serif;font-size:24px;color:var(--accent);display:block}
-.am-stat span{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px}
-.am-table{width:100%;border-collapse:collapse;font-size:12px}
-.am-table th{text-align:left;padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);border-bottom:1px solid var(--border)}
-.am-table td{padding:5px 8px;border-bottom:1px solid rgba(51,51,59,.3);color:var(--text)}
-.am-table tr:hover td{background:var(--surface-2)}
-.am-table .num{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px}
-.am-table .pg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.am-table .pg:hover{text-decoration:underline}
-.am-msg{text-align:center;padding:30px 20px;color:var(--text-dim);font-size:13px}
 </style>
 </head>
 <body class="view-preview">
@@ -372,10 +346,6 @@ body.view-preview .preview-pane{width:100%}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
     </button>
     <span class="file-size" id="fileSize"></span>
-    <button class="btn ghost" id="btnStats" onclick="toggleAnalytics()" title="Page view stats" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-        Stats
-      </button>
     <span class="watch-badge" id="watchBadge"><span class="pulse"></span>Watching</span>
   </div>
 
@@ -477,20 +447,6 @@ body.view-preview .preview-pane{width:100%}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     <p>Drop to open</p>
     <span>file or folder</span>
-  </div>
-</div>
-<!-- ANALYTICS MODAL -->
-<div class="analytics-overlay" id="analyticsOverlay" onclick="if(event.target===this)toggleAnalytics()">
-  <div class="analytics-modal">
-    <div class="am-header">
-      <h2>Page Views</h2>
-      <button class="am-close" onclick="toggleAnalytics()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-    </div>
-    <div class="am-body" id="analyticsBody">
-      <div class="am-msg">Loading...</div>
-    </div>
   </div>
 </div>
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
@@ -2287,88 +2243,28 @@ function applySortToTree(items, path, sorts){
 }
 
 // =================================================================
-// Analytics — Privacy-preserving page view tracking
+// Aggregate page-view counting
 // =================================================================
 const Analytics = (function(){
   let EP = '', SITE = '';
 
-  function vid(){
-    let id = localStorage.getItem('fh_vid');
-    if(!id){
-      id = crypto.randomUUID ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
-            const r=Math.random()*16|0; return(c==='x'?r:(r&0x3|0x8)).toString(16);
-          });
-      localStorage.setItem('fh_vid', id);
-    }
-    return id;
-  }
+  // Remove the retired cross-project visitor identifier on the next visit.
+  try{localStorage.removeItem('fh_vid')}catch{}
 
   function track(pageRef){
     if(!EP) return;
     const p = SITE ? SITE+':'+pageRef : pageRef;
     fetch(EP+'/track',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({p,id:vid()})}).catch(()=>{});
-  }
-
-  async function stats(){
-    if(!EP) return null;
-    try{
-      const r=await fetch(EP+'/stats');
-      if(!r.ok) return null;
-      const all=await r.json();
-      if(!SITE) return all;
-      const pfx=SITE+':';
-      return all.filter(e=>e.p.startsWith(pfx)).map(e=>({...e,p:e.p.slice(pfx.length)}));
-    }catch{ return null; }
+      body:JSON.stringify({p})}).catch(()=>{});
   }
 
   function configure(url, siteId){
     EP=(url||'').replace(/\/+$/,'');
     SITE=siteId||'';
-    const btn=document.getElementById('btnStats');
-    if(btn) btn.style.display=EP?'':'none';
   }
 
-  return { trackPageView:track, stats, configure, isEnabled:()=>!!EP };
+  return { trackPageView:track, configure, isEnabled:()=>!!EP };
 })();
-
-function toggleAnalytics(){
-  const o=document.getElementById('analyticsOverlay');
-  if(o.classList.toggle('active')) loadAnalytics();
-}
-
-async function loadAnalytics(){
-  const body=document.getElementById('analyticsBody');
-  body.innerHTML='<div class="am-msg">Loading...</div>';
-  const data=await Analytics.stats();
-  if(!data){body.innerHTML='<div class="am-msg">No data yet.</div>';return;}
-
-  const totalViews=data.reduce((s,d)=>s+d.v,0);
-  // Collect unique visitor count from all pages (server already provides per-page unique count)
-  const totalUnique=new Set(); // approximate from page data
-  let html='<div class="am-summary">';
-  html+='<div class="am-stat"><b>'+totalViews+'</b><span>Total Views</span></div>';
-  html+='<div class="am-stat"><b>'+data.length+'</b><span>Pages Viewed</span></div>';
-  html+='</div>';
-
-  if(data.length===0){
-    html+='<div class="am-msg">No page views recorded yet.</div>';
-  } else {
-    html+='<table class="am-table"><thead><tr>';
-    html+='<th>#</th><th>Page</th><th style="text-align:right">Views</th><th style="text-align:right">Visitors</th>';
-    html+='</tr></thead><tbody>';
-    data.forEach((d,i)=>{
-      const click=pageIndex[d.p]?' onclick="toggleAnalytics();loadPage(\''+escAttr(d.p)+'\')"':'';
-      html+='<tr><td class="num">'+(i+1)+'</td>';
-      html+='<td class="pg"'+click+' title="'+esc(d.p)+'">'+esc(d.p)+'</td>';
-      html+='<td class="num">'+d.v+'</td>';
-      html+='<td class="num">'+d.u+'</td></tr>';
-    });
-    html+='</tbody></table>';
-  }
-  body.innerHTML=html;
-}
 
 // =================================================================
 // Init
