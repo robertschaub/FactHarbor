@@ -2,7 +2,17 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-06-17 (WIP Consolidation #13)
+**Last Updated**: 2026-09-18 (WIP Consolidation #14)
+
+---
+
+### WIP Consolidation #14 (2026-09-18)
+
+**Description**: Archived the June 2 best-commit/regression investigation after later reason-coded attribution and frozen stage-isolation work replaced its proposed T1/T2 gate-softening path. The evidence remains useful historically; current execution guidance is the June 18 analysis-quality plan.
+
+| File | Reason |
+|------|--------|
+| `WIP/2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md` | HISTORICAL / SUPERSEDED — preserve the commit-era analysis, but do not use its T1/T2 gate-softening or live A/B recommendations as current work |
 
 ---
 

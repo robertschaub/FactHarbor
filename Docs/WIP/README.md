@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-08-10
-**Status**: Consolidation #13 complete. 26 WIP files archived. 73 active files remain.
+**Last Updated**: 2026-09-18
+**Status**: Consolidation #14 complete. 27 WIP files archived. 73 active files remain.
 
 ---
 
@@ -32,7 +32,6 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md](2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md) — current consolidated execution order for analysis-quality improvement after the June 18 failed rerun; start here before further pipeline, prompt, UCM, or live-validation work
 - [2026-06-17_Clean_Main_Next_Cleanup_Plan.md](2026-06-17_Clean_Main_Next_Cleanup_Plan.md) — post-consolidation execution plan after F2 smoke validation; current recommended sequence for clean-main recovery
 - [2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md](2026-06-17_Stage4_Citation_Grounding_Execution_Plan.md) — reviewed first implementation slice for Stage 4 citation/grounding integrity; start here before code edits
-- [2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md](2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md) — current consolidated best-report/regression findings; supersedes the May 31 best-commit strategy
 - [2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md](2026-06-04_Pipeline_Era_Comparison_Worktree_Study_Plan.md) — near-term era-comparison path; preferred over the deferred in-tree variant capability
 - [2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md](2026-06-04_Report_Quality_Measurement_And_Build_Comparison_Concept.md) — report-quality measurement concept
 - [2026-06-04_Report_Quality_Measurement_Implementation_Plan.md](2026-06-04_Report_Quality_Measurement_Implementation_Plan.md) — implementation plan for report-quality measurement
@@ -150,6 +149,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-09-18 | **#14** | 1 historical best-commit/regression investigation archived; its T1/T2 next steps are superseded by the June 18 analysis-quality plan | 73 |
 | 2026-06-17 | **#13** | 26 files archived (superseded May pipeline-rebuild packet, applied/rejected quality proposals, completed Agent_Outputs migration design, and ignored V2 evidence-lifecycle artifacts moved locally) | 66 |
 | 2026-04-18 | **#12** | 48 files archived (Phase 2-6 execution artefacts, completed investigations, historical reviews, event prep, superseded proposals, abandoned MCP investigation) | 37 |
 | 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |

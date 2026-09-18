@@ -7,7 +7,7 @@
 
 ## Summary
 
-Attempted to create the requested positive artifact for the Captain-accepted comparator `f8e72c84fb004f23945e23c81973fc26`, but direct read-only SQLite lookup confirmed that this job is not present in the local `apps/api/factharbor.db`. This matches the known coverage gap documented in `Docs/WIP/2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md`: the May 10 deployed/isolated comparators are not locally re-inspectable.
+Attempted to create the requested positive artifact for the Captain-accepted comparator `f8e72c84fb004f23945e23c81973fc26`, but direct read-only SQLite lookup confirmed that this job is not present in the local `apps/api/factharbor.db`. This matches the known coverage gap documented in `Docs/ARCHIVE/WIP/2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md`: the May 10 deployed/isolated comparators are not locally re-inspectable.
 
 Selected the best locally auditable exact-input positive C4 candidate instead:
 
