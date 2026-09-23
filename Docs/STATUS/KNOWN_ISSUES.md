@@ -119,7 +119,7 @@ The ClaimAssessmentBoundary pipeline eliminates pre-detection of AnalysisContext
 
 **How neutrality is checked now** (updated 2026-08-10 — the old "Phase 5h" plan no longer exists):
 - Heuristic question→statement normalization was **removed** in favour of LLM-first handling, so input equivalence is a *measured* property, not an enforced transform.
-- Two live lanes exist, both expensive and excluded from the safe suite: `npm run test:neutrality` (`test/unit/lib/input-neutrality.test.ts`, full analysis ×2 per pair) and the framing-symmetry calibration lanes `test:calibration:smoke` / `:canary` / `:gate` (`test/calibration/framing-symmetry.test.ts`), governed by [Calibration_Run_Policy.md](Calibration_Run_Policy.md).
+- Two live lanes exist, both expensive and excluded from the safe suite: `npm run test:neutrality` (`test/unit/lib/input-neutrality.test.ts`, full analysis ×2 per pair; currently not functional, see Backlog `TEST-LIVE-EXCL`) and the framing-symmetry calibration lanes `test:calibration:smoke` / `:canary` / `:gate` (`test/calibration/framing-symmetry.test.ts`), governed by [Calibration_Run_Policy.md](Calibration_Run_Policy.md).
 - Because both lanes need paid runs, neutrality is currently **monitored rather than gated** — no fresh measurement can be taken while engineering is paused.
 
 **Status**: Superseded as a defect; carried forward as a monitored quality property, not a queued fix.
