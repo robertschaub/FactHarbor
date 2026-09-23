@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-09-09 (pause decision and F-35 work reconciled; earlier measurements retain their dates)
+**Last Updated**: 2026-09-24 (CI, .NET test coverage and live-test notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
 **Phase**: **Alpha** — development paused since 2026-07-02 for funding reasons
 **Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development remains paused because the metered third-party API cost of running analyses exceeds what the project can fund.** The active engineering plan remains intact. A separately authorized local F-35 repair (`e29773c71`, 2026-09-09) changed pipeline code and ran paid verification; its implementation session recorded **1,991 passing / 1 skipped across 103 files**. That bounded work does not resume the broader plan. See the [F-35 handoff](../AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md) for its evidence and remaining issues, and [Why development is paused](#why-development-is-paused) below.
 
@@ -221,11 +221,11 @@ Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume stati
 
 **Expensive integration tests** (explicit scripts only, $1–5+ per run — do not run without asking):
 
-- `npm run test:llm` — multi-provider LLM integration
-- `npm run test:neutrality` — input neutrality (full analysis ×2 per pair)
-- `npm run test:cb-integration` — CB end-to-end (3 scenarios)
+- `npm run test:llm` — multi-provider LLM integration (currently not functional; see Backlog `TEST-LIVE-EXCL`)
+- `npm run test:neutrality` — input neutrality (full analysis ×2 per pair) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
+- `npm run test:cb-integration` — CB end-to-end (3 scenarios, all skipped) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
 - `npm run test:calibration:canary` / `:smoke` / `:gate` — framing-symmetry lanes, per [Calibration_Run_Policy.md](Calibration_Run_Policy.md)
-- `npm run test:expensive` — LLM + neutrality + CB integration (excludes calibration)
+- `npm run test:expensive` — LLM + neutrality + CB integration (excludes calibration) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
 
 **Missing coverage**: .NET API controllers and most of the database layer (CI runs only the `JobService` status tests), frontend components, automated E2E.
 
