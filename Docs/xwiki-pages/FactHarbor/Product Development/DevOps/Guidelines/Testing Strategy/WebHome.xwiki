@@ -57,7 +57,7 @@ Validation and benchmark runs must use only the analysis inputs that the Captain
 
 == Validation Batches ==
 
-##npm run validate:run -- <batchLabel> [familiesFile]## submits each family in the families file and waits for its job, up to a per-job time limit set in the script, before submitting the next. The default file, ##scripts/validation/validation-families.json##, contains inputs that are not on the Captain-defined list, so pass a families file that contains only Captain-defined inputs. The script writes a summary for each successful family to ##test-output/validation/<batchLabel>/##, and a ##manifest.json## there when the batch completes. It submits with the invite code in ##FH_INVITE_CODE##. ##npm run validate:compare -- <oldDir> <newDir>## prints a markdown comparison of two batches.
+##npm run validate:run -- <batchLabel> [familiesFile]## submits each family in the families file and waits for its job, up to a per-job time limit set in the script, before submitting the next. The default file, ##scripts/validation/validation-families.json##, holds the 8 scored benchmark inputs, named like the families in ##benchmark-expectations.json##; any other families file must contain only Captain-defined inputs. The script writes a summary for each successful family to ##test-output/validation/<batchLabel>/##, and a ##manifest.json## there when the batch completes. It submits with the invite code in ##FH_INVITE_CODE##. ##npm run validate:compare -- <oldDir> <newDir>## prints a markdown comparison of two batches.
 
 Before submitting a batch, commit the change under test and refresh the running services. If the first 3 jobs already show a clear regression, stop the batch (##AGENTS.md##, Live Job Submission Discipline).
 
