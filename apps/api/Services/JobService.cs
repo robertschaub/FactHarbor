@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
@@ -8,13 +9,13 @@ namespace FactHarbor.Api.Services;
 
 public sealed class JobService
 {
-    // Terminal statuses are final. Late writes (progress from a pipeline that has not yet reached
-    // its abort checkpoint, a runner FAILED after a user cancel, a late SUCCEEDED) are recorded as
-    // events but never change the job. INTERRUPTED is not terminal: the runner re-queues it.
-    private static readonly HashSet<string> TerminalStatuses = new(StringComparer.Ordinal)
-    {
-        "SUCCEEDED", "FAILED", "CANCELLED"
-    };
+    // SUCCEEDED, FAILED and CANCELLED are final. Status, result and cancel writes are conditional
+    // UPDATEs that only match a job not in one of them, so a terminal status committed by a
+    // concurrent request is never overwritten. Late writes (progress from a pipeline that has not
+    // yet reached its abort checkpoint, a runner FAILED after a user cancel, a late SUCCEEDED) are
+    // recorded as events instead. INTERRUPTED is not terminal: the runner re-queues it.
+    private static readonly Expression<Func<JobEntity, bool>> IsNotTerminal =
+        j => j.Status != "SUCCEEDED" && j.Status != "FAILED" && j.Status != "CANCELLED";
 
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
@@ -129,85 +130,77 @@ public sealed class JobService
         string message,
         string? executedWebGitCommitHash = null)
     {
-        var job = await GetJobAsync(jobId);
-        if (job is null) return false;
-
-        if (TerminalStatuses.Contains(job.Status))
-        {
-            // A repeated terminal status (the runner's stack-trace event after FAILED) is a normal
-            // event; any other status is refused. The job row itself stays unchanged either way.
-            var sameStatus = job.Status == status;
-            _db.JobEvents.Add(new JobEventEntity
-            {
-                JobId = jobId,
-                Level = sameStatus ? level : "info",
-                Message = sameStatus
-                    ? message
-                    : $"Ignored status update after terminal status {job.Status}: requested {status} ({message})",
-                TsUtc = DateTime.UtcNow
-            });
-            await _db.SaveChangesAsync();
-            return sameStatus;
-        }
+        var now = DateTime.UtcNow;
+        var keepProgress = !progress.HasValue;
+        var newProgress = progress ?? 0;
+        var isRunningUpdate = status == "RUNNING";
+        var commitHash = string.IsNullOrWhiteSpace(executedWebGitCommitHash)
+            ? null
+            : executedWebGitCommitHash.Trim().ToLowerInvariant();
 
         // Enforce monotonic progress for RUNNING→RUNNING updates to prevent
         // out-of-order async events from making progress appear to go backward.
         // Terminal states and restarts (which change status) set progress directly.
-        var previousStatus = job.Status;
-        job.Status = status;
-        if (progress.HasValue)
-        {
-            var isMonotonicViolation = status == "RUNNING" && previousStatus == "RUNNING"
-                                      && progress.Value < job.Progress;
-            if (!isMonotonicViolation)
-                job.Progress = progress.Value;
-        }
-        if (!string.IsNullOrWhiteSpace(executedWebGitCommitHash))
-            job.ExecutedWebGitCommitHash = executedWebGitCommitHash.Trim().ToLowerInvariant();
-        job.UpdatedUtc = DateTime.UtcNow;
+        // j.Status in the SET clause is the value before this UPDATE.
+        var updated = await _db.Jobs
+            .Where(j => j.JobId == jobId)
+            .Where(IsNotTerminal)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.Status, status)
+                .SetProperty(j => j.Progress, j =>
+                    keepProgress || (isRunningUpdate && j.Status == "RUNNING" && newProgress < j.Progress)
+                        ? j.Progress
+                        : newProgress)
+                .SetProperty(j => j.ExecutedWebGitCommitHash, j => commitHash ?? j.ExecutedWebGitCommitHash)
+                .SetProperty(j => j.UpdatedUtc, now));
 
-        _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });
+        if (updated > 0)
+        {
+            _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = now });
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        var currentStatus = await _db.Jobs.Where(j => j.JobId == jobId).Select(j => j.Status).FirstOrDefaultAsync();
+        if (currentStatus is null) return false;
+
+        // The job is terminal. A repeated terminal status (the runner's stack-trace event after
+        // FAILED) is a normal event; any other status is refused.
+        var sameStatus = currentStatus == status;
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = jobId,
+            Level = sameStatus ? level : "info",
+            Message = sameStatus
+                ? message
+                : $"Ignored status update after terminal status {currentStatus}: requested {status} ({message})",
+            TsUtc = now
+        });
         await _db.SaveChangesAsync();
-        return true;
+        return sameStatus;
     }
 
     /// <returns>False when the job does not exist or is already terminal (result not stored).</returns>
     public async Task<bool> StoreResultAsync(string jobId, object resultJson, string? reportMarkdown)
     {
-        var job = await GetJobAsync(jobId);
-        if (job is null) return false;
-
-        if (TerminalStatuses.Contains(job.Status))
-        {
-            _db.JobEvents.Add(new JobEventEntity
-            {
-                JobId = jobId,
-                Level = "info",
-                Message = $"Ignored result after terminal status {job.Status}",
-                TsUtc = DateTime.UtcNow
-            });
-            await _db.SaveChangesAsync();
-            return false;
-        }
-
+        var now = DateTime.UtcNow;
         var jsonOptions = new JsonSerializerOptions { WriteIndented = true, PropertyNameCaseInsensitive = true };
-        job.ResultJson = JsonSerializer.Serialize(resultJson, jsonOptions);
-        job.ReportMarkdown = reportMarkdown;
-        job.UpdatedUtc = DateTime.UtcNow;
+        var resultText = JsonSerializer.Serialize(resultJson, jsonOptions);
 
         // Extract verdict for quick display in lists
+        int? truthPct = null;
+        int? confidence = null;
+        string? promptContentHash = null;
+        string? extractionError = null;
         try
         {
-            var doc = JsonDocument.Parse(job.ResultJson);
+            using var doc = JsonDocument.Parse(resultText);
             var root = doc.RootElement;
 
             // Try multiple paths to find the overall truth percentage and confidence.
             // ClaimBoundary pipeline: top-level truthPercentage + confidence
             // Dynamic pipeline: verdictSummary.overallVerdict + verdictSummary.overallConfidence
             // Legacy formats: articleAnalysis, twoPanelSummary
-            int? truthPct = null;
-            int? confidence = null;
-
             if (root.TryGetProperty("truthPercentage", out var tpProp) && tpProp.ValueKind == JsonValueKind.Number)
                 truthPct = (int)tpProp.GetDouble();
             else if (root.TryGetProperty("verdictSummary", out var vsProp) && vsProp.TryGetProperty("overallVerdict", out var vsOvProp) && vsOvProp.ValueKind == JsonValueKind.Number)
@@ -224,13 +217,6 @@ public sealed class JobService
             else if (root.TryGetProperty("twoPanelSummary", out var tpsProp2) && tpsProp2.TryGetProperty("factharborAnalysis", out var faProp2) && faProp2.TryGetProperty("confidence", out var cProp2) && cProp2.ValueKind == JsonValueKind.Number)
                 confidence = (int)cProp2.GetDouble();
 
-            if (truthPct.HasValue)
-            {
-                job.TruthPercentage = truthPct.Value;
-                job.VerdictLabel = MapPercentageToVerdict(truthPct.Value, confidence ?? 0);
-            }
-            job.Confidence = confidence;
-
             // Lift prompt provenance into the indexed column so prompt-diagnosis can
             // correlate failures by prompt version. The pipeline emits it under meta;
             // the dedicated column was never populated before.
@@ -240,15 +226,49 @@ public sealed class JobService
             {
                 var pch = pchProp.GetString();
                 if (!string.IsNullOrWhiteSpace(pch))
-                    job.PromptContentHash = pch;
+                    promptContentHash = pch;
             }
         }
         catch (Exception ex)
         {
-            _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "warn", Message = $"Failed to extract verdict: {ex.Message}", TsUtc = DateTime.UtcNow });
+            extractionError = ex.Message;
         }
 
-        _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "info", Message = "Result stored", TsUtc = DateTime.UtcNow });
+        // A failed extraction leaves the verdict columns unchanged.
+        var extracted = extractionError is null;
+        var setTruth = extracted && truthPct.HasValue;
+        var verdictLabel = setTruth ? MapPercentageToVerdict(truthPct!.Value, confidence ?? 0) : null;
+
+        var updated = await _db.Jobs
+            .Where(j => j.JobId == jobId)
+            .Where(IsNotTerminal)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.ResultJson, resultText)
+                .SetProperty(j => j.ReportMarkdown, reportMarkdown)
+                .SetProperty(j => j.UpdatedUtc, now)
+                .SetProperty(j => j.TruthPercentage, j => setTruth ? truthPct : j.TruthPercentage)
+                .SetProperty(j => j.VerdictLabel, j => setTruth ? verdictLabel : j.VerdictLabel)
+                .SetProperty(j => j.Confidence, j => extracted ? confidence : j.Confidence)
+                .SetProperty(j => j.PromptContentHash, j => promptContentHash ?? j.PromptContentHash));
+
+        if (updated == 0)
+        {
+            var currentStatus = await _db.Jobs.Where(j => j.JobId == jobId).Select(j => j.Status).FirstOrDefaultAsync();
+            if (currentStatus is null) return false;
+            _db.JobEvents.Add(new JobEventEntity
+            {
+                JobId = jobId,
+                Level = "info",
+                Message = $"Ignored result after terminal status {currentStatus}",
+                TsUtc = now
+            });
+            await _db.SaveChangesAsync();
+            return false;
+        }
+
+        if (!extracted)
+            _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "warn", Message = $"Failed to extract verdict: {extractionError}", TsUtc = now });
+        _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "info", Message = "Result stored", TsUtc = now });
         await _db.SaveChangesAsync();
         return true;
     }
@@ -266,20 +286,25 @@ public sealed class JobService
         return "FALSE";
     }
 
+    /// <returns>The job as stored after the attempt: CANCELLED, or unchanged when already terminal.</returns>
     public async Task<JobEntity?> CancelJobAsync(string jobId)
     {
-        var job = await _db.Jobs.FindAsync(jobId);
-        if (job is null) return null;
-        if (TerminalStatuses.Contains(job.Status))
-            return job;
-        job.Status = "CANCELLED";
-        job.UpdatedUtc = DateTime.UtcNow;
-        _db.JobEvents.Add(new JobEventEntity {
-            JobId = jobId, Level = "info", Message = "Job cancelled by user",
-            TsUtc = DateTime.UtcNow
-        });
-        await _db.SaveChangesAsync();
-        return job;
+        var now = DateTime.UtcNow;
+        var cancelled = await _db.Jobs
+            .Where(j => j.JobId == jobId)
+            .Where(IsNotTerminal)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.Status, "CANCELLED")
+                .SetProperty(j => j.UpdatedUtc, now));
+        if (cancelled > 0)
+        {
+            _db.JobEvents.Add(new JobEventEntity {
+                JobId = jobId, Level = "info", Message = "Job cancelled by user",
+                TsUtc = now
+            });
+            await _db.SaveChangesAsync();
+        }
+        return await _db.Jobs.AsNoTracking().FirstOrDefaultAsync(j => j.JobId == jobId);
     }
 
     public async Task<bool> DeleteJobAsync(string jobId)

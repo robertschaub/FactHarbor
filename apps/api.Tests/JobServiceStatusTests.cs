@@ -33,6 +33,14 @@ public sealed class JobServiceStatusTests : IDisposable
         _connection.Dispose();
     }
 
+    // A second request's context on the same database: lets a test load the job there first,
+    // commit a terminal status through the fixture's context, then let the stale caller write.
+    private (FhDbContext db, JobService jobs) OtherRequest()
+    {
+        var db = new FhDbContext(new DbContextOptionsBuilder<FhDbContext>().UseSqlite(_connection).Options);
+        return (db, new JobService(db, NullLogger<JobService>.Instance, new AppBuildInfo()));
+    }
+
     private static readonly DateTime SeededUpdatedUtc = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private async Task<string> SeedJobAsync(string status, int progress)
@@ -211,6 +219,77 @@ public sealed class JobServiceStatusTests : IDisposable
         Assert.Equal("CANCELLED", job.Status);
         Assert.Equal(36, job.Progress);
         Assert.Null(job.ResultJson);
+    }
+
+    [Theory]
+    [InlineData("QUEUED", "RUNNING", "Runner started")]
+    [InlineData("INTERRUPTED", "QUEUED", "Re-queued after application restart (previous execution interrupted)")]
+    [InlineData("RUNNING", "QUEUED", "Re-queued after application restart (previous execution lost)")]
+    [InlineData("RUNNING", "SUCCEEDED", "Done")]
+    public async Task UpdateStatus_DoesNotOverwriteACancelCommittedAfterTheCallerReadTheJob(
+        string statusWhenRead, string requestedStatus, string message)
+    {
+        var jobId = await SeedJobAsync(statusWhenRead, 10);
+        var (otherDb, otherJobs) = OtherRequest();
+        using (otherDb)
+        {
+            Assert.Equal(statusWhenRead, (await otherDb.Jobs.SingleAsync(j => j.JobId == jobId)).Status);
+
+            await _jobs.CancelJobAsync(jobId);
+            var applied = await otherJobs.UpdateStatusAsync(jobId, requestedStatus, 1, "info", message);
+
+            Assert.False(applied);
+        }
+        Assert.Equal("CANCELLED", (await ReloadJobAsync(jobId)).Status);
+    }
+
+    [Fact]
+    public async Task StoreResult_IsRefusedWhenTheJobWasCancelledAfterTheCallerReadIt()
+    {
+        var jobId = await SeedJobAsync("RUNNING", 95);
+        var (otherDb, otherJobs) = OtherRequest();
+        using (otherDb)
+        {
+            _ = await otherDb.Jobs.SingleAsync(j => j.JobId == jobId);
+
+            await _jobs.CancelJobAsync(jobId);
+
+            Assert.False(await otherJobs.StoreResultAsync(jobId, new { truthPercentage = 80 }, "# report"));
+        }
+        var job = await ReloadJobAsync(jobId);
+        Assert.Equal("CANCELLED", job.Status);
+        Assert.Null(job.ResultJson);
+    }
+
+    [Fact]
+    public async Task Cancel_DoesNotOverwriteASuccessCommittedAfterTheCallerReadTheJob()
+    {
+        var jobId = await SeedJobAsync("RUNNING", 95);
+        var (otherDb, otherJobs) = OtherRequest();
+        using (otherDb)
+        {
+            _ = await otherDb.Jobs.SingleAsync(j => j.JobId == jobId);
+
+            Assert.True(await _jobs.UpdateStatusAsync(jobId, "SUCCEEDED", 100, "info", "Done"));
+
+            Assert.Equal("SUCCEEDED", (await otherJobs.CancelJobAsync(jobId))?.Status);
+        }
+        Assert.Equal("SUCCEEDED", (await ReloadJobAsync(jobId)).Status);
+    }
+
+    [Fact]
+    public async Task StoreResult_LeavesVerdictColumnsForAResultWithoutVerdict()
+    {
+        var jobId = await SeedJobAsync("RUNNING", 95);
+
+        Assert.True(await _jobs.StoreResultAsync(jobId, new { meta = new { promptContentHash = "p1" } }, null));
+
+        var job = await ReloadJobAsync(jobId);
+        Assert.NotNull(job.ResultJson);
+        Assert.Null(job.TruthPercentage);
+        Assert.Null(job.VerdictLabel);
+        Assert.Null(job.Confidence);
+        Assert.Equal("p1", job.PromptContentHash);
     }
 
     [Fact]

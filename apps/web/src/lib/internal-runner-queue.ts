@@ -252,6 +252,10 @@ async function runJobBackground(jobId: string) {
     const requestedVariant = (job.pipelineVariant || "claimboundary") as string;
 
     await emit("info", "Preparing input (pipeline: claimboundary)", 5);
+    if (isJobAborted(jobId)) {
+      console.warn(`[Runner] Job ${jobId} became terminal before its pipeline started; not starting it`);
+      return;
+    }
 
     let result: any;
 
@@ -435,7 +439,7 @@ export async function drainRunnerQueue() {
     const STALE_THRESHOLD_MS = getRunnerStaleThresholdMs();
     try {
       // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
-      const runningJobs: Array<{ jobId: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
+      const runningJobs: Array<{ jobId: string; status: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
       const queuedJobsFromDb: Array<{ jobId: string; createdUtc: string }> = [];
       const interruptedJobIds = new Set<string>();
       // Jobs this process still runs although the DB already has them terminal.
@@ -450,9 +454,12 @@ export async function drainRunnerQueue() {
 
         for (const job of jobs) {
           const status = String(job?.status || "").toUpperCase();
-          if (status === "RUNNING") {
+          // An INTERRUPTED job this process still runs (the API restarted, the pipeline did not)
+          // is checked for staleness like a RUNNING one instead of being re-queued.
+          if (status === "RUNNING" || (status === "INTERRUPTED" && qs.runningJobIds.has(String(job.jobId)))) {
             runningJobs.push({
               jobId: String(job.jobId),
+              status,
               updatedUtc: String(job.updatedUtc),
               progress: typeof job.progress === "number" ? job.progress : 0,
               pipelineVariant: String(job.pipelineVariant || "claimboundary"),
@@ -512,9 +519,9 @@ export async function drainRunnerQueue() {
         const liveStatus = String(liveJob?.status || "").toUpperCase();
         const liveUpdatedUtc = String(liveJob?.updatedUtc || "");
         const snapshotStillCurrent = liveUpdatedUtc === job.updatedUtc;
-        if (liveStatus !== "RUNNING" || !snapshotStillCurrent) {
+        if (liveStatus !== job.status || !snapshotStillCurrent) {
           console.info(
-            `[Runner] Skipping ${recovery} for ${jobId}: snapshot stale or job no longer RUNNING ` +
+            `[Runner] Skipping ${recovery} for ${jobId}: snapshot stale or job no longer ${job.status} ` +
             `(snapshot updatedUtc=${job.updatedUtc}, live status=${liveStatus || "unknown"}, live updatedUtc=${liveUpdatedUtc || "missing"})`,
           );
           if (!wasLocallyRunning && liveStatus === "RUNNING") {

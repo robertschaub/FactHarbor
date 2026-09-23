@@ -57,7 +57,7 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 ## Status Values
 
 `JobEntity.Status`: `QUEUED` -> `RUNNING` -> `SUCCEEDED` | `FAILED` | `CANCELLED`; `INTERRUPTED` (RUNNING at API startup) is re-queued by the runner.
-`SUCCEEDED`, `FAILED` and `CANCELLED` are terminal: `JobService` refuses later status changes and result writes for them and records each as a job event.
+`SUCCEEDED`, `FAILED` and `CANCELLED` are final: `JobService` applies status, result and cancel writes as conditional UPDATEs that only match non-terminal jobs, and records each refused write as a job event.
 `Progress`: 0-100 integer.
 
 ## Safety

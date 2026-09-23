@@ -147,7 +147,7 @@ async function waitForJob(jobId, timeoutMs = 300000) {
       throw new Error(`Failed to fetch job: ${response.statusText}`);
     }
     const job = await response.json();
-    if (job.status === 'SUCCEEDED' || job.status === 'FAILED' || job.status === 'CANCELLED') {
+    if (job.status === 'SUCCEEDED' || job.status === 'FAILED') {
       return job;
     }
     await new Promise(resolve => setTimeout(resolve, 2000));

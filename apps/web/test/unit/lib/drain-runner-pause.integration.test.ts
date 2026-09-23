@@ -938,6 +938,40 @@ describe("drainRunnerQueue pause integration", () => {
         });
       });
 
+      it("stale-checks an INTERRUPTED job whose pipeline still runs here instead of re-queuing it", async () => {
+        // The API restarted and marked the job INTERRUPTED; this process kept its pipeline, which
+        // then went silent. It is failed and aborted like a stale RUNNING job, keeping its slot.
+        const jobId = "job-interrupted-still-tracked-1";
+        const updatedUtc = minutesAgo(31);
+        const statusPuts = mockApi(
+          [{ jobId, status: "INTERRUPTED", updatedUtc, progress: 60 }],
+          { [jobId]: { jobId, status: "INTERRUPTED", updatedUtc } },
+        );
+        seedQueueState([jobId]);
+
+        const qs = await drainOnce();
+
+        expect(statusPuts.map((p) => p.body.status)).toEqual(["FAILED"]);
+        expect(isJobAborted(jobId)).toBe(true);
+        expect(qs.runningJobIds.has(jobId)).toBe(true);
+        expect(qs.queue).toHaveLength(0);
+      });
+
+      it("does not start the pipeline when the API refuses the preparing-input update", async () => {
+        // The job was cancelled right after it started; the refusal arrives before the pipeline.
+        const jobId = "job-cancelled-while-preparing-1";
+        mockApi([], { [jobId]: startableJob(jobId) }, (body) =>
+          String(body.message).startsWith("Preparing input") ? { ok: true, applied: false } : { ok: true, applied: true },
+        );
+        seedQueueState([], [jobId]);
+
+        const qs = await drainOnce();
+
+        expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+        expect(qs.runningJobIds.has(jobId)).toBe(false);
+        expect(isJobAborted(jobId)).toBe(false);
+      });
+
       it("does not start the pipeline when the API refuses the start", async () => {
         // The job was cancelled between the drain's QUEUED check and the runner's first write.
         const jobId = "job-cancelled-before-start-1";
