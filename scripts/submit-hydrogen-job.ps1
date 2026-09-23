@@ -1,6 +1,8 @@
 # Hydrogen Job Submission Script (User Specific)
 
-$endpoint = "http://localhost:5000/v1/analyze"
+param([string]$ApiBase = "http://localhost:5000")
+
+$endpoint = "$($ApiBase.TrimEnd('/'))/v1/analyze"
 $inviteCode = "SELF-TEST"
 $inputValue = "Using hydrogen for cars is more efficient than using electricity"
 
@@ -25,9 +27,16 @@ try {
     Write-Host "View Analysis at: http://localhost:3000/analyze/$($response.jobId)"
 } catch {
     Write-Host "`n❌ Failed to submit job."
-    if ($_.Exception.Response) {
-        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-        $errorBody = $reader.ReadToEnd()
+    $errorResponse = $_.Exception.Response
+    if ($errorResponse) {
+        # PowerShell 7 puts the response body in ErrorDetails; Windows PowerShell 5.1 only exposes it as a stream.
+        $errorBody = $_.ErrorDetails.Message
+        if (-not $errorBody -and $errorResponse.PSObject.Methods['GetResponseStream']) {
+            $errorBody = (New-Object System.IO.StreamReader($errorResponse.GetResponseStream())).ReadToEnd()
+        }
         Write-Host "Server Response: $errorBody"
+    } else {
+        Write-Host "Error: $($_.Exception.Message)"
     }
+    exit 1
 }
