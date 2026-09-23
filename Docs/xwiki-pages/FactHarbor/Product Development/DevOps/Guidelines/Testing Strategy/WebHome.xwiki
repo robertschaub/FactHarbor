@@ -16,7 +16,7 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 |= Layer |= Command |= Calls real LLM or search providers
 | Default test suite | ##npm test## | No
 | CI guardrail | ##npm run test:ci##, plus web and API builds | No
-| LLM integration suites | ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## | Yes (see the known issue below)
+| LLM integration suites | ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## | Yes
 | Prompt evaluation | ##promptfoo##, ##promptfoo:sr## | Yes
 | Calibration lanes | ##test:calibration:smoke##, ##test:calibration:canary##, ##test:calibration:gate## | Yes
 | Validation batches | ##npm run validate:run -- <batchLabel> <familiesFile>## | Yes, submits live analysis jobs
@@ -38,11 +38,7 @@ The ##test:*## and ##promptfoo## commands in this table are the scripts in ##app
 * ##test:smoke##: the hydrogen versus electricity efficiency scenario (##apps/web/test/integration/hydrogen-smoke.test.ts##)
 * ##test:expensive##: the four suites above in one run
 
-Each of these scripts first runs ##apps/web/scripts/assert-local-live-tests.js##, which blocks it on GitHub Actions.
-
-{{warning}}
-Known issue (2026-09-23): these scripts pass their test files to ##vitest run## under ##apps/web/vitest.config.ts##, whose exclude list contains the same files, so they currently select no test files and run nothing. The calibration lanes avoid this by using ##apps/web/vitest.calibration.config.ts##.
-{{/warning}}
+Each of these scripts first runs ##apps/web/scripts/assert-local-live-tests.js##, which blocks it on GitHub Actions. It then runs its test files under ##apps/web/vitest.live.config.ts##, because ##apps/web/vitest.config.ts## excludes them from the default run.
 
 == Quality Baselines ==
 

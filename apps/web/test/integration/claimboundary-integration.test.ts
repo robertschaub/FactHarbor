@@ -5,7 +5,7 @@
  * They are EXCLUDED from `npm test` (vitest.config.ts exclude list).
  *
  * To run manually:
- *   npx vitest run test/integration/claimboundary-integration.test.ts
+ *   npx vitest run --config vitest.live.config.ts test/integration/claimboundary-integration.test.ts
  *
  * Or via npm script:
  *   npm -w apps/web run test:cb-integration
