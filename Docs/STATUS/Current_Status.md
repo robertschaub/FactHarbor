@@ -271,7 +271,8 @@ FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
 
 ```bash
 FH_RUNNER_MAX_CONCURRENCY=3   # max parallel analysis jobs
-FH_JOB_TIMEOUT_MS=1800000     # per-job timeout for diagnostic batches
+# Read from the shell by validate:run and scripts/diag/verdict-stability-batch.cjs:
+FH_JOB_TIMEOUT_MS=7200000     # per-job wait bound (default 2 h); a job not finished by then stops the batch
 ```
 
 ---
