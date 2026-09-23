@@ -2,7 +2,19 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-09-23 (Benchmark experiment outputs)
+**Last Updated**: 2026-09-23 (Setup, deployment and testing docs)
+
+---
+
+### Setup, deployment and testing docs (2026-09-23)
+
+**Description**: Previous full versions of three living docs, kept when they were rewritten for the current stack after the baseline, regression and A/B test runners and `test-cases.ts` were deleted (`28323efce`). The live docs were updated in place; these copies preserve the January 2026 Orchestrated-era instructions.
+
+| File | Reason |
+|------|--------|
+| `QUICKSTART_arch.md` | Metrics & Testing quick start: manual `dotnet ef` migration, Orchestrated `analyzer.ts` metrics hooks, baseline and A/B runs, unused environment variables, links to deleted docs |
+| `DEPLOYMENT_CHECKLIST_arch.md` | v2.8.1 checklist: manual migration options, 2026-03-10 search-cache and source-reliability notes, Orchestrated metrics and performance code, baseline and A/B runs |
+| `../xwiki-pages-ARCHIVE/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome_arch.xwiki` | Testing Strategy page describing the 30-case baseline suite, A/B prompt tests, `npm test:regression` and their report templates and cost table |
 
 ---
 

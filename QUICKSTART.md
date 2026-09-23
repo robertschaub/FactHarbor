@@ -1,274 +1,70 @@
-# Quick Start Guide - Metrics & Testing
+# Quick Start Guide - Metrics
 
-## 🚀 Quick Setup (5 minutes)
+> ⚠️ _Updated 2026-09-23: removed the Orchestrated-era metrics hooks, the `dotnet ef` migration step, the baseline and A/B test runners and the unused environment variables. The previous version is archived in [Docs/ARCHIVE/QUICKSTART_arch.md](Docs/ARCHIVE/QUICKSTART_arch.md)._
 
-### Step 1: Run Database Migration
-```bash
-cd apps/api
-dotnet ef database update
-```
+## 🚀 Start the Services
 
-This creates the `AnalysisMetrics` table in your SQLite database.
-
-### Step 2: Restart Services
-```bash
-# Terminal 1 - API Server
-cd apps/api
-dotnet run
-
-# Terminal 2 - Web Server
-cd apps/web
-npm run dev
-```
-
-### Step 3: Verify Dashboard
-Open browser: `http://localhost:3000/admin/metrics`
-
-You should see "No metrics available" - this is correct (no analyses run yet).
-
----
-
-## 📊 Start Collecting Metrics (Optional - 15 minutes)
-
-To automatically collect metrics for all analyses, add this to `apps/web/src/lib/analyzer.ts`:
-
-```typescript
-// Add at top of file
-import {
-  initializeMetrics,
-  startPhase,
-  endPhase,
-  recordGate1Stats,
-  recordGate4Stats,
-  recordOutputQuality,
-  finalizeMetrics,
-} from './analyzer/metrics-integration';
-
-// In runAnalysis() function, add at the very start:
-initializeMetrics(jobId, 'orchestrated'); // or 'monolithic-dynamic'
-
-try {
-  // Your existing code...
-  
-  // Add phase tracking around major sections:
-  startPhase('understand');
-  // ... understanding code ...
-  endPhase('understand');
-  
-  startPhase('research');
-  // ... research code ...
-  endPhase('research');
-  
-  startPhase('verdict');
-  // ... verdict code ...
-  endPhase('verdict');
-  
-  // Record quality gates (find where claims are filtered):
-  recordGate1Stats({
-    totalClaims: allClaims.length,
-    passedClaims: keptClaims.length,
-    filteredReasons: reasonCounts,
-    centralClaimsKept: centralCount,
-  });
-  
-  // Record verdict quality (after verdicts generated):
-  recordGate4Stats(claimVerdicts);
-  
-  // Record final output (before return):
-  recordOutputQuality(result);
-  
-  return result;
-  
-} finally {
-  // Always persist metrics
-  await finalizeMetrics();
-}
-```
-
-**Detailed integration guide**: See `apps/web/src/lib/analyzer/metrics-integration.ts`
-
----
-
-## 🧪 Run Baseline Test (Requires $20-50 budget)
-
-### Option A: PowerShell Script
 ```powershell
-cd scripts
-.\run-baseline.ps1
+# First run: checks the config files, starts the API (port 5000), then installs web dependencies and starts the web app (port 3000)
+powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1
+
+# Later restarts: stops leftover API and web processes, starts the API, reseeds the system-default prompts and configs, then starts the web app
+./scripts/restart-clean.ps1
 ```
 
-### Option B: NPM Script
-```bash
-cd apps/web
-npm run test:baseline
-```
+On startup the API runs its EF Core migrations plus a small column patch. This creates `apps/api/factharbor.db`, including the `AnalysisMetrics` table, so no `dotnet ef` step is needed. A brand-new database currently needs one manual fix; see Troubleshooting.
 
-**What it does:**
-- Runs all 30 test cases
-- Makes real LLM API calls
-- Collects performance & quality metrics
-- Generates: `baseline-results-YYYY-MM-DD.json`
-
-**Cost:** $20-50 depending on provider
+For prerequisites, API keys and health checks, see **Getting Started** under Documentation below.
 
 ---
 
-## 🔬 Run A/B Test (Requires $100-200 budget)
+## 📈 View Metrics
 
-### Quick Test (10 cases, $10-20)
-```bash
-cd apps/web
-npm run test:ab:quick
-```
+Analysis jobs record their metrics automatically: duration, token counts, estimated cost (when every LLM call can be priced), quality-gate statistics and per-call schema-compliance flags.
 
-### Full Test (30 cases, 3 providers, $100-200)
-```bash
-cd apps/web
-npm run test:ab
-```
-
-**What it does:**
-- Compares old prompts vs optimized prompts
-- Measures token reduction, cost savings, quality impact
-- Generates: `ab-results-YYYY-MM-DD.json`
-
----
-
-## 📈 View Results
-
-### Dashboard (Real-time)
-`http://localhost:3000/admin/metrics`
-
-Shows:
-- Average duration, cost, tokens
-- Schema compliance rate
-- Quality gate pass rates
-- Time-based filtering (24h, 7d, 30d, 90d)
+### Dashboard
+`http://localhost:3000/admin/quality-health` (Analysis Monitoring, in the admin area, which asks for the admin key). The old `/admin/metrics` path redirects there.
 
 ### API (Programmatic)
+The metrics endpoints require the `X-Admin-Key` header.
+
 ```bash
 # Get metrics for a job
-curl http://localhost:3000/api/fh/metrics/{jobId}
+curl -H "X-Admin-Key: <admin key>" http://localhost:5000/api/fh/metrics/{jobId}
 
-# Get summary statistics
-curl "http://localhost:3000/api/fh/metrics/summary?limit=100"
+# Get summary statistics (optional: startDate, endDate)
+curl -H "X-Admin-Key: <admin key>" "http://localhost:5000/api/fh/metrics/summary?limit=100"
 ```
-
-### Files (Baseline & A/B Results)
-- `baseline-results-YYYY-MM-DD.json` - Baseline test output
-- `ab-results-YYYY-MM-DD.json` - A/B test comparison
-
----
-
-## 🎯 Recommended Workflow
-
-### Week 1: Establish Measurement
-1. ✅ Run database migration (done above)
-2. ✅ Verify dashboard works
-3. ✅ Run 2-3 test analyses manually
-4. ✅ Check metrics appear in dashboard
-
-### Week 2: Baseline
-5. Get budget approval ($20-50)
-6. Run baseline test: `npm run test:baseline`
-7. Analyze results, identify issues
-8. Document findings
-
-### Week 3: Improvements
-9. Implement targeted fixes based on baseline
-10. Run regression tests
-11. Validate improvements
-
-### Week 4: Validation
-12. Get budget approval ($100-200)
-13. Run A/B test: `npm run test:ab`
-14. Review comparison results
-15. Decide: approve or reject optimizations
 
 ---
 
 ## 🔧 Configuration
 
-### Environment Variables
-
-Add to `.env.local`:
-
-```bash
-# Metrics
-FH_METRICS_ENABLED=true
-
-# Testing
-FH_USE_OPTIMIZED_PROMPTS=false  # Set to true for A/B test variant
-FH_DETERMINISTIC=true            # For reproducible tests
-
-# Performance
-FH_LLM_TIERING=true             # Enable tiered model routing
-FH_MAX_CONCURRENCY=5            # Parallel verdict limit
-```
+Analysis settings such as models, thresholds, limits and prompts are UCM settings, edited under Admin → Config (`/admin/config`). Environment variables cover infrastructure, secrets and startup concurrency, for example `FH_ADMIN_KEY` and `FH_RUNNER_MAX_CONCURRENCY`; see `apps/web/.env.example`.
 
 ---
 
 ## 📚 Documentation
 
+- **Getting Started**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Getting Started/WebHome.xwiki`
 - **Metrics Schema**: `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki`
 - **Testing Strategy**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`
-- **Implementation Summary**: `Docs/IMPLEMENTATION_SUMMARY.md`
-- **Investigation Report**: `Docs/INVESTIGATION/Report_Quality_Investigation.md`
-- **Current Status**: `Docs/STATUS/Implementation_Status_2026-01-19.md`
-
----
-
-## ❓ FAQ
-
-**Q: Do I need to integrate metrics to run tests?**
-A: No, baseline and A/B tests work independently. Metrics integration only enables continuous tracking.
-
-**Q: Can I run tests without spending money?**
-A: No, tests make real LLM API calls. However, you can view the framework code and run individual analyses manually.
-
-**Q: What if tests fail?**
-A: Results are saved even if some tests fail. Review the output JSON to see which cases succeeded and which failed.
-
-**Q: How do I reduce costs?**
-A: Use `npm run test:ab:quick` (10 cases instead of 30), or enable `FH_LLM_TIERING` to use cheaper models for extraction tasks.
-
-**Q: Can I customize test cases?**
-A: Yes, edit `apps/web/src/lib/analyzer/test-cases.ts` to add/remove/modify test cases.
+- **Current Status**: `Docs/STATUS/Current_Status.md`
 
 ---
 
 ## 🆘 Troubleshooting
 
-### Dashboard shows "No metrics available"
-- This is normal if no analyses have been run yet
-- Metrics are only collected if you add integration hooks to analyzer.ts
-- Or run baseline/A/B tests which collect metrics automatically
+### Dashboard shows no metrics
+- Metrics appear once an analysis job has finished. Submit an analysis first.
+- If a finished job still shows nothing, check that `FH_ADMIN_KEY` in `apps/web/.env.local` matches the API's `Admin:Key` (`scripts/validate-config.ps1` reports a mismatch), and look for `[Metrics] Failed to persist` or `[Metrics] Error persisting metrics` in the web server output.
 
-### Tests fail with "Services not running"
-- Make sure both services are running:
-  - API: `cd apps/api && dotnet run`
-  - Web: `cd apps/web && npm run dev`
+### API fails at startup with a `no such column` error for `IsHidden`
+- Known issue on a brand-new database: the `AddIsHidden` EF Core migration is not registered, so startup never adds the `Jobs.IsHidden` column. Add it with the SQLite command-line shell (`sqlite3`, or any SQLite tool that can run SQL), then start the API again:
+  ```bash
+  sqlite3 apps/api/factharbor.db "ALTER TABLE Jobs ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;"
+  ```
 
-### Tests timeout
-- Check if services are responding: `curl http://localhost:3000/api/health`
-- Increase timeout in test scripts if needed
-- Check for errors in service logs
-
-### Database migration fails
-- Make sure EF Core tools are installed: `dotnet tool install --global dotnet-ef`
-- Check that SQLite database file is writable
-- Try running from `apps/api` directory
-
----
-
-## 🎉 Success Checklist
-
-- [ ] Database migration completed
-- [ ] Services running (API + Web)
-- [ ] Dashboard accessible at `/admin/metrics`
-- [ ] Test run manually (any analysis)
-- [ ] (Optional) Metrics integration added
-- [ ] (Optional) Baseline test executed
-- [ ] (Optional) A/B test executed
-
-**You're ready to start measuring and improving quality!**
+### API fails to start or cannot open the database
+- Run `./scripts/restart-clean.ps1`, which stops leftover API and web processes before starting new ones.
+- Check that `apps/api/factharbor.db` is writable.

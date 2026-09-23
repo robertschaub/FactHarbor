@@ -19,10 +19,7 @@ test/
 │   ├── neutrality-pairs.json
 │   └── terminology-refactor-jobs.json
 ├── helpers/                 # Shared test utilities
-│   ├── test-helpers.ts      # Common test utilities
-│   └── test-cases.ts        # Shared test case data
-├── scripts/                 # Test runner scripts
-│   └── regression-test.js
+│   └── test-helpers.ts      # Common test utilities
 ├── output/                  # Test output (gitignored)
 └── test-budget.ts           # Manual budget tracking test
 ```

@@ -1,8 +1,6 @@
 # FactHarbor Setup & Deployment Checklist
 
-**Version**: 2.8.1  
-**Date**: 2026-01-19  
-**Status**: Ready for Deployment
+> ⚠️ _Updated 2026-09-23: rewritten for the current local stack. Removed the manual database migration options, the 2026-03-10 release notes, the Orchestrated-era metrics and performance instructions, and the baseline and A/B test runners. The previous version is archived in [Docs/ARCHIVE/DEPLOYMENT_CHECKLIST_arch.md](Docs/ARCHIVE/DEPLOYMENT_CHECKLIST_arch.md)._
 
 ---
 
@@ -10,40 +8,7 @@
 
 ### 1. Database Setup
 
-- [ ] **Verify database exists**: `apps/api/factharbor.db`
-  ```powershell
-  Test-Path apps/api/factharbor.db
-  ```
-
-- [ ] **Apply AnalysisMetrics migration** (Choose ONE option):
-  
-  **Option A: PowerShell Script** (Easiest)
-  ```powershell
-  .\scripts\apply-migration.ps1
-  ```
-  
-  **Option B: SQLite Command**
-  ```bash
-  sqlite3 apps/api/factharbor.db < apps/api/Migrations/20260119_AddAnalysisMetrics_Manual.sql
-  ```
-  
-  **Option C: EF Core CLI** (If dotnet-ef installed)
-  ```bash
-  cd apps/api
-  dotnet ef database update
-  ```
-  
-  **Option D: Automatic** (Lazy option)
-  - Just start the API - EF Core will create tables automatically
-  - ⚠️ May not work without additional DbContext configuration
-
-### 1.3 Search Cache & SR Migration (2026-03-10)
-
-- [ ] **Acknowledge Cache Invalidation**: The search cache key shape has changed to include `callerContext` and `autoMode`.
-  - **Impact**: All existing cached search results will be cache misses on the first run.
-  - **Warning**: Expect a temporary surge in Search API (Google/Brave/Serper) quota usage immediately after deployment.
-- [ ] **SR Score Shift**: Confidence thresholds for Source Reliability have been lowered by 0.05.
-  - **Impact**: You may observe a systematic upward shift in SR ratings as more sources pass confidence gating. This is an intentional tuning change to restore evaluation diversity.
+- [ ] **No `dotnet ef` step**: when the API starts (step 3) it applies any pending registered EF Core migrations and adds three known Jobs columns if they are missing; this creates `apps/api/factharbor.db` (including the `AnalysisMetrics` table). A brand-new database currently needs one manual fix; see the `IsHidden` entry under Troubleshooting.
 
 ### 2. Build Verification
 
@@ -52,7 +17,7 @@
   cd apps/web
   npm run build
   ```
-  Expected: ✓ Compiled successfully (14 pages)
+  Expected: the build completes without errors
 
 - [ ] **API build successful**
   ```bash
@@ -62,6 +27,14 @@
   Expected: Build succeeded. 0 Error(s)
 
 ### 3. Service Startup
+
+- [ ] **Start both services** (recommended)
+  ```powershell
+  ./scripts/restart-clean.ps1
+  ```
+  Stops leftover API and web processes, starts the API, reseeds the system-default prompts and configs, then starts the web app.
+
+Or start them manually:
 
 - [ ] **Start API server**
   ```bash
@@ -76,7 +49,7 @@
   cd apps/web
   npm run dev
   ```
-  Expected: `✓ Ready on http://localhost:3000`
+  Expected: the web app is reachable at `http://localhost:3000`
 
 ### 4. Endpoint Verification
 
@@ -84,215 +57,85 @@
   ```
   http://localhost:5000/health
   ```
-  Expected: `{"status":"healthy","timestamp":"..."}`
+  Expected: `{"ok":true,"db":{"can_connect":true,"error":null},"now_utc":"..."}` (HTTP 503 with `"ok":false` if the database is unreachable)
 
 - [ ] **Web Health Check**
   ```
   http://localhost:3000/api/health
   ```
-  Expected: `{"status":"ok"}`
+  Expected: `"status":"healthy"` (`degraded` if a stored UCM config is invalid; `unhealthy` if a required key such as `FH_ADMIN_KEY` or the LLM provider's API key is missing, or the API is unreachable)
 
-- [ ] **Swagger UI**
+- [ ] **Swagger UI** (Development environment only)
   ```
   http://localhost:5000/swagger
   ```
   Expected: Swagger UI with `/api/fh/metrics` endpoints visible
 
-- [ ] **Metrics Dashboard**
+- [ ] **Analysis Monitoring dashboard** (asks for the admin key)
   ```
-  http://localhost:3000/admin/metrics
+  http://localhost:3000/admin/quality-health
   ```
-  Expected: Dashboard loads (may show "No metrics available")
+  Expected: the dashboard loads; it has data only after an analysis has finished
 
 ---
 
 ## 🧪 Functional Testing
 
+Each analysis makes real LLM and search calls, so it costs money.
+
 ### Test 1: Manual Analysis
 
-- [ ] Submit a simple analysis via UI
+- [ ] Submit an analysis via the UI
   ```
   http://localhost:3000/analyze
-  Input: "The Earth orbits the Sun"
+  Input: Using hydrogen for cars is more efficient than using electricity
   ```
+  Use only a Captain-defined input (`AGENTS.md` → Captain-Defined Analysis Inputs). Unless you are logged in to the admin area in this browser tab, the form also needs an invite code; create or look one up at `/admin/invites`.
 
-- [ ] Wait for completion (~30-60 seconds)
+- [ ] Wait for completion (a run can take many minutes)
 - [ ] View results at `/jobs/[id]`
-- [ ] Verify verdict is TRUE with high confidence
+- [ ] Compare the verdict, truth percentage and confidence with the input's band in `Docs/AGENTS/benchmark-expectations.json`. That file also lists known open issues for this input, including a run shape in about 1 in 5 runs that is structurally incomplete and low in confidence, so one such run is not by itself a deployment failure.
 
 ### Test 2: Metrics API
 
+The metrics endpoints require the `X-Admin-Key` header.
+
 - [ ] Get metrics for a job (replace `{jobId}`)
   ```
-  http://localhost:3000/api/fh/metrics/{jobId}
+  http://localhost:5000/api/fh/metrics/{jobId}
   ```
-  Expected: JSON metrics or 404 if not integrated yet
+  Expected: JSON metrics for the job
 
 - [ ] Get summary statistics
   ```
-  http://localhost:3000/api/fh/metrics/summary?limit=10
+  http://localhost:5000/api/fh/metrics/summary?limit=10
   ```
-  Expected: Summary stats or empty if no metrics collected yet
+  Expected: summary statistics over the stored metrics
 
 ### Test 3: Dashboard
 
-- [ ] View metrics dashboard
+- [ ] View the Analysis Monitoring dashboard
   ```
-  http://localhost:3000/admin/metrics
+  http://localhost:3000/admin/quality-health
   ```
 
-- [ ] Change time range (24h/7d/30d/90d)
-- [ ] Verify metrics update (if any analyses with metrics exist)
+- [ ] Verify it now shows data from the finished analysis
 
 ---
 
-## 🔧 Optional: Metrics Integration
+## 🔧 Configuration
 
-### Enable Automatic Metrics Collection
-
-**File**: `apps/web/src/lib/analyzer.ts`
-
-Add at the **top of file**:
-```typescript
-import {
-  initializeMetrics,
-  startPhase,
-  endPhase,
-  recordGate1Stats,
-  recordGate4Stats,
-  recordOutputQuality,
-  finalizeMetrics,
-} from './analyzer/metrics-integration';
-```
-
-Add at **start of runAnalysis()**:
-```typescript
-initializeMetrics(jobId, 'orchestrated');
-```
-
-Add **around major phases**:
-```typescript
-startPhase('understand');
-// ... existing understanding code ...
-endPhase('understand');
-```
-
-Add at **end of runAnalysis()** (in finally block):
-```typescript
-} finally {
-  await finalizeMetrics();
-}
-```
-
-**See**: `apps/web/src/lib/analyzer/metrics-integration.ts` for complete examples
-
----
-
-## 🚀 Optional: Enable Performance Optimizations
-
-### Option 1: Parallel Verdicts
-
-**Benefit**: 50-80% faster verdict generation
-
-**How**: In `analyzer.ts`, replace sequential verdict loop:
-```typescript
-// OLD
-for (const claim of claims) {
-  const verdict = await generateClaimVerdict(claim);
-  verdicts.push(verdict);
-}
-
-// NEW
-import { generateClaimVerdictsParallel } from './analyzer/parallel-verdicts';
-const verdicts = await generateClaimVerdictsParallel(
-  claims, facts, sources, model, { maxConcurrency: 5 }
-);
-```
-
-### Option 2: Tiered LLM Routing
-
-**Benefit**: 50-70% cost reduction
-
-**How**: Add to `.env.local`:
-```bash
-FH_LLM_TIERING=true
-```
-
-Then in `analyzer.ts`:
-```typescript
-import { getModelForTask } from './analyzer/model-tiering';
-
-// For understanding (use budget model)
-const understandConfig = getModelForTask('understand', 'anthropic');
-const understandModel = anthropic(understandConfig.modelId);
-
-// For verdicts (use premium model)
-const verdictConfig = getModelForTask('verdict', 'anthropic');
-const verdictModel = anthropic(verdictConfig.modelId);
-```
-
----
-
-## 📊 Optional: Run Baseline Test
-
-**Cost**: $20-50  
-**Benefit**: Establish quality baseline, identify actual issues
-
-### Prerequisites
-- [ ] Both services running (API + Web)
-- [ ] Budget approval obtained
-- [ ] LLM API keys configured
-
-### Execute
-```bash
-cd apps/web
-npm run test:baseline
-```
-
-### Expected Output
-- Duration: 1-3 hours
-- File: `baseline-results-YYYY-MM-DD.json`
-- Console: Completed/Failed counts
-
-### Next Steps After Baseline
-1. Review `baseline-results-*.json`
-2. Analyze metrics and identify issues
-3. Document findings
-4. Implement targeted fixes
-5. Re-run to validate improvements
-
----
-
-## 🔬 Optional: Run A/B Test
-
-**Cost**: $100-200 (full) or $10-20 (quick)  
-**Benefit**: Validate v2.8 prompt optimizations
-
-**NOT RECOMMENDED** until after baseline test
-
-### Quick Test
-```bash
-cd apps/web
-npm run test:ab:quick
-```
-
-### Full Test
-```bash
-cd apps/web
-npm run test:ab
-```
+Metrics collection is built into the pipeline; no code changes are needed. Model selection, thresholds, limits and prompts are UCM settings under Admin → Config (`/admin/config`). Environment variables cover infrastructure, secrets and startup concurrency, for example `FH_RUNNER_MAX_CONCURRENCY`; see `apps/web/.env.example`.
 
 ---
 
 ## ✅ Deployment Complete When...
 
-- [x] Build successful (both Web and API)
-- [x] All compilation errors fixed
-- [ ] Database migration applied
+- [ ] Web and API builds succeed
 - [ ] Both services running
 - [ ] Health checks passing
-- [ ] Swagger UI accessible
-- [ ] Metrics dashboard accessible
+- [ ] Swagger UI accessible (Development environment)
+- [ ] Analysis Monitoring dashboard accessible
 - [ ] Manual analysis works end-to-end
 
 ---
@@ -301,26 +144,23 @@ npm run test:ab
 
 | Document | Purpose |
 |----------|---------|
-| **QUICKSTART.md** | 5-minute setup guide |
-| **FINAL_DELIVERY_REPORT.md** | Complete implementation summary |
+| **QUICKSTART.md** | Start the services and view metrics |
+| **Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Getting Started/WebHome.xwiki** | Full setup, configuration and health checks |
 | **Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki** | Metrics API documentation |
 | **Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki** | Testing approach & cost management |
-| **BUILD_FIXES_2026-01-19.md** | Build issue resolutions |
 
 ---
 
 ## 🆘 Troubleshooting
 
-### Issue: Migration fails with "table already exists"
-**Solution**: This is OK - table was already created. Verify with:
+### Issue: API fails at startup with a `no such column` error for `IsHidden`
+**Solution**: Known issue on a brand-new database: the `AddIsHidden` EF Core migration is not registered, so startup never adds the `Jobs.IsHidden` column. Add it with the SQLite command-line shell (`sqlite3`, or any SQLite tool that can run SQL), then start the API again:
 ```bash
-sqlite3 apps/api/factharbor.db "SELECT name FROM sqlite_master WHERE type='table';"
+sqlite3 apps/api/factharbor.db "ALTER TABLE Jobs ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;"
 ```
 
-### Issue: Metrics dashboard shows "No metrics available"
-**Solution**: This is expected until:
-1. Metrics integration is added to analyzer.ts, OR
-2. Baseline/A/B tests are run (they collect metrics automatically)
+### Issue: Analysis Monitoring dashboard shows no data
+**Solution**: This is expected until the first analysis job has finished. If a finished job still shows nothing, check that `FH_ADMIN_KEY` in `apps/web/.env.local` matches the API's `Admin:Key` (`scripts/validate-config.ps1` reports a mismatch), and look for `[Metrics] Failed to persist` or `[Metrics] Error persisting metrics` in the web server output.
 
 ### Issue: API won't start - port conflict
 **Solution**: 
@@ -329,6 +169,7 @@ sqlite3 apps/api/factharbor.db "SELECT name FROM sqlite_master WHERE type='table
 npx kill-port 5000
 # Then restart API
 ```
+`./scripts/restart-clean.ps1` also stops leftover processes before restarting both services.
 
 ### Issue: Web won't start - port conflict
 **Solution**:
@@ -341,17 +182,3 @@ npx kill-port 3000
 ### Issue: TypeScript errors in new files
 **Solution**: Restart TypeScript server in VS Code:
 - Ctrl+Shift+P → "TypeScript: Restart TS Server"
-
----
-
-## 🎉 Success Indicators
-
-You know deployment is successful when:
-
-1. ✅ Both services start without errors
-2. ✅ Swagger shows `/api/fh/metrics` endpoints
-3. ✅ Dashboard loads at `/admin/metrics`
-4. ✅ Manual analysis completes successfully
-5. ✅ No build errors or warnings
-
-**Congratulations! FactHarbor v2.8.1 is now deployed with complete metrics & testing infrastructure.** 🚀
