@@ -17,6 +17,7 @@ import {
   recordProviderFailure,
 } from "@/lib/provider-health";
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import { isJobAborted } from "@/lib/job-abort";
 
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
@@ -391,7 +392,8 @@ describe("drainRunnerQueue pause integration", () => {
 
       const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
       await drainRunnerQueue();
-      await flushMicrotasks(24);
+      // Enough turns for the runner's awaited status writes (and their JSON bodies) before the pipeline starts.
+      await flushMicrotasks(60);
 
       expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledWith(
         expect.objectContaining({ jobId: hiddenJobId }),
@@ -619,6 +621,337 @@ describe("drainRunnerQueue pause integration", () => {
       expect(qs.runningJobIds.has(jobId)).toBe(false);
       expect(qs.runningCount).toBe(1);
       expect(qs.queue).toHaveLength(0);
+    });
+
+    describe("stale-job recovery and slot accounting", () => {
+      type ListedJob = { jobId: string; status: string; updatedUtc: string; progress?: number };
+
+      const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+
+      // A queued job that the drain would start as soon as a slot is free.
+      const startableJob = (jobId: string) => ({
+        jobId,
+        status: "QUEUED",
+        updatedUtc: minutesAgo(0),
+        pipelineVariant: "claimboundary",
+        inputType: "text",
+        inputValue: "input",
+      });
+
+      // Serves the paginated job list and per-job live reads (both read live on every call, so
+      // tests can change them mid-test); records status PUTs and answers them like the API.
+      function mockApi(
+        listedJobs: ListedJob[],
+        liveJobs: Record<string, Record<string, unknown>>,
+        statusPutResponse: (body: Record<string, unknown>) => Record<string, unknown> = () => ({ ok: true, applied: true }),
+      ) {
+        const statusPuts: Array<{ jobId: string; body: Record<string, unknown> }> = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+          const url = String(input);
+          const method = init?.method ?? "GET";
+          if (method === "GET" && url.includes("/v1/jobs?page=")) {
+            return new Response(JSON.stringify({ jobs: listedJobs, pagination: { totalPages: 1 } }), { status: 200 });
+          }
+          const detail = /\/v1\/jobs\/([^/?]+)$/.exec(url);
+          if (method === "GET" && detail) {
+            return new Response(JSON.stringify(liveJobs[detail[1]] ?? {}), { status: 200 });
+          }
+          const statusPut = /\/internal\/v1\/jobs\/([^/]+)\/status$/.exec(url);
+          if (method === "PUT" && statusPut) {
+            const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+            statusPuts.push({ jobId: statusPut[1], body });
+            return new Response(JSON.stringify(statusPutResponse(body)), { status: 200 });
+          }
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        });
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(console, "log").mockImplementation(() => {});
+        vi.spyOn(console, "info").mockImplementation(() => {});
+        return statusPuts;
+      }
+
+      function seedQueueState(runningJobIds: string[], queuedJobIds: string[] = []) {
+        (globalThis as any).__fhRunnerQueueState = {
+          runningCount: runningJobIds.length,
+          queue: queuedJobIds.map((jobId) => ({ jobId, enqueuedAt: Date.now() })),
+          runningJobIds: new Set<string>(runningJobIds),
+          isDraining: false,
+          drainRequested: false,
+          watchdogTimer: null,
+        };
+      }
+
+      async function drainOnce() {
+        const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+        await drainRunnerQueue();
+        await flushMicrotasks(40);
+        return (globalThis as any).__fhRunnerQueueState;
+      }
+
+      beforeEach(() => {
+        (globalThis as any).__fhAbortSignals = undefined;
+        process.env.FH_RUNNER_MAX_CONCURRENCY = "1";
+      });
+
+      it("fails a stale local job, aborts its pipeline and keeps its slot until the pipeline exits", async () => {
+        const staleJobId = "job-stale-1";
+        const queuedJobId = "job-queued-1";
+        const updatedUtc = minutesAgo(31);
+        const statusPuts = mockApi(
+          [{ jobId: staleJobId, status: "RUNNING", updatedUtc, progress: 60 }],
+          {
+            [staleJobId]: { jobId: staleJobId, status: "RUNNING", updatedUtc },
+            [queuedJobId]: startableJob(queuedJobId),
+          },
+        );
+        seedQueueState([staleJobId], [queuedJobId]);
+
+        const qs = await drainOnce();
+
+        expect(statusPuts).toEqual([
+          {
+            jobId: staleJobId,
+            body: expect.objectContaining({
+              status: "FAILED",
+              progress: 60,
+              message: expect.stringContaining("Stale job (no progress update for 31 minutes)"),
+            }),
+          },
+        ]);
+        expect(isJobAborted(staleJobId)).toBe(true);
+        expect(qs.runningJobIds.has(staleJobId)).toBe(true);
+        expect(qs.runningCount).toBe(1);
+        // The stale pipeline still occupies the only slot, so the queued job must wait.
+        expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+        expect(qs.queue.map((item: { jobId: string }) => item.jobId)).toEqual([queuedJobId]);
+      });
+
+      it("does not fail a stale-looking local job whose live record advanced after the list snapshot", async () => {
+        const jobId = "job-progressed-local-1";
+        const statusPuts = mockApi(
+          [{ jobId, status: "RUNNING", updatedUtc: minutesAgo(31), progress: 60 }],
+          { [jobId]: { jobId, status: "RUNNING", updatedUtc: minutesAgo(0) } },
+        );
+        seedQueueState([jobId]);
+
+        const qs = await drainOnce();
+
+        expect(statusPuts).toHaveLength(0);
+        expect(isJobAborted(jobId)).toBe(false);
+        expect(qs.runningJobIds.has(jobId)).toBe(true);
+        expect(qs.runningCount).toBe(1);
+      });
+
+      it("leaves a local job alone while its silence is below the stale threshold", async () => {
+        // A single slow LLM call has kept live pipelines silent for ~15 minutes.
+        const jobId = "job-slow-llm-call-1";
+        const updatedUtc = minutesAgo(20);
+        const statusPuts = mockApi(
+          [{ jobId, status: "RUNNING", updatedUtc, progress: 60 }],
+          { [jobId]: { jobId, status: "RUNNING", updatedUtc } },
+        );
+        seedQueueState([jobId]);
+
+        const qs = await drainOnce();
+
+        expect(statusPuts).toHaveLength(0);
+        expect(isJobAborted(jobId)).toBe(false);
+        expect(qs.runningCount).toBe(1);
+      });
+
+      it("keeps the slot of a local job that is already terminal in the DB while its pipeline still runs", async () => {
+        // A user cancel sets CANCELLED immediately; the pipeline stops only at its next checkpoint.
+        const cancelledJobId = "job-cancelled-1";
+        const queuedJobId = "job-queued-2";
+        const statusPuts = mockApi(
+          [{ jobId: cancelledJobId, status: "CANCELLED", updatedUtc: minutesAgo(1), progress: 40 }],
+          { [queuedJobId]: startableJob(queuedJobId) },
+        );
+        seedQueueState([cancelledJobId], [queuedJobId]);
+
+        const qs = await drainOnce();
+
+        expect(statusPuts).toHaveLength(0);
+        expect(qs.runningCount).toBe(1);
+        expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+        expect(qs.queue.map((item: { jobId: string }) => item.jobId)).toEqual([queuedJobId]);
+      });
+
+      it("releases the slot of a pipeline still running a full threshold after its job became terminal", async () => {
+        // The abort only lands at a stage checkpoint; an await that never settles must not
+        // hold the slot until the next restart.
+        const hungJobId = "job-hung-after-cancel-1";
+        const queuedJobId = "job-queued-3";
+        mockApi(
+          [{ jobId: hungJobId, status: "CANCELLED", updatedUtc: minutesAgo(31), progress: 40 }],
+          { [queuedJobId]: startableJob(queuedJobId) },
+        );
+        seedQueueState([hungJobId], [queuedJobId]);
+
+        const qs = await drainOnce();
+
+        expect(qs.runningJobIds.has(hungJobId)).toBe(false);
+        expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledWith(
+          expect.objectContaining({ jobId: queuedJobId }),
+        );
+      });
+
+      it("does not re-queue a stale-failed job whose pipeline flips it back to RUNNING", async () => {
+        // Regression: the watchdog used to untrack the job, so its next RUNNING write made it look
+        // orphaned; it was re-queued and run again in parallel (one job started five times).
+        // The flip is simulated here, as an API without the terminal-status guard would allow it.
+        const jobId = "job-stale-rerun-1";
+        const silentSince = minutesAgo(31);
+        const listedJobs: ListedJob[] = [{ jobId, status: "RUNNING", updatedUtc: silentSince, progress: 60 }];
+        const liveJobs: Record<string, Record<string, unknown>> = {
+          [jobId]: { jobId, status: "RUNNING", updatedUtc: silentSince },
+        };
+        const statusPuts = mockApi(listedJobs, liveJobs);
+        seedQueueState([jobId]);
+        await drainOnce();
+        expect(isJobAborted(jobId)).toBe(true);
+
+        const flippedBackAt = minutesAgo(0);
+        listedJobs[0] = { jobId, status: "RUNNING", updatedUtc: flippedBackAt, progress: 65 };
+        liveJobs[jobId] = { ...liveJobs[jobId], updatedUtc: flippedBackAt };
+        const qs = await drainOnce();
+
+        expect(statusPuts.filter((p) => p.body.status === "QUEUED")).toHaveLength(0);
+        expect(qs.runningJobIds.has(jobId)).toBe(true);
+      });
+
+      it("hands the slot to the next job once the aborted pipeline exits, keeping the stale reason", async () => {
+        const staleJobId = "job-stale-cycle-1";
+        const nextJobId = "job-next-1";
+        const listedJobs: ListedJob[] = [];
+        const liveJobs: Record<string, Record<string, unknown>> = {
+          [staleJobId]: startableJob(staleJobId),
+          [nextJobId]: startableJob(nextJobId),
+        };
+        const statusPuts = mockApi(listedJobs, liveJobs);
+        let reachAbortCheckpoint!: (error: Error) => void;
+        vi.mocked(runClaimBoundaryAnalysis)
+          .mockImplementationOnce(() => new Promise<never>((_, reject) => { reachAbortCheckpoint = reject; }))
+          .mockImplementationOnce(() => new Promise<never>(() => {}));
+        seedQueueState([], [staleJobId]);
+
+        // The job starts and occupies the only slot.
+        await drainOnce();
+        expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(1);
+
+        // It then goes silent past the threshold while another job waits.
+        const silentSince = minutesAgo(31);
+        listedJobs.push({ jobId: staleJobId, status: "RUNNING", updatedUtc: silentSince, progress: 60 });
+        liveJobs[staleJobId] = { ...liveJobs[staleJobId], status: "RUNNING", updatedUtc: silentSince };
+        (globalThis as any).__fhRunnerQueueState.queue.push({ jobId: nextJobId, enqueuedAt: Date.now() });
+        await drainOnce();
+        expect(isJobAborted(staleJobId)).toBe(true);
+        expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(1);
+
+        // The pipeline reaches its abort checkpoint; the API now has the job FAILED.
+        listedJobs.length = 0;
+        liveJobs[staleJobId] = { ...liveJobs[staleJobId], status: "FAILED" };
+        reachAbortCheckpoint(new Error(`Job ${staleJobId} was cancelled`));
+        await flushMicrotasks(60);
+
+        const failedWrites = statusPuts.filter((p) => p.jobId === staleJobId && p.body.status === "FAILED");
+        expect(failedWrites).toEqual([
+          { jobId: staleJobId, body: expect.objectContaining({ message: expect.stringContaining("Stale job") }) },
+        ]);
+        expect(isJobAborted(staleJobId)).toBe(false);
+        expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenLastCalledWith(
+          expect.objectContaining({ jobId: nextJobId }),
+        );
+      });
+
+      it("aborts its own pipeline once the API refuses a progress update, then stops reporting", async () => {
+        // Covers a cancel whose best-effort abort request never reached this process.
+        const jobId = "job-cancelled-elsewhere-1";
+        let refuseProgress = false;
+        const statusPuts = mockApi([], { [jobId]: startableJob(jobId) }, (body) =>
+          refuseProgress && body.status === "RUNNING" ? { ok: true, applied: false } : { ok: true, applied: true },
+        );
+        let reportProgress!: (message: string) => unknown;
+        vi.mocked(runClaimBoundaryAnalysis).mockImplementationOnce((input) => {
+          reportProgress = (message) => input.onEvent?.(message, 50);
+          return new Promise<never>(() => {});
+        });
+        seedQueueState([], [jobId]);
+        await drainOnce();
+
+        refuseProgress = true;
+        await reportProgress("Researching evidence...");
+        expect(isJobAborted(jobId)).toBe(true);
+
+        const putsBefore = statusPuts.length;
+        await reportProgress("Clustering evidence...");
+        expect(statusPuts).toHaveLength(putsBefore);
+      });
+
+      describe("late completion", () => {
+        // The pipeline finishes; what the job's status is at that moment decides the outcome.
+        async function completeJobWhileStatusIs(statusAtCompletion: string) {
+          const jobId = `job-completes-while-${statusAtCompletion.toLowerCase()}`;
+          const liveJobs: Record<string, Record<string, unknown>> = { [jobId]: startableJob(jobId) };
+          const statusPuts = mockApi([], liveJobs);
+          let finishPipeline!: () => void;
+          vi.mocked(runClaimBoundaryAnalysis).mockImplementationOnce(
+            () => new Promise<{ resultJson: any; reportMarkdown: string }>((resolve) => {
+              finishPipeline = () => resolve({ resultJson: { meta: {} }, reportMarkdown: "" });
+            }),
+          );
+          seedQueueState([], [jobId]);
+          await drainOnce();
+
+          liveJobs[jobId] = { ...liveJobs[jobId], status: statusAtCompletion };
+          finishPipeline();
+          await flushMicrotasks(60);
+          return statusPuts.filter((p) => p.jobId === jobId).map((p) => p.body.status);
+        }
+
+        it("completes a job that the API marked INTERRUPTED while its pipeline kept running", async () => {
+          expect(await completeJobWhileStatusIs("INTERRUPTED")).toContain("SUCCEEDED");
+        });
+
+        it("does not complete a job that was cancelled while its pipeline finished", async () => {
+          expect(await completeJobWhileStatusIs("CANCELLED")).not.toContain("SUCCEEDED");
+        });
+
+        it("still records a genuine pipeline failure of an active job with its stack trace", async () => {
+          const jobId = "job-genuine-failure-1";
+          const statusPuts = mockApi([], { [jobId]: startableJob(jobId) });
+          vi.mocked(runClaimBoundaryAnalysis).mockImplementationOnce(async () => {
+            throw new Error("Stage 3 exploded");
+          });
+          seedQueueState([], [jobId]);
+
+          await drainOnce();
+          await flushMicrotasks(60);
+
+          const failedWrites = statusPuts.filter((p) => p.jobId === jobId && p.body.status === "FAILED");
+          expect(failedWrites.map((p) => p.body.message)).toEqual([
+            "Stage 3 exploded",
+            expect.stringContaining("Stack (truncated):"),
+          ]);
+        });
+      });
+
+      it("does not start the pipeline when the API refuses the start", async () => {
+        // The job was cancelled between the drain's QUEUED check and the runner's first write.
+        const jobId = "job-cancelled-before-start-1";
+        mockApi([], { [jobId]: startableJob(jobId) }, (body) =>
+          body.message === "Runner started" ? { ok: true, applied: false } : { ok: true, applied: true },
+        );
+        seedQueueState([], [jobId]);
+
+        const qs = await drainOnce();
+
+        expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+        expect(qs.runningJobIds.has(jobId)).toBe(false);
+        expect(qs.runningCount).toBe(0);
+      });
     });
   });
 });

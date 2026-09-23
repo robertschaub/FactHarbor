@@ -8,6 +8,14 @@ namespace FactHarbor.Api.Services;
 
 public sealed class JobService
 {
+    // Terminal statuses are final. Late writes (progress from a pipeline that has not yet reached
+    // its abort checkpoint, a runner FAILED after a user cancel, a late SUCCEEDED) are recorded as
+    // events but never change the job. INTERRUPTED is not terminal: the runner re-queues it.
+    private static readonly HashSet<string> TerminalStatuses = new(StringComparer.Ordinal)
+    {
+        "SUCCEEDED", "FAILED", "CANCELLED"
+    };
+
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
     private readonly AppBuildInfo _buildInfo;
@@ -109,7 +117,11 @@ public sealed class JobService
         await _db.SaveChangesAsync();
     }
 
-    public async Task UpdateStatusAsync(
+    /// <returns>
+    /// False when the job does not exist or is already in a different terminal status; the
+    /// update is then only recorded as an audit event.
+    /// </returns>
+    public async Task<bool> UpdateStatusAsync(
         string jobId,
         string status,
         int? progress,
@@ -118,7 +130,25 @@ public sealed class JobService
         string? executedWebGitCommitHash = null)
     {
         var job = await GetJobAsync(jobId);
-        if (job is null) return;
+        if (job is null) return false;
+
+        if (TerminalStatuses.Contains(job.Status))
+        {
+            // A repeated terminal status (the runner's stack-trace event after FAILED) is a normal
+            // event; any other status is refused. The job row itself stays unchanged either way.
+            var sameStatus = job.Status == status;
+            _db.JobEvents.Add(new JobEventEntity
+            {
+                JobId = jobId,
+                Level = sameStatus ? level : "info",
+                Message = sameStatus
+                    ? message
+                    : $"Ignored status update after terminal status {job.Status}: requested {status} ({message})",
+                TsUtc = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
+            return sameStatus;
+        }
 
         // Enforce monotonic progress for RUNNING→RUNNING updates to prevent
         // out-of-order async events from making progress appear to go backward.
@@ -138,12 +168,27 @@ public sealed class JobService
 
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });
         await _db.SaveChangesAsync();
+        return true;
     }
 
-    public async Task StoreResultAsync(string jobId, object resultJson, string? reportMarkdown)
+    /// <returns>False when the job does not exist or is already terminal (result not stored).</returns>
+    public async Task<bool> StoreResultAsync(string jobId, object resultJson, string? reportMarkdown)
     {
         var job = await GetJobAsync(jobId);
-        if (job is null) return;
+        if (job is null) return false;
+
+        if (TerminalStatuses.Contains(job.Status))
+        {
+            _db.JobEvents.Add(new JobEventEntity
+            {
+                JobId = jobId,
+                Level = "info",
+                Message = $"Ignored result after terminal status {job.Status}",
+                TsUtc = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
+            return false;
+        }
 
         var jsonOptions = new JsonSerializerOptions { WriteIndented = true, PropertyNameCaseInsensitive = true };
         job.ResultJson = JsonSerializer.Serialize(resultJson, jsonOptions);
@@ -205,6 +250,7 @@ public sealed class JobService
 
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "info", Message = "Result stored", TsUtc = DateTime.UtcNow });
         await _db.SaveChangesAsync();
+        return true;
     }
 
     private static string MapPercentageToVerdict(int percentage, int confidence)
@@ -224,7 +270,7 @@ public sealed class JobService
     {
         var job = await _db.Jobs.FindAsync(jobId);
         if (job is null) return null;
-        if (job.Status == "SUCCEEDED" || job.Status == "FAILED" || job.Status == "CANCELLED")
+        if (TerminalStatuses.Contains(job.Status))
             return job;
         job.Status = "CANCELLED";
         job.UpdatedUtc = DateTime.UtcNow;

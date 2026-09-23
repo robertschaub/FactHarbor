@@ -50,12 +50,14 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 |--------|---------|
 | Run (hot reload) | `dotnet watch run` (from `apps/api`) |
 | Build | `dotnet build` (from `apps/api`) |
+| Test | `dotnet test ../api.Tests` (from `apps/api`; offline, in-memory SQLite) |
 | Swagger | http://localhost:5000/swagger |
 | Reset DB | Destructive main-session operation only when explicitly authorized; preserve the assigned backup/recovery plan |
 
 ## Status Values
 
-`JobEntity.Status`: `QUEUED` -> `RUNNING` -> `SUCCEEDED` | `FAILED`
+`JobEntity.Status`: `QUEUED` -> `RUNNING` -> `SUCCEEDED` | `FAILED` | `CANCELLED`; `INTERRUPTED` (RUNNING at API startup) is re-queued by the runner.
+`SUCCEEDED`, `FAILED` and `CANCELLED` are terminal: `JobService` refuses later status changes and result writes for them and records each as a job event.
 `Progress`: 0-100 integer.
 
 ## Safety
