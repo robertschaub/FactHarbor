@@ -64,7 +64,7 @@ scripts/        Setup and management scripts
 
 - `npm test` — runs Vitest for `apps/web` with configured expensive-suite exclusions; it still discovers the service-dependent job lifecycle test
 - `npm run lint` — not yet configured
-- API: `cd apps/api && dotnet build`; `dotnet test apps/api.Tests` runs the offline `JobService` tests (not yet in CI)
+- API: `cd apps/api && dotnet build`; `dotnet test apps/api.Tests` runs the offline `JobService` tests (also run in CI)
 
 ### Credential-free worker checks
 

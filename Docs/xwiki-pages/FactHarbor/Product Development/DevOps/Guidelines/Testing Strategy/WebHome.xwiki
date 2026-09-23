@@ -15,7 +15,7 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 
 |= Layer |= Command |= Calls real LLM or search providers
 | Default test suite | ##npm test## | No
-| CI guardrail | ##npm run test:ci##, plus web and API builds | No
+| CI guardrail | ##npm run test:ci##, web and API builds, API tests | No
 | LLM integration suites | ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## | Yes
 | Prompt evaluation | ##promptfoo##, ##promptfoo:sr## | Yes
 | Calibration lanes | ##test:calibration:smoke##, ##test:calibration:canary##, ##test:calibration:gate## | Yes
@@ -28,7 +28,7 @@ The ##test:*## and ##promptfoo## commands in this table are the scripts in ##app
 * Vitest suites live in ##apps/web/test/## (##unit/##, ##integration/##, ##calibration/##).
 * ##npm test## excludes the suites that call real LLMs; the exclusion list is in ##apps/web/vitest.config.ts##.
 * Some local tests can still contact running services or write local state. Check a test before running it against a live stack.
-* CI (##.github/workflows/ci.yml##) runs ##npm run test:ci## and builds the web app and the API on pushes to ##main## and on pull requests. It makes no LLM calls.
+* CI (##.github/workflows/ci.yml##) runs ##npm run test:ci##, builds the web app and the API, and runs the offline API tests (##apps/api.Tests##) on pushes to ##main## and on pull requests. It makes no LLM calls.
 
 == Real-LLM Suites ==
 

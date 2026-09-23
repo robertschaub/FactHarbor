@@ -42,3 +42,6 @@ jobs:
 
       - name: Build API
         run: dotnet build apps/api -c Release
+
+      - name: Test API
+        run: dotnet test apps/api.Tests -c Release
