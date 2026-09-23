@@ -10,6 +10,9 @@
  *   node scripts/validation/compare-batches.js test-output/validation/baseline test-output/validation/post_fix
  *
  * Output: markdown table to stdout (pipe to file if needed)
+ *
+ * Summaries are paired by run.familyName and compared only when run.inputText is byte-identical.
+ * Pairs whose input differs (or is missing) are listed as not compared, and the process exits with code 2.
  */
 
 const fs = require("fs");
@@ -137,6 +140,14 @@ function getZeroTargetedSelectedClaimCount(summary) {
   return coverage.filter((entry) => entry?.zeroTargetedMainResearch).length;
 }
 
+// JSON-quoted with non-ASCII escaped, so case, whitespace and look-alike characters stay visible.
+function formatInputText(summary) {
+  const text = summary?.run?.inputText;
+  if (typeof text !== "string") return "(missing)";
+  const escaped = JSON.stringify(text).replace(/[^\x20-\x7e]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+  return `\`${escaped}\``;
+}
+
 // ---------------------------------------------------------------------------
 
 const oldBatch = loadBatch(oldDir);
@@ -146,12 +157,16 @@ const newManifest = loadManifest(newDir);
 
 const allFamilies = new Set([...Object.keys(oldBatch), ...Object.keys(newBatch)]);
 const matched = [];
+const inputMismatch = [];
 const oldOnly = [];
 const newOnly = [];
 
 for (const family of [...allFamilies].sort()) {
   if (oldBatch[family] && newBatch[family]) {
-    matched.push(family);
+    // A renamed or re-spelled input under the same familyName is a different analysis.
+    const oldInput = oldBatch[family].run?.inputText;
+    if (typeof oldInput === "string" && oldInput === newBatch[family].run?.inputText) matched.push(family);
+    else inputMismatch.push(family);
   } else if (oldBatch[family]) {
     oldOnly.push(family);
   } else {
@@ -216,6 +231,14 @@ for (const family of matched) {
   );
 }
 
+if (inputMismatch.length > 0) {
+  console.log();
+  console.log(`**Not compared — run.inputText differs (${inputMismatch.length}):**`);
+  for (const family of inputMismatch) {
+    console.log(`- ${family}: old=${formatInputText(oldBatch[family])} new=${formatInputText(newBatch[family])}`);
+  }
+}
+
 // Missing families
 if (oldOnly.length > 0) {
   console.log();
@@ -231,7 +254,8 @@ const avgTp = matched.length > 0 ? (totalTpDelta / matched.length).toFixed(1) : 
 const avgConf = matched.length > 0 ? (totalConfDelta / matched.length).toFixed(1) : 0;
 
 console.log();
-console.log(`### Regressions: ${regressions} | Improvements: ${improvements} | Stable: ${stable}`);
+const notComparedStr = inputMismatch.length > 0 ? ` | Not compared (input differs): ${inputMismatch.length}` : "";
+console.log(`### Regressions: ${regressions} | Improvements: ${improvements} | Stable: ${stable}${notComparedStr}`);
 console.log(`### Avg TP delta: ${sign(Number(avgTp))} | Avg confidence delta: ${sign(Number(avgConf))}`);
 
 // JSON summary to stderr (pipeable separately)
@@ -245,5 +269,7 @@ const jsonSummary = {
   avgTpDelta: Number(avgTp),
   avgConfDelta: Number(avgConf),
   promptChanged,
+  inputMismatch,
 };
 process.stderr.write(JSON.stringify(jsonSummary) + "\n");
+if (inputMismatch.length > 0) process.exitCode = 2;
