@@ -13,7 +13,7 @@ Read root `AGENTS.md` and `apps/api/AGENTS.md` before target work. The nested fi
 - Swagger at `http://localhost:5000/swagger`
 
 ## Key Patterns
-- **Database lifecycle:** `EnsureCreated()` only bootstraps a new DB; existing schemas use the authorized manual migration procedure in `apps/api/AGENTS.md`. Never infer permission to reset a database.
+- **Database lifecycle:** startup runs `Migrate()` plus the `EnsureJobsColumn` patch (see `apps/api/AGENTS.md`); existing schemas use the authorized manual migration procedure there. Never infer permission to reset a database.
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for audit history. Never write to DbContext directly from controllers.
 - **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`.
 - **RunnerClient has built-in retry** with exponential backoff.

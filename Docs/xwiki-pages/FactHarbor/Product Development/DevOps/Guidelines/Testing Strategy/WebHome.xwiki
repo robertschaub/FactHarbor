@@ -19,7 +19,7 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 | LLM integration suites | ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## | Yes (currently not functional; see the known issue below)
 | Prompt evaluation | ##promptfoo##, ##promptfoo:sr## | Yes
 | Calibration lanes | ##test:calibration:smoke##, ##test:calibration:canary##, ##test:calibration:gate## | Yes
-| Validation batches | ##npm run validate:run -- <batchLabel> <familiesFile>## | Yes, submits live analysis jobs
+| Validation batches | ##npm run validate:run -- <batchLabel> [familiesFile]## | Yes, submits live analysis jobs
 
 The ##test:*## and ##promptfoo## commands in this table are the scripts in ##apps/web/package.json##; run them from ##apps/web## or with ##npm -w apps/web run <script>##. The root ##package.json## has its own ##promptfoo*## wrappers (##scripts/promptfoo-sr.js##); from the root, ##npm run promptfoo## runs the source-reliability config rather than ##promptfooconfig.yaml##. ##npm test##, ##npm run test:ci## and the ##validate:*## scripts run from the repository root.
 
@@ -73,7 +73,7 @@ The calibration lanes (smoke, canary, gate) measure run reliability and framing 
 * Real-LLM suites, calibration lanes and validation batches run here, each on explicit approval
 
 === CI/CD ===
-* Default test suite and builds only (no LLM calls), on pushes to ##main## and on pull requests
+* Default test suite, web and API builds, and the offline API tests (no LLM calls), on pushes to ##main## and on pull requests
 
 == Cost Management ==
 

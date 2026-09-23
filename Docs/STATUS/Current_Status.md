@@ -157,7 +157,7 @@ Grouped by theme rather than by day. Full commit history in git; dated sections 
 | Serper→P1 priority not re-seeded in production | Shipped to `main` 2026-06-01; production still on the old order. Volume-proportional, so a resume-time item |
 | `/admin/source-reliability` bypasses the admin login gate | Read-only, no paid calls, no personal data — but inconsistent (`SEC-ADMIN-SR`) |
 | No invite-code brute-force lockout | Real gap; **risk accepted 2026-08-10** — cost amplification only, rate-limited to 5/min/IP, bounded provider-side by a spend cap instead (`SEC-INVITE`, DECLINED) |
-| No `dotnet test` in CI | The whole .NET layer — auth, invite quotas, rate limiting, runner client — has zero gate coverage (`CI-DOTNET`) |
+| Thin .NET test coverage | CI runs `apps/api.Tests`, which covers only the `JobService` job-status rules; auth, invite quotas, rate limiting and the runner client have no tests (`CI-DOTNET`) |
 | No uptime monitoring or error aggregation | **Deferred 2026-08-10** in favour of manual checks when appropriate; little to be down for at 1–2 jobs/week (`OPS-MONITOR`) |
 | No claim caching; no normalized data model | Results are JSON blobs; every analysis recomputes from scratch |
 
@@ -187,7 +187,7 @@ Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume stati
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Next.js Web App** | ✅ Operational | Runner + orchestrator, port 3000 |
-| **.NET API** | ✅ Operational | SQLite locally and in the documented VPS deployment; no automated test coverage in CI |
+| **.NET API** | ✅ Operational | SQLite locally and in the documented VPS deployment; CI runs only the `JobService` status tests |
 | **Job Orchestration** | ✅ Working | SSE events, exponential backoff, orphan re-queue |
 | **Analysis Pipeline** | ✅ Operational | ClaimAssessmentBoundary only — Orchestrated, Monolithic Canonical and Monolithic Dynamic all removed |
 | **LLM Integration** | ✅ Multi-provider | Anthropic (default), OpenAI, Google, Mistral |
@@ -227,7 +227,7 @@ Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume stati
 - `npm run test:calibration:canary` / `:smoke` / `:gate` — framing-symmetry lanes, per [Calibration_Run_Policy.md](Calibration_Run_Policy.md)
 - `npm run test:expensive` — LLM + neutrality + CB integration (excludes calibration)
 
-**Missing coverage**: .NET API controllers and database layer (no `dotnet test` in CI at all), frontend components, automated E2E.
+**Missing coverage**: .NET API controllers and most of the database layer (CI runs only the `JobService` status tests), frontend components, automated E2E.
 
 ---
 

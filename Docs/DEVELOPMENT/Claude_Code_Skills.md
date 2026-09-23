@@ -200,7 +200,7 @@ The slug is appended to the output directory name so results are easy to diff.
 ### What it does
 
 1. Reads recent git log to understand the scope of changes.
-2. Runs `npm run validate:run -- post-<change-slug>` — submits 16 benchmark families, writes JSON to `test-output/validation/`.
+2. Runs `npm run validate:run -- post-<change-slug> <familiesFile>` — submits the selected families (the default file holds the 8 scored benchmark inputs), writes JSON to `test-output/validation/`.
 3. If a prior baseline exists, runs `npm run validate:compare` to diff the two runs.
 4. Applies the Captain's principle: **"improve the system not the data"** — all fixes must be generic, never input-specific.
 5. Pays special attention to the three priority benchmark families:
