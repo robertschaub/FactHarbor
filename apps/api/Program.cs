@@ -147,6 +147,8 @@ using (var scope = app.Services.CreateScope())
     EnsureJobsColumn(db, "GitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
     EnsureJobsColumn(db, "AdminAnnotation", "TEXT");
+    // AddIsHidden is not a registered migration, so Migrate() never applies it.
+    EnsureJobsColumn(db, "IsHidden", "INTEGER NOT NULL DEFAULT 0");
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
     // QUEUED jobs are left as-is — they were never started and the runner will pick

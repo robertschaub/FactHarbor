@@ -8,7 +8,7 @@
 
 ### 1. Database Setup
 
-- [ ] **No `dotnet ef` step**: when the API starts (step 3) it applies any pending registered EF Core migrations and adds three known Jobs columns if they are missing; this creates `apps/api/factharbor.db` (including the `AnalysisMetrics` table). A brand-new database currently needs one manual fix; see the `IsHidden` entry under Troubleshooting.
+- [ ] **No `dotnet ef` step**: when the API starts (step 3) it applies any pending registered EF Core migrations and adds four known Jobs columns if they are missing; this creates `apps/api/factharbor.db` (including the `AnalysisMetrics` table).
 
 ### 2. Build Verification
 
@@ -152,12 +152,6 @@ Metrics collection is built into the pipeline; no code changes are needed. Model
 ---
 
 ## 🆘 Troubleshooting
-
-### Issue: API fails at startup with a `no such column` error for `IsHidden`
-**Solution**: Known issue on a brand-new database: the `AddIsHidden` EF Core migration is not registered, so startup never adds the `Jobs.IsHidden` column. Add it with the SQLite command-line shell (`sqlite3`, or any SQLite tool that can run SQL), then start the API again:
-```bash
-sqlite3 apps/api/factharbor.db "ALTER TABLE Jobs ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;"
-```
 
 ### Issue: Analysis Monitoring dashboard shows no data
 **Solution**: This is expected until the first analysis job has finished. If a finished job still shows nothing, check that `FH_ADMIN_KEY` in `apps/web/.env.local` matches the API's `Admin:Key` (`scripts/validate-config.ps1` reports a mismatch), and look for `[Metrics] Failed to persist` or `[Metrics] Error persisting metrics` in the web server output.
