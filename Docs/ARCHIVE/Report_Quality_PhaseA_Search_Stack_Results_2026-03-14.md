@@ -4,9 +4,9 @@
 **Created:** 2026-03-14
 **Author Role:** Senior Developer
 **Baseline commit:** `quality_window_start` (`9cdc8889`)
-**Experiment script:** `scripts/phaseA_search_experiment.py`
-**Live log:** `scripts/phaseA_live_tracking.md`
-**Results file:** `scripts/phaseA_results.json`
+**Experiment script:** `scripts/Benchmarks/phaseA_search_experiment.py` (deleted 2026-09-23; in git history at `a4c786531`)
+**Live log:** [`phaseA_live_tracking.md`](phaseA_live_tracking.md)
+**Results file:** [`phaseA_results.json`](phaseA_results.json)
 
 ---
 
@@ -144,11 +144,11 @@ into which provider served each query and how many results it returned.
 | C2_SERPAPI | TBD | | | | TBD |
 | C3_ACCUM | TBD | | | | TBD |
 
-*Update from `scripts/phaseA_results.json` when complete.*
+*Update from [`phaseA_results.json`](phaseA_results.json) when complete.*
 
 ### 4.2 Per-Run Results
 
-*See `scripts/phaseA_live_tracking.md` for live per-run data.*
+*See [`phaseA_live_tracking.md`](phaseA_live_tracking.md) for live per-run data.*
 
 ### 4.3 Provider Behavior Observed
 

@@ -5,10 +5,10 @@
 **Author Role:** Code Reviewer
 **Baseline checkpoint:** `quality_window_start` (`9cdc8889`)
 **Primary evidence:**
-- [`Report_Quality_Restoration_Plan_2026-03-14.md`]( /c:/DEV/FactHarbor/Docs/WIP/Report_Quality_Restoration_Plan_2026-03-14.md )
-- [`scripts/phase1_live_tracking.md`]( /c:/DEV/FactHarbor/scripts/phase1_live_tracking.md )
-- [`scripts/phase1_results.json`]( /c:/DEV/FactHarbor/scripts/phase1_results.json )
-- [`Report_Quality_Worktree_Comparison_Results_2026-03-13.md`]( /c:/DEV/FactHarbor/Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md )
+- [`Report_Quality_Restoration_Plan_2026-03-14.md`](Report_Quality_Restoration_Plan_2026-03-14.md)
+- [`phase1_live_tracking.md`](phase1_live_tracking.md)
+- [`phase1_results.json`](phase1_results.json)
+- [`Report_Quality_Worktree_Comparison_Results_2026-03-13.md`](Report_Quality_Worktree_Comparison_Results_2026-03-13.md)
 
 ---
 
@@ -59,7 +59,7 @@ Primary review question:
 
 ## What Phase 1 Actually Proved
 
-From [`scripts/phase1_live_tracking.md`]( /c:/DEV/FactHarbor/scripts/phase1_live_tracking.md ) and [`scripts/phase1_results.json`]( /c:/DEV/FactHarbor/scripts/phase1_results.json ):
+From [`phase1_live_tracking.md`](phase1_live_tracking.md) and [`phase1_results.json`](phase1_results.json):
 
 - Disabled-profile average score: `219.0`
 - Control-profile average score: `207.8`
