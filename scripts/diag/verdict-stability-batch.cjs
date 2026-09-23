@@ -17,6 +17,13 @@
  *
  * SAFETY: PLAN-ONLY by default (no jobs submitted, no spend). Pass --run to execute.
  *
+ * Isolation: one job at a time. The next run is submitted only once the previous job is not known to be
+ * running: it SUCCEEDED, or FAILED at progress 100 (written when its pipeline exits or the runner could not
+ * be triggered), or the API rejected the submission (HTTP 4xx). Anything else stops the batch with exit
+ * code 2, including CANCELLED, FAILED by the stale-job watchdog (progress < 100), non-terminal at the wait
+ * bound, or an unreadable status. Job status cannot reveal a duplicate execution that the runner may
+ * start after a stale-job watchdog mark.
+ *
  * Usage:
  *   node scripts/diag/verdict-stability-batch.cjs --inputs <set.json> --n 8            # plan + cost, no spend
  *   node scripts/diag/verdict-stability-batch.cjs --inputs <set.json> --n 8 --run      # actually submit
@@ -24,6 +31,7 @@
  *
  * Env: FH_API_URL (default http://localhost:5000) · FH_INVITE_CODE (default SELF-TEST)
  *      FH_PER_JOB_USD (cost-estimate assumption, default 0.75)
+ *      FH_JOB_TIMEOUT_MS (per-job wait bound, default 7200000 = 2 h; "Infinity" waits until terminal)
  */
 
 const fs = require('node:fs');
@@ -71,7 +79,11 @@ const API_URL = (process.env.FH_API_URL || 'http://localhost:5000').replace(/\/$
 const INVITE = process.env.FH_INVITE_CODE || 'SELF-TEST';
 const PER_JOB_USD = Number(process.env.FH_PER_JOB_USD) || 0.75;
 const POLL_MS = 5000;
-const TIMEOUT_MS = Number(process.env.FH_JOB_TIMEOUT_MS) || 1800000; // 30 min/job (jobs run ~10-15 min under heavy local load)
+// The default covers observed local runs (SUCCEEDED since 2026-06-01, submit to done: median 14, p90 32, max 75 min).
+const configuredTimeoutMs = Number(process.env.FH_JOB_TIMEOUT_MS);
+const TIMEOUT_MS = configuredTimeoutMs > 0 ? configuredTimeoutMs : 7200000;
+// INTERRUPTED is not terminal: the runner re-queues interrupted jobs and runs them again.
+const TERMINAL_STATUSES = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED']);
 const HIGH_OVERLAP = 0.5; // Jaccard >= this => "within-pool" (proxy-catchable); below => substitution
 
 function parseArgs(argv) {
@@ -120,20 +132,26 @@ async function submit(input) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inputType: input.inputType, inputValue: input.inputValue, pipelineVariant: 'claimboundary', inviteCode: INVITE }),
   });
-  if (!res.ok) throw new Error(`submit ${res.status}: ${(await res.text().catch(() => '')).slice(0, 160)}`);
+  if (!res.ok) {
+    const err = new Error(`submit ${res.status}: ${(await res.text().catch(() => '')).slice(0, 160)}`);
+    // The API rejects 4xx requests before it creates a job; any other failure may have created one.
+    err.rejected = res.status >= 400 && res.status < 500;
+    throw err;
+  }
   return (await res.json()).jobId;
 }
 
-async function waitFor(jobId) {
-  const start = Date.now();
+async function waitFor(jobId, { timeoutMs = TIMEOUT_MS, pollMs = POLL_MS } = {}) {
+  const deadline = Date.now() + timeoutMs;
   for (;;) {
-    if (Date.now() - start > TIMEOUT_MS) throw new Error(`job ${jobId} timed out`);
     const headers = process.env.FH_ADMIN_KEY ? { 'X-Admin-Key': process.env.FH_ADMIN_KEY } : undefined;
     const res = await fetch(`${API_URL}/v1/jobs/${jobId}`, { headers });
     if (!res.ok) throw new Error(`poll ${res.status}`);
     const job = await res.json();
-    if (job.status === 'SUCCEEDED' || job.status === 'FAILED') return job;
-    await new Promise((r) => setTimeout(r, POLL_MS));
+    if (TERMINAL_STATUSES.has(job.status)) return job;
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) throw new Error(`job ${jobId} still ${job.status} after ${timeoutMs / 1000}s`);
+    await sleep(Math.min(pollMs, remainingMs));
   }
 }
 
@@ -224,7 +242,7 @@ function analyzeRecords(records) {
 }
 
 // ---- main ---------------------------------------------------------------------
-(async () => {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.analyze) {
@@ -282,6 +300,7 @@ function analyzeRecords(records) {
   console.log(`  inputs: ${inputs.length}   N per input: ${args.n}   => ${total} jobs (max)`);
   console.log(`  est. cost: ~$${(total * PER_JOB_USD).toFixed(0)} max (@ $${PER_JOB_USD}/job; override FH_PER_JOB_USD)`);
   if (args.stopAfterUnverified > 0) console.log(`  circuit-breaker: STOP after ${args.stopAfterUnverified} UNVERIFIED verdicts (likely halts well before ${total} on contested inputs)`);
+  console.log(`  isolation: one job at a time; a job not finished within ${TIMEOUT_MS / 60000} min (FH_JOB_TIMEOUT_MS) stops the batch`);
   console.log(`  output: ${outFile}`);
   console.log('  --- input set ---');
   inputs.forEach((x, i) => console.log(`   ${i + 1}. [${x.inputType}] "${String(x.inputValue).slice(0, 72).replace(/\s+/g, ' ')}"${x.note ? `  (${x.note})` : ''}`));
@@ -298,14 +317,22 @@ function analyzeRecords(records) {
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   const stream = fs.createWriteStream(outFile, { flags: 'a' });
-  let done = 0, unverified = 0, stopped = false;
-  for (let ii = 0; ii < inputs.length && !stopped; ii++) {
-    for (let r = 1; r <= args.n && !stopped; r++) {
+  let done = 0, attempted = 0, unverified = 0, stopped = false, stopReason = null;
+  for (let ii = 0; ii < inputs.length && !stopped && !stopReason; ii++) {
+    for (let r = 1; r <= args.n && !stopped && !stopReason; r++) {
       const input = inputs[ii];
       const label = input.note || String(input.inputValue).slice(0, 48);
+      let jobId = null, job = null;
+      attempted++;
       try {
-        const jobId = await submit(input);
-        const job = await waitFor(jobId);
+        jobId = await submit(input);
+        job = await waitFor(jobId);
+        // FAILED at progress 100 is written when the pipeline exits or the runner could not be triggered. A cancelled
+        // job runs until the runner's next abort checkpoint (or to completion if the abort request is lost), and the
+        // stale-job watchdog marks a job FAILED without stopping its pipeline.
+        if (job.status !== 'SUCCEEDED' && (job.status !== 'FAILED' || job.progress !== 100)) {
+          stopReason = `job ${jobId} is ${job.status} at progress ${job.progress}, and its pipeline may still be running`;
+        }
         const rec = extract(job, label, r);
         await attachTelemetry(rec);
         stream.write(JSON.stringify(rec) + '\n');
@@ -320,13 +347,29 @@ function analyzeRecords(records) {
           }
         }
       } catch (e) {
-        stream.write(JSON.stringify({ label, runIdx: r, status: 'ERROR', error: String(e.message) }) + '\n');
-        console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ERROR ${e.message}`);
+        // If waitFor returned, stopReason already reflects the job's status. Otherwise continue only after a 4xx
+        // rejection: any other failure may have left a job queued or running.
+        const status = job || e.rejected ? 'ERROR' : 'NOT_TERMINAL';
+        stream.write(JSON.stringify({ label, runIdx: r, jobId, status, error: String(e.message) }) + '\n');
+        console.log(`  [${done}/${total}] "${label.slice(0, 40)}" run ${r}: ${status} ${e.message}`);
+        if (status === 'NOT_TERMINAL') {
+          stopReason = jobId
+            ? `job ${jobId} may still be running (${e.message})`
+            : `the submission may have created a job that is still running (${e.message})`;
+        }
       }
     }
   }
-  stream.end();
+  // Wait for the last record to reach the file before reading it back.
+  await new Promise((resolve) => stream.end(resolve));
   console.log(`\nCollected ${done}/${total} runs (${unverified} UNVERIFIED${stopped ? '; stopped early by circuit-breaker' : ''}) -> ${outFile}`);
+  // Report the stop before reading the file back, so a bad line from an earlier run cannot hide it.
+  if (stopReason) {
+    console.log(`STOPPED: ${stopReason}`);
+    console.log(`Not submitted: ${total - attempted} of ${total} runs.`);
+    console.log('Confirm the job is no longer queued or running (cancel it if needed) before submitting more runs.');
+    process.exitCode = 2;
+  }
   const recs = fs.readFileSync(outFile, 'utf8').trim().split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l));
   analyzeRecords(recs);
   const unv = recs.filter((r) => r.verdict === 'UNVERIFIED');
@@ -334,4 +377,8 @@ function analyzeRecords(records) {
     console.log(`\n=== UNVERIFIED cases — drill into WHY (node scripts/diag/compare-evidence-pools.cjs <jobId> [<jobId>...]) ===`);
     for (const u of unv) console.log(`  ${u.jobId}  truth=${u.truth ?? '-'}  d5=${u.d5 ? JSON.stringify(u.d5) : 'missing'}  "${u.label}"`);
   }
-})();
+}
+
+if (require.main === module) main();
+
+module.exports = { waitFor };
