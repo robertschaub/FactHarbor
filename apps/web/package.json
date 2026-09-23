@@ -33,7 +33,6 @@
     "test:calibration:validate": "npx tsx scripts/validate-calibration-telemetry.ts",
     "test:calibration:refresh-html": "npx tsx scripts/refresh-bias-report-html.ts",
     "test:jobs": "vitest run test/unit/lib/job-lifecycle.test.ts",
-    "test:baseline": "node scripts/baseline-runner.js",
     "promptfoo": "promptfoo eval --env-file .env.local",
     "promptfoo:sr": "promptfoo eval -c promptfooconfig.source-reliability.yaml --env-file .env.local",
     "promptfoo:view": "promptfoo view"

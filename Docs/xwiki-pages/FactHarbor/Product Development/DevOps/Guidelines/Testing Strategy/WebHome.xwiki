@@ -54,37 +54,7 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 * Schema compliance rate (target: >95%)
 * Verdict accuracy rate (target: >80% within expected range)
 
-=== Baseline Script ===
-
-{{code language="bash"}}
-# Run baseline test suite
-npm run test:baseline
-
-# Output: baseline-results-{date}.json
-{{/code}}
-
 == A/B Testing ==
-
-=== Configuration ===
-
-{{code language="typescript"}}
-const abConfig = {
-  testCases: BASELINE_TEST_CASES,
-  variants: ['inline-prompts', 'optimized-prompts'],
-  providers: ['anthropic', 'openai', 'google'],
-  runsPerVariant: 3, // For statistical significance
-};
-{{/code}}
-
-=== Execution ===
-
-{{code language="bash"}}
-# Run A/B test (WARNING: Expensive!)
-npm run test:ab
-
-# Quick test (10 cases, 1 provider, 2 runs)
-npm run test:ab:quick
-{{/code}}
 
 === Comparison Metrics ===
 
