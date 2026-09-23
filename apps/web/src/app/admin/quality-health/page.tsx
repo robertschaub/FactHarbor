@@ -55,7 +55,7 @@ interface QualityHealthData {
 interface SummaryStats {
   count: number;
   avgDuration: number;
-  avgCost: number;
+  avgCost: number | null;
   avgTokens: number;
   schemaComplianceRate: number;
   gate1PassRate: number;
@@ -133,7 +133,8 @@ function formatDuration(ms: number): string {
   return `${(ms / 60000).toFixed(1)}m`;
 }
 
-function formatCost(cost: number): string {
+function formatCost(cost: number | null): string {
+  if (cost === null) return "Unavailable";
   return `$${cost.toFixed(4)}`;
 }
 
@@ -578,7 +579,7 @@ export default function QualityHealthPage() {
                 <div className={styles.failureStatsRow}>
                   <div className={styles.failureStat}>
                     <span className={styles.failureStatLabel}>Total Cost (Period)</span>
-                    <span className={styles.failureStatValue}>{formatCost(stats.avgCost * stats.count)}</span>
+                    <span className={styles.failureStatValue}>{formatCost(stats.avgCost === null ? null : stats.avgCost * stats.count)}</span>
                   </div>
                   <div className={styles.failureStat}>
                     <span className={styles.failureStatLabel}>Total Tokens (Period)</span>

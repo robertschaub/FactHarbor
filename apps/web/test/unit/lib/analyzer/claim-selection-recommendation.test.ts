@@ -330,6 +330,20 @@ describe("claim-selection recommendation", () => {
     expect(mockExtractStructuredOutput).not.toHaveBeenCalled();
   });
 
+  it("does not retry a candidate refusal raised before SDK schema parsing", async () => {
+    const refusal = Object.assign(new Error("LLM response ended with refusal"), {
+      result: { finishReason: "content-filter", rawFinishReason: "refusal", usage: { inputTokens: 100, outputTokens: 5 } },
+    });
+    mockGenerateText.mockRejectedValueOnce(refusal);
+    await expect(generateClaimSelectionRecommendation({
+      originalInput: "Plastic recycling is pointless",
+      impliedClaim: "", articleThesis: "", atomicClaims: [claim("AC_01")],
+      selectionCap: 1, pipelineConfig: DEFAULT_PIPELINE_CONFIG,
+    })).rejects.toBe(refusal);
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockRecordLLMCall).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the prompt contract automatic-only", () => {
     const promptPath = path.resolve(__dirname, "../../../../prompts/claimboundary.prompt.md");
     const prompt = fs.readFileSync(promptPath, "utf8");

@@ -335,10 +335,11 @@ export async function callSRCalibrationLLM(
 
   const settings = getCalibrationSettings(calcConfig);
   const task = strengthToModelTask(request.strength);
-  const model = getModelForTask(task, undefined, pipelineConfig);
+  const model = getModelForTask(task, undefined, pipelineConfig, "sourceReliabilityCalibration");
   const expectedClaimIds = new Set(request.claims.map((c) => c.claimId));
   const llmCallStartedAt = Date.now();
 
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "SR_CALIBRATION", {
       claimsJson: serializeClaimsForPrompt(request),
@@ -361,11 +362,11 @@ export async function callSRCalibrationLLM(
         retries: 0,
         errorMessage: "Stage 4.5 SR calibration prompt section could not be loaded",
         timestamp: new Date(),
-      });
+      }, { model: model });
       return undefined;
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -400,7 +401,7 @@ export async function callSRCalibrationLLM(
         retries: 0,
         errorMessage: "Stage 4.5 SR calibration returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return undefined;
     }
 
@@ -426,7 +427,7 @@ export async function callSRCalibrationLLM(
         retries: 0,
         errorMessage: `Stage 4.5 SR calibration batch contract violated: expected ${expectedClaimIds.size} claims [${[...expectedClaimIds].join(",")}], got ${returnedClaimIds.size} [${[...returnedClaimIds].join(",")}]`,
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return undefined;
     }
 
@@ -442,7 +443,7 @@ export async function callSRCalibrationLLM(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return validated.claims.map((claim) => ({
       claimId: claim.claimId,
@@ -467,7 +468,7 @@ export async function callSRCalibrationLLM(
       retries: 0,
       errorMessage: `Stage 4.5 SR calibration failed: ${errorMessage}`,
       timestamp: new Date(),
-    });
+    }, { model, result, error });
     return undefined;
   }
 }

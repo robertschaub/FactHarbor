@@ -462,12 +462,15 @@ export async function extractClaims(
       );
 
     if (shouldRetryAfterValidation) {
-      // Build corrective guidance from failing claims + anchor omission
-      const failingClaims = (contractResult?.claims ?? [])
-        .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
-      const failingReasons = failingClaims
-        .map((c) => `${c.claimId}: ${c.reasoning}`)
-        .join("; ");
+      const retryPlan = buildContractRetrySaliencePlan(evaluatedContract, salienceCommitment);
+      const { retrySalienceCommitment, anchorEscalation } = retryPlan;
+      // Render before the non-fatal retry catch: missing UCM guidance must stop
+      // extraction before any retry, repair or completion call can proceed.
+      const { content: contractGuidance, failingClaimCount } = await renderClaimContractRetryGuidance(
+        evaluatedContract,
+        pass2.atomicClaims as unknown as AtomicClaim[],
+        retryPlan,
+      );
 
       // Telemetry (Counter A): observe how often contract validation actually
       // triggers a Pass 2 retry. This rate gates the "should Pass 2 default to
@@ -475,50 +478,20 @@ export async function extractClaims(
       state.warnings.push({
         type: "contract_validation_retry_triggered",
         severity: "info",
-        message: `Stage 1: contract validation triggered Pass 2 retry (${failingClaims.length} failing claim(s)).`,
+        message: `Stage 1: contract validation triggered Pass 2 retry (${failingClaimCount} failing claim(s)).`,
         details: {
           stage: "stage1_pass2",
-          failingClaimCount: failingClaims.length,
+          failingClaimCount,
           contractResultAvailable: !!contractResult,
           anchorRetryReason: anchorRetryReason ?? null,
           atomicityRetryReason: atomicityRetryReason ?? null,
         },
       });
 
-      // Dynamic anchor-specific guidance when the retry is triggered by anchor omission
-      const anchorText = contractResult?.truthConditionAnchor?.anchorText;
-      const anchorGuidance = anchorRetryReason && anchorText
-        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. The primary direct claim must fuse this modifier with the action it modifies; do not externalize it into a supporting sub-claim.`
-        : "";
-      const atomicityGuidance = atomicityRetryReason
-        ? ` The previous extraction kept one bundled claim even though the input ties one act/state to multiple independently verifiable coordinated branches. Split into one thesis-direct claim per coordinated branch, preserve any in-scope truth-condition-bearing modifier in each branch claim, and do NOT keep a bundled whole-claim version.`
-        : "";
-
-      const contractGuidance = contractResult
-        ? `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
-          `${contractValidationSummary?.summary ?? contractResult.inputAssessment.summary}. ` +
-          `Specific issues: ${failingReasons}.${anchorGuidance}${atomicityGuidance} ` +
-          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
-          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
-          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
-          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
-        : `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
-          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
-          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
-          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
-          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`;
-
       console.info(
         contractResult
-          ? `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). Retrying Pass 2 with corrective guidance.`
+          ? `[Stage1] Claim contract validation requested retry (${failingClaimCount} flagged claim(s)). Retrying Pass 2 with corrective guidance.`
           : `[Stage1] Claim contract validation returned no usable result. Retrying Pass 2 with conservative contract guidance.`
-      );
-
-      const { retrySalienceCommitment, anchorEscalation } = buildContractRetrySaliencePlan(
-        evaluatedContract,
-        salienceCommitment,
       );
 
       if (anchorEscalation.mode === "binding_merged_anchor") {
@@ -527,7 +500,7 @@ export async function extractClaims(
         );
       } else if (anchorEscalation.mode === "audit_guidance_only") {
         console.info(
-          `[Stage1] Truth-condition anchor "${anchorEscalation.anchorText}" was omitted, but no trustworthy upstream salience inventory is available; retrying in audit mode with corrective guidance only.`,
+          `[Stage1] Validator reported no valid carrier for "${anchorEscalation.anchorText}"; no trustworthy upstream salience inventory is available, so retrying in audit mode with corrective guidance only.`,
         );
       }
 
@@ -1632,7 +1605,7 @@ export async function runPass1(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
     return validated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1668,7 +1641,7 @@ export async function runPass1(
       errorMessage,
       errorType,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: error });
     throw error;
   }
 }
@@ -1729,8 +1702,9 @@ export async function runSalienceCommitment(
   }
 
   const llmCallStartedAt = Date.now();
+  let result: any;
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -1762,7 +1736,7 @@ export async function runSalienceCommitment(
         retries: 0,
         errorMessage: "Salience commitment returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return {
         ran: true,
         enabled: true,
@@ -1801,7 +1775,7 @@ export async function runSalienceCommitment(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return {
       ran: true,
@@ -1812,6 +1786,12 @@ export async function runSalienceCommitment(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "understand", provider: model.provider, modelName: model.modelName,
+      promptTokens: 0, completionTokens: 0, totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt, success: false, schemaCompliant: false,
+      retries: 0, timestamp: new Date(), errorMessage,
+    }, { model, result, error });
     console.warn("[Stage1] Salience commitment failed (non-fatal):", errorMessage);
     return {
       ran: true,
@@ -2248,7 +2228,7 @@ async function extractPreliminaryEvidence(
         retries: 0,
         errorMessage: "Stage 1 preliminary evidence extraction returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return [];
     }
 
@@ -2265,7 +2245,7 @@ async function extractPreliminaryEvidence(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     // Map to PreliminaryEvidenceItem, assigning source URLs.
     // Use LLM-attributed sourceUrl when available; fall back to first source.
@@ -2303,7 +2283,7 @@ async function extractPreliminaryEvidence(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: err });
     console.warn("[Stage1] Preliminary evidence extraction failed:", err);
     return [];
   }
@@ -2424,10 +2404,11 @@ async function runContractRepair(
   pipelineConfig: PipelineConfig,
   state: Pick<CBResearchState, "onEvent"> | undefined,
 ): Promise<z.infer<typeof ContractRepairOutputSchema> | undefined> {
-  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractRepair");
   state?.onEvent?.(`LLM call: contract repair — ${model.modelName}`, -1);
 
   const llmCallStartedAt = Date.now();
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_REPAIR", {
       analysisInput: inputText,
@@ -2442,7 +2423,7 @@ async function runContractRepair(
       return undefined;
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2463,7 +2444,7 @@ async function runContractRepair(
     });
 
     const parsed = extractStructuredOutput(result);
-    if (!parsed) return undefined;
+    if (!parsed) throw new Error("Contract repair returned no structured output");
 
     const repaired = ContractRepairOutputSchema.parse(parsed);
 
@@ -2474,7 +2455,7 @@ async function runContractRepair(
     const anchorLanded = claimSetContainsAnchorText(repaired.atomicClaims, anchorText);
     if (!anchorLanded) {
       console.warn(`[Stage1] Contract repair output still missing anchor "${anchorText}" (case-insensitive check); discarding.`);
-      return undefined;
+      throw new Error("Contract repair output did not contain the required anchor");
     }
 
     recordLLMCall({
@@ -2489,10 +2470,17 @@ async function runContractRepair(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return repaired;
   } catch (error) {
+    recordLLMCall({
+      taskType: "other", provider: model.provider, modelName: model.modelName,
+      promptTokens: 0, completionTokens: 0, totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt, success: false, schemaCompliant: false,
+      retries: 0, timestamp: new Date(),
+      errorMessage: error instanceof Error ? error.message : String(error),
+    }, { model, result, error });
     console.warn("[Stage1] Contract repair LLM call failed (non-fatal):", error instanceof Error ? error.message : String(error));
     return undefined;
   }
@@ -2601,10 +2589,11 @@ async function runContractCompletion(
   pipelineConfig: PipelineConfig,
   state: Pick<CBResearchState, "onEvent"> | undefined,
 ): Promise<ContractCompletionResult> {
-  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractCompletion");
   state?.onEvent?.(`LLM call: contract completion — ${model.modelName}`, -1);
 
   const llmCallStartedAt = Date.now();
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_COMPLETION", {
       analysisInput: inputText,
@@ -2618,7 +2607,7 @@ async function runContractCompletion(
       return { rejectionReason: "CLAIM_CONTRACT_COMPLETION prompt section not found" };
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2640,7 +2629,7 @@ async function runContractCompletion(
 
     const parsed = extractStructuredOutput(result);
     if (!parsed) {
-      return { rejectionReason: "completion returned no structured output" };
+      throw new Error("completion returned no structured output");
     }
 
     const completion = ContractCompletionOutputSchema.parse(parsed);
@@ -2656,7 +2645,7 @@ async function runContractCompletion(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     if (!completion.completionEligible) {
       return { rejectionReason: `completion ineligible: ${completion.failureKind}` };
@@ -2682,7 +2671,7 @@ async function runContractCompletion(
       retries: 0,
       errorMessage: `Contract completion failed: ${errorMessage}`,
       timestamp: new Date(),
-    });
+    }, { model, result, error });
     return { rejectionReason: errorMessage };
   }
 }
@@ -2903,7 +2892,7 @@ async function runSurgicalContractRepair(
   pipelineConfig: PipelineConfig,
   state: Pick<CBResearchState, "onEvent"> | undefined,
 ): Promise<SurgicalContractRepairResult> {
-  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractSurgicalRepair");
   state?.onEvent?.(`LLM call: surgical contract repair — ${model.modelName}`, -1);
 
   const claimById = new Map(claims.map((claim) => [claim.id, claim] as const));
@@ -2917,6 +2906,7 @@ async function runSurgicalContractRepair(
   }));
 
   const llmCallStartedAt = Date.now();
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_SURGICAL_REPAIR", {
       analysisInput: inputText,
@@ -2932,7 +2922,7 @@ async function runSurgicalContractRepair(
       return { rejectionReason: "CLAIM_CONTRACT_SURGICAL_REPAIR prompt section not found" };
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -2954,7 +2944,7 @@ async function runSurgicalContractRepair(
 
     const parsed = extractStructuredOutput(result);
     if (!parsed) {
-      return { rejectionReason: "surgical repair returned no structured output" };
+      throw new Error("surgical repair returned no structured output");
     }
 
     const repair = SurgicalContractRepairOutputSchema.parse(parsed);
@@ -2970,7 +2960,7 @@ async function runSurgicalContractRepair(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return normalizeSurgicalContractRepairSet(
       claims,
@@ -2993,7 +2983,7 @@ async function runSurgicalContractRepair(
       retries: 0,
       errorMessage: `Surgical contract repair failed: ${errorMessage}`,
       timestamp: new Date(),
-    });
+    }, { model, result, error });
     return { rejectionReason: errorMessage };
   }
 }
@@ -3074,7 +3064,7 @@ export async function runPass2(
   // path only — that invocation escalates to `context_refinement` (Sonnet) because
   // Haiku has ~10–15% residual non-compliance on the multi-rule PASS2 prompt and
   // retrying on the same tier reproduces the failure.
-  const model = getModelForTask(modelTaskOverride ?? "extract_evidence", undefined, pipelineConfig);
+  const model = getModelForTask(modelTaskOverride ?? "extract_evidence", undefined, pipelineConfig, "claimExtractionPass2");
 
   // Retry logic with quality validation and Zod-aware feedback.
   // Schema uses .catch() defaults so AI SDK never throws NoObjectGeneratedError.
@@ -3240,7 +3230,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         schemaCompliant: true,
         retries: attempt,
         timestamp: new Date(),
-      });
+      }, { model: model, result: attemptResult });
 
       return validated;
     } catch (err) {
@@ -3259,7 +3249,7 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         retries: attempt,
         errorMessage,
         timestamp: new Date(),
-      });
+      }, { model: model, result: attemptResult, error: err });
 
       // Log detailed Zod validation errors for diagnostics
       if (err instanceof z.ZodError) {
@@ -3612,6 +3602,12 @@ export interface EvaluatedClaimContractValidation {
   effectiveRePromptRequired: boolean;
   anchorRetryReason?: string;
   atomicityRetryReason?: string;
+  /** Ephemeral winning validator assessment; not part of the persisted summary. */
+  assessment?: ClaimContractValidationResult;
+  /** Structural finding rendered through UCM before the evaluation is consumed. */
+  carrierFidelityFailure?: { anchorText: string; claimIds: string[] };
+  /** Ephemeral UCM text for retry guidance; excludes legacy code-written diagnostics. */
+  carrierFidelityGuidance?: string;
 }
 
 function pruneGate1FidelityDriftFromContractApprovedSet(
@@ -3806,6 +3802,7 @@ export function evaluateClaimContractValidation(
   const anchor = contractResult.truthConditionAnchor;
   let anchorOverrideRetry = false;
   let anchorRetryReason: string | undefined;
+  let carrierFidelityFailure: EvaluatedClaimContractValidation["carrierFidelityFailure"];
   let validPreservedIds: string[] = [];
 
   if (anchor?.presentInInput && anchor.anchorText) {
@@ -3843,50 +3840,46 @@ export function evaluateClaimContractValidation(
     // positive anchorOverrideRetry on R2 rechtskräftig-class inputs even
     // after F4 was fixed. The LLM's preservedByQuotes is trusted as-is;
     // structural validity is checked via validPreservedIds (ID existence +
-    // thesis-directness) and the self-consistency check below.
+    // thesis-directness) and the fidelity guard below.
 
-    // LLM self-consistency check (structural, not semantic): if the LLM
-    // lists a claim as anchor-preserving in preservedInClaimIds but that
-    // same claim is marked as drifted in the per-claim assessment array
-    // (recommendedAction=retry, proxyDriftSeverity=material, or
-    // preservesEvaluativeMeaning=false), the LLM is internally contradicting
-    // itself. This is a pure structural cross-check of LLM output against
-    // itself, NOT a deterministic semantic re-check.
+    // Carrier presence is separate from fidelity. Retain the guard for an
+    // LLM-assessed material drift or lost meaning, even when the carrier is
+    // correctly inventoried. A retry action alone does not establish either.
     const claimAssessmentById = new Map(
       (contractResult.claims ?? []).map((c) => [c.claimId, c] as const),
     );
-    const contradictedPreservedIds = validPreservedIds.filter((claimId) => {
+    const failedFidelityCarrierIds = validPreservedIds.filter((claimId) => {
       const assessment = claimAssessmentById.get(claimId);
       if (!assessment) return false;
       return (
-        assessment.recommendedAction === "retry" ||
         assessment.proxyDriftSeverity === "material" ||
         assessment.preservesEvaluativeMeaning === false
       );
     });
 
     // Override the LLM's judgment when the validator actually cites anchor
-    // carriers but none survive structural validation, OR when it contradicts
-    // itself between preservedInClaimIds and its per-claim assessment.
+    // carriers but none survive structural validation, OR its per-claim
+    // assessment reports material drift or lost meaning for a listed carrier.
     // If the validator cites no carrier IDs at all, leave that case to the
     // validator's own top-level assessment: some article-level caveats can be
     // acceptable without a thesis-direct carrier, and forcing a retry here
     // would turn that observational anchor into a false report_damaged.
     const noValidIds = citedPreservedIds.length > 0 && validPreservedIds.length === 0;
-    const selfContradicted = contradictedPreservedIds.length > 0;
-    if (noValidIds || selfContradicted) {
+    if (noValidIds || failedFidelityCarrierIds.length > 0) {
       anchorOverrideRetry = true;
+    }
+    if (failedFidelityCarrierIds.length > 0) {
+      carrierFidelityFailure = { anchorText: anchor.anchorText, claimIds: failedFidelityCarrierIds };
+    }
+    if (noValidIds) {
       const reasons: string[] = [];
-      if (noValidIds) {
-        const existingCited = citedPreservedIds.filter((id) => claimIds.has(id));
-        const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
-        if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
-          reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
-        } else {
-          reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
-        }
+      const existingCited = citedPreservedIds.filter((id) => claimIds.has(id));
+      const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
+      if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
+        reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
+      } else {
+        reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
       }
-      if (selfContradicted) reasons.push(`LLM self-contradiction on claim(s) [${contradictedPreservedIds.join(",")}] — listed as anchor-preserving but flagged as drifted in per-claim assessment`);
       anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${citedPreservedIds.join(",")}], valid IDs=[${validPreservedIds.join(",")}]`;
     }
   }
@@ -3935,8 +3928,27 @@ export function evaluateClaimContractValidation(
       } : {}),
     },
     effectiveRePromptRequired,
+    assessment: contractResult,
+    ...(carrierFidelityFailure ? { carrierFidelityFailure } : {}),
     ...(anchorRetryReason ? { anchorRetryReason } : {}),
   };
+}
+
+export async function renderClaimContractRetryDiagnostics(
+  evaluation: EvaluatedClaimContractValidation,
+): Promise<EvaluatedClaimContractValidation> {
+  const { carrierFidelityFailure, ...evaluated } = evaluation;
+  if (!carrierFidelityFailure) return evaluation;
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_CARRIER_FIDELITY_REASON", {
+    anchorText: carrierFidelityFailure.anchorText,
+    carrierClaimIds: carrierFidelityFailure.claimIds.join(","),
+  });
+  if (!rendered?.content.trim()) {
+    throw new Error("Stage 1 contract validation: Failed to load CLAIM_CONTRACT_CARRIER_FIDELITY_REASON prompt section");
+  }
+  const carrierFidelityGuidance = rendered.content.trim();
+  const anchorRetryReason = [evaluated.anchorRetryReason, carrierFidelityGuidance].filter(Boolean).join("; ");
+  return { ...evaluated, carrierFidelityGuidance, anchorRetryReason, summary: { ...evaluated.summary, anchorRetryReason } };
 }
 
 export function shouldRunSingleClaimAtomicityValidation(
@@ -4086,6 +4098,9 @@ export function applySingleClaimAtomicityValidation(
       ...(evaluatedAtomicity.retryReason ? { atomicityRetryReason: evaluatedAtomicity.retryReason } : {}),
     },
     effectiveRePromptRequired: true,
+    ...(contractValidation.assessment ? { assessment: contractValidation.assessment } : {}),
+    ...(contractValidation.carrierFidelityFailure ? { carrierFidelityFailure: contractValidation.carrierFidelityFailure } : {}),
+    ...(contractValidation.carrierFidelityGuidance ? { carrierFidelityGuidance: contractValidation.carrierFidelityGuidance } : {}),
     ...(contractValidation.anchorRetryReason ? { anchorRetryReason: contractValidation.anchorRetryReason } : {}),
     ...(evaluatedAtomicity.retryReason ? { atomicityRetryReason: evaluatedAtomicity.retryReason } : {}),
   };
@@ -4252,6 +4267,53 @@ export function buildContractRetrySaliencePlan(
   };
 }
 
+export async function renderClaimContractRetryGuidance(
+  evaluatedContract: EvaluatedClaimContractValidation | undefined,
+  claims: AtomicClaim[],
+  retryPlan: ContractRetrySaliencePlan,
+): Promise<{ content: string; failingClaimCount: number }> {
+  // A challenger replaces the whole evaluation. Never borrow primary findings
+  // when the selected evaluation has no per-claim assessment.
+  const failingClaims = selectFlaggedContractAssessments(evaluatedContract?.assessment, claims);
+  let anchorGuidance = "";
+  if (retryPlan.anchorEscalation.mode !== "none") {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE", {
+      anchorText: evaluatedContract?.summary.truthConditionAnchor?.anchorText ?? "",
+    });
+    if (!rendered?.content.trim()) {
+      throw new Error("Stage 1 contract retry: Failed to load CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE prompt section");
+    }
+    anchorGuidance = rendered.content;
+  }
+
+  let contractRetryAtomicityGuidance = "";
+  if (evaluatedContract?.atomicityRetryReason) {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE", {});
+    if (!rendered?.content.trim()) {
+      throw new Error("Stage 1 contract retry: Failed to load CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE prompt section");
+    }
+    contractRetryAtomicityGuidance = rendered.content;
+  }
+
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_RETRY_GUIDANCE", {
+    retryValidationContextJson: JSON.stringify({
+      validationAvailable: evaluatedContract !== undefined,
+      summary: evaluatedContract?.summary.summary ?? null,
+      carrierFidelityGuidance: evaluatedContract?.carrierFidelityGuidance ?? null,
+      flaggedAssessments: failingClaims.map(({ claimId, preservesEvaluativeMeaning, usesNeutralDimensionQualifier, reasoning }) => ({
+        claimId, preservesEvaluativeMeaning, usesNeutralDimensionQualifier, reasoning,
+      })),
+      antiInferenceCheck: evaluatedContract?.assessment?.antiInferenceCheck ?? null,
+    }),
+    anchorGuidance,
+    contractRetryAtomicityGuidance,
+  });
+  if (!rendered?.content.trim()) {
+    throw new Error("Stage 1 contract retry: Failed to load CLAIM_CONTRACT_RETRY_GUIDANCE prompt section");
+  }
+  return { content: rendered.content, failingClaimCount: failingClaims.length };
+}
+
 export function selectPreferredSingleClaimContractChallenge(
   primary: EvaluatedClaimContractValidation,
   challenger: EvaluatedClaimContractValidation | undefined,
@@ -4380,7 +4442,7 @@ async function applyApprovedSingleClaimChallenges(
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
 ): Promise<EvaluatedClaimContractValidation> {
   if (!shouldRunSingleClaimAtomicityValidation(claims, contractValidation, salienceCommitment)) {
-    return contractValidation;
+    return renderClaimContractRetryDiagnostics(contractValidation);
   }
 
   const atomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
@@ -4399,7 +4461,7 @@ async function applyApprovedSingleClaimChallenges(
     atomicityResult,
   );
   if (postAtomicityValidation.effectiveRePromptRequired) {
-    return postAtomicityValidation;
+    return renderClaimContractRetryDiagnostics(postAtomicityValidation);
   }
 
   const bindingChallenge = await runSingleClaimBindingContractChallenge(
@@ -4414,10 +4476,10 @@ async function applyApprovedSingleClaimChallenges(
     progressPercent,
   );
 
-  return selectPreferredSingleClaimContractChallenge(
+  return renderClaimContractRetryDiagnostics(selectPreferredSingleClaimContractChallenge(
     postAtomicityValidation,
     bindingChallenge,
-  );
+  ));
 }
 
 async function runSingleClaimAtomicityValidationWithRecheck(
@@ -4478,9 +4540,10 @@ async function validateSingleClaimAtomicity(
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
   if (claims.length !== 1) return undefined;
 
-  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig, "claimAtomicity");
   const llmCallStartedAt = Date.now();
 
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION", {
       analysisInput: originalInput,
@@ -4514,11 +4577,11 @@ async function validateSingleClaimAtomicity(
         retries: 0,
         errorMessage: "Single-claim atomicity validation prompt section could not be loaded",
         timestamp: new Date(),
-      });
+      }, { model: model });
       return undefined;
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -4553,7 +4616,7 @@ async function validateSingleClaimAtomicity(
         retries: 0,
         errorMessage: "Single-claim atomicity validation returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return undefined;
     }
 
@@ -4571,7 +4634,7 @@ async function validateSingleClaimAtomicity(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return validated;
   } catch (error) {
@@ -4589,7 +4652,7 @@ async function validateSingleClaimAtomicity(
       retries: 0,
       errorMessage: `Single-claim atomicity validation failed: ${errorMessage}`,
       timestamp: new Date(),
-    });
+    }, { model, result, error });
     return undefined;
   }
 }
@@ -4615,12 +4678,13 @@ async function validateClaimContract(
 ): Promise<ClaimContractValidationResult | undefined> {
   if (claims.length === 0) return undefined;
 
-  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractValidation");
   const expectedClaimIds = new Set(claims.map((c) => c.id));
   const llmCallStartedAt = Date.now();
   const bindingModeActive = salienceBinding?.mode === "binding";
   const salienceBindingContextJson = buildSalienceBindingContextJson(salienceBinding);
 
+  let result: any;
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
       analysisInput: originalInput,
@@ -4664,7 +4728,7 @@ async function validateClaimContract(
         retries: 0,
         errorMessage: "Claim contract validation prompt section could not be loaded",
         timestamp: new Date(),
-      });
+      }, { model: model });
       return undefined;
     }
 
@@ -4687,13 +4751,13 @@ async function validateClaimContract(
           retries: 0,
           errorMessage: "Claim contract validation binding appendix could not be loaded",
           timestamp: new Date(),
-        });
+        }, { model: model });
         return undefined;
       }
       contractBindingAppendix = `\n\n${bindingAppendix.content}`;
     }
 
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -4728,7 +4792,7 @@ async function validateClaimContract(
         retries: 0,
         errorMessage: "Claim contract validation returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return undefined;
     }
 
@@ -4761,7 +4825,7 @@ async function validateClaimContract(
         retries: 0,
         errorMessage: `Claim contract validation batch contract violated: expected [${[...expectedClaimIds].join(",")}], got [${[...returnedClaimIds].join(",")}]`,
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       return validated;
     }
 
@@ -4777,7 +4841,7 @@ async function validateClaimContract(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return validated;
   } catch (error) {
@@ -4795,7 +4859,7 @@ async function validateClaimContract(
       retries: 0,
       errorMessage: `Claim contract validation failed: ${errorMessage}`,
       timestamp: new Date(),
-    });
+    }, { model, result, error });
     return undefined;
   }
 }
@@ -4897,7 +4961,7 @@ export async function runGate1Validation(
         retries: 0,
         errorMessage: "Gate 1 validation returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model: model, result: result });
       console.warn("[Stage1] Gate 1: LLM returned no structured output — passing all claims");
       return {
         stats: {
@@ -5037,7 +5101,7 @@ export async function runGate1Validation(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     return {
       stats: {
@@ -5075,7 +5139,7 @@ export async function runGate1Validation(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: err });
     console.warn("[Stage1] Gate 1 validation failed:", err);
     return {
       stats: {

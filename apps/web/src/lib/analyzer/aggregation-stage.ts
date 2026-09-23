@@ -754,7 +754,7 @@ async function assessArticleVerdict(
 
   if (!rendered) return undefined;
 
-  const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const model = getModelForTask("verdict", undefined, pipelineConfig, "articleAdjudication");
   const llmCallStartedAt = Date.now();
   let result: Awaited<ReturnType<typeof generateText>> | undefined;
   try {
@@ -779,7 +779,7 @@ async function assessArticleVerdict(
     });
 
     const parsed = extractStructuredOutput(result);
-    if (!parsed) return undefined;
+    if (!parsed) throw new Error("Article adjudication returned no structured output");
 
     const validated = ArticleAdjudicationOutputSchema.parse(parsed);
     recordLLMCall({
@@ -794,7 +794,7 @@ async function assessArticleVerdict(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
 
     // Structural validation: dominantClaimId must exist in the claim set
     if (validated.dominanceAssessment.mode === "single" && validated.dominanceAssessment.dominantClaimId) {
@@ -823,7 +823,7 @@ async function assessArticleVerdict(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: err });
     console.warn("[Stage5] Article adjudication failed (non-fatal, falling back to baseline):", err);
     return undefined;
   }
@@ -937,7 +937,7 @@ export async function generateVerdictNarrative(
     throw new Error("Stage 5: Failed to load VERDICT_NARRATIVE prompt section");
   }
 
-  const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const model = getModelForTask("verdict", undefined, pipelineConfig, "verdictNarrative");
   const llmCallStartedAt = Date.now();
   let result: any;
   try {
@@ -979,7 +979,7 @@ export async function generateVerdictNarrative(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result });
     return validated;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -996,7 +996,7 @@ export async function generateVerdictNarrative(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: error });
     throw error;
   }
 }

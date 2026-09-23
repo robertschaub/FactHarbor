@@ -85,8 +85,57 @@ export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict
  * Record an LLM call
  * Call AFTER each LLM generation completes
  */
-export function recordLLMCall(call: LLMCallMetric): void {
-  getJobMetrics()?.recordLLMCall(call);
+export interface LLMCallMeasurement {
+  model: { provider: string; modelName: string; getLastCall?: () => { result?: unknown; maxOutputTokens?: number } };
+  result?: unknown;
+  error?: unknown;
+  maxOutputTokens?: number;
+}
+
+/** Normalize SDK evidence without retaining prompts, full responses or errors. */
+export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasurement): LLMCallMetric {
+  if (!measurement) return call;
+  const observed = measurement.model.getLastCall?.();
+  // Candidate SDK-boundary evidence also survives Output.object parse failures.
+  const error = measurement.error as any;
+  const result = (observed?.result ?? measurement.result ?? error?.result ?? error) as any;
+  const usage = result?.usage;
+  const finishReason = result?.finishReason;
+  const rawFinishReason = result?.rawFinishReason;
+  const refusal = finishReason === "content-filter" || rawFinishReason === "refusal";
+  const truncated = finishReason === "length";
+  const rawUsage = usage?.raw ?? result?.providerMetadata?.anthropic?.usage;
+  const cacheCreation = rawUsage?.cache_creation;
+  const hasUsage = typeof usage?.inputTokens === "number" && typeof usage?.outputTokens === "number";
+  const failed = !call.success || !call.schemaCompliant || refusal || truncated;
+  const failureKind = refusal ? "refusal" : truncated ? "truncation"
+    : error?.name === "ModelPolicyError" ? "configuration"
+    : failed ? (usage || measurement.result ? "schema" : "transport") : undefined;
+  return {
+    ...call,
+    ...(hasUsage ? {
+      promptTokens: usage.inputTokens,
+      completionTokens: usage.outputTokens,
+      totalTokens: usage.inputTokens + usage.outputTokens,
+    } : {}),
+    usageAvailable: hasUsage,
+    cacheReadInputTokens: usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens ?? call.cacheReadInputTokens,
+    cacheCreationInputTokens: usage?.inputTokenDetails?.cacheWriteTokens
+      ?? result?.providerMetadata?.anthropic?.cacheCreationInputTokens ?? call.cacheCreationInputTokens,
+    cacheCreation1hInputTokens: cacheCreation?.ephemeral_1h_input_tokens ?? call.cacheCreation1hInputTokens,
+    reasoningTokens: usage?.outputTokenDetails?.reasoningTokens ?? usage?.reasoningTokens,
+    finishReason,
+    rawFinishReason,
+    maxOutputTokens: observed?.maxOutputTokens ?? measurement.maxOutputTokens,
+    servedModelName: result?.response?.modelId,
+    success: !failed,
+    schemaCompliant: call.schemaCompliant && !refusal && !truncated,
+    failureKind,
+  };
+}
+
+export function recordLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasurement): void {
+  getJobMetrics()?.recordLLMCall(measuredLLMCall(call, measurement));
 }
 
 /**

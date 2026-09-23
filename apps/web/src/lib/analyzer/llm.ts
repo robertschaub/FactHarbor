@@ -11,7 +11,7 @@ import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
-import { AISDKError } from "ai";
+import { AISDKError, wrapLanguageModel } from "ai";
 import {
   getStructuredOutputGuidance,
   getEnhancedRetryPrompt,
@@ -19,7 +19,10 @@ import {
   getOpenAIJsonModeHint,
   type ProviderType,
 } from "./prompts/config-adaptations/structured-output";
-import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
+import {
+  DEFAULT_PIPELINE_CONFIG, type PipelineConfig, type ModelPolicyStage,
+  getModelPolicyErrors, ModelPolicyError, requiresExplicitModelPolicy,
+} from "../config-schemas";
 import {
   isModelTier,
   normalizeLLMProvider,
@@ -35,6 +38,15 @@ export interface ModelInfo {
   provider: string;
   modelName: string;
   model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral>;
+  /** Candidate request/response metadata survives SDK schema parsing failures. */
+  getLastCall?: () => { result?: unknown; maxOutputTokens?: number };
+}
+
+export class LLMResponseError extends Error {
+  constructor(public readonly result: { finishReason?: string; rawFinishReason?: string }) {
+    super(`LLM response ended with ${result.rawFinishReason ?? result.finishReason}`);
+    this.name = "LLMResponseError";
+  }
 }
 
 export type ModelTask = "understand" | "extract_evidence" | "context_refinement" | "verdict" | "report";
@@ -138,6 +150,7 @@ export function getModelForTask(
   task: ModelTask,
   providerOverride?: string,
   config?: PipelineConfig,
+  stage?: ModelPolicyStage,
 ): ModelInfo {
   if (!isTieringEnabled(config)) {
     return getModel(providerOverride, config);
@@ -167,7 +180,66 @@ export function getModelForTask(
   }
 
   const model = buildProviderModel(provider, modelName);
-  return { provider, modelName, model };
+  if (!requiresExplicitModelPolicy(modelName)) return { provider, modelName, model };
+
+  // Enforce at the SDK boundary, not at name-only preview/log lookups. A caller
+  // cannot accidentally bypass candidate controls by omitting providerOptions.
+  let lastCall: { result?: unknown; maxOutputTokens?: number } = {};
+  const controlledModel = wrapLanguageModel({
+    model,
+    middleware: {
+      specificationVersion: "v3",
+      transformParams: async ({ params }) => {
+        lastCall = {};
+        const errors = getModelPolicyErrors(config ?? {}, { modelName, stage });
+        if (provider !== "anthropic") errors.push(`${modelName}: Anthropic provider is required`);
+        if (errors.length) throw new ModelPolicyError(errors);
+        const policy = config!.modelPolicies![modelName];
+        const maxOutputTokens = policy.outputTokenCaps[stage!]!;
+        lastCall = { maxOutputTokens };
+        const anthropicOptions = { ...params.providerOptions?.anthropic };
+        // Disabled thinking must not retain effort inherited from caller options.
+        delete anthropicOptions.effort;
+        return {
+          ...params,
+          maxOutputTokens,
+          providerOptions: {
+            ...params.providerOptions,
+            anthropic: {
+              ...anthropicOptions,
+              thinking: { type: policy.thinking.type },
+              ...(policy.thinking.type === "adaptive" ? { effort: policy.thinking.effort } : {}),
+            },
+          },
+        };
+      },
+      wrapGenerate: async ({ doGenerate }) => {
+        const response = await doGenerate();
+        const result = {
+          finishReason: response.finishReason.unified,
+          rawFinishReason: response.finishReason.raw,
+          response: response.response,
+          providerMetadata: response.providerMetadata,
+          usage: {
+            inputTokens: response.usage.inputTokens.total,
+            outputTokens: response.usage.outputTokens.total,
+            inputTokenDetails: {
+              cacheReadTokens: response.usage.inputTokens.cacheRead,
+              cacheWriteTokens: response.usage.inputTokens.cacheWrite,
+            },
+            outputTokenDetails: { reasoningTokens: response.usage.outputTokens.reasoning },
+            raw: response.usage.raw,
+          },
+        };
+        lastCall = { ...lastCall, result };
+        if (["content-filter", "length"].includes(result.finishReason) || result.rawFinishReason === "refusal") {
+          throw new LLMResponseError(result);
+        }
+        return response;
+      },
+    },
+  });
+  return { provider, modelName, model: controlledModel, getLastCall: () => lastCall };
 }
 
 // ============================================================================

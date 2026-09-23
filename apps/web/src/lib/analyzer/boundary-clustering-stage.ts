@@ -339,7 +339,7 @@ export async function runLLMClustering(
     throw new Error("Stage 3: Failed to load BOUNDARY_CLUSTERING prompt section");
   }
 
-  const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const model = getModelForTask("verdict", undefined, pipelineConfig, "boundaryClustering");
   const llmCallStartedAt = Date.now();
   let result: any;
   try {
@@ -387,7 +387,7 @@ export async function runLLMClustering(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, maxOutputTokens: 32768 });
 
     return validated.claimBoundaries.map((cb) => ({
       id: cb.id,
@@ -419,7 +419,7 @@ export async function runLLMClustering(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model: model, result: result, error: error, maxOutputTokens: 32768 });
     throw error;
   }
 }

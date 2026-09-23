@@ -172,6 +172,7 @@ public class MetricsController : ControllerBase
             // Parse and aggregate metrics
             double totalDuration = 0;
             double totalCost = 0;
+            bool hasUnavailableCost = false;
             double totalTokens = 0;
             int schemaCompliantCount = 0;
             double gate1PassSum = 0;
@@ -199,10 +200,12 @@ public class MetricsController : ControllerBase
                         totalDuration += duration.GetDouble();
                     }
 
-                    if (root.TryGetProperty("estimatedCostUSD", out var cost))
+                    if (root.TryGetProperty("estimatedCostUSD", out var cost)
+                        && cost.ValueKind == JsonValueKind.Number && cost.TryGetDouble(out var knownCost))
                     {
-                        totalCost += cost.GetDouble();
+                        totalCost += knownCost;
                     }
+                    else hasUnavailableCost = true;
 
                     if (root.TryGetProperty("tokenCounts", out var tokens) &&
                         tokens.TryGetProperty("totalTokens", out var total))
@@ -342,7 +345,7 @@ public class MetricsController : ControllerBase
             {
                 count,
                 avgDuration = totalDuration / count,
-                avgCost = totalCost / count,
+                avgCost = hasUnavailableCost ? (double?)null : totalCost / count,
                 avgTokens = totalTokens / count,
                 schemaComplianceRate = (double)schemaCompliantCount / count * 100,
                 gate1PassRate = gate1PassSum / count * 100,

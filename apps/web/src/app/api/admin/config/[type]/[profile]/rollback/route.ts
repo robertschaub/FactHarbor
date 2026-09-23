@@ -10,7 +10,7 @@ import {
   getActiveConfigHash,
   type ConfigType,
 } from "@/lib/config-storage";
-import { isValidConfigType } from "@/lib/config-schemas";
+import { isValidConfigType, ModelPolicyError } from "@/lib/config-schemas";
 import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -76,7 +76,7 @@ export async function POST(req: Request, context: RouteParams) {
     console.error("[Config-API] rollback error:", err);
     return NextResponse.json(
       { error: `Failed to rollback: ${err instanceof Error ? err.message : String(err)}` },
-      { status: 500 },
+      { status: err instanceof ModelPolicyError ? 400 : 500 },
     );
   }
 }

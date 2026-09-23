@@ -974,6 +974,11 @@ describe("shouldProtectValidatedAnchorCarriers", () => {
 // --- LLM-dependent function tests (mocked) ---
 
 // Mock modules used by Stage 1 LLM functions
+vi.mock("@/lib/analyzer/metrics", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/analyzer/metrics")>();
+  return { ...actual, persistMetrics: vi.fn(async () => {}) };
+});
+
 vi.mock("ai", () => ({
   generateText: vi.fn(),
   Output: { object: vi.fn(() => ({})) },
@@ -5669,7 +5674,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
     // getModelForTask should have been called with "understand" (Haiku tier mapping)
     const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
-    expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("understand", undefined, expect.any(Object));
+    expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("understand", undefined, expect.any(Object), "verdict");
   });
 
   it("should throw when prompt section is not found", async () => {
@@ -5781,7 +5786,7 @@ describe("Stage 4: createProductionLLMCall", () => {
       await llmCall("VERDICT_CHALLENGER", {}, { tier: "sonnet", providerOverride: "openai" });
 
       const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
-      expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("verdict", "openai", pipelineConfig);
+      expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("verdict", "openai", pipelineConfig, "verdict");
     } finally {
       if (origKey !== undefined) {
         process.env.OPENAI_API_KEY = origKey;
@@ -5806,7 +5811,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
       const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
       // Should have fallen back to undefined (no providerOverride → global provider)
-      expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("verdict", undefined, pipelineConfig);
+      expect(vi.mocked(mockGetModel)).toHaveBeenCalledWith("verdict", undefined, pipelineConfig, "verdict");
     } finally {
       if (origKey !== undefined) {
         process.env.MISTRAL_API_KEY = origKey;

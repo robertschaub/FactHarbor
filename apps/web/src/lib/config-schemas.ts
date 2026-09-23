@@ -276,6 +276,98 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 
 const CONTEXT_PATTERN_ID_REGEX = /^CTX_[A-Z_]+$/;
 
+// Request stages, not semantic classifications. Keep this inventory aligned with
+// the explicit stage arguments at the Sonnet-routed getModelForTask call sites.
+export const MODEL_POLICY_STAGES = [
+  "verdict", "boundaryClustering", "claimContractRepair", "claimContractCompletion",
+  "claimContractSurgicalRepair", "claimAtomicity", "claimContractValidation",
+  "claimExtractionPass2", "claimSelection", "articleAdjudication", "verdictNarrative",
+  "sourceReliabilityCalibration",
+] as const;
+export type ModelPolicyStage = typeof MODEL_POLICY_STAGES[number];
+
+const ModelThinkingSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("disabled") }).strict(),
+  z.object({ type: z.literal("adaptive"), effort: z.enum(["low", "medium", "high"]) }).strict(),
+]);
+export const ModelPolicySchema = z.object({
+  thinking: ModelThinkingSchema,
+  outputTokenCaps: z.record(z.enum(MODEL_POLICY_STAGES), z.number().int().min(1).max(128000)),
+}).strict();
+
+/** Only this candidate family has a reviewed policy in this rollout. */
+export function requiresExplicitModelPolicy(modelName: string): boolean {
+  return /^claude-sonnet-5(?:$|-)/.test(modelName);
+}
+
+export class ModelPolicyError extends Error {
+  constructor(public readonly errors: string[]) {
+    super(`Invalid model policy: ${errors.join("; ")}`);
+    this.name = "ModelPolicyError";
+  }
+}
+
+/** Shared by schema/save, stored-version activation, Admin advice and requests. */
+export function getModelPolicyErrors(
+  config: Record<string, unknown>,
+  request?: { modelName: string; stage?: string },
+): string[] {
+  const errors: string[] = [];
+  const policies = (config.modelPolicies ?? {}) as Record<string, unknown>;
+  const checked = z.record(ModelPolicySchema).safeParse(policies);
+  if (!checked.success) {
+    return checked.error.issues.map(i => `modelPolicies.${i.path.join(".")}: ${i.message}`);
+  }
+  for (const name of Object.keys(checked.data)) {
+    if (name !== "claude-sonnet-5") errors.push(`modelPolicies.${name}: no reviewed policy support for this model ID`);
+  }
+
+  const required = new Map<string, readonly string[]>();
+  if (request) {
+    if (requiresExplicitModelPolicy(request.modelName)) {
+      required.set(request.modelName, request.stage ? [request.stage] : []);
+      if (!request.stage || !MODEL_POLICY_STAGES.includes(request.stage as ModelPolicyStage)) {
+        errors.push(`${request.modelName}: a reviewed request stage is required`);
+      }
+    }
+  } else if (config.llmTiering !== false) {
+    // Phase B covers the existing reasoning route. Other task migrations need
+    // their own stage inventory before they can select this candidate.
+    for (const field of ["modelUnderstand", "modelExtractEvidence"] as const) {
+      if (typeof config[field] === "string" && requiresExplicitModelPolicy(config[field])) {
+        errors.push(`${field}: Sonnet 5 is currently supported only on the modelVerdict/modelOpus reasoning route`);
+      }
+    }
+    if (typeof config.modelOpus === "string" && requiresExplicitModelPolicy(config.modelOpus)) {
+      required.set(config.modelOpus, ["verdict"]);
+    }
+    if (typeof config.modelVerdict === "string" && requiresExplicitModelPolicy(config.modelVerdict)) {
+      const stages = MODEL_POLICY_STAGES.filter(stage => stage !== "sourceReliabilityCalibration"
+        || (config.sourceReliabilityCalibrationEnabled === true
+          && (config.sourceReliabilityCalibrationMode ?? "off") !== "off"
+          && ["standard", "premium"].includes(String(config.sourceReliabilityCalibrationStrength))));
+      required.set(config.modelVerdict, stages);
+    }
+  }
+  for (const [name, stages] of required) {
+    if (name !== "claude-sonnet-5") {
+      errors.push(`${name}: use the reviewed exact model ID claude-sonnet-5`);
+      continue;
+    }
+    const policy = checked.data[name];
+    if (!policy) {
+      errors.push(`modelPolicies.${name}: explicit adaptive + effort or disabled thinking and stage caps are required`);
+      continue;
+    }
+    for (const stage of stages) {
+      if (policy.outputTokenCaps[stage as ModelPolicyStage] === undefined) {
+        errors.push(`modelPolicies.${name}.outputTokenCaps.${stage}: explicit output cap is required`);
+      }
+    }
+  }
+  return errors;
+}
+
 const TEMPORAL_PROMPT_TEXT_DEFAULTS = {
   temporalPromptContractTemplate:
     "## TEMPORAL AWARENESS CONTRACT (MANDATORY)\nCURRENT DATE: {{CURRENT_DATE_ISO}}\n- Treat your training knowledge as potentially stale for recent developments after your training snapshot.\n{{KNOWLEDGE_RULE}}\n{{RECENCY_RULE}}\n{{NO_FRESH_EVIDENCE_RULE}}\n{{RELATIVE_TIME_RULE}}",
@@ -301,8 +393,9 @@ export const PipelineConfigSchema = z.object({
     .describe("Anthropic prompt caching is locked off. The only valid value is false because measured costs exceeded benefits."),
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
   modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
-  modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
+  modelVerdict: z.string().min(1).describe("Reasoning model: contract checks/repairs, claim selection, clustering, verdict debate, adjudication and narrative"),
   modelOpus: z.string().min(1).optional().describe("Model for OPUS debate tier (B-5b). Used when a debate role is set to 'opus'. Falls back to modelVerdict if not set."),
+  modelPolicies: z.record(ModelPolicySchema).optional().describe("Explicit candidate thinking and per-stage output caps. Empty preserves baseline requests; no candidate policy is supplied implicitly."),
 
   // === LLM Text Analysis Feature Flags ===
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
@@ -702,6 +795,10 @@ export const PipelineConfigSchema = z.object({
   openaiTpmGuardFallbackModel: z.string().min(1).optional()
     .describe("Fallback OpenAI model used by TPM guard (default: gpt-4.1-mini)."),
 
+}).superRefine((data, ctx) => {
+  for (const message of getModelPolicyErrors(data)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["modelPolicies"], message });
+  }
 }).transform((data) => {
   // Runtime migration warnings (no legacy field aliases in v3.1+)
   const warnings: string[] = [];
@@ -1060,6 +1157,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   modelExtractEvidence: "budget",
   modelVerdict: "standard",
   modelOpus: "premium",
+  modelPolicies: {},
 
   // LLM text analysis (all enabled by default per v2.8.3)
   llmInputClassification: true,

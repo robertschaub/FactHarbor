@@ -17,6 +17,8 @@ import {
   SchemaVersion,
   ValidationResult,
   validateConfig,
+  getModelPolicyErrors,
+  ModelPolicyError,
   canonicalizeContent,
   canonicalizeJson,
   computeContentHash,
@@ -686,6 +688,13 @@ export async function activateConfig(
     throw new Error(
       `Config blob does not match type/profile: expected ${configType}/${profileKey}, got ${blob.configType}/${blob.profileKey}`,
     );
+  }
+
+  // Validate the candidate policy even for blobs saved before this check existed.
+  // Do not retroactively require every modern schema field in legacy blobs.
+  if (configType === "pipeline") {
+    const errors = getModelPolicyErrors(JSON.parse(blob.content));
+    if (errors.length) throw new ModelPolicyError(errors);
   }
 
   // Upsert activation (SQLite ON CONFLICT)

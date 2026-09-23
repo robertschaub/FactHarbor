@@ -20,6 +20,7 @@ import {
   evaluateSingleClaimAtomicityValidation,
   getPrioritySalienceAnchorsForAtomicityValidation,
   runClaimContractValidationWithRetry,
+  selectFlaggedContractAssessments,
   selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
@@ -351,7 +352,7 @@ describe("Claim contract retry decision", () => {
     expect(shouldRetry).toBe(false);
   });
 
-  it("builds corrective guidance from failing claims", () => {
+  it("selects corrective assessments using the production filter", () => {
     const contractResult = {
       inputAssessment: {
         preservesOriginalClaimContract: false,
@@ -378,16 +379,14 @@ describe("Claim contract retry decision", () => {
       ],
     };
 
-    const failingClaims = contractResult.claims
-      .filter(c => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
-    const failingReasons = failingClaims
-      .map(c => `${c.claimId}: ${c.reasoning}`)
-      .join("; ");
+    const failingClaims = selectFlaggedContractAssessments(
+      contractResult,
+      contractResult.claims.map(c => ({ id: c.claimId }) as AtomicClaim),
+    );
 
     expect(failingClaims).toHaveLength(1);
-    expect(failingReasons).toContain("AC_01");
-    expect(failingReasons).toContain("not viable");
-    expect(failingReasons).not.toContain("AC_02");
+    expect(failingClaims[0].claimId).toBe("AC_01");
+    expect(failingClaims[0].reasoning).toContain("not viable");
   });
 });
 
@@ -1051,11 +1050,11 @@ describe("CBClaimUnderstanding observability fields", () => {
 // against claim text. The gate now enforces only structural checks:
 //
 //   1. Cited preservedInClaimIds must exist in the final claim list.
-//   2. Cited preservedByQuotes must be real substrings of their cited claims
-//      (anti-hallucination provenance, NOT semantic relevance to the anchor).
+//   2. Cited carriers must be thesis-direct. The LLM's preservation quotes
+//      are trusted; there is no deterministic quote-substring check.
 //   3. LLM self-consistency: a claim cited in preservedInClaimIds must not be
 //      simultaneously marked as drifted in the per-claim assessment
-//      (recommendedAction=retry, proxyDriftSeverity=material, or
+//      (proxyDriftSeverity=material or
 //      preservesEvaluativeMeaning=false).
 //
 // What the gate deliberately does NOT check:
@@ -1160,7 +1159,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
   // is now trusted as-is. Structural validity is checked via validPreservedIds
   // (ID existence + thesis-directness) and the self-consistency check below.
 
-  it("rejects LLM self-contradiction: preservedInClaimIds cites a claim marked recommendedAction=retry", () => {
+  it("rejects a cited carrier marked as material drift and meaning not preserved", () => {
     const claims = [makeClaim("AC_01", "The council signed the treaty before parliament decided.")];
     const result = makeResult({
       anchorText: "before parliament decided",
@@ -1168,7 +1167,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
       preservedByQuotes: ["before parliament decided"],
       claims: [{
         claimId: "AC_01",
-        preservesEvaluativeMeaning: false, // ← LLM contradicts itself
+        preservesEvaluativeMeaning: false, // presence does not establish fidelity
         usesNeutralDimensionQualifier: false,
         proxyDriftSeverity: "material",
         recommendedAction: "retry",
@@ -1180,11 +1179,11 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
 
     expect(evaluated.summary.preservesContract).toBe(false);
     expect(evaluated.effectiveRePromptRequired).toBe(true);
-    expect(evaluated.anchorRetryReason).toContain("LLM self-contradiction");
-    expect(evaluated.anchorRetryReason).toContain("AC_01");
+    expect(evaluated.carrierFidelityFailure?.claimIds).toEqual(["AC_01"]);
+    expect(evaluated.carrierFidelityFailure?.anchorText).toBe("before parliament decided");
   });
 
-  it("rejects LLM self-contradiction: proxyDriftSeverity=material alone is sufficient", () => {
+  it("rejects a cited carrier when proxyDriftSeverity=material alone is sufficient", () => {
     const claims = [makeClaim("AC_01", "Test claim with some preserved wording.")];
     const result = makeResult({
       anchorText: "some preserved wording",
@@ -1194,7 +1193,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
         claimId: "AC_01",
         preservesEvaluativeMeaning: true,
         usesNeutralDimensionQualifier: true,
-        proxyDriftSeverity: "material", // ← contradicts preservation
+        proxyDriftSeverity: "material", // explicit material-drift finding
         recommendedAction: "keep",
         reasoning: "",
       }],
@@ -1203,7 +1202,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     const evaluated = evaluateClaimContractValidation(result, claims);
 
     expect(evaluated.summary.preservesContract).toBe(false);
-    expect(evaluated.anchorRetryReason).toContain("LLM self-contradiction");
+    expect(evaluated.carrierFidelityFailure?.claimIds).toEqual(["AC_01"]);
   });
 
   // --------------------------------------------------------------------------
@@ -1631,6 +1630,14 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain('"antiInferenceCheck"');
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
+    expect(section).toContain("Choose the single most decisive thesis-direct anchor");
+    expect(section).toContain("do not concatenate distinct anchors into that field");
+    expect(section).toContain("This preference orders carriers; it must not remove other carriers from the inventory.");
+    expect(section).toContain("Include carriers that fail another rule");
+    expect(section).toContain("A structural retry does not by itself mean the anchor is absent from the claim.");
+    expect(section).toContain("do NOT treat the claim as normative injection.");
+    expect(section).toContain("For the syntactic-role change alone, flag at most `proxyDriftSeverity: mild`");
+    expect(section).toContain("Assess meaning and action/state fidelity under rules 1 and 6, retry materiality under rule 9, and modifier scope under rules 16 and 18.");
   });
 
 });
@@ -1748,54 +1755,6 @@ describe("PR 1: early report_damaged regression", () => {
     expect(evaluated.effectiveRePromptRequired).toBe(true);
     expect(evaluated.anchorRetryReason).toBeDefined();
     expect(evaluated.anchorRetryReason).toContain("tangential/contextual");
-  });
-});
-
-// ============================================================================
-// PR 1 (Rev B Track 1): validator-unavailable fallback wording alignment
-// ============================================================================
-//
-// The validator-unavailable retry guidance must use the same fusion-first
-// wording the normal anchor-retry path uses. This is a string-presence
-// regression test that locks in alignment between the two branches.
-// ============================================================================
-
-describe("PR 1: validator-unavailable fallback guidance wording", () => {
-  it("source file contains aligned fusion-first wording on validator-unavailable branch", () => {
-    // Read claim-extraction-stage.ts and assert the validator-unavailable
-    // fallback branch uses the same canonical phrases the normal retry path
-    // uses. This is a build-time regression guard against the two branches
-    // drifting apart again.
-    const sourcePath = path.resolve(
-      __dirname,
-      "../../../../src/lib/analyzer/claim-extraction-stage.ts",
-    );
-    const source = readFileSync(sourcePath, "utf-8");
-
-    // The fusion-first canonical phrases (must appear in BOTH the normal
-    // contractGuidance string and the fallbackGuidance string).
-    const canonicalPhrases = [
-      "must fuse any truth-condition-bearing modifier",
-      "Do NOT substitute proxy predicates",
-      "shared predicate or modifier applies across multiple actors",
-    ];
-
-    // The code now uses an inline ternary branch inside contractGuidance
-    // rather than a separate fallbackGuidance variable. Anchor on the
-    // validator-unavailable literal and inspect that branch directly.
-    const fallbackStart = source.indexOf(
-      "CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result.",
-    );
-    expect(fallbackStart, "validator-unavailable fallback guidance literal not found").toBeGreaterThan(-1);
-    const fallbackEnd = source.indexOf("console.info(", fallbackStart);
-    const fallbackBlock = source.slice(fallbackStart, fallbackEnd === -1 ? undefined : fallbackEnd);
-
-    for (const phrase of canonicalPhrases) {
-      expect(
-        fallbackBlock,
-        `validator-unavailable fallback guidance is missing canonical phrase "${phrase}"`,
-      ).toContain(phrase);
-    }
   });
 });
 

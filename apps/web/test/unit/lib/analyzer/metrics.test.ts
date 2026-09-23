@@ -68,6 +68,41 @@ function finalizeMetricsForSingleCall(overrides: Partial<LLMCallMetric> = {}) {
 }
 
 describe("MetricsCollector cost estimation", () => {
+  it("prices the known served GPT-4.1 snapshot and keeps unknown served models unavailable", () => {
+    const base = { provider: "openai", modelName: "gpt-4.1", completionTokens: 0,
+      promptTokens: 1_000_000, cacheReadInputTokens: 200_000 };
+    expect(finalizeMetricsForSingleCall({ ...base, servedModelName: "gpt-4.1-2025-04-14" }).estimatedCostUSD).toBe(1.7);
+    expect(finalizeMetricsForSingleCall({ ...base, servedModelName: "unknown-served-model" }).estimatedCostUSD).toBeNull();
+  });
+  it("prices Sonnet 5 thinking once inside billed output", () => {
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-sonnet-5", reasoningTokens: 750_000 });
+    expect(metrics.estimatedCostUSD).toBe(12);
+  });
+
+  it("separates cache reads, five-minute writes and one-hour writes from total input", () => {
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-sonnet-5",
+      promptTokens: 1_000_000, completionTokens: 0, cacheReadInputTokens: 200_000,
+      cacheCreationInputTokens: 300_000, cacheCreation1hInputTokens: 100_000 });
+    expect(metrics.estimatedCostUSD).toBeCloseTo(1 + 0.04 + 0.5 + 0.4, 9);
+  });
+
+  it("uses Fable 5.1's model-specific cache-read rate", () => {
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-fable-5-1",
+      promptTokens: 1_000_000, completionTokens: 0, cacheReadInputTokens: 1_000_000 });
+    expect(metrics.estimatedCostUSD).toBe(0.25);
+  });
+
+  it.each([
+    { modelName: "unpriced-model" },
+    { usageAvailable: false },
+    { cacheCreationInputTokens: 100 },
+  ])("marks unavailable pricing or usage as unavailable, including summary", overrides => {
+    const metrics = finalizeMetricsForSingleCall(overrides);
+    expect(metrics.estimatedCostUSD).toBeNull();
+    expect(metrics.costEstimate?.unpricedCalls).toBe(1);
+    expect(calculateSummaryStats([metrics, finalizeMetricsForSingleCall()]).avgCost).toBeNull();
+  });
+
   it("prices claude-sonnet-4-6 with the Anthropic standard-tier rate instead of fallback pricing", () => {
     const metrics = finalizeMetricsForSingleCall();
 

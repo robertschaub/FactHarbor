@@ -19,6 +19,7 @@ import {
   DEFAULT_CALC_CONFIG as SHARED_DEFAULT_CALC_CONFIG,
   DEFAULT_PIPELINE_CONFIG as SHARED_DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG as SHARED_DEFAULT_SR_CONFIG,
+  MODEL_POLICY_STAGES,
   type PipelineConfig as SharedPipelineConfig,
 } from "@/lib/config-schemas";
 
@@ -1248,7 +1249,7 @@ function PipelineConfigForm({
       {/* Model Selection */}
       <h3 className={styles.formSectionTitle}>Model Selection</h3>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
-        Choose LLM models for each analysis phase. Better models = higher quality but more cost.
+        Choose models for each task route. Validate quality and cost before activating a new model.
         Phase models below accept concrete model IDs or compatibility aliases like <code>haiku</code>, <code>sonnet</code>, and <code>opus</code>.
       </p>
       <div className={styles.formGroup}>
@@ -1286,7 +1287,7 @@ function PipelineConfigForm({
             value={config.modelUnderstand}
             onChange={(e) => updateField("modelUnderstand", e.target.value)}
           />
-          <div className={styles.formHelp}>Initial claim comprehension. Medium quality OK. Default: claude-sonnet-4</div>
+          <div className={styles.formHelp}>Claim comprehension and routine checks. Default: budget tier (Claude Haiku 4.5 with Anthropic).</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Extract Evidence Model</label>
@@ -1296,7 +1297,7 @@ function PipelineConfigForm({
             value={config.modelExtractEvidence}
             onChange={(e) => updateField("modelExtractEvidence", e.target.value)}
           />
-          <div className={styles.formHelp}>Evidence extraction from sources. Can use cheaper model. Default: claude-haiku-3.5</div>
+          <div className={styles.formHelp}>Evidence extraction and Pass 2 claim extraction. Default: budget tier (Claude Haiku 4.5 with Anthropic).</div>
         </div>
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Verdict Model</label>
@@ -1306,9 +1307,53 @@ function PipelineConfigForm({
             value={config.modelVerdict}
             onChange={(e) => updateField("modelVerdict", e.target.value)}
           />
-          <div className={styles.formHelp}>Final reasoning - use best model. Default: claude-sonnet-4</div>
+          <div className={styles.formHelp}>Contract checks/repairs, claim selection, clustering, debate, adjudication and narrative. Default: standard tier (Claude Sonnet 4.6 with Anthropic). A role with another provider resolves its own model.</div>
         </div>
       </div>
+
+      <details className={styles.formGroup}>
+        <summary>Sonnet 5 candidate controls</summary>
+        <div className={styles.formHelp}>
+          These settings apply only when a task resolves to claude-sonnet-5. They do not select or activate it.
+          Every affected stage needs an explicit cap, including thinking and visible output. Empty settings preserve baseline behavior.
+        </div>
+        <label className={styles.formLabel} htmlFor="sonnet5-thinking">Thinking policy</label>
+        <select id="sonnet5-thinking" className={styles.formInput}
+          value={(() => {
+            const thinking = config.modelPolicies?.["claude-sonnet-5"]?.thinking;
+            return !thinking ? "" : thinking.type === "disabled" ? "disabled" : `adaptive:${thinking.effort}`;
+          })()}
+          onChange={(e) => {
+            const policies = { ...config.modelPolicies };
+            if (!e.target.value) delete policies["claude-sonnet-5"];
+            else policies["claude-sonnet-5"] = {
+              thinking: e.target.value === "disabled" ? { type: "disabled" }
+                : { type: "adaptive", effort: e.target.value.split(":")[1] as "low" | "medium" | "high" },
+              outputTokenCaps: policies["claude-sonnet-5"]?.outputTokenCaps ?? {},
+            };
+            updateField("modelPolicies", policies);
+          }}>
+          <option value="">Unconfigured</option>
+          <option value="disabled">Disabled</option>
+          <option value="adaptive:low">Adaptive / low</option>
+          <option value="adaptive:medium">Adaptive / medium</option>
+          <option value="adaptive:high">Adaptive / high</option>
+        </select>
+        {config.modelPolicies?.["claude-sonnet-5"] && MODEL_POLICY_STAGES.map((stage) => (
+          <div className={styles.formGroup} key={stage}>
+            <label className={styles.formLabel} htmlFor={`cap-${stage}`}>{stage} — output token cap</label>
+            <input id={`cap-${stage}`} type="number" min={1} max={128000} step={1} className={styles.formInput}
+              value={config.modelPolicies?.["claude-sonnet-5"]?.outputTokenCaps[stage] ?? ""}
+              onChange={(e) => {
+                const policy = config.modelPolicies!["claude-sonnet-5"];
+                const caps = { ...policy.outputTokenCaps };
+                if (e.target.value === "") delete caps[stage];
+                else caps[stage] = Number(e.target.value);
+                updateField("modelPolicies", { ...config.modelPolicies, "claude-sonnet-5": { ...policy, outputTokenCaps: caps } });
+              }} />
+          </div>
+        ))}
+      </details>
 
       {/* LLM Text Analysis Feature Flags */}
       <h3 className={styles.formSectionTitle}>LLM Text Analysis (v2.8.3)</h3>

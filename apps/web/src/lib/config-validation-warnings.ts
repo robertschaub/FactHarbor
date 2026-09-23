@@ -12,6 +12,7 @@
  */
 
 import type { PipelineConfig, SearchConfig } from "./config-schemas";
+import { getModelPolicyErrors } from "./config-schemas";
 
 export interface ConfigWarning {
   level: "warning" | "danger" | "info";
@@ -30,6 +31,17 @@ export interface ConfigWarning {
  */
 export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] {
   const warnings: ConfigWarning[] = [];
+
+  const policyErrors = getModelPolicyErrors(config);
+  if (policyErrors.length) {
+    warnings.push({
+      level: "danger",
+      title: "Candidate model policy is incomplete",
+      message: policyErrors.join("; "),
+      suggestion: "Set explicit thinking/effort and output caps in modelPolicies before saving or activating this candidate.",
+      affectedFields: ["modelPolicies", "modelVerdict", "modelOpus"],
+    });
+  }
 
   // Warning 1: Deep mode with low budget
   if (config.analysisMode === "deep" && config.maxTotalTokens < 500000) {

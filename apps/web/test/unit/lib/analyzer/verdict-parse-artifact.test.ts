@@ -16,6 +16,9 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("@/lib/analyzer/llm", () => ({
+  LLMResponseError: class extends Error {
+    constructor(public result: any) { super(`LLM response ended with ${result.rawFinishReason ?? result.finishReason}`); }
+  },
   getModelForTask: vi.fn(() => ({
     model: { id: "mock-model" },
     modelName: "claude-sonnet-mock",
@@ -98,6 +101,38 @@ function getAllCalls(): any[] {
 describe("Stage-4 parse failure artifact capture", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("records one billed failed attempt for an empty visible response", async () => {
+    const response = { ...makeResponse("", { inputTokens: 100, outputTokens: 50 }), finishReason: "stop", rawFinishReason: "end_turn" };
+    mockGenerateText.mockResolvedValueOnce(response);
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(llmCall("VERDICT_ADVOCATE", {}, {
+      callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" },
+    })).rejects.toThrow("empty response");
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockRecordLLMCall).toHaveBeenCalledTimes(1);
+    expect(mockRecordLLMCall.mock.calls[0][0]).toMatchObject({ success: false, schemaCompliant: false });
+    expect(mockRecordLLMCall.mock.calls[0][1].result).toBe(response);
+  });
+
+  it("retains legacy parse recovery on length finish while forwarding its finish evidence", async () => {
+    const response = { ...makeResponse('[{"claimId":"AC_01"}]'), finishReason: "length", rawFinishReason: "max_tokens" };
+    mockGenerateText.mockResolvedValueOnce(response);
+    const llmCall = createProductionLLMCall({} as any);
+    expect(await llmCall("VERDICT_ADVOCATE", {}, {})).toEqual([{ claimId: "AC_01" }]);
+    expect(mockRecordLLMCall).toHaveBeenCalledTimes(1);
+    expect(mockRecordLLMCall.mock.calls[0][1].result).toBe(response);
+  });
+
+  it("records a transport failure during parse retry as its own attempt", async () => {
+    mockGenerateText.mockResolvedValueOnce(makeResponse("{ invalid JSON"))
+      .mockRejectedValueOnce(new Error("offline transport failure"));
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(llmCall("VERDICT_ADVOCATE", {}, {})).rejects.toThrow("offline transport failure");
+    expect(mockRecordLLMCall).toHaveBeenCalledTimes(2);
+    expect(mockRecordLLMCall.mock.calls[1][0]).toMatchObject({ success: false, schemaCompliant: false, retries: 1 });
+    expect(mockRecordLLMCall.mock.calls[1][1].error).toBeInstanceOf(Error);
   });
 
   it("captures artifact on first-attempt parse failure with fenced JSON", async () => {

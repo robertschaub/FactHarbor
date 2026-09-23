@@ -27,6 +27,8 @@ import {
   SearchConfigSchema,
   CalcConfigSchema,
   PipelineConfigSchema,
+  getModelPolicyErrors,
+  ModelPolicyError,
   type SearchConfig,
   type CalcConfig,
   type PipelineConfig,
@@ -340,6 +342,11 @@ export async function loadPipelineConfig(
       DEFAULT_PIPELINE_CONFIG,
     );
 
+    // Check the original complete policy before any analysis stage can spend.
+    // Per-request checks additionally validate resolved premium/model overrides.
+    const policyErrors = getModelPolicyErrors(content);
+    if (policyErrors.length) throw new ModelPolicyError(policyErrors);
+
     // Record usage
     if (jobId) {
       await recordConfigUsage(jobId, configType, profileKey, hash);
@@ -347,6 +354,7 @@ export async function loadPipelineConfig(
 
     return { config: content, contentHash: hash, overrides: [], fromCache, fromDefault };
   } catch (err) {
+    if (err instanceof ModelPolicyError) throw err;
     console.error(`[Config-Loader] Error loading pipeline config:`, err);
     return { config: DEFAULT_PIPELINE_CONFIG, contentHash: "__ERROR_FALLBACK__", overrides: [], fromCache: false, fromDefault: true };
   }

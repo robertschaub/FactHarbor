@@ -33,6 +33,16 @@ export interface LLMCallMetric {
   cacheReadInputTokens?: number;
   /** Optional: tokens that were used to create a cache entry */
   cacheCreationInputTokens?: number;
+  /** Subset of cacheCreationInputTokens written with a one-hour TTL. */
+  cacheCreation1hInputTokens?: number;
+  /** Included in completionTokens, never billed again. */
+  reasoningTokens?: number;
+  finishReason?: string;
+  rawFinishReason?: string;
+  maxOutputTokens?: number;
+  servedModelName?: string;
+  usageAvailable?: boolean;
+  failureKind?: "refusal" | "truncation" | "schema" | "transport" | "configuration";
   durationMs: number;
   success: boolean;
   schemaCompliant: boolean;
@@ -361,7 +371,9 @@ export interface AnalysisMetrics {
   telemetryContext?: MetricsTelemetryContext;
 
   // Costs (estimated)
-  estimatedCostUSD: number;
+  estimatedCostUSD: number | null;
+  /** Known subtotal is separate; null total must not be displayed as zero. */
+  costEstimate?: { knownSubtotalUSD: number; unpricedCalls: number; pricingCheckedAt: string; searchCostIsEstimate: true };
   tokenCounts: {
     promptTokens: number;
     completionTokens: number;
@@ -578,12 +590,32 @@ export class MetricsCollector {
   /**
    * Estimate cost based on token usage and providers
    */
-  private estimateCost(): number {
+  private estimateCost(): number | null {
     let totalCost = 0;
+    let unpricedCalls = 0;
 
     for (const call of this.metrics.llmCalls!) {
-      const costPer1M = this.getCostPer1MTokens(call.provider, call.modelName);
-      const promptCost = (call.promptTokens / 1_000_000) * costPer1M.input;
+      const costPer1M = this.getCostPer1MTokens(call.provider, call.servedModelName ?? call.modelName);
+      if (!costPer1M || call.usageAvailable === false) {
+        unpricedCalls++;
+        continue;
+      }
+      const reads = call.cacheReadInputTokens ?? 0;
+      const writes = call.cacheCreationInputTokens ?? 0;
+      const hourWrites = call.cacheCreation1hInputTokens ?? 0;
+      // AI SDK inputTokens includes cache reads/writes; subtract before repricing.
+      // Cache writes without TTL evidence cannot be billed accurately.
+      if (reads + writes > call.promptTokens || hourWrites > writes
+        || (writes > 0 && call.cacheCreation1hInputTokens === undefined)
+        || ((reads > 0 || writes > 0) && costPer1M.cacheRead === undefined)
+        || (writes > 0 && costPer1M.cacheWrite === undefined)) {
+        unpricedCalls++;
+        continue;
+      }
+      const promptCost = ((call.promptTokens - reads - writes) * costPer1M.input
+        + reads * (costPer1M.cacheRead ?? 0)
+        + (writes - hourWrites) * (costPer1M.cacheWrite ?? 0)
+        + hourWrites * costPer1M.input * 2) / 1_000_000;
       const completionCost = (call.completionTokens / 1_000_000) * costPer1M.output;
       totalCost += promptCost + completionCost;
     }
@@ -591,16 +623,23 @@ export class MetricsCollector {
     // Add search costs (rough estimate: $5 per 1000 queries for most providers)
     const searchCost = (this.metrics.searchQueries!.length / 1000) * 5;
     totalCost += searchCost;
-
-    return totalCost;
+    this.metrics.costEstimate = {
+      knownSubtotalUSD: totalCost, unpricedCalls, pricingCheckedAt: "2026-09-22", searchCostIsEstimate: true,
+    };
+    return unpricedCalls ? null : totalCost;
   }
 
   /**
    * Get cost per 1M tokens for a model
    */
-  private getCostPer1MTokens(provider: string, modelName: string): { input: number; output: number } {
-    // Pricing per 1M tokens (updated 2026-03)
+  private getCostPer1MTokens(provider: string, modelName: string): { input: number; output: number; cacheRead?: number; cacheWrite?: number } | undefined {
+    // Candidate + active Anthropic rates checked 2026-09-22:
+    // https://platform.claude.com/docs/en/about-claude/pricing
+    // Other entries retain their historical estimates; this is not invoice data.
     const pricing: Record<string, { input: number; output: number }> = {
+      'claude-sonnet-5': { input: 2, output: 10 },
+      'claude-opus-5': { input: 5, output: 25 },
+      'claude-fable-5-1': { input: 10, output: 50 },
       // Anthropic (May 2026 — Opus family $5/$25; Sonnet $3/$15; Haiku $1/$5)
       'claude-opus-4-7': { input: 5, output: 25 },
       'claude-opus-4-6': { input: 5, output: 25 },
@@ -614,7 +653,8 @@ export class MetricsCollector {
       'claude-sonnet-4-20250514': { input: 3, output: 15 },
       'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
       'claude-haiku-4-5-20251001': { input: 1, output: 5 },
-      'claude-3-5-haiku-20241022': { input: 1, output: 5 },
+      'claude-haiku-4-5': { input: 1, output: 5 },
+      'claude-3-5-haiku-20241022': { input: 0.8, output: 4 },
       'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
       
       // OpenAI
@@ -624,7 +664,9 @@ export class MetricsCollector {
       'gpt-5.2': { input: 1.75, output: 14 },
       'gpt-5.1': { input: 1.25, output: 10 },
       'gpt-4.1': { input: 2, output: 8 },
+      'gpt-4.1-2025-04-14': { input: 2, output: 8 },
       'gpt-4.1-mini': { input: 0.4, output: 1.6 },
+      'gpt-4.1-mini-2025-04-14': { input: 0.4, output: 1.6 },
       'gpt-4.1-nano': { input: 0.1, output: 0.4 },
       'gpt-4o': { input: 2.5, output: 10 },
       'gpt-4o-mini': { input: 0.15, output: 0.6 },
@@ -641,7 +683,18 @@ export class MetricsCollector {
       'mistral-small-latest': { input: 0.2, output: 0.6 },
     };
 
-    return pricing[modelName] || { input: 2, output: 6 }; // Default fallback
+    const rate = pricing[modelName];
+    if (!rate) return undefined;
+    if (provider === "anthropic" || provider === "claude") {
+      return { ...rate, cacheRead: rate.input * (modelName === "claude-fable-5-1" ? 0.025 : 0.1), cacheWrite: rate.input * 1.25 };
+    }
+    // Dated OpenAI baseline cache rates; other unknown cache pricing stays unavailable.
+    const openAiCache: Record<string, number> = {
+      "gpt-4.1": 0.5, "gpt-4.1-2025-04-14": 0.5,
+      "gpt-4.1-mini": 0.1, "gpt-4.1-mini-2025-04-14": 0.1,
+      "gpt-4.1-nano": 0.025,
+    };
+    return { ...rate, cacheRead: provider === "openai" ? openAiCache[modelName] : undefined };
   }
 
   /**
@@ -702,7 +755,7 @@ export async function persistMetrics(metrics: AnalysisMetrics): Promise<void> {
  */
 export function calculateSummaryStats(metricsArray: AnalysisMetrics[]): {
   avgDuration: number;
-  avgCost: number;
+  avgCost: number | null;
   avgTokens: number;
   schemaComplianceRate: number;
   gate1PassRate: number;
@@ -720,7 +773,9 @@ export function calculateSummaryStats(metricsArray: AnalysisMetrics[]): {
   }
 
   const avgDuration = metricsArray.reduce((sum, m) => sum + m.totalDurationMs, 0) / metricsArray.length;
-  const avgCost = metricsArray.reduce((sum, m) => sum + m.estimatedCostUSD, 0) / metricsArray.length;
+  const avgCost = metricsArray.every(m => typeof m.estimatedCostUSD === "number")
+    ? metricsArray.reduce((sum, m) => sum + m.estimatedCostUSD!, 0) / metricsArray.length
+    : null;
   const avgTokens = metricsArray.reduce((sum, m) => sum + m.tokenCounts.totalTokens, 0) / metricsArray.length;
 
   // Schema compliance rate: a job is compliant iff every LLM call has schemaCompliant === true.

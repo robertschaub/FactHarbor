@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T11:47:26.821Z",
+  "generatedAt": "2026-09-23T12:23:45.940Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -49,6 +49,7 @@
         "shouldProtectValidatedAnchorCarriers",
         "getProtectedContractCarrierIds",
         "evaluateClaimContractValidation",
+        "renderClaimContractRetryDiagnostics",
         "shouldRunSingleClaimAtomicityValidation",
         "evaluateSingleClaimAtomicityValidation",
         "selectPreferredSingleClaimAtomicityValidation",
@@ -57,6 +58,7 @@
         "areClaimSetsEquivalent",
         "canCarryForwardValidatedContractApproval",
         "buildContractRetrySaliencePlan",
+        "renderClaimContractRetryGuidance",
         "selectPreferredSingleClaimContractChallenge",
         "selectRepairAnchorText",
         "shouldRunContractRepairPass",

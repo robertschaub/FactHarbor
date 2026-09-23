@@ -37,6 +37,7 @@ import {
   getModelForTask,
   getStructuredOutputProviderOptions,
   getPromptCachingOptions,
+  LLMResponseError,
   type ModelTask,
 } from "./llm";
 import { tryParseFirstJsonValue, repairTruncatedJsonValue, tryParseJsonWithInnerQuoteRepair } from "./json";
@@ -439,7 +440,7 @@ export function createProductionLLMCall(
     const effectiveConfig = (tier === "opus" || tier === "premium") && pipelineConfig.modelOpus
       ? { ...pipelineConfig, modelVerdict: pipelineConfig.modelOpus }
       : pipelineConfig;
-    let model = getModelForTask(taskKey, effectiveProviderOverride, effectiveConfig);
+    let model = getModelForTask(taskKey, effectiveProviderOverride, effectiveConfig, "verdict");
 
     // A-2b: OpenAI TPM guard/fallback configuration (UCM-backed defaults).
     const tpmGuardEnabled = pipelineConfig.openaiTpmGuardEnabled ?? true;
@@ -454,7 +455,7 @@ export function createProductionLLMCall(
         llmProvider: "openai",
         modelVerdict: tpmGuardFallbackModel,
       };
-      return getModelForTask("verdict", "openai", fallbackConfig);
+      return getModelForTask("verdict", "openai", fallbackConfig, "verdict");
     };
 
     const maybeWarnTpmGuardFallback = (
@@ -517,7 +518,7 @@ export function createProductionLLMCall(
     let result: any;
     const callModel = async (activeModel: typeof model): Promise<any> => {
       onModelUsed?.(activeModel.provider, activeModel.modelName);
-      return generateText({
+      const response = await generateText({
         model: activeModel.model,
         messages: [
           {
@@ -537,6 +538,11 @@ export function createProductionLLMCall(
         maxRetries: 2,
         providerOptions: getStructuredOutputProviderOptions(activeModel.provider),
       });
+      if (response.finishReason === "content-filter"
+        || response.rawFinishReason === "refusal") {
+        throw new LLMResponseError(response);
+      }
+      return response;
     };
 
     const callModelWithGuard = async (activeModel: typeof model): Promise<any> => {
@@ -574,7 +580,7 @@ export function createProductionLLMCall(
         errorType,
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
-      });
+      }, { model: attemptModel, error: error, maxOutputTokens: 16384 });
 
       // Retry once with mini fallback when OpenAI TPM pressure is detected.
       if (
@@ -607,7 +613,7 @@ export function createProductionLLMCall(
             errorType: retryErrorType,
             timestamp: new Date(),
             debateRole: options?.callContext?.debateRole,
-          });
+          }, { model: attemptModel, error: retryError, maxOutputTokens: 16384 });
 
           maybeAppendProviderErrorWarning(
             retryError,
@@ -656,6 +662,13 @@ export function createProductionLLMCall(
     // 5. Parse result as JSON
     const text = result.text?.trim();
     if (!text) {
+      recordLLMCall({
+        taskType: "verdict", provider: attemptModel.provider, modelName: attemptModel.modelName,
+        promptTokens: 0, completionTokens: 0, totalTokens: 0,
+        durationMs: Date.now() - startTime, success: false, schemaCompliant: false, retries: 0,
+        errorMessage: "Empty visible response", timestamp: new Date(),
+        debateRole: options?.callContext?.debateRole,
+      }, { model: attemptModel, result, maxOutputTokens: 16384 });
       throw toError(
         `Stage 4: LLM returned empty response for prompt "${promptKey}"`,
         {
@@ -778,7 +791,7 @@ export function createProductionLLMCall(
         retries: 0,
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
-      });
+      }, { model: attemptModel, result: result, maxOutputTokens: 16384 });
       return parsed;
     }
 
@@ -815,7 +828,7 @@ export function createProductionLLMCall(
         expectedRootKind,
         lastRecoveriesAttempted,
       ),
-    });
+    }, { model: attemptModel, result: result, maxOutputTokens: 16384 });
 
     // RETRY ONCE ON PARSE FAILURE (SAME MODEL/PROVIDER)
     if (onEvent) onEvent(`Parse failure, retrying ${attemptModel.modelName}...`, -1);
@@ -840,7 +853,7 @@ export function createProductionLLMCall(
           retries: 1,
           timestamp: new Date(),
           debateRole: options?.callContext?.debateRole,
-        });
+        }, { model: attemptModel, result: retryResult, maxOutputTokens: 16384 });
         return parsed;
       }
 
@@ -874,10 +887,16 @@ export function createProductionLLMCall(
           expectedRootKind,
           lastRecoveriesAttempted,
         ),
-      });
+      }, { model: attemptModel, result: retryResult, maxOutputTokens: 16384 });
     } catch (retryError) {
-      // Retry call itself failed - already handled by recordLLMCall in callModelWithGuard catch block
-      // Rethrow to preserve real failure type (provider/network)
+      recordLLMCall({
+        taskType: "verdict", provider: attemptModel.provider, modelName: attemptModel.modelName,
+        promptTokens: 0, completionTokens: 0, totalTokens: 0,
+        durationMs: Date.now() - startTime, success: false, schemaCompliant: false, retries: 1,
+        errorMessage: retryError instanceof Error ? retryError.message : String(retryError),
+        errorType: retryError instanceof Error ? retryError.name : undefined,
+        timestamp: new Date(), debateRole: options?.callContext?.debateRole,
+      }, { model: attemptModel, error: retryError, maxOutputTokens: 16384 });
       throw retryError;
     }
 

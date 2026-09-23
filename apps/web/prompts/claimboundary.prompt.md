@@ -1,8 +1,8 @@
 ---
-version: "1.0.12"
+version: "1.0.13"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-06-11T00:00:00Z"
+lastModified: "2026-09-23T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -27,12 +27,20 @@ variables:
   - flaggedAssessmentsJson
   - validatorSummary
   - maxReplacementClaims
+  - retryValidationContextJson
+  - anchorGuidance
+  - contractRetryAtomicityGuidance
+  - carrierClaimIds
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_SALIENCE_COMMITMENT"
   - "CLAIM_EXTRACTION_PASS2"
   - "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_VALIDATION"
+  - "CLAIM_CONTRACT_RETRY_GUIDANCE"
+  - "CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE"
+  - "CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE"
+  - "CLAIM_CONTRACT_CARRIER_FIDELITY_REASON"
   - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_REPAIR"
@@ -535,10 +543,10 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
 11. **Truth-condition-bearing modifier audit (MANDATORY).**
-    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all thesis-direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct. Only claims whose `thesisRelevance` is `"direct"` qualify as anchor carriers; tangential or contextual claims do NOT preserve the contract, even if they contain similar wording. **Anchor tiebreaker:** when multiple thesis-direct claims are candidate anchors, prefer the one whose predicate fuses the modifier with the input's original action; a claim about the modifier alone or its effect does NOT qualify as the primary anchor carrier. **Verbatim-presence guard (MANDATORY):** if the anchor modifier appears as a literal substring in any thesis-direct claim's `statement`, you MUST treat that claim as an anchor carrier — do NOT report the anchor as "omitted from all thesis-direct claims" or claim it is missing. If the only literal carrier is a near-verbatim thesis-direct restatement of the input, treat it as the anchor carrier.
+    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. Choose the single most decisive thesis-direct anchor for `truthConditionAnchor`; do not concatenate distinct anchors into that field. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all thesis-direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct. Only claims whose `thesisRelevance` is `"direct"` qualify as anchor carriers; tangential or contextual claims do NOT preserve the contract, even if they contain similar wording. **Carrier tiebreaker:** list first the carrier whose predicate fuses the modifier with the input's original action. This preference orders carriers; it must not remove other carriers from the inventory. If no carrier fuses the modifier with the original action, fail the set under this rule and rule 18 where applicable, while still listing claims that carry the modifier or its in-scope part. **Verbatim-presence guard (MANDATORY):** if the anchor modifier appears as a literal substring in any thesis-direct claim's `statement`, you MUST treat that claim as an anchor carrier — do NOT report the anchor as "omitted from all thesis-direct claims" or claim it is missing. If the only literal carrier is a near-verbatim thesis-direct restatement of the input, treat it as the anchor carrier. Carrier presence does not establish whole-claim fidelity or whole-set approval.
 
 12. **Anti-inference audit (MANDATORY).**
-    Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried. **Verbatim-input guard (MANDATORY):** a claim cannot be "adding" normative language that is not in the input when the claim's `statement` is a literal substring of the input text (or equals it). A verbatim or near-verbatim quotation of the user's own wording is by definition NOT an inferred addition — do NOT flag such a claim as normative injection. **Input-vocabulary guard (MANDATORY):** this rule targets *injected* normative content — vocabulary (e.g. "illegal", "unconstitutional", "binding") that the extractor added without a basis in the input text. When the allegedly injected normative/legal word is itself present in the input text (even if used in a different syntactic role, e.g. adverbial in the input vs. attributive in the claim), do NOT treat the claim as normative injection. Reframing an input-authored term into a different syntactic role within the same claim set is a paraphrase concern governed by rules 9/10, not an injection; flag at most as `proxyDriftSeverity: minor` in that claim's entry and do NOT set `rePromptRequired: true` on the anti-inference channel for this reason alone.
+    Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried. **Verbatim-input guard (MANDATORY):** a claim cannot be "adding" normative language that is not in the input when the claim's `statement` is a literal substring of the input text (or equals it). A verbatim or near-verbatim quotation of the user's own wording is by definition NOT an inferred addition — do NOT flag such a claim as normative injection. **Input-vocabulary guard (MANDATORY):** this rule targets normative content that the extractor added without a basis in the input text. When the allegedly injected normative term is itself present in the input text, do NOT treat the claim as normative injection. Assess meaning and action/state fidelity under rules 1 and 6, retry materiality under rule 9, and modifier scope under rules 16 and 18. For the syntactic-role change alone, flag at most `proxyDriftSeverity: mild` in that claim's entry and do NOT set `rePromptRequired: true` on the anti-inference channel.
 
 13. **Traceable validation only.**
     You MUST justify anchor-preservation approval with explicit traceable evidence from the provided claim set. Do not assume a modifier is preserved; cite the exact claim IDs and quote the relevant phrase from each cited claim. If no claim preserves the modifier, set `rePromptRequired: true`. **Cited preservation evidence (`preservedInClaimIds`) MUST reference claims whose `thesisRelevance` is `"direct"`. Citing a tangential or contextual claim as the anchor carrier is not allowed and counts as preservation failure even if the cited claim's text contains modifier-like wording.**
@@ -634,13 +642,49 @@ Field constraints:
 - `preservesEvaluativeMeaning`: does this claim preserve the original evaluative meaning?
 - `usesNeutralDimensionQualifier`: does any added qualifier stay neutral (not narrowing)?
 - `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
-- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift that requires a new extraction attempt.
+- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift or a structural failure of this claim under rules 16–21 that requires a new extraction attempt. A structural retry does not by itself mean the anchor is absent from the claim.
 - `reasoning`: max 120 characters. Why this assessment.
 - `truthConditionAnchor.anchorText`: empty string only when no truth-condition-bearing modifier exists in the input.
-- `truthConditionAnchor.preservedInClaimIds`: must contain only claim IDs that actually exist in the provided claim list.
+- `truthConditionAnchor.preservedInClaimIds`: list every thesis-direct claim carrying the chosen anchor or its in-scope part, using only IDs that actually exist in the provided claim list. Include carriers that fail another rule; report those failures through `recommendedAction` or `rePromptRequired`, never by omitting the carrier from this inventory.
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
 - If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
+
+---
+
+## CLAIM_CONTRACT_RETRY_GUIDANCE
+
+CLAIM CONTRACT CORRECTION
+
+The selected validation assessment is provided below. Re-extract to address its findings. If `validationAvailable` is false, validation returned no usable structured result: re-extract conservatively from the original input only. An empty `flaggedAssessments` list does not invalidate a finding recorded in the summary.
+
+```json
+${retryValidationContextJson}
+```
+
+${anchorGuidance}
+
+${contractRetryAtomicityGuidance}
+
+Preserve the original evaluative meaning and use only neutral dimension qualifiers. The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original words for that modifier **verbatim** in the claim's `statement`. Do not translate, paraphrase or externalize that modifier into a supporting claim. Do NOT substitute proxy predicates for the user's original predicate. Preserve the original action/state threshold: do not weaken a decisive act into a preparatory step or strengthen a preparatory step into a final act. If a shared predicate or modifier applies across multiple actors, preserve it in each actor-specific claim within its scope. These instructions apply in the original input language.
+
+---
+
+## CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE
+
+The selected validator identified this truth-condition-bearing anchor in the input but supplied no carrier that passed the structural checks: "${anchorText}". Address that preservation finding while retaining the anchor's original action and semantic scope. This finding does not establish that the anchor's wording is absent from every claim.
+
+---
+
+## CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE
+
+The atomicity assessment requires splitting independently verifiable propositions that remained bundled. Return one thesis-direct claim per independently verifiable proposition, preserve every in-scope truth-condition-bearing modifier in each resulting claim, and do not retain a bundled whole-input claim alongside its parts.
+
+---
+
+## CLAIM_CONTRACT_CARRIER_FIDELITY_REASON
+
+carrier_fidelity_failed: the validator identified anchor "${anchorText}" in claim(s) [${carrierClaimIds}] but assessed material drift or lost evaluative meaning in those claims. Carrier presence does not establish fidelity; the contract requires correction.
 
 ---
 

@@ -300,7 +300,8 @@ function getFinishReason(result: unknown): string | null {
 
 function isExplicitRefusalOrSafetyBlock(result: unknown): boolean {
   const reason = getFinishReason(result)?.toLowerCase();
-  return reason === "content-filter" || reason === "safety";
+  return reason === "content-filter" || reason === "safety"
+    || (result as { rawFinishReason?: string } | undefined)?.rawFinishReason === "refusal";
 }
 
 function stringifyDiagnosticValue(value: unknown): string | undefined {
@@ -416,7 +417,7 @@ function recordClaimSelectionCall(args: {
     errorMessage,
     errorType: args.error instanceof Error ? args.error.name : undefined,
     timestamp: new Date(),
-  });
+  }, { model: args.model, result: args.result, error: args.error });
 }
 
 export async function generateClaimSelectionRecommendation(args: {
@@ -441,7 +442,7 @@ export async function generateClaimSelectionRecommendation(args: {
     throw new ClaimSelectionRecommendationError("Stage 1.5: Failed to load CLAIM_SELECTION_RECOMMENDATION prompt section");
   }
 
-  const model = getModelForTask("context_refinement", undefined, args.pipelineConfig);
+  const model = getModelForTask("context_refinement", undefined, args.pipelineConfig, "claimSelection");
   let lastError: unknown;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -501,7 +502,8 @@ export async function generateClaimSelectionRecommendation(args: {
         retries: attempt,
         error,
       });
-      if (error instanceof ClaimSelectionRecommendationExplicitRefusalError) {
+      if (error instanceof ClaimSelectionRecommendationExplicitRefusalError
+        || isExplicitRefusalOrSafetyBlock((error as { result?: unknown })?.result)) {
         throw error;
       }
       if (attempt === 1) {

@@ -13,6 +13,7 @@ import {
   DEFAULT_CALC_CONFIG,
   invalidateConfigCache,
   loadCalcConfig,
+  loadPipelineConfig,
 } from "@/lib/config-loader";
 import {
   getActiveConfigHash,
@@ -24,6 +25,17 @@ describe("config-loader nested default backfill", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     invalidateConfigCache();
+  });
+
+  it("rejects a stored partial candidate policy without silently loading baseline", async () => {
+    vi.mocked(getActiveConfigHash).mockResolvedValue("old-candidate-hash");
+    vi.mocked(getConfigBlob).mockResolvedValue({ content: JSON.stringify({
+      llmTiering: true, modelVerdict: "claude-sonnet-5",
+      modelPolicies: { "claude-sonnet-5": { thinking: { type: "adaptive", effort: "medium" },
+        outputTokenCaps: { claimContractValidation: 8192 } } },
+    }) } as any);
+    await expect(loadPipelineConfig("default", "offline-invalid")).rejects.toThrow("outputTokenCaps.verdict");
+    expect(recordConfigUsage).not.toHaveBeenCalled();
   });
 
   it("deep-merges nested sections so new default fields are backfilled", async () => {
