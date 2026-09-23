@@ -235,7 +235,9 @@ static void EnsureJobsColumn(FhDbContext db, string columnName, string sqlType)
     try
     {
         using var check = connection.CreateCommand();
-        check.CommandText = "SELECT 1 FROM pragma_table_info('Jobs') WHERE name = $name LIMIT 1;";
+        // SQLite column names are case-insensitive, so match them that way; a case-sensitive
+        // miss would send ALTER TABLE into "duplicate column name" and stop startup.
+        check.CommandText = "SELECT 1 FROM pragma_table_info('Jobs') WHERE name = $name COLLATE NOCASE LIMIT 1;";
         var parameter = check.CreateParameter();
         parameter.ParameterName = "$name";
         parameter.Value = columnName;

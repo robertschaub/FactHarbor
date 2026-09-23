@@ -27,7 +27,7 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 
 ## Key Patterns
 
-- **DB bootstrap + manual schema updates.** `Program.cs` runs `db.Database.Migrate()` for the registered EF migrations, then `EnsureJobsColumn` adds the Jobs columns whose migrations are not registered (`GitCommitHash`, `ExecutedWebGitCommitHash`, `AdminAnnotation`, `IsHidden`) when they are missing. A new column needs either a registered migration or an entry there.
+- **DB bootstrap + manual schema updates.** `Program.cs` runs `db.Database.Migrate()` for the registered EF migrations, then `EnsureJobsColumn` adds the Jobs columns whose migrations are not registered (`GitCommitHash`, `ExecutedWebGitCommitHash`, `AdminAnnotation`, `IsHidden`) when they are missing. A new column needs either a registered migration or an entry there. Before adding a registered migration, add `AdminAnnotation` to `migrations/FhDbContextModelSnapshot.cs`: the snapshot lacks it, so a new migration would try to add it again, and `Migrate()` runs before the patch, so startup would fail on existing databases.
 - **Manual SQL migration scripts live in `apps/api/migrations/`.** Only an authorized main-session database task may apply relevant scripts for existing databases after entity/schema changes (e.g., `004_add_verdict_summary_columns.sql` adds `VerdictLabel` and `TruthPercentage`).
 - **All DB writes go through `JobService`.** It appends `JobEventEntity` rows for history/audit. Never write to DbContext directly from controllers.
 - **Internal endpoints use header auth.** `InternalJobsController` checks `X-Admin-Key` via `IsAuthorized()`. This is a shared-secret mechanism, not full AuthN/AuthZ.
