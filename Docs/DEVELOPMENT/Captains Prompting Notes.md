@@ -14,7 +14,7 @@ And analyze the current source code.
 ---
 
 ## General rule for any changes:
-
+- For anything to decide, ask me wizard like multiple choice questions with your reccomendations
 - After each bigger step, run automated test without my participation.
 - Re-test the recent analyses inputs (Especially the two Bolsonaro inputs, the Hydrogen vs Electric Cars input, the one with the .pdf article and the Venezuela article).
 - Look into `apps\web\debug-analyzer.log`.
