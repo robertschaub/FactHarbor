@@ -2,7 +2,18 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-09-18 (WIP Consolidation #14)
+**Last Updated**: 2026-09-23 (Benchmark experiment outputs)
+
+---
+
+### Benchmark experiment outputs (2026-09-23)
+
+**Description**: Raw outputs of the March 14–15 Phase 1 and Phase A experiments, moved here from `scripts/Benchmarks/` when the experiment scripts were deleted as obsolete. The scripts remain in git history at `a4c786531`.
+
+| File | Reason |
+|------|--------|
+| `phase1_live_tracking.md`, `phase1_results.json` | Phase 1 binary-gate results cited by `Report_Quality_Next_Investigation_Recommendations_2026-03-14.md` |
+| `phaseA_live_tracking.md`, `phaseA_results.json` | Phase A per-run data cited by `Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md`, whose §4 tables were never filled in |
 
 ---
 
