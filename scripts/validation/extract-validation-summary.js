@@ -13,9 +13,17 @@
  *
  * Output: test-output/validation/<batchLabel>/<familyName>.json + manifest.json
  *
+ * Isolation: one job at a time. The next family is submitted only once the previous one cannot
+ * still be running: its job SUCCEEDED, or FAILED at progress 100 (written when the pipeline exits
+ * or the runner could not be triggered), or the API rejected the submission (HTTP 4xx). Anything
+ * else stops the batch, including CANCELLED, FAILED by the stale-job watchdog, non-terminal at the
+ * wait bound, or an unreadable status. manifest.stopped then lists the families not submitted,
+ * and the process exits with code 2.
+ *
  * Environment:
- *   FH_API_URL     — API base (default: http://localhost:5000)
- *   FH_INVITE_CODE — invite code (default: SELF-TEST)
+ *   FH_API_URL        — API base (default: http://localhost:5000)
+ *   FH_INVITE_CODE    — invite code (default: SELF-TEST)
+ *   FH_JOB_TIMEOUT_MS — per-job wait bound (default: 7200000 = 2 h; "Infinity" waits until terminal)
  */
 
 const fs = require("fs");
@@ -23,8 +31,12 @@ const path = require("path");
 
 const API_URL = (process.env.FH_API_URL || "http://localhost:5000").replace(/\/$/, "");
 const INVITE_CODE = process.env.FH_INVITE_CODE || "SELF-TEST";
-const JOB_TIMEOUT_MS = 600_000; // 10 minutes per job
+// The default covers observed local runs (June–September 2026: median 14 min, max 75 min).
+const configuredJobTimeoutMs = Number(process.env.FH_JOB_TIMEOUT_MS);
+const JOB_TIMEOUT_MS = configuredJobTimeoutMs > 0 ? configuredJobTimeoutMs : 7_200_000;
 const POLL_INTERVAL_MS = 5_000;
+// INTERRUPTED is not terminal: the runner re-queues interrupted jobs and runs them again.
+const TERMINAL_JOB_STATUSES = new Set(["SUCCEEDED", "FAILED", "CANCELLED"]);
 const isCli = require.main === module;
 
 const batchLabel = process.argv[2];
@@ -59,23 +71,27 @@ async function submitJob(family) {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Submit failed (${res.status}): ${body.slice(0, 200)}`);
+    const err = new Error(`Submit failed (${res.status}): ${body.slice(0, 200)}`);
+    // The API rejects 4xx requests before it creates a job; any other failure may have created one.
+    err.rejected = res.status >= 400 && res.status < 500;
+    throw err;
   }
   const data = await res.json();
   return data.jobId;
 }
 
-async function waitForJob(jobId) {
-  const start = Date.now();
-  while (Date.now() - start < JOB_TIMEOUT_MS) {
+async function waitForJob(jobId, { timeoutMs = JOB_TIMEOUT_MS, pollIntervalMs = POLL_INTERVAL_MS } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
     const headers = process.env.FH_ADMIN_KEY ? { "X-Admin-Key": process.env.FH_ADMIN_KEY } : undefined;
     const res = await fetch(`${API_URL}/v1/jobs/${jobId}`, { headers });
     if (!res.ok) throw new Error(`Poll failed (${res.status})`);
     const job = await res.json();
-    if (job.status === "SUCCEEDED" || job.status === "FAILED") return job;
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    if (TERMINAL_JOB_STATUSES.has(job.status)) return job;
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) throw new Error(`Job ${jobId} still ${job.status} after ${timeoutMs / 1000}s`);
+    await new Promise((r) => setTimeout(r, Math.min(pollIntervalMs, remainingMs)));
   }
-  throw new Error(`Job ${jobId} timed out after ${JOB_TIMEOUT_MS / 1000}s`);
 }
 
 function normalizeArray(value) {
@@ -299,7 +315,7 @@ function extractSummary(family, job) {
 async function run() {
   console.log("=".repeat(60));
   console.log(`Validation Batch: ${batchLabel}`);
-  console.log(`Families: ${families.length} | API: ${API_URL}`);
+  console.log(`Families: ${families.length} | API: ${API_URL} | Job wait bound: ${JOB_TIMEOUT_MS / 60_000} min`);
   console.log(`Output: ${outputDir}`);
   console.log("=".repeat(60));
 
@@ -325,21 +341,30 @@ async function run() {
 
   let passed = 0;
   let failed = 0;
+  let stopReason = null;
 
   for (let i = 0; i < families.length; i++) {
     const family = families[i];
     const label = `[${i + 1}/${families.length}] ${family.familyName}`;
     process.stdout.write(`${label}: submitting... `);
 
+    let jobId = null;
+    let job = null;
     try {
-      const jobId = await submitJob(family);
+      jobId = await submitJob(family);
       process.stdout.write(`job=${jobId.slice(0, 8)}... `);
 
-      const job = await waitForJob(jobId);
+      job = await waitForJob(jobId);
       if (job.status !== "SUCCEEDED") {
         console.log(`FAILED (${job.status})`);
-        manifest.results.push({ familyName: family.familyName, status: "FAILED", jobId });
+        manifest.results.push({ familyName: family.familyName, status: job.status, jobId });
         failed++;
+        // FAILED at progress 100 is written when the pipeline exits or the runner could not be triggered. A cancelled
+        // job runs until its next abort checkpoint, and the stale-job watchdog marks a job FAILED without stopping it.
+        if (job.status !== "FAILED" || job.progress !== 100) {
+          stopReason = `job ${jobId} is ${job.status} at progress ${job.progress}, and its pipeline may still be running`;
+          break;
+        }
         continue;
       }
 
@@ -367,20 +392,39 @@ async function run() {
       });
       passed++;
     } catch (err) {
-      console.log(`ERROR: ${err.message}`);
-      manifest.results.push({ familyName: family.familyName, status: "ERROR", error: err.message });
+      // Continue only when no job can be running: the submission was rejected, or the job already SUCCEEDED.
+      const status = job || err.rejected ? "ERROR" : "NOT_TERMINAL";
+      console.log(`${status}: ${err.message}`);
+      manifest.results.push({ familyName: family.familyName, status, jobId, error: err.message });
       failed++;
+      if (status === "NOT_TERMINAL") {
+        stopReason = jobId
+          ? `job ${jobId} may still be running (${err.message})`
+          : `the submission may have created a job that is still running (${err.message})`;
+        break;
+      }
     }
   }
 
   manifest.completedAt = new Date().toISOString();
   manifest.passed = passed;
   manifest.failed = failed;
+  if (stopReason) {
+    // Each processed family added exactly one result, so the rest were never submitted.
+    const notSubmitted = families.slice(manifest.results.length).map((family) => family.familyName);
+    manifest.stopped = { reason: stopReason, notSubmitted };
+  }
   fs.writeFileSync(path.join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2));
 
   console.log(`\n${"=".repeat(60)}`);
   console.log(`Done: ${passed} passed, ${failed} failed`);
   console.log(`Results: ${outputDir}`);
+  if (manifest.stopped) {
+    console.log(`STOPPED: ${manifest.stopped.reason}`);
+    console.log(`Not submitted: ${manifest.stopped.notSubmitted.join(", ") || "(none)"}`);
+    console.log("Confirm the job is no longer queued or running (cancel it if needed) before submitting the remaining families.");
+    process.exitCode = 2;
+  }
 }
 
 if (isCli) {
@@ -394,4 +438,5 @@ module.exports = {
   buildSummaryReadModel,
   extractSummary,
   getResultSchemaKind,
+  waitForJob,
 };
