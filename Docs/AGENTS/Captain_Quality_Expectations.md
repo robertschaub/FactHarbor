@@ -107,11 +107,12 @@ Search scope: local `apps/api/factharbor.db` exact-input matches plus the deploy
 - Multilingual robustness: no English-only assumptions or logic paths.
 - Report quality is broader than symmetry: verdict accuracy, explanation quality, evidence completeness, cross-lingual robustness, and stability all matter.
 
-## For Inputs Outside the 8 Approved Families
+## For Inputs Outside the 8 Scored Benchmark Families
 
 - Apply all generic expectations above.
-- Do NOT invent new benchmark verdict bands. Captain adds new families to `AGENTS.md` and `benchmark-expectations.json` explicitly.
-- Treat non-approved inputs as controls, stability probes, regression fixtures, or exploratory cases.
+- Inputs explicitly listed as authorized unscored controls or variants in root `AGENTS.md` may be used only for their stated role. They have no Captain-approved verdict, truth, or confidence bands; do not infer bands from stored results or scored families.
+- Do NOT invent new benchmark verdict bands. Captain adds scored families to root `AGENTS.md` and `benchmark-expectations.json` explicitly.
+- All other inputs remain non-approved until Captain defines or approves their exact wording and role.
 
 ## Next Actions
 

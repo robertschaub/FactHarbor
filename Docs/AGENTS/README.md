@@ -76,7 +76,7 @@ The first three rows form the **quality-expectations triad** consumed by `/repor
 | Document | Purpose |
 |----------|---------|
 | [Captain_Quality_Expectations.md](Captain_Quality_Expectations.md) | Human-readable summary of current Captain benchmark and generic quality expectations |
-| [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 approved benchmark families |
+| [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 scored benchmark families |
 | [report-quality-expectations.json](report-quality-expectations.json) | Machine-readable cross-input Q-code quality criteria used by `/report-review` |
 | [GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md) | Core rules and document handling for xWiki work |
 | [InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md) | Chat initialization prompt for xWiki-focused sessions |

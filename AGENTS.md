@@ -118,7 +118,8 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - **Do not invent analysis inputs.** For planning, validation, benchmark runs, live analysis, documentation, or review packets, agents MUST use only analysis inputs explicitly defined by Captain.
 - **Do not paraphrase, translate, normalize, or synthesize substitute inputs.** Use the Captain-defined wording exactly as provided unless Captain explicitly replaces or extends the list.
 - **If the needed analysis input is not on the approved list, stop and ask Captain** to define or approve it before proceeding.
-- **Current Captain-defined analysis inputs:**
+- **Listing an input authorizes its exact wording only.** Live submission still requires current action and scope authorization under §Task authority and review.
+- **Scored benchmark inputs (8):** Mechanical bands and status remain authoritative in `Docs/AGENTS/benchmark-expectations.json`.
     - `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
     - `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
     - `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
@@ -127,6 +128,14 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
     - `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
     - `Using hydrogen for cars is more efficient than using electricity`
     - `Plastic recycling is pointless`
+- **Authorized unscored exact-input controls:** Use these only for byte-exact historical comparison and stability or multilingual controls. No Captain-approved verdict, truth, or confidence band exists; do not infer one from stored results or from a scored family.
+    - `Plastik recycling bringt nichts`
+    - `Le recyclage du plastique ne sert à rien`
+    - `Ist die Erde flach?`
+    - `Ist die Erde rund?`
+- **Authorized dated asylum variant (unscored):**
+    - `Am 31. August 2026 hielten sich 237 645 Personen aus dem Asylbereich in der Schweiz auf; das waren fast so viele wie am Ende des Zweiten Weltkrieges.`
+    - This is a semantic, date, and definition variant, not an exact comparator or replacement for either scored asylum input. `237 645` is an agent-derived sum of official SEM monthly component tables, not a published monthly headline aggregate. Do not refresh, normalize, or substitute its date or number without Captain approval.
 
 ### Failed-Attempt Recovery
 
