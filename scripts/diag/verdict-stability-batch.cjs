@@ -21,8 +21,7 @@
  * running: it SUCCEEDED, or FAILED at progress 100 (written when its pipeline exits or the runner could not
  * be triggered), or the API rejected the submission (HTTP 4xx). Anything else stops the batch with exit
  * code 2, including CANCELLED, FAILED by the stale-job watchdog (progress < 100), non-terminal at the wait
- * bound, or an unreadable status. Job status cannot reveal a duplicate execution that the runner may
- * start after a stale-job watchdog mark.
+ * bound, or an unreadable status.
  *
  * Usage:
  *   node scripts/diag/verdict-stability-batch.cjs --inputs <set.json> --n 8            # plan + cost, no spend
