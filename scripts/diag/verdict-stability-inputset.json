@@ -6,7 +6,7 @@
   },
   {
     "inputType": "text",
-    "inputValue": "Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
     "note": "contested-DE-contractanchor"
   },
   {
@@ -18,10 +18,5 @@
     "inputType": "text",
     "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
     "note": "contested-EN-legal"
-  },
-  {
-    "inputType": "text",
-    "inputValue": "Muslims are more violent than Christians.",
-    "note": "sensitive-EN"
   }
 ]
