@@ -762,21 +762,21 @@ Proposed operational sub-cap: **$8 within the original $25**, only after reconci
 
 Artifacts are in `test-output/live-ab-harness/runs/model-upgrade-live-20260924/offline-followup/`: source-review record, current/proposed narrative projections, conditional pilot JSON, exact input and both plan-only logs/process records. An initial Windows-decoding error in the draft input was caught offline, preserved under `attempt-1/`, and amended by copying the approved UTF-8 file byte-for-byte; regenerated previews use the exact approved input. No live submission, application/prompt/configuration edit, runtime activation, service change, test/build, commit, push or deployment occurred in this follow-up.
 
-### Status after the review of the offline diagnosis (2026-09-24)
+### Status after the review and offline implementation (2026-09-24)
 
-Claude Opus 5.5 in Claude Code reviewed the offline diagnosis read-only (report `30f3af95…`) and re-checked the findings against `main` at `47d8b0745`. The Backlog carries the open items; this table only maps them.
+Claude Opus 5.5 in Claude Code reviewed the offline diagnosis read-only (report `30f3af95…`) and re-checked the findings against `main` at `47d8b0745`. The follow-up implementation was prepared in an isolated worktree from `c58efd32d`: the Backlog carries the open items, while the tracked pilot package at `scripts/diag/model-upgrade-pilot/` is the operational source for this two-job proposal. Independent review cleared the corrected tooling, which is now integrated locally. No-spend setup is within the settled preparation scope; one final GO is required before candidate activation or either paid run.
 
-| Item | State at `47d8b0745` | Backlog |
+| Item | Current state | Backlog |
 | --- | --- | --- |
 | SR cost missing from job metrics | Fixed from `6840e90d9`/`094fbeed5` on; `d3de379c` stays a lower bound | `SR-COST`, `SR-ATTRIB` (done) |
 | Decomposition conflict | Captain decision taken; prompt 1.0.14 parked on `claude/decomp-three-claims`; Stage 5 change proposed; all on hold, `main` unchanged | `DECOMP-RULES`, `ANCHOR-SUBSTR` |
-| Arm B transport | Open: adaptive/medium stays on the forced JSON-tool route; the approved plan's acceptance clause is missing from `conditional-pilot-plan.json` | `S5-TRANSPORT` |
+| Arm B transport | Pilot disposition implemented: adaptive/medium stays on the forced JSON-tool route; any schema failure, recovered fallback, unsuccessful job or damaged report is B's assigned outcome and is not replaced. General transport reliability remains open. | `S5-TRANSPORT` |
 | Narrative and adjudication inputs | Open: both cut each claim's reasoning to 200 characters; under the Stage 5 design, adjudication decides this family's article verdict | `NARR-INPUT`, `ADJ-INPUT` |
 | Q-code annotations | Open: Q-S1.3 and Q-S1.1 cannot both pass for `bundesrat-simple`, the Bolsonaro inputs and, on `main`, `bundesrat-rechtskraftig` | `QCODE-ANNOT` |
 | Reconciler | Open: AC_02's truth lowered for spread and an out-of-scope contingency | `RECON-SPREAD` |
-| Unknown-cost stop | New: a timed-out SR evaluation now makes the job's cost null, which trips the pilot's unknown-cost stop | `SR-TIMEOUT` |
-| Runner prechecks | Open: no commit, config or input-byte check before `--run` | `BATCH-PRECHECK` |
-| Pilot status | Not execution-ready; the rows above update the prerequisite list in the offline follow-up | `MODEL-AB` |
+| Unknown-cost stop | Product leak remains open. For this pilot only, an explicit synthetic lost-evaluation marker receives the accepted $0.97875 operational allowance. Unknown-usage physical calls, unrelated unpriced calls or missing/mismatched cost metadata leave the upper unresolved and block continuation. | `SR-TIMEOUT` |
+| Runner prechecks | Implemented offline: after the reviewed commit, an ignored execution manifest pins the clean commit, exact input bytes, all source/control artifact hashes and all five config hashes. The runner also enforces one run per arm, a fresh arm-specific output, an empty active queue, and per-job start/completion provenance. | `BATCH-PRECHECK` |
+| Pilot status | Offline implementation complete. Settled no-spend preparation may save B inactive and freeze the ignored execution record after integration/review; one final GO is required before activation or either paid run. | `MODEL-AB` |
 
 The §8 capped contract-validation screen pins prompt 1.0.13 and the pre-decision rules 16/18/19. Re-specify it once `DECOMP-RULES` lands, or drop it.
 
@@ -787,11 +787,11 @@ The §8 capped contract-validation screen pins prompt 1.0.13 and the pre-decisio
 - refinement, translation and detection outputs at their caps (2,000, 800 and 50 tokens) plus their small inputs: under $0.08;
 - at most 68 SR searches per evaluated domain (the full query set) at the metrics' flat $5 per 1,000: $2.72.
 
-That totals at most $7.83, so at least $15.5 of the $25 remains, enough for the proposed $8 sub-cap if the Captain accepts this bound as the budget disposition. The SR cache's stored evidence packs list each domain's queries if a tighter search figure is needed; the LLM usage was discarded and cannot be recovered.
+That totals at most $7.83. The accepted disposition therefore leaves at least $15.529468 of the original $25 under its recorded assumptions. The implemented pilot uses a $10 operational sub-cap, stops before submitting B when known plus bounded-unknown pilot cost is at least $5, and preserves a $5 in-flight reserve. This is not a hard invoice ceiling. The SR cache's stored evidence packs list each domain's queries if a tighter search figure is needed; the historical LLM usage was discarded and cannot be recovered.
 
 ### Documentation discipline
 
-This is the single review record for the model-upgrade decision. It supplements the [consolidated analysis-quality plan](2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md), rather than replacing it. Historical cost documents remain historical. No backlog item is marked complete and no programme status changes.
+This is the single review record for the model-upgrade decision. It supplements the [consolidated analysis-quality plan](2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md), rather than replacing it. Historical cost documents remain historical. Only the offline pilot tooling and its pilot-specific dispositions are implemented; the product findings remain open and no programme status changes.
 
 DOC-GUARD: reader = Captain and reviewer; need = grounded model/configuration decision; existing home = older plans linked for history; option = one dated proposal; rejected = overwriting old measurements; lean test = decision-relevant evidence only; readability = verified/measured/proposed distinctions; docs-update = task-record linkage only.
 

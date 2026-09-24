@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "planId": "model-upgrade-two-job-pilot-v1",
+  "status": "IMPLEMENTED OFFLINE; NO-SPEND PREPARATION THEN ONE FINAL GO BEFORE ACTIVATION OR PAID RUNS",
+  "sourceBaseline": "c58efd32d13455f3ab0a51439d9996d3d794a870",
+  "executionFreeze": {
+    "template": "scripts/diag/model-upgrade-pilot/preflight-manifest.template.json",
+    "generatedRecord": "test-output/model-upgrade-pilot/execution-preflight.json",
+    "timing": "Generate only after the reviewed implementation commit exists and the inactive B profile has a UCM content hash. The ignored record, not a tracked file, pins the commit and all artifact hashes."
+  },
+  "purpose": "Two-job full-pipeline smoke comparison: one baseline A job followed conditionally by one Sonnet 5 adaptive/medium B job on the exact approved qualifier-bearing German input.",
+  "input": {
+    "file": "scripts/diag/model-upgrade-pilot/pilot-input.json",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "runsPerArm": 1,
+    "maxNewAttempts": 2,
+    "replacementAttempts": 0
+  },
+  "arms": {
+    "A": {
+      "profile": "pipeline/default",
+      "contentHash": "1b699a0d8ed98efe23a6b0a310d040abe18fdf6adbca0b9eab1481a176ee6fd9",
+      "modelVerdict": "standard resolves to claude-sonnet-4-6"
+    },
+    "B": {
+      "profile": "pipeline/default",
+      "candidateFile": "scripts/diag/model-upgrade-pilot/arm-B-sonnet5-medium.json",
+      "contentHashSource": "Generated execution manifest after inactive UCM save",
+      "modelVerdict": "claude-sonnet-5",
+      "thinking": { "type": "adaptive", "effort": "medium" },
+      "boundaryClusteringMaxOutputTokens": 32768,
+      "transport": "Existing forced jsonTool route. Any schema failure, recovered fallback, unsuccessful job or damaged report is the assigned B outcome and is not replaced."
+    }
+  },
+  "fixedConfigHashes": {
+    "calculation/default": "f96af741cdb60d5f592c39da9f5d4c0db81ffaaf0da75f17c290727faa0f313e",
+    "prompt/claimboundary": "39299133a8a4488e5cfb4071ae70968d152272cd6b4353fbc28b830e46ce904b",
+    "search/default": "f67ff92c7aee09ddcc49d6c205f8ce01d29cf01d83ef197305b2e0d06e9c1f02",
+    "sr/default": "50a1573b15bc116fd9adde2377012bcb2baafde955822f95055c7e966b18698a"
+  },
+  "budget": {
+    "historicalDisposition": "The accepted upper bound for d3de379c omitted SR work is $7.83, leaving at least $15.529468 of the original $25 under the recorded assumptions.",
+    "newPilotOperationalSubcapUSD": 10,
+    "stopNewSubmissionsAtConservativeUpperUSD": 5,
+    "inflightReserveUSD": 5,
+    "hardInvoiceCapEnforced": false,
+    "boundedUnknownRule": "Add $0.97875 only for each explicit synthetic lost-evaluation marker. Unknown-usage physical calls or other unpriced calls keep the conservative upper unresolved and block the next submission. The allowance is operational, not exact billing."
+  },
+  "acceptedHistoricalCostAllowances": {
+    "d3de379ceb4c4cb3a4846bf68be5e436": {
+      "usd": 7.83,
+      "provenance": "Accepted source-reconciled upper bound for d3de379c's omitted SR work; investigation section 9, 2026-09-24. This exact-job allowance does not apply to new jobs."
+    }
+  },
+  "sequence": [
+    { "order": 1, "arm": "A", "n": 1, "out": "test-output/model-upgrade-pilot-A.jsonl" },
+    { "order": 2, "arm": "B", "n": 1, "out": "test-output/model-upgrade-pilot-B.jsonl", "conditional": true }
+  ],
+  "beforeEverySubmission": [
+    "Runner manifest verifies a full approved commit SHA and a clean worktree.",
+    "Runner verifies the exact input-file hash and byte-identical Captain-defined input.",
+    "Runner verifies every frozen harness hash, active pipeline/search/calculation/SR/prompt hash, exactly one authorized run, a fresh arm-specific output and zero nonterminal jobs.",
+    "After A, submit B only when the conservative pilot total remains below $5 and the baseline quality/stability review passes."
+  ],
+  "betweenArms": {
+    "restartRule": "Restart before B only if A records any source-reliability error. After a restart, rerun the complete preflight and stop on any commit/config/input/artifact drift.",
+    "cacheRule": "Do not flush or disable caches. Report cached-search and SR reuse counts; do not interpret a B cache advantage as model savings."
+  },
+  "timeoutClassification": {
+    "confirmed": "Only a recorded UND_ERR_HEADERS_TIMEOUT or Headers Timeout Error is a confirmed Headers Timeout.",
+    "proxy": "A recorded call duration >=300000 ms is a duration proxy only.",
+    "interpretation": "Keep clustering, Stage 1, Stage 5 and SR separate from Stage 4; an ambiguous verdict-task row is labelled Stage4-or-5 rather than guessed. Exact SDK retry counting is deferred."
+  },
+  "scoring": {
+    "mechanical": "Benchmark verdict/truth/confidence band.",
+    "semantic": "Metadata-stripped blinded claim-by-claim review of statement fidelity, evidence/citation support, direction, qualifiers and reasoning.",
+    "excluded": ["claim-count scoring", "anchor-token scoring", "narrative prose quality"],
+    "reportedButNotScored": "Confidence before and after narrative adjustment.",
+    "limits": "This is a smoke comparison, not repeatability, model-isolated causality, reliability-rate or promotion evidence."
+  },
+  "stops": [
+    "Any preflight or postflight commit/config/input/artifact mismatch.",
+    "Any nonterminal overlap or uncertainty that a previous job is still running.",
+    "A conservative pilot total at or above $5 before B.",
+    "Baseline A fails the agreed quality/stability review.",
+    "Any B failure remains the B observation; no replacement is submitted."
+  ],
+  "holdsAndDeferrals": {
+    "untouched": ["DECOMP-RULES", "NARR-INPUT", "ADJ-INPUT", "parked prompt 1.0.14"],
+    "notPilotScoring": ["Q-S1.1 claim count", "Q-S1.3 anchor tokens", "narrative quality"],
+    "deferredBeforeAnyLater12JobDesign": ["exact transport retry accounting", "the separately identified two unrecorded Haiku calls"]
+  },
+  "authorization": {
+    "implementedNow": "Tooling, candidate artifact, tests and documentation only.",
+    "noSpendPreparationBeforeFinalGO": "After integration and review, local service/config preparation may save B inactive and generate the ignored execution manifest. This is preparation within the settled scope, not a separate approval gate.",
+    "oneFinalGORequiredFor": "Activating B or submitting either paid analysis job.",
+    "neverInferred": ["push", "deployment", "production access"]
+  }
+}

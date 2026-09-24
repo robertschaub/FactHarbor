@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "planId": "model-upgrade-two-job-pilot-v1",
+  "planPath": "scripts/diag/model-upgrade-pilot/conditional-pilot-plan.json",
+  "requireClean": true,
+  "input": {
+    "path": "scripts/diag/model-upgrade-pilot/pilot-input.json",
+    "sha256": "d259acbeb38188a309f038c066f284da13f1162671faa8ae4e097b73cd206195",
+    "count": 1
+  },
+  "artifactPaths": [
+    "scripts/diag/verdict-stability-batch.cjs",
+    "scripts/diag/verdict-stability-batch.test.mjs",
+    "scripts/diag/live-ab-arm-report.cjs",
+    "scripts/diag/live-ab-arm-report.test.mjs",
+    "scripts/diag/model-upgrade-pilot/arm-B-sonnet5-medium.json",
+    "scripts/diag/model-upgrade-pilot/conditional-pilot-plan.json",
+    "scripts/diag/model-upgrade-pilot/preflight-manifest.template.json",
+    "scripts/diag/model-upgrade-pilot/README.md",
+    "apps/web/test/unit/lib/analyzer/model-policy.test.ts",
+    "Docs/AGENTS/benchmark-expectations.json"
+  ],
+  "runPolicy": {
+    "runsPerInvocation": 1,
+    "requireFreshOutput": true
+  },
+  "arms": {
+    "A": {
+      "outputPath": "test-output/model-upgrade-pilot-A.jsonl",
+      "activeConfigs": {
+        "calculation/default": "f96af741cdb60d5f592c39da9f5d4c0db81ffaaf0da75f17c290727faa0f313e",
+        "pipeline/default": "1b699a0d8ed98efe23a6b0a310d040abe18fdf6adbca0b9eab1481a176ee6fd9",
+        "prompt/claimboundary": "39299133a8a4488e5cfb4071ae70968d152272cd6b4353fbc28b830e46ce904b",
+        "search/default": "f67ff92c7aee09ddcc49d6c205f8ce01d29cf01d83ef197305b2e0d06e9c1f02",
+        "sr/default": "50a1573b15bc116fd9adde2377012bcb2baafde955822f95055c7e966b18698a"
+      }
+    },
+    "B": {
+      "outputPath": "test-output/model-upgrade-pilot-B.jsonl",
+      "activeConfigs": {
+        "calculation/default": "f96af741cdb60d5f592c39da9f5d4c0db81ffaaf0da75f17c290727faa0f313e",
+        "pipeline/default": "__SET_AFTER_UCM_SAVE__",
+        "prompt/claimboundary": "39299133a8a4488e5cfb4071ae70968d152272cd6b4353fbc28b830e46ce904b",
+        "search/default": "f67ff92c7aee09ddcc49d6c205f8ce01d29cf01d83ef197305b2e0d06e9c1f02",
+        "sr/default": "50a1573b15bc116fd9adde2377012bcb2baafde955822f95055c7e966b18698a"
+      }
+    }
+  }
+}

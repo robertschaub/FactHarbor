@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   DEFAULT_PIPELINE_CONFIG, MODEL_POLICY_STAGES, PipelineConfigSchema,
   getModelPolicyErrors, type PipelineConfig,
@@ -10,13 +12,18 @@ import { measuredLLMCall } from "@/lib/analyzer/metrics-integration";
 import { MetricsCollector, type LLMCallMetric } from "@/lib/analyzer/metrics";
 
 function candidate(): PipelineConfig {
-  return {
-    ...DEFAULT_PIPELINE_CONFIG, modelVerdict: "claude-sonnet-5",
-    modelPolicies: { "claude-sonnet-5": {
-      thinking: { type: "adaptive", effort: "medium" },
-      outputTokenCaps: Object.fromEntries(MODEL_POLICY_STAGES.map(stage => [stage, 16384])),
-    } },
-  };
+  return JSON.parse(readFileSync(
+    fileURLToPath(new URL("../../../../../../scripts/diag/model-upgrade-pilot/arm-B-sonnet5-medium.json", import.meta.url)),
+    "utf8",
+  )) as PipelineConfig;
+}
+
+function serializedBaseline(): PipelineConfig {
+  const { schemaVersion: _schemaVersion, ...config } = JSON.parse(readFileSync(
+    fileURLToPath(new URL("../../../../configs/pipeline.default.json", import.meta.url)),
+    "utf8",
+  ));
+  return config as PipelineConfig;
 }
 
 const metric: LLMCallMetric = {
@@ -26,6 +33,19 @@ const metric: LLMCallMetric = {
 };
 
 describe("candidate policy validation", () => {
+  it("keeps every baseline setting except the declared Sonnet 5 policy", () => {
+    const config = candidate();
+    const baseline = serializedBaseline();
+    const policy = config.modelPolicies!["claude-sonnet-5"];
+    expect({
+      ...config,
+      modelVerdict: baseline.modelVerdict,
+      modelPolicies: baseline.modelPolicies,
+    }).toEqual(baseline);
+    expect(policy.thinking).toEqual({ type: "adaptive", effort: "medium" });
+    expect(policy.outputTokenCaps.boundaryClustering).toBe(32768);
+  });
+
   it("keeps legacy blobs without new settings valid", () => {
     const config = { ...DEFAULT_PIPELINE_CONFIG };
     delete config.modelPolicies;
@@ -95,11 +115,13 @@ describe("offline SDK requests (fetch stub only; no paid calls)", () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
   it.each(MODEL_POLICY_STAGES)("transmits policy and finite cap for %s", async stage => {
-    const model = getModelForTask("verdict", undefined, candidate(), stage);
+    const config = candidate();
+    const expectedCap = config.modelPolicies!["claude-sonnet-5"].outputTokenCaps[stage];
+    const model = getModelForTask("verdict", undefined, config, stage);
     await generateText({ model: model.model, prompt: "Using hydrogen for cars is more efficient than using electricity", maxRetries: 0 });
     expect(bodies).toHaveLength(1);
-    expect(bodies[0]).toMatchObject({ model: "claude-sonnet-5", max_tokens: 16384, thinking: { type: "adaptive" }, output_config: { effort: "medium" } });
-    expect(model.getLastCall?.().maxOutputTokens).toBe(16384);
+    expect(bodies[0]).toMatchObject({ model: "claude-sonnet-5", max_tokens: expectedCap, thinking: { type: "adaptive" }, output_config: { effort: "medium" } });
+    expect(model.getLastCall?.().maxOutputTokens).toBe(expectedCap);
   });
 
   it.each([
@@ -118,7 +140,7 @@ describe("offline SDK requests (fetch stub only; no paid calls)", () => {
     expect(bodies[0].messages[0].content[0].text).toBe(prompt);
     expect(bodies[0].tools[0].name).toBe("json");
     expect(bodies[0].thinking.type).toBe("adaptive");
-    expect(bodies[0].max_tokens).toBe(16384);
+    expect(bodies[0].max_tokens).toBe(32768);
   });
 
   it("blocks missing policy/stage even if the caller supplies its own budget", async () => {
