@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
@@ -108,7 +109,24 @@ public sealed class JobsController : ControllerBase
         object? resultObj = null;
         if (!string.IsNullOrWhiteSpace(j.ResultJson))
         {
-            try { resultObj = JsonSerializer.Deserialize<object>(j.ResultJson); } catch { }
+            try
+            {
+                var result = JsonNode.Parse(j.ResultJson);
+                // Stage 1 candidate/validator capture is retained in storage and admin
+                // responses only. Public warning outcomes and report fields are unchanged.
+                if (!isAdmin && result is JsonObject root && root["analysisWarnings"] is JsonArray warnings)
+                {
+                    foreach (var warning in warnings.OfType<JsonObject>())
+                    {
+                        if (warning["type"] is JsonValue type && type.TryGetValue<string>(out var name)
+                            && name is "contract_validation_retry_triggered" or "contract_surgical_repair_diagnostic" or "contract_completion_diagnostic"
+                            && warning["details"] is JsonObject details)
+                            details.Remove("adminCapture");
+                    }
+                }
+                resultObj = result;
+            }
+            catch (JsonException) { }
         }
 
         var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);

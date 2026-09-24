@@ -437,9 +437,12 @@ ${textContent}`,
 }
 
 /**
- * Translation cache to avoid repeated LLM calls for the same language.
+ * Process cache shares in-flight translations and retains failures as empty results.
  */
-const translationCache = new Map<string, Record<string, string>>();
+const translationProcess = globalThis as typeof globalThis & {
+  __fhSrTranslationCache?: Map<string, Promise<Record<string, string>>>;
+};
+const translationCache = translationProcess.__fhSrTranslationCache ??= new Map<string, Promise<Record<string, string>>>();
 
 /**
  * Key search terms that need translation for fact-checker searches.
@@ -532,17 +535,18 @@ const SEARCH_TERMS_TO_TRANSLATE = [
 /**
  * Get translated search terms for a language, using LLM with caching.
  */
-async function getTranslatedSearchTerms(
+export function getTranslatedSearchTerms(
   language: string
 ): Promise<Record<string, string>> {
   // Check cache first
   const cached = translationCache.get(language);
   if (cached) return cached;
 
-  debugLog(`[SR-Eval] Translating search terms to ${language}`, { language });
+  const pending = (async (): Promise<Record<string, string>> => {
+    debugLog(`[SR-Eval] Translating search terms to ${language}`, { language });
 
-  try {
-    const prompt = `Translate these English fact-checking search terms to ${language}.
+    try {
+      const prompt = `Translate these English fact-checking search terms to ${language}.
 Return ONLY a JSON object with English keys and ${language} translations as values.
 Use the most common/natural terms that fact-checkers and media critics would use in ${language}.
 
@@ -552,39 +556,54 @@ ${SEARCH_TERMS_TO_TRANSLATE.map((t) => `- "${t}"`).join("\n")}
 Output format (JSON only, no markdown):
 {"fact check": "...", "reliability": "...", ...}`;
 
-    const { text } = await generateTextWithTimeout(
-      "SR translation",
-      SR_TRANSLATION_TIMEOUT_MS,
-      {
-        model: anthropic(ANTHROPIC_MODELS.budget.modelId),
-        prompt,
-        temperature: 0,
-        maxOutputTokens: 800,
-      },
-    );
+      const { text, finishReason } = await generateTextWithTimeout(
+        "SR translation",
+        SR_TRANSLATION_TIMEOUT_MS,
+        {
+          model: anthropic(ANTHROPIC_MODELS.budget.modelId),
+          prompt,
+          temperature: 0,
+          maxOutputTokens: 800,
+        },
+      );
 
-    // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.warn(`[SR-Eval] Failed to parse translation response for ${language}`);
+      if (finishReason === "length") {
+        console.warn(`[SR-Eval] Truncated translation response for ${language}`);
+        return {};
+      }
+
+      // Accept only a complete requested dictionary; extra keys never enter the cache.
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.warn(`[SR-Eval] Failed to parse translation response for ${language}`);
+        return {};
+      }
+
+      const parsed: unknown = JSON.parse(jsonMatch[0]);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+      const translations: Record<string, string> = {};
+      for (const term of SEARCH_TERMS_TO_TRANSLATE) {
+        const value = (parsed as Record<string, unknown>)[term];
+        if (!Object.hasOwn(parsed, term) || typeof value !== "string" || !value.trim()) {
+          console.warn(`[SR-Eval] Incomplete or invalid translation response for ${language}`);
+          return {};
+        }
+        translations[term] = value;
+      }
+
+      debugLog(`[SR-Eval] Translated ${Object.keys(translations).length} terms to ${language}`, {
+        language,
+        translations,
+      });
+
+      return translations;
+    } catch (err) {
+      console.warn(`[SR-Eval] Translation failed for ${language}:`, err);
       return {};
     }
-
-    const translations = JSON.parse(jsonMatch[0]) as Record<string, string>;
-
-    // Cache the result
-    translationCache.set(language, translations);
-
-    debugLog(`[SR-Eval] Translated ${Object.keys(translations).length} terms to ${language}`, {
-      language,
-      translations,
-    });
-
-    return translations;
-  } catch (err) {
-    console.warn(`[SR-Eval] Translation failed for ${language}:`, err);
-    return {};
-  }
+  })();
+  translationCache.set(language, pending);
+  return pending;
 }
 
 // ============================================================================

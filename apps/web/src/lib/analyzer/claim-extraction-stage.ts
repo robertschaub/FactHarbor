@@ -370,14 +370,15 @@ export async function extractClaims(
   // Observability: capture contract validation outcome for stored result
   let contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"] = undefined;
   let lastContractValidatedClaims: AtomicClaim[] | undefined;
-  // F2 (surgical repair): latest usable raw validator result whose per-claim
-  // assessments correspond to the CURRENT activePass2 claim set. Updated at
-  // every adoption site that runs BEFORE the surgical pass; the completion
-  // pass and the final post-Gate-1 revalidation do NOT refresh it, so do not
-  // add readers after the surgical block.
+  // Latest usable raw validator critique for the CURRENT activePass2 set.
+  // Refreshed at each pre-completion adoption, including surgical repair;
+  // rejected candidates never replace it. Surgical repair and completion
+  // eligibility read it. Completion adoption and post-Gate-1 revalidation do
+  // not refresh it, so do not add readers after the completion block.
   let latestContractCritique: ClaimContractValidationResult | undefined;
 
   if (contractValidationEnabled) {
+    const retryCapture = createContractDiagnosticCapture();
     state.onEvent?.("Validating claim contract fidelity...", 24);
     state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
 
@@ -396,6 +397,8 @@ export async function extractClaims(
       )
     );
     state.llmCalls += contractValidationAttempts;
+    const observeInitial = retryCapture.forClaims("initial", pass2.atomicClaims as unknown as AtomicClaim[]);
+    if (!contractResult) observeInitial("contract");
 
     if (contractValidationAttempts > 1) {
       console.info(
@@ -425,6 +428,7 @@ export async function extractClaims(
         state,
         24,
         salienceCommitment,
+        observeInitial,
       );
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       latestContractCritique = contractResult;
@@ -485,6 +489,7 @@ export async function extractClaims(
           contractResultAvailable: !!contractResult,
           anchorRetryReason: anchorRetryReason ?? null,
           atomicityRetryReason: atomicityRetryReason ?? null,
+          adminCapture: retryCapture.details,
         },
       });
 
@@ -570,8 +575,12 @@ export async function extractClaims(
             state,
             24,
             retrySalienceCommitment,
+            retryCapture.forClaims("retry", retryPass2.atomicClaims as unknown as AtomicClaim[]),
           )
           : undefined;
+        if (!retryContractResult) {
+          retryCapture.forClaims("retry", retryPass2.atomicClaims as unknown as AtomicClaim[])("contract");
+        }
 
         if (evaluatedRetryContract && !evaluatedRetryContract.effectiveRePromptRequired) {
           activePass2 = retryPass2;
@@ -728,23 +737,30 @@ export async function extractClaims(
       );
     }
 
-    let completionDiagnosticEmitted = false;
+    const completionCapture = createContractDiagnosticCapture();
+    let completionDiagnostic: CBResearchState["warnings"][number] | undefined;
     const emitCompletionDiagnostic = (
-      outcome: "rejected" | "validation_failed" | "skipped_validator_unavailable",
+      outcome: "adopted" | "rejected" | "validation_failed" | "skipped_validator_unavailable" | "skipped_existing_claim_defects",
       details: Record<string, unknown>,
     ) => {
-      if (completionDiagnosticEmitted) return;
-      completionDiagnosticEmitted = true;
-      state.warnings.push({
+      const diagnostic: CBResearchState["warnings"][number] = {
         type: "contract_completion_diagnostic",
         severity: "info",
         message: `Stage 1: contract completion ${outcome}.`,
         details: {
           stage: "stage1_contract_completion",
           outcome,
+          adminCapture: completionCapture.details,
           ...details,
         },
-      });
+      };
+      // Keep one warning and its bounded shared trace across configured attempts.
+      // Its outcome describes the latest attempt, including a later adoption.
+      if (completionDiagnostic) Object.assign(completionDiagnostic, diagnostic);
+      else {
+        completionDiagnostic = diagnostic;
+        state.warnings.push(diagnostic);
+      }
     };
 
     const validatorAvailabilityMaxAttempts =
@@ -816,8 +832,8 @@ export async function extractClaims(
     // Coverage: per-claim validator critiques are the primary source; the
     // single-claim atomicity challenge (bundling on one-claim sets) is
     // covered via a synthesized assessment. Remaining intentional skips:
-    // binding-challenge, anchor-provenance (C11b owns anchors), and
-    // normative-injection violations fall through to contract completion.
+    // binding-challenge and anchor-provenance (C11b owns anchors) remain
+    // outside this repair. Completion separately excludes existing-claim defects.
     // ------------------------------------------------------------------
     const surgicalRepairEnabled = calcConfig.claimContractValidation?.surgicalRepairEnabled ?? true;
     const surgicalRepairMaxClaimsPerGroup = calcConfig.claimContractValidation?.surgicalRepairMaxClaimsPerGroup ?? 4;
@@ -866,6 +882,8 @@ export async function extractClaims(
         // from stored reports (prod deploy verification depends on this —
         // a missing prompt blob shows up as outcome=rejected here).
         const claimsBefore = currentClaims.length;
+        const surgicalCapture = createContractDiagnosticCapture();
+        surgicalCapture.forClaims("current", currentClaims)("contract", latestContractCritique);
         const emitSurgicalDiagnostic = (
           outcome: "adopted" | "rejected" | "validation_failed" | "not_validated_cleanly",
           details: Record<string, unknown>,
@@ -879,6 +897,7 @@ export async function extractClaims(
               outcome,
               critiqueSource,
               claimsBefore,
+              adminCapture: surgicalCapture.details,
               ...details,
             },
           });
@@ -919,6 +938,7 @@ export async function extractClaims(
           state.llmCalls += surgicalValidationAttempts;
 
           if (!surgicalValidationResult) {
+            surgicalCapture.forClaims("surgical", repairedClaims)("contract");
             emitSurgicalDiagnostic("validation_failed", {
               reason: "validator_unavailable_after_surgical_repair",
               claimsAfter: repairedClaims.length,
@@ -940,6 +960,7 @@ export async function extractClaims(
               state,
               25,
               salienceCommitment,
+              surgicalCapture.forClaims("surgical", repairedClaims),
             );
 
             if (!evaluatedSurgical.effectiveRePromptRequired) {
@@ -974,17 +995,35 @@ export async function extractClaims(
         contractValidationSummary.rePromptRequired === true
       );
 
+    // Completion can add omissions; it cannot repair a defective existing claim.
+    // Consume only typed validator flags for IDs in the current candidate set.
+    const currentClaimIds = new Set(activePass2.atomicClaims.map((claim) => claim.id));
+    const hasExistingClaimDefects =
+      latestContractCritique?.claims.some((claim) => currentClaimIds.has(claim.claimId) && (
+        claim.preservesEvaluativeMeaning === false || claim.proxyDriftSeverity === "material"
+      )) || latestContractCritique?.antiInferenceCheck?.injectedClaimIds.some((id) => currentClaimIds.has(id));
+
     if (
       completionEnabled &&
       completionMaxAttempts > 0 &&
       contractValidationSummary?.failureMode === "validator_unavailable"
     ) {
+      completionCapture.forClaims("current", activePass2.atomicClaims as unknown as AtomicClaim[])("contract", latestContractCritique);
       emitCompletionDiagnostic("skipped_validator_unavailable", {
         attemptsConfigured: completionMaxAttempts,
       });
     }
 
     if (shouldAttemptContractCompletion) {
+      completionCapture.forClaims("current", activePass2.atomicClaims as unknown as AtomicClaim[])("contract", latestContractCritique);
+      if (hasExistingClaimDefects) {
+        emitCompletionDiagnostic("skipped_existing_claim_defects", {
+          attemptsConfigured: completionMaxAttempts,
+        });
+      }
+    }
+
+    if (shouldAttemptContractCompletion && !hasExistingClaimDefects) {
       for (let attempt = 1; attempt <= completionMaxAttempts; attempt++) {
         const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
         state.onEvent?.(`Completing claim contract from original input (${attempt}/${completionMaxAttempts})...`, 25);
@@ -1026,6 +1065,7 @@ export async function extractClaims(
         state.llmCalls += completionValidationAttempts;
 
         if (!completionValidationResult) {
+          completionCapture.forClaims(`completion_${attempt}`, completedClaims)("contract");
           emitCompletionDiagnostic("validation_failed", {
             attempt,
             reason: "validator_unavailable_after_completion",
@@ -1050,6 +1090,7 @@ export async function extractClaims(
           state,
           25,
           salienceCommitment,
+          completionCapture.forClaims(`completion_${attempt}`, completedClaims),
         );
 
         if (!evaluatedCompletion.effectiveRePromptRequired) {
@@ -1058,6 +1099,10 @@ export async function extractClaims(
           lastContractValidatedClaims = completedClaims;
           contractValidationSummary = evaluatedCompletion.summary;
           contractValidationSummary.stageAttribution = stageAttribution;
+          emitCompletionDiagnostic("adopted", {
+            attempt,
+            addedClaimCount: completedClaims.length - currentClaims.length,
+          });
           console.info(
             `[Stage1] Contract completion accepted with ${completedClaims.length - currentClaims.length} added claim(s).`,
           );
@@ -3563,6 +3608,69 @@ export interface SingleClaimAtomicityValidationResult {
   coordinatedBranchFinding: z.infer<typeof SingleClaimCoordinatedBranchFindingSchema>;
 }
 
+type ContractDiagnosticObserver = (
+  step: string,
+  assessment?: ClaimContractValidationResult,
+  atomicity?: SingleClaimAtomicityValidationResult,
+) => void;
+
+/** Fixed telemetry limits, not analysis tunables. Never feeds selection or prompts. */
+export function createContractDiagnosticCapture() {
+  const details = { steps: [] as Record<string, unknown>[], truncated: false, omittedSteps: 0 };
+  const maxItems = 32;
+  const maxBytes = 65_536;
+  return {
+    details,
+    forClaims(prefix: string, claims: AtomicClaim[]): ContractDiagnosticObserver {
+      return (step, assessment, atomicity) => {
+        let truncated = false;
+        const text = (value: string, limit: number) => {
+          if (value.length > limit) truncated = true;
+          return value.slice(0, limit);
+        };
+        const items = <T>(values: T[]) => {
+          if (values.length > maxItems) truncated = true;
+          return values.slice(0, maxItems);
+        };
+        const injectedIds = assessment?.antiInferenceCheck?.injectedClaimIds ?? [];
+        const snapshot = {
+          step: text(`${prefix}_${step}`, 80),
+          candidateCount: claims.length,
+          candidates: items(claims).map((claim) => ({ id: text(claim.id, 80), statement: text(claim.statement, 1000) })),
+          validator: assessment ? {
+            preservesOriginalClaimContract: assessment.inputAssessment.preservesOriginalClaimContract,
+            rePromptRequired: assessment.inputAssessment.rePromptRequired,
+            assessmentCount: assessment.claims.length,
+            claims: items(assessment.claims).map((claim) => ({
+              claimId: text(claim.claimId, 80),
+              preservesEvaluativeMeaning: claim.preservesEvaluativeMeaning,
+              proxyDriftSeverity: claim.proxyDriftSeverity,
+              recommendedAction: claim.recommendedAction,
+            })),
+            injectedClaimIdCount: injectedIds.length,
+            injectedClaimIds: items(injectedIds).map((id) => text(id, 80)),
+          } : null,
+          ...(step.startsWith("atomicity_") ? { atomicity: atomicity ? {
+            isAtomic: atomicity.singleClaimAssessment.isAtomic,
+            rePromptRequired: atomicity.singleClaimAssessment.rePromptRequired,
+            presentInInput: atomicity.coordinatedBranchFinding.presentInInput,
+            bundledInSingleClaim: atomicity.coordinatedBranchFinding.bundledInSingleClaim,
+          } : null } : {}),
+          truncated,
+        };
+        // Leave room for counters even after further attempts are omitted.
+        if (details.steps.length >= maxItems || Buffer.byteLength(JSON.stringify(details)) + Buffer.byteLength(JSON.stringify(snapshot)) > maxBytes - 128) {
+          details.truncated = true;
+          details.omittedSteps++;
+          return;
+        }
+        details.steps.push(snapshot);
+        details.truncated ||= truncated;
+      };
+    },
+  };
+}
+
 export async function runClaimContractValidationWithRetry(
   runValidation: () => Promise<ClaimContractValidationResult | undefined>,
   maxAttempts = 2,
@@ -4440,7 +4548,9 @@ async function applyApprovedSingleClaimChallenges(
   state: CBResearchState,
   progressPercent: number,
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+  observe?: ContractDiagnosticObserver,
 ): Promise<EvaluatedClaimContractValidation> {
+  observe?.("contract", contractValidation.assessment);
   if (!shouldRunSingleClaimAtomicityValidation(claims, contractValidation, salienceCommitment)) {
     return renderClaimContractRetryDiagnostics(contractValidation);
   }
@@ -4455,6 +4565,7 @@ async function applyApprovedSingleClaimChallenges(
     salienceCommitment,
     state,
     progressPercent,
+    (step, atomicity) => observe?.(step, contractValidation.assessment, atomicity),
   );
   const postAtomicityValidation = applySingleClaimAtomicityValidation(
     contractValidation,
@@ -4476,10 +4587,11 @@ async function applyApprovedSingleClaimChallenges(
     progressPercent,
   );
 
-  return renderClaimContractRetryDiagnostics(selectPreferredSingleClaimContractChallenge(
-    postAtomicityValidation,
-    bindingChallenge,
-  ));
+  observe?.("binding", bindingChallenge?.assessment);
+  const selected = selectPreferredSingleClaimContractChallenge(postAtomicityValidation, bindingChallenge);
+  observe?.("selected_contract", selected.assessment);
+
+  return renderClaimContractRetryDiagnostics(selected);
 }
 
 async function runSingleClaimAtomicityValidationWithRecheck(
@@ -4492,6 +4604,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
   state: CBResearchState,
   progressPercent: number,
+  observe?: (step: string, result: SingleClaimAtomicityValidationResult | undefined) => void,
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
   if (claims.length !== 1) return undefined;
 
@@ -4508,8 +4621,10 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     salienceCommitment,
   );
   state.llmCalls++;
+  observe?.("atomicity_primary", primaryResult);
 
   if (primaryResult && evaluateSingleClaimAtomicityValidation(primaryResult).effectiveRePromptRequired) {
+    observe?.("atomicity_selected", primaryResult);
     return primaryResult;
   }
 
@@ -4525,8 +4640,11 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     salienceCommitment,
   );
   state.llmCalls++;
+  observe?.("atomicity_recheck", challengerResult);
 
-  return selectPreferredSingleClaimAtomicityValidation(primaryResult, challengerResult);
+  const selected = selectPreferredSingleClaimAtomicityValidation(primaryResult, challengerResult);
+  observe?.("atomicity_selected", selected);
+  return selected;
 }
 
 async function validateSingleClaimAtomicity(
