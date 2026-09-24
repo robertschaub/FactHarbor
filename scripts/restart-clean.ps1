@@ -39,8 +39,7 @@ function Stop-Gracefully([string]$label, $cimProcesses) {
             Write-Host "Stopping $label PID $($proc.Id) ($($proc.ProcessName))..." -ForegroundColor Yellow
             $closed = $proc.CloseMainWindow()
             if (-not $closed) {
-                Write-Host "  Could not signal graceful close for PID $($proc.Id). Close it manually if needed." -ForegroundColor Yellow
-                continue
+                throw "Could not close $label owner PID $($proc.Id). Stop that service tree explicitly before restarting; no replacement will be launched."
             }
             Wait-Process -Id $proc.Id -Timeout 10 -ErrorAction SilentlyContinue
             if (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue) {
@@ -48,7 +47,7 @@ function Stop-Gracefully([string]$label, $cimProcesses) {
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             }
         } catch {
-            Write-Host "  Could not stop PID $($cim.ProcessId): $($_.Exception.Message)" -ForegroundColor Red
+            throw "Could not stop $label owner PID $($cim.ProcessId): $($_.Exception.Message)"
         }
     }
 }
@@ -100,12 +99,50 @@ function Stop-ListeningProcesses([int[]]$ports, [string]$label) {
     }
 }
 
+function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [int[]]$ports, [string]$stdoutPath, [string]$stderrPath, [int]$timeoutSeconds = 90) {
+    $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
+    do {
+        $output = (@($stdoutPath, $stderrPath) | ForEach-Object {
+            if (Test-Path -LiteralPath $_) { Get-Content -LiteralPath $_ -Raw }
+        }) -join "`n"
+        if ($output -match '(?im)\berror\s+[A-Z]+\d+\b|\bbuild failed\b|Fehler beim Build|\b(?:Error|TypeError|SyntaxError):|\bnpm (?:ERR!|error\b)|\bEADDRINUSE\b|Failed to start server') {
+            throw "$label startup failed: new service reported a build/startup error. See $stdoutPath and $stderrPath."
+        }
+        $processes = @(Get-CimInstance Win32_Process)
+        if (-not ($processes | Where-Object ProcessId -eq $serviceShellProcessId)) {
+            throw "$label startup failed: new shell $serviceShellProcessId exited. See $stdoutPath and $stderrPath."
+        }
+        $allListening = $true
+        foreach ($port in $ports) {
+            $listeners = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
+            if (-not $listeners.Count) { $allListening = $false }
+            foreach ($listener in $listeners) {
+                $ancestorId = $listener.OwningProcess
+                $visited = @()
+                while ($ancestorId -ne $serviceShellProcessId -and $ancestorId -notin $visited) {
+                    $visited += $ancestorId
+                    $child = $processes | Where-Object ProcessId -eq $ancestorId
+                    $parent = $processes | Where-Object ProcessId -eq $child.ParentProcessId
+                    if (-not $child -or -not $parent -or $parent.CreationDate -gt $child.CreationDate) { break }
+                    $ancestorId = $parent.ProcessId
+                }
+                if ($ancestorId -ne $serviceShellProcessId) {
+                    throw "$label startup failed: port $port belongs to PID $($listener.OwningProcess), outside new shell $serviceShellProcessId. See $stdoutPath and $stderrPath."
+                }
+            }
+        }
+        if ($allListening) { return }
+        Start-Sleep -Milliseconds 500
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "$label startup failed: no verified listener within $timeoutSeconds seconds. See $stdoutPath and $stderrPath."
+}
+
 Write-Host "Stopping existing services (graceful)..."
 $apiShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\api" -and $_.CommandLine -match "dotnet watch run"
+    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\api" -and $_.CommandLine -match "dotnet watch run"
 }
 $webShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\web" -and $_.CommandLine -match "npm run dev"
+    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\web" -and $_.CommandLine -match "npm run dev"
 }
 
 Stop-Gracefully -label "API" -cimProcesses $apiShells
@@ -118,7 +155,7 @@ Stop-ListeningProcesses -ports @($WebPort) -label "Web"
 
 Write-Host "Starting API and Web services..."
 
-# Start API in new terminal (creates DB on startup if missing)
+# Start API with retained logs (creates DB on startup if missing)
 Write-Host "Starting API..."
 $apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='$ApiUrls'; "
 if (-not $RunnerBaseUrl) {
@@ -128,11 +165,22 @@ $apiEnvPrefix += "`$env:Runner__BaseUrl='$RunnerBaseUrl'; "
 if ($ApiDbPath) {
     $apiEnvPrefix += "`$env:ConnectionStrings__FhDbSqlite='Data Source=$ApiDbPath'; "
 }
-Start-Process -FilePath "powershell.exe" -ArgumentList @(
+$startupLogDir = Join-Path $PSScriptRoot '..\test-output\service-startup'
+New-Item -ItemType Directory -Force -Path $startupLogDir | Out-Null
+$startupId = [Guid]::NewGuid().ToString('N')
+$apiStdout = Join-Path $startupLogDir "$startupId-api.stdout.log"
+$apiStderr = Join-Path $startupLogDir "$startupId-api.stderr.log"
+$apiShell = Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -RedirectStandardOutput $apiStdout -RedirectStandardError $apiStderr -ArgumentList @(
   "-NoExit",
   "-Command",
   "cd `"$PSScriptRoot\..\apps\api`"; $apiEnvPrefix dotnet watch run"
 )
+try {
+    Assert-ServiceStartup -label "API" -serviceShellProcessId $apiShell.Id -ports $apiPorts -stdoutPath $apiStdout -stderrPath $apiStderr
+} catch {
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
+}
 
 # Propagate ONLY genuinely-runtime vars into the spawned Web dev-server shell
 # (FH_RUNNER_MAX_CONCURRENCY, FH_API_BASE_URL, PORT — set just below).
@@ -181,16 +229,25 @@ try {
 }
 Write-Host ""
 
-# Start Web in new terminal
+# Start Web with the same log capture and ownership check as API.
 Write-Host "Starting Web..."
-Start-Process -FilePath "powershell.exe" -ArgumentList @(
+$webStdout = Join-Path $startupLogDir "$startupId-web.stdout.log"
+$webStderr = Join-Path $startupLogDir "$startupId-web.stderr.log"
+$webShell = Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -RedirectStandardOutput $webStdout -RedirectStandardError $webStderr -ArgumentList @(
   "-NoExit",
   "-Command",
   "cd `"$PSScriptRoot\..\apps\web`"; $webEnvPrefix npm run dev"
 )
+try {
+    Assert-ServiceStartup -label "Web" -serviceShellProcessId $webShell.Id -ports @($WebPort) -stdoutPath $webStdout -stderrPath $webStderr
+} catch {
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
 Write-Host "Services started!"
+Write-Host "Startup logs: $apiStdout, $apiStderr, $webStdout, $webStderr"
 Write-Host ""
 Write-Host "Web:    http://localhost:$WebPort  (use HTTP, not HTTPS)"
 Write-Host "API:    $ApiBaseUrl"

@@ -699,6 +699,7 @@ async function assessArticleVerdict(
   boundaries: ClaimAssessmentBoundary[],
   pipelineConfig: PipelineConfig,
   contractValidationSummary?: {
+    adminCapture?: unknown;
     ran: boolean;
     preservesContract: boolean;
     rePromptRequired: boolean;
@@ -715,6 +716,8 @@ async function assessArticleVerdict(
 ): Promise<ArticleAdjudication | undefined> {
   if (claimVerdicts.length < 2) return undefined;
 
+  // Admin diagnostics must not become analytical input or alter the stored trace.
+  const { adminCapture: _adminCapture, ...promptContractSummary } = contractValidationSummary ?? {};
   const rendered = await loadAndRenderSection("claimboundary", "ARTICLE_ADJUDICATION", {
     originalInput,
     claimVerdicts: JSON.stringify(
@@ -743,7 +746,7 @@ async function assessArticleVerdict(
       null,
       2,
     ),
-    contractValidationSummary: JSON.stringify(contractValidationSummary ?? null, null, 2),
+    contractValidationSummary: JSON.stringify(contractValidationSummary ? promptContractSummary : null, null, 2),
     baselineTruthPercentage: String(Math.round(baselineTruth * 10) / 10),
     baselineConfidence: String(Math.round(baselineConfidence * 10) / 10),
     evidenceSummary: JSON.stringify({

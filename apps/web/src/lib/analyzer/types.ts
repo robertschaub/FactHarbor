@@ -1299,7 +1299,9 @@ export interface CBClaimUnderstanding {
      * Phase 7: which recovery stage produced the final accepted claim set.
      * Helps distinguish raw extraction quality from recovery-mediated success.
      */
-    stageAttribution?: "initial" | "retry" | "repair" | "surgical_repair" | "completion";
+    stageAttribution?: "initial" | "retry" | "repair" | "surgical_repair" | "completion" | "count_floor_reprompt" | "multi_event_reprompt";
+    /** Bounded Stage 1 trace; stored and returned to admins only. */
+    adminCapture?: { steps: Record<string, unknown>[]; truncated: boolean; omittedSteps: number };
     /**
      * C9 (Phase 5): diagnostic discriminant for Phase B reporting.
      * Absent when the contract is preserved (success). Set to "contract_violated"

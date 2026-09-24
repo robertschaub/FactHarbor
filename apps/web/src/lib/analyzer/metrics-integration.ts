@@ -22,6 +22,7 @@ import type {
 } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 import { getWebGitCommitHash } from '../build-info';
+import { extractSchemaErrors } from './llm';
 
 /**
  * Per-job metrics isolation using AsyncLocalStorage.
@@ -93,7 +94,7 @@ export interface LLMCallMeasurement {
   maxOutputTokens?: number;
 }
 
-/** Normalize SDK evidence without retaining prompts, full responses or errors. */
+/** Normalize SDK evidence; retain bounded response excerpts only for schema failures, never prompts or full errors. */
 export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasurement): LLMCallMetric {
   if (!measurement) return call;
   const observed = measurement.model.getLastCall?.();
@@ -112,6 +113,23 @@ export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasur
   const failureKind = refusal ? "refusal" : truncated ? "truncation"
     : error?.name === "ModelPolicyError" ? "configuration"
     : failed ? (usage || measurement.result ? "schema" : "transport") : undefined;
+  let schemaFailureExcerpt: string | undefined;
+  let schemaIssues: string[] | undefined;
+  if (failureKind === "schema") {
+    // getLastCall() intentionally retains metadata only; take content from the
+    // generation result independently so the metadata cannot mask tool input.
+    const response = (measurement.result ?? error?.result ?? observed?.result) as any;
+    const toolInput = response?.toolCalls?.[0]?.input
+      ?? response?.content?.find((part: any) => part.type === "tool-call")?.input;
+    const text = error?.name === "AI_NoObjectGeneratedError" && typeof error.text === "string" && error.text.length > 0
+      ? error.text
+      : typeof toolInput === "string" ? toolInput : JSON.stringify(toolInput);
+    schemaFailureExcerpt = text?.slice(0, 512);
+    if (error) {
+      schemaIssues = extractSchemaErrors(error.cause?.cause ?? error.cause ?? error)
+        .slice(0, 5).map((issue) => issue.slice(0, 512));
+    }
+  }
   return {
     ...call,
     ...(hasUsage ? {
@@ -132,6 +150,8 @@ export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasur
     success: !failed,
     schemaCompliant: call.schemaCompliant && !refusal && !truncated,
     failureKind,
+    ...(schemaFailureExcerpt !== undefined ? { schemaFailureExcerpt } : {}),
+    ...(schemaIssues !== undefined ? { schemaIssues } : {}),
   };
 }
 

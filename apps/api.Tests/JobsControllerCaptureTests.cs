@@ -27,14 +27,18 @@ public sealed class JobsControllerCaptureTests
         using var db = new FhDbContext(new DbContextOptionsBuilder<FhDbContext>().UseSqlite(connection).Options);
         db.Database.EnsureCreated();
         var types = new[] { "contract_validation_retry_triggered", "contract_surgical_repair_diagnostic", "contract_completion_diagnostic" };
+        var summary = new {
+            failureMode = "contract_violated", stageAttribution = "count_floor_reprompt",
+            adminCapture = new { steps = new[] { new { step = "final_contract", candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
+        };
         var stored = JsonSerializer.Serialize(new {
-            analysisWarnings = types.Select(type => new {
+            analysisWarnings = types.Select(type => (object)new {
                 type, severity = "info", details = new {
                     outcome = "validation_failed",
                     adminCapture = new { steps = new[] { new { candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
                 }
-            }).ToArray(),
-            understanding = new { unchanged = true }
+            }).Append(new { type = "report_damaged", severity = "error", details = new { contractValidationSummary = summary } }).ToArray(),
+            understanding = new { unchanged = true, contractValidationSummary = summary }
         });
         var job = new JobEntity { Status = "SUCCEEDED", ResultJson = stored };
         db.Jobs.Add(job);
@@ -52,10 +56,20 @@ public sealed class JobsControllerCaptureTests
         foreach (var warning in result.GetProperty("analysisWarnings").EnumerateArray())
         {
             var details = warning.GetProperty("details");
+            if (warning.GetProperty("type").GetString() == "report_damaged")
+            {
+                var warningSummary = details.GetProperty("contractValidationSummary");
+                Assert.Equal(admin, warningSummary.TryGetProperty("adminCapture", out _));
+                Assert.Equal("contract_violated", warningSummary.GetProperty("failureMode").GetString());
+                continue;
+            }
             Assert.Equal("validation_failed", details.GetProperty("outcome").GetString());
             Assert.Equal(admin, details.TryGetProperty("adminCapture", out _));
         }
         Assert.True(result.GetProperty("understanding").GetProperty("unchanged").GetBoolean());
+        var resultSummary = result.GetProperty("understanding").GetProperty("contractValidationSummary");
+        Assert.Equal(admin, resultSummary.TryGetProperty("adminCapture", out _));
+        Assert.Equal("count_floor_reprompt", resultSummary.GetProperty("stageAttribution").GetString());
         if (admin) Assert.Equal(JsonSerializer.Serialize(JsonDocument.Parse(stored).RootElement), JsonSerializer.Serialize(result));
         db.ChangeTracker.Clear();
         Assert.Equal(stored, (await db.Jobs.SingleAsync()).ResultJson);

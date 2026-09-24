@@ -15,8 +15,7 @@ function Stop-Gracefully([string]$label, $cimProcesses) {
             Write-Host "Stopping $label PID $($proc.Id) ($($proc.ProcessName))..." -ForegroundColor Yellow
             $closed = $proc.CloseMainWindow()
             if (-not $closed) {
-                Write-Host "  Could not signal graceful close for PID $($proc.Id). Close it manually if needed." -ForegroundColor Yellow
-                continue
+                throw "Could not close $label owner PID $($proc.Id). Stop that service tree explicitly; shutdown is incomplete."
             }
             Wait-Process -Id $proc.Id -Timeout 10 -ErrorAction SilentlyContinue
             if (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue) {
@@ -24,17 +23,17 @@ function Stop-Gracefully([string]$label, $cimProcesses) {
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             }
         } catch {
-            Write-Host "  Could not stop PID $($cim.ProcessId): $($_.Exception.Message)" -ForegroundColor Red
+            throw "Could not stop $label owner PID $($cim.ProcessId): $($_.Exception.Message)"
         }
     }
 }
 
 Write-Host "Stopping existing services (graceful)..."
 $apiShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\api" -and $_.CommandLine -match "dotnet watch run"
+    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\api" -and $_.CommandLine -match "dotnet watch run"
 }
 $webShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\web" -and $_.CommandLine -match "npm run dev"
+    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\web" -and $_.CommandLine -match "npm run dev"
 }
 
 Stop-Gracefully -label "API" -cimProcesses $apiShells

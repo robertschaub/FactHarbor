@@ -42,9 +42,9 @@ const gate = (candidates = claims) => ({ validatedClaims: candidates.map(({ id }
 const atomicity = (bundled: boolean) => ({ singleClaimAssessment: { isAtomic: !bundled, rePromptRequired: bundled, summary: "not captured" }, coordinatedBranchFinding: { presentInInput: true, bundledInSingleClaim: bundled, branchLabels: [], reasoning: "not captured" } });
 const completion = (candidates: AtomicClaim[]) => ({ completionEligible: true, failureKind: "omitted_thesis_direct_proposition", omittedPropositions: [], atomicClaims: candidates, rationale: "offline" });
 
-async function scenario(options: Record<string, unknown> = {}, salience = false, input = PT) {
+async function scenario(options: Record<string, unknown> = {}, salience = false, input = PT, decomposition = {}) {
   mocks.calc.mockResolvedValue({ config: {
-    claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+    claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0, ...decomposition },
     claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: false, surgicalRepairEnabled: false, completionEnabled: false, validatorAvailabilityMaxAttempts: 0, ...options },
     salienceCommitment: { enabled: salience, mode: "audit" }, mixedConfidenceThreshold: 40,
   } });
@@ -83,6 +83,65 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Stage 1 bounded contract capture", () => {
+  it("attributes an adopted multi-event reprompt and captures its candidates", async () => {
+    const s = await scenario({}, false, PT, { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 });
+    const original = [claims[0]];
+    const collapsed = { ...pass2(original), distinctEvents: [
+      { name: "event-1", date: "", description: "offline event" },
+      { name: "event-2", date: "", description: "offline event" },
+    ] };
+    s.queues.CLAIM_EXTRACTION_PASS2 = [collapsed, collapsed, pass2(claims)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(original, true), critique(claims)];
+    s.queues.CLAIM_VALIDATION = [gate(original), gate(original), gate(claims)];
+    const result = await s.run();
+    expect(result.contractValidationSummary?.stageAttribution).toBe("multi_event_reprompt");
+    expect(result.contractValidationSummary?.adminCapture?.steps.map((step) => step.step))
+      .toEqual(["count_floor_1_gate1", "multi_event_gate1", "final_contract"]);
+    expect(result.atomicClaims).toHaveLength(2);
+  });
+
+  it("keeps initial attribution when a count-floor attempt is not adopted", async () => {
+    const s = await scenario({}, false, PT, { minCoreClaimsPerContext: 3, supplementalRepromptMaxAttempts: 1 });
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(claims), pass2([claims[0]])];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(claims, true)];
+    s.queues.CLAIM_VALIDATION = [gate(claims), gate([claims[0]])];
+    const result = await s.run();
+    expect(result.contractValidationSummary?.stageAttribution).toBe("initial");
+    expect(result.contractValidationSummary?.adminCapture?.steps).toMatchObject([
+      { step: "count_floor_1_gate1", candidateCount: 1, validator: null },
+    ]);
+    expect(result.atomicClaims).toHaveLength(2);
+  });
+
+  it.each([false, true])("captures count-floor replacement and final typed flags (initial validator unavailable: %s)", async (unavailable) => {
+    const s = await scenario({}, false, DE, { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 });
+    const original = [{ ...claims[0], statement: DE }];
+    const replacement = [
+      { ...claims[0], statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig, bevor das Parlament darüber entschieden hat." },
+      { ...claims[1], statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig, bevor das Volk darüber entschieden hat." },
+      { ...claims[0], id: "AC_03", statement: "Die Unterschrift hatte rechtskräftige Wirkung." },
+    ];
+    const final = critique(replacement, true);
+    Object.assign(final.claims[2], { preservesEvaluativeMeaning: false, proxyDriftSeverity: "material", recommendedAction: "retry" });
+    final.antiInferenceCheck!.injectedClaimIds = ["AC_03"];
+    const replacementGate = gate(replacement);
+    replacementGate.validatedClaims[2].passedFidelity = false;
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(original), pass2(replacement)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [...(unavailable ? [undefined, undefined] : [critique(original, true)]), final];
+    s.queues.CLAIM_VALIDATION = [gate(original), replacementGate];
+    const result = await s.run();
+    expect(result.atomicClaims.map(({ id }) => id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(result.gate1Reasoning?.find((claim) => claim.claimId === "AC_03")?.passedFidelity).toBe(false);
+    expect(result.contractValidationSummary).toMatchObject({ stageAttribution: "count_floor_reprompt", failureMode: "contract_violated" });
+    expect(result.contractValidationSummary?.adminCapture).toMatchObject({ truncated: false, omittedSteps: 0, steps: [
+      { step: "count_floor_1_gate1", candidates: replacement.map(({ id, statement }) => ({ id, statement })), validator: null },
+      { step: "final_contract", candidates: replacement.map(({ id, statement }) => ({ id, statement })), validator: {
+        rePromptRequired: true, injectedClaimIds: ["AC_03"],
+        claims: [{}, {}, { claimId: "AC_03", preservesEvaluativeMeaning: false, proxyDriftSeverity: "material", recommendedAction: "retry" }],
+      } },
+    ] });
+  });
+
   it("captures initial and rejected retry candidates with typed flags", async () => {
     const s = await scenario({ maxRetries: 1 });
     const initial = critique(claims, true);

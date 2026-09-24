@@ -364,7 +364,7 @@ export async function extractClaims(
   // or if validation returns no usable structured result.
   // ------------------------------------------------------------------
   let activePass2 = pass2;
-  let stageAttribution: "initial" | "retry" | "repair" | "surgical_repair" | "completion" = "initial";
+  let stageAttribution: "initial" | "retry" | "repair" | "surgical_repair" | "completion" | "count_floor_reprompt" | "multi_event_reprompt" = "initial";
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
@@ -1203,6 +1203,7 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   const minCoreClaims = calcConfig.claimDecomposition?.minCoreClaimsPerContext ?? 2;
   const maxRepromptAttempts = calcConfig.claimDecomposition?.supplementalRepromptMaxAttempts ?? 2;
+  const finalCapture = createContractDiagnosticCapture();
 
   // C14 (Phase 6): skip the reprompt loop when the current claim set has
   // already been validated by the contract authority. The reprompt exists to
@@ -1274,6 +1275,7 @@ export async function extractClaims(
           }
         }
 
+        finalCapture.forClaims(`count_floor_${attempt}`, retryClaims)("gate1");
         // Gate 1 validation
         const retryGate1 = await runGate1Validation(
           retryClaims,
@@ -1308,6 +1310,7 @@ export async function extractClaims(
     }
 
     // Use best result
+    if (bestGate1Result !== gate1Result) stageAttribution = "count_floor_reprompt";
     gate1Result = bestGate1Result;
     bestPass2 = bestAttemptPass2;
 
@@ -1391,6 +1394,7 @@ export async function extractClaims(
         }
       }
 
+      finalCapture.forClaims("multi_event", retryClaims)("gate1");
       const retryGate1 = await runGate1Validation(
         retryClaims,
         pipelineConfig,
@@ -1408,6 +1412,7 @@ export async function extractClaims(
       if (retryCount > gate1Result.filteredClaims.length) {
         gate1Result = retryGate1;
         bestPass2 = retryPass2;
+        stageAttribution = "multi_event_reprompt";
         console.info(`[Stage1] MT-5(C) recovered: ${retryCount} claims.`);
       }
     } catch (repromptErr) {
@@ -1471,6 +1476,7 @@ export async function extractClaims(
         );
       }
 
+      if (!finalContractResult) finalCapture.forClaims("final", finalAcceptedClaims)("contract");
       if (finalContractResult) {
         let evaluatedFinalContract = await applyApprovedSingleClaimChallenges(
           finalAcceptedClaims,
@@ -1487,6 +1493,7 @@ export async function extractClaims(
           state,
           26,
           salienceCommitment,
+          finalCapture.forClaims("final", finalAcceptedClaims),
         );
         contractValidationSummary = evaluatedFinalContract.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
@@ -1526,6 +1533,13 @@ export async function extractClaims(
         };
         console.warn("[Stage1] Final accepted claims could not be re-validated; marked as degraded (no silent fail-open).");
       }
+    }
+  }
+
+  if (contractValidationSummary) {
+    contractValidationSummary.stageAttribution = stageAttribution;
+    if (finalCapture.details.steps.length || finalCapture.details.omittedSteps) {
+      contractValidationSummary.adminCapture = finalCapture.details;
     }
   }
 

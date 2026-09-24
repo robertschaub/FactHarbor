@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { buildFailureModeMetrics } from "@/lib/analyzer/metrics-integration";
+import { buildFailureModeMetrics, measuredLLMCall } from "@/lib/analyzer/metrics-integration";
+import type { LLMCallMetric } from "@/lib/analyzer/metrics";
+
+it("retains bounded schema-failure text and formatted issues, never successful responses", () => {
+  const call: LLMCallMetric = { taskType: "other", provider: "anthropic", modelName: "offline",
+    promptTokens: 0, completionTokens: 0, totalTokens: 0, durationMs: 1,
+    success: false, schemaCompliant: false, retries: 0, timestamp: new Date() };
+  const model = { provider: "anthropic", modelName: "offline" };
+  const error = Object.assign(new Error("schema mismatch"), {
+    name: "AI_NoObjectGeneratedError", text: "x".repeat(600),
+    usage: { inputTokens: 10, outputTokens: 20 }, finishReason: "stop",
+    cause: { cause: { issues: Array.from({ length: 8 }, (_, index) => ({ path: ["claims", index], message: "m".repeat(600) })) } },
+  });
+  const measured = measuredLLMCall(call, { model, error });
+  expect(measured).toMatchObject({ failureKind: "schema", schemaFailureExcerpt: "x".repeat(512) });
+  expect(measured.schemaIssues).toHaveLength(5);
+  expect(measured.schemaIssues?.every((issue, index) => issue.length === 512 && issue.startsWith(`claims.${index}: `))).toBe(true);
+  const result = { usage: error.usage, toolCalls: [{ input: { claims: [] } }] };
+  expect(measuredLLMCall(call, { model, result }).schemaFailureExcerpt).toBe('{"claims":[]}');
+  const metadataModel = { ...model, getLastCall: () => ({ result: { usage: error.usage } }) };
+  expect(measuredLLMCall(call, { model: metadataModel, result }).schemaFailureExcerpt).toBe('{"claims":[]}');
+  expect(measuredLLMCall(call, { model: metadataModel, result, error: { ...error, text: "" } }).schemaFailureExcerpt).toBe('{"claims":[]}');
+  const success = measuredLLMCall({ ...call, success: true, schemaCompliant: true }, { model, result });
+  expect(success).not.toHaveProperty("schemaFailureExcerpt");
+  expect(success).not.toHaveProperty("schemaIssues");
+});
 
 function resultWith(types: string[]) {
   return {

@@ -7327,7 +7327,7 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     );
   });
 
-  it("direction conflict with adjudication enabled: fires LLM adjudication", async () => {
+  it.each([false, true])("direction conflict with adjudication enabled: fires LLM adjudication (admin capture present: %s)", async (withCapture) => {
     await setupConfigMocks(true);
     const adjudicationPayload = {
       articleTruthPercentage: 35,
@@ -7357,7 +7357,14 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
 
-    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+    const state = makeState(claims);
+    const summary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "offline summary" };
+    const capture = { steps: [{ step: "final_contract" }], truncated: false, omittedSteps: 0 };
+    if (withCapture) state.understanding!.contractValidationSummary = { ...summary, adminCapture: capture };
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, state);
+    const renderedSummary = mockLoadSection.mock.calls.find((call) => call[1] === "ARTICLE_ADJUDICATION")?.[2]?.contractValidationSummary;
+    expect(JSON.parse(renderedSummary as string)).toEqual(withCapture ? summary : null);
+    if (withCapture) expect(state.understanding!.contractValidationSummary?.adminCapture).toEqual(capture);
 
     expect(result.adjudicationPath!.path).toBe("llm_adjudicated");
     expect(result.adjudicationPath!.directionConflict).toBe(true);
@@ -9703,7 +9710,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       ran: true,
       preservesContract: false,
       rePromptRequired: true,
-      stageAttribution: "initial",
+      stageAttribution: "count_floor_reprompt",
       summary: expect.stringContaining("final accepted claims dropped the finality anchor"),
       truthConditionAnchor: {
         presentInInput: true,

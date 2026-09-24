@@ -44,6 +44,10 @@ export interface LLMCallMetric {
   servedModelName?: string;
   usageAvailable?: boolean;
   failureKind?: "refusal" | "truncation" | "schema" | "transport" | "configuration";
+  /** Admin-only schema-failure response excerpt, at most 512 characters. */
+  schemaFailureExcerpt?: string;
+  /** At most five formatted schema issues, each at most 512 characters. */
+  schemaIssues?: string[];
   durationMs: number;
   success: boolean;
   schemaCompliant: boolean;
