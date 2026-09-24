@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "planId": "model-upgrade-two-job-pilot-v1",
-  "status": "IMPLEMENTED OFFLINE; NO-SPEND PREPARATION THEN ONE FINAL GO BEFORE ACTIVATION OR PAID RUNS",
+  "status": "CLAUDE REVIEW CONDITIONS INCORPORATED; RE-FREEZE THEN FINAL GO BEFORE ACTIVATION OR PAID RUNS",
   "sourceBaseline": "c58efd32d13455f3ab0a51439d9996d3d794a870",
   "executionFreeze": {
     "template": "scripts/diag/model-upgrade-pilot/preflight-manifest.template.json",
@@ -56,15 +56,39 @@
     { "order": 1, "arm": "A", "n": 1, "out": "test-output/model-upgrade-pilot-A.jsonl" },
     { "order": 2, "arm": "B", "n": 1, "out": "test-output/model-upgrade-pilot-B.jsonl", "conditional": true }
   ],
+  "beforeA": {
+    "isolation": "Confirm no other writer or agent session is active, including the separate Codex worktree. Keep the checkout and runtime exclusive through restoration.",
+    "expectedJobCount": 1711,
+    "jobCountRule": "Confirm the count is still 1711 with no new jobs since the preparation receipt; do not silently rebase the count if it differs.",
+    "machine": "Keep the machine awake throughout execution and restoration.",
+    "runtime": "Confirm the reviewed runtime and runner concurrency 1. If services restarted after the 2026-09-24 15:15 UTC preparation, or the runtime revision/concurrency cannot be established, relaunch with FH_RUNNER_MAX_CONCURRENCY=1 and rerun A preflight-only. A new execution commit must also be reflected by the runtime.",
+    "submission": "After final Captain GO, use the frozen execution manifest with --arm A --n 1 --run."
+  },
   "beforeEverySubmission": [
     "Runner manifest verifies a full approved commit SHA and a clean worktree.",
     "Runner verifies the exact input-file hash and byte-identical Captain-defined input.",
     "Runner verifies every frozen harness hash, active pipeline/search/calculation/SR/prompt hash, exactly one authorized run, a fresh arm-specific output and zero nonterminal jobs.",
-    "After A, submit B only when the conservative pilot total remains below $5 and the baseline quality/stability review passes."
+    "After A, evaluate every continuationGate condition. These operator checks are additional to the runner's enforced pre/postflight."
   ],
+  "continuationGate": {
+    "allRequired": [
+      "A succeeded with no hard failure or report_damaged outcome, and A postflight passed.",
+      "The job count increased by exactly one, from 1711 to 1712, attributable to A; no unrelated job appeared.",
+      "A's conservative cost ceiling is resolved and strictly below $5.",
+      "No A call lasted 300000 ms or more in clustering, Stage 1, Stage 5 or source reliability."
+    ],
+    "timeoutAmbiguity": "Inspect raw call metadata when a >=300000 ms row is labelled stage-1-or-2, stage-1-or-calibration or stage-4-or-5. If a covered stage cannot be excluded, the gate is unresolved: stop before B, rather than guessing. Stage 4 observations remain disclosed.",
+    "quality": "Record A's band result and blinded claim review, but neither decides whether B runs. This gate establishes A's execution validity only."
+  },
   "betweenArms": {
-    "restartRule": "Restart before B only if A records any source-reliability error. After a restart, rerun the complete preflight and stop on any commit/config/input/artifact drift.",
-    "cacheRule": "Do not flush or disable caches. Report cached-search and SR reuse counts; do not interpret a B cache advantage as model savings."
+    "restartRule": "Do not restart either service between A and B. If a restart occurs or is required, stop this pair before B; do not silently resume or replace it.",
+    "cacheRule": "Do not flush or disable caches. Disclose source-reliability unknowns inherited by B from A, cached-search and SR reuse counts. This accepts the stale-map risk for this smoke test; do not interpret a B cache advantage as model savings.",
+    "activation": "Only after final GO and a passed continuation gate, activate the frozen B hash, wait at least 35 seconds, run B preflight-only, then submit with the same manifest and --arm B --n 1 --run. The wait exceeds config-loader.ts's 30-second active-pointer TTL."
+  },
+  "restoration": {
+    "when": "After B, or whenever the pilot stops early, first establish that the current job is terminal; wait if it is not. Then confirm its pipeline has stopped. If pipeline exit remains uncertain despite terminal job status, restart the web app before changing configuration. Keep execution exclusive and submit no further job during restoration; terminal status alone does not prove pipeline exit.",
+    "pipelineHash": "1b699a0d8ed98efe23a6b0a310d040abe18fdf6adbca0b9eab1481a176ee6fd9",
+    "runtime": "Reactivate the baseline through UCM, restart normally with FH_RUNNER_MAX_CONCURRENCY=2, and confirm all five baseline active hashes and the absence of nonterminal jobs. Record the restoration."
   },
   "timeoutClassification": {
     "confirmed": "Only a recorded UND_ERR_HEADERS_TIMEOUT or Headers Timeout Error is a confirmed Headers Timeout.",
@@ -76,13 +100,15 @@
     "semantic": "Metadata-stripped blinded claim-by-claim review of statement fidelity, evidence/citation support, direction, qualifiers and reasoning.",
     "excluded": ["claim-count scoring", "anchor-token scoring", "narrative prose quality"],
     "reportedButNotScored": "Confidence before and after narrative adjustment.",
+    "transportOutcome": "A report_damaged B with validator_unavailable and schema failures is a transport outcome, not a verdict on model quality. Preserve its cost and failure observations; do not replace it.",
     "limits": "This is a smoke comparison, not repeatability, model-isolated causality, reliability-rate or promotion evidence."
   },
   "stops": [
     "Any preflight or postflight commit/config/input/artifact mismatch.",
     "Any nonterminal overlap or uncertainty that a previous job is still running.",
     "A conservative pilot total at or above $5 before B.",
-    "Baseline A fails the agreed quality/stability review.",
+    "Any continuationGate condition fails or cannot be established; A's band/claim quality alone is not a stop condition.",
+    "Loss of exclusive execution, a changed initial job count, or a service restart between arms.",
     "Any B failure remains the B observation; no replacement is submitted."
   ],
   "holdsAndDeferrals": {
