@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-09-24 (CI, .NET test coverage and live-test notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
+**Last Updated**: 2026-09-24 (CI, .NET test coverage, live-test and cost-metrics notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
 **Phase**: **Alpha** — development paused since 2026-07-02 for funding reasons
 **Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development remains paused because the metered third-party API cost of running analyses exceeds what the project can fund.** The active engineering plan remains intact. A separately authorized local F-35 repair (`e29773c71`, 2026-09-09) changed pipeline code and ran paid verification; its implementation session recorded **1,991 passing / 1 skipped across 103 files**. That bounded work does not resume the broader plan. See the [F-35 handoff](../AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md) for its evidence and remaining issues, and [Why development is paused](#why-development-is-paused) below.
 
@@ -278,7 +278,7 @@ FH_JOB_TIMEOUT_MS=7200000     # per-job wait bound (default 2 h); a job not fini
 
 **Typical analysis time**: 30–60 s for 1–2 claims, 2–5 min for a medium article, 5–15 min for 20+ claims.
 
-**Measured cost**: roughly **$1.10 per job** on the current stack. The dominant spend is the pipeline itself, not agent tooling. Anthropic prompt caching is disabled on `main` (measured net-negative for this workload) and result caching is deliberately off during alpha so per-run variance stays visible.
+**Measured cost**: roughly **$1.10 per job** on the current stack. The dominant spend is the pipeline itself, not agent tooling. Anthropic prompt caching is disabled on `main` (measured net-negative for this workload) and result caching is deliberately off during alpha so per-run variance stays visible. Per-job figures taken from job metrics (`AnalysisMetrics`) before `6840e90d9` (2026-09-24) leave out source-reliability calls and searches, so they are lower bounds (Backlog `SR-COST`).
 
 **Search behaviour**: 3–6 queries per analysis, 4–8 sources fetched, parallel fetch with per-domain 401/403 short-circuiting and same-domain staggering. Fetch failure is chronic at the environment level (publisher bot-walls) but the pipeline over-provisions so reports stay non-degenerate.
 
