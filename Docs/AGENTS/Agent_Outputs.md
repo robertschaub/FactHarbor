@@ -419,3 +419,10 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 → Docs/WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#offline-invocation-diagnosis-and-c14-decision-2026-09-24
 
 **Captain decision after this review:** retain current recovery eligibility. C14 implementation is not scheduled; final validation and all held decisions remain unchanged.
+
+---
+### 2026-09-25 | Unassigned | Codex (Astra) | Corrected Restart Invocation Verified — [Standard] [open-items: yes]
+**Authority / result:** Captain GO for local commit and restart verification. Review records committed as `6b3a5018a3de12d53592b7d1fb28a3b96fc2dbfe`; clean execution tree. Hidden-owner refusal returned exit 1 in 1.562 seconds. After rechecking idle state and process identities, only the two authorized service trees were stopped. Corrected detached invocation returned exit 0 in 19.138 seconds with a 300-second bound; caller closed and services remained running.
+**Checks / evidence:** at 21:59 UTC on September 24, API PID 23780 and web PID 35876 descend from new shells 48096 and 42232. Both health/version routes and Jobs returned HTTP 200; shared startup checks passed after page compilation. All 15 active hashes, environment files and 1,715 jobs unchanged; zero nonterminal, concurrency 2. Receipt, frozen logs, before/after snapshots and hashes: `test-output/model-upgrade-pilot/followup-20260924/restart-invocation-verification/`. Integrator execution, no independent live reviewer; `/version` is not binary provenance.
+**Disposition:** RESTART-WATCH closed for the verified invocation; C14 retains existing eligibility. Sonnet 4.6 remains recommended, all semantic/SR holds stay in place. No application/service-script/prompt/config edits, provider spending, push or deployment. Any paid comparison still needs a fresh reviewed plan/freeze and Captain GO.
+→ Docs/WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#offline-invocation-diagnosis-and-c14-decision-2026-09-24
