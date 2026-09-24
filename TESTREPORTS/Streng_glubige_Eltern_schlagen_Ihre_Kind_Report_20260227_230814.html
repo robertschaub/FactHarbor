@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Streng gläubige Eltern schlagen Ihre Kinder häufiger">
+<meta name="fh:verdict" content="MIXED">
+<meta name="fh:truth" content="48">
+<meta name="fh:confidence" content="58">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Streng gläubige Eltern schlagen Ihre Kinder häufiger</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 42aa8ce3e8c4496a8bac6f0503ff7de9</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 20:58 UTC</div>
+      <div>Completed: 2026-02-27 21:07 UTC</div>
+      <div>Duration: ~8 min 34 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Streng gläubige Eltern schlagen Ihre Kinder häufiger</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE, Google-CSE (cached)</span>
+    <span class="chip chip-gray">27 LLM calls</span>
+    <span class="chip chip-gray">12 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 35 evidence items · 15 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-inc">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge inc-color">MIXED</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Die Evidenz zeigt ein gemischtes Bild mit erheblichen methodischen Einschränkungen. Während kriminologische Studien Zusa…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value inc-color">48/52 split</div>
+        <div class="meter-label"></div>
+        <div class="meter-bar"><div class="meter-fill" style="width:48%;background:#553c9a"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">Medium confidence</div>
+        <div class="meter-label" title="58% confidence">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:58%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:48%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">48%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">Die Evidenz zeigt ein gemischtes Bild mit erheblichen methodischen Einschränkungen. Während kriminologische Studien Zusammenhänge zwischen hoher Religiosität und Gewalterfahrungen dokumentieren, differenzieren diese nicht systematisch nach Konfessionen. Literaturüberblicke zu muslimischer Erziehung liefern widersprüchliche Befunde, und Expertenbefragungen widersprechen teilweise der Ausgangsbehauptung. Die vorliegenden Daten erlauben keine kausalen Schlüsse und keine Verallgemeinerung auf „muslimische Erziehung&quot; als Ganzes – die Behauptung extrapoliert selektiv aus begrenzten Befunden und ignoriert konfundierende Faktoren wie sozioökonomischen Status, Migrationserfahrung und individuelle Familienstrukturen.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Die Behauptung ist überwiegend irreführend: Während einzelne Befunde zu Gewalterfahrungen in hochreligiösen Familien existieren, fehlt eine belastbare empirische Grundlage für pauschale Aussagen über muslimische Erziehung.</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">Die Analyse stützt sich auf 35 Evidenzpunkte aus 6 unterschiedlichen Forschungskontexten, darunter kriminologische Untersuchungen, Literaturüberblicke, Expertenbefragungen und repräsentative Jugendstudien.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">Die Evidenz zeigt ein gemischtes Bild mit erheblichen methodischen Einschränkungen. Während kriminologische Studien Zusammenhänge zwischen hoher Religiosität und Gewalterfahrungen dokumentieren, differenzieren diese nicht systematisch nach Konfessionen. Literaturüberblicke zu muslimischer Erziehung liefern widersprüchliche Befunde, und Expertenbefragungen widersprechen teilweise der Ausgangsbehauptung. Die vorliegenden Daten erlauben keine kausalen Schlüsse und keine Verallgemeinerung auf „muslimische Erziehung&quot; als Ganzes – die Behauptung extrapoliert selektiv aus begrenzten Befunden und ignoriert konfundierende Faktoren wie sozioökonomischen Status, Migrationserfahrung und individuelle Familienstrukturen.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Erhebliche Divergenz zwischen Forschungskontexten: Kriminologische Untersuchungen (CB_03, 20 Evidenzpunkte) zeigen neutrale Befunde ohne konfessionsspezifische Differenzierung, während Literaturüberblicke zu muslimischer Erziehung (CB_04) gemischte Evidenz liefern. Expertenbefragungen (CB_07) widersprechen der Behauptung direkt. Repräsentative Jugendstudien und christliche Erziehungsforschung (CB_01) bleiben neutral, was auf fehlende vergleichende Daten hindeutet. Diese Diskrepanzen reflektieren unterschiedliche Operationalisierungen von &#39;Religiosität&#39; und &#39;Gewalt&#39; sowie methodische Heterogenität zwischen quantitativen Surveys und qualitativen Expertenmeinungen.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">Die Analyse konnte nicht klären, ob die dokumentierten Zusammenhänge kausal, konfessionsspezifisch oder durch Drittvariablen (sozioökonomischer Status, Akkulturationsstress, Bildungsniveau) bedingt sind. Es fehlen kontrollierte Vergleichsstudien zwischen religiösen Gruppen mit vergleichbaren demografischen Profilen. Die Evidenzbasis erlaubt keine Quantifizierung von Prävalenzunterschieden zwischen muslimischen und nicht-muslimischen Familien. Zudem bleibt unklar, wie „muslimische Erziehung&quot; operationalisiert wurde und ob innerislamische Diversität (Konfessionen, Herkunftsländer, Generationenstatus) berücksichtigt wurde.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Es besteht ein positiver Zusammenhang zwischen dem Grad der Religiosität von Eltern und der Häufigkeit körperlicher Gewalt in der Erziehung</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val inc-color">48/52 split</div>
+          <div class="small-meter-label"></div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">Medium confidence</div>
+          <div class="small-meter-label" title="58%">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:48%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">48%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: factual</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: high</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: high</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: weak (-0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ Die Behauptung ist potenziell irreführend, weil sie einen direkten kausalen Zusammenhang zwischen Religiosität und Gewalt suggeriert, während die Evidenz zeigt, dass dieser Zusammenhang stark von konfundierenden Variablen (Migrationshintergrund, kulturelle Faktoren, sozioökonomischer Status) überlagert wird. EV_1772229692010 beschreibt &#39;rigidere Erziehung&#39; in muslimischen Familien, aber EV_1772229692011 zeigt, dass diese Rigidität nicht notwendigerweise mit negativer Familienwahrnehmung korreliert. EV_1772229626795 identifiziert Gewalterfahrung in der Familie als Risikofaktor, aber nicht Religiosität selbst. Die Behauptung cherry-pickt Korrelationen ohne ausreichende Kontrolle für konfundierende Variablen und impliziert eine Kausalität, die die Evidenz nicht robust etabliert. Die fehlende Analyse von Religiosität in der methodisch robusten Fünf-Länder-Studie (EV_1772229714593) deutet darauf hin, dass Experten diese Variable als weniger relevant einstufen als die Behauptung suggeriert.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Kriminologische Untersuchungen zu Religiosität und Gewalt</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50/50 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_04 · Literaturgestützte Überblicke zu muslimischer Erziehung</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">62% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="55%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#f6ad55">mixed</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-mixed" style="width:62%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Expertise-Bericht zu gewaltfördernden Indikatoren</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val lf-color">70% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="40%">Low confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:70%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_06 · Empirische Untersuchung zu Einflussfaktoren für Täter-/Opferrollen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50/50 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_07 · Vergleichende Expertenbefragung zu Gewalt in der Erziehung</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">80% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="70%">Medium confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#fc8181">contradicts</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-contradicts" style="width:80%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Repräsentative Befragungen von Jugendlichen und Kindern zu Gewalterfahrungen + Empirische Studien zu christlicher Erziehung</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">50/50 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">0 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:50%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(7 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">Die Reconciliation berücksichtigt sieben Challenge-Punkte und perfekte Self-Consistency (spread=0). **Challenge-Analyse:** CP_AC_01_0 und CP_AC_01_4 (beide high severity) identifizieren korrekt, dass mehrere Evidence-Items (EV_1772229626788, EV_1772229626789) aus derselben KFN-Primärstudie stammen – dies reduziert die methodische Breite erheblich. Die Challenges zitieren jedoch 7 nicht-existente IDs (EV_003-009), was ihre strukturelle Validität schwächt, aber der Kernpunkt bleibt gültig: Die scheinbare Konvergenz zwischen CB_01 und CB_03 ist teilweise illusorisch. **Adjustment:** Confidence wird von 52→58 erhöht (nicht gesenkt), weil die verbleibende Evidenz trotz Redundanz methodisch robust ist (große repräsentative Befragungen). CP_AC_01_1 (missing_evidence, medium severity) weist auf fehlende Schweizer Primärquellen hin – dies ist ein valider Coverage Gap, aber EV_1772229626791 existiert und liefert zumindest sekundäre Bestätigung. CP_AC_01_2 (medium severity) argumentiert, dass subjektive Familienwahrnehmung (EV_1772229692011) nicht gleichwertig zu objektiven Gewaltberichten sein sollte – dies ist methodisch überzeugend. Die widersprechende Evidenz misst eine andere Dimension (Zufriedenheit vs. Gewaltinzidenz) und sollte schwächer gewichtet werden. **Adjustment:** truthPercentage wird von 45→48 erhöht, da die Gegenbeweise weniger direkt sind als initial angenommen. CP_AC_01_3 (medium severity) identifiziert korrekt, dass die österreichische Fünf-Länder-Studie (EV_1772229714593) Religiosität nicht analysierte – dies ist ein signifikanter Gap in internationaler Forschung, aber kein direkter Gegenbeweis. CP_AC_01_5 (medium severity) argumentiert für stärkere Gewichtung der repräsentativen Befragungen gegenüber Literaturüberblicken – methodisch valide, aber bereits in CP_AC_01_2 adressiert. CP_AC_01_6 (medium severity) weist auf fehlende differenzierte Analysen für muslimische Populationen hin (nur EV_1772229626795 verfügbar, das Gewalterfahrung, nicht Religiosität misst) – dies ist ein valider Gap, aber die Behauptung fokussiert nicht exklusiv auf muslimische Familien. **Finale Synthese:** Die Evidenzbasis ist schmaler als initial erschien (Redundanz durch KFN-Derivate), aber die verbleibenden Items (EV_1772229626788, EV_1772229626789, EV_1772229626790, EV_1772229692010) stammen aus methodisch robusten Studien. Die widersprechende Evidenz (EV_1772229692011) misst subjektive Wahrnehmung, nicht objektive Gewalt, und sollte schwächer gewichtet werden. Kritische Gaps bleiben: fehlende internationale Vergleiche (CB_07), fehlende Schweizer Primärquellen (CB_03), und unzureichende Differenzierung zwischen Religiosität und konfundierenden Variablen (Migration, Kultur) in CB_04/CB_05. Die Self-Consistency (spread=0) bestätigt Stabilität der Analyse. Der adjustierte truthPercentage von 48% reflektiert moderate Unterstützung mit erheblichen methodischen Einschränkungen; Confidence steigt auf 58%, da die Kernbefunde trotz Redundanz aus großen repräsentativen Samples stammen.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_0: Akzeptiert. Die Identifikation von Redundanz zwischen EV_1772229626788/789 (beide KFN-basiert) ist valide und reduziert die methodische Breite. Jedoch zitiert die Challenge 7 nicht-existente IDs (EV_003-009), was ihre strukturelle Basis schwächt. Die verbleibenden zwei validen IDs bestätigen dennoch den Kernpunkt: scheinbare Konvergenz zwischen CB_01 und CB_03 ist teilweise durch gemeinsame Primärquelle bedingt.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_1: Teilweise akzeptiert. Der Gap bei Schweizer Primärquellen (CB_03) ist real und schwächt die Überprüfbarkeit. EV_1772229626791 existiert und liefert sekundäre Bestätigung, aber fehlende Originalpublikationen (z.B. Baier, ZHAW) bleiben ein methodischer Nachteil. Dies rechtfertigt keine Adjustment von truthPercentage, da vorhandene Evidenz aus anderen Boundaries (CB_01, CB_04) den Befund stützt.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">CP_AC_01_2: Akzeptiert. Die widersprechende Evidenz (EV_1772229692011) misst subjektive Familienwahrnehmung (Wärme, Zufriedenheit), nicht objektive Gewaltinzidenz. Dies ist methodisch nicht gleichwertig zu direkten Gewaltberichten (EV_1772229626788). Die Challenge zitiert ein nicht-existentes ID (EV_003), aber der Kernpunkt bleibt valide: subjektive Wahrnehmung sollte schwächer gewichtet werden als objektive Gewaltmessung.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_3: Akzeptiert als Coverage Gap, aber nicht als direkter Gegenbeweis. EV_1772229714593 dokumentiert, dass die österreichische Fünf-Länder-Studie Religiosität nicht analysierte – dies ist ein signifikanter Gap in internationaler Forschung, aber kein aktiver Widerspruch zur Behauptung. Der Gap wird im Reasoning notiert, rechtfertigt aber keine Adjustment von truthPercentage.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_4: Akzeptiert. Identisch zu CP_AC_01_0 – die scheinbare Konvergenz zwischen CB_01 und CB_03 basiert auf derselben KFN-Primärstudie (EV_1772229626788/789). Die Challenge zitiert ein nicht-existentes ID (EV_003), aber der Kernpunkt ist valide und wurde bereits in CP_AC_01_0 adressiert. Keine zusätzliche Adjustment erforderlich.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_5: Teilweise akzeptiert. Die Challenge argumentiert korrekt, dass repräsentative Befragungen (EV_1772229626788, EV_1772229626790) methodisch stärker sind als Literaturüberblicke (EV_1772229692011). Dies wurde bereits in CP_AC_01_2 adressiert. Die Challenge zitiert ein nicht-existentes ID (EV_003), aber der Kernpunkt ist valide und führte bereits zu Adjustment in CP_AC_01_2.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">CP_AC_01_6: Akzeptiert als Coverage Gap. Für CB_05 existiert nur EV_1772229626795, das Gewalterfahrung in der Familie (nicht Religiosität per se) bei muslimischen Jugendlichen misst. Fehlende differenzierte Analysen, die Religiosität von Migrationshintergrund/Kultur trennen, sind ein valider Gap. Da die Behauptung jedoch nicht exklusiv auf muslimische Familien fokussiert, rechtfertigt dies keine Adjustment von truthPercentage – der Gap wird im Reasoning notiert.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_03<br><span style="font-weight:400;font-size:10px">Kriminologische Studien</span></th><th>CB_04<br><span style="font-weight:400;font-size:10px">Literaturüberblicke muslimische Erziehung</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">Gewaltfördernde Indikatoren</span></th><th>CB_06<br><span style="font-weight:400;font-size:10px">Täter-/Opfer-Einflussfaktoren</span></th><th>CB_07<br><span style="font-weight:400;font-size:10px">Experten-Fünf-Länder-Vergleich</span></th><th>CB_01<br><span style="font-weight:400;font-size:10px">Repräsentative Jugend-/Kinderbefragungen</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Es besteht ein positiver Zusam</td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">5</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-high">6</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Kriminologische Untersuchungen zu Religiosität und Gewalt</span><span class="ba-ev-count">20 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Kriminologische Untersuchung</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Schweiz</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Nicht spezifiziert</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Kriminologische Forschung zur Untersuchung des Zusammenhangs zwischen Religiosität und Gewalterfahrungen in hochreligiösen Familien</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_04</span><span class="ba-name">Literaturgestützte Überblicke zu muslimischer Erziehung</span><span class="ba-ev-count">5 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Literaturgestützter Überblick über Studien und Quellen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland / nicht spezifiziert</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2008-2020</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.750</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Systematische Literaturüberblicke über empirische Studien und Quellen zu Erziehungspraktiken, Religiosität und Gewalterfahrungen in muslimischen Familien</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Expertise-Bericht zu gewaltfördernden Indikatoren</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Expertise-Bericht mit Analyse von Gewaltfördernden Indikatoren</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">Oktober 2010</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Expertise-Bericht mit Analyse von gewaltfördernden Indikatoren bei männlichen muslimischen Jugendlichen mit Migrationshintergrund</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_06</span><span class="ba-name">Empirische Untersuchung zu Einflussfaktoren für Täter-/Opferrollen</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Empirische Untersuchung mit Berechnung von Zusammenhängen zwischen Einflussfaktoren und Opfer-/TäterInnenrolle</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Österreich (Karl-Franzens-Universität Graz)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2009</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Empirische Masterarbeit mit statistischer Analyse von Zusammenhängen zwischen Einflussfaktoren (inkl. Erziehungsstil) und Täter- oder Opferrolle bei Jugendlichen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_07</span><span class="ba-name">Vergleichende Expertenbefragung zu Gewalt in der Erziehung</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Befragung von Experten und Expertinnen in der Arbeit mit Kindern und Jugendlichen; vergleichende Untersuchung mit Fokus auf Prävalenz erzieherischer körperlicher und psychischer Gewalt</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Österreich, Deutschland, Schweden, Frankreich, Spanien (Fünf-Länder-Vergleich)</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2009 (Publikationsjahr); Daten zu 20 Jahren gesetzliches Gewaltverbot in Österreich</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Vergleichende Untersuchung mit Befragung von Experten und Expertinnen in der Kinder- und Jugendhilfe zur Prävalenz körperlicher und psychischer Gewalt in der Erziehung im Fünf-Länder-Vergleich</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Repräsentative Befragungen von Jugendlichen und Kindern zu Gewalterfahrungen + Empirische Studien zu christlicher Erziehung und Glaubensentwicklung</span><span class="ba-ev-count">6 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Repräsentative Befragung mit standardisierten Fragebögen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2005-2014</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.875</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Merged: Großangelegte repräsentative Befragungen von Kindern und Jugendlichen zu erlebter elterlicher Gewalt und Erziehungsverhalten, durchgeführt mit standardisierten Fragebögen; Empirische Untersuchungen zur Glaubenserziehung und Erziehungspraktiken in christlichen Familien, mit Fokus auf Zusammenhänge zwischen Religiosität und Erziehungsverhalten</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">35 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(5 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626788</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Je gläubiger die Eltern sind, desto mehr schlagen sie zu. Bei hochgläubigen evangelikalen Eltern werden nur 21 Prozent der Kinder völlig gewaltfrei erzogen, während bei Eltern, die Religion nur als Lebensdekoration nehmen, 60 Prozent der Kinder gewaltfrei erzogen werden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.deutschlandfunk.de/kriminologe-pfeiffer-ueber-religiositaet-und-100.html" target="_blank" rel="noopener noreferrer">Kriminologe Pfeiffer über Religiosität und Gewaltbereitschaft - &quot;Je gläubiger die Eltern sind, desto mehr schlagen sie zu&quot;</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626789</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">2013 führte der deutsche Kriminologe Christian Pfeiffer in Niedersachsen eine repräsentative Umfrage unter 56.000 Menschen durch. Er kam zum Schluss, dass jedes 6. Kind aus einer freikirchlichen Familie schwere Gewalt erlebte. Mit dem Grad der Religiosität steige die Gewalt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle" target="_blank" rel="noopener noreferrer">Züchtigung in Freikirchen: Schlagen im Namen Gottes - Kultur - SRF</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626790</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">2017 publizierte das Institut Empirica eine Studie über christliche Erziehung mit dem Titel &#39;Zwischen Furcht und Freiheit. Das Dilemma der christlichen Erziehung&#39;. Die Tendenz, dass mit zunehmender Religiosität die Gewaltbereitschaft steigt, wird dort bestätigt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle" target="_blank" rel="noopener noreferrer">Züchtigung in Freikirchen: Schlagen im Namen Gottes - Kultur - SRF</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626791</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Für die Schweiz bestätigt eine Untersuchung des Kriminologen Dirk Baier von der ZHAW die Tendenz, dass hochreligiöse Familien eher bereit sind, körperliche Gewalt als Erziehungsmittel einzusetzen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle" target="_blank" rel="noopener noreferrer">Züchtigung in Freikirchen: Schlagen im Namen Gottes - Kultur - SRF</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626792</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Bei muslimischen Jugendlichen gilt in abgeschwächter Form: Je religiöser die Eltern sind, umso mehr hängen sie am traditionellen Erziehungsstil, auch mit Schlagen verknüpft. Dies fördert die Gewaltrate bei Jugendlichen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.deutschlandfunk.de/kriminologe-pfeiffer-ueber-religiositaet-und-100.html" target="_blank" rel="noopener noreferrer">Kriminologe Pfeiffer über Religiosität und Gewaltbereitschaft - &quot;Je gläubiger die Eltern sind, desto mehr schlagen sie zu&quot;</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(1 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229692011</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Junge Muslime erleben im Durchschnitt eine rigidere Erziehung innerhalb ihrer Familien, sind aber dennoch sehr zufrieden mit ihrer Familienerfahrung und charakterisieren ihre Eltern als warm und fürsorglich.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.theo-web.de/fileadmin/user_upload/TW_pdfs1_2020/22_Kenar_Stein_Zimmer_END.pdf" target="_blank" rel="noopener noreferrer">22 Kenar Stein Zimmer END</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(29 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die UN-Kinderrechtskonvention erkennt das Recht des Kindes auf Schutz vor Gewalt an und verpflichtet Vertragsstaaten, alle geeigneten Maßnahmen zu treffen, um sicherzustellen, dass Kinder vor allen Formen der Diskriminierung oder Bestrafung geschützt werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.unicef.de/informieren/ueber-uns/fuer-kinderrechte/un-kinderrechtskonvention" target="_blank" rel="noopener noreferrer">https://www.unicef.de/informieren/ueber-uns/fuer-kinderrechte/un-kinderrechtskonvention</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Artikel 9 der UN-Kinderrechtskonvention sieht vor, dass Kinder von ihren Eltern getrennt werden können, wenn zuständige Behörden bestimmen, dass dies zum Wohl des Kindes notwendig ist, etwa wenn das Kind durch die Eltern misshandelt oder vernachlässigt wird.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.unicef.de/informieren/ueber-uns/fuer-kinderrechte/un-kinderrechtskonvention" target="_blank" rel="noopener noreferrer">https://www.unicef.de/informieren/ueber-uns/fuer-kinderrechte/un-kinderrechtskonvention</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Je gläubiger Christen sind, desto eher schlagen sie ihre Kinder. Das Kriminologische Forschungsinstitut Niedersachsen (KFN) veröffentlichte diesen Befund basierend auf einer Befragung von 45.000 Neuntklässlern im Alter zwischen 14 bis 16 Jahren aus 61 deutschen Städten und Landkreisen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bei freikirchlichen Christen gaben 27 Prozent der Kinder an, gewaltfrei erzogen zu werden, während 21,3 Prozent sagten, sie seien massiven Schlägen ausgesetzt. Im Vergleich dazu betrug der Anteil der Kinder, die gewaltfrei erzogen werden, unter &#39;Formalchristen&#39; 50 Prozent.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Unter hochgläubigen Christen waren nur noch 27 Prozent der Kinder, die gewaltfrei erzogen werden, während bei &#39;Formalchristen&#39; (die die Kirche nur zur Lebensdekoration wie Taufe und Heirat brauchen) 50 Prozent gewaltfrei erzogen wurden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Freikirchliche Christen tendierten noch eher zu Gewalt in der Erziehung als etwa Muslime. Unter den hochgläubigen Muslimen wenden demnach nur 35 Prozent Gewalt in der Erziehung an, während bei hochgläubigen Freikirchler der Anteil höher liegt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Studienleiter Pfeiffer erklärte, dass der Verdacht naheliegt, dass die Gruppe der hochgläubigen Freikirchler sehr bibeltreu vorgehen und die im Alten Testament auffindbaren Stellen aktiv als Rechtfertigung oder als Handlungsleitlinie für körperliche Züchtigung sehen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Trotz eines höheren Anteils an Akademikern unter den Eltern und eines deutlich niedrigeren Anteils an Hauptschülern unter den Kindern schlagen Freikirchler ihre Kinder häufiger als andere Gruppen – ein Muster, das der allgemeinen Regel widerspricht, dass höher Gebildete ihre Kinder weniger schlagen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Zufriedenheit mit dem Leben ist mit Abstand am niedrigsten bei den Freikirchlern mit nur 32 Prozent, während sie bei Evangelischen fast 50 Prozent und bei Katholiken fast 53 Prozent beträgt. Studienleiter Pfeiffer schließt daraus, dass dieser Erziehungsstil der Evangelikalen sich nicht positiv auswirkt, sondern den Kindern ihre Lebenszufriedenheit nimmt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/" target="_blank" rel="noopener noreferrer">https://www.jesus.de/nachrichten-themen/studie-behauptet-freikirchliche-christen-schlagen-ihre-kinder-haeufiger/</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das RaFiK-Projekt analysierte Fachkräfte in der Kinder- und Jugendhilfe und identifizierte gefährdendes Erziehungsverhalten im Zusammenhang mit radikal-religiösen und extremistischen Überzeugungen und Verhaltensgrundsätzen als spezifische Fallkonstellation bei Kindeswohlgefährdung.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf" target="_blank" rel="noopener noreferrer">https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Gefährdendes Erziehungsverhalten im Zusammenhang mit radikal-religiösen und extremistischen Überzeugungen und Verhaltensgrundsätzen wird als spezifische Fallkonstellation im Kontext von Kindeswohlgefährdung identifiziert.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf" target="_blank" rel="noopener noreferrer">https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Fachkräfte in der Kinder- und Jugendhilfe berichten von wiederkehrenden Konfliktsituationen zwischen streng religiösen oder religiös radikalisierten Kindern, Jugendlichen und ihren Familien, die praktische und ethische Herausforderungen im Kontext von Kindeswohl aufwerfen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf" target="_blank" rel="noopener noreferrer">https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Religiöse Unterstützungsnetzwerke senken die Kosten für die Erziehung von mehr Kindern für die Teilnehmer, und religiöse Eltern erhalten viel Hilfe von ihren religiösen Netzwerken.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/Natalism/comments/1kocpga/why_do_religious_people_have_more_children/?tl=de" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/Natalism/comments/1kocpga/why_do_religious_people_have_more_children/?tl=de</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In evangelikalen Glaubensverhältnissen können starre Moralvorstellungen und missbräuchliche Erfahrungen die Kindheit von Individuen negativ prägen. Innerhalb der evangelikalen Glaubensströmung nimmt die Erziehung des Kindes eine große Rolle ein, und das Aufwachsen kann durch Herausforderungen gekennzeichnet werden, einschließlich negativer oder traumatisierender Erlebnisse.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download" target="_blank" rel="noopener noreferrer">https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In evangelikalen Gemeinschaften gibt es verschiedene Erziehungsstile, die aus Erziehungsratgebern zu entnehmen sind. Hierbei reichen die Ansätze von einer problematischen Züchtigungspädagogik bis hin zu modernen partizipativen Ansätzen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download" target="_blank" rel="noopener noreferrer">https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Drechsel beleuchtet potenzielle Risikofaktoren in der Erziehung christlich-fundamentalistischer Familien, wobei die Erziehung oft durch ein von Sünde und Verdammnis geprägtes Verständnis charakterisiert wird.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download" target="_blank" rel="noopener noreferrer">https://digitalcollection.zhaw.ch/bitstreams/1414cc92-017e-4d82-bbe5-061860540872/download</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Aus persönlicher Erfahrung in Zeugen Jehovas Gemeinschaften (Schottland, 1990er-2000er Jahre) schien häusliche Gewalt auf niedrigem Niveau wirklich verbreitet zu sein. Von Vätern wurde erwartet, sie wurden sogar dazu ermutigt, ihre Kinder zu schlagen, um sie in Schach zu halten. Kinder lebten im Allgemeinen in vager Angst, eine Ohrfeige zu bekommen, wenn sie sich daneben benahmen oder nicht fromm genug aussahen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: low</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.reddit.com/r/exjw/comments/1k175a6/question_for_exjws_over_25_did_you_ever_feel_like/?tl=de" target="_blank" rel="noopener noreferrer">https://www.reddit.com/r/exjw/comments/1k175a6/question_for_exjws_over_25_did_you_ever_feel_like/?tl=de</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Christliche Erziehung ist ein wesentlicher Prägefaktor für die Glaubensentwicklung. Die primäre Sozialisation in der Familie und insbesondere die Prägung durch familiäre Bindungs- und Bezugspersonen haben für die Entwicklung der Persönlichkeit eine große Bedeutung.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="http://www.scm-shop.de/media/wysiwyg/SCMBrockhaus/Downloads_nicht_loeschen/226813000_Forschungsbericht_zur_Studie.pdf" target="_blank" rel="noopener noreferrer">http://www.scm-shop.de/media/wysiwyg/SCMBrockhaus/Downloads_nicht_loeschen/226813000_Forschungsbericht_zur_Studie.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Studie zur christlich-familiären Erziehung untersucht, wie Glaubenserziehung in christlichen Familien konkret aussieht und wie sich gesellschaftliche Transformationsprozesse darin niederschlagen, einschließlich der Frage, was im Rückblick in Bezug auf die eigene Erziehung als positiv oder negativ erlebt wird.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="http://www.scm-shop.de/media/wysiwyg/SCMBrockhaus/Downloads_nicht_loeschen/226813000_Forschungsbericht_zur_Studie.pdf" target="_blank" rel="noopener noreferrer">http://www.scm-shop.de/media/wysiwyg/SCMBrockhaus/Downloads_nicht_loeschen/226813000_Forschungsbericht_zur_Studie.pdf</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626793</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Erziehung in muslimischen Familien ist tendenziell rigider als in einheimisch-christlich geprägten Familien, wird aber dennoch von den Kindern und Jugendlichen zumeist als positiv, da beschützend aufgenommen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.theo-web.de/ausgaben/2020/19-jahrgang-2020-heft-1/news/religiositaet-und-religioese-erziehung-muslimischer-jugendlicher-ein-literaturueberblick" target="_blank" rel="noopener noreferrer">Religiosität und religiöse Erziehung muslimischer Jugendlicher – ein Literaturüberblick</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626794</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Anhand von Quellen zu islamischen Erziehungsidealen konnte gezeigt werden, dass Gehorsam, elterliche Kontrolle und (Selbst)Disziplinierung im islamischen Sinne zentrale Elemente in der islamischen Werteerziehung darstellen. Wenn jedoch in der Familie keine Diskussions- und Streitkultur herrscht und der Gehorsam religiös legitimiert wird, lassen sich kritische Kompetenzen bei Kindern nur schwer ausbilden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.theo-web.de/ausgaben/2020/19-jahrgang-2020-heft-1/news/religiositaet-und-religioese-erziehung-muslimischer-jugendlicher-ein-literaturueberblick" target="_blank" rel="noopener noreferrer">Religiosität und religiöse Erziehung muslimischer Jugendlicher – ein Literaturüberblick</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626795</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Gewalterfahrung in der Familie ist ein gewaltfördernder Indikator bei männlichen, muslimischen Jugendlichen mit Migrationshintergrund.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bmbfsfj.bund.de/resource/blob/74636/98ae887759a6e22eef9eff0cead54454/gewaltphaenomene-maennliche-muslimischen-jugendliche-data.pdf" target="_blank" rel="noopener noreferrer">gewaltphaenomene maennliche muslimischen jugendliche data</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229626796</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Immerhin 7 Prozent der Befragten in der 2017 Empirica-Studie gaben an, körperliche Strafe sei &#39;biblisch und darum einzusetzen&#39;.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle" target="_blank" rel="noopener noreferrer">Züchtigung in Freikirchen: Schlagen im Namen Gottes - Kultur - SRF</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229643065</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Ein autoritärer Erziehungsstil begünstigt den Opfer- oder TäterInnenstatus bei Jugendlichen</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://unipub.uni-graz.at/obvugrhs/download/pdf/245725" target="_blank" rel="noopener noreferrer">245725</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229643066</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Schlechte Sozialbeziehungen, geringe Zugehörigkeit und niedrige Wertschätzung begünstigen den Opfer- oder TäterInnenstatus</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://unipub.uni-graz.at/obvugrhs/download/pdf/245725" target="_blank" rel="noopener noreferrer">245725</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229667050</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Forschungsbefragung des Kriminologischen Forschungsinstituts Niedersachsen (KFN) untersuchte körperliche Gewalt gegen Kinder in der Familie als eines der Hauptforschungsthemen, mit Fokus auf elterliche Misshandlung und Vernachlässigung sowie transgenerationale Weitergabe elterlicher Gewalt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://kfn.de/wp-content/uploads/Forschungsberichte/FB_122.pdf" target="_blank" rel="noopener noreferrer">FB 122</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229667051</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die KFN-Schülerbefragung 2005 untersuchte Gewalterfahrungen von Kindern und Jugendlichen, einschließlich erlebter Gewalt durch die Eltern als Ursachenfaktor für Kindergewalt und Jugenddelinquenz.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://publikationen.uni-tuebingen.de/xmlui/bitstream/handle/10900/142439/Baier_179.pdf?sequence=1&amp;isAllowed=y" target="_blank" rel="noopener noreferrer">Baier 179</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229692010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Erziehung in muslimischen Familien ist tendenziell rigider als in einheimisch-christlich geprägten Familien, wird aber dennoch von den Kindern und Jugendlichen zumeist als positiv, da beschützend aufgenommen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">peer_reviewed_study</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.theo-web.de/fileadmin/user_upload/TW_pdfs1_2020/22_Kenar_Stein_Zimmer_END.pdf" target="_blank" rel="noopener noreferrer">22 Kenar Stein Zimmer END</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772229714593</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die österreichische Studie untersuchte Gewalt in der Erziehung und analysierte verschiedene soziodemographische Faktoren wie Geschlecht, Schichtzugehörigkeit, Migrationshintergrund und Partnergewalt, aber es wird keine explizite Analyse des Zusammenhangs zwischen Religiosität der Eltern und körperlicher Gewalt in der Erziehung berichtet.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_07</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.oif.ac.at/fileadmin/user_upload/p_oif/andere_Publikationen/Gewaltverbot_in_OE_2010.pdf" target="_blank" rel="noopener noreferrer">Gewaltverbot in OE 2010</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">15 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">Religiosität und religiöse Erziehung muslimischer Jugendlicher – ein Literaturüberblick</span></div>
+        <div class="source-url"><a href="https://www.theo-web.de/ausgaben/2020/19-jahrgang-2020-heft-1/news/religiositaet-und-religioese-erziehung-muslimischer-jugendlicher-ein-literaturueberblick" target="_blank" rel="noopener noreferrer">https://www.theo-web.de/ausgaben/2020/19-jahrgang-2020-heft-1/news/religiositaet-und-religioese-erziehung-muslimischer-jugendlicher-ein-literaturueberblick</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Züchtigung in Freikirchen: Schlagen im Namen Gottes - Kultur - SRF</span></div>
+        <div class="source-url"><a href="https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle" target="_blank" rel="noopener noreferrer">https://www.srf.ch/kultur/gesellschaft-religion/zuechtigung-in-freikirchen-schlagen-im-namen-gottes-mehr-als-bedauerliche-einzelfaelle</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Thieme E-Journals - Zeitschrift für Sexualforschung / Abstract</span></div>
+        <div class="source-url"><a href="https://www.thieme-connect.com/products/ejournals/html/10.1055/s-0043-122001?device=desktop&amp;innerWidth=412&amp;offsetWidth=412&amp;lang=de" target="_blank" rel="noopener noreferrer">https://www.thieme-connect.com/products/ejournals/html/10.1055/s-0043-122001?device=desktop&amp;innerWidth=412&amp;offsetWidth=412&amp;lang=de</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">Kriminologe Pfeiffer über Religiosität und Gewaltbereitschaft - &quot;Je gläubiger die Eltern sind, desto mehr schlagen sie zu&quot;</span></div>
+        <div class="source-url"><a href="https://www.deutschlandfunk.de/kriminologe-pfeiffer-ueber-religiositaet-und-100.html" target="_blank" rel="noopener noreferrer">https://www.deutschlandfunk.de/kriminologe-pfeiffer-ueber-religiositaet-und-100.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">gewaltphaenomene maennliche muslimischen jugendliche data</span></div>
+        <div class="source-url"><a href="https://www.bmbfsfj.bund.de/resource/blob/74636/98ae887759a6e22eef9eff0cead54454/gewaltphaenomene-maennliche-muslimischen-jugendliche-data.pdf" target="_blank" rel="noopener noreferrer">https://www.bmbfsfj.bund.de/resource/blob/74636/98ae887759a6e22eef9eff0cead54454/gewaltphaenomene-maennliche-muslimischen-jugendliche-data.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">245725</span></div>
+        <div class="source-url"><a href="https://unipub.uni-graz.at/obvugrhs/download/pdf/245725" target="_blank" rel="noopener noreferrer">https://unipub.uni-graz.at/obvugrhs/download/pdf/245725</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: gewaltfreie Erziehung religiöse Eltern keine Korrelation Widerlegung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">FB 122</span></div>
+        <div class="source-url"><a href="https://kfn.de/wp-content/uploads/Forschungsberichte/FB_122.pdf" target="_blank" rel="noopener noreferrer">https://kfn.de/wp-content/uploads/Forschungsberichte/FB_122.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: KFN Kriminologisches Forschungsinstitut Bestrafung Religiosität Befragung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">FB 151</span></div>
+        <div class="source-url"><a href="https://kfn.de/wp-content/uploads/Forschungsberichte/FB_151.pdf" target="_blank" rel="noopener noreferrer">https://kfn.de/wp-content/uploads/Forschungsberichte/FB_151.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: KFN Kriminologisches Forschungsinstitut Bestrafung Religiosität Befragung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_009</span><span class="source-title">Baier 179</span></div>
+        <div class="source-url"><a href="https://publikationen.uni-tuebingen.de/xmlui/bitstream/handle/10900/142439/Baier_179.pdf?sequence=1&amp;isAllowed=y" target="_blank" rel="noopener noreferrer">https://publikationen.uni-tuebingen.de/xmlui/bitstream/handle/10900/142439/Baier_179.pdf?sequence=1&amp;isAllowed=y</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: KFN Kriminologisches Forschungsinstitut Bestrafung Religiosität Befragung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_010</span><span class="source-title">22 Kenar Stein Zimmer END</span></div>
+        <div class="source-url"><a href="https://www.theo-web.de/fileadmin/user_upload/TW_pdfs1_2020/22_Kenar_Stein_Zimmer_END.pdf" target="_blank" rel="noopener noreferrer">https://www.theo-web.de/fileadmin/user_upload/TW_pdfs1_2020/22_Kenar_Stein_Zimmer_END.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_011</span><span class="source-title">aktuelle einstellungen zu koerperstrafen und elterliches erziehungsverhalten in deutschland pdf data</span></div>
+        <div class="source-url"><a href="https://www.unicef.de/_cae/resource/blob/239474/ee770482a72a5f51bd3ece14c519a78c/aktuelle-einstellungen-zu-koerperstrafen-und-elterliches-erziehungsverhalten-in-deutschland-pdf-data.pdf" target="_blank" rel="noopener noreferrer">https://www.unicef.de/_cae/resource/blob/239474/ee770482a72a5f51bd3ece14c519a78c/aktuelle-einstellungen-zu-koerperstrafen-und-elterliches-erziehungsverhalten-in-deutschland-pdf-data.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Religiosität Eltern körperliche Gewalt Erziehung Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_012</span><span class="source-title">Gewaltverbot in OE 2010</span></div>
+        <div class="source-url"><a href="https://www.oif.ac.at/fileadmin/user_upload/p_oif/andere_Publikationen/Gewaltverbot_in_OE_2010.pdf" target="_blank" rel="noopener noreferrer">https://www.oif.ac.at/fileadmin/user_upload/p_oif/andere_Publikationen/Gewaltverbot_in_OE_2010.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: gewaltfreie Erziehung religiöse Eltern Prävalenz Vergleich</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_013</span><span class="source-title">DJI 2022 RaFiK Handlungsempfehlungen</span></div>
+        <div class="source-url"><a href="https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf" target="_blank" rel="noopener noreferrer">https://www.dji.de/fileadmin/user_upload/bibs2022/DJI_2022_RaFiK_Handlungsempfehlungen.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: gewaltfreie Erziehung religiöse Eltern Prävalenz Vergleich</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_014</span><span class="source-title">Gutachten Kriminalitaet Migration Walburg</span></div>
+        <div class="source-url"><a href="https://mediendienst-integration.de/fileadmin/Dateien/Gutachten_Kriminalitaet_Migration_Walburg.pdf" target="_blank" rel="noopener noreferrer">https://mediendienst-integration.de/fileadmin/Dateien/Gutachten_Kriminalitaet_Migration_Walburg.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: KFN Kriminologisches Forschungsinstitut Religiosität Bestrafung Daten</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_015</span><span class="source-title">jas handbuch digital bf</span></div>
+        <div class="source-url"><a href="https://www.stmas.bayern.de/imperia/md/content/stmas/stmas_inet/jugendsozialarbeit/jas-handbuch_digital_bf.pdf" target="_blank" rel="noopener noreferrer">https://www.stmas.bayern.de/imperia/md/content/stmas/stmas_inet/jugendsozialarbeit/jas-handbuch_digital_bf.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: religiöse Eltern gewaltfreie Erziehung positive Effekte</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">12 queries · 3 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>religiöse Eltern körperliche Bestrafung Kinder</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Streng gläubige Eltern schlagen ihre Kinder häufiger.</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Religiosität Schlagen Kinder Häufigkeit</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Es gibt einen Zusammenhang zwischen religiöser Strenge und körperlicher Züchtigu</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Religiosität Eltern körperliche Gewalt Erziehung Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>gewaltfreie Erziehung religiöse Eltern keine Korrelation Widerlegung</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>KFN Kriminologisches Forschungsinstitut Bestrafung Religiosität Befragung</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Religiosität Eltern körperliche Gewalt Erziehung Studie</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>gewaltfreie Erziehung religiöse Eltern Prävalenz Vergleich</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>KFN Kriminologisches Forschungsinstitut Religiosität Bestrafung Daten</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Religiosität Eltern körperliche Bestrafung Erziehung Studie</td><td>2</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+          <tr><td>religiöse Eltern gewaltfreie Erziehung positive Effekte</td><td>2</td><td><span class="focus-main">contrarian</span></td><td>2</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">35</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">15</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">12</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">27</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 22:08 UTC
+  <br>Job 42aa8ce3e8c4496a8bac6f0503ff7de9 · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="fh:claim" content="Das Doppelbesteuerungsabkommen generiert mehr Verlierer als Gewinner">
+<meta name="fh:verdict" content="MOSTLY-FALSE">
+<meta name="fh:truth" content="28">
+<meta name="fh:confidence" content="35">
+<meta name="fh:date" content="2026-02-27">
+<meta name="fh:model" content="anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001">
+<title>FactHarbor Report — Das Doppelbesteuerungsabkommen generiert mehr Verlierer als Gewinner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5;background:#0f1117;color:#e2e8f0;min-height:100vh}
+a{color:#63b3ed;text-decoration:none}a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:24px 16px}
+.header{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.08em;color:#63b3ed;text-transform:uppercase}
+.job-id{font-size:11px;color:#718096;font-family:monospace;margin-top:2px}
+.input-claim{font-size:22px;font-weight:700;margin:16px 0 4px;color:#f7fafc}
+.pipeline-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.chip-blue{background:#1a365d;border-color:#2b6cb0;color:#90cdf4}
+.chip-gray{background:#2d3748;border-color:#4a5568;color:#a0aec0}
+.chip-green{background:#1c4532;border-color:#276749;color:#68d391}
+.verdict-banner{border-radius:12px;padding:28px 28px 24px;margin-bottom:20px;border:2px solid}
+.verdict-lf{background:#1c1409;border-color:#c05621}
+.verdict-f{background:#1a0a0a;border-color:#c53030}
+.verdict-lt{background:#0a1a0a;border-color:#276749}
+.verdict-t{background:#061a06;border-color:#22543d}
+.verdict-inc{background:#1a1520;border-color:#553c9a}
+.verdict-unv{background:#1a0d00;border-color:#e65100}
+.unv-color{color:#f6ad55}
+.verdict-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.verdict-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.verdict-badge{font-size:26px;font-weight:800;letter-spacing:.02em}
+.lf-color{color:#f6ad55}
+.f-color{color:#fc8181}
+.lt-color{color:#68d391}
+.t-color{color:#48bb78}
+.inc-color{color:#b794f4}
+.meter-group{display:flex;gap:32px;flex-wrap:wrap}
+.meter{text-align:center}
+.meter-value{font-size:42px;font-weight:800;line-height:1}
+.meter-conf .meter-value{font-size:22px;font-weight:700}
+.meter-conf .meter-bar{width:80px}
+.meter-label{font-size:11px;color:#a0aec0;margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.meter-bar{width:120px;height:6px;background:#2d3748;border-radius:3px;margin-top:8px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width .3s}
+.section{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.section-head{padding:14px 20px;background:#1e2535;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px}
+.section-title{font-weight:700;font-size:14px;color:#e2e8f0}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#2d3748;color:#a0aec0;font-weight:600}
+.section-body{padding:20px}
+.narrative-headline{font-size:17px;font-weight:700;color:#f7fafc;margin-bottom:12px;line-height:1.4}
+.narrative-block{margin-bottom:14px}
+.nl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:5px}
+.narrative-text{color:#cbd5e0;line-height:1.65}
+.boundary-disagreements{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.disagreement-item{background:#0f1117;border-left:3px solid #4a5568;padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;color:#a0aec0}
+.claim-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.claim-statement{font-size:16px;font-weight:700;color:#f7fafc;flex:1}
+.claim-meters{display:flex;gap:20px}
+.small-meter{text-align:center}
+.small-meter-val{font-size:24px;font-weight:800}
+.small-meter-conf .small-meter-val{font-size:15px;font-weight:700}
+.small-meter-label{font-size:10px;color:#718096;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIGERScore */
+.tiger-panel{background:#1e2535;border:1px solid #2d3748;border-radius:12px;padding:24px;margin-bottom:20px}
+.tiger-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.tiger-title{font-size:18px;font-weight:700;color:#63b3ed;display:flex;align-items:center;gap:8px}
+.tiger-overall{padding:6px 16px;border-radius:20px;font-weight:800;font-size:16px}
+.tiger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.tiger-metric{text-align:center;padding:12px;background:#0f1117;border:1px solid #2d3748;border-radius:8px}
+.tiger-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#718096;margin-bottom:6px}
+.tiger-val{font-size:20px;font-weight:800;color:#e2e8f0}
+.tiger-max{font-size:12px;color:#4a5568;font-weight:400}
+.tiger-reason{font-size:13px;line-height:1.6;color:#cbd5e0;background:#0f1117;padding:16px;border-radius:8px;border-left:4px solid #2b6cb0}
+.tiger-warn{margin-top:12px;padding:10px 14px;background:#2d1a1a;border:1px solid #742a2a;border-radius:6px;color:#feb2b2;font-size:12px;display:flex;gap:8px}
+
+/* Visual Truth Meter */
+.vm-container{width:100%;max-width:300px;margin:12px 0}
+.vm-bar{height:10px;background:#2d3748;border-radius:5px;position:relative;overflow:hidden;border:1px solid #4a5568}
+.vm-range{position:absolute;top:0;bottom:0;background:rgba(66,153,225,0.2);border-left:1px solid rgba(66,153,225,0.4);border-right:1px solid rgba(66,153,225,0.4)}
+.vm-mark{position:absolute;top:0;bottom:0;width:4px;background:#3182ce;margin-left:-2px;border-radius:2px;z-index:2}
+.vm-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#718096;font-family:monospace}
+.vm-current{font-weight:700;color:#e2e8f0}
+
+/* Evidence Styles */
+.evidence-item-contrarian{border-left:4px dashed #ed8936!important;background:#2d241a!important}
+.ev-tag-contrarian{background:#ed8936;color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;margin-right:6px}
+.reasoning-box{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;color:#a0aec0;line-height:1.7;max-height:300px;overflow-y:auto}
+details summary{cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';font-size:10px;transition:transform .2s;display:inline-block;color:#718096}
+details[open] summary::before{transform:rotate(90deg)}
+details summary .sum-label{font-weight:700;font-size:13px;color:#e2e8f0}
+details summary .sum-count{font-size:11px;color:#718096;margin-left:4px}
+.dir-supports{color:#68d391}
+.dir-contradicts{color:#fc8181}
+.dir-neutral{color:#90cdf4}
+.dir-bg-supports{background:#0a1a10;border-color:#276749}
+.dir-bg-contradicts{background:#1a0a0a;border-color:#742a2a}
+.dir-bg-neutral{background:#0a0f1a;border-color:#2a4365}
+.ev-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev-item{border-radius:8px;padding:10px 14px;border:1px solid;font-size:13px}
+.ev-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ev-id{font-size:10px;font-family:monospace;color:#718096;flex-shrink:0}
+.ev-dir-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase;letter-spacing:.05em}
+.ev-sup{background:#1c4532;color:#68d391}
+.ev-con{background:#742a2a;color:#fc8181}
+.ev-neu{background:#1a365d;color:#90cdf4}
+.ev-statement{color:#e2e8f0;line-height:1.5}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ev-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:#2d3748;color:#a0aec0}
+.ev-source-link{font-size:10px;color:#63b3ed;margin-top:4px;word-break:break-all}
+.bf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.bf-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.bf-name{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+.bf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bf-key{font-size:11px;color:#718096}
+.bf-val{font-size:12px;font-weight:700}
+.bf-bar-bg{background:#2d3748;height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.bf-bar-fill{height:100%;border-radius:2px}
+.fill-supports{background:#68d391}
+.fill-contradicts{background:#fc8181}
+.fill-neutral{background:#90cdf4}
+.fill-mixed{background:#f6ad55}
+.matrix-wrap{overflow-x:auto}
+.matrix-table{border-collapse:collapse;width:100%;font-size:12px}
+.matrix-table th{padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600;text-align:center;white-space:nowrap}
+.matrix-table td{padding:6px 10px;border:1px solid #2d3748;text-align:center}
+.matrix-table td.claim-col{text-align:left;font-weight:700;color:#e2e8f0;white-space:nowrap}
+.cell-val{font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;min-width:32px}
+.cell-high{background:#1c4532;color:#68d391}
+.cell-mid{background:#7b4c1a;color:#f6ad55}
+.cell-low{background:#742a2a;color:#fc8181}
+.cell-zero{background:#2d3748;color:#718096}
+.boundary-accord{margin-bottom:8px;border:1px solid #2d3748;border-radius:8px;overflow:hidden}
+.boundary-accord summary{padding:12px 16px;background:#1e2535;cursor:pointer;display:flex;align-items:center;gap:10px}
+.boundary-accord summary::-webkit-details-marker{display:none}
+.boundary-accord[open] summary{border-bottom:1px solid #2d3748}
+.ba-arrow{font-size:10px;color:#718096;transition:transform .2s;flex-shrink:0}
+details[open] .ba-arrow{transform:rotate(90deg)}
+.ba-id{font-size:11px;font-family:monospace;color:#718096}
+.ba-name{font-weight:700;font-size:13px;color:#e2e8f0;flex:1}
+.ba-ev-count{font-size:11px;background:#2d3748;color:#a0aec0;padding:2px 8px;border-radius:10px}
+.boundary-body{padding:14px 16px}
+.boundary-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.bm-item{display:flex;flex-direction:column;gap:2px}
+.bm-label{color:#718096;font-size:11px}
+.bm-val{color:#e2e8f0;font-weight:600}
+.challenge-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.challenge-item{border-radius:8px;padding:10px 14px;border:1px solid #2d3748;background:#0f1117;font-size:12px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ch-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#a0aec0}
+.ch-adj{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.ch-yes{background:#1c4532;color:#68d391}
+.ch-no{background:#2d3748;color:#a0aec0}
+.ch-part{background:#7b4c1a;color:#f6ad55}
+.source-list{display:flex;flex-direction:column;gap:8px}
+.source-item{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:10px 14px;font-size:12px}
+.source-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.source-id{font-family:monospace;font-size:10px;color:#718096;flex-shrink:0}
+.source-title{font-weight:600;color:#e2e8f0;flex:1;line-height:1.3}
+.source-url{color:#63b3ed;font-size:11px;word-break:break-all}
+.source-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.query-table{width:100%;border-collapse:collapse;font-size:12px}
+.query-table th{text-align:left;padding:6px 10px;background:#1e2535;border:1px solid #2d3748;color:#a0aec0;font-weight:600}
+.query-table td{padding:6px 10px;border:1px solid #2d3748;color:#cbd5e0;vertical-align:top}
+.query-table tr:nth-child(odd) td{background:#0f1117}
+.focus-main{color:#68d391}
+.focus-contr{color:#f6ad55}
+.focus-prel{color:#90cdf4}
+.gates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gate-card{background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:14px}
+.gate-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#63b3ed;margin-bottom:10px}
+.gate-stat{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.gate-stat-key{color:#718096}
+.gate-stat-val{font-weight:700;color:#e2e8f0}
+.footer{text-align:center;padding:20px 0 8px;font-size:11px;color:#4a5568}
+@media(max-width:600px){
+  .meter-group{gap:16px}
+  .meter-value{font-size:32px}
+  .claim-head{flex-direction:column}
+  .boundary-meta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">FactHarbor Analysis Report</div>
+      <div class="job-id">Job: 5305bdea6b4d466ca0025b8381e3008e</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#718096">
+      <div>Created: 2026-02-27 11:24 UTC</div>
+      <div>Completed: 2026-02-27 11:32 UTC</div>
+      <div>Duration: ~7 min 48 sec</div>
+    </div>
+  </div>
+  <div class="input-claim">Das Doppelbesteuerungsabkommen generiert mehr Verlierer als Gewinner</div>
+  <div style="font-size:12px;color:#718096;margin-bottom:10px">Detected input type: <strong style="color:#a0aec0">claim</strong></div>
+  <div class="pipeline-meta">
+    <span class="chip chip-blue">&#127891; claimboundary pipeline</span>
+    <span class="chip chip-gray">&#129302; anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001</span>
+    <span class="chip chip-gray">&#128269; Google-CSE (circuit-open), Brave, Google-CSE</span>
+    <span class="chip chip-gray">22 LLM calls</span>
+    <span class="chip chip-gray">10 searches</span>
+    <span class="chip chip-gray">1 claim · 6 boundaries · 34 evidence items · 8 sources</span>
+    <span class="chip chip-green">SUCCEEDED</span>
+  </div>
+</div>
+<!-- VERDICT BANNER -->
+<div class="verdict-banner verdict-f">
+  <div class="verdict-header">
+    <div>
+      <div class="verdict-label">Overall Verdict</div>
+      <div class="verdict-badge f-color">MOSTLY-FALSE</div>
+      <div style="font-size:12px;color:#a0aec0;margin-top:6px">Die Analyse zeigt substantielle methodische Schwächen in der ursprünglichen Behauptung. Während grundlegende Information…</div>
+    </div>
+    <div class="meter-group">
+      <div class="meter">
+        <div class="meter-value f-color">72% false</div>
+        <div class="meter-label"></div>
+        <div class="meter-bar"><div class="meter-fill" style="width:72%;background:#c53030"></div></div>
+      </div>
+      <div class="meter meter-conf">
+        <div class="meter-value" style="color:#a0aec0">Low confidence</div>
+        <div class="meter-label" title="35% confidence">confidence</div>
+        <div class="meter-bar"><div class="meter-fill" style="width:35%;background:#4a5568"></div></div>
+      </div>
+    </div>
+    
+    <div style="margin-top:20px">
+      <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:28%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">28%</span>
+      <span>100%</span>
+    </div>
+  </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div style="font-size:11px;color:#a0aec0;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Key finding</div>
+      <div style="font-size:13px;color:#cbd5e0;line-height:1.6">Die Analyse zeigt substantielle methodische Schwächen in der ursprünglichen Behauptung. Während grundlegende Informationen über die Funktionsweise von Doppelbesteuerungsabkommen (DBA) korrekt dargestellt sein mögen, fehlt es an robusten Belegen für die Kernaussage. Die überwiegende Mehrheit der Evidenz (26 von 34 Einheiten) stammt aus allgemeinen, erklärenden Quellen ohne spezifische Validierung der konkreten Behauptung. Die wenigen Fallstudien zu Steueroasen, multinationalen Konzernstrukturen und IT-Unternehmen (7 Einheiten) bieten zwar unterstützende Hinweise, reichen jedoch nicht aus, um die Gesamtaussage zu stützen, insbesondere angesichts der durch die Challenger-Analyse aufgedeckten methodischen Mängel.</div>
+    </div>
+  </div>
+</div>
+<!-- VERDICT NARRATIVE -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128196;</span>
+    <span class="section-title">Verdict Narrative</span>
+  </div>
+  <div class="section-body">
+    <div class="narrative-headline">Die Behauptung über Doppelbesteuerungsabkommen ist überwiegend falsch und basiert auf methodisch schwachen Grundlagen mit niedriger Vertrauenswürdigkeit (28% Wahrheitsgehalt, 35% Konfidenz).</div>
+    <div class="narrative-block">
+      <div class="nl">Evidence Base</div>
+      <div class="narrative-text">34 Evidenzeinheiten aus 6 analytischen Perspektiven, wobei 26 Belege aus erklärenden Darstellungen stammen und nur 7 aus spezifischen Fallstudien und systematischen Analysen.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Key Finding</div>
+      <div class="narrative-text">Die Analyse zeigt substantielle methodische Schwächen in der ursprünglichen Behauptung. Während grundlegende Informationen über die Funktionsweise von Doppelbesteuerungsabkommen (DBA) korrekt dargestellt sein mögen, fehlt es an robusten Belegen für die Kernaussage. Die überwiegende Mehrheit der Evidenz (26 von 34 Einheiten) stammt aus allgemeinen, erklärenden Quellen ohne spezifische Validierung der konkreten Behauptung. Die wenigen Fallstudien zu Steueroasen, multinationalen Konzernstrukturen und IT-Unternehmen (7 Einheiten) bieten zwar unterstützende Hinweise, reichen jedoch nicht aus, um die Gesamtaussage zu stützen, insbesondere angesichts der durch die Challenger-Analyse aufgedeckten methodischen Mängel.</div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Boundary Disagreements</div>
+      <div class="boundary-disagreements">
+        <div class="disagreement-item">Die analytischen Perspektiven zeigen erhebliche Divergenzen: Während CB_01 (erklärende Darstellungen, 26 Belege) und CB_02/CB_06 (behördliche Dokumentationen, 2 Belege) neutral bleiben, zeigen nur CB_03, CB_04 und CB_05 (Fallstudien und systematische Analysen, 7 Belege) unterstützende Evidenz. Diese Diskrepanz deutet darauf hin, dass allgemeine Informationen über DBA-Mechanismen nicht mit spezifischen Behauptungen über deren Missbrauch oder Wirkung gleichgesetzt werden können. Die neutrale Haltung der größten Evidenzbasis unterminiert die Gesamtbehauptung erheblich.</div>
+      </div>
+    </div>
+    <div class="narrative-block">
+      <div class="nl">Limitations</div>
+      <div class="narrative-text" style="color:#a0aec0">Die Analyse konnte nicht abschließend klären, welche spezifische Behauptung über Doppelbesteuerungsabkommen geprüft wurde, da der genaue Wortlaut fehlt. Die niedrige Konfidenz (35%) signalisiert erhebliche Unsicherheit in der Bewertung. Es fehlen quantitative Daten zur tatsächlichen Häufigkeit und zum Ausmaß möglicher DBA-Missbrauchsfälle. Die Evidenzbasis ist stark auf deskriptive und erklärende Quellen konzentriert, während empirische Studien und behördliche Prüfberichte unterrepräsentiert sind. Unklar bleibt, ob die methodischen Schwächen in der ursprünglichen Behauptung selbst liegen oder in deren Interpretation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM VERDICT -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Atomic Claim — AC_01</span>
+    <span class="section-badge">1 of 1</span>
+  </div>
+  <div class="section-body">
+    <div class="claim-head">
+      <div class="claim-statement">Doppelbesteuerungsabkommen erzeugen mehr Verlierer als Gewinner</div>
+      <div class="claim-meters">
+        <div class="small-meter">
+          <div class="small-meter-val f-color">72% false</div>
+          <div class="small-meter-label"></div>
+        </div>
+        <div class="small-meter small-meter-conf">
+          <div class="small-meter-val" style="color:#a0aec0">Low confidence</div>
+          <div class="small-meter-label" title="35%">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-container">
+    <div class="vm-bar">
+      
+      <div class="vm-mark" style="left:28%"></div>
+    </div>
+    <div class="vm-labels">
+      <span>0%</span>
+      <span class="vm-current">28%</span>
+      <span>100%</span>
+    </div>
+  </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <span class="chip chip-gray">Category: evaluative</span>
+      <span class="chip chip-gray">Centrality: high</span>
+      <span class="chip chip-gray">Harm potential: medium</span>
+      <span class="chip chip-gray">Check-worthiness: high</span>
+      <span class="chip chip-gray">Verifiability: medium</span>
+      <span class="chip chip-gray">Contested: yes</span>
+      <span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: potentially_misleading</span>
+      <span class="chip chip-gray">Triangulation: strong (+0.1)</span>
+      <div style="width:100%;font-size:11px;color:#fc8181;margin-top:2px">↳ Die Behauptung &#39;Doppelbesteuerungsabkommen erzeugen mehr Verlierer als Gewinner&#39; ist potenziell irreführend, weil sie eine präzise quantitative Aussage über Verteilungswirkungen trifft, ohne dass entsprechende empirische Daten existieren. Die Formulierung suggeriert eine klare Mehrheitsfeststellung, die durch die vorliegende Evidenz nicht gestützt wird. Während die Evidenz zeigt, dass bestimmte Akteure (multinationale Konzerne) DBA-Strukturen zur Steueroptimierung nutzen können, erlaubt dies keine Schlussfolgerung über das Verhältnis von Gewinnern zu Verlierern in der Gesamtheit der betroffenen Steuerzahler. Die Behauptung könnte Rezipienten zu der Annahme verleiten, es gäbe eine empirisch belegte Verteilungsanalyse, die diese Schlussfolgerung stützt, obwohl eine solche Analyse in der Evidenzbasis vollständig fehlt.</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Per-Boundary Findings</div>
+      <div class="bf-grid">
+        <div class="bf-card">
+          <div class="bf-name">CB_01 · Erklärende und beispielhafte Darstellung von DBA-Methoden</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">100% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">26 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:100%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_02 · Behördliche Dokumentenanalyse von DBA-Regelungen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">100% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:100%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_03 · Fallstudienanalyse von Steueroasen und Konzernsteuerstrukturen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">55/45 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="45%">Low confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">2 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:55%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_04 · Systematische Analyse von internationalem Steuerrecht und Besteuerungskonflikten</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val unv-color">48/52 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="38%">Low confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">3 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:48%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_05 · Fallstudienanalyse multinationaler IT-Unternehmensstrukturen</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val inc-color">52/48 split</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="40%">Low confidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#68d391">supports</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-supports" style="width:52%"></div></div>
+        </div>
+        <div class="bf-card">
+          <div class="bf-name">CB_06 · Behördliche Prüfung von Informationsaustauschverfahren</div>
+          <div class="bf-row"><span class="bf-key">Truth</span><span class="bf-val f-color">100% false</span></div>
+          <div class="bf-row"><span class="bf-key">Confidence</span><span class="bf-val" title="0%">Insufficient evidence</span></div>
+          <div class="bf-row"><span class="bf-key">Direction</span><span class="bf-val" style="color:#90cdf4">neutral</span></div>
+          <div class="bf-row"><span class="bf-key">Evidence</span><span class="bf-val">1 items</span></div>
+          <div class="bf-bar-bg"><div class="bf-bar-fill fill-neutral" style="width:100%"></div></div>
+        </div>
+      </div>
+    </div>
+    <details style="margin-bottom:16px">
+      <summary style="padding:10px 0"><span class="sum-label">Full Reasoning &amp; Challenge Responses</span><span class="sum-count">(6 challenges evaluated)</span></summary>
+      <div class="reasoning-box" style="margin-top:10px;max-height:none">
+        <p style="margin-bottom:10px;font-weight:700;color:#e2e8f0">Verdict Reasoning</p>
+        <div style="white-space:pre-wrap">Die finale Bewertung berücksichtigt substantielle methodische Schwächen, die durch die Challenger-Analyse aufgedeckt wurden, sowie die stabile aber niedrige initiale Bewertung.
+
+**Auseinandersetzung mit Challenges:**
+
+CP_AC_01_0 (Source-Diversity-Problem): TEILWEISE AKZEPTIERT. Die Validierung zeigt, dass 4 von 8 zitierten Evidence-IDs nicht existieren (halluziniert). Die 4 validen IDs (EV_1772195217051-54) stammen tatsächlich aus derselben Quelle (vlh.de). Dies reduziert die scheinbare Evidenzbasis in CB_01 erheblich. Die initiale Bewertung von CB_01 als &quot;neutral&quot; bleibt korrekt, aber die Evidenzqualität ist schwächer als durch die Anzahl suggeriert. Anpassung: Confidence wird reduziert, da die Evidenzbasis dünner ist als initial angenommen.
+
+CP_AC_01_1 (Fehlende quantitative Verteilungsstudien): VOLLSTÄNDIG AKZEPTIERT. Dies ist die zentrale Schwäche. Alle drei zitierten Evidence-IDs sind valide und bestätigen: Es existieren ausschließlich qualitative Fallstudien, keine quantitativen Verteilungsanalysen. Die Behauptung &quot;mehr Verlierer als Gewinner&quot; erfordert zwingend aggregierte empirische Daten (Anzahl betroffener Steuerzahler, Steuerausfälle vs. Ersparnisse, Verteilungswirkungen nach Gruppen). Diese fundamentale Evidenzlücke rechtfertigt eine weitere Reduktion des truthPercentage.
+
+CP_AC_01_2 (Überbewertung durch indirekte Evidenz): AKZEPTIERT. Die Challenge argumentiert überzeugend, dass die initialen 35% zu hoch sind. Die drei validen Fallstudien (EV_1772195248914, EV_1772195248915, EV_1772195273304) zeigen lediglich, dass *einige* Akteure (multinationale Konzerne) profitieren – nicht, dass die *Mehrheit* der Betroffenen verliert. Das Fehlen direkter Gegenbeweise rechtfertigt keine 35%-Wahrscheinlichkeit. Anpassung: truthPercentage wird auf 28% reduziert, um die rein indirekte Natur der Evidenz zu reflektieren.
+
+CP_AC_01_3 (Fehlende Gegenbeweise): TEILWEISE AKZEPTIERT. Die Challenge weist korrekt darauf hin, dass auch positive Wirkungsstudien fehlen. Jedoch sind 6 von 8 zitierten Evidence-IDs halluziniert (nur EV_013, EV_017 valide). Die validen IDs bieten keine makroökonomischen Wirkungsstudien. Diese beidseitige Evidenzlücke erhöht die Unsicherheit, rechtfertigt aber keine Erhöhung des truthPercentage – sie bestätigt vielmehr die niedrige Confidence. Keine Anpassung des truthPercentage, aber Bestätigung der niedrigen Confidence.
+
+CP_AC_01_4 (Fehlende Unabhängigkeit der Quellen): AKZEPTIERT. Alle sechs zitierten Evidence-IDs sind valide. Die Analyse zeigt korrekt, dass CB_03, CB_04, CB_05 auf nur zwei Primärquellen basieren (Uni Regensburg Working Paper, AK Wien Studie). Die scheinbare Konvergenz zwischen Boundaries ist artifiziell. Dies reduziert die Robustheit der schwachen Unterstützung weiter. Anpassung: Confidence wird zusätzlich reduziert.
+
+CP_AC_01_5 (Qualität vs. Quantität der Evidenz): AKZEPTIERT. Von 11 zitierten IDs sind nur 5 valide (EV_1772195248914, EV_1772195248915, EV_1772195273304, EV_013, EV_017). Die Challenge identifiziert korrekt, dass keine peer-reviewed oder regierungsbeauftragten quantitativen Studien vorliegen. Die Evidenzbasis besteht aus nicht-peer-reviewed Fallstudien und deskriptiven Materialien. Dies bestätigt die niedrige Qualität der Evidenzbasis. Keine weitere Anpassung nötig, da bereits in CP_AC_01_1 und CP_AC_01_2 berücksichtigt.
+
+**Self-Consistency-Bewertung:**
+Die Konsistenzprüfung zeigt perfekte Stabilität (35/35/35, spread=0). Dies bedeutet, dass die methodischen Schwächen systematisch sind, nicht zufällig. Die stabile niedrige Bewertung reflektiert eine konsistente Evidenzlücke, nicht Unsicherheit in der Analyse.
+
+**Finale Synthese:**
+Die Behauptung bleibt fundamental unbelegt. Die Evidenz zeigt lediglich, dass DBA-Strukturen von sophistizierten Akteuren zur Steueroptimierung genutzt werden können (CB_03, CB_04, CB_05), was asymmetrische Vorteile impliziert. Dies ist jedoch weit entfernt von der Behauptung &quot;mehr Verlierer als Gewinner&quot;, die eine quantitative Mehrheitsfeststellung erfordert. Die Reduktion von 35% auf 28% reflektiert:
+1. Die rein indirekte Natur der Evidenz (CP_AC_01_2)
+2. Die reduzierte Quellenvielfalt (CP_AC_01_0, CP_AC_01_4)
+3. Die fundamentale Abwesenheit quantitativer Verteilungsdaten (CP_AC_01_1)
+
+Die Confidence-Reduktion von 42% auf 35% reflektiert die durch Challenges aufgedeckten methodischen Schwächen in der Evidenzbasis.
+
+**Per-Boundary-Findings bleiben unverändert**, da die Challenges die Interpretation der Evidenz betreffen, nicht die Boundary-Klassifikation selbst.</div>
+      </div>
+      <div class="challenge-list">
+        <p style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Challenge Responses</p>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Teilweise akzeptiert. 4 von 8 zitierten Evidence-IDs sind halluziniert, aber die 4 validen IDs bestätigen das Source-Diversity-Problem. Die scheinbare Evidenzbreite in CB_01 ist illusorisch. Confidence wurde reduziert.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Vollständig akzeptiert. Die fundamentale Abwesenheit quantitativer Verteilungsstudien ist die zentrale Schwäche. Alle drei zitierten Evidence-IDs sind valide und bestätigen diese Lücke. TruthPercentage wurde reduziert.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Akzeptiert. Die initialen 35% sind zu hoch für rein indirekte Evidenz. Die drei validen Fallstudien zeigen Vorteile für einige Akteure, nicht Nachteile für die Mehrheit. TruthPercentage auf 28% reduziert.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">missing_evidence</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Teilweise akzeptiert. 6 von 8 zitierten IDs sind halluziniert. Die beidseitige Evidenzlücke (keine positiven Wirkungsstudien) erhöht Unsicherheit, bestätigt aber die niedrige Confidence. Keine Anpassung des truthPercentage.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-yes">ACCEPTED · verdict adjusted</span></div>
+          <div class="ch-response">Akzeptiert. Alle sechs zitierten IDs sind valide. CB_03-05 basieren auf nur zwei Primärquellen. Die scheinbare Konvergenz ist artifiziell. Confidence wurde zusätzlich reduziert.</div>
+        </div>
+        <div class="challenge-item">
+          <div class="ch-head"><span class="ch-type">assumption</span><span class="ch-adj ch-no">REJECTED</span></div>
+          <div class="ch-response">Akzeptiert. Von 11 zitierten IDs sind nur 5 valide. Keine peer-reviewed oder regierungsbeauftragten quantitativen Studien vorhanden. Bestätigt niedrige Evidenzqualität, bereits in anderen Challenges berücksichtigt.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- CLAIM ASSESSMENT BOUNDARIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128202;</span>
+    <span class="section-title">ClaimAssessmentBoundaries</span>
+    <span class="section-badge">6 boundaries</span>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Matrix</div>
+      <div class="matrix-wrap">
+        <table class="matrix-table">
+          <thead><tr><th>Claim</th><th>CB_01<br><span style="font-weight:400;font-size:10px">Erklärende DBA-Darstellung</span></th><th>CB_02<br><span style="font-weight:400;font-size:10px">BMF-Dokumentenanalyse</span></th><th>CB_03<br><span style="font-weight:400;font-size:10px">Steueroasen-Fallstudien</span></th><th>CB_04<br><span style="font-weight:400;font-size:10px">Systematische Steuerrechtsanalyse</span></th><th>CB_05<br><span style="font-weight:400;font-size:10px">IT-Konzern-Fallstudie</span></th><th>CB_06<br><span style="font-weight:400;font-size:10px">Amtshilfe-Dokumentation</span></th></tr></thead>
+          <tbody><tr><td class="claim-col">AC_01 — Doppelbesteuerungsabkommen erz</td><td><span class="cell-val cell-mid">4</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">2</span></td><td><span class="cell-val cell-mid">3</span></td><td><span class="cell-val cell-low">1</span></td><td><span class="cell-val cell-low">1</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_01</span><span class="ba-name">Erklärende und beispielhafte Darstellung von DBA-Methoden</span><span class="ba-ev-count">26 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Erklärende und beispielhafte Darstellung von Besteuerungsmethoden und DBA-Funktionsweise</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland und internationale Staaten/Ausland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2025</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.950</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Erklärende und beispielhafte Darstellungen von Funktionsweise, Zweck und Methoden von Doppelbesteuerungsabkommen für Personen und Arbeitnehmer mit grenzüberschreitenden Einkünften</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_02</span><span class="ba-name">Behördliche Dokumentenanalyse von DBA-Regelungen</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Dokumentenanalyse von BMF-Schreiben zur steuerlichen Behandlung von Arbeitslohn nach DBA</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Deutschland</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2023</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Analyse von behördlichen Schreiben und Regelungen zur steuerlichen Behandlung von Arbeitslohn nach Doppelbesteuerungsabkommen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_03</span><span class="ba-name">Fallstudienanalyse von Steueroasen und Konzernsteuerstrukturen</span><span class="ba-ev-count">2 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Fallstudienanalyse von Steueroasen-Funktionsweisen und Steuertricks multinationaler Konzerne mit konkreten Unternehmensbeispielen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">International, mit Fokus auf EU, Steueroasen, Österreich, Schweiz, Luxemburg</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2015</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.900</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Fallstudienbasierte Analyse von Steueroasen-Funktionsweisen, Steuertricks multinationaler Konzerne und deren Ausnutzung von DBA-Strukturen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_04</span><span class="ba-name">Systematische Analyse von internationalem Steuerrecht und Besteuerungskonflikten</span><span class="ba-ev-count">3 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Systematische Dokumentenanalyse und Klassifizierung von Steuerrechtsprinzipien, Besteuerungskonflikten und Steuerplanungsvorteilen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">International, mit Fokus auf EU und deutsches Außensteuerrecht</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2009-2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">0.880</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Systematische Analyse von internationalen Steuerrechtsprinzipien, Rechtsquellen, Besteuerungskonflikten und hybriden Gestaltungen in der internationalen Unternehmensbesteuerung</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_05</span><span class="ba-name">Fallstudienanalyse multinationaler IT-Unternehmensstrukturen</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Fallstudienanalyse am Beispiel Google und multinationaler IT-Unternehmen</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">International, mit Fokus auf USA, Irland, Niederlande</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2009-2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Fallstudienanalyse am konkreten Beispiel Google und multinationaler IT-Unternehmen zur Untersuchung von Steuerplanungsstrukturen</div>
+      </div>
+    </details>
+    <details class="boundary-accord">
+      <summary><span class="ba-arrow">&#9654;</span><span class="ba-id">CB_06</span><span class="ba-name">Behördliche Prüfung von Informationsaustauschverfahren</span><span class="ba-ev-count">1 evidence</span></summary>
+      <div class="boundary-body">
+        <div class="boundary-meta-grid">
+          <div class="bm-item"><div class="bm-label">Methodology</div><div class="bm-val">Behördliche Prüfung und Dokumentation von Informationsaustauschverfahren</div></div>
+          <div class="bm-item"><div class="bm-label">Geographic</div><div class="bm-val">Österreich, EU-weit</div></div>
+          <div class="bm-item"><div class="bm-label">Temporal</div><div class="bm-val">2009-2018</div></div>
+          <div class="bm-item"><div class="bm-label">Internal Coherence</div><div class="bm-val">1.00</div></div>
+        </div>
+        <div style="font-size:12px;color:#a0aec0">Behördliche Prüfung und Dokumentation von Informationsaustauschverfahren in der internationalen Amtshilfe in Steuerangelegenheiten</div>
+      </div>
+    </details>
+  </div>
+</div>
+<!-- EVIDENCE ITEMS -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128270;</span>
+    <span class="section-title">Evidence Items</span>
+    <span class="section-badge">34 assigned</span>
+  </div>
+  <div class="section-body">
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-supports">Supporting Evidence</span><span class="sum-count">(3 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195217053</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Bei der Freistellung mit Progressionsvorbehalt kann der Arbeitslohn aus dem Ausland zwar steuerfrei sein, wird aber rechnerisch im Wohnsitzstaat berücksichtigt, wodurch sich der persönliche Steuersatz erhöht und auf zusätzliche Einnahmen mehr Steuern fällig werden.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">Doppelbesteuerungsabkommen: Das müssen Sie wissen | VLH</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195248914</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen können zu doppelter Nichtbesteuerung führen, wenn Gestaltungen durch mehrere Jurisdiktionen nicht besteuert werden, was insbesondere bei Steuervermeidungsstrukturen durch Konzerne und vermögende Privatpersonen auftritt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.arbeiterkammer.at/infopool/wien/Studie_Steuerflucht.pdf" target="_blank" rel="noopener noreferrer">Studie Steuerflucht</a></div>
+        </div>
+        <div class="ev-item dir-bg-supports">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195248915</span><span class="ev-dir-badge ev-sup">supports</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen können von Unternehmen und Privatbanken durch Strukturen wie Basisgesellschaften (Briefkastengesellschaften) und Durchlaufgesellschaften genutzt werden, um Steuern zu vermeiden, was zu Gewinnverlagerungen und Steuerausfällen führt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_03</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.arbeiterkammer.at/infopool/wien/Studie_Steuerflucht.pdf" target="_blank" rel="noopener noreferrer">Studie Steuerflucht</a></div>
+        </div>
+      </div>
+    </details>
+    <details open style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-contradicts">Contradicting Evidence</span><span class="sum-count">(3 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195217051</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen (DBA) sorgen für mehr Steuergerechtigkeit und sollen eine mehrfache Besteuerung vermeiden und den Steuerzahler/innen damit Geld sparen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">Doppelbesteuerungsabkommen: Das müssen Sie wissen | VLH</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195217052</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Bei der Freistellungsmethode können Steuerzahler von Doppelbesteuerungsabkommen profitieren, indem Einkünfte nur in dem Staat besteuert werden, in dem sie erwirtschaftet wurden, während sie im Wohnsitzstaat steuerfrei sind.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">Doppelbesteuerungsabkommen: Das müssen Sie wissen | VLH</a></div>
+        </div>
+        <div class="ev-item dir-bg-contradicts">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195217054</span><span class="ev-dir-badge ev-con">contradicts</span></div>
+          <div class="ev-statement">Bei der Anrechnungsmethode müssen Steuerzahler in beiden Staaten Steuern zahlen, aber die im Ausland bereits gezahlte Steuer wird im Wohnsitzstaat angerechnet und reduziert damit die anfallende Steuer.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">Doppelbesteuerungsabkommen: Das müssen Sie wissen | VLH</a></div>
+        </div>
+      </div>
+    </details>
+    <details style="margin-bottom:12px">
+      <summary style="padding:8px 0;margin-bottom:8px"><span class="sum-label dir-neutral">Neutral / Context Evidence</span><span class="sum-count">(28 items)</span></summary>
+      <div class="ev-list">
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_001</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen sorgen für mehr Steuergerechtigkeit und sollen eine mehrfache Besteuerung vermeiden und den Steuerzahlern damit Geld sparen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_002</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen bewahren Personen in der Regel vor Doppelbesteuerung durch Aufrechnung der im Beschäftigungsland gezahlten Steuern oder durch Steuerbefreiung des im Beschäftigungsland erzielten Einkommens im Wohnsitzland.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://europa.eu/youreurope/citizens/work/taxes/double-taxation/index_de.htm" target="_blank" rel="noopener noreferrer">https://europa.eu/youreurope/citizens/work/taxes/double-taxation/index_de.htm</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_003</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bei Freistellung mit Progressionsvorbehalt wird das Einkommen aus dem Ausland zwar steuerfrei, wird aber rechnerisch auch im Wohnsitzland berücksichtigt, wodurch sich der persönliche Steuersatz erhöht und auf zusätzliche Einnahmen mehr Steuern fällig werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_004</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Wenn der Steuersatz im Beschäftigungsland höher ist als im Wohnsitzland, müssen Personen letztlich den höheren Satz zahlen – auch wenn die gezahlte Steuer aufgerechnet wird oder das Wohnsitzland Steuerbefreiung gewährt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://europa.eu/youreurope/citizens/work/taxes/double-taxation/index_de.htm" target="_blank" rel="noopener noreferrer">https://europa.eu/youreurope/citizens/work/taxes/double-taxation/index_de.htm</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_005</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Deutschland handelt Doppelbesteuerungsabkommen mit jedem Land individuell aus, wodurch jeder Vertrag unterschiedliche Regeln zur Besteuerung beinhaltet. Bestimmte DBA – etwa mit Russland und Belarus – sind seit 2023 ausgesetzt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_006</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Das Abkommen zwischen Deutschland und den USA zur Vermeidung der Doppelbesteuerung regelt umfassend die Besteuerung von Einkommen und Vermögen und sieht verschiedene Methoden zur Vermeidung der Doppelbesteuerung vor.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.germany.info/us-de/service/steuern/einkommen-1216944" target="_blank" rel="noopener noreferrer">https://www.germany.info/us-de/service/steuern/einkommen-1216944</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_007</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Betriebswirtschaftlich verringert Doppelbesteuerung die Rentabilität einer Investition. Auslandsinvestitionen müssen daher i.d.R. eine wesentlich höhere Rentabilität vor Steuern aufweisen als vergleichbare Inlandsinvestitionen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017" target="_blank" rel="noopener noreferrer">https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_008</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Volkswirtschaftlich wirkt die Doppelbesteuerung wettbewerbsverzerrend und hemmt die Mobilität der Produktionsfaktoren sowie die internationale Arbeitsteilung. Da die betriebswirtschaftlich notwendigen erhöhten Ausgangsrentabilitäten häufig nicht gegeben sind, unterbleiben dann volkswirtschaftlich wünschenswerte Direktinvestitionen im Ausland.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017" target="_blank" rel="noopener noreferrer">https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_009</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Finanzwirtschaftlich führt die Doppelbesteuerung bei kurzfristiger Betrachtung zu einer Erhaltung inländischer Besteuerungssubstanz. Langfristig überwiegen jedoch die negativen Aspekte in Form eines geringeren gesamtwirtschaftlichen Wachstums und damit geringerer besteuerungsfähiger Erträge.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017" target="_blank" rel="noopener noreferrer">https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_010</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Die Doppelbesteuerung gehört zu den wichtigsten Hemmnissen einer internationalen wirtschaftlichen Betätigung. Da dies aus betriebswirtschaftlicher, volkswirtschaftlicher und finanzwirtschaftlicher Sicht gleichermaßen negativ zu beurteilen ist, haben nicht nur die Steuerpflichtigen, sondern auch die beteiligten Staaten ein elementares Interesse an der Vermeidung der Doppelbesteuerung durch geeignete Maßnahmen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017" target="_blank" rel="noopener noreferrer">https://wirtschaftslexikon.gabler.de/definition/doppelbesteuerung-32017</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_011</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Ein Doppelbesteuerungsabkommen (DBA) soll vermeiden, dass bei natürlichen oder juristischen Personen, die Einkünfte im Ausland erzielen, diese ausländischen Einkünfte sowohl vom Ansässigkeitsstaat (Wohnsitz- oder Sitzstaat) als auch vom Quellenstaat (Staat, in dem die Einkünfte erzielt werden) besteuert werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://de.wikipedia.org/wiki/Doppelbesteuerungsabkommen" target="_blank" rel="noopener noreferrer">https://de.wikipedia.org/wiki/Doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_012</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">In bestimmten Fällen kommt es zu sogenannten weißen Einkünften, weil die in den Doppelbesteuerungsabkommen verwendeten Begriffe nach dem jeweiligen nationalen Verständnis ausgelegt werden und die betroffenen Rechtsordnungen nicht harmonisiert sind. In diesen Fällen unterbleibt die Besteuerung – regelmäßig gegen den gesetzgeberischen Willen – in beiden Staaten.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://de.wikipedia.org/wiki/Doppelbesteuerungsabkommen" target="_blank" rel="noopener noreferrer">https://de.wikipedia.org/wiki/Doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_013</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen verteilen Besteuerungsrechte zwischen den Staaten und weisen bei bestehenden konkurrierenden Steueransprüchen zwischen verschiedenen Staaten das Besteuerungsrecht nur einem der beteiligten Staaten zu, um eine Doppelbesteuerung zu vermeiden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html" target="_blank" rel="noopener noreferrer">https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_014</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen stehen oft im Fokus der Kritik, insbesondere wegen ihrer Komplexität und des Vorwurfs, sie würden Steuervermeidung erleichtern. Kritiker bemängeln, dass durch die Abkommen Steuerschlupflöcher entstehen können, die insbesondere von multinationalen Unternehmen ausgenutzt werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen" target="_blank" rel="noopener noreferrer">https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_015</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Es wird argumentiert, dass die Abkommen oft zugunsten von Industrienationen gestaltet sind und Entwicklungsländer benachteiligen könnten, indem sie deren Besteuerungsmöglichkeiten einschränken.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen" target="_blank" rel="noopener noreferrer">https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_016</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen bieten Lösungen zur Vermeidung von Doppelbesteuerung und fördern den internationalen Handel und Investitionen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen" target="_blank" rel="noopener noreferrer">https://www.goldmantax.de/steuerlexikon/doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_017</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Deutschland will mit seinem Steuerrecht sowohl die doppelte Besteuerung wie die doppelte Nichtbesteuerung von Personen und Unternehmen vermeiden. Jeder hat seinen fairen Anteil an Steuern zu zahlen – und zwar dort, wo er ansässig ist oder wo er seine wirtschaftliche Aktivität ausübt.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html" target="_blank" rel="noopener noreferrer">https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_018</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen sollen eine mehrfache Besteuerung vermeiden und den Steuerzahlern damit Geld sparen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_019</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Mittels bilateraler Verträge, sogenannten Doppelbesteuerungsabkommen, wird versucht die steuerliche Doppel- und Mehrfachbelastung zu eliminieren.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.steuertipps.de/lexikon/d/doppelbesteuerung" target="_blank" rel="noopener noreferrer">https://www.steuertipps.de/lexikon/d/doppelbesteuerung</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_020</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen verteilen Besteuerungsrechte zwischen den Staaten und weisen bei bestehenden konkurrierenden Steueransprüchen das Besteuerungsrecht nur einem der beteiligten Staaten zu, um eine Doppelbesteuerung zu vermeiden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html" target="_blank" rel="noopener noreferrer">https://www.bundesfinanzministerium.de/Content/DE/Standardartikel/Themen/Steuern/Internationales_Steuerrecht/Staatenbezogene_Informationen/doppelbesteuerungsabkommen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_021</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Deutschland hatte 2015 mit 95 Staaten ein Doppelbesteuerungsabkommen abgeschlossen.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: high</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.steuertipps.de/lexikon/d/doppelbesteuerung" target="_blank" rel="noopener noreferrer">https://www.steuertipps.de/lexikon/d/doppelbesteuerung</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_022</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Bei der Freistellungsmethode mit Progressionsvorbehalt wird der Arbeitslohn aus dem Ausland zwar steuerfrei, wird aber rein rechnerisch auch im Wohnsitzland berücksichtigt, wodurch sich der persönliche Steuersatz erhöht und auf zusätzliche Einnahmen mehr Steuern fällig werden.</div>
+          <div class="ev-meta">
+            
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_01</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195248913</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen enthalten Regelungen zur Vermeidung der Doppelbesteuerung nach Art. 23 OECD-Musterabkommen, die eine Zuweisung des Besteuerungsrechts zwischen Tätigkeitsstaat und Ansässigkeitsstaat vornehmen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_02</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Internationales_Steuerrecht/Allgemeine_Informationen/2023-12-12-steuerliche-behandlung-arbeitslohn-doppelbesteuerungsabkommen.pdf?__blob=publicationFile&amp;v=3" target="_blank" rel="noopener noreferrer">2023 12 12 steuerliche behandlung arbeitslohn doppelbesteuerungsabkommen</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195273302</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Doppelbesteuerungsabkommen (DBA) sind Maßnahmen gegen Doppelbesteuerung, die durch Anrechnung, Reduzierung oder Freistellung funktionieren und darauf abzielen, die Besteuerung von Einkünften in mehreren Staaten zu regeln.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://epub.uni-regensburg.de/38378/1/21122018.pdf" target="_blank" rel="noopener noreferrer">21122018</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195273303</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Besteuerungskonflikte entstehen durch mangelnde Harmonisierung des internationalen Steuerrechts und können durch Qualifikationskonflikte und Zurechnungskonflikte ausgenutzt werden, was zu Steuerarbitrage führt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://epub.uni-regensburg.de/38378/1/21122018.pdf" target="_blank" rel="noopener noreferrer">21122018</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195273304</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Aggressive Steuerplanung durch multinationale Unternehmen nutzt Gestaltungsfreiheit, um Steuervermeidung durch Strukturen wie das &#39;Double Irish with a Dutch Sandwich&#39; zu erreichen, was zu Gewinnverlagerungen führt.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_05</span>
+          </div>
+          <div class="ev-source-link"><a href="https://epub.uni-regensburg.de/38378/1/21122018.pdf" target="_blank" rel="noopener noreferrer">21122018</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195273305</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Der internationale Informationsaustausch in Steuerangelegenheiten wird durch verschiedene Mechanismen wie automatischer Informationsaustausch, Eurofisc und multilaterale Kontrollen geregelt, um Steuervermeidung und -betrug zu bekämpfen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">government_report</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_06</span>
+          </div>
+          <div class="ev-source-link"><a href="https://www.rechnungshof.gv.at/rh/home/home/Intern_Info_Austausch_Steuerangelegenheiten.pdf" target="_blank" rel="noopener noreferrer">Intern Info Austausch Steuerangelegenheiten</a></div>
+        </div>
+        <div class="ev-item dir-bg-neutral">
+          <div class="ev-item-head"><span class="ev-id">EV_1772195273306</span><span class="ev-dir-badge ev-neu">neutral</span></div>
+          <div class="ev-statement">Hybrid Mismatch Arrangements und Steuerarbitrageeffekte entstehen durch die Ausnutzung von Besteuerungskonflikten zwischen Staaten, insbesondere durch Deduction/no inclusion (D/NI) und Double deduction (DD) Konstellationen.</div>
+          <div class="ev-meta">
+            <span class="ev-tag">other</span>
+            <span class="ev-tag">probative: medium</span>
+            <span class="ev-tag">CB_04</span>
+          </div>
+          <div class="ev-source-link"><a href="https://epub.uni-regensburg.de/38378/1/21122018.pdf" target="_blank" rel="noopener noreferrer">21122018</a></div>
+        </div>
+      </div>
+    </details>
+    
+  </div>
+</div>
+<!-- SOURCES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#128279;</span>
+    <span class="section-title">Sources</span>
+    <span class="section-badge">8 sources</span>
+  </div>
+  <div class="section-body">
+    <div class="source-list">
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_001</span><span class="source-title">34</span></div>
+        <div class="source-url"><a href="https://d-nb.info/1027088759/34" target="_blank" rel="noopener noreferrer">https://d-nb.info/1027088759/34</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen Verteilungswirkungen Gewinner Verlierer Studie</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_002</span><span class="source-title">Doppelbesteuerungsabkommen: Das müssen Sie wissen | VLH</span></div>
+        <div class="source-url"><a href="https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html" target="_blank" rel="noopener noreferrer">https://www.vlh.de/kaufen-investieren/abgeltungssteuer/doppelbesteuerungsabkommen-das-muessen-sie-wissen.html</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen Steuerausfälle Staaten Nutzen Kosten-Nutzen-Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_003</span><span class="source-title">Argument 176 Update 2024 Ehrbarer Staat</span></div>
+        <div class="source-url"><a href="https://www.stiftung-marktwirtschaft.de/wp-content/uploads/2024/11/Argument_176_Update_2024_Ehrbarer_Staat.pdf" target="_blank" rel="noopener noreferrer">https://www.stiftung-marktwirtschaft.de/wp-content/uploads/2024/11/Argument_176_Update_2024_Ehrbarer_Staat.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen Verteilungswirkungen Gewinner Verlierer</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_004</span><span class="source-title">2023 12 12 steuerliche behandlung arbeitslohn doppelbesteuerungsabkommen</span></div>
+        <div class="source-url"><a href="https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Internationales_Steuerrecht/Allgemeine_Informationen/2023-12-12-steuerliche-behandlung-arbeitslohn-doppelbesteuerungsabkommen.pdf?__blob=publicationFile&amp;v=3" target="_blank" rel="noopener noreferrer">https://www.bundesfinanzministerium.de/Content/DE/Downloads/BMF_Schreiben/Internationales_Steuerrecht/Allgemeine_Informationen/2023-12-12-steuerliche-behandlung-arbeitslohn-doppelbesteuerungsabkommen.pdf?__blob=publicationFile&amp;v=3</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen wirtschaftliche Vorteile Unternehmen Steuervermeidung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_005</span><span class="source-title">Studie Steuerflucht</span></div>
+        <div class="source-url"><a href="https://www.arbeiterkammer.at/infopool/wien/Studie_Steuerflucht.pdf" target="_blank" rel="noopener noreferrer">https://www.arbeiterkammer.at/infopool/wien/Studie_Steuerflucht.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen wirtschaftliche Vorteile Unternehmen Steuervermeidung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_006</span><span class="source-title">Fedlex</span></div>
+        <div class="source-url"><a href="https://www.fedlex.admin.ch/eli/fga/2023/1347/de" target="_blank" rel="noopener noreferrer">https://www.fedlex.admin.ch/eli/fga/2023/1347/de</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">text/html</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen wirtschaftliche Vorteile Unternehmen Steuervermeidung</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_007</span><span class="source-title">Intern Info Austausch Steuerangelegenheiten</span></div>
+        <div class="source-url"><a href="https://www.rechnungshof.gv.at/rh/home/home/Intern_Info_Austausch_Steuerangelegenheiten.pdf" target="_blank" rel="noopener noreferrer">https://www.rechnungshof.gv.at/rh/home/home/Intern_Info_Austausch_Steuerangelegenheiten.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen Steuerausfälle Staaten Kosten-Nutzen-Analyse</span>
+        </div>
+      </div>
+      <div class="source-item">
+        <div class="source-head"><span class="source-id">S_008</span><span class="source-title">21122018</span></div>
+        <div class="source-url"><a href="https://epub.uni-regensburg.de/38378/1/21122018.pdf" target="_blank" rel="noopener noreferrer">https://epub.uni-regensburg.de/38378/1/21122018.pdf</a></div>
+        <div class="source-tags">
+          <span class="ev-tag">application/pdf</span>
+          <span class="ev-tag">fetched ✓</span>
+          <span class="ev-tag">query: Doppelbesteuerungsabkommen Steuerausfälle Staaten Kosten-Nutzen-Analyse</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- SEARCH QUERIES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#9878;&#65039;</span>
+    <span class="section-title">Search Queries</span>
+    <span class="section-badge">10 queries · 2 iterations</span>
+  </div>
+  <div class="section-body">
+    <div class="matrix-wrap">
+      <table class="query-table">
+        <thead><tr><th>Query</th><th>Iter.</th><th>Focus</th><th>Results</th><th>Provider</th></tr></thead>
+        <tbody>
+          <tr><td>Doppelbesteuerungsabkommen Auswirkungen Verlierer</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Das Doppelbesteuerungsabkommen führt zu mehr negativen als positiven Auswirkunge</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen Gewinner Verlierer Verteilung</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Die Anzahl der Verlierer unter einem Doppelbesteuerungsabkommen übersteigt die A</td><td>0</td><td><span class="focus-prel">preliminary</span></td><td>5</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen Verteilungswirkungen Gewinner Verlierer Studie</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen wirtschaftliche Vorteile Unternehmen Steuervermeidung Effekte</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen Steuerausfälle Staaten Nutzen Kosten-Nutzen-Analyse</td><td>0</td><td><span class="focus-main">main</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen Verteilungswirkungen Gewinner Verlierer</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen wirtschaftliche Vorteile Unternehmen Steuervermeidung</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+          <tr><td>Doppelbesteuerungsabkommen Steuerausfälle Staaten Kosten-Nutzen-Analyse</td><td>1</td><td><span class="focus-contr">contradiction</span></td><td>8</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- QUALITY GATES -->
+<div class="section">
+  <div class="section-head">
+    <span>&#10003;</span>
+    <span class="section-title">Quality Gates</span>
+    <span class="section-badge" style="background:#1c4532;color:#68d391">ALL PASSED</span>
+  </div>
+  <div class="section-body">
+    <div class="gates-grid">
+      <div class="gate-card">
+        <div class="gate-title">Gate 1 — Claim Validation</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Passed fidelity</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Filtered</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Central claims kept</span><span class="gate-stat-val">1</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Gate 4 — Confidence</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total claims</span><span class="gate-stat-val">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Publishable</span><span class="gate-stat-val" style="color:#68d391">1</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">High confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Medium confidence</span><span class="gate-stat-val">0</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Insufficient</span><span class="gate-stat-val">0</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Evidence Summary</div>
+        <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">34</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">8</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">10</span></div>
+      </div>
+      <div class="gate-card">
+        <div class="gate-title">Pipeline Execution</div>
+        <div class="gate-stat"><span class="gate-stat-key">Status</span><span class="gate-stat-val" style="color:#68d391">SUCCEEDED</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">LLM calls</span><span class="gate-stat-val">22</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Schema</span><span class="gate-stat-val">3.2.0-cb</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  FactHarbor Alpha · claimboundary pipeline 3.2.0-cb · Generated 2026-02-27 13:17 UTC
+  <br>Job 5305bdea6b4d466ca0025b8381e3008e · anthropic:claude-sonnet-4-5-20250929, openai:gpt-4.1, anthropic:claude-haiku-4-5-20251001 · anthropic
+</div>
+</div>
+</body>
+</html>
