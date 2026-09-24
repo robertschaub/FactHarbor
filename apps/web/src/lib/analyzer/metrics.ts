@@ -97,6 +97,23 @@ export interface SearchQueryMetric {
   timestamp: Date;
 }
 
+/**
+ * Per-job source-reliability prefetch counts. Only `evaluated` domains cost this job
+ * anything; the others were answered by work earlier jobs paid for.
+ */
+export interface SourceReliabilityPrefetchMetric {
+  /** Domains not yet held in the web process's prefetch map. */
+  domains: number;
+  /** Domains already held in the process-wide prefetch map, from earlier jobs. */
+  alreadyPrefetched: number;
+  /** Domains answered from the shared SR cache. */
+  cacheHits: number;
+  /** Domains this job evaluated (and paid for). */
+  evaluated: number;
+  noConsensus: number;
+  errors: number;
+}
+
 export interface Gate1Metric {
   totalClaims: number;
   passedClaims: number;
@@ -377,6 +394,8 @@ export interface AnalysisMetrics {
   estimatedCostUSD: number | null;
   /** Known subtotal is separate; null total must not be displayed as zero. */
   costEstimate?: { knownSubtotalUSD: number; unpricedCalls: number; pricingCheckedAt: string; searchCostIsEstimate: true };
+  /** Which source-reliability evaluations this job paid for and which it reused. */
+  sourceReliabilityPrefetch?: SourceReliabilityPrefetchMetric;
   tokenCounts: {
     promptTokens: number;
     completionTokens: number;
@@ -475,6 +494,21 @@ export class MetricsCollector {
    */
   recordSearchQuery(query: SearchQueryMetric): void {
     this.metrics.searchQueries!.push(query);
+  }
+
+  /** Add one source-reliability prefetch's counts to the job's totals. */
+  recordSourceReliabilityPrefetch(stats: SourceReliabilityPrefetchMetric): void {
+    const total = this.metrics.sourceReliabilityPrefetch;
+    this.metrics.sourceReliabilityPrefetch = total
+      ? {
+          domains: total.domains + stats.domains,
+          alreadyPrefetched: total.alreadyPrefetched + stats.alreadyPrefetched,
+          cacheHits: total.cacheHits + stats.cacheHits,
+          evaluated: total.evaluated + stats.evaluated,
+          noConsensus: total.noConsensus + stats.noConsensus,
+          errors: total.errors + stats.errors,
+        }
+      : { ...stats };
   }
 
   /**

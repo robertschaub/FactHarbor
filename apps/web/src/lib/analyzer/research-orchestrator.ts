@@ -30,6 +30,7 @@ import {
   prefetchSourceReliability,
   getTrackRecordData
 } from "./source-reliability";
+import { recordSourceReliabilityPrefetch } from "./metrics-integration";
 import {
   searchWebWithProvider
 } from "@/lib/web-search";
@@ -759,6 +760,15 @@ export async function researchEvidence(
   if (allSourceUrls.length > 0) {
     state.onEvent?.("Evaluating source reliability...", 58);
     const srPrefetch = await prefetchSourceReliability(allSourceUrls);
+    // Only `evaluated` domains cost this job; the rest reuse work earlier jobs paid for.
+    recordSourceReliabilityPrefetch({
+      domains: srPrefetch.domains.length,
+      alreadyPrefetched: srPrefetch.alreadyPrefetched,
+      cacheHits: srPrefetch.cacheHits,
+      evaluated: srPrefetch.evaluated,
+      noConsensus: srPrefetch.noConsensusCount,
+      errors: srPrefetch.errorCount,
+    });
     if (srPrefetch.errorCount > 0) {
       const failedDomainCount = srPrefetch.failedDomains.length;
       const domainCount = Math.max(1, srPrefetch.domains.length);

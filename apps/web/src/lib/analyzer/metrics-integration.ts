@@ -17,6 +17,7 @@ import type {
   QualityHealthD5Metrics,
   QualityHealthMetrics,
   SearchQueryMetric,
+  SourceReliabilityPrefetchMetric,
   TelemetrySectionStatus,
 } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
@@ -144,6 +145,11 @@ export function recordLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasurem
  */
 export function recordSearchQuery(query: SearchQueryMetric): void {
   getJobMetrics()?.recordSearchQuery(query);
+}
+
+/** Record one source-reliability prefetch's counts for the current job. */
+export function recordSourceReliabilityPrefetch(stats: SourceReliabilityPrefetchMetric): void {
+  getJobMetrics()?.recordSourceReliabilityPrefetch(stats);
 }
 
 /** LLM calls and searches recorded outside the job's own async context. */

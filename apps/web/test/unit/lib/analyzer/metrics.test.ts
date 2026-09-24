@@ -174,6 +174,22 @@ describe("calculateSummaryStats — schemaComplianceRate", () => {
   });
 });
 
+describe("sourceReliabilityPrefetch", () => {
+  it("adds up per-job prefetch counts and keeps them in the final metrics", () => {
+    const collector = new MetricsCollector("job-sr", "claimboundary");
+    collector.recordSourceReliabilityPrefetch({ domains: 5, alreadyPrefetched: 2, cacheHits: 3, evaluated: 2, noConsensus: 0, errors: 1 });
+    collector.recordSourceReliabilityPrefetch({ domains: 1, alreadyPrefetched: 0, cacheHits: 0, evaluated: 1, noConsensus: 1, errors: 0 });
+
+    expect(collector.finalize().sourceReliabilityPrefetch).toEqual({
+      domains: 6, alreadyPrefetched: 2, cacheHits: 3, evaluated: 3, noConsensus: 1, errors: 1,
+    });
+  });
+
+  it("is absent when no prefetch ran", () => {
+    expect(new MetricsCollector("job-none", "claimboundary").finalize().sourceReliabilityPrefetch).toBeUndefined();
+  });
+});
+
 describe("estimatedCostUSD — search estimate", () => {
   it("does not charge searches served from the search cache", () => {
     const collector = new MetricsCollector("job-search", "claimboundary");
