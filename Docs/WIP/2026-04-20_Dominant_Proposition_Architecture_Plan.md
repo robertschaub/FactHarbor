@@ -6,6 +6,30 @@
 - Scope: Stage 1 structure, Stage 5 aggregation, report/UI shape, rollout controls
 - Goal: introduce an optional parent/top-level proposition without damaging the current flat-claim pipeline
 - Rollout posture: detection first, verdict semantics second
+- 2026-09-24: Captain chose the three-claim split for act-level modifiers; see the update section below, which proposes a smaller Stage 5 change than Phase B
+
+## 2026-09-24 update: three-claim decision and minimal Stage 5 path
+
+**Decision (Captain, 2026-09-24; Backlog `DECOMP-RULES`).** When one act carries an act-level truth-condition-bearing modifier and is tied to several coordinated events, the target is one claim that fuses the modifier with the act plus one claim per branch that keeps the relation. For that structure this supersedes "Do not make truth-condition-bearing qualifier ⇒ separate child claim the default" below. The reviewed prompt change (claimboundary 1.0.14) is parked on local branch `claude/decomp-three-claims` (`2b9d54dee`). Until the Stage 5 change below exists, §Current Doctrine To Preserve stays in force on `main`.
+
+**Why Stage 5 must change first.** In a three-claim set only the modifier claim carries the anchor, so today's baseline weights it 2.5× (`anchorClaimMultiplier`), while the two chronology claims are true. With high centrality for all three, modifier confidence 72 and chronology claims at truth 95 and confidence 85, the baseline is roughly (5.4·T + 2.55·95 + 2.55·95) / 10.5 for modifier truth T. That gives about 56 at T 20, 66 at T 38 and 69 at T 45 (other weight factors ignored). Article adjudication can pull the result down, but it runs only on a direction conflict, skips claims scoring 40–60 (`borderlineMargin` 10) and moves at most ±30 from the baseline (`aggregation-stage.ts:317`, `:642`, `:344`). A modifier claim at 45 therefore ends near 69 (LEANING-TRUE), outside this family's 29–57 band. The fused shape on `main` is in band in 8 of 21 local runs since 2026-04-20.
+
+**Proposed change (generic, small, behind a UCM flag):**
+1. **Anchor carriers from the validator only.** Replace the substring match in `aggregation-stage.ts:165-172` with the contract validator's LLM-validated carrier IDs (`validPreservedIds`, else `preservedInClaimIds`). The substring match is deterministic text matching, which AGENTS.md forbids, and it misses inflected forms; the same check was removed from Stage 1 in `9ca8c514` (Backlog `ANCHOR-SUBSTR`).
+2. **Anchor-divergence trigger for article adjudication.** Also run the existing LLM adjudication when the anchor-carrying direct claims and the other direct claims differ in mean truth by at least `anchorDivergenceMargin` (UCM, proposed default 20), even if a carrier is borderline. This is structural routing on typed LLM outputs; whether the carrier is decisive stays an LLM judgment under the adjudication prompt's existing decisive-claim rule, which already receives `contractValidationSummary`.
+3. **Flag and audit.** Add `articleAdjudication.anchorDivergenceTrigger` (default `false`) and record in `adjudicationPath` which trigger fired. Rollback means turning the flag off. Keep the ±30 cap for now and revisit it only with validation data.
+
+**Not in this step:** no parent proposition (Phase A/B), no strict "all must hold" semantics, and no change to research or per-claim verdicts. Strict conjunction would cap the article at the modifier claim's truth (often 10–30, FALSE), below this family's MIXED/LEANING-FALSE band. Note also that the dossier's `dominance_weighted` weights (0.5 modifier, 0.2 per chronology branch, 0.1 signature) give about 67 at T 38, outside its own band; the band implies stronger dominance, which is why the decision is left to the adjudicator rather than fixed weights.
+
+**Validation (paid; needs Captain go and spend cap).** Commit the prompt change and the Stage 5 change together on the branch, reseed, and run one job at a time with the flag on:
+- `bundesrat-rechtskraftig` ×3 (target: three claims, in band in at least 2 of 3);
+- `bundesrat-simple` ×1 (no modifier; must stay TRUE/MOSTLY-TRUE);
+- `bolsonaro-pt` ×1 and `bolsonaro-en` ×1 (coordinated clauses; no spurious modifier claim, band holds);
+- `plastic-en` ×1 (null control).
+
+That is 7 jobs, roughly $12–15 now that source-reliability cost is recorded. Compare with the fused baseline job `d3de379c` (2026-09-23 UTC) and add a same-commit fused arm only if the results are ambiguous. Stop on any failed job, a second hard failure, or a clear regression on a control.
+
+**If this is not enough:** implement Phase A/B below with a dominance-weighted parent mode, in which Stage 1 assigns component roles, instead of `all_must_hold`.
 
 ## Consolidated Solution
 
