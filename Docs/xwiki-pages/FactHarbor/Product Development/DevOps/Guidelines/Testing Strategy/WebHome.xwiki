@@ -2,6 +2,8 @@
 
 {{info}}
 Updated 2026-09-23: rewritten for the current test layers. The 30-case baseline suite, the A/B prompt tests, the ##npm test:regression## suite and their cost table no longer exist. The previous version of this page is archived in ##Docs/xwiki-pages-ARCHIVE/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome_arch.xwiki##.
+
+Updated 2026-09-24: the ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## and ##test:jobs## suites were deleted. None of them tested the current pipeline: five selected no test files, and ##test:jobs## ran 10 tests that returned early or checked a constant (Backlog ##TEST-LIVE-EXCL##).
 {{/info}}
 
 == Overview ==
@@ -16,7 +18,6 @@ FactHarbor's testing strategy focuses on measurement-driven quality improvement:
 |= Layer |= Command |= Calls real LLM or search providers
 | Default test suite | ##npm test## | No
 | CI guardrail | ##npm run test:ci##, web and API builds, API tests | No
-| LLM integration suites | ##test:llm##, ##test:neutrality##, ##test:cb-integration##, ##test:smoke##, ##test:expensive## | Yes (currently not functional; see the known issue below)
 | Prompt evaluation | ##promptfoo##, ##promptfoo:sr## | Yes
 | Calibration lanes | ##test:calibration:smoke##, ##test:calibration:canary##, ##test:calibration:gate## | Yes
 | Validation batches | ##npm run validate:run -- <batchLabel> [familiesFile]## | Yes, submits live analysis jobs
@@ -29,20 +30,6 @@ The ##test:*## and ##promptfoo## commands in this table are the scripts in ##app
 * ##npm test## excludes the suites that call real LLMs; the exclusion list is in ##apps/web/vitest.config.ts##.
 * Some local tests can still contact running services or write local state. Check a test before running it against a live stack.
 * CI (##.github/workflows/ci.yml##) runs ##npm run test:ci##, builds the web app and the API, and runs the offline API tests (##apps/api.Tests##) on pushes to ##main## and on pull requests. It makes no LLM calls.
-
-== Real-LLM Suites ==
-
-* ##test:llm##: LLM provider integration
-* ##test:neutrality##: input neutrality; a question and the equivalent statement must yield the same analysis (target: average absolute divergence ≤ 4 percentage points)
-* ##test:cb-integration##: the full ClaimAssessmentBoundary pipeline
-* ##test:smoke##: the hydrogen versus electricity efficiency scenario (##apps/web/test/integration/hydrogen-smoke.test.ts##)
-* ##test:expensive##: the four suites above in one run
-
-Each of these scripts first runs ##apps/web/scripts/assert-local-live-tests.js##, which blocks it on GitHub Actions.
-
-{{warning}}
-Known issue: these scripts cannot produce a result today. They pass their test files to ##vitest run## under ##apps/web/vitest.config.ts##, whose exclude list contains the same files, so they select no test files. The suites themselves are also out of date: ##test:llm## and ##test:neutrality## call a function of the removed pipeline, every test in ##claimboundary-integration.test.ts## is skipped, and ##hydrogen-smoke.test.ts## and the neutrality fixtures use inputs that are not Captain-defined. Do not make them runnable before they are rewritten on the current pipeline with Captain-defined inputs; see Backlog ##TEST-LIVE-EXCL##.
-{{/warning}}
 
 == Quality Baselines ==
 
@@ -63,14 +50,16 @@ Before submitting a batch, commit the change under test and refresh the running 
 
 == Calibration ==
 
-The calibration lanes (smoke, canary, gate) measure run reliability and framing skew. Lane purpose, thresholds and the run registry are in ##Docs/STATUS/Calibration_Run_Policy.md##.
+The calibration lanes (smoke, canary, gate) measure run reliability and framing skew. Lane purpose, thresholds and the run registry are in ##Docs/STATUS/Calibration_Run_Policy.md##. Each lane script first runs ##apps/web/scripts/assert-local-live-tests.js##, which blocks it on GitHub Actions.
+
+No test currently checks input neutrality, i.e. that a question and the equivalent statement yield the same analysis (within 4 percentage points). The lanes compare mirrored framings instead. A question/statement check needs Captain-defined pairs (Backlog ##NEUTRALITY-PAIRS##).
 
 == Test Environments ==
 
 === Local Development ===
 * SQLite database
 * Default test suite without real LLM calls
-* Real-LLM suites, calibration lanes and validation batches run here, each on explicit approval
+* Calibration lanes and validation batches run here, each on explicit approval
 
 === CI/CD ===
 * Default test suite, web and API builds, and the offline API tests (no LLM calls), on pushes to ##main## and on pull requests

@@ -98,7 +98,7 @@ Then it adds **max 1** forced-English query through the standard relevance/budge
 
 - **Shipped & review-clean** (2026-04-01, commits `e9002e9c`, `06fab2e5`, `8f9d4fae`, `ac51975c`): contract, threading, EN lane hardening.
 - **Open gate**: live A/B (lane OFF vs ON) on Plastik-DE, Plastik-FR, Bolsonaro-PT + DE/EN controls; metrics and promotion criteria in the [validation-status handoff](../ARCHIVE/Handoffs/2026-04/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md). Do not promote past default-off without it.
-- **Test-coverage caveat**: `test/unit/lib/input-neutrality.test.ts` tests **question-vs-statement** equivalence only — despite the name, there is **no automated cross-language divergence test**. Cross-language evidence so far: C10 calibration baseline (10 pairs, 3 languages) and the NEUTRALITY-1 measurements. C17 (multi-language adversarial benchmark) is open backlog, as is full ES/DE/FR/PT support.
+- **Test-coverage caveat**: there is **no automated cross-language divergence test**, and no working question-vs-statement test either (the old `input-neutrality.test.ts` could not run and was deleted on 2026-09-24; Backlog `NEUTRALITY-PAIRS`). Cross-language evidence so far: C10 calibration baseline (10 pairs, 3 languages) and the NEUTRALITY-1 measurements. C17 (multi-language adversarial benchmark) is open backlog, as is full ES/DE/FR/PT support.
 
 ## 6. Operational caveats for agents
 

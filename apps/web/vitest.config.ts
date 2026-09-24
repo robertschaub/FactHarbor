@@ -8,19 +8,7 @@ export default defineConfig({
     exclude: [
       "node_modules",
       ".next",
-      // Expensive tests that make REAL LLM API calls (use dedicated npm scripts instead):
-      // npm run test:llm           — LLM provider integration
-      // npm run test:neutrality    — Input neutrality (full analysis x2 per pair)
-      // npm run test:contexts      — Context preservation (full analysis)
-      // npm run test:adversarial   — Adversarial context leak (full analysis)
-      "test/unit/lib/llm-integration.test.ts",
-      "test/unit/lib/input-neutrality.test.ts",
-      "test/unit/lib/analyzer/context-preservation.test.ts",
-      "test/unit/lib/analyzer/adversarial-context-leak.test.ts",
-      // npm run test:cb-integration — Full CB pipeline with real LLM calls
-      "test/integration/claimboundary-integration.test.ts",
-      "test/integration/hydrogen-smoke.test.ts",
-      // npm run test:calibration — Framing symmetry calibration (full pipeline x2 per pair)
+      // Makes REAL LLM API calls; run via npm run test:calibration:* (full pipeline x2 per pair)
       "test/calibration/framing-symmetry.test.ts",
     ]
   },

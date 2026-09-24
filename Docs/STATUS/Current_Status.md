@@ -214,18 +214,15 @@ Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume stati
 
 ## Test Status
 
-**Safe suite** (`npm test` — mocked, no API calls, verified 2026-08-10):
+**Safe suite** (`npm test` — mocked, no API calls, verified 2026-09-24):
 
-- **102 test files, 1,986 passing, 1 skipped**
-- Covers the CB pipeline, verdict stage, prompt contracts, evidence filtering, aggregation, truth scale, quality gates, confidence calibration, job lifecycle, admin API routes
+- **107 test files, 2,104 passing, 1 skipped**
+- Covers the CB pipeline, verdict stage, prompt contracts, evidence filtering, aggregation, truth scale, quality gates, confidence calibration, admin API routes
 
-**Expensive integration tests** (explicit scripts only, $1–5+ per run — do not run without asking):
+**Expensive tests** (explicit scripts only, $1–5+ per run — do not run without asking):
 
-- `npm run test:llm` — multi-provider LLM integration (currently not functional; see Backlog `TEST-LIVE-EXCL`)
-- `npm run test:neutrality` — input neutrality (full analysis ×2 per pair) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
-- `npm run test:cb-integration` — CB end-to-end (3 scenarios, all skipped) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
 - `npm run test:calibration:canary` / `:smoke` / `:gate` — framing-symmetry lanes, per [Calibration_Run_Policy.md](Calibration_Run_Policy.md)
-- `npm run test:expensive` — LLM + neutrality + CB integration (excludes calibration) (currently not functional; see Backlog `TEST-LIVE-EXCL`)
+- Full-pipeline checks run as validation batches (`npm run validate:run`) with Captain-defined inputs. The `test:llm`, `test:neutrality`, `test:cb-integration`, `test:smoke` and `test:expensive` suites could not run and were deleted on 2026-09-24 (Backlog `TEST-LIVE-EXCL`). No test checks question/statement neutrality until Captain-defined pairs exist (`NEUTRALITY-PAIRS`).
 
 **Missing coverage**: .NET API controllers and most of the database layer (CI runs only the `JobService` status tests), frontend components, automated E2E.
 
@@ -292,7 +289,7 @@ FH_JOB_TIMEOUT_MS=7200000     # per-job wait bound (default 2 h); a job not fini
 | Rule | Status | Notes |
 |---|---|---|
 | **Generic by Design** | ✅ Compliant | No domain-specific keyword tables; prompt audit F01–F09 applied 2026-06-01 |
-| **Input Neutrality** | ⚠️ Monitored | Heuristic question→statement normalization was removed in favour of LLM-first handling; equivalence is now a measured property, not an enforced transform. Framing-symmetry calibration is the check |
+| **Input Neutrality** | ⚠️ Monitored | Heuristic question→statement normalization was removed in favour of LLM-first handling; equivalence has to be measured, not enforced, but no working test measures question/statement equivalence (`NEUTRALITY-PAIRS`). The framing-symmetry calibration lane checks mirrored framings |
 | **Pipeline Integrity** | ✅ Compliant | All 5 stages execute; no stage skipping; fail-fast on damaged jobs rather than fabricated fallback verdicts |
 | **Evidence Transparency** | ✅ Compliant | Verdict citation publication contract enforced; single citation channel; counter-evidence tracked |
 | **No deterministic semantic logic** | ⚠️ Partial | Ranked residual hotspots tracked as `LLMINT-2`; the top two are Stage-1 anchor preservation and Stage-4 direction plausibility |

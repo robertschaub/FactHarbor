@@ -3,6 +3,7 @@
 **Purpose**: Configure continuous integration for FactHarbor pipeline regression tests
 **Date**: 2026-01-16
 **Target**: GitHub Actions / GitLab CI / Other CI providers
+**Status**: Archived 2026-09-24. It describes CI runs of the neutrality regression suite, which was deleted (Backlog `TEST-LIVE-EXCL`). Paid suites are local-only, and CI makes no LLM calls. For the current test layers, see the Testing Strategy page (`Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`).
 
 ---
 

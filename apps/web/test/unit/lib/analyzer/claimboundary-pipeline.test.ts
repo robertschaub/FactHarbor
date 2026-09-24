@@ -549,7 +549,7 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
   });
 
   describe("buildClaimBoundaryResultJson", () => {
-    it("persists articleAdjudication and adjudicationPath into resultJson", () => {
+    it("persists articleAdjudication, adjudicationPath and the schema version into resultJson", () => {
       const claims = [createAtomicClaim({ id: "AC_01" })];
       const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
       const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
@@ -626,6 +626,9 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
         boundaryCount: boundaries.length,
       });
 
+      expect(resultJson._schemaVersion).toBe("3.2.0-cb");
+      expect(resultJson.meta.schemaVersion).toBe("3.2.0-cb");
+      expect(resultJson.meta.pipeline).toBe("claimboundary");
       expect(resultJson.truthPercentageRange).toEqual({ min: 35, max: 49 });
       expect(resultJson.articleAdjudication).toEqual(assessment.articleAdjudication);
       expect(resultJson.adjudicationPath).toEqual(assessment.adjudicationPath);
@@ -4513,9 +4516,9 @@ describe("Stage 2: researchEvidence", () => {
   // SKIPPED: This integration-level test relies on sequential mock state across
   // module boundaries (research-orchestrator → research-extraction-stage → research-query-stage).
   // After Stage 2 extraction, the llmStage++ mock approach breaks because vi.mock boundaries
-  // don't share state predictably across dynamic imports. The behavior tested here
-  // (preliminary evidence not satisfying sufficiency threshold) is validated by the
-  // CB integration tests (test:cb-integration). To restore as a unit test, the mock
+  // don't share state predictably across dynamic imports. The rule itself (preliminary evidence
+  // does not satisfy the sufficiency threshold) is covered by the allClaimsSufficient tests; only
+  // its wiring inside researchEvidence is untested. To restore this as a unit test, the mock
   // strategy would need per-module call tracking rather than a global sequence counter.
   it.skip("does not let preliminary evidence satisfy sufficiency before main research runs", async () => {
     const { researchEvidence } = await import("@/lib/analyzer/claimboundary-pipeline");

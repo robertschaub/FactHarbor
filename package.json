@@ -15,7 +15,6 @@
     "test": "npm -w apps/web test",
     "test:knowledge": "node --test packages/fh-agent-knowledge/test/**/*.test.mjs",
     "test:ci": "npm -w apps/web run test:ci",
-    "test:llm": "npm -w apps/web run test:llm",
     "promptfoo": "node scripts/promptfoo-sr.js",
     "promptfoo:sr": "node scripts/promptfoo-sr.js sr",
     "promptfoo:verdict": "node scripts/promptfoo-sr.js verdict",

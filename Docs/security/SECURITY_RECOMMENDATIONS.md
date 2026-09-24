@@ -206,22 +206,7 @@ docker run --rm -v "$(pwd):/repo" trufflesecurity/trufflehog:latest git file:///
 - `GOOGLE_CSE_ID` - Custom Search Engine ID
 - `SERPAPI_API_KEY` - For SerpAPI fallback
 
-**Usage in workflows:**
-
-```yaml
-# In .github/workflows/ci.yml or test workflows
-jobs:
-  test:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run LLM integration tests
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
-        run: npm run test:llm
-```
+**Usage in workflows:** *(updated 2026-09-24)* the earlier example here ran `npm run test:llm` in CI. That script was deleted. The paid calibration lanes refuse to run on GitHub Actions (`apps/web/scripts/assert-local-live-tests.js`), and CI (`.github/workflows/ci.yml`) makes no LLM calls and uses none of these secrets. Add them only if a workflow that calls providers is introduced.
 
 ---
 

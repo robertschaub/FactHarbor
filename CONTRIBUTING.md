@@ -62,7 +62,7 @@ scripts/        Setup and management scripts
 
 ## Testing
 
-- `npm test` — runs Vitest for `apps/web` with configured expensive-suite exclusions; it still discovers the service-dependent job lifecycle test
+- `npm test` — runs Vitest for `apps/web` with configured expensive-suite exclusions
 - `npm run lint` — not yet configured
 - API: `cd apps/api && dotnet build`; `dotnet test apps/api.Tests` runs the offline `JobService` tests (also run in CI)
 
@@ -244,19 +244,12 @@ dotnet restore apps/api --configfile "$taskRoot/config/NuGet.Config" --locked-mo
 
 Run commands individually and stop on any nonzero exit code (`$LASTEXITCODE`). `npm ci` installs from `package-lock.json`, including dependency lifecycle scripts. NuGet has no checked-in `packages.lock.json`: the first restore records its initial resolution; the second enforces that task-local lock. Retain the lock and `apps/api/obj/project.assets.json` as evidence. This does not establish a repository-pinned transitive NuGet baseline across fresh runs. Installation may contact registries, download native binaries/SDK assets, and use the named caches; do not count it as a network-free check. Do not replace locked installation with `npm install` or silently acquire missing tools during checks.
 
-**Verify test discovery before execution.** The approved worker selection is the default Web test include set minus the union of every exclusion in [vitest.config.ts](apps/web/vitest.config.ts) and `apps/web/test/unit/lib/job-lifecycle.test.ts`. That lifecycle test can POST analyses when an API is available; relying on its availability skip is insufficient. Preserve all configured exclusions, including expensive suites. Paths below are relative to `apps/web`:
+**Verify test discovery before execution.** The approved worker selection is the default Web test include set minus the union of every exclusion in [vitest.config.ts](apps/web/vitest.config.ts). Preserve all configured exclusions, including the expensive calibration suite. Paths below are relative to `apps/web`:
 
 ```powershell
 $workerExcludes = @(
   'node_modules', '.next',
-  'test/unit/lib/llm-integration.test.ts',
-  'test/unit/lib/input-neutrality.test.ts',
-  'test/unit/lib/analyzer/context-preservation.test.ts',
-  'test/unit/lib/analyzer/adversarial-context-leak.test.ts',
-  'test/integration/claimboundary-integration.test.ts',
-  'test/integration/hydrogen-smoke.test.ts',
-  'test/calibration/framing-symmetry.test.ts',
-  'test/unit/lib/job-lifecycle.test.ts'
+  'test/calibration/framing-symmetry.test.ts'
 )
 $excludeArgs = @()
 foreach ($pattern in $workerExcludes) { $excludeArgs += @('--exclude', $pattern) }
@@ -275,7 +268,7 @@ dotnet build apps/api -c Release --no-restore
 
 The Web build is a **writing command**: `next build` produces `.next` output, then npm automatically runs `postbuild` (`npx tsx scripts/reseed-all-prompts.ts --quiet`). Reseeding writes/activates UCM configs and prompts in the disposable `FH_CONFIG_DB_PATH`; it must never target an existing development UCM database. Preserve its summary and require zero reseed errors. API compilation writes build artifacts; `--no-restore` keeps dependency resolution in the installation phase and does not start the API.
 
-Exclude `first-run.ps1`, restart/stop/build-and-restart scripts, hook installers, dev/start/watch servers, `test:jobs`, all paid/live suites (including calibration, smoke and promptfoo), validation batches and live analyses from this recipe. Do not enable services or add credentials to make a check pass. The generic `npm test`/`test:ci` commands alone do not supply this worker's lifecycle exclusion.
+Exclude `first-run.ps1`, restart/stop/build-and-restart scripts, hook installers, dev/start/watch servers, all paid/live suites (including calibration and promptfoo), validation batches and live analyses from this recipe. Do not enable services or add credentials to make a check pass.
 
 **Evidence and closeout:** finish with another listener inspection and tracked status comparison, including after failure. Evidence must contain the commit and exact tool versions (or failed/unexecuted version checks); starting/final tracked status; environment names/presence only and local config verification; selected and excluded tests plus discovery comparison; every command, working directory, output and exit code; before/after listeners; lexical paths and no-reparse verification, named cache/output exceptions and actual sandbox writable roots; and remaining filesystem/network limits. Report failures, unexpected writes, listeners and checks not executed without widening the selection or invoking live setup.
 

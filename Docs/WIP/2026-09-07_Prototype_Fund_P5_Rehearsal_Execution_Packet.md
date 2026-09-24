@@ -134,7 +134,8 @@ contradictory direct-to-main or reviewer-write guidance; no application tests or
 - Use fresh worktrees without credentials or development databases and task-local state below
   `test-output/preparation/<task-id>/`.
 - Preserve configured expensive-suite exclusions and explicitly exclude
-  `apps/web/test/unit/lib/job-lifecycle.test.ts`; require discovery comparison before running.
+  `apps/web/test/unit/lib/job-lifecycle.test.ts` (deleted 2026-09-24, so no longer needed);
+  require discovery comparison before running.
 - Keep services off, inspect ports 3000/5000 before and after, and describe local controls as
   operational safeguards rather than network confinement.
 - Treat Web build/reseeding, dependency caches, restore and temporary paths explicitly.

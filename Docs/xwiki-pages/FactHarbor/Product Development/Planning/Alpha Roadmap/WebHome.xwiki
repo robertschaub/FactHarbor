@@ -43,7 +43,7 @@ The following features are prioritized for the next major milestone.
 | Dimension | Target Metric | Status |
 |-----------|---------------|--------|
 | **Accuracy** | >92% Factually Correct | In Progress |
-| **Neutrality** | <4% Bias Asymmetry | Testing (test:neutrality) |
+| **Neutrality** | <4% Bias Asymmetry | Monitored (framing-symmetry calibration lane, paid runs only) |
 | **Reliability** | >85% Confidence in High-Probative Verdicts | In Progress |
 | **Coverage** | Supports 5+ languages out-of-the-box | In Progress |
 

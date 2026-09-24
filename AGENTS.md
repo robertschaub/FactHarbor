@@ -237,7 +237,7 @@ Documentation publication is triggered by pushing `main`; CI owns `gh-pages`. Ne
 
 Select focused offline checks for the actual change. `npm test` excludes the designated real-LLM suites, but individual local tests can still contact services or write state: inspect the selected commands for restricted assignments. Broad suites/builds are not prerequisites for documentation edits.
 
-`test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive`, calibration and live validation can call real providers. Run them only under the current action/scope authorization above; being a quality-affecting change or loading a skill does not supply that authority.
+Calibration lanes, promptfoo evaluations and live validation can call real providers. Run them only under the current action/scope authorization above; being a quality-affecting change or loading a skill does not supply that authority.
 
 ### Live Job Submission Discipline
 

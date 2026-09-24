@@ -118,9 +118,9 @@ Question vs statement phrasing could yield different context counts in the old O
 The ClaimAssessmentBoundary pipeline eliminates pre-detection of AnalysisContexts entirely. Boundaries emerge from evidence clustering (Stage 3), which is input-phrasing agnostic.
 
 **How neutrality is checked now** (updated 2026-08-10 — the old "Phase 5h" plan no longer exists):
-- Heuristic question→statement normalization was **removed** in favour of LLM-first handling, so input equivalence is a *measured* property, not an enforced transform.
-- Two live lanes exist, both expensive and excluded from the safe suite: `npm run test:neutrality` (`test/unit/lib/input-neutrality.test.ts`, full analysis ×2 per pair; currently not functional, see Backlog `TEST-LIVE-EXCL`) and the framing-symmetry calibration lanes `test:calibration:smoke` / `:canary` / `:gate` (`test/calibration/framing-symmetry.test.ts`), governed by [Calibration_Run_Policy.md](Calibration_Run_Policy.md).
-- Because both lanes need paid runs, neutrality is currently **monitored rather than gated** — no fresh measurement can be taken while engineering is paused.
+- Heuristic question→statement normalization was **removed** in favour of LLM-first handling, so input equivalence has to be *measured*, not enforced.
+- One live lane exists, expensive and excluded from the safe suite: the framing-symmetry calibration lanes `test:calibration:smoke` / `:canary` / `:gate` (`test/calibration/framing-symmetry.test.ts`), governed by [Calibration_Run_Policy.md](Calibration_Run_Policy.md). It compares mirrored claim framings, not a question with the equivalent statement. The old question/statement suite (`test:neutrality`) could not run and was deleted on 2026-09-24; a replacement needs Captain-defined pairs (Backlog `NEUTRALITY-PAIRS`).
+- Because the lane needs paid runs, neutrality is currently **monitored rather than gated** — no fresh measurement can be taken while engineering is paused.
 
 **Status**: Superseded as a defect; carried forward as a monitored quality property, not a queued fix.
 
@@ -194,7 +194,7 @@ So "not validated" is too strong: the iteration ceiling was tuned on cost ground
 
 The 8 skipped tests no longer exist. `apps/web/test/unit/lib/analyzer/budgets.test.ts` contains **zero** `.skip` calls — the tests for the deleted `checkContextIterationBudget` / `recordIteration` functions were removed rather than left skipped, and the file documents the removal inline (`budgets.test.ts:13,222`). The functions themselves are gone from `budgets.ts:152,158`.
 
-The safe suite now reports exactly **1** skipped test, and it is unrelated: `claimboundary-pipeline.test.ts:4515` — *"does not let preliminary evidence satisfy sufficiency before main research runs"*. The three `test.skip` calls in `test/integration/claimboundary-integration.test.ts` are not counted, because `vitest.config.ts` excludes that file from the safe suite (it makes real LLM calls; run via `npm run test:cb-integration`).
+The safe suite now reports exactly **1** skipped test, and it is unrelated: `claimboundary-pipeline.test.ts:4523` — *"does not let preliminary evidence satisfy sufficiency before main research runs"*.
 
 ---
 
