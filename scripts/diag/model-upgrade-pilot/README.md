@@ -1,6 +1,6 @@
 # Two-job model-upgrade pilot
 
-Status: **Claude review conditions incorporated; regenerate the execution freeze before final GO and paid runs**.
+Status: **Completed 2026-09-24 at `7b3799cc`: one A and one B; no promotion.** A missed its verdict band; B returned a damaged report and failed prompt-provenance postflight. Recorded spend was $3.2555616; baseline and concurrency 2 were restored. See the [reviewed results and next steps](../../../Docs/WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#completed-two-job-smoke-pilot-2026-09-24). The commands and plan below preserve the executed protocol; they do not authorize another submission. The frozen control files are those at the execution commit, before this status update.
 
 This directory is the tracked, reviewable control package for one baseline A job and, conditionally, one Sonnet 5 adaptive/medium B job. The authoritative decisions are in `conditional-pilot-plan.json`. The B payload differs from active A only in `modelVerdict` and `modelPolicies`; its clustering ceiling is 32,768 provider output tokens.
 
