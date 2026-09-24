@@ -7,7 +7,6 @@
  * @module source-reliability/sr-eval-enrichment
  */
 
-import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
@@ -20,7 +19,7 @@ import {
   type EvidenceQualityAssessmentConfig,
 } from "@/lib/source-reliability/evidence-quality-assessment";
 import { getAllFactCheckerDomains } from "@/lib/fact-checker-service";
-import { withTimeout, type EvidencePack } from "./sr-eval-types";
+import { generateTextWithTimeout, type EvidencePack } from "./sr-eval-types";
 
 // ============================================================================
 // TIMEOUT CONSTANTS
@@ -212,16 +211,15 @@ export async function enrichEvidencePackWithQualityAssessment(
     outputFormatTemplate: promptTemplate.outputTemplate,
     classify: async (prompt, timeoutMs) => {
       const model = provider === "anthropic" ? anthropic(modelName) : openai(modelName);
-      const response = await withTimeout(
+      const response = await generateTextWithTimeout(
         "SR evidence quality assessment",
         timeoutMs,
-        () =>
-          generateText({
-            model,
-            prompt,
-            temperature: getDeterministicTemperature(0.1),
-            maxOutputTokens: 3000,
-          }),
+        {
+          model,
+          prompt,
+          temperature: getDeterministicTemperature(0.1),
+          maxOutputTokens: 3000,
+        },
       );
       return response.text ?? "";
     },

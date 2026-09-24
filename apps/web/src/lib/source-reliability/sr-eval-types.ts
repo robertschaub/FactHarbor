@@ -5,6 +5,9 @@
  */
 
 import { z } from "zod";
+import { generateText } from "ai";
+import type { LLMCallMetric } from "@/lib/analyzer/metrics";
+import { recordLLMCall } from "@/lib/analyzer/metrics-integration";
 import type { SearchConfig } from "@/lib/config-schemas";
 import type {
   EvidenceQualityAssessmentConfig,
@@ -302,4 +305,55 @@ export async function withTimeout<T>(
       clearTimeout(timeoutHandle);
     }
   }
+}
+
+/**
+ * Run one SR `generateText` call under `withTimeout` and record it for cost accounting.
+ * The evaluate-source route captures these records and returns them to the job that
+ * asked for the evaluation. A call that times out keeps running and is billed, so its
+ * usage is recorded as unknown, not zero.
+ */
+export async function generateTextWithTimeout(
+  operationName: string,
+  timeoutMs: number,
+  params: Parameters<typeof generateText>[0],
+): Promise<Awaited<ReturnType<typeof generateText>>> {
+  const model = params.model as string | { provider?: string; modelId?: string };
+  // Pricing reads the provider family ("anthropic", "openai"), not the SDK's "anthropic.messages".
+  const provider = typeof model === "string" ? "unknown" : String(model.provider ?? "unknown").split(".")[0];
+  const modelName = typeof model === "string" ? model : String(model.modelId ?? "unknown");
+  const startedAt = Date.now();
+  const call = (success: boolean, errorMessage?: string): LLMCallMetric => ({
+    taskType: "source_reliability",
+    provider,
+    modelName,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    durationMs: Date.now() - startedAt,
+    success,
+    schemaCompliant: success,
+    retries: 0,
+    ...(errorMessage ? { errorMessage } : {}),
+    timestamp: new Date(),
+  });
+  const measurement = { model: { provider, modelName }, maxOutputTokens: params.maxOutputTokens };
+  // Metrics must never break analysis: a recording failure must not change the SR result.
+  const record = (entry: LLMCallMetric, outcome: { result?: unknown; error?: unknown }) => {
+    try {
+      recordLLMCall(entry, { ...measurement, ...outcome });
+    } catch (err) {
+      console.warn(`[SR-Eval] Could not record ${operationName}:`, err);
+    }
+  };
+  let result: Awaited<ReturnType<typeof generateText>>;
+  try {
+    result = await withTimeout(operationName, timeoutMs, () => generateText(params));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    record(call(false, message.includes(operationName) ? message : `${operationName}: ${message}`), { error });
+    throw error;
+  }
+  record(call(true), { result });
+  return result;
 }

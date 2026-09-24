@@ -30,6 +30,7 @@ import {
 } from "@/lib/source-reliability-config";
 import type { EvidenceQualityAssessmentConfig } from "@/lib/source-reliability/evidence-quality-assessment";
 import { checkRunnerKey } from "@/lib/auth";
+import { captureMetrics } from "@/lib/analyzer/metrics-integration";
 import { normalizeEvidenceQualityAssessmentConfig } from "@/lib/source-reliability/sr-eval-enrichment";
 import { evaluateSourceWithConsensus } from "@/lib/source-reliability/sr-eval-engine";
 import type { SrEvalConfig } from "@/lib/source-reliability/sr-eval-types";
@@ -254,13 +255,27 @@ export async function POST(req: Request) {
     );
   }
 
-  // Evaluate
-  const result = await evaluateSourceWithConsensus(
+  // Evaluate. This request runs outside the analysis job's metrics context, so the
+  // records of its LLM calls and searches go back to the caller as `accounting`.
+  const evaluation = await captureMetrics(() => evaluateSourceWithConsensus(
     body.domain,
     effectiveMultiModel,
     effectiveConfidenceThreshold,
     config,
-  );
+  ));
+  const accounting = {
+    llmCalls: evaluation.captured.llmCalls,
+    searchQueries: evaluation.captured.searchQueries.map((query) => ({ ...query, origin: "source_reliability" })),
+  };
+
+  if (!evaluation.ok) {
+    console.error(`[SR-Eval] Evaluation error for ${body.domain}:`, evaluation.error);
+    return NextResponse.json(
+      { error: "Evaluation error", details: String(evaluation.error), accounting },
+      { status: 500 }
+    );
+  }
+  const result = evaluation.value;
 
   if (!result.success) {
     return NextResponse.json(
@@ -272,10 +287,11 @@ export async function POST(req: Request) {
         primaryConfidence: result.error.primaryConfidence,
         secondaryScore: result.error.secondaryScore,
         secondaryConfidence: result.error.secondaryConfidence,
+        accounting,
       },
       { status: 422 }
     );
   }
 
-  return NextResponse.json(result.data);
+  return NextResponse.json({ ...result.data, accounting });
 }

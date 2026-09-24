@@ -17,6 +17,7 @@ import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabi
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
 import { extractNormalizedHostname, getDomainLookupChain, getFamilyDomain } from "../domain-utils";
+import { recordCapturedMetrics, recordLLMCall } from "./metrics-integration";
 
 // ============================================================================
 // CONFIGURATION (using shared config for unified defaults)
@@ -536,6 +537,12 @@ async function evaluateSourceInternal(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      // A failed evaluation can still have made paid calls; its body carries their records.
+      // 422 and 5xx come after the evaluation started; 400, 401 and 429 are refused before any work.
+      const failureBody = await response.json().catch(() => null);
+      if (!recordCapturedMetrics(failureBody?.accounting) && (response.status === 422 || response.status >= 500)) {
+        recordUnaccountedEvaluation(domain, `HTTP ${response.status}`);
+      }
       const errorType = classifySourceReliabilityHttpError(response.status);
       const message = `HTTP ${response.status} ${response.statusText}`.trim();
       onError?.({
@@ -551,10 +558,18 @@ async function evaluateSourceInternal(
     }
 
     const data = await response.json();
+    if (!recordCapturedMetrics(data?.accounting)) {
+      recordUnaccountedEvaluation(domain, "response without accounting");
+    }
     return data as EvaluationResult;
   } catch (err: any) {
     clearTimeout(timeoutId);
     const errorType = classifySourceReliabilityTransportError(err);
+    // Unless the request never reached the route, the evaluation may have run (a timed-out
+    // one keeps running and is billed), but its records never arrive.
+    if (!evaluationNeverStarted(err)) {
+      recordUnaccountedEvaluation(domain, errorType === "timeout" ? `timeout after ${EVAL_TIMEOUT_MS}ms` : errorType);
+    }
     const message = err instanceof Error ? err.message : String(err);
     onError?.({
       domain,
@@ -568,6 +583,40 @@ async function evaluateSourceInternal(
     }
     return null;
   }
+}
+
+/**
+ * Mark an SR evaluation whose call records were lost, so the job's cost reads as
+ * unknown (usage unavailable) instead of silently too low.
+ */
+function recordUnaccountedEvaluation(domain: string, reason: string): void {
+  try {
+    recordLLMCall({
+      taskType: "source_reliability",
+      provider: "unknown",
+      modelName: "unknown",
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      usageAvailable: false,
+      failureKind: "transport",
+      durationMs: 0,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `SR evaluation of ${domain} not accounted (${reason}); its calls are unrecorded`,
+      timestamp: new Date(),
+    });
+  } catch (err) {
+    // Metrics must never break analysis.
+    console.warn(`[SR] Could not record the unaccounted evaluation of ${domain}:`, err);
+  }
+}
+
+/** True when the request cannot have reached the evaluation route, so nothing was spent. */
+function evaluationNeverStarted(err: any): boolean {
+  const code = String(err?.code ?? err?.cause?.code ?? "").toUpperCase();
+  return code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "EAI_AGAIN";
 }
 
 function classifySourceReliabilityHttpError(statusCode: number): SourceReliabilityErrorType {

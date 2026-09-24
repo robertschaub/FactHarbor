@@ -162,4 +162,25 @@ describe("calculateSummaryStats — schemaComplianceRate", () => {
     const rate = calculateSummaryStats([ok, bad, ok, ok]).schemaComplianceRate;
     expect(rate).toBe(75);
   });
+
+  it("ignores source-reliability calls, which have no pipeline schema contract", () => {
+    const m = jobWith([{ schemaCompliant: true }, { taskType: "source_reliability", schemaCompliant: false }]);
+    expect(calculateSummaryStats([m]).schemaComplianceRate).toBe(100);
+  });
+
+  it("does not count a job with only source-reliability calls as compliant", () => {
+    const m = jobWith([{ taskType: "source_reliability", schemaCompliant: true }]);
+    expect(calculateSummaryStats([m]).schemaComplianceRate).toBe(0);
+  });
+});
+
+describe("estimatedCostUSD — search estimate", () => {
+  it("does not charge searches served from the search cache", () => {
+    const collector = new MetricsCollector("job-search", "claimboundary");
+    const query = { query: "q", provider: "serper", resultsCount: 3, durationMs: 5, success: true, timestamp: new Date() };
+    collector.recordSearchQuery(query);
+    collector.recordSearchQuery({ ...query, cached: true });
+
+    expect(collector.finalize().estimatedCostUSD).toBeCloseTo(0.005, 10);
+  });
 });

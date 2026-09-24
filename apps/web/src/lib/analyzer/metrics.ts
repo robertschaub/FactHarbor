@@ -20,6 +20,7 @@ export type LLMTaskType =
   | 'verdict'
   | 'aggregate'
   | 'supplemental'
+  | 'source_reliability'
   | 'other';
 
 export interface LLMCallMetric {
@@ -91,6 +92,8 @@ export interface SearchQueryMetric {
   success: boolean;
   /** Optional: whether the result was served from cache */
   cached?: boolean;
+  /** Optional: component that ran the search for the job, e.g. "source_reliability" */
+  origin?: string;
   timestamp: Date;
 }
 
@@ -541,6 +544,11 @@ export class MetricsCollector {
     return [...(this.metrics.llmCalls ?? [])];
   }
 
+  /** Snapshot of recorded search queries (see captureMetrics). */
+  getSearchQueriesSnapshot(): SearchQueryMetric[] {
+    return [...(this.metrics.searchQueries ?? [])];
+  }
+
   /** Pipeline variant for telemetry provenance context. */
   getPipelineVariant(): string {
     return this.metrics.pipelineVariant ?? 'unknown';
@@ -620,8 +628,9 @@ export class MetricsCollector {
       totalCost += promptCost + completionCost;
     }
 
-    // Add search costs (rough estimate: $5 per 1000 queries for most providers)
-    const searchCost = (this.metrics.searchQueries!.length / 1000) * 5;
+    // Add search costs (rough estimate: $5 per 1000 queries for most providers).
+    // Results served from the search cache made no provider call.
+    const searchCost = (this.metrics.searchQueries!.filter((query) => !query.cached).length / 1000) * 5;
     totalCost += searchCost;
     this.metrics.costEstimate = {
       knownSubtotalUSD: totalCost, unpricedCalls, pricingCheckedAt: "2026-09-22", searchCostIsEstimate: true,
@@ -781,9 +790,12 @@ export function calculateSummaryStats(metricsArray: AnalysisMetrics[]): {
   // Schema compliance rate: a job is compliant iff every LLM call has schemaCompliant === true.
   // The top-level `schemaCompliance` field is not populated by the runner in current builds;
   // per-call `llmCalls[].schemaCompliant` is the authoritative signal.
-  const compliantCount = metricsArray.filter(m =>
-    m.llmCalls.length > 0 && m.llmCalls.every(c => c.schemaCompliant === true)
-  ).length;
+  // Source-reliability calls are excluded: they run outside the pipeline's schema contracts
+  // and are recorded before their JSON is parsed.
+  const compliantCount = metricsArray.filter(m => {
+    const pipelineCalls = m.llmCalls.filter(c => c.taskType !== "source_reliability");
+    return pipelineCalls.length > 0 && pipelineCalls.every(c => c.schemaCompliant === true);
+  }).length;
   const schemaComplianceRate = (compliantCount / metricsArray.length) * 100;
 
   // Gate 1 pass rate

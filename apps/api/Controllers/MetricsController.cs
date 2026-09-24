@@ -216,13 +216,23 @@ public class MetricsController : ControllerBase
                     // Schema compliance: job is compliant iff every llmCall has schemaCompliant === true.
                     // The top-level `schemaCompliance` field is not populated by the runner in current
                     // builds; per-call `llmCalls[].schemaCompliant` is the authoritative signal.
+                    // Source-reliability calls are excluded: they run outside the pipeline's schema
+                    // contracts and are recorded before their JSON is parsed.
                     if (root.TryGetProperty("llmCalls", out var llmCalls) &&
                         llmCalls.ValueKind == JsonValueKind.Array &&
                         llmCalls.GetArrayLength() > 0)
                     {
                         var allCompliant = true;
+                        var pipelineCalls = 0;
                         foreach (var call in llmCalls.EnumerateArray())
                         {
+                            if (call.TryGetProperty("taskType", out var taskType) &&
+                                taskType.ValueKind == JsonValueKind.String &&
+                                taskType.GetString() == "source_reliability")
+                            {
+                                continue;
+                            }
+                            pipelineCalls++;
                             if (!call.TryGetProperty("schemaCompliant", out var sc) ||
                                 sc.ValueKind != JsonValueKind.True)
                             {
@@ -230,7 +240,7 @@ public class MetricsController : ControllerBase
                                 break;
                             }
                         }
-                        if (allCompliant)
+                        if (allCompliant && pipelineCalls > 0)
                         {
                             schemaCompliantCount++;
                         }

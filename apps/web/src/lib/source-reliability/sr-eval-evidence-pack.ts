@@ -7,14 +7,13 @@
  * @module source-reliability/sr-eval-evidence-pack
  */
 
-import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { debugLog } from "@/lib/analyzer/debug";
 import { getActiveSearchProviders, searchWebWithProvider, type WebSearchResult } from "@/lib/web-search";
 import { getGlobalFactCheckerSites, getRegionalFactCheckerQueries } from "@/lib/fact-checker-service";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
 import { languageDetectionStatus } from "@/lib/source-reliability-eval-helpers";
-import { withTimeout, type SrEvalConfig, type EvidencePack, type EvidencePackItem } from "./sr-eval-types";
+import { generateTextWithTimeout, type SrEvalConfig, type EvidencePack, type EvidencePackItem } from "./sr-eval-types";
 
 // ============================================================================
 // TIMEOUT CONSTANT
@@ -394,11 +393,10 @@ export async function detectSourceLanguage(domain: string): Promise<string | nul
       .slice(0, 1000);
 
     if (textContent.length > 100) {
-      const { text } = await withTimeout(
+      const { text } = await generateTextWithTimeout(
         "SR language detection",
         SR_TRANSLATION_TIMEOUT_MS,
-        () =>
-          generateText({
+        {
             model: anthropic(ANTHROPIC_MODELS.budget.modelId),
             prompt: `What is the primary publication language of this webpage content?
 Return ONLY the language name in English (e.g., "German", "French", "Russian", "English").
@@ -408,7 +406,7 @@ Content sample:
 ${textContent}`,
             temperature: 0,
             maxOutputTokens: 50,
-          }),
+        },
       );
 
       const detectedLang = text.trim();
@@ -554,16 +552,15 @@ ${SEARCH_TERMS_TO_TRANSLATE.map((t) => `- "${t}"`).join("\n")}
 Output format (JSON only, no markdown):
 {"fact check": "...", "reliability": "...", ...}`;
 
-    const { text } = await withTimeout(
+    const { text } = await generateTextWithTimeout(
       "SR translation",
       SR_TRANSLATION_TIMEOUT_MS,
-      () =>
-        generateText({
-          model: anthropic(ANTHROPIC_MODELS.budget.modelId),
-          prompt,
-          temperature: 0,
-          maxOutputTokens: 800,
-        }),
+      {
+        model: anthropic(ANTHROPIC_MODELS.budget.modelId),
+        prompt,
+        temperature: 0,
+        maxOutputTokens: 800,
+      },
     );
 
     // Parse the JSON response

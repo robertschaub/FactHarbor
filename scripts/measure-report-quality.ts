@@ -105,6 +105,7 @@ const KNOWN_METRIC_TASK_TYPES = new Set([
   'verdict',
   'aggregate',
   'supplemental',
+  'source_reliability',
   'other',
 ]);
 

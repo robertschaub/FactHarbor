@@ -7,7 +7,6 @@
  * @module source-reliability/sr-eval-engine
  */
 
-import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getDeterministicTemperature } from "@/lib/analyzer/config";
@@ -29,7 +28,7 @@ import {
   MIN_FOUNDEDNESS_FOR_HIGH_SCORES,
 } from "@/lib/source-reliability-config";
 import {
-  withTimeout,
+  generateTextWithTimeout,
   EvaluationResultSchema,
   RefinementResultSchema,
   type EvaluationResult,
@@ -260,11 +259,10 @@ async function evaluateWithModel(
     : openai(modelName);
 
   try {
-    const response = await withTimeout(
+    const response = await generateTextWithTimeout(
       "SR primary evaluation",
       SR_PRIMARY_EVALUATION_TIMEOUT_MS,
-      () =>
-        generateText({
+      {
           model,
           messages: [
             {
@@ -283,7 +281,7 @@ Always respond with valid JSON only.`,
             { role: "user", content: prompt },
           ],
           temperature,
-        }),
+      },
     );
 
     const text = response.text?.trim() || "";
@@ -376,16 +374,15 @@ async function refineEvaluation(
   debugLog(`[SR-Eval] Starting refinement pass with ${modelName} for ${domain}...`);
 
   try {
-    const { text } = await withTimeout(
+    const { text } = await generateTextWithTimeout(
       "SR refinement",
       SR_REFINEMENT_TIMEOUT_MS,
-      () =>
-        generateText({
-          model: openai(modelName),
-          prompt,
-          temperature,
-          maxOutputTokens: 2000,
-        }),
+      {
+        model: openai(modelName),
+        prompt,
+        temperature,
+        maxOutputTokens: 2000,
+      },
     );
 
     // Parse JSON response

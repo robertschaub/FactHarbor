@@ -146,6 +146,54 @@ export function recordSearchQuery(query: SearchQueryMetric): void {
   getJobMetrics()?.recordSearchQuery(query);
 }
 
+/** LLM calls and searches recorded outside the job's own async context. */
+export interface CapturedMetrics {
+  llmCalls: LLMCallMetric[];
+  searchQueries: SearchQueryMetric[];
+}
+
+/**
+ * Run `fn` with its own collector and return what it recorded, also when it throws.
+ * An internal HTTP route doing work for a job uses this, because the job's collector
+ * does not cross the request boundary; the caller adds the records to the job with
+ * `recordCapturedMetrics`.
+ */
+export async function captureMetrics<T>(fn: () => Promise<T>): Promise<
+  | { ok: true; value: T; captured: CapturedMetrics }
+  | { ok: false; error: unknown; captured: CapturedMetrics }
+> {
+  const collector = createMetricsCollector("captured", "internal");
+  const captured = (): CapturedMetrics => ({
+    llmCalls: collector.getLLMCallsSnapshot(),
+    searchQueries: collector.getSearchQueriesSnapshot(),
+  });
+  try {
+    const value = await metricsStorage.run(collector, fn);
+    return { ok: true, value, captured: captured() };
+  } catch (error) {
+    return { ok: false, error, captured: captured() };
+  }
+}
+
+/**
+ * Add records returned by an internal route (see `captureMetrics`) to the current job.
+ * Returns false when `captured` is not such a record set.
+ */
+export function recordCapturedMetrics(captured: unknown): boolean {
+  const records = captured as Partial<CapturedMetrics> | null | undefined;
+  if (!records || !Array.isArray(records.llmCalls) || !Array.isArray(records.searchQueries)) return false;
+  const job = getJobMetrics();
+  try {
+    for (const call of records.llmCalls) job?.recordLLMCall({ ...call, timestamp: new Date(call.timestamp) });
+    for (const query of records.searchQueries) job?.recordSearchQuery({ ...query, timestamp: new Date(query.timestamp) });
+    return true;
+  } catch (err) {
+    // Metrics must never break analysis; the caller then treats the work as unaccounted.
+    console.warn("[Metrics] Could not merge captured records:", err);
+    return false;
+  }
+}
+
 /**
  * Record Gate 1 statistics
  * Call AFTER claim filtering completes
