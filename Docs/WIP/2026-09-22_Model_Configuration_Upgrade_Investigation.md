@@ -4,7 +4,7 @@
 
 **Status:** Offline follow-up found prerequisites before more paid comparison: **unrecorded source-reliability cost, lost narrative input and conflicting decomposition rules**. Full-pipeline execution remains one diagnostic baseline and no candidate run. **$1.640532 is only the recorded subtotal; total cost and remaining budget are unknown.** Local restoration is complete. Phase C remains stopped at 14 calls / $0.386396; model promotion and production remain **NOT READY**. The repair-first proposal and conditional plan-only template are in the final §9 follow-up; no repair or further spending was performed.
 
-**Update 2026-09-24 (Claude session, after the status above):** source-reliability cost is now recorded in each job's metrics (`6840e90d9`, Backlog `SR-COST`), and each job records the SR evaluations it paid for (`094fbeed5`, `SR-ATTRIB`). Cost figures in this report leave out SR work and are not comparable with jobs from `6840e90d9` on. `NARR-INPUT` is still open. On `DECOMP-RULES` the Captain chose the three-claim target (one claim for the act with its modifier, one per branch) but put it on hold: the reviewed prompt change is parked on branch `claude/decomp-three-claims`, and the Stage 5 change that would let the modifier claim decide the article verdict is proposed in the [dominant-proposition plan](2026-04-20_Dominant_Proposition_Architecture_Plan.md#2026-09-24-update-three-claim-decision-and-minimal-stage-5-path), also on hold. `main` keeps the fused rule.
+**Update 2026-09-24 (Claude session, after the status above):** source-reliability cost is now recorded in each job's metrics (`6840e90d9`, Backlog `SR-COST`), and each job records the SR evaluations it paid for (`094fbeed5`, `SR-ATTRIB`). Cost figures in this report leave out SR work and are not comparable with jobs from `6840e90d9` on. `NARR-INPUT` is still open. On `DECOMP-RULES` the Captain chose the three-claim target (one claim for the act with its modifier, one per branch) but put it on hold: the reviewed prompt change is parked on branch `claude/decomp-three-claims`, and the Stage 5 change that would let the modifier claim decide the article verdict is proposed in the [dominant-proposition plan](2026-04-20_Dominant_Proposition_Architecture_Plan.md#2026-09-24-update-three-claim-decision-and-minimal-stage-5-path), also on hold. `main` keeps the fused rule. The open blockers for any new A/B job and a bound on `d3de379c`'s unrecorded SR cost are in [§9, status after the review](#status-after-the-review-of-the-offline-diagnosis-2026-09-24) (Backlog `MODEL-AB`).
 
 **Source baseline:** `main`, `2b93fa1504d7f74796aad28a19605e4c630597b4`. Original investigation line references describe this baseline. Phase B and Phase C/reconciliation references describe the preserved pre-correction working tree; the correction changes source line positions and has its own hashes in §9. At that original checkpoint, the pre-existing modification to `apps/web/AGENTS.md` was outside this task. The later live-run revision and activation record appear in §9.
 
@@ -761,6 +761,33 @@ The strongest alternative is to compare models immediately while preserving curr
 Proposed operational sub-cap: **$8 within the original $25**, only after reconciliation establishes that at least $8 remains. Stop new pilot submissions at $3 to retain the same $5 in-flight reserve, also respecting the original $20 global submission threshold. This is not a hard invoice ceiling. No extra total budget or replacement attempt is approved. The runner previews show **one job per arm**, with no `--run`; displayed ~$2/~$3 figures use incomplete-baseline/placeholder allowances ($1.65/$2.50), **not complete cost forecasts**, and must be replaced/reviewed before execution. Restoring the repaired baseline must retain its newly approved prompt/hash, not blindly revert to the historical 1.0.13 hash.
 
 Artifacts are in `test-output/live-ab-harness/runs/model-upgrade-live-20260924/offline-followup/`: source-review record, current/proposed narrative projections, conditional pilot JSON, exact input and both plan-only logs/process records. An initial Windows-decoding error in the draft input was caught offline, preserved under `attempt-1/`, and amended by copying the approved UTF-8 file byte-for-byte; regenerated previews use the exact approved input. No live submission, application/prompt/configuration edit, runtime activation, service change, test/build, commit, push or deployment occurred in this follow-up.
+
+### Status after the review of the offline diagnosis (2026-09-24)
+
+Claude Opus 5.5 in Claude Code reviewed the offline diagnosis read-only (report `30f3af95…`) and re-checked the findings against `main` at `47d8b0745`. The Backlog carries the open items; this table only maps them.
+
+| Item | State at `47d8b0745` | Backlog |
+| --- | --- | --- |
+| SR cost missing from job metrics | Fixed from `6840e90d9`/`094fbeed5` on; `d3de379c` stays a lower bound | `SR-COST`, `SR-ATTRIB` (done) |
+| Decomposition conflict | Captain decision taken; prompt 1.0.14 parked on `claude/decomp-three-claims`; Stage 5 change proposed; all on hold, `main` unchanged | `DECOMP-RULES`, `ANCHOR-SUBSTR` |
+| Arm B transport | Open: adaptive/medium stays on the forced JSON-tool route; the approved plan's acceptance clause is missing from `conditional-pilot-plan.json` | `S5-TRANSPORT` |
+| Narrative and adjudication inputs | Open: both cut each claim's reasoning to 200 characters; under the Stage 5 design, adjudication decides this family's article verdict | `NARR-INPUT`, `ADJ-INPUT` |
+| Q-code annotations | Open: Q-S1.3 and Q-S1.1 cannot both pass for `bundesrat-simple`, the Bolsonaro inputs and, on `main`, `bundesrat-rechtskraftig` | `QCODE-ANNOT` |
+| Reconciler | Open: AC_02's truth lowered for spread and an out-of-scope contingency | `RECON-SPREAD` |
+| Unknown-cost stop | New: a timed-out SR evaluation now makes the job's cost null, which trips the pilot's unknown-cost stop | `SR-TIMEOUT` |
+| Runner prechecks | Open: no commit, config or input-byte check before `--run` | `BATCH-PRECHECK` |
+| Pilot status | Not execution-ready; the rows above update the prerequisite list in the offline follow-up | `MODEL-AB` |
+
+The §8 capped contract-validation screen pins prompt 1.0.13 and the pre-decision rules 16/18/19. Re-specify it once `DECOMP-RULES` lands, or drop it.
+
+**Budget bound for `d3de379c`'s unrecorded SR work.** The SR log window holds 8 Haiku primary evaluations, 8 GPT-4.1-mini refinements, 7 translations and at most 8 language detections; all 8 evidence-quality enrichments were skipped. With each logged call billed once, the upper bound is:
+
+- primary outputs, which have no cap, at the SDK's 64,000-token default: $2.56;
+- inputs at the context limit: $1.60 for the primaries and at most $0.87 for the refinements (evidence plus the primary result);
+- refinement, translation and detection outputs at their caps (2,000, 800 and 50 tokens) plus their small inputs: under $0.08;
+- at most 68 SR searches per evaluated domain (the full query set) at the metrics' flat $5 per 1,000: $2.72.
+
+That totals at most $7.83, so at least $15.5 of the $25 remains, enough for the proposed $8 sub-cap if the Captain accepts this bound as the budget disposition. The SR cache's stored evidence packs list each domain's queries if a tighter search figure is needed; the LLM usage was discarded and cannot be recovered.
 
 ### Documentation discipline
 

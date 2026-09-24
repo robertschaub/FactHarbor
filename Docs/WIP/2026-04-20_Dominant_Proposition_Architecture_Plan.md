@@ -29,6 +29,12 @@
 
 That is 7 jobs, roughly $12–15 now that source-reliability cost is recorded. Compare with the fused baseline job `d3de379c` (2026-09-23 UTC) and add a same-commit fused arm only if the results are ambiguous. Stop on any failed job, a second hard failure, or a clear regression on a control.
 
+**Before this validation (added 2026-09-24 after review):**
+- Decide `ADJ-INPUT`: adjudication receives each claim's reasoning cut to 200 characters, and the anchor-divergence trigger makes it decide this family's article verdict.
+- Judge the controls by their bands until `QCODE-ANNOT` is settled. Q-S1.3 and Q-S1.1 cannot both pass for `bundesrat-simple` or the Bolsonaro inputs.
+- The only positive case is German: no approved non-German input has an act-level modifier on coordinated branches.
+- Use `d3de379c` as a quality comparator only; its recorded cost predates `SR-COST`.
+
 **If this is not enough:** implement Phase A/B below with a dominance-weighted parent mode, in which Stage 1 assigns component roles, instead of `all_must_hold`.
 
 ## Consolidated Solution
