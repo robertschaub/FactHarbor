@@ -850,6 +850,7 @@ export async function runClaimBoundaryAnalysis(
         runtimeRoleModels: {},
         searchProvider: initialSearchConfig.provider,
         evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0, isSkewed: false },
+        promptContentHash,
         boundaryCount: 0,
       });
 
@@ -931,6 +932,7 @@ export async function runClaimBoundaryAnalysis(
           runtimeRoleModels: {},
           searchProvider: initialSearchConfig.provider,
           evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0, isSkewed: false },
+          promptContentHash,
           boundaryCount: 0,
         });
         recordOutputQuality(resultJson);

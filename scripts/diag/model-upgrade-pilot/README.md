@@ -2,6 +2,8 @@
 
 Status: **Completed 2026-09-24 at `7b3799cc`: one A and one B; no promotion.** A missed its verdict band; B returned a damaged report and failed prompt-provenance postflight. Recorded spend was $3.2555616; baseline and concurrency 2 were restored. See the [reviewed results and next steps](../../../Docs/WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#completed-two-job-smoke-pilot-2026-09-24). The commands and plan below preserve the executed protocol; they do not authorize another submission. The frozen control files are those at the execution commit, before this status update.
 
+The [offline follow-up](../../../Docs/WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#offline-correction-and-failure-diagnosis-2026-09-24) fixes prompt-hash propagation on terminal results and adds independent expected/job/result-hash flags to the report. It does not repair historical jobs or B's analytical failure. Frozen execution artifacts remain historical; changed source/reporting requires a new reviewed freeze for any future run.
+
 This directory is the tracked, reviewable control package for one baseline A job and, conditionally, one Sonnet 5 adaptive/medium B job. The authoritative decisions are in `conditional-pilot-plan.json`. The B payload differs from active A only in `modelVerdict` and `modelPolicies`; its clustering ceiling is 32,768 provider output tokens.
 
 ## Offline checks

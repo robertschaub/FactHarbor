@@ -1,11 +1,81 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const report = createRequire(import.meta.url)(join(here, 'live-ab-arm-report.cjs'));
+
+test('CLI independently flags missing and conflicting job/result prompt hashes against the frozen manifest', () => {
+  const fixtureDir = mkdtempSync(join(tmpdir(), 'fh-arm-report-'));
+  const db = join(fixtureDir, 'fixture.db');
+  const manifestPath = join(fixtureDir, 'manifest.json');
+  const expected = 'a'.repeat(64);
+  const wrong = 'b'.repeat(64);
+  const configs = {
+    'pipeline/default': '1'.repeat(64),
+    'search/default': '2'.repeat(64),
+    'calculation/default': '3'.repeat(64),
+    'sr/default': '4'.repeat(64),
+    'prompt/claimboundary': expected,
+  };
+  const cases = [
+    ['valid001', expected, expected, null],
+    ['missing1', null, null, 'job:missing, result:missing'],
+    ['missing2', null, expected, 'job:missing'],
+    ['missing3', expected, null, 'result:missing'],
+    ['wrong001', wrong, expected, 'job:unexpected, job/result:mismatch'],
+    ['wrong002', expected, wrong, 'result:unexpected, job/result:mismatch'],
+    ['wrong003', wrong, wrong, 'job:unexpected, result:unexpected'],
+  ];
+  const literal = (v) => v === null ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`;
+  const runReport = (ids) => execFileSync(process.execPath, [
+    join(here, 'live-ab-arm-report.cjs'), '--manifest', manifestPath, '--arm', `A=${ids.join(',')}`,
+  ], { encoding: 'utf8', env: { ...process.env, FH_DB_PATH: db, FH_CONFIG_DB_PATH: db } });
+  try {
+    const statements = [
+      'CREATE TABLE Jobs (JobId TEXT, Status TEXT, CreatedUtc TEXT, InputValue TEXT, ExecutedWebGitCommitHash TEXT, GitCommitHash TEXT, PromptContentHash TEXT, VerdictLabel TEXT, TruthPercentage REAL, Confidence REAL, ResultJson TEXT);',
+      'CREATE TABLE AnalysisMetrics (JobId TEXT, CreatedUtc TEXT, MetricsJson TEXT);',
+      'CREATE TABLE config_usage (job_id TEXT, config_type TEXT, profile_key TEXT, content_hash TEXT, loaded_utc TEXT);',
+    ];
+    for (const [id, jobHash, resultHash] of cases) {
+      const result = { meta: { promptContentHash: resultHash }, truthPercentage: 50, confidence: 0 };
+      const metrics = { costEstimate: { knownSubtotalUSD: 1, unpricedCalls: 0 }, telemetryContext: { pipelineCommitId: 'commit' } };
+      statements.push(`INSERT INTO Jobs VALUES (${[
+        id, 'SUCCEEDED', '2026-09-24', 'Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben',
+        'commit', 'commit', jobHash, 'UNVERIFIED', 50, 0, JSON.stringify(result),
+      ].map(literal).join(',')});`);
+      statements.push(`INSERT INTO AnalysisMetrics VALUES (${literal(id)}, '2026-09-24', ${literal(JSON.stringify(metrics))});`);
+      for (const [key, hash] of Object.entries(configs)) {
+        const [type, profile] = key.split('/');
+        statements.push(`INSERT INTO config_usage VALUES (${[id, type, profile, hash, '2026-09-24'].map(literal).join(',')});`);
+      }
+    }
+    execFileSync('sqlite3', [db], { input: statements.join('\n'), encoding: 'utf8' });
+    writeFileSync(manifestPath, JSON.stringify({ approvedCommit: 'commit', arms: { A: { activeConfigs: configs } } }));
+    const output = runReport(cases.map(([id]) => id));
+    for (const [id, , , flag] of cases) {
+      if (flag) assert.ok(output.includes(`- A/${id}: prompt provenance ${flag}`), id);
+      else assert.ok(!output.includes(`- A/${id}: prompt provenance`), id);
+    }
+    assert.ok(output.includes(`valid001 prompt hashes: expected=${expected.slice(0, 12)}; job=${expected.slice(0, 12)}; result=${expected.slice(0, 12)}`));
+    assert.ok(output.includes('missing1 prompt hashes: expected=aaaaaaaaaaaa; job=-; result=-'));
+
+    // Matching usage must not mask missing job/result hashes, and absent frozen
+    // expectations must not be presented as verified prompt provenance.
+    writeFileSync(manifestPath, JSON.stringify({ approvedCommit: 'commit', arms: { A: { activeConfigs: {} } } }));
+    const noExpected = runReport(['valid001', 'wrong001']);
+    assert.ok(noExpected.includes('- A/valid001: prompt provenance expected:unavailable'));
+    assert.ok(noExpected.includes('- A/wrong001: prompt provenance expected:unavailable, job/result:mismatch'));
+  } finally {
+    assert.equal(dirname(fixtureDir), resolve(tmpdir()));
+    rmSync(fixtureDir, { recursive: true, force: true });
+  }
+});
 
 test('config hashes retain one unique hash per type and expose mixed types', () => {
   assert.deepEqual(report.configHashes([

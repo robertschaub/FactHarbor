@@ -228,6 +228,16 @@ function loadJob(id, benchmark, manifest, armName, historicalAllowances) {
   }
   const approvedCommit = manifest?.approvedCommit || null;
   const expectedConfigs = manifest?.arms?.[armName]?.activeConfigs || {};
+  const expectedPromptHash = expectedConfigs['prompt/claimboundary'] || null;
+  const jobPromptHash = row.PromptContentHash || null;
+  const resultPromptHash = result.meta?.promptContentHash || null;
+  const promptFlags = [];
+  if (!expectedPromptHash) promptFlags.push('expected:unavailable');
+  for (const [source, hash] of [['job', jobPromptHash], ['result', resultPromptHash]]) {
+    if (!hash) promptFlags.push(`${source}:missing`);
+    else if (expectedPromptHash && hash !== expectedPromptHash) promptFlags.push(`${source}:unexpected`);
+  }
+  if (jobPromptHash && resultPromptHash && jobPromptHash !== resultPromptHash) promptFlags.push('job/result:mismatch');
   const configFlags = [];
   for (const key of EXPECTED_CONFIG_KEYS) {
     const hashes = usage[key] || [];
@@ -243,7 +253,10 @@ function loadJob(id, benchmark, manifest, armName, historicalAllowances) {
     startCommit: row.ExecutedWebGitCommitHash || result.meta?.executedWebGitCommitHash || null,
     completionCommit: metrics.telemetryContext?.pipelineCommitId || null,
     createdCommit: row.GitCommitHash || null,
-    promptHash: row.PromptContentHash || result.meta?.promptContentHash || null,
+    expectedPromptHash,
+    jobPromptHash,
+    resultPromptHash,
+    promptFlags,
     configHashes: usage,
     configFlags,
     verdict,
@@ -327,10 +340,12 @@ function main() {
       print(`| ${short(job.id, 8)} | ${job.inputId} | ${job.status} | ${short(job.approvedCommit, 8)}/${short(job.startCommit, 8)}/${short(job.completionCommit, 8)} | ${job.verdict || '-'} | ${fmt(job.truth, 1)}/${fmt(job.confidence)} | ${fmt(job.preNarrativeConfidence)}->${fmt(job.confidence)} | ${job.band || '-'} | ${job.claims}/${job.boundaries}/${job.evidence} | ${fmt(job.cost.knownSubtotalUSD, 3)}+${fmt(job.cost.boundedUnknownUSD, 3)}=${fmt(job.cost.conservativeUpperUSD, 3)} | ${job.searches.cached}/${job.searches.total} | ${job.sr.domains ?? '-'}/${job.sr.alreadyPrefetched ?? '-'}/${job.sr.cacheHits ?? '-'}/${job.sr.evaluated ?? '-'}/${job.sr.noConsensus ?? '-'}/${job.sr.errors ?? '-'} | ${job.hard.join(',') || '-'} |`);
       if (job.approvedCommit && (job.startCommit !== job.approvedCommit || job.completionCommit !== job.approvedCommit)) flags.push(`${arm.name}/${short(job.id, 8)}: commit provenance mismatch`);
       if (job.configFlags.length) flags.push(`${arm.name}/${short(job.id, 8)}: config ${job.configFlags.join(', ')}`);
+      if (job.promptFlags.length) flags.push(`${arm.name}/${short(job.id, 8)}: prompt provenance ${job.promptFlags.join(', ')}`);
       if (job.failedCalls) flags.push(`${arm.name}/${short(job.id, 8)}: ${job.failedCalls} failed recorded LLM call(s)`);
       if (job.hard.length) flags.push(`${arm.name}/${short(job.id, 8)}: hard outcome ${job.hard.join(',')}; retain as assigned-arm outcome`);
       if (!finite(job.cost.conservativeUpperUSD)) flags.push(`${arm.name}/${short(job.id, 8)}: cost upper unresolved (${job.cost.unresolvedUnpricedCalls ?? 'unknown'} unpriced call(s)); do not submit another pilot job`);
       print(`\n- ${short(job.id, 8)} config hashes: ${EXPECTED_CONFIG_KEYS.map((key) => `${key}=${(job.configHashes[key] || []).map((hash) => short(hash, 12)).join('+') || 'missing'}`).join('; ')}`);
+      print(`- ${short(job.id, 8)} prompt hashes: expected=${short(job.expectedPromptHash, 12)}; job=${short(job.jobPromptHash, 12)}; result=${short(job.resultPromptHash, 12)}`);
       print(`- ${short(job.id, 8)} SR error types: ${JSON.stringify(job.sr.errorByType)}; lost-evaluation markers=${job.sr.lostEvaluationMarkers}; unresolved physical calls=${job.sr.unresolvedPhysicalCalls}`);
       if (job.cost.historicalAllowanceUSD) print(`- ${short(job.id, 8)} accepted historical allowance: $${fmt(job.cost.historicalAllowanceUSD, 3)} — ${job.cost.historicalAllowanceProvenance}`);
       print(`- ${short(job.id, 8)} timeout evidence: confirmed=${JSON.stringify(job.timeouts.confirmed)}; duration>=300s proxies=${JSON.stringify(job.timeouts.proxies)}`);

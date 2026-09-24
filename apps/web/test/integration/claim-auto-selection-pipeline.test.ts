@@ -543,10 +543,12 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
     const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
 
     const result = await runClaimBoundaryAnalysis({
+      jobId: "normal-prompt-provenance",
       inputType: "text",
-      inputValue: "Input claim",
+      inputValue: "Plastic recycling is pointless",
     });
 
+    expect(result.resultJson.meta.promptContentHash).toBe("__PROMPT__");
     const researchedState = mocks.researchEvidence.mock.calls[0][0] as CBResearchState;
     expect(researchedState.understanding?.atomicClaims.map((claim) => claim.id)).toEqual(["AC_03", "AC_01"]);
     expect(result.resultJson.understanding.atomicClaims.map((claim: AtomicClaim) => claim.id)).toEqual(["AC_03", "AC_01"]);
@@ -628,16 +630,48 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
     ]);
   });
 
+  it.each([
+    ["de", "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben"],
+    ["pt", "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"],
+  ])("preserves startup prompt provenance on a damaged contract return (%s)", async (language, inputValue) => {
+    configurePipeline(true);
+    const failed = understanding();
+    failed.detectedLanguage = language;
+    failed.contractValidationSummary = {
+      ran: true,
+      preservesContract: false,
+      rePromptRequired: true,
+      summary: "Mock contract failure",
+      stageAttribution: "initial",
+    };
+    mocks.extractClaims.mockResolvedValue(failed);
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+
+    const { resultJson } = await runClaimBoundaryAnalysis({
+      jobId: `damaged-contract-${language}`,
+      inputType: "text",
+      inputValue,
+    });
+
+    expect(mocks.loadPromptConfig).toHaveBeenCalledWith("claimboundary", `damaged-contract-${language}`);
+    expect(resultJson.meta.promptContentHash).toBe("__PROMPT__");
+    expect(resultJson.analysisWarnings).toContainEqual(expect.objectContaining({ type: "report_damaged" }));
+    expect(mocks.researchEvidence).not.toHaveBeenCalled();
+    expect(mocks.generateVerdicts).not.toHaveBeenCalled();
+  });
+
   it("returns a non-damaged terminal result when the selector selects zero claims", async () => {
     configurePipeline(true);
     mocks.generateClaimSelectionRecommendation.mockResolvedValue(recommendation([]));
     const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
 
     const result = await runClaimBoundaryAnalysis({
+      jobId: "zero-selected-prompt-provenance",
       inputType: "text",
-      inputValue: "Input claim",
+      inputValue: "Plastic recycling is pointless",
     });
 
+    expect(result.resultJson.meta.promptContentHash).toBe("__PROMPT__");
     expect(mocks.researchEvidence).not.toHaveBeenCalled();
     expect(result.resultJson.verdict).toBe("UNVERIFIED");
     expect(result.resultJson.claimVerdicts).toEqual([]);
@@ -656,10 +690,12 @@ describe("Stage 1.5 automatic claim selection pipeline integration", () => {
     const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
 
     const result = await runClaimBoundaryAnalysis({
+      jobId: "failed-selection-prompt-provenance",
       inputType: "text",
-      inputValue: "Input claim",
+      inputValue: "Plastik recycling bringt nichts",
     });
 
+    expect(result.resultJson.meta.promptContentHash).toBe("__PROMPT__");
     expect(mocks.researchEvidence).not.toHaveBeenCalled();
     expect(result.resultJson.verdict).toBe("UNVERIFIED");
     expect(result.resultJson.claimSelection.selectedClaimIds).toEqual([]);
