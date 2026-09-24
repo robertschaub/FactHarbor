@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "planId": "model-upgrade-two-job-pilot-v1",
-  "status": "CLAUDE REVIEW CONDITIONS INCORPORATED; RE-FREEZE THEN FINAL GO BEFORE ACTIVATION OR PAID RUNS",
-  "sourceBaseline": "c58efd32d13455f3ab0a51439d9996d3d794a870",
+  "planId": "model-upgrade-two-job-followup-v2",
+  "status": "PROPOSAL ONLY — FRESH CAPTAIN GO REQUIRED BEFORE LOCAL RUNTIME SETUP, ARM B ACTIVATION OR EITHER PAID SUBMISSION",
+  "sourceBaseline": "4e163487e965cdfdea6d44c37849f99a2469e9a8",
   "executionFreeze": {
     "template": "scripts/diag/model-upgrade-pilot/preflight-manifest.template.json",
-    "generatedRecord": "test-output/model-upgrade-pilot/execution-preflight.json",
-    "timing": "Generate only after the reviewed implementation commit exists and the inactive B profile has a UCM content hash. The ignored record, not a tracked file, pins the commit and all artifact hashes."
+    "generatedRecord": "test-output/model-upgrade-pilot/followup-20260924/execution-preflight.json",
+    "timing": "After the local fixes and this reviewed proposal are committed, generate a new ignored manifest pinning the final clean HEAD and every artifact hash. Both arms use that same HEAD. The saved inactive B blob already exists and must match the pinned candidate; do not resave or silently substitute a hash."
   },
-  "purpose": "Two-job full-pipeline smoke comparison: one baseline A job followed conditionally by one Sonnet 5 adaptive/medium B job on the exact approved qualifier-bearing German input.",
+  "purpose": "Diagnostic full-pipeline follow-up after three offline fixes: one fresh baseline A job, then one conditional Sonnet 5 adaptive/medium B job on the same exact approved German input. Check bounded Stage 1 evidence, completion eligibility and operational viability; one pair cannot establish a model-quality or cost advantage.",
   "input": {
     "file": "scripts/diag/model-upgrade-pilot/pilot-input.json",
     "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
@@ -25,11 +25,15 @@
     "B": {
       "profile": "pipeline/default",
       "candidateFile": "scripts/diag/model-upgrade-pilot/arm-B-sonnet5-medium.json",
-      "contentHashSource": "Generated execution manifest after inactive UCM save",
+      "contentHashSource": "Existing inactive UCM blob ab-20260924-sonnet5-medium-32768, read-only rehashed and canonically matched to candidate file on 2026-09-24. Retained unchanged.",
       "modelVerdict": "claude-sonnet-5",
-      "thinking": { "type": "adaptive", "effort": "medium" },
+      "thinking": {
+        "type": "adaptive",
+        "effort": "medium"
+      },
       "boundaryClusteringMaxOutputTokens": 32768,
-      "transport": "Existing forced jsonTool route. Any schema failure, recovered fallback, unsuccessful job or damaged report is the assigned B outcome and is not replaced."
+      "transport": "Existing forced jsonTool route. Any schema failure, recovered fallback, unsuccessful job or damaged report is the assigned B outcome and is not replaced.",
+      "contentHash": "ceb9e50b9a0daf6ce24e5e0cfedb40a75204a0dccaa74bd455840ff6bb25adad"
     }
   },
   "fixedConfigHashes": {
@@ -39,12 +43,14 @@
     "sr/default": "50a1573b15bc116fd9adde2377012bcb2baafde955822f95055c7e966b18698a"
   },
   "budget": {
-    "historicalDisposition": "The accepted upper bound for d3de379c omitted SR work is $7.83, leaving at least $15.529468 of the original $25 under the recorded assumptions.",
+    "historicalDisposition": "Completed pilot spent $3.2555616. The accepted historical ledger leaves $12.2739064 of the original $25 under its stated assumptions. Propose at most $10 additional operational allowance for these two new attempts; this proposal is not spending authorization.",
     "newPilotOperationalSubcapUSD": 10,
     "stopNewSubmissionsAtConservativeUpperUSD": 5,
     "inflightReserveUSD": 5,
     "hardInvoiceCapEnforced": false,
-    "boundedUnknownRule": "Add $0.97875 only for each explicit synthetic lost-evaluation marker. Unknown-usage physical calls or other unpriced calls keep the conservative upper unresolved and block the next submission. The allowance is operational, not exact billing."
+    "boundedUnknownRule": "Add $0.97875 only for each explicit synthetic lost-evaluation marker. Unknown-usage physical calls or other unpriced calls keep the conservative upper unresolved and block the next submission. The allowance is operational, not exact billing.",
+    "planOnlyAllowancePerJobUSD": 5,
+    "estimateCaveat": "The runner prints ~$5 max per job because FH_PER_JOB_USD=5 is a planning allowance. It is neither a measured prediction nor an enforced invoice ceiling. Previous A cost $2.7426476; previous B stopped early at $0.512914 and cannot price a complete B run. Existing retry/missing-call accounting limitations remain."
   },
   "acceptedHistoricalCostAllowances": {
     "d3de379ceb4c4cb3a4846bf68be5e436": {
@@ -53,15 +59,26 @@
     }
   },
   "sequence": [
-    { "order": 1, "arm": "A", "n": 1, "out": "test-output/model-upgrade-pilot-A.jsonl" },
-    { "order": 2, "arm": "B", "n": 1, "out": "test-output/model-upgrade-pilot-B.jsonl", "conditional": true }
+    {
+      "order": 1,
+      "arm": "A",
+      "n": 1,
+      "out": "test-output/model-upgrade-pilot/followup-20260924/A.jsonl"
+    },
+    {
+      "order": 2,
+      "arm": "B",
+      "n": 1,
+      "out": "test-output/model-upgrade-pilot/followup-20260924/B.jsonl",
+      "conditional": true
+    }
   ],
   "beforeA": {
     "isolation": "Confirm no other writer or agent session is active, including the separate Codex worktree. Keep the checkout and runtime exclusive through restoration.",
-    "expectedJobCount": 1711,
-    "jobCountRule": "Confirm the count is still 1711 with no new jobs since the preparation receipt; do not silently rebase the count if it differs.",
+    "expectedJobCount": 1713,
+    "jobCountRule": "Confirm exactly 1713 jobs, zero nonterminal jobs and no new jobs since preparation. Reconcile any difference; do not silently rebase the count.",
     "machine": "Keep the machine awake throughout execution and restoration.",
-    "runtime": "Confirm the reviewed runtime and runner concurrency 1. If services restarted after the 2026-09-24 15:15 UTC preparation, or the runtime revision/concurrency cannot be established, relaunch with FH_RUNNER_MAX_CONCURRENCY=1 and rerun A preflight-only. A new execution commit must also be reflected by the runtime.",
+    "runtime": "After the separate execution GO, restart the local API/web through scripts/restart-clean.ps1 with FH_RUNNER_MAX_CONCURRENCY=1. Verify both services serve the frozen clean commit, concurrency 1 and all five A hashes, then rerun A preflight-only. Current preparation reads local files/SQLite only and does not establish runtime readiness.",
     "submission": "After final Captain GO, use the frozen execution manifest with --arm A --n 1 --run."
   },
   "beforeEverySubmission": [
@@ -73,16 +90,17 @@
   "continuationGate": {
     "allRequired": [
       "A succeeded with no hard failure or report_damaged outcome, and A postflight passed.",
-      "The job count increased by exactly one, from 1711 to 1712, attributable to A; no unrelated job appeared.",
+      "The job count increased by exactly one, from 1713 to 1714, attributable to A; no unrelated job appeared.",
       "A's conservative cost ceiling is resolved and strictly below $5.",
-      "No A call lasted 300000 ms or more in clustering, Stage 1, Stage 5 or source reliability."
+      "No A call lasted 300000 ms or more in clustering, Stage 1, Stage 5 or source reliability.",
+      "If A emitted any contract_validation_retry_triggered, contract_surgical_repair_diagnostic or contract_completion_diagnostic, its adminCapture is present and records the candidates/typed flags needed to explain that step. Missing or materially truncated decisive capture stops this pair before B; do not infer absent fields."
     ],
     "timeoutAmbiguity": "Inspect raw call metadata when a >=300000 ms row is labelled stage-1-or-2, stage-1-or-calibration or stage-4-or-5. If a covered stage cannot be excluded, the gate is unresolved: stop before B, rather than guessing. Stage 4 observations remain disclosed.",
     "quality": "Record A's band result and blinded claim review, but neither decides whether B runs. This gate establishes A's execution validity only."
   },
   "betweenArms": {
     "restartRule": "Do not restart either service between A and B. If a restart occurs or is required, stop this pair before B; do not silently resume or replace it.",
-    "cacheRule": "Do not flush or disable caches. Disclose source-reliability unknowns inherited by B from A, cached-search and SR reuse counts. This accepts the stale-map risk for this smoke test; do not interpret a B cache advantage as model savings.",
+    "cacheRule": "Do not flush or disable caches. Disclose inherited SR unknowns, cached-search/SR reuse and the process-cached translation result or failure. The new per-language promise cache is shared across arms in the same web process. Do not attribute its reuse or early termination to model savings.",
     "activation": "Only after final GO and a passed continuation gate, activate the frozen B hash, wait at least 35 seconds, run B preflight-only, then submit with the same manifest and --arm B --n 1 --run. The wait exceeds config-loader.ts's 30-second active-pointer TTL."
   },
   "restoration": {
@@ -93,15 +111,27 @@
   "timeoutClassification": {
     "confirmed": "Only a recorded UND_ERR_HEADERS_TIMEOUT or Headers Timeout Error is a confirmed Headers Timeout.",
     "proxy": "A recorded call duration >=300000 ms is a duration proxy only.",
-    "interpretation": "Keep clustering, Stage 1, Stage 5 and SR separate from Stage 4; an ambiguous verdict-task row is labelled Stage4-or-5 rather than guessed. Exact SDK retry counting is deferred."
+    "interpretation": "Keep clustering, Stage 1, Stage 5 and SR separate from Stage 4; an ambiguous verdict-task row is labelled Stage4-or-5 rather than guessed. Exact SDK retry counting is deferred.",
+    "armOutcome": "Every AnalysisMetrics Headers Timeout failure remains an outcome of the arm that incurred it, including recovered failures. Preserve its duration, stage attribution, fallback/schema events and cost; never replace the job.",
+    "capReview": {
+      "thinking": "Sonnet 5 requests adaptive/medium; previous ten Sonnet 5 calls reported zero reasoning tokens, so requested policy is not proof of observed thinking.",
+      "caps": "8192 for atomicity, contract validation, selection, adjudication, narrative and inactive SR calibration; 16384 for verdict, Pass 2 escalation and contract repair/completion/surgical repair; 32768 for clustering, matching A.",
+      "risk": "At the Captain-provided planning rate of 110 tokens/s, 32768 tokens alone take about 298 seconds. Non-streaming no-header exposure remains near the roughly 300-second limit; caps are not timeout guarantees. No transport, thinking, cap or retry changes in this proposal; CLUSTER-CEIL C stays held."
+    }
   },
   "scoring": {
     "mechanical": "Benchmark verdict/truth/confidence band.",
     "semantic": "Metadata-stripped blinded claim-by-claim review of statement fidelity, evidence/citation support, direction, qualifiers and reasoning.",
-    "excluded": ["claim-count scoring", "anchor-token scoring", "narrative prose quality"],
+    "excluded": [
+      "claim-count scoring",
+      "anchor-token scoring",
+      "narrative prose quality"
+    ],
     "reportedButNotScored": "Confidence before and after narrative adjustment.",
     "transportOutcome": "A report_damaged B with validator_unavailable and schema failures is a transport outcome, not a verdict on model quality. Preserve its cost and failure observations; do not replace it.",
-    "limits": "This is a smoke comparison, not repeatability, model-isolated causality, reliability-rate or promotion evidence."
+    "limits": "This is a smoke comparison, not repeatability, model-isolated causality, reliability-rate or promotion evidence.",
+    "capture": "Preserve original result JSON and AnalysisMetrics under each new output job ID. Read adminCapture from local stored output or authenticated admin API, not the redacted public response. Review typed flags and atomicity primary/recheck separately; missing/truncated captures remain unknown. If a clean path emits no relevant diagnostic, mark that diagnostic not invoked rather than missing.",
+    "comparators": "Primary comparison is the two fresh same-HEAD observations. The old A/B pair is exact-input, local, historical code/config execution, not a same-stack control. Captain-preferred f8e72c84 remains unavailable locally at preparation; disclose that limitation. Use Captain_Quality_Expectations and benchmark-expectations; do not invent a best comparator."
   },
   "stops": [
     "Any preflight or postflight commit/config/input/artifact mismatch.",
@@ -112,14 +142,39 @@
     "Any B failure remains the B observation; no replacement is submitted."
   ],
   "holdsAndDeferrals": {
-    "untouched": ["DECOMP-RULES", "NARR-INPUT", "ADJ-INPUT", "parked prompt 1.0.14"],
-    "notPilotScoring": ["Q-S1.1 claim count", "Q-S1.3 anchor tokens", "narrative quality"],
-    "deferredBeforeAnyLater12JobDesign": ["exact transport retry accounting", "the separately identified two unrecorded Haiku calls"]
+    "untouched": [
+      "DECOMP-RULES",
+      "NARR-INPUT",
+      "ADJ-INPUT",
+      "CLUSTER-CEIL C",
+      "parked prompt 1.0.14",
+      "SR 800-token cap / prompt-term UCM migration pending Captain approval and SR timeout-budget fix"
+    ],
+    "notPilotScoring": [
+      "Q-S1.1 claim count",
+      "Q-S1.3 anchor tokens",
+      "narrative quality"
+    ],
+    "deferredBeforeAnyLater12JobDesign": [
+      "exact transport retry accounting",
+      "the separately identified two unrecorded Haiku calls"
+    ]
   },
   "authorization": {
-    "implementedNow": "Tooling, candidate artifact, tests and documentation only.",
-    "noSpendPreparationBeforeFinalGO": "After integration and review, local service/config preparation may save B inactive and generate the ignored execution manifest. This is preparation within the settled scope, not a separate approval gate.",
-    "oneFinalGORequiredFor": "Activating B or submitting either paid analysis job.",
-    "neverInferred": ["push", "deployment", "production access"]
+    "implementedNow": "Three reviewed offline fixes committed locally; this proposal and no-spend plan-only/static/SQLite preparation only. No new job, activation, save, restart, push or deployment.",
+    "noSpendPreparationBeforeFinalGO": "Read-only local state/config verification, exact-input building, ignored manifest generation and plan-only/preflight-only checks. Existing saved B is reused unchanged; service restart and runtime preparation wait for execution GO.",
+    "oneFinalGORequiredFor": "Local runtime restart/setup, B activation and at most one new paid A plus one conditional paid B under this frozen plan and $10 operational allowance.",
+    "neverInferred": [
+      "push",
+      "deployment",
+      "production access"
+    ]
+  },
+  "previousPilot": {
+    "executionCommit": "7b3799ccd4f3b2c6f2f73c323557ffd99d212bc3",
+    "A": "52f39d99bd364205a39bc4d1ce9bba8e",
+    "B": "06ea9f0ff15a442ba30e9729603ffd9f",
+    "costUSD": 3.2555616,
+    "interpretation": "Completed historical exact-input observations; not current-stack controls or replacements. Frozen controls remain under execution-20260924 and in Git."
   }
 }

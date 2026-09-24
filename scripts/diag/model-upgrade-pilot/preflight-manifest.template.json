@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "planId": "model-upgrade-two-job-pilot-v1",
+  "planId": "model-upgrade-two-job-followup-v2",
   "planPath": "scripts/diag/model-upgrade-pilot/conditional-pilot-plan.json",
   "requireClean": true,
   "input": {
@@ -18,7 +18,10 @@
     "scripts/diag/model-upgrade-pilot/preflight-manifest.template.json",
     "scripts/diag/model-upgrade-pilot/README.md",
     "apps/web/test/unit/lib/analyzer/model-policy.test.ts",
-    "Docs/AGENTS/benchmark-expectations.json"
+    "Docs/AGENTS/benchmark-expectations.json",
+    "apps/web/src/lib/source-reliability/sr-eval-evidence-pack.ts",
+    "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+    "apps/api/Controllers/JobsController.cs"
   ],
   "runPolicy": {
     "runsPerInvocation": 1,
@@ -26,7 +29,7 @@
   },
   "arms": {
     "A": {
-      "outputPath": "test-output/model-upgrade-pilot-A.jsonl",
+      "outputPath": "test-output/model-upgrade-pilot/followup-20260924/A.jsonl",
       "activeConfigs": {
         "calculation/default": "f96af741cdb60d5f592c39da9f5d4c0db81ffaaf0da75f17c290727faa0f313e",
         "pipeline/default": "1b699a0d8ed98efe23a6b0a310d040abe18fdf6adbca0b9eab1481a176ee6fd9",
@@ -36,10 +39,10 @@
       }
     },
     "B": {
-      "outputPath": "test-output/model-upgrade-pilot-B.jsonl",
+      "outputPath": "test-output/model-upgrade-pilot/followup-20260924/B.jsonl",
       "activeConfigs": {
         "calculation/default": "f96af741cdb60d5f592c39da9f5d4c0db81ffaaf0da75f17c290727faa0f313e",
-        "pipeline/default": "__SET_AFTER_UCM_SAVE__",
+        "pipeline/default": "ceb9e50b9a0daf6ce24e5e0cfedb40a75204a0dccaa74bd455840ff6bb25adad",
         "prompt/claimboundary": "39299133a8a4488e5cfb4071ae70968d152272cd6b4353fbc28b830e46ce904b",
         "search/default": "f67ff92c7aee09ddcc49d6c205f8ce01d29cf01d83ef197305b2e0d06e9c1f02",
         "sr/default": "50a1573b15bc116fd9adde2377012bcb2baafde955822f95055c7e966b18698a"
