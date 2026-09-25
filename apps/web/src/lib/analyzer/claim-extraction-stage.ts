@@ -376,9 +376,9 @@ export async function extractClaims(
   // eligibility read it. Completion adoption and post-Gate-1 revalidation do
   // not refresh it, so do not add readers after the completion block.
   let latestContractCritique: ClaimContractValidationResult | undefined;
+  const retryCapture = createContractDiagnosticCapture();
 
   if (contractValidationEnabled) {
-    const retryCapture = createContractDiagnosticCapture();
     state.onEvent?.("Validating claim contract fidelity...", 24);
     state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractValidation").modelName}`, -1);
 
@@ -804,6 +804,7 @@ export async function extractClaims(
           state,
           25,
           salienceCommitment,
+          retryCapture.forClaims("availability", currentClaims),
         );
         contractValidationSummary = evaluatedAvailability.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
@@ -1203,7 +1204,13 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   const minCoreClaims = calcConfig.claimDecomposition?.minCoreClaimsPerContext ?? 2;
   const maxRepromptAttempts = calcConfig.claimDecomposition?.supplementalRepromptMaxAttempts ?? 2;
-  const finalCapture = createContractDiagnosticCapture();
+  // Preserve the initial set's trace, including rejected retries and availability
+  // recovery. Retry warnings share this object. Later steps keep their own
+  // candidate snapshots and share its bounds (including explicit omissions).
+  // Adopted pre-Gate-1 replacements start a separate final trace.
+  const finalCapture = stageAttribution === "initial"
+    ? retryCapture
+    : createContractDiagnosticCapture();
 
   // C14 (Phase 6): skip the reprompt loop when the current claim set has
   // already been validated by the contract authority. The reprompt exists to

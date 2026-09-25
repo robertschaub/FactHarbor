@@ -17,22 +17,26 @@ namespace FactHarbor.Api.Tests;
 public sealed class JobsControllerCaptureTests
 {
     [Theory]
-    [InlineData(null, false)]
-    [InlineData("wrong", false)]
-    [InlineData("offline-test-key", true)]
-    public async Task Get_ProjectsCaptureByAdminAccessWithoutChangingStoredResult(string? suppliedKey, bool admin)
+    [InlineData(null, false, false)]
+    [InlineData("wrong", false, false)]
+    [InlineData("offline-test-key", true, false)]
+    [InlineData(null, false, true)]
+    [InlineData("wrong", false, true)]
+    [InlineData("offline-test-key", true, true)]
+    public async Task Get_ProjectsCaptureByAdminAccessWithoutChangingStoredResult(string? suppliedKey, bool admin, bool firstPass)
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
         using var db = new FhDbContext(new DbContextOptionsBuilder<FhDbContext>().UseSqlite(connection).Options);
         db.Database.EnsureCreated();
         var types = new[] { "contract_validation_retry_triggered", "contract_surgical_repair_diagnostic", "contract_completion_diagnostic" };
+        var attribution = firstPass ? "initial" : "count_floor_reprompt";
         var summary = new {
-            failureMode = "contract_violated", stageAttribution = "count_floor_reprompt",
-            adminCapture = new { steps = new[] { new { step = "final_contract", candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
+            failureMode = firstPass ? null : "contract_violated", stageAttribution = attribution,
+            adminCapture = new { steps = new[] { new { step = firstPass ? "initial_contract" : "final_contract", candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
         };
         var stored = JsonSerializer.Serialize(new {
-            analysisWarnings = types.Select(type => (object)new {
+            analysisWarnings = firstPass ? Array.Empty<object>() : types.Select(type => (object)new {
                 type, severity = "info", details = new {
                     outcome = "validation_failed",
                     adminCapture = new { steps = new[] { new { candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
@@ -69,7 +73,7 @@ public sealed class JobsControllerCaptureTests
         Assert.True(result.GetProperty("understanding").GetProperty("unchanged").GetBoolean());
         var resultSummary = result.GetProperty("understanding").GetProperty("contractValidationSummary");
         Assert.Equal(admin, resultSummary.TryGetProperty("adminCapture", out _));
-        Assert.Equal("count_floor_reprompt", resultSummary.GetProperty("stageAttribution").GetString());
+        Assert.Equal(attribution, resultSummary.GetProperty("stageAttribution").GetString());
         if (admin) Assert.Equal(JsonSerializer.Serialize(JsonDocument.Parse(stored).RootElement), JsonSerializer.Serialize(result));
         db.ChangeTracker.Clear();
         Assert.Equal(stored, (await db.Jobs.SingleAsync()).ResultJson);

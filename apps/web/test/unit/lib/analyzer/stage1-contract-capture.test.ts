@@ -101,6 +101,124 @@ afterEach(() => {
 });
 
 describe("Stage 1 bounded contract capture", () => {
+  it.each([PT, DE])("persists clean first-pass multi-claim approval for %s", async input => {
+    const s = await scenario({}, false, input);
+    const candidates = input === PT ? claims : claims.map(claim => ({ ...claim, statement: DE }));
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates)];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: true, rePromptRequired: false, stageAttribution: "initial", adminCapture: {
+      truncated: false, omittedSteps: 0, steps: [{ step: "initial_contract",
+        candidates: candidates.map(({ id, statement }) => ({ id, statement })),
+        validator: { rePromptRequired: false, injectedClaimIds: [], claims: candidates.map(({ id }) => ({
+          claimId: id, preservesEvaluativeMeaning: true, proxyDriftSeverity: "none", recommendedAction: "keep",
+        })) },
+      }],
+    } });
+    expect(result.atomicClaims).toMatchObject(candidates);
+    expect(s.state.warnings).toEqual([]);
+    expect(mocks.generate).toHaveBeenCalledTimes(4);
+    expect(JSON.stringify(mocks.render.mock.calls)).not.toContain("adminCapture");
+  });
+
+  it("persists first-pass atomicity, binding and selected flags without a recovery warning", async () => {
+    const s = await scenario({}, true, DE);
+    const candidates = [{ ...claims[0], statement: DE }];
+    const binding = critique(candidates);
+    binding.claims[0].proxyDriftSeverity = "mild";
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates), binding];
+    s.queues.CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION = [atomicity(false), atomicity(false)];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    const capture = result.contractValidationSummary?.adminCapture;
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: true, stageAttribution: "initial" });
+    expect(capture).toMatchObject({ truncated: false, omittedSteps: 0 });
+    expect(capture?.steps.map(step => step.step)).toEqual([
+      "initial_contract", "initial_atomicity_primary", "initial_atomicity_recheck", "initial_atomicity_selected", "initial_binding", "initial_selected_contract",
+    ]);
+    for (const step of capture!.steps) expect(step.candidates).toEqual([{ id: "AC_01", statement: DE }]);
+    expect(capture?.steps[2].atomicity).toMatchObject({ isAtomic: true, rePromptRequired: false, bundledInSingleClaim: false });
+    expect(capture?.steps[4].validator).toMatchObject({ claims: [{ proxyDriftSeverity: "mild" }] });
+    expect(capture?.steps[5].validator).toMatchObject({ claims: [{ preservesEvaluativeMeaning: true, proxyDriftSeverity: "none", recommendedAction: "keep" }], injectedClaimIds: [] });
+    expect(s.state.warnings).toEqual([]);
+    expect(mocks.generate).toHaveBeenCalledTimes(8);
+    expect(JSON.stringify(mocks.render.mock.calls)).not.toContain("adminCapture");
+  });
+
+  it("keeps initial and final assessments tied to their own candidates after Gate 1 pruning", async () => {
+    const s = await scenario();
+    const candidates = [claims[0], { ...claims[1], thesisRelevance: "tangential" as const }];
+    const prunedGate = gate(candidates);
+    prunedGate.validatedClaims[1].passedOpinion = false;
+    prunedGate.validatedClaims[1].passedSpecificity = false;
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates), critique([claims[0]])];
+    s.queues.CLAIM_VALIDATION = [prunedGate];
+    const result = await s.run();
+    expect(result.atomicClaims.map(claim => claim.id)).toEqual(["AC_01"]);
+    expect(result.contractValidationSummary?.stageAttribution).toBe("initial");
+    expect(result.contractValidationSummary?.adminCapture?.steps).toMatchObject([
+      { step: "initial_contract", candidateCount: 2, candidates: claims.map(({ id, statement }) => ({ id, statement })) },
+      { step: "final_contract", candidateCount: 1, candidates: [{ id: "AC_01", statement: claims[0].statement }], validator: { claims: [{ claimId: "AC_01" }] } },
+    ]);
+    expect(mocks.generate).toHaveBeenCalledTimes(5);
+  });
+
+  it("records an unavailable initial assessment without inventing typed flags", async () => {
+    const s = await scenario();
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2()];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [undefined, undefined];
+    s.queues.CLAIM_VALIDATION = [gate()];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ failureMode: "validator_unavailable", stageAttribution: "initial", adminCapture: {
+      steps: [{ step: "initial_contract", candidateCount: 2, validator: null }],
+    } });
+    expect(mocks.generate).toHaveBeenCalledTimes(5);
+  });
+
+  it("does not attach the initial summary capture to an adopted retry set", async () => {
+    const s = await scenario({ maxRetries: 1 });
+    const replacement = [{ ...claims[0], statement: PT }, claims[1]];
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(), pass2(replacement)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(claims, true), critique(replacement)];
+    s.queues.CLAIM_VALIDATION = [gate(replacement)];
+    const result = await s.run();
+    expect(result.contractValidationSummary?.stageAttribution).toBe("retry");
+    expect(result.contractValidationSummary?.adminCapture).toBeUndefined();
+    expect(s.capture("contract_validation_retry_triggered").adminCapture.steps).toMatchObject([
+      { step: "initial_contract", candidates: claims.map(({ id, statement }) => ({ id, statement })) },
+      { step: "retry_contract", candidates: replacement.map(({ id, statement }) => ({ id, statement })), validator: { rePromptRequired: false } },
+    ]);
+    expect(mocks.generate).toHaveBeenCalledTimes(6);
+  });
+
+  it.each([false, true])("captures successful availability recovery (single-claim challenges=%s)", async single => {
+    const s = await scenario({ validatorAvailabilityMaxAttempts: 1 }, single, DE);
+    const candidates = single ? [{ ...claims[0], statement: DE }] : claims.map(claim => ({ ...claim, statement: DE }));
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [undefined, undefined, critique(candidates), ...(single ? [critique(candidates)] : [])];
+    s.queues.CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION = single ? [atomicity(false), atomicity(false)] : [];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ stageAttribution: "initial", preservesContract: true, rePromptRequired: false });
+    const steps = result.contractValidationSummary!.adminCapture!.steps;
+    expect(steps.map(step => step.step)).toEqual(single
+      ? ["initial_contract", "availability_contract", "availability_atomicity_primary", "availability_atomicity_recheck", "availability_atomicity_selected", "availability_binding", "availability_selected_contract"]
+      : ["initial_contract", "availability_contract"]);
+    expect(steps[0].validator).toBeNull();
+    expect(steps[1].validator).toMatchObject({ rePromptRequired: false, injectedClaimIds: [], claims: candidates.map(({ id }) => ({ claimId: id, preservesEvaluativeMeaning: true, proxyDriftSeverity: "none", recommendedAction: "keep" })) });
+    for (const step of steps) expect(step.candidates).toEqual(candidates.map(({ id, statement }) => ({ id, statement })));
+    if (single) {
+      expect(steps[3].atomicity).toMatchObject({ isAtomic: true, rePromptRequired: false });
+      expect(steps[6].validator).toEqual(steps[1].validator);
+    }
+    expect(s.state.warnings).toEqual([]);
+    expect(mocks.generate).toHaveBeenCalledTimes(single ? 10 : 6);
+    expect(JSON.stringify(mocks.render.mock.calls)).not.toContain("adminCapture");
+  });
+
   it.each([0, 1])("honors retry-only critique with recovery budget %s without changing preservation", async maxRetries => {
     const s = await scenario({ maxRetries });
     const assessment = critique();
@@ -171,7 +289,7 @@ describe("Stage 1 bounded contract capture", () => {
     const result = await s.run();
     expect(result.contractValidationSummary?.stageAttribution).toBe("multi_event_reprompt");
     expect(result.contractValidationSummary?.adminCapture?.steps.map((step) => step.step))
-      .toEqual(["count_floor_1_gate1", "multi_event_gate1", "final_contract"]);
+      .toEqual(["initial_contract", "count_floor_1_gate1", "multi_event_gate1", "final_contract"]);
     expect(result.atomicClaims).toHaveLength(2);
   });
 
@@ -183,6 +301,7 @@ describe("Stage 1 bounded contract capture", () => {
     const result = await s.run();
     expect(result.contractValidationSummary?.stageAttribution).toBe("initial");
     expect(result.contractValidationSummary?.adminCapture?.steps).toMatchObject([
+      { step: "initial_contract", candidates: claims.map(({ id, statement }) => ({ id, statement })), validator: { rePromptRequired: true } },
       { step: "count_floor_1_gate1", candidateCount: 1, validator: null },
     ]);
     expect(result.atomicClaims).toHaveLength(2);
@@ -209,6 +328,7 @@ describe("Stage 1 bounded contract capture", () => {
     expect(result.gate1Reasoning?.find((claim) => claim.claimId === "AC_03")?.passedFidelity).toBe(false);
     expect(result.contractValidationSummary).toMatchObject({ stageAttribution: "count_floor_reprompt", failureMode: "contract_violated" });
     expect(result.contractValidationSummary?.adminCapture).toMatchObject({ truncated: false, omittedSteps: 0, steps: [
+      { step: "initial_contract", candidates: [{ id: "AC_01", statement: DE }], validator: unavailable ? null : { rePromptRequired: true } },
       { step: "count_floor_1_gate1", candidates: replacement.map(({ id, statement }) => ({ id, statement })), validator: null },
       { step: "final_contract", candidates: replacement.map(({ id, statement }) => ({ id, statement })), validator: {
         rePromptRequired: true, injectedClaimIds: ["AC_03"],
@@ -229,8 +349,10 @@ describe("Stage 1 bounded contract capture", () => {
     s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(), pass2(retried)];
     s.queues.CLAIM_CONTRACT_VALIDATION = [initial, retry];
     s.queues.CLAIM_VALIDATION = [gate()];
-    await s.run();
+    const result = await s.run();
     const capture = s.capture("contract_validation_retry_triggered").adminCapture;
+    expect(result.contractValidationSummary?.stageAttribution).toBe("initial");
+    expect(result.contractValidationSummary?.adminCapture).toBe(capture);
     expect(capture.steps).toMatchObject([
       { step: "initial_contract", candidates: claims.map(({ id, statement }) => ({ id, statement })), validator: { claims: [{ preservesEvaluativeMeaning: false }, {}] } },
       { step: "retry_contract", candidates: retried.map(({ id, statement }) => ({ id, statement })), validator: { claims: [{}, { proxyDriftSeverity: "material", recommendedAction: "retry" }], injectedClaimIds: ["AC_02"] } },
