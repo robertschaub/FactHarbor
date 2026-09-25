@@ -8,6 +8,8 @@
  * @date 2026-01-19
  */
 
+import type { ModelPolicyStage } from "../config-schemas";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -41,6 +43,9 @@ export interface LLMCallMetric {
   finishReason?: string;
   rawFinishReason?: string;
   maxOutputTokens?: number;
+  /** Request configuration, not proof of provider acceptance. */
+  modelPolicyStage?: ModelPolicyStage;
+  configuredStructuredOutputMode?: "jsonTool" | "outputFormat" | "auto";
   servedModelName?: string;
   usageAvailable?: boolean;
   failureKind?: "refusal" | "truncation" | "schema" | "transport" | "configuration";

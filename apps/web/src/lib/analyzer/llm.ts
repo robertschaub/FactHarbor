@@ -39,7 +39,12 @@ export interface ModelInfo {
   modelName: string;
   model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral>;
   /** Candidate request/response metadata survives SDK schema parsing failures. */
-  getLastCall?: () => { result?: unknown; maxOutputTokens?: number };
+  getLastCall?: () => {
+    result?: unknown;
+    maxOutputTokens?: number;
+    modelPolicyStage?: ModelPolicyStage;
+    configuredStructuredOutputMode?: "jsonTool" | "outputFormat" | "auto";
+  };
 }
 
 export class LLMResponseError extends Error {
@@ -152,12 +157,24 @@ export function getModelForTask(
   config?: PipelineConfig,
   stage?: ModelPolicyStage,
 ): ModelInfo {
+  const contractStage = task === "context_refinement" && stage === "claimContractValidation";
+  const hasContractPolicy = config?.modelClaimContractValidation != null
+    || Boolean(config?.modelPolicies?.["claude-sonnet-5"]?.structuredOutputModes?.claimContractValidation);
+  if (hasContractPolicy && contractStage) {
+    // Direct validator callers fail closed; other stages may use derived configs.
+    const errors = getModelPolicyErrors(config ?? {});
+    if (errors.length) throw new ModelPolicyError(errors);
+  }
+  const provider = resolveProvider(providerOverride, config);
+  if (hasContractPolicy && contractStage && provider !== "anthropic") {
+    throw new ModelPolicyError(["claimContractValidation: Anthropic provider is required"]);
+  }
   if (!isTieringEnabled(config)) {
     return getModel(providerOverride, config);
   }
 
-  const provider = resolveProvider(providerOverride, config);
-  const overrideName = modelOverrideForTask(task, config);
+  const overrideName = (contractStage ? config?.modelClaimContractValidation : null)
+    ?? modelOverrideForTask(task, config);
   let modelName: string | null = null;
 
   if (overrideName) {
@@ -184,7 +201,7 @@ export function getModelForTask(
 
   // Enforce at the SDK boundary, not at name-only preview/log lookups. A caller
   // cannot accidentally bypass candidate controls by omitting providerOptions.
-  let lastCall: { result?: unknown; maxOutputTokens?: number } = {};
+  let lastCall: ReturnType<NonNullable<ModelInfo["getLastCall"]>> = {};
   const controlledModel = wrapLanguageModel({
     model,
     middleware: {
@@ -196,8 +213,14 @@ export function getModelForTask(
         if (errors.length) throw new ModelPolicyError(errors);
         const policy = config!.modelPolicies![modelName];
         const maxOutputTokens = policy.outputTokenCaps[stage!]!;
-        lastCall = { maxOutputTokens };
         const anthropicOptions = { ...params.providerOptions?.anthropic };
+        if (stage === "claimContractValidation" && policy.structuredOutputModes?.claimContractValidation) {
+          anthropicOptions.structuredOutputMode = policy.structuredOutputModes.claimContractValidation;
+        }
+        const mode = anthropicOptions.structuredOutputMode;
+        lastCall = { maxOutputTokens, modelPolicyStage: stage,
+          ...((mode === "jsonTool" || mode === "outputFormat" || mode === "auto")
+            ? { configuredStructuredOutputMode: mode } : {}) };
         // Disabled thinking must not retain effort inherited from caller options.
         delete anthropicOptions.effort;
         return {

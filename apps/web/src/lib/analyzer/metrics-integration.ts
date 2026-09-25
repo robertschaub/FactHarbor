@@ -22,7 +22,7 @@ import type {
 } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 import { getWebGitCommitHash } from '../build-info';
-import { extractSchemaErrors } from './llm';
+import { extractSchemaErrors, type ModelInfo } from './llm';
 
 /**
  * Per-job metrics isolation using AsyncLocalStorage.
@@ -88,7 +88,7 @@ export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict
  * Call AFTER each LLM generation completes
  */
 export interface LLMCallMeasurement {
-  model: { provider: string; modelName: string; getLastCall?: () => { result?: unknown; maxOutputTokens?: number } };
+  model: Pick<ModelInfo, "provider" | "modelName" | "getLastCall">;
   result?: unknown;
   error?: unknown;
   maxOutputTokens?: number;
@@ -146,6 +146,8 @@ export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasur
     finishReason,
     rawFinishReason,
     maxOutputTokens: observed?.maxOutputTokens ?? measurement.maxOutputTokens,
+    modelPolicyStage: observed?.modelPolicyStage,
+    configuredStructuredOutputMode: observed?.configuredStructuredOutputMode,
     servedModelName: result?.response?.modelId,
     success: !failed,
     schemaCompliant: call.schemaCompliant && !refusal && !truncated,

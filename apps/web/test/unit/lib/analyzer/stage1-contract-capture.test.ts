@@ -3,10 +3,12 @@ import type { AtomicClaim } from "@/lib/analyzer/types";
 import type { ClaimContractValidationResult } from "@/lib/analyzer/claim-extraction-stage";
 import savedContractCases from "../../../fixtures/claim-contract-retry-consistency.json";
 
-const mocks = vi.hoisted(() => ({ generate: vi.fn(), calc: vi.fn(), render: vi.fn() }));
+const mocks = vi.hoisted(() => ({ generate: vi.fn(), calc: vi.fn(), render: vi.fn(),
+  model: vi.fn((task: string, _provider: unknown, _config: unknown, stage?: string) =>
+    ({ model: { task, stage }, modelName: "offline", provider: "anthropic" })) }));
 vi.mock("ai", () => ({ generateText: mocks.generate, Output: { object: vi.fn(() => ({})) }, APICallError: { isInstance: () => false } }));
 vi.mock("@/lib/analyzer/llm", () => ({
-  getModelForTask: () => ({ model: {}, modelName: "offline", provider: "anthropic" }),
+  getModelForTask: mocks.model,
   extractStructuredOutput: (result: any) => result.object,
   getStructuredOutputProviderOptions: () => ({}), getPromptCachingOptions: () => ({}),
 }));
@@ -81,7 +83,22 @@ beforeEach(() => {
   mocks.render.mockImplementation(async (_pipeline, section) => ({ content: section, variables: {} }));
   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Network forbidden in offline tests"); }));
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  // Assert the real caller wiring for every existing recovery/final/binding
+  // scenario. Separate SDK tests exercise the resolver behind this recording mock.
+  const stages: Record<string, string> = {
+    CLAIM_CONTRACT_VALIDATION: "claimContractValidation",
+    CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION: "claimAtomicity",
+    CLAIM_CONTRACT_REPAIR: "claimContractRepair",
+    CLAIM_CONTRACT_SURGICAL_REPAIR: "claimContractSurgicalRepair",
+    CLAIM_CONTRACT_COMPLETION: "claimContractCompletion",
+  };
+  for (const [args] of mocks.generate.mock.calls) {
+    const section = args.messages[0].content.split("\n")[0];
+    if (stages[section]) expect(args.model).toEqual({ task: "context_refinement", stage: stages[section] });
+  }
+  vi.unstubAllGlobals();
+});
 
 describe("Stage 1 bounded contract capture", () => {
   it.each([0, 1])("honors retry-only critique with recovery budget %s without changing preservation", async maxRetries => {

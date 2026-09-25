@@ -6,6 +6,7 @@
   "modelUnderstand": "budget",
   "modelExtractEvidence": "budget",
   "modelVerdict": "standard",
+  "modelClaimContractValidation": null,
   "modelOpus": "premium",
   "modelPolicies": {},
   "llmInputClassification": true,

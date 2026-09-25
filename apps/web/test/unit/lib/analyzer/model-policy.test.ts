@@ -39,6 +39,7 @@ describe("candidate policy validation", () => {
     const policy = config.modelPolicies!["claude-sonnet-5"];
     expect({
       ...config,
+      modelClaimContractValidation: config.modelClaimContractValidation ?? null,
       modelVerdict: baseline.modelVerdict,
       modelPolicies: baseline.modelPolicies,
     }).toEqual(baseline);
@@ -96,6 +97,100 @@ describe("candidate policy validation", () => {
   });
 });
 
+function contractCandidate(): PipelineConfig {
+  return { ...serializedBaseline(), modelClaimContractValidation: "claude-sonnet-5",
+    modelPolicies: { "claude-sonnet-5": {
+      thinking: { type: "adaptive", effort: "medium" },
+      outputTokenCaps: { claimContractValidation: 8192 },
+      structuredOutputModes: { claimContractValidation: "outputFormat" },
+    } } };
+}
+
+describe("contract-only candidate routing", () => {
+  it("requires only its cap and leaves every other stage and task on the inherited model", () => {
+    const config = contractCandidate();
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(true);
+    expect(getModelForTask("context_refinement", undefined, config, "claimContractValidation").modelName).toBe("claude-sonnet-5");
+    for (const stage of MODEL_POLICY_STAGES.filter(s => s !== "claimContractValidation")) {
+      expect(getModelForTask("context_refinement", undefined, config, stage).modelName).toBe("claude-sonnet-4-6");
+    }
+    expect(getModelForTask("context_refinement", undefined, config).modelName).toBe("claude-sonnet-4-6");
+    for (const task of ["understand", "extract_evidence", "verdict", "report"] as const) {
+      expect(getModelForTask(task, undefined, config, "claimContractValidation").modelName)
+        .toBe(getModelForTask(task, undefined, serializedBaseline(), "claimContractValidation").modelName);
+    }
+    expect(getModelForTask("verdict", "openai", config, "verdict").provider).toBe("openai");
+  });
+
+  it("preserves Stage 4's derived OpenAI fallback without accepting it for contract validation", () => {
+    const config = contractCandidate();
+    expect(getModelPolicyErrors(config)).toEqual([]);
+    const fallbackConfig: PipelineConfig = {
+      ...config, llmTiering: true, llmProvider: "openai", modelVerdict: "gpt-4.1-mini",
+    };
+    expect(getModelForTask("verdict", "openai", fallbackConfig, "verdict"))
+      .toMatchObject({ provider: "openai", modelName: "gpt-4.1-mini" });
+    expect(() => getModelForTask("context_refinement", "openai", fallbackConfig, "claimContractValidation"))
+      .toThrow("Invalid model policy");
+  });
+
+  it.each([
+    { modelClaimContractValidation: "claude-sonnet-5-latest" },
+    { modelClaimContractValidation: {} },
+    { llmTiering: false },
+    { llmProvider: "openai" },
+    { llmProvider: null },
+    { llmProvider: 42 },
+    { modelPolicies: {} },
+    { modelClaimContractValidation: null },
+  ])("rejects incompatible config and direct resolver calls: %j", change => {
+    const config = { ...contractCandidate(), ...change } as PipelineConfig;
+    expect(getModelPolicyErrors(config).length).toBeGreaterThan(0);
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(false);
+    expect(() => getModelForTask("context_refinement", undefined, config, "claimContractValidation")).toThrow("Invalid model policy");
+  });
+
+  it.each([
+    { claimContractValidation: "auto" }, { claimContractValidation: "jsonTool" },
+    { verdict: "outputFormat" }, null, "outputFormat",
+  ])("rejects unsupported raw mode objects: %j", modes => {
+    const config = contractCandidate();
+    (config.modelPolicies!["claude-sonnet-5"] as any).structuredOutputModes = modes;
+    expect(getModelPolicyErrors(config).length).toBeGreaterThan(0);
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(false);
+  });
+
+  it("keeps candidate defaults inert and rejects missing thinking/caps", () => {
+    expect(DEFAULT_PIPELINE_CONFIG.modelClaimContractValidation).toBeNull();
+    expect(DEFAULT_PIPELINE_CONFIG.modelPolicies).toEqual({});
+    expect(serializedBaseline().modelClaimContractValidation).toBeNull();
+    expect(serializedBaseline().modelPolicies).toEqual({});
+    for (const field of ["thinking", "outputTokenCaps"]) {
+      const config = contractCandidate();
+      delete (config.modelPolicies!["claude-sonnet-5"] as any)[field];
+      expect(getModelPolicyErrors(config).length).toBeGreaterThan(0);
+    }
+    const config = contractCandidate();
+    config.modelPolicies!["claude-sonnet-5"].outputTokenCaps = {};
+    expect(getModelPolicyErrors(config).join()).toContain("outputTokenCaps.claimContractValidation");
+  });
+
+  it("unions required caps and rejects direct non-Anthropic contract overrides", () => {
+    const config = contractCandidate();
+    config.modelOpus = "claude-sonnet-5";
+    expect(getModelPolicyErrors(config).join()).toContain("outputTokenCaps.verdict");
+    config.modelVerdict = "claude-sonnet-5";
+    expect(getModelPolicyErrors(config).join()).toContain("outputTokenCaps.boundaryClustering");
+    const complete = candidate();
+    complete.modelClaimContractValidation = "claude-sonnet-5";
+    complete.modelPolicies!["claude-sonnet-5"].structuredOutputModes = { claimContractValidation: "outputFormat" };
+    expect(getModelPolicyErrors(complete)).toEqual([]);
+    expect(() => getModelForTask("context_refinement", "google", contractCandidate(), "claimContractValidation")).toThrow("Anthropic provider");
+    // The old non-candidate/tiering-off behavior stays available with no new opt-in.
+    expect(getModelForTask("verdict", undefined, { ...serializedBaseline(), llmTiering: false }).modelName).toBe("claude-sonnet-4-6");
+  });
+});
+
 describe("offline SDK requests (fetch stub only; no paid calls)", () => {
   let bodies: any[];
   let response: any;
@@ -113,6 +208,89 @@ describe("offline SDK requests (fetch stub only; no paid calls)", () => {
     }));
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it("sends native output at the candidate seam and retains configured request metadata", async () => {
+    const model = getModelForTask("context_refinement", undefined, contractCandidate(), "claimContractValidation");
+    const result = await generateText({ model: model.model, prompt: "Plastic recycling is pointless", maxRetries: 0,
+      temperature: 0.1, output: Output.object({ schema: z.object({ items: z.array(z.object({ ok: z.boolean() })) }) }),
+      providerOptions: getStructuredOutputProviderOptions(model.provider) });
+    expect(result.output).toEqual({ items: [{ ok: true }] });
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toMatchObject({ model: "claude-sonnet-5", max_tokens: 8192,
+      thinking: { type: "adaptive" }, output_config: { effort: "medium", format: { type: "json_schema" } } });
+    expect(bodies[0].tools).toBeUndefined();
+    expect(bodies[0].tool_choice).toBeUndefined();
+    expect(bodies[0].temperature).toBeUndefined();
+    expect(measuredLLMCall(metric, { model, result })).toMatchObject({
+      modelPolicyStage: "claimContractValidation", configuredStructuredOutputMode: "outputFormat", maxOutputTokens: 8192 });
+  });
+
+  it("preserves legacy validator wire bytes and does not switch an unrelated stage", async () => {
+    response.content = [{ type: "tool_use", id: "offline_tool", name: "json", input: { items: [{ ok: true }] } }];
+    response.stop_reason = "tool_use";
+    const baseline = serializedBaseline(), legacy = { ...baseline };
+    delete legacy.modelClaimContractValidation;
+    for (const [config, stage] of [[legacy, "claimContractValidation"], [baseline, "claimContractValidation"],
+      [contractCandidate(), "claimAtomicity"]] as const) {
+      const model = getModelForTask("context_refinement", undefined, config, stage);
+      await generateText({ model: model.model, prompt: "Plastic recycling is pointless", maxRetries: 0, temperature: 0.1,
+        output: Output.object({ schema: z.object({ items: z.array(z.object({ ok: z.boolean() })) }) }),
+        providerOptions: getStructuredOutputProviderOptions(model.provider) });
+    }
+    expect(bodies[1]).toEqual(bodies[0]);
+    expect(bodies[2]).toEqual(bodies[0]);
+  });
+
+  it("preserves Stage 4's derived premium route with only the caps required by the original config", async () => {
+    const config = contractCandidate();
+    config.modelOpus = "claude-sonnet-5";
+    config.modelPolicies!["claude-sonnet-5"].outputTokenCaps.verdict = 16384;
+    expect(getModelPolicyErrors(config)).toEqual([]);
+    const effectiveConfig = { ...config, modelVerdict: config.modelOpus };
+    response.content = [{ type: "tool_use", id: "offline_tool", name: "json", input: { items: [{ ok: true }] } }];
+    response.stop_reason = "tool_use";
+    const model = getModelForTask("verdict", undefined, effectiveConfig, "verdict");
+    await generateText({ model: model.model, prompt: "Plastic recycling is pointless", maxRetries: 0,
+      output: Output.object({ schema: z.object({ items: z.array(z.object({ ok: z.boolean() })) }) }),
+      providerOptions: getStructuredOutputProviderOptions(model.provider) });
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toMatchObject({ model: "claude-sonnet-5", max_tokens: 16384,
+      thinking: { type: "adaptive" }, output_config: { effort: "medium" } });
+    expect(bodies[0].tools[0].name).toBe("json");
+    expect(bodies[0].output_config.format).toBeUndefined();
+    expect(model.getLastCall?.()).toMatchObject({ modelPolicyStage: "verdict", configuredStructuredOutputMode: "jsonTool" });
+  });
+
+  it.each([["refusal", "refusal"], ["max_tokens", "truncation"], ["end_turn", "schema"]])(
+    "retains native failure usage and mode for %s", async (stop, kind) => {
+      response.stop_reason = stop;
+      response.content = [{ type: "text", text: '{"wrong":true}' }];
+      const model = getModelForTask("context_refinement", undefined, contractCandidate(), "claimContractValidation");
+      let error: unknown;
+      try { await generateText({ model: model.model, prompt: "Plastic recycling is pointless", maxRetries: 0,
+        output: Output.object({ schema: z.object({ items: z.array(z.object({ ok: z.boolean() })) }) }),
+        providerOptions: getStructuredOutputProviderOptions(model.provider) }); }
+      catch (caught) { error = caught; }
+      expect(error).toBeDefined();
+      const measured = measuredLLMCall(metric, { model, error });
+      expect(measured).toMatchObject({ failureKind: kind, usageAvailable: true,
+        promptTokens: 100, completionTokens: 30, modelPolicyStage: "claimContractValidation",
+        configuredStructuredOutputMode: "outputFormat", maxOutputTokens: 8192 });
+      if (kind === "schema") expect(measured.schemaFailureExcerpt).toBe('{"wrong":true}');
+      expect(bodies).toHaveLength(1);
+    });
+
+  it("retains native request metadata when headers never arrive without inventing usage", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("Headers Timeout"));
+    const model = getModelForTask("context_refinement", undefined, contractCandidate(), "claimContractValidation");
+    let error: unknown;
+    try { await generateText({ model: model.model, prompt: "Plastic recycling is pointless", maxRetries: 0 }); }
+    catch (caught) { error = caught; }
+    expect(measuredLLMCall({ ...metric, durationMs: 300001 }, { model, error })).toMatchObject({
+      failureKind: "transport", usageAvailable: false, durationMs: 300001,
+      modelPolicyStage: "claimContractValidation", configuredStructuredOutputMode: "outputFormat" });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 
   it.each(MODEL_POLICY_STAGES)("transmits policy and finite cap for %s", async stage => {
     const config = candidate();

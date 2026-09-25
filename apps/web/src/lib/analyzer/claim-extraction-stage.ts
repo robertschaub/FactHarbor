@@ -380,7 +380,7 @@ export async function extractClaims(
   if (contractValidationEnabled) {
     const retryCapture = createContractDiagnosticCapture();
     state.onEvent?.("Validating claim contract fidelity...", 24);
-    state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+    state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractValidation").modelName}`, -1);
 
     const {
       result: contractResult,
@@ -1448,7 +1448,7 @@ export async function extractClaims(
       console.info("[Stage1] Final accepted claims are empty after Gate 1; contract summary refreshed to reflect the final claim set.");
     } else {
       state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 26);
-      state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+      state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractValidation").modelName}`, -1);
       const previousContractValidationSummary = contractValidationSummary;
 
       const {
@@ -4536,7 +4536,7 @@ async function runSingleClaimBindingContractChallenge(
     return undefined;
   }
 
-  const modelName = getModelForTask("context_refinement", undefined, pipelineConfig).modelName;
+  const modelName = getModelForTask("context_refinement", undefined, pipelineConfig, "claimContractValidation").modelName;
   state.onEvent?.("Re-checking single-claim contract against salience anchors...", progressPercent);
   state.onEvent?.(`LLM call: single-claim binding contract challenge — ${modelName}`, -1);
 

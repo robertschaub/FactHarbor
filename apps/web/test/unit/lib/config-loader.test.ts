@@ -11,6 +11,7 @@ vi.mock("@/lib/config-storage", () => ({
 
 import {
   DEFAULT_CALC_CONFIG,
+  DEFAULT_PIPELINE_CONFIG,
   invalidateConfigCache,
   loadCalcConfig,
   loadPipelineConfig,
@@ -36,6 +37,42 @@ describe("config-loader nested default backfill", () => {
     }) } as any);
     await expect(loadPipelineConfig("default", "offline-invalid")).rejects.toThrow("outputTokenCaps.verdict");
     expect(recordConfigUsage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { modelClaimContractValidation: "claude-sonnet-5" },
+    { modelClaimContractValidation: "claude-sonnet-5", llmTiering: false },
+    { modelClaimContractValidation: "claude-sonnet-5", llmProvider: "openai" },
+    { modelClaimContractValidation: "unsupported" },
+    { modelPolicies: { "claude-sonnet-5": { thinking: { type: "adaptive", effort: "medium" },
+      outputTokenCaps: { claimContractValidation: 8192 },
+      structuredOutputModes: { claimContractValidation: "outputFormat" } } } },
+  ])("does not backfill an incomplete or ineffective contract opt-in: %j", content => {
+    expect(DEFAULT_PIPELINE_CONFIG.modelClaimContractValidation).toBeNull();
+    expect(DEFAULT_PIPELINE_CONFIG.modelPolicies).toEqual({});
+    vi.mocked(getActiveConfigHash).mockResolvedValue("invalid-contract-route");
+    vi.mocked(getConfigBlob).mockResolvedValue({ content: JSON.stringify(content) } as any);
+    return expect(loadPipelineConfig()).rejects.toThrow("Invalid model policy");
+  });
+
+  it("loads explicit narrow policy while old blobs inherit only inert defaults", async () => {
+    vi.mocked(getActiveConfigHash).mockResolvedValue("legacy-contract-route");
+    vi.mocked(getConfigBlob).mockResolvedValue({ content: JSON.stringify({ llmTiering: true, modelVerdict: "standard" }) } as any);
+    const legacy = await loadPipelineConfig();
+    expect(legacy.config.modelClaimContractValidation).toBeNull();
+    expect(legacy.config.modelPolicies).toEqual({});
+    invalidateConfigCache();
+    vi.mocked(getActiveConfigHash).mockResolvedValue("native-contract-route");
+    vi.mocked(getConfigBlob).mockResolvedValue({ content: JSON.stringify({
+      llmTiering: true, modelClaimContractValidation: "claude-sonnet-5",
+      modelPolicies: { "claude-sonnet-5": { thinking: { type: "adaptive", effort: "medium" },
+        outputTokenCaps: { claimContractValidation: 8192 },
+        structuredOutputModes: { claimContractValidation: "outputFormat" } } },
+    }) } as any);
+    const candidate = await loadPipelineConfig();
+    expect(candidate.config.modelVerdict).toBe("standard");
+    expect(candidate.config.modelPolicies!["claude-sonnet-5"].outputTokenCaps).toEqual({ claimContractValidation: 8192 });
+    expect(candidate.contentHash).toBe("native-contract-route");
   });
 
   it("deep-merges nested sections so new default fields are backfilled", async () => {

@@ -9,6 +9,8 @@ const offline = vi.hoisted(() => {
     generate: vi.fn(() => { throw new Error("Unexpected model call in offline test"); }),
     database: vi.fn(() => { throw new Error("Database access forbidden"); }),
     network: vi.fn(() => { throw new Error("Network access forbidden"); }),
+    model: vi.fn((task: string, _provider: unknown, _config: unknown, stage?: string) =>
+      ({ model: { task, stage }, modelName: "offline", provider: "anthropic" })),
   };
 });
 vi.mock("ai", async original => ({
@@ -23,7 +25,7 @@ vi.mock("@/lib/config-loader", () => ({
 }));
 vi.mock("@/lib/analyzer/llm", async original => ({
   ...await original<typeof import("@/lib/analyzer/llm")>(),
-  getModelForTask: () => ({ model: {}, modelName: "offline", provider: "anthropic" }),
+  getModelForTask: offline.model,
   extractStructuredOutput: (response: { output: unknown }) => response.output,
 }));
 
@@ -106,6 +108,7 @@ beforeEach(() => {
   offline.generate.mockImplementation(() => { throw new Error("Unexpected model call in offline test"); });
   offline.database.mockClear();
   offline.network.mockClear();
+  offline.model.mockClear();
   vi.stubGlobal("fetch", offline.network);
   vi.mocked(loadPromptConfig).mockImplementation(async () => ({
     content: activePrompt,
@@ -123,6 +126,12 @@ beforeEach(() => {
 afterEach(() => {
   expect(offline.network).not.toHaveBeenCalled();
   expect(offline.database).not.toHaveBeenCalled();
+  for (const [args] of offline.generate.mock.calls as any[]) {
+    if (args.model?.stage === "claimContractValidation") {
+      expect(args.model.task).toBe("context_refinement");
+      expect(offline.model).toHaveBeenCalledWith("context_refinement", undefined, expect.anything(), "claimContractValidation");
+    }
+  }
   vi.unstubAllGlobals();
 });
 

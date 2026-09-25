@@ -38,8 +38,8 @@ export function validatePipelineConfig(config: PipelineConfig): ConfigWarning[] 
       level: "danger",
       title: "Candidate model policy is incomplete",
       message: policyErrors.join("; "),
-      suggestion: "Set explicit thinking/effort and output caps in modelPolicies before saving or activating this candidate.",
-      affectedFields: ["modelPolicies", "modelVerdict", "modelOpus"],
+      suggestion: "Check candidate routing, thinking/effort, output caps and any native-output policy before saving or activating.",
+      affectedFields: ["modelPolicies", "modelVerdict", "modelOpus", "modelClaimContractValidation"],
     });
   }
 

@@ -1313,8 +1313,15 @@ function PipelineConfigForm({
 
       <details className={styles.formGroup}>
         <summary>Sonnet 5 candidate controls</summary>
+        <label className={styles.formLabel} htmlFor="contract-validator-model">Contract validator model</label>
+        <select id="contract-validator-model" className={styles.formInput}
+          value={config.modelClaimContractValidation ?? ""}
+          onChange={(e) => updateField("modelClaimContractValidation", e.target.value === "claude-sonnet-5" ? "claude-sonnet-5" : null)}>
+          <option value="">Inherit reasoning model</option>
+          <option value="claude-sonnet-5">Sonnet 5 — contract validation only</option>
+        </select>
         <div className={styles.formHelp}>
-          These settings apply only when a task resolves to claude-sonnet-5. They do not select or activate it.
+          Thinking, caps and output mode apply only when a task resolves to claude-sonnet-5.
           Every affected stage needs an explicit cap, including thinking and visible output. Empty settings preserve baseline behavior.
         </div>
         <label className={styles.formLabel} htmlFor="sonnet5-thinking">Thinking policy</label>
@@ -1327,6 +1334,7 @@ function PipelineConfigForm({
             const policies = { ...config.modelPolicies };
             if (!e.target.value) delete policies["claude-sonnet-5"];
             else policies["claude-sonnet-5"] = {
+              ...policies["claude-sonnet-5"],
               thinking: e.target.value === "disabled" ? { type: "disabled" }
                 : { type: "adaptive", effort: e.target.value.split(":")[1] as "low" | "medium" | "high" },
               outputTokenCaps: policies["claude-sonnet-5"]?.outputTokenCaps ?? {},
@@ -1339,6 +1347,26 @@ function PipelineConfigForm({
           <option value="adaptive:medium">Adaptive / medium</option>
           <option value="adaptive:high">Adaptive / high</option>
         </select>
+        <label className={styles.formLabel} htmlFor="contract-validator-output">Contract validator output mode</label>
+        <select id="contract-validator-output" className={styles.formInput}
+          disabled={!config.modelPolicies?.["claude-sonnet-5"]}
+          value={config.modelPolicies?.["claude-sonnet-5"]?.structuredOutputModes?.claimContractValidation ?? "jsonTool"}
+          onChange={(e) => {
+            const policy = config.modelPolicies?.["claude-sonnet-5"];
+            if (!policy) return;
+            const modes = { ...policy.structuredOutputModes };
+            if (e.target.value === "outputFormat") modes.claimContractValidation = "outputFormat";
+            else delete modes.claimContractValidation;
+            updateField("modelPolicies", { ...config.modelPolicies,
+              "claude-sonnet-5": { ...policy, structuredOutputModes: modes } });
+          }}>
+          <option value="jsonTool">JSON tool (existing route)</option>
+          <option value="outputFormat">Native structured output</option>
+        </select>
+        <div className={styles.formHelp}>
+          Native output requires Sonnet 5 contract validation with Anthropic tiering enabled.
+          Other stages keep their existing output route. Changes are validated before saving.
+        </div>
         {config.modelPolicies?.["claude-sonnet-5"] && MODEL_POLICY_STAGES.map((stage) => (
           <div className={styles.formGroup} key={stage}>
             <label className={styles.formLabel} htmlFor={`cap-${stage}`}>{stage} — output token cap</label>

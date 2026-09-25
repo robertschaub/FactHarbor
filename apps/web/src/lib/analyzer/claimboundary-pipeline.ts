@@ -1547,13 +1547,15 @@ export async function runClaimBoundaryAnalysis(
         .filter(Boolean)
     )].join(", ");
 
-    // Get LLM model information for all task tiers (for result metadata)
+    // Configured task/stage inventory, not proof that each model was called.
     const verdictModel = getModelForTask("verdict", undefined, initialPipelineConfig);
     const understandModel = getModelForTask("understand", undefined, initialPipelineConfig);
     const extractModel = getModelForTask("extract_evidence", undefined, initialPipelineConfig);
+    const contractModel = getModelForTask("context_refinement", undefined, initialPipelineConfig, "claimContractValidation");
     recordRuntimeModelUsage(understandModel.provider, understandModel.modelName);
     recordRuntimeModelUsage(extractModel.provider, extractModel.modelName);
     recordRuntimeModelUsage(verdictModel.provider, verdictModel.modelName);
+    recordRuntimeModelUsage(contractModel.provider, contractModel.modelName);
 
     // B-1: Aggregate runtime role traces into per-role summary
     const runtimeRoleModels: Record<string, { provider: string; model: string; strength: string; callCount: number; fallbackUsed: boolean }> = {};

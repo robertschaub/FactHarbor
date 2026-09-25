@@ -29,6 +29,31 @@ const context = () => ({ params: Promise.resolve({ type: "pipeline", profile: "p
 afterAll(async () => { await (await getDb()).close(); });
 
 describe("real UCM save/activation against isolated memory DB", () => {
+  it("rejects incompatible stored contract routes at every save/activation seam", async () => {
+    const native = { ...DEFAULT_PIPELINE_CONFIG, modelClaimContractValidation: "claude-sonnet-5",
+      modelPolicies: { "claude-sonnet-5": { thinking: { type: "adaptive", effort: "medium" },
+        outputTokenCaps: { claimContractValidation: 8192 },
+        structuredOutputModes: { claimContractValidation: "outputFormat" } } } };
+    const changes = [
+      { modelClaimContractValidation: "unsupported" }, { modelClaimContractValidation: null },
+      { llmTiering: false }, { llmProvider: "openai" }, { modelPolicies: {} },
+      { llmProvider: null },
+      { modelPolicies: { "claude-sonnet-5": { ...native.modelPolicies["claude-sonnet-5"],
+        structuredOutputModes: { verdict: "outputFormat" } } } },
+    ];
+    for (const [index, change] of changes.entries()) {
+      const content = JSON.stringify({ ...native, ...change });
+      await expect(saveConfigBlob("pipeline", "policy-test", content, "invalid-contract")).rejects.toThrow("Validation failed");
+      expect((await saveRoute(request({ content, versionLabel: "invalid" }), context())).status).toBe(400);
+      const hash = `invalid-contract-${index}`;
+      await historicalBlob(hash, JSON.parse(content));
+      for (const route of [activateRoute, rollbackRoute]) {
+        expect((await route(request({ contentHash: hash }), context())).status).toBe(400);
+      }
+    }
+    const saved = await saveConfigBlob("pipeline", "policy-test", JSON.stringify(native), "native-contract");
+    expect((await activateRoute(request({ contentHash: saved.blob.contentHash }), context())).status).toBe(200);
+  });
   it("rejects candidate saves at storage and HTTP seams", async () => {
     const content = JSON.stringify({ ...DEFAULT_PIPELINE_CONFIG, modelVerdict: "claude-sonnet-5" });
     await expect(saveConfigBlob("pipeline", "policy-test", content, "invalid")).rejects.toThrow("explicit adaptive");

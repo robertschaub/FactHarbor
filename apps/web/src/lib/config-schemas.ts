@@ -290,9 +290,13 @@ const ModelThinkingSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("disabled") }).strict(),
   z.object({ type: z.literal("adaptive"), effort: z.enum(["low", "medium", "high"]) }).strict(),
 ]);
+const ContractValidationModelSchema = z.literal("claude-sonnet-5").nullable().optional();
 export const ModelPolicySchema = z.object({
   thinking: ModelThinkingSchema,
   outputTokenCaps: z.record(z.enum(MODEL_POLICY_STAGES), z.number().int().min(1).max(128000)),
+  structuredOutputModes: z.object({
+    claimContractValidation: z.literal("outputFormat").optional(),
+  }).strict().optional(),
 }).strict();
 
 /** Only this candidate family has a reviewed policy in this rollout. */
@@ -313,19 +317,38 @@ export function getModelPolicyErrors(
   request?: { modelName: string; stage?: string },
 ): string[] {
   const errors: string[] = [];
+  const selector = ContractValidationModelSchema.safeParse(config.modelClaimContractValidation);
+  if (!selector.success) errors.push("modelClaimContractValidation: use null or the reviewed exact model ID claude-sonnet-5");
+  const contractModel = selector.success ? selector.data : undefined;
+  const provider = config.llmProvider === undefined ? "anthropic"
+    : typeof config.llmProvider === "string" ? config.llmProvider.trim().toLowerCase() : "";
+  const anthropicProvider = provider === "anthropic" || provider === "claude";
+  if (contractModel) {
+    if (config.llmTiering !== true) errors.push("modelClaimContractValidation: llmTiering must be enabled");
+    if (!anthropicProvider) errors.push("modelClaimContractValidation: Anthropic provider is required");
+  }
   const policies = (config.modelPolicies ?? {}) as Record<string, unknown>;
   const checked = z.record(ModelPolicySchema).safeParse(policies);
   if (!checked.success) {
-    return checked.error.issues.map(i => `modelPolicies.${i.path.join(".")}: ${i.message}`);
+    return [...errors, ...checked.error.issues.map(i => `modelPolicies.${i.path.join(".")}: ${i.message}`)];
   }
   for (const name of Object.keys(checked.data)) {
     if (name !== "claude-sonnet-5") errors.push(`modelPolicies.${name}: no reviewed policy support for this model ID`);
+    if (checked.data[name].structuredOutputModes?.claimContractValidation
+      && (config.llmTiering !== true || !anthropicProvider || (contractModel ?? config.modelVerdict) !== name)) {
+      errors.push(`modelPolicies.${name}.structuredOutputModes.claimContractValidation: contract validation must resolve to this model with Anthropic tiering enabled`);
+    }
   }
 
-  const required = new Map<string, readonly string[]>();
+  const required = new Map<string, Set<string>>();
+  const requireStages = (name: string, stages: readonly string[]) => {
+    const union = required.get(name) ?? new Set<string>();
+    stages.forEach(stage => union.add(stage));
+    required.set(name, union);
+  };
   if (request) {
     if (requiresExplicitModelPolicy(request.modelName)) {
-      required.set(request.modelName, request.stage ? [request.stage] : []);
+      requireStages(request.modelName, request.stage ? [request.stage] : []);
       if (!request.stage || !MODEL_POLICY_STAGES.includes(request.stage as ModelPolicyStage)) {
         errors.push(`${request.modelName}: a reviewed request stage is required`);
       }
@@ -335,19 +358,20 @@ export function getModelPolicyErrors(
     // their own stage inventory before they can select this candidate.
     for (const field of ["modelUnderstand", "modelExtractEvidence"] as const) {
       if (typeof config[field] === "string" && requiresExplicitModelPolicy(config[field])) {
-        errors.push(`${field}: Sonnet 5 is currently supported only on the modelVerdict/modelOpus reasoning route`);
+        errors.push(`${field}: Sonnet 5 is supported only on reviewed reasoning routes`);
       }
     }
     if (typeof config.modelOpus === "string" && requiresExplicitModelPolicy(config.modelOpus)) {
-      required.set(config.modelOpus, ["verdict"]);
+      requireStages(config.modelOpus, ["verdict"]);
     }
     if (typeof config.modelVerdict === "string" && requiresExplicitModelPolicy(config.modelVerdict)) {
       const stages = MODEL_POLICY_STAGES.filter(stage => stage !== "sourceReliabilityCalibration"
         || (config.sourceReliabilityCalibrationEnabled === true
           && (config.sourceReliabilityCalibrationMode ?? "off") !== "off"
           && ["standard", "premium"].includes(String(config.sourceReliabilityCalibrationStrength))));
-      required.set(config.modelVerdict, stages);
+      requireStages(config.modelVerdict, stages);
     }
+    if (contractModel) requireStages(contractModel, ["claimContractValidation"]);
   }
   for (const [name, stages] of required) {
     if (name !== "claude-sonnet-5") {
@@ -394,6 +418,7 @@ export const PipelineConfigSchema = z.object({
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
   modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
   modelVerdict: z.string().min(1).describe("Reasoning model: contract checks/repairs, claim selection, clustering, verdict debate, adjudication and narrative"),
+  modelClaimContractValidation: ContractValidationModelSchema.describe("Optional contract-validator-only model. Missing/null inherits the reasoning model; requires Anthropic tiering and an explicit candidate policy."),
   modelOpus: z.string().min(1).optional().describe("Model for OPUS debate tier (B-5b). Used when a debate role is set to 'opus'. Falls back to modelVerdict if not set."),
   modelPolicies: z.record(ModelPolicySchema).optional().describe("Explicit candidate thinking and per-stage output caps. Empty preserves baseline requests; no candidate policy is supplied implicitly."),
 
@@ -1156,6 +1181,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   modelUnderstand: "budget",
   modelExtractEvidence: "budget",
   modelVerdict: "standard",
+  modelClaimContractValidation: null,
   modelOpus: "premium",
   modelPolicies: {},
 
