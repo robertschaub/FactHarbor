@@ -64,6 +64,7 @@ test('CLI independently flags missing and conflicting job/result prompt hashes a
     }
     assert.ok(output.includes(`valid001 prompt hashes: expected=${expected.slice(0, 12)}; job=${expected.slice(0, 12)}; result=${expected.slice(0, 12)}`));
     assert.ok(output.includes('missing1 prompt hashes: expected=aaaaaaaaaaaa; job=-; result=-'));
+    assert.ok(output.includes('Arm conservative operational total: $7.000 across 7/7 recorded attempt(s).'));
 
     // Matching usage must not mask missing job/result hashes, and absent frozen
     // expectations must not be presented as verified prompt provenance.
@@ -171,15 +172,55 @@ test('the accepted historical allowance is explicit and never inferred for a new
 });
 
 test('arm cost stays unresolved when any requested job or runner record is missing', () => {
-  const finiteJob = { cost: { conservativeUpperUSD: 2.5 } };
+  const finiteJob = { cost: { knownSubtotalUSD: 2, conservativeUpperUSD: 2.5 } };
   assert.deepEqual(report.armCostSummary([finiteJob], 0), {
-    resolved: true, knownPartialUSD: 2.5, finiteAttempts: 1, attempts: 1,
+    resolved: true, knownPartialUSD: 2, conservativeUpperUSD: 2.5, finiteAttempts: 1, attempts: 1,
   });
   assert.deepEqual(report.armCostSummary([finiteJob, { missing: true }], 0), {
-    resolved: false, knownPartialUSD: 2.5, finiteAttempts: 1, attempts: 2,
+    resolved: false, knownPartialUSD: 2, conservativeUpperUSD: null, finiteAttempts: 1, attempts: 2,
   });
   assert.deepEqual(report.armCostSummary([finiteJob], 1), {
-    resolved: false, knownPartialUSD: 2.5, finiteAttempts: 1, attempts: 2,
+    resolved: false, knownPartialUSD: 2, conservativeUpperUSD: null, finiteAttempts: 1, attempts: 2,
+  });
+});
+
+test('arm subtotal retains measured spend from credit-rejected and mixed-cost jobs without resolving their upper bound', () => {
+  const metrics = {
+    estimatedCostUSD: null,
+    costEstimate: { knownSubtotalUSD: 0.24607200000000004, unpricedCalls: 9 },
+    llmCalls: [],
+  };
+  const unresolved = { cost: report.costSummary(metrics, report.sourceReliabilitySummary(metrics, [])) };
+  assert.equal(unresolved.cost.unresolvedUnpricedCalls, 9);
+  assert.deepEqual(report.armCostSummary([unresolved]), {
+    resolved: false, knownPartialUSD: 0.24607200000000004, conservativeUpperUSD: null, finiteAttempts: 0, attempts: 1,
+  });
+  assert.deepEqual(report.armCostSummary([
+    { cost: { knownSubtotalUSD: 2, conservativeUpperUSD: 2.5 } }, unresolved,
+  ]), {
+    resolved: false, knownPartialUSD: 2 + metrics.costEstimate.knownSubtotalUSD,
+    conservativeUpperUSD: null, finiteAttempts: 1, attempts: 2,
+  });
+});
+
+test('missing arm subtotals are unavailable while a measured zero remains zero', () => {
+  for (const jobs of [[], [{ missing: true }], [{ cost: { knownSubtotalUSD: null, conservativeUpperUSD: null } }]]) {
+    const summary = report.armCostSummary(jobs);
+    assert.equal(summary.resolved, false);
+    assert.equal(summary.knownPartialUSD, null);
+    assert.equal(summary.conservativeUpperUSD, null);
+  }
+  assert.deepEqual(report.armCostSummary([{ cost: { knownSubtotalUSD: 0, conservativeUpperUSD: 0 } }]), {
+    resolved: true, knownPartialUSD: 0, conservativeUpperUSD: 0, finiteAttempts: 1, attempts: 1,
+  });
+});
+
+test('a resolved multi-job arm separates measured subtotal from all conservative allowances', () => {
+  assert.deepEqual(report.armCostSummary([
+    { cost: { knownSubtotalUSD: 2, conservativeUpperUSD: 2.5 } },
+    { cost: { knownSubtotalUSD: 3, conservativeUpperUSD: 4 } },
+  ]), {
+    resolved: true, knownPartialUSD: 5, conservativeUpperUSD: 6.5, finiteAttempts: 2, attempts: 2,
   });
 });
 

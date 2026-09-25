@@ -166,10 +166,14 @@ function loadAcceptedHistoricalAllowances() {
 function armCostSummary(jobs, lost = 0) {
   const bounds = jobs.map((job) => job.missing ? null : job.cost?.conservativeUpperUSD);
   const finiteBounds = bounds.filter(finite);
+  // Measured subtotals exclude allowances; null means unavailable, not zero.
+  const knownSubtotals = jobs.map((job) => job.missing ? null : job.cost?.knownSubtotalUSD).filter(finite);
   const attempts = jobs.length + lost;
+  const resolved = attempts > 0 && lost === 0 && bounds.length === finiteBounds.length;
   return {
-    resolved: attempts > 0 && lost === 0 && bounds.length === finiteBounds.length,
-    knownPartialUSD: finiteBounds.reduce((a, b) => a + b, 0),
+    resolved,
+    knownPartialUSD: knownSubtotals.length ? knownSubtotals.reduce((a, b) => a + b, 0) : null,
+    conservativeUpperUSD: resolved ? finiteBounds.reduce((a, b) => a + b, 0) : null,
     finiteAttempts: finiteBounds.length,
     attempts,
   };
@@ -354,7 +358,7 @@ function main() {
     if (arm.lost) flags.push(`${arm.name}: ${arm.lost} runner record(s) lacked jobId`);
     const armCost = armCostSummary(jobs, arm.lost);
     print(armCost.resolved
-      ? `\nArm conservative operational total: $${fmt(armCost.knownPartialUSD, 3)} across ${armCost.attempts}/${armCost.attempts} recorded attempt(s).`
+      ? `\nArm conservative operational total: $${fmt(armCost.conservativeUpperUSD, 3)} across ${armCost.attempts}/${armCost.attempts} recorded attempt(s).`
       : `\nArm conservative operational total: UNRESOLVED (known partial $${fmt(armCost.knownPartialUSD, 3)}; ${armCost.finiteAttempts}/${armCost.attempts} recorded attempt(s) have a finite upper bound).`);
   }
   print('\n## Flags');
