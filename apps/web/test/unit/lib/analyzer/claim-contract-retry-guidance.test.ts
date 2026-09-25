@@ -30,6 +30,7 @@ vi.mock("@/lib/analyzer/llm", async original => ({
 import {
   applySingleClaimAtomicityValidation,
   buildContractRetrySaliencePlan,
+  canCarryForwardValidatedContractApproval,
   ClaimContractOutputSchema,
   evaluateClaimContractValidation,
   extractClaims,
@@ -43,6 +44,7 @@ import { clearPromptCache, loadPromptFile } from "@/lib/analyzer/prompt-loader";
 import { loadPromptConfig, loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import { DEFAULT_CALC_CONFIG, DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG } from "@/lib/config-schemas";
 import type { AtomicClaim, CBResearchState } from "@/lib/analyzer/types";
+import savedContractCases from "../../../fixtures/claim-contract-retry-consistency.json";
 
 const promptFile = readFileSync(path.resolve(__dirname, "../../../../prompts/claimboundary.prompt.md"), "utf8");
 let activePrompt: string;
@@ -125,6 +127,25 @@ afterEach(() => {
 });
 
 describe("carrier presence and fidelity", () => {
+  it.each(savedContractCases.fixtures)("replays the saved $name assessment without changing carrier fidelity", fixture => {
+    const candidates = fixture.claims.map(c => ({ ...claim(c.statement), ...c })) as AtomicClaim[];
+    const raw = ClaimContractOutputSchema.parse(fixture.assessment);
+    expect(raw).toEqual(fixture.assessment);
+    expect([german, portuguese]).toContain(fixture.input);
+    const result = evaluateClaimContractValidation(raw, candidates, fixture.inputClassification);
+    expect(result.summary.preservesContract).toBe(true);
+    expect(result.effectiveRePromptRequired).toBe(fixture.expectedRetry);
+    expect(result.summary.failureMode).toBe(fixture.expectedRetry ? "contract_violated" : undefined);
+    expect(result.carrierFidelityFailure).toBeUndefined();
+    expect(result.anchorRetryReason).toBeUndefined();
+    expect(buildContractRetrySaliencePlan(result).anchorEscalation.mode).toBe("none");
+    if (fixture.expectedRetry) {
+      expect(result.summary.truthConditionAnchor?.validPreservedIds).toEqual(["AC_02"]);
+      expect(result.summary.contractCarrierClaimIds).toBeUndefined();
+      expect(canCarryForwardValidatedContractApproval(result.summary, candidates, candidates)).toBe(false);
+    }
+  });
+
   it.each([false, true])("does not treat a retry-only carrier as drift (top-level retry=%s)", retry => {
     const raw = assessment();
     raw.claims[0].recommendedAction = "retry";
@@ -132,8 +153,13 @@ describe("carrier presence and fidelity", () => {
     raw.inputAssessment.preservesOriginalClaimContract = !retry;
     const result = evaluateClaimContractValidation(raw, [claim()]);
     expect(result.anchorRetryReason).toBeUndefined();
-    expect(result.effectiveRePromptRequired).toBe(retry);
+    expect(result.effectiveRePromptRequired).toBe(true);
     expect(result.summary.preservesContract).toBe(!retry);
+    expect(result.summary.failureMode).toBe("contract_violated");
+    expect(result.summary.contractCarrierClaimIds).toBeUndefined();
+    expect(result.assessment).toBe(raw);
+    expect(result.carrierFidelityFailure).toBeUndefined();
+    expect(canCarryForwardValidatedContractApproval(result.summary, [claim()], [claim()])).toBe(false);
     expect(result.summary.truthConditionAnchor?.validPreservedIds).toEqual(["AC_01"]);
   });
 
@@ -146,6 +172,49 @@ describe("carrier presence and fidelity", () => {
     expect(uncited.summary.contractCarrierClaimIds ?? []).toEqual(severity === "none" ? ["AC_01"] : []);
     raw.truthConditionAnchor!.preservedInClaimIds = ["AC_01"];
     expect(evaluateClaimContractValidation(raw, [claim()], "multi_assertion_input").summary.contractCarrierClaimIds).toEqual(["AC_01"]);
+  });
+
+  it.each([german, portuguese])("honors a current non-carrier retry with no anchor: %s", input => {
+    const current = [claim(input), { ...claim(input), id: "AC_02", thesisRelevance: "tangential" as const }];
+    const raw = assessment({ truthConditionAnchor: undefined });
+    raw.claims.push({ ...raw.claims[0], claimId: "AC_02", recommendedAction: "retry", proxyDriftSeverity: "mild" });
+    const result = evaluateClaimContractValidation(raw, current);
+    expect(result.summary).toMatchObject({ preservesContract: true, rePromptRequired: true, failureMode: "contract_violated" });
+    expect(result.anchorRetryReason).toBeUndefined();
+    expect(buildContractRetrySaliencePlan(result).anchorEscalation.mode).toBe("none");
+  });
+
+  it("ignores foreign retry IDs without parsing retry wording from a current claim's reason", () => {
+    const raw = assessment();
+    raw.claims[0].reasoning = "recommendedAction:retry";
+    raw.claims.push({ ...raw.claims[0], claimId: "stale-id", recommendedAction: "retry" });
+    const result = evaluateClaimContractValidation(raw, [claim()]);
+    expect(result.summary).toMatchObject({ preservesContract: true, rePromptRequired: false });
+    expect(result.summary.failureMode).toBeUndefined();
+  });
+
+  it.each(["material", "fidelity"] as const)("does not broaden non-carrier %s handling when action is keep", kind => {
+    const raw = assessment({ truthConditionAnchor: undefined });
+    if (kind === "material") raw.claims[0].proxyDriftSeverity = "material";
+    else raw.claims[0].preservesEvaluativeMeaning = false;
+    const result = evaluateClaimContractValidation(raw, [claim()]);
+    expect(result.summary).toMatchObject({ preservesContract: true, rePromptRequired: false });
+  });
+
+  it("selects an explicit-retry challenger without borrowing the primary assessment", async () => {
+    const primary = evaluateClaimContractValidation(assessment(), [claim()]);
+    const raw = assessment();
+    raw.claims[0].recommendedAction = "retry";
+    raw.claims[0].reasoning = "challenger structural retry";
+    const challenger = evaluateClaimContractValidation(raw, [claim()]);
+    const winner = selectPreferredSingleClaimContractChallenge(primary, challenger);
+    expect(winner).toBe(challenger);
+    expect(winner.summary.preservesContract).toBe(true);
+    const rendered = await render(winner);
+    expect(rendered.failingClaimCount).toBe(1);
+    expect(context(rendered.content).flaggedAssessments[0].reasoning).toBe("challenger structural retry");
+    expect(rendered.content).not.toContain("primary assessment");
+    expect(buildContractRetrySaliencePlan(winner).anchorEscalation.mode).toBe("none");
   });
 });
 

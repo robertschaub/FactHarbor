@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AtomicClaim } from "@/lib/analyzer/types";
 import type { ClaimContractValidationResult } from "@/lib/analyzer/claim-extraction-stage";
+import savedContractCases from "../../../fixtures/claim-contract-retry-consistency.json";
 
 const mocks = vi.hoisted(() => ({ generate: vi.fn(), calc: vi.fn(), render: vi.fn() }));
 vi.mock("ai", () => ({ generateText: mocks.generate, Output: { object: vi.fn(() => ({})) }, APICallError: { isInstance: () => false } }));
@@ -83,6 +84,63 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Stage 1 bounded contract capture", () => {
+  it.each([0, 1])("honors retry-only critique with recovery budget %s without changing preservation", async maxRetries => {
+    const s = await scenario({ maxRetries });
+    const assessment = critique();
+    assessment.claims[0].recommendedAction = "retry";
+    assessment.claims[0].proxyDriftSeverity = "mild";
+    s.queues.CLAIM_EXTRACTION_PASS2 = Array.from({ length: 1 + maxRetries }, () => pass2());
+    s.queues.CLAIM_CONTRACT_VALIDATION = Array.from({ length: 1 + maxRetries }, () => structuredClone(assessment));
+    s.queues.CLAIM_VALIDATION = [gate()];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: true, rePromptRequired: true, failureMode: "contract_violated" });
+    expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
+    expect(mocks.generate).toHaveBeenCalledTimes(4 + 2 * maxRetries);
+    expect(s.queues.CLAIM_EXTRACTION_PASS2).toEqual([]);
+    expect(s.queues.CLAIM_CONTRACT_VALIDATION).toEqual([]);
+    if (maxRetries) {
+      const steps = s.capture("contract_validation_retry_triggered").adminCapture.steps;
+      expect(steps.find((step: any) => step.step === "initial_contract").validator.claims[0].recommendedAction).toBe("retry");
+    }
+  });
+
+  it.each([false, true])("retains retry after count-floor replacement (initial retry-only=%s)", async retryOnly => {
+    const s = await scenario({}, false, PT, { minCoreClaimsPerContext: 3, supplementalRepromptMaxAttempts: 1 });
+    const replacement = [...claims, { ...claims[0], id: "AC_03", statement: "O processo respeitou os requisitos constitucionais." }];
+    const initial = critique(claims, !retryOnly);
+    if (retryOnly) initial.claims[0].recommendedAction = "retry";
+    const final = critique(replacement);
+    final.claims[2].recommendedAction = "retry";
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(), pass2(replacement)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [initial, final];
+    s.queues.CLAIM_VALIDATION = [gate(), gate(replacement)];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: true, rePromptRequired: true, failureMode: "contract_violated", stageAttribution: "count_floor_reprompt" });
+    expect(result.contractValidationSummary?.adminCapture?.steps.find(step => step.step === "final_contract")?.validator?.claims[2].recommendedAction).toBe("retry");
+    expect(mocks.generate).toHaveBeenCalledTimes(7);
+    expect(s.queues.CLAIM_EXTRACTION_PASS2).toEqual([]);
+  });
+
+  it.each([false, true])("keeps C11b's existing literal-carrier routing (inflected anchor=%s)", async inflected => {
+    const s = await scenario({ repairPassEnabled: true }, false, DE);
+    const fixture = savedContractCases.fixtures.find(f => f.name === "de-stress")!;
+    const candidates = fixture.claims.map(c => ({ ...claims[0], ...c })) as AtomicClaim[];
+    const assessment = structuredClone(fixture.assessment);
+    assessment.truthConditionAnchor!.anchorText = inflected ? "rechtskräftige" : "rechtskräftig";
+    const extracted = { ...pass2(candidates), impliedClaim: DE, articleThesis: DE };
+    s.queues.CLAIM_EXTRACTION_PASS2 = [extracted];
+    // Without successful repair, the existing centrality cap keeps three
+    // claims and therefore requires final validation of that smaller set.
+    s.queues.CLAIM_CONTRACT_VALIDATION = inflected
+      ? [assessment, critique(candidates)]
+      : [assessment, critique(candidates.slice(0, 3))];
+    s.queues.CLAIM_CONTRACT_REPAIR = inflected ? [extracted] : [];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    await s.run();
+    expect(mocks.generate).toHaveBeenCalledTimes(inflected ? 6 : 5);
+    expect(s.state.warnings.filter((w: any) => w.type === "contract_repair_pass_fired")).toHaveLength(inflected ? 1 : 0);
+  });
+
   it("attributes an adopted multi-event reprompt and captures its candidates", async () => {
     const s = await scenario({}, false, PT, { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 });
     const original = [claims[0]];
@@ -249,7 +307,7 @@ describe("Stage 1 completion existing-claim gate", () => {
 
   it("keeps completion for retry-only and mild flags; ignores injected IDs outside the current set", async () => {
     const s = await scenario({ completionEnabled: true });
-    const assessment = critique(claims, true);
+    const assessment = critique(claims); // Explicit retry alone now opens existing completion eligibility.
     assessment.claims[0].recommendedAction = "retry";
     assessment.claims[0].proxyDriftSeverity = "mild";
     assessment.antiInferenceCheck!.injectedClaimIds = ["not_a_current_claim"];

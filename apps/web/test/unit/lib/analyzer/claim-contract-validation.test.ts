@@ -1444,7 +1444,10 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     const evaluated = evaluateClaimContractValidation(result, claims, "multi_assertion_input");
 
     expect(evaluated.summary.preservesContract).toBe(true);
-    expect(evaluated.summary.contractCarrierClaimIds).toEqual(["AC_01", "AC_02"]);
+    // The explicit non-carrier retry retains preservation but prevents
+    // approval-dependent protection until the current set validates cleanly.
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.summary.contractCarrierClaimIds).toBeUndefined();
   });
 
   it("does not promote every clean thesis-direct claim as a carrier for single-claim inputs", () => {

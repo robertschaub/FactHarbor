@@ -87,6 +87,7 @@ import type {
 } from "@/lib/analyzer/types";
 import { createUnverifiedFallbackVerdict } from "@/lib/analyzer/pipeline-utils";
 import { Pass2AtomicClaimSchema } from "@/lib/analyzer/claim-extraction-stage";
+import savedContractCases from "../../../fixtures/claim-contract-retry-consistency.json";
 
 // ============================================================================
 // TEST DATA FACTORIES — CB types only (§22.3.2)
@@ -988,7 +989,8 @@ vi.mock("ai", () => ({
   APICallError: { isInstance: vi.fn(() => false) },
 }));
 
-vi.mock("@/lib/analyzer/llm", () => ({
+vi.mock("@/lib/analyzer/llm", async (importOriginal) => ({
+  extractSchemaErrors: (await importOriginal<typeof import("@/lib/analyzer/llm")>()).extractSchemaErrors,
   getModelForTask: vi.fn(() => ({ model: "mock-model", modelName: "mock-model", provider: "anthropic" })),
   extractStructuredOutput: vi.fn(),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
@@ -11666,6 +11668,73 @@ describe("M2: evaluateExplanationRubric error handling", () => {
 describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it.each([true, false])("keeps the existing terminal gate for retry-only output (preservation=%s)", async preserves => {
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    const aggregation = await import("@/lib/analyzer/aggregation-stage");
+    const fixture = savedContractCases.fixtures.find(f => f.name === "pt-usable")!;
+    const claims = fixture.claims.map(c => createAtomicClaim(c as Partial<AtomicClaim>));
+    const assessment = structuredClone(fixture.assessment);
+    assessment.inputAssessment.preservesOriginalClaimContract = preserves;
+    assessment.claims[0].recommendedAction = "retry";
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: { centralityThreshold: "medium", maxAtomicClaims: 5, claimAutoSelectionEnabled: false } } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({ config: {} } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({ config: {
+      mixedConfidenceThreshold: 40, salienceCommitment: { enabled: false },
+      claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+      claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: false,
+        surgicalRepairEnabled: false, completionEnabled: false, validatorAvailabilityMaxAttempts: 0 },
+    } } as any);
+    mockSearch.mockResolvedValue({ results: [], providersUsed: [] } as any);
+    const priorLoadSection = mockLoadSection.getMockImplementation();
+    const priorGenerateText = mockGenerateText.getMockImplementation();
+    const priorExtractOutput = mockExtractOutput.getMockImplementation();
+    mockLoadSection.mockReset();
+    mockLoadSection.mockResolvedValue({ content: "offline prompt", variables: {} });
+    const outputs = [
+      { impliedClaim: fixture.input, backgroundDetails: "", roughClaims: [], detectedLanguage: "pt" },
+      { impliedClaim: fixture.input, articleThesis: fixture.input, backgroundDetails: fixture.input, inputClassification: fixture.inputClassification, atomicClaims: claims },
+      assessment,
+      { validatedClaims: claims.map(c => ({ claimId: c.id, passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" })) },
+    ];
+    mockGenerateText.mockReset();
+    mockExtractOutput.mockReset();
+    mockGenerateText.mockResolvedValue({ text: "", usage: {} } as any);
+    mockExtractOutput.mockImplementation(() => {
+      if (!outputs.length) throw new Error("Unexpected offline model call");
+      return outputs.shift();
+    });
+    const stoppedAtResearch = new Error("offline: reached research entry");
+    const stoppedAtDamaged = new Error("offline: reached damaged-report aggregation");
+    const aggregate = vi.spyOn(aggregation, "aggregateAssessment").mockRejectedValue(stoppedAtDamaged);
+    const progress: string[] = [];
+    try {
+      await expect(runClaimBoundaryAnalysis({ inputValue: fixture.input, inputType: "text", onEvent: message => {
+        progress.push(message);
+        if (message === "Researching evidence for claims...") throw stoppedAtResearch;
+      } })).rejects.toThrow(preserves ? stoppedAtResearch : stoppedAtDamaged);
+      expect(outputs).toEqual([]);
+      if (preserves) {
+        expect(progress).toContain("Researching evidence for claims...");
+        expect(aggregate).not.toHaveBeenCalled();
+      } else {
+        expect(progress).not.toContain("Researching evidence for claims...");
+        expect(aggregate).toHaveBeenCalledOnce();
+        const state = aggregate.mock.calls[0][4];
+        expect(state.understanding?.contractValidationSummary).toMatchObject({ preservesContract: false, rePromptRequired: true });
+        expect(state.warnings.some(w => w.type === "report_damaged")).toBe(true);
+      }
+    } finally {
+      aggregate.mockRestore();
+      mockLoadSection.mockReset();
+      mockGenerateText.mockReset();
+      mockExtractOutput.mockReset();
+      if (priorLoadSection) mockLoadSection.mockImplementation(priorLoadSection);
+      if (priorGenerateText) mockGenerateText.mockImplementation(priorGenerateText);
+      if (priorExtractOutput) mockExtractOutput.mockImplementation(priorExtractOutput);
+    }
   });
 
   it("records startup config provenance with jobId for claimboundary jobs", async () => {

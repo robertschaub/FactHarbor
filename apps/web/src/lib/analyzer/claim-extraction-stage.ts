@@ -4013,7 +4013,12 @@ export function evaluateClaimContractValidation(
       `normative_injection: claims [${antiInf.injectedClaimIds.join(",")}] added normative/legal assertion not in input`;
   }
 
-  const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
+  // Honor explicit extraction retries for the current set without treating
+  // retry intent alone as lost meaning or changing the terminal policy.
+  const explicitCurrentClaimRetry = selectFlaggedContractAssessments(contractResult, claims)
+    .some((assessment) => assessment.recommendedAction === "retry");
+  const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired
+    || anchorOverrideRetry || explicitCurrentClaimRetry;
   const preservesContract = contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry;
   // C9 (Phase 5): validator returned a usable result. Any failure here is a
   // genuine contract violation, not a validator-availability issue.

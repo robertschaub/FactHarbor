@@ -1,0 +1,178 @@
+{
+  "provenance": "Exact validator outputs and projected candidate fields from the 2026-09-25 bounded stage screen. These are saved model outputs, not factual endorsements or new benchmark inputs.",
+  "fixtures": [
+    {
+      "name": "pt-usable",
+      "input": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+      "sourceRawSha256": "bf073748eb0e46cd25c400e66e22cf953e63327cd1a61a6d758872062c170852",
+      "sourcePacketSha256": "8e1abed710e4f6708ec4dc3dd05675fe747461b6a6cd167bb698e67dd00fc178",
+      "inputClassification": "ambiguous_single_claim",
+      "claims": [
+        {
+          "id": "AC_01",
+          "statement": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro em termos de conformidade com procedimentos e garantias processuais.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        },
+        {
+          "id": "AC_02",
+          "statement": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou os requisitos constitucionais em termos de conformidade com a Constituição Federal Brasileira.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        },
+        {
+          "id": "AC_03",
+          "statement": "No processo contra Jair Bolsonaro por tentativa de golpe de Estado, as sentenças proferidas foram justas.",
+          "category": "evaluative",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        }
+      ],
+      "assessment": {
+        "inputAssessment": {
+          "preservesOriginalClaimContract": true,
+          "rePromptRequired": false,
+          "summary": "Two dimensions of procedural/constitutional compliance and a separate fairness-of-sentences claim, each direct and atomic; jointly cover the input's conjuncts."
+        },
+        "truthConditionAnchor": {
+          "presentInInput": true,
+          "anchorText": "as sentencas proferidas foram justas",
+          "preservedInClaimIds": [
+            "AC_03"
+          ],
+          "preservedByQuotes": [
+            "as sentenças proferidas foram justas"
+          ]
+        },
+        "antiInferenceCheck": {
+          "normativeClaimInjected": false,
+          "injectedClaimIds": [],
+          "reasoning": "Procedural/constitutional compliance and 'justas' terms are drawn directly from input wording, not inferred additions."
+        },
+        "claims": [
+          {
+            "claimId": "AC_01",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "none",
+            "recommendedAction": "keep",
+            "reasoning": "Isolates procedural-law compliance conjunct with neutral qualifier, matching input's own predicate."
+          },
+          {
+            "claimId": "AC_02",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "none",
+            "recommendedAction": "keep",
+            "reasoning": "Isolates constitutional requirements conjunct with neutral qualifier, distinct from AC_01."
+          },
+          {
+            "claimId": "AC_03",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "none",
+            "recommendedAction": "keep",
+            "reasoning": "Preserves the substantive fairness-of-sentences anchor verbatim from input."
+          }
+        ]
+      },
+      "expectedRetry": false
+    },
+    {
+      "name": "de-stress",
+      "input": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "sourceRawSha256": "7e65e4f998adc5045258f13b33d3294a1ba6631fa02d35b51f99dc1f8d0d0c3b",
+      "sourcePacketSha256": "3ece39b47a66224acc40a12c119a8f35114147d76fdae407bf25ea69cae11ccd",
+      "inputClassification": "multi_assertion_input",
+      "claims": [
+        {
+          "id": "AC_01",
+          "statement": "Der Bundesrat unterzeichnete den EU-Vertrag (Vertragspaket Schweiz–EU) am 2. März 2026 durch Bundespräsident Guy Parmelin.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        },
+        {
+          "id": "AC_02",
+          "statement": "Mit der Unterzeichnung am 2. März 2026 wurde der EU-Vertrag rechtskräftig bindend für die Schweiz.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        },
+        {
+          "id": "AC_03",
+          "statement": "Das Parlament entschied über den EU-Vertrag erst nach der Unterzeichnung durch den Bundesrat am 2. März 2026.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        },
+        {
+          "id": "AC_04",
+          "statement": "Das Schweizer Stimmvolk entschied über den EU-Vertrag erst nach der Unterzeichnung durch den Bundesrat am 2. März 2026.",
+          "category": "factual",
+          "thesisRelevance": "direct",
+          "claimDirection": "supports_thesis"
+        }
+      ],
+      "assessment": {
+        "inputAssessment": {
+          "preservesOriginalClaimContract": true,
+          "rePromptRequired": false,
+          "summary": "The signing, its legally binding effect ('rechtskräftig'), and the temporal priority over parliament and popular decisions are each preserved across AC_01-AC_04, though the modifier is externalized into a separate claim (AC_02) rather than fused into the branch claims (AC_03, AC_04), which weakens branch atomicity per rule 18."
+        },
+        "truthConditionAnchor": {
+          "presentInInput": true,
+          "anchorText": "rechtskräftig",
+          "preservedInClaimIds": [
+            "AC_02"
+          ],
+          "preservedByQuotes": [
+            "wurde der EU-Vertrag rechtskräftig bindend für die Schweiz"
+          ]
+        },
+        "antiInferenceCheck": {
+          "normativeClaimInjected": false,
+          "injectedClaimIds": [],
+          "reasoning": "'rechtskräftig' and the legal-binding framing are taken directly from the input's own wording; no external legal/constitutional/legitimacy claim is added beyond what the input asserts."
+        },
+        "claims": [
+          {
+            "claimId": "AC_01",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "none",
+            "recommendedAction": "keep",
+            "reasoning": "Preserves the base signing event with date and actor; neutral factual anchor for the other claims."
+          },
+          {
+            "claimId": "AC_02",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "mild",
+            "recommendedAction": "retry",
+            "reasoning": "Correctly carries 'rechtskräftig' but externalizes it as standalone claim instead of fusing into branch claims (rule 18)."
+          },
+          {
+            "claimId": "AC_03",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "mild",
+            "recommendedAction": "retry",
+            "reasoning": "Preserves temporal ordering for parliament branch but lacks fused 'rechtskräftig' modifier on the main act (rule 18)."
+          },
+          {
+            "claimId": "AC_04",
+            "preservesEvaluativeMeaning": true,
+            "usesNeutralDimensionQualifier": true,
+            "proxyDriftSeverity": "mild",
+            "recommendedAction": "retry",
+            "reasoning": "Preserves temporal ordering for popular vote branch but lacks fused 'rechtskräftig' modifier on the main act (rule 18)."
+          }
+        ]
+      },
+      "expectedRetry": true
+    }
+  ]
+}
