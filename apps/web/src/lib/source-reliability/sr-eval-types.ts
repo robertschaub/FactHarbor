@@ -286,38 +286,17 @@ export interface EvaluationError {
 // SHARED UTILITY
 // ============================================================================
 
-export async function withTimeout<T>(
-  operationName: string,
-  timeoutMs: number,
-  operation: () => Promise<T>,
-): Promise<T> {
-  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    timeoutHandle = setTimeout(() => {
-      reject(new Error(`${operationName} timeout after ${timeoutMs}ms`));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([operation(), timeoutPromise]);
-  } finally {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
-  }
-}
-
 /**
- * Run one SR `generateText` call under `withTimeout` and record it for cost accounting.
- * The evaluate-source route captures these records and returns them to the job that
- * asked for the evaluation. A call that times out keeps running and is billed, so its
- * usage is recorded as unknown, not zero.
+ * Run one SR call with SDK cancellation and record its cost evidence.
+ * The route returns these records to the requesting job. Cancellation does not
+ * establish remote billing; missing usage stays unknown, never zero.
  */
 export async function generateTextWithTimeout(
   operationName: string,
   timeoutMs: number,
   params: Parameters<typeof generateText>[0],
 ): Promise<Awaited<ReturnType<typeof generateText>>> {
+  params.abortSignal?.throwIfAborted();
   const model = params.model as string | { provider?: string; modelId?: string };
   // Pricing reads the provider family ("anthropic", "openai"), not the SDK's "anthropic.messages".
   const provider = typeof model === "string" ? "unknown" : String(model.provider ?? "unknown").split(".")[0];
@@ -348,10 +327,11 @@ export async function generateTextWithTimeout(
   };
   let result: Awaited<ReturnType<typeof generateText>>;
   try {
-    result = await withTimeout(operationName, timeoutMs, () => generateText(params));
+    result = await generateText({ ...params, timeout: timeoutMs });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     record(call(false, message.includes(operationName) ? message : `${operationName}: ${message}`), { error });
+    params.abortSignal?.throwIfAborted();
     throw error;
   }
   record(call(true), { result });

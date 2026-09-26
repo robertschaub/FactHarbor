@@ -113,7 +113,10 @@ describe("generateTextWithTimeout", () => {
   });
 
   it("records a timed-out call as failed with unknown usage and rethrows", async () => {
-    mockGenerateText.mockReturnValue(new Promise(() => {}));
+    mockGenerateText.mockImplementation(async (params) => {
+      const signal = AbortSignal.timeout(params.timeout);
+      return new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }));
+    });
 
     const run = await captureMetrics(() =>
       generateTextWithTimeout("SR test call", 5, {
@@ -123,7 +126,7 @@ describe("generateTextWithTimeout", () => {
     );
 
     expect(run.ok).toBe(false);
-    expect(String((run as { error: unknown }).error)).toContain("SR test call timeout");
+    expect(String((run as { error: unknown }).error)).toContain("aborted due to timeout");
     expect(run.captured.llmCalls[0]).toMatchObject({
       provider: "openai",
       modelName: "gpt-4.1-mini",
@@ -131,7 +134,18 @@ describe("generateTextWithTimeout", () => {
       usageAvailable: false,
       failureKind: "transport",
     });
-    expect(run.captured.llmCalls[0].errorMessage).toBe("SR test call timeout after 5ms");
+    expect(run.captured.llmCalls[0].errorMessage).toBe("SR test call: The operation was aborted due to timeout");
+  });
+
+  it("does not invoke or account a pre-aborted request", async () => {
+    const signal = AbortSignal.abort(new Error("cancelled before dispatch"));
+    const run = await captureMetrics(() => generateTextWithTimeout("SR test", 1000, {
+      model: {} as any, prompt: "p", abortSignal: signal,
+    }));
+    expect(run.ok).toBe(false);
+    expect(!run.ok && run.error).toBe(signal.reason);
+    expect(mockGenerateText).not.toHaveBeenCalled();
+    expect(run.captured.llmCalls).toEqual([]);
   });
 
   it("records a completed call that reports no usage as usage-unknown", async () => {
