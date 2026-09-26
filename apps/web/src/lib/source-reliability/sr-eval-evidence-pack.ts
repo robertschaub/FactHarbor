@@ -256,7 +256,8 @@ export function normalizeLanguageName(lang: string): string | null {
  * NOTE: This detects actual site content language, NOT country-based inference.
  * Returns null for English or if detection fails.
  */
-export async function detectSourceLanguage(domain: string): Promise<string | null> {
+export async function detectSourceLanguage(domain: string, abortSignal?: AbortSignal): Promise<string | null> {
+  abortSignal?.throwIfAborted();
   // Check cache first
   if (languageDetectionCache.has(domain)) {
     return languageDetectionCache.get(domain) ?? null;
@@ -269,25 +270,32 @@ export async function detectSourceLanguage(domain: string): Promise<string | nul
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const response = await fetch(`https://${domain}`, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; FactHarbor/1.0; +https://factharbor.com)",
-        "Accept": "text/html",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
+    let html: string;
+    try {
+      const response = await fetch(`https://${domain}`, {
+        signal: abortSignal ? AbortSignal.any([abortSignal, controller.signal]) : controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; FactHarbor/1.0; +https://factharbor.com)",
+          "Accept": "text/html",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
 
-    clearTimeout(timeout);
+      abortSignal?.throwIfAborted();
 
-    if (!response.ok) {
-      debugLog(`[SR-Eval] Failed to fetch ${domain}: ${response.status}`, { domain, status: response.status });
-      languageDetectionCache.set(domain, null);
-      languageDetectionStatus.set(domain, "failed");
-      return null;
+      if (!response.ok) {
+        debugLog(`[SR-Eval] Failed to fetch ${domain}: ${response.status}`, { domain, status: response.status });
+        languageDetectionCache.set(domain, null);
+        languageDetectionStatus.set(domain, "failed");
+        return null;
+      }
+
+      html = await response.text();
+      abortSignal?.throwIfAborted();
+
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const html = await response.text();
 
     // Check for redirect pages (common pattern: .com redirects to .com.br for Brazilian sites)
     const isRedirectPage = /<title[^>]*>Redirecting/i.test(html) ||
@@ -303,21 +311,23 @@ export async function detectSourceLanguage(domain: string): Promise<string | nul
 
       for (const altDomain of alternateDomains) {
         debugLog(`[SR-Eval] Redirect page detected, trying alternate TLD: ${altDomain}`, { domain, altDomain });
+        abortSignal?.throwIfAborted();
+        const altController = new AbortController();
+        const altTimeout = setTimeout(() => altController.abort(), 8000);
         try {
-          const altController = new AbortController();
-          const altTimeout = setTimeout(() => altController.abort(), 8000);
           const altResponse = await fetch(`https://${altDomain}`, {
-            signal: altController.signal,
+            signal: abortSignal ? AbortSignal.any([abortSignal, altController.signal]) : altController.signal,
             headers: {
               "User-Agent": "Mozilla/5.0 (compatible; FactHarbor/1.0; +https://factharbor.com)",
               "Accept": "text/html",
               "Accept-Language": "en-US,en;q=0.9",
             },
           });
-          clearTimeout(altTimeout);
+          abortSignal?.throwIfAborted();
 
           if (altResponse.ok) {
             const altHtml = await altResponse.text();
+            abortSignal?.throwIfAborted();
             // Check if alternate site has actual content (not another redirect)
             if (altHtml.length > 5000 || /<article|<main/i.test(altHtml)) {
               const altLangMatch = altHtml.match(/<html[^>]*?\s+lang=["']([^"']+)["']/i);
@@ -334,7 +344,10 @@ export async function detectSourceLanguage(domain: string): Promise<string | nul
             }
           }
         } catch {
+          abortSignal?.throwIfAborted();
           // Continue to next alternate
+        } finally {
+          clearTimeout(altTimeout);
         }
       }
     }
@@ -406,9 +419,11 @@ Content sample:
 ${textContent}`,
             temperature: 0,
             maxOutputTokens: 50,
+            abortSignal,
         },
       );
 
+      abortSignal?.throwIfAborted();
       const detectedLang = text.trim();
       const normalized = normalizeLanguageName(detectedLang);
 
@@ -427,6 +442,7 @@ ${textContent}`,
     return null;
 
   } catch (err) {
+    abortSignal?.throwIfAborted();
     const errorMessage = String(err);
     const isTimeout = (err as { name?: string })?.name === "AbortError";
     debugLog(`[SR-Eval] Language detection failed for ${domain}`, { domain, error: errorMessage });
@@ -628,7 +644,8 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
   const domainToken = `"${domain}"`;
 
   // Detect source language for multi-language queries
-  const sourceLanguage = await detectSourceLanguage(domain);
+  const sourceLanguage = await detectSourceLanguage(domain, config.abortSignal);
+  config.abortSignal?.throwIfAborted();
   let translatedTerms: Record<string, string> = {};
 
   if (sourceLanguage) {

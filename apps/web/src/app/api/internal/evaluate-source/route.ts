@@ -255,43 +255,51 @@ export async function POST(req: Request) {
     );
   }
 
-  // Evaluate. This request runs outside the analysis job's metrics context, so the
-  // records of its LLM calls and searches go back to the caller as `accounting`.
-  const evaluation = await captureMetrics(() => evaluateSourceWithConsensus(
-    body.domain,
-    effectiveMultiModel,
-    effectiveConfidenceThreshold,
-    config,
-  ));
-  const accounting = {
-    llmCalls: evaluation.captured.llmCalls,
-    searchQueries: evaluation.captured.searchQueries.map((query) => ({ ...query, origin: "source_reliability" })),
-  };
+  const deadline = new AbortController();
+  const timeout = setTimeout(() => deadline.abort(new DOMException("Source reliability evaluation deadline exceeded", "TimeoutError")),
+    Math.max(0, requestBudgetMs - (Date.now() - requestStartedAtMs)));
+  config.abortSignal = AbortSignal.any([req.signal, deadline.signal]);
+  try {
+    // Evaluate. This request runs outside the analysis job's metrics context, so the
+    // records of its LLM calls and searches go back to the caller as `accounting`.
+    const evaluation = await captureMetrics(async () => {
+      config.abortSignal!.throwIfAborted();
+      const result = await evaluateSourceWithConsensus(body.domain, effectiveMultiModel, effectiveConfidenceThreshold, config);
+      config.abortSignal!.throwIfAborted();
+      return result;
+    });
+    const accounting = {
+      llmCalls: evaluation.captured.llmCalls,
+      searchQueries: evaluation.captured.searchQueries.map((query) => ({ ...query, origin: "source_reliability" })),
+    };
 
-  if (!evaluation.ok) {
-    console.error(`[SR-Eval] Evaluation error for ${body.domain}:`, evaluation.error);
-    return NextResponse.json(
-      { error: "Evaluation error", details: String(evaluation.error), accounting },
-      { status: 500 }
-    );
+    if (!evaluation.ok) {
+      console.error(`[SR-Eval] Evaluation error for ${body.domain}:`, evaluation.error);
+      return NextResponse.json(
+        { error: "Evaluation error", details: String(evaluation.error), accounting },
+        { status: 500 }
+      );
+    }
+    const result = evaluation.value;
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: "Evaluation failed",
+          reason: result.error.reason,
+          details: result.error.details,
+          primaryScore: result.error.primaryScore,
+          primaryConfidence: result.error.primaryConfidence,
+          secondaryScore: result.error.secondaryScore,
+          secondaryConfidence: result.error.secondaryConfidence,
+          accounting,
+        },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json({ ...result.data, accounting });
+  } finally {
+    clearTimeout(timeout);
   }
-  const result = evaluation.value;
-
-  if (!result.success) {
-    return NextResponse.json(
-      {
-        error: "Evaluation failed",
-        reason: result.error.reason,
-        details: result.error.details,
-        primaryScore: result.error.primaryScore,
-        primaryConfidence: result.error.primaryConfidence,
-        secondaryScore: result.error.secondaryScore,
-        secondaryConfidence: result.error.secondaryConfidence,
-        accounting,
-      },
-      { status: 422 }
-    );
-  }
-
-  return NextResponse.json({ ...result.data, accounting });
 }

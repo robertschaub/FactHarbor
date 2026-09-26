@@ -138,14 +138,17 @@ export async function POST(req: Request) {
     const evalUrl = new URL("/api/internal/evaluate-source", internalBase);
 
     const callEvaluateSource = async (targetDomain: string) => {
+      req.signal.throwIfAborted();
       const resp = await fetch(evalUrl.toString(), {
         method: "POST",
+        signal: req.signal,
         headers: {
           "Content-Type": "application/json",
           ...(runnerKey ? { "x-runner-key": runnerKey } : {}),
         },
         body: JSON.stringify({ domain: targetDomain, multiModel, confidenceThreshold, consensusThreshold }),
       });
+      req.signal.throwIfAborted();
       return resp;
     };
 
@@ -155,6 +158,7 @@ export async function POST(req: Request) {
     //             domain and store that result too; return the root's score to the caller.
     for (const domain of domains) {
       try {
+        req.signal.throwIfAborted();
         const rootDomain = getFamilyDomain(domain);
         const hasRootFallback = rootDomain !== domain;
 
@@ -204,11 +208,13 @@ export async function POST(req: Request) {
               continue;
             }
             const errData = await evalResponse.json().catch(() => ({}));
+            req.signal.throwIfAborted();
             results.push({ domain, success: false, error: errData.details || errData.error || `HTTP ${evalResponse.status}` });
             continue;
           }
 
           const evalData = await evalResponse.json();
+          req.signal.throwIfAborted();
           await setCachedScore(domain, evalData.score, evalData.confidence, evalData.modelPrimary, evalData.modelSecondary, evalData.consensusAchieved, evalData.reasoning, evalData.category, evalData.biasIndicator, evalData.evidenceCited, evalData.evidencePack, evalData.fallbackUsed || false, evalData.fallbackReason || null, evalData.identifiedEntity || null, evalData.sourceType || null);
 
           if (evalData.score !== null || !hasRootFallback) {
@@ -237,10 +243,12 @@ export async function POST(req: Request) {
         }
 
         const rootEvalData = await rootEvalResponse.json();
+        req.signal.throwIfAborted();
         await setCachedScore(rootDomain, rootEvalData.score, rootEvalData.confidence, rootEvalData.modelPrimary, rootEvalData.modelSecondary, rootEvalData.consensusAchieved, rootEvalData.reasoning, rootEvalData.category, rootEvalData.biasIndicator, rootEvalData.evidenceCited, rootEvalData.evidencePack, rootEvalData.fallbackUsed || false, rootEvalData.fallbackReason || null, rootEvalData.identifiedEntity || null, rootEvalData.sourceType || null);
 
         results.push({ domain, resolvedDomain: rootDomain, success: true, cached: false, score: rootEvalData.score, confidence: rootEvalData.confidence, consensus: rootEvalData.consensusAchieved, fallbackUsed: rootEvalData.fallbackUsed || false, fallbackReason: rootEvalData.fallbackReason || null, identifiedEntity: rootEvalData.identifiedEntity || null, models: rootEvalData.modelSecondary ? `${rootEvalData.modelPrimary} + ${rootEvalData.modelSecondary}` : rootEvalData.modelPrimary });
       } catch (err) {
+        req.signal.throwIfAborted();
         results.push({
           domain,
           success: false,
@@ -249,6 +257,7 @@ export async function POST(req: Request) {
       }
     }
 
+    req.signal.throwIfAborted();
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
     const cached = results.filter(r => r.success && r.cached).length;
@@ -264,6 +273,7 @@ export async function POST(req: Request) {
       results,
     });
   } catch (err) {
+    req.signal.throwIfAborted();
     console.error("[Admin SR] Evaluate error:", err);
     return NextResponse.json(
       { error: "Failed to evaluate domains" },

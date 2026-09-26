@@ -142,7 +142,9 @@ export async function enrichEvidencePackWithQualityAssessment(
   config: EvidenceQualityAssessmentConfig,
   requestStartedAtMs: number,
   requestBudgetMs: number | null,
+  abortSignal?: AbortSignal,
 ): Promise<EvidencePack> {
+  abortSignal?.throwIfAborted();
   if (!evidencePack.enabled) {
     return {
       ...evidencePack,
@@ -189,6 +191,7 @@ export async function enrichEvidencePackWithQualityAssessment(
   }
 
   const promptTemplate = await renderEvidenceQualityAssessmentPrompt();
+  abortSignal?.throwIfAborted();
   if (!promptTemplate) {
     return {
       ...evidencePack,
@@ -216,15 +219,18 @@ export async function enrichEvidencePackWithQualityAssessment(
         timeoutMs,
         {
           model,
+          abortSignal,
           prompt,
           temperature: getDeterministicTemperature(0.1),
           maxOutputTokens: 3000,
         },
       );
+      abortSignal?.throwIfAborted();
       return response.text ?? "";
     },
   });
 
+  abortSignal?.throwIfAborted();
   if (assessment.warningMessage) {
     console.warn("[SR-Eval][warning] sr_evidence_quality_assessment_failed", {
       domain,

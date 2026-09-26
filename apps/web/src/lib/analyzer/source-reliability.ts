@@ -534,12 +534,12 @@ async function evaluateSourceInternal(
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       // A failed evaluation can still have made paid calls; its body carries their records.
       // 422 and 5xx come after the evaluation started; 400, 401 and 429 are refused before any work.
       const failureBody = await response.json().catch(() => null);
+      controller.signal.throwIfAborted();
       if (!recordCapturedMetrics(failureBody?.accounting) && (response.status === 422 || response.status >= 500)) {
         recordUnaccountedEvaluation(domain, `HTTP ${response.status}`);
       }
@@ -558,15 +558,15 @@ async function evaluateSourceInternal(
     }
 
     const data = await response.json();
+    controller.signal.throwIfAborted();
     if (!recordCapturedMetrics(data?.accounting)) {
       recordUnaccountedEvaluation(domain, "response without accounting");
     }
     return data as EvaluationResult;
   } catch (err: any) {
-    clearTimeout(timeoutId);
     const errorType = classifySourceReliabilityTransportError(err);
     // Unless the request never reached the route, the evaluation may have run (a timed-out
-    // one keeps running and is billed), but its records never arrive.
+    // one may still incur remote charges), but its records never arrive.
     if (!evaluationNeverStarted(err)) {
       recordUnaccountedEvaluation(domain, errorType === "timeout" ? `timeout after ${EVAL_TIMEOUT_MS}ms` : errorType);
     }
@@ -582,6 +582,8 @@ async function evaluateSourceInternal(
       console.error(`[SR] Evaluation API call failed for ${domain}:`, err);
     }
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

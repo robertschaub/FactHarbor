@@ -232,6 +232,7 @@ async function evaluateWithModel(
   evidencePack: EvidencePack,
   config: SrEvalConfig,
 ): Promise<{ result: EvaluationResult; modelName: string } | null> {
+  config.abortSignal?.throwIfAborted();
   const apiKeyEnvVar = modelProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
   const apiKey = process.env[apiKeyEnvVar];
 
@@ -264,6 +265,7 @@ async function evaluateWithModel(
       SR_PRIMARY_EVALUATION_TIMEOUT_MS,
       {
           model,
+          abortSignal: config.abortSignal,
           messages: [
             {
               role: "system",
@@ -284,6 +286,7 @@ Always respond with valid JSON only.`,
       },
     );
 
+    config.abortSignal?.throwIfAborted();
     const text = response.text?.trim() || "";
     if (!text) {
       console.error(`[SR-Eval] ${modelProvider.toUpperCase()} FAILED: Empty response`);
@@ -314,6 +317,7 @@ Always respond with valid JSON only.`,
     debugLog(`[SR-Eval] ${modelProvider.toUpperCase()} SUCCESS: score=${scoreStr}, confidence=${result.confidence.toFixed(2)}, rating=${result.factualRating}, type=${result.sourceType || "unknown"}`, { domain, result });
     return { result, modelName };
   } catch (err: any) {
+    config.abortSignal?.throwIfAborted();
     const errorMessage = err?.message || String(err);
     const errorCode = err?.code || err?.status || "unknown";
 
@@ -355,6 +359,7 @@ async function refineEvaluation(
   refinementNotes: string;
   originalScore: number | null;
 } | null> {
+  config.abortSignal?.throwIfAborted();
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey || apiKey.startsWith("PASTE_") || apiKey === "sk-...") {
@@ -379,12 +384,14 @@ async function refineEvaluation(
       SR_REFINEMENT_TIMEOUT_MS,
       {
         model: openai(modelName),
+        abortSignal: config.abortSignal,
         prompt,
         temperature,
         maxOutputTokens: 2000,
       },
     );
 
+    config.abortSignal?.throwIfAborted();
     // Parse JSON response
     const cleaned = text.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
     let parsed: unknown;
@@ -444,6 +451,7 @@ async function refineEvaluation(
       originalScore,
     };
   } catch (err: unknown) {
+    config.abortSignal?.throwIfAborted();
     const errorMessage = err instanceof Error ? err.message : String(err);
     debugLog(`[SR-Eval] Refinement failed with error: ${errorMessage}`, { domain });
     return null;
@@ -469,7 +477,9 @@ export async function evaluateSourceWithConsensus(
   confidenceThreshold: number,
   config: SrEvalConfig,
 ): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
+  config.abortSignal?.throwIfAborted();
   const initialEvidencePack = await buildEvidencePack(domain, config);
+  config.abortSignal?.throwIfAborted();
   if (initialEvidencePack.enabled) {
     debugLog(
       `[SR-Eval] Evidence pack for ${domain}: ${initialEvidencePack.items.length} items`,
@@ -521,9 +531,11 @@ export async function evaluateSourceWithConsensus(
       config.evidenceQualityAssessment,
       config.requestStartedAtMs,
       config.requestBudgetMs,
+      config.abortSignal,
     );
   }
 
+  config.abortSignal?.throwIfAborted();
   return evaluateSourceWithPinnedEvidencePack(
     domain,
     evidencePack,
@@ -557,7 +569,9 @@ export async function evaluateSourceWithPinnedEvidencePack(
   // ============================================================================
   // STEP 1: Primary evaluation (Anthropic Claude)
   // ============================================================================
+  config.abortSignal?.throwIfAborted();
   const primary = await evaluateWithModel(domain, "anthropic", evidencePack, config);
+  config.abortSignal?.throwIfAborted();
   if (!primary) {
     debugLog(`[SR-Eval] Primary evaluation failed for ${domain}`);
     return {
@@ -615,6 +629,7 @@ export async function evaluateSourceWithPinnedEvidencePack(
     config,
   );
 
+  config.abortSignal?.throwIfAborted();
   // If refinement fails, fall back to primary result
   if (!refinement) {
     debugLog(`[SR-Eval] Refinement failed for ${domain}, using primary result`);

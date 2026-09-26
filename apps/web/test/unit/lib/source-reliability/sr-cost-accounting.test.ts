@@ -69,11 +69,12 @@ function srSearch(): SearchQueryMetric {
   };
 }
 
-function evaluateRequest(domain: string): Request {
+function evaluateRequest(domain: string, signal?: AbortSignal, budgetMs?: number): Request {
   return new Request("http://localhost/api/internal/evaluate-source", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ domain }),
+    body: JSON.stringify({ domain, budgetMs }),
+    signal,
   });
 }
 
@@ -234,6 +235,46 @@ describe("evaluate-source route accounting", () => {
     expect(body.accounting.searchQueries[0].origin).toBe("source_reliability");
   });
 
+  it("rejects an already-disconnected request without starting evaluation", async () => {
+    const response = await POST(evaluateRequest("cancelled-before-work.test", AbortSignal.abort()));
+    expect(response.status).toBe(500);
+    expect(mockEvaluate).not.toHaveBeenCalled();
+    expect((await response.json()).accounting.llmCalls).toEqual([]);
+  });
+
+  it.each(["disconnect", "deadline"])("cancels %s, retains records and clears its deadline", async (mode) => {
+    vi.useFakeTimers();
+    const parent = new AbortController();
+    let entered!: () => void;
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    mockEvaluate.mockImplementation(async (_domain, _multi, _confidence, config) => {
+      recordLLMCall(srCall());
+      entered();
+      return new Promise((_resolve, reject) => config.abortSignal.addEventListener("abort", () => reject(config.abortSignal.reason), { once: true }));
+    });
+    try {
+      const pending = POST(evaluateRequest("cancelled-" + mode + ".test", parent.signal, 10_000));
+      await started;
+      if (mode === "disconnect") parent.abort();
+      else await vi.advanceTimersByTimeAsync(10_000);
+      const response = await pending;
+      expect(response.status).toBe(500);
+      expect((await response.json()).accounting.llmCalls).toHaveLength(1);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("rejects a late result even when the engine ignores cancellation", async () => {
+    const parent = new AbortController();
+    mockEvaluate.mockImplementation(async () => {
+      parent.abort();
+      return { success: true, data: { score: 0.7 } };
+    });
+    const response = await POST(evaluateRequest("late-score.test", parent.signal));
+    expect(response.status).toBe(500);
+    expect(await response.json()).not.toHaveProperty("score");
+  });
+
   it("returns the records of a failed evaluation", async () => {
     mockEvaluate.mockImplementation(async () => {
       recordLLMCall(srCall());
@@ -290,6 +331,23 @@ describe("prefetchSourceReliability accounting", () => {
     expect(job.captured.llmCalls).toHaveLength(1);
     expect(job.captured.llmCalls[0].taskType).toBe("source_reliability");
     expect(job.captured.searchQueries).toHaveLength(1);
+  });
+
+  it("keeps the outer deadline active while the response body stalls", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn(async (_url, init) => new Response(new ReadableStream({ start(controller) {
+      init.signal.addEventListener("abort", () => controller.error(init.signal.reason), { once: true });
+    } }), { headers: { "content-type": "application/json" } })));
+    try {
+      const pending = captureMetrics(() => prefetchSourceReliability(["https://body-stall.test/story"]));
+      await vi.advanceTimersByTimeAsync(90_000);
+      const job = await pending;
+      expect(job.captured.llmCalls).toHaveLength(1);
+      expect(job.captured.llmCalls[0]).toMatchObject({ usageAvailable: false, success: false });
+      expect(job.captured.llmCalls[0].errorMessage).toContain("timeout");
+      expect(mockSetCachedScore).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
   });
 
   it("marks a timed-out evaluation as unknown cost instead of free", async () => {

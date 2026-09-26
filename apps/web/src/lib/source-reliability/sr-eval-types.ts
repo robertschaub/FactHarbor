@@ -129,6 +129,8 @@ export interface SrEvalConfig {
   evidenceQualityAssessment: EvidenceQualityAssessmentConfig;
   requestStartedAtMs: number;
   requestBudgetMs: number | null;
+  /** Runtime-only cancellation; never persisted in UCM or cache keys. */
+  abortSignal?: AbortSignal;
 }
 
 // ============================================================================
