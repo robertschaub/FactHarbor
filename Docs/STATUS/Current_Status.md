@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-09-24 (CI, .NET test coverage, live-test and cost-metrics notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
+**Last Updated**: 2026-09-26 (local SR cancellation integration; 2026-09-24: CI, .NET test coverage, live-test and cost-metrics notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
 **Phase**: **Alpha** — development paused since 2026-07-02 for funding reasons
 **Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development remains paused because the metered third-party API cost of running analyses exceeds what the project can fund.** The active engineering plan remains intact. A separately authorized local F-35 repair (`e29773c71`, 2026-09-09) changed pipeline code and ran paid verification; its implementation session recorded **1,991 passing / 1 skipped across 103 files**. That bounded work does not resume the broader plan. See the [F-35 handoff](../AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md) for its evidence and remaining issues, and [Why development is paused](#why-development-is-paused) below.
 
@@ -84,6 +84,8 @@ Grouped by theme rather than by day. Full commit history in git; dated sections 
 - ✅ **Failure-attribution and stage-isolation fixtures** (`66ddc0cf`, 2026-07-01): frozen fixtures + `scripts/diag/current-build-failure-attribution.cjs`, satisfying plan Phases 1–2.
 
 ### Retrieval, search, and reliability
+
+- **Local SR cancellation integration** (`98a5b864`, 2026-09-26): deadline/disconnect cancellation and accounting propagation are integrated locally. Prior verification (297 offline tests and TypeScript) remains applicable; three real-socket component cases and five HTTP smoke checks after cold startup now pass. Zero provider calls/jobs in this verification; no production deployment, model promotion or demonstrated savings. [Evidence and limits](../WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#sr-cancellation-local-integration-closeout--2026-09-26).
 
 - ✅ **Search priority swapped Serper→P1, Google CSE→free-tier fallback** (`362a9312`). Local DB live; **production re-seed still pending**.
 - ✅ **Google-CSE throttle** (`406393c9`) to curb 429-driven evidence drift under runner concurrency — a verdict-variance driver, not just a latency issue.
