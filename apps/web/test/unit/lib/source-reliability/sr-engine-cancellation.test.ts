@@ -1,9 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 const mocks = vi.hoisted(() => ({ generate: vi.fn(), build: vi.fn(), enrich: vi.fn() }));
 vi.mock("@/lib/source-reliability/sr-eval-types", async (original) => ({ ...await original<object>(), generateTextWithTimeout: mocks.generate }));
 vi.mock("@/lib/source-reliability/sr-eval-evidence-pack", () => ({ buildEvidencePack: mocks.build }));
 vi.mock("@/lib/source-reliability/sr-eval-enrichment", async (original) => ({ ...await original<object>(), enrichEvidencePackWithQualityAssessment: mocks.enrich }));
 vi.mock("@/lib/analyzer/llm", () => ({ getPromptCachingOptions: () => undefined }));
+// loadPromptFile uses this DB-backed seam. Keep real parsing/sections while
+// supplying the unchanged file prompt explicitly, with no config DB bootstrap.
+vi.mock("@/lib/config-loader", () => ({ loadPromptConfig: async () => {
+  const content = await readFile(new URL("../../../../prompts/source-reliability.prompt.md", import.meta.url), "utf8");
+  return { content, contentHash: createHash("sha256").update(content).digest("hex") };
+} }));
 import { evaluateSourceWithConsensus, evaluateSourceWithPinnedEvidencePack } from "@/lib/source-reliability/sr-eval-engine";
 import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import type { EvidencePack, SrEvalConfig } from "@/lib/source-reliability/sr-eval-types";
@@ -41,6 +49,28 @@ describe("SR engine cancellation boundaries", () => {
     mocks.generate.mockResolvedValueOnce(primary).mockRejectedValueOnce(new DOMException("local timeout", "TimeoutError"));
     const result = await evaluateSourceWithPinnedEvidencePack("outlet.test", pack, true, 0.8, config(new AbortController().signal));
     expect(result.success).toBe(true); expect(result.success && result.data.consensusAchieved).toBe(false);
+  });
+  it("preserves primary failure after a local timeout while the request remains live", async () => {
+    mocks.generate.mockRejectedValueOnce(new DOMException("local timeout", "TimeoutError"));
+    const result = await evaluateSourceWithPinnedEvidencePack("outlet.test", pack, true, 0.8, config(new AbortController().signal));
+    expect(result).toMatchObject({ success: false, error: { reason: "primary_model_failed" } });
+    expect(mocks.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["cancelled", "live"])("the real eligible enrichment path handles a %s assessment", async (mode) => {
+    const actual = await vi.importActual<typeof import("@/lib/source-reliability/sr-eval-enrichment")>("@/lib/source-reliability/sr-eval-enrichment");
+    const parent = new AbortController(); const reason = new Error("assessment cancelled");
+    mocks.generate.mockImplementationOnce(async (_label, _cap, params) => {
+      expect(params.abortSignal).toBe(parent.signal);
+      if (mode === "cancelled") { parent.abort(reason); throw reason; }
+      return { text: JSON.stringify({ classifications: [{ id: "E1", relevant: true, probativeValue: "high", evidenceCategory: "fact_checker_rating" }] }) };
+    });
+    const pending = actual.enrichEvidencePackWithQualityAssessment("outlet.test", pack,
+      DEFAULT_SR_CONFIG.evidenceQualityAssessment!, Date.now(), 300_000, parent.signal);
+    if (mode === "cancelled") await expect(pending).rejects.toBe(reason);
+    else expect(await pending).toMatchObject({ items: [{ id: "E1", probativeValue: "high", evidenceCategory: "fact_checker_rating" }], qualityAssessment: { status: "applied" } });
+    expect(mocks.generate).toHaveBeenCalledExactlyOnceWith("SR evidence quality assessment",
+      DEFAULT_SR_CONFIG.evidenceQualityAssessment!.timeoutMs, expect.objectContaining({ maxOutputTokens: 3000 }));
   });
   it("preserves the 90s EQA budget guard", async () => {
     await evaluateSourceWithConsensus("outlet.test", true, 0.8, config(undefined, 90_000));

@@ -183,4 +183,47 @@ describe("SR translation process cache", () => {
     expect(getEventListeners(parent.signal, "abort")).toHaveLength(0);
   });
 
+  it.each(["German", "French"])("a signal-less %s consumer survives four cancelled signalled consumers", async (language) => {
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    generate.mockImplementation(async (_label, _cap, { prompt, abortSignal }) => {
+      await held;
+      expect(abortSignal.aborted).toBe(false);
+      return { text: JSON.stringify(completeResponse(prompt)), finishReason: "stop" };
+    });
+    const { getTranslatedSearchTerms } = await import("@/lib/source-reliability/sr-eval-evidence-pack");
+    const parents = Array.from({ length: 4 }, () => new AbortController());
+    const cancelled = parents.map(parent => getTranslatedSearchTerms(language, parent.signal).catch(error => error));
+    const survivor = getTranslatedSearchTerms(language);
+    for (const parent of parents) parent.abort();
+    expect(generate.mock.calls[0][2].abortSignal.aborted).toBe(false);
+    release();
+    expect(await survivor).toEqual(completeResponse(generate.mock.calls[0][2].prompt));
+    expect(await Promise.all(cancelled)).toEqual(parents.map(parent => parent.signal.reason));
+    expect(generate).toHaveBeenCalledTimes(1);
+    for (const parent of parents) expect(getEventListeners(parent.signal, "abort")).toHaveLength(0);
+  });
+
+  it("retains success when cancellation wins the microtask before a consumer receives it", async () => {
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    generate.mockImplementation(async (_label, _cap, { prompt }) => {
+      await held; return { text: JSON.stringify(completeResponse(prompt)), finishReason: "stop" };
+    });
+    const { getTranslatedSearchTerms } = await import("@/lib/source-reliability/sr-eval-evidence-pack");
+    const parent = new AbortController();
+    const shared = getTranslatedSearchTerms("French");
+    // Register before the signalled consumer: shared settlement has happened,
+    // but this reaction cancels before that consumer's reaction can return it.
+    void shared.then(() => parent.abort());
+    const cancelled = getTranslatedSearchTerms("French", parent.signal).catch(error => error);
+    release();
+    const value = await shared;
+    expect(await cancelled).toBe(parent.signal.reason);
+    expect(await getTranslatedSearchTerms("French")).toBe(value);
+    expect(generate.mock.calls[0][2].abortSignal.aborted).toBe(false);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(getEventListeners(parent.signal, "abort")).toHaveLength(0);
+  });
+
 });

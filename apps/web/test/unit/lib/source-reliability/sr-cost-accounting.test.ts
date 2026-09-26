@@ -7,6 +7,7 @@ const mockGenerateText = vi.fn();
 const mockEvaluate = vi.fn();
 const mockBatchGetCachedData = vi.fn();
 const mockSetCachedScore = vi.fn();
+const mockGetConfig = vi.fn();
 
 vi.mock("ai", () => ({
   generateText: (...args: unknown[]) => mockGenerateText(...args),
@@ -26,7 +27,7 @@ vi.mock("@/lib/auth", () => ({ checkRunnerKey: () => true }));
 
 vi.mock("@/lib/config-storage", async () => {
   const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
-  return { getConfig: async () => ({ config: DEFAULT_SR_CONFIG }) };
+  return { getConfig: async (...args: unknown[]) => mockGetConfig(...args) ?? { config: DEFAULT_SR_CONFIG } };
 });
 
 import { createMetricsCollector, type LLMCallMetric, type SearchQueryMetric } from "@/lib/analyzer/metrics";
@@ -216,6 +217,78 @@ describe("captureMetrics and recordCapturedMetrics", () => {
 describe("evaluate-source route accounting", () => {
   beforeEach(() => {
     mockEvaluate.mockReset();
+    mockGetConfig.mockReset();
+  });
+
+  it("uses the default budget without an immediate timeout when budgetMs is omitted", async () => {
+    vi.useFakeTimers();
+    let entered!: () => void; const started = new Promise<void>(resolve => { entered = resolve; });
+    mockEvaluate.mockImplementation(async (_domain, _multi, _confidence, config) => {
+      expect(config.requestBudgetMs).toBe(90_000); entered();
+      await new Promise(resolve => setTimeout(resolve, 5));
+      expect(config.abortSignal.aborted).toBe(false);
+      return { success: true, data: { score: 0.7 } };
+    });
+    try {
+      const req = evaluateRequest("default-budget.test"); req.headers.set("x-forwarded-for", "default-budget");
+      const pending = POST(req); await started;
+      await vi.advanceTimersByTimeAsync(5);
+      expect((await pending).status).toBe(200); expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("starts no evaluation after disconnect during config loading", async () => {
+    const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
+    const parent = new AbortController();
+    mockGetConfig.mockImplementationOnce(async () => { parent.abort(); return { config: DEFAULT_SR_CONFIG }; });
+    const req = evaluateRequest("config-disconnect.test", parent.signal); req.headers.set("x-forwarded-for", "config-disconnect");
+    expect((await POST(req)).status).toBe(500);
+    expect(mockEvaluate).not.toHaveBeenCalled();
+  });
+
+  it.each(["domain", "ip"])("preserves %s rate accounting for a pre-aborted request", async (limit) => {
+    const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
+    mockGetConfig.mockResolvedValue({ config: { ...DEFAULT_SR_CONFIG, rateLimitPerIp: limit === "ip" ? 1 : 10 } });
+    const domain = `rate-${limit}.test`;
+    const first = evaluateRequest(domain, AbortSignal.abort()); first.headers.set("x-forwarded-for", `rate-${limit}`);
+    expect((await POST(first)).status).toBe(500);
+    const second = evaluateRequest(limit === "ip" ? "other-rate.test" : domain); second.headers.set("x-forwarded-for", `rate-${limit}`);
+    const response = await POST(second);
+    expect(response.status).toBe(429);
+    expect((await response.json()).reason).toContain(limit === "ip" ? "IP rate limit" : "Domain cooldown");
+    expect(mockEvaluate).not.toHaveBeenCalled();
+  });
+
+  it("keeps two requests' cancellation signals separate without mutating shared config", async () => {
+    const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
+    const parents = [new AbortController(), new AbortController()];
+    const configs: any[] = []; let entered!: () => void; let release!: () => void;
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const held = new Promise<void>(resolve => { release = resolve; });
+    mockEvaluate.mockImplementation(async (_domain, _multi, _confidence, config) => {
+      configs.push(config); if (configs.length === 2) entered();
+      await held; config.abortSignal.throwIfAborted(); return { success: true, data: { score: 0.7 } };
+    });
+    const pending = parents.map((parent, i) => {
+      const req = evaluateRequest(`separate-${i}.test`, parent.signal); req.headers.set("x-forwarded-for", `separate-${i}`);
+      return POST(req);
+    });
+    await started; parents[0].abort();
+    expect(configs[0]).not.toBe(configs[1]);
+    expect(configs.map(config => config.abortSignal.aborted)).toEqual([true, false]);
+    expect(DEFAULT_SR_CONFIG).not.toHaveProperty("abortSignal");
+    release(); expect((await Promise.all(pending)).map(response => response.status)).toEqual([500, 200]);
+  });
+
+  it("aborts synchronously when setup has already exhausted the request budget", async () => {
+    const req = evaluateRequest("overdue-setup.test", undefined, 10_000); req.headers.set("x-forwarded-for", "overdue-setup");
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValueOnce(now).mockReturnValue(now + 10_001);
+    try {
+      const response = await POST(req);
+      expect(response.status).toBe(500); expect(mockEvaluate).not.toHaveBeenCalled();
+      expect((await response.json()).accounting.llmCalls).toEqual([]);
+    } finally { clock.mockRestore(); }
   });
 
   it("returns the evaluation's records with the result", async () => {

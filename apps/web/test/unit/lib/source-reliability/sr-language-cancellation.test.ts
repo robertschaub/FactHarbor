@@ -6,6 +6,23 @@ vi.mock("@/lib/fact-checker-service", () => ({}));
 beforeEach(() => { vi.resetModules(); generate.mockReset(); });
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 describe("SR homepage/language cancellation", () => {
+  it.each(["alternate", "llm"])("does not cache cancellation during %s detection", async (stage) => {
+    const { detectSourceLanguage } = await import("@/lib/source-reliability/sr-eval-evidence-pack");
+    const parent = new AbortController(); const reason = new Error("language request cancelled");
+    const send = vi.fn();
+    if (stage === "alternate") send.mockResolvedValueOnce(new Response('<html><title>Redirecting</title></html>'))
+      .mockImplementationOnce(async () => { parent.abort(reason); throw reason; });
+    else {
+      send.mockResolvedValueOnce(new Response(`<html><p>${"fixture ".repeat(40)}</p></html>`));
+      generate.mockImplementationOnce(async () => { parent.abort(reason); throw reason; });
+    }
+    vi.stubGlobal("fetch", send);
+    await expect(detectSourceLanguage("language-fixture.com", parent.signal)).rejects.toBe(reason);
+    send.mockResolvedValueOnce(new Response('<html lang="fr"></html>'));
+    expect(await detectSourceLanguage("language-fixture.com")).toBe("French");
+    expect(send).toHaveBeenCalledTimes(stage === "alternate" ? 3 : 2);
+    expect(generate).toHaveBeenCalledTimes(stage === "llm" ? 1 : 0);
+  });
   it.each(["German", "French"])("does not cache cancellation before later %s detection", async (language) => {
     const { detectSourceLanguage } = await import("@/lib/source-reliability/sr-eval-evidence-pack");
     const parent = new AbortController();

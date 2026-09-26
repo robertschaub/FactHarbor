@@ -36,3 +36,16 @@ it("starts no evaluation after disconnect during configuration loading", async (
     body: JSON.stringify({ domains: "example.com", forceReevaluate: true }) }))).rejects.toBe(reason);
   expect(send).not.toHaveBeenCalled(); expect(mocks.cache).not.toHaveBeenCalled();
 });
+
+it("continues to the next domain after an internal deadline failure while the Admin request is live", async () => {
+  const send = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Evaluation error", details: "TimeoutError", accounting: { llmCalls: [], searchQueries: [] } }), { status: 500 }))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ score: 0.6, confidence: 0.7, consensusAchieved: true }), { status: 200 }));
+  vi.stubGlobal("fetch", send);
+  const response = await POST(new Request("http://localhost/api/admin/source-reliability", { method: "POST",
+    body: JSON.stringify({ domains: "example.com,example.org", forceReevaluate: true }) }));
+  expect(response.status).toBe(200);
+  const result = await response.json();
+  expect(result.results.map((entry: { success: boolean }) => entry.success)).toEqual([false, true]);
+  expect(send).toHaveBeenCalledTimes(2); expect(mocks.cache).toHaveBeenCalledTimes(1);
+});

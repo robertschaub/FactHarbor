@@ -422,7 +422,8 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     if (options.abortSignal?.aborted) {
       if (providerDispatched) recordSearchQuery({
         query: options.query,
-        provider: primaryProviderKey,
+        provider: primaryProviderKey === "auto" ? "auto" : (providersUsed[0]
+          || (isSearchProviderKey(primaryProviderKey) ? SEARCH_PROVIDER_DEFINITIONS[primaryProviderKey].name : primaryProviderKey)),
         resultsCount: 0,
         durationMs: Date.now() - startTime,
         cached: false,

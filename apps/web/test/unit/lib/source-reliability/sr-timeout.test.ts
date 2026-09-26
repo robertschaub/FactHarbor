@@ -42,7 +42,10 @@ describe.each(["anthropic", "openai"] as const)("SR SDK cancellation (%s)", (pro
       if (mode === "timeout" || mode === "body") {
         expect(run.captured.llmCalls[0].errorMessage).toBe("SR test call: The operation was aborted due to timeout");
         expect(!run.ok && (run.error as Error).name).toBe("TimeoutError");
-      } else expect(!run.ok && run.error).toBe(reason);
+      } else {
+        expect(!run.ok && run.error).toBe(reason);
+        expect(run.captured.llmCalls[0].errorMessage).toBe("SR test call: Request cancelled");
+      }
     } finally { clearTimeout(timer); }
   });
 });

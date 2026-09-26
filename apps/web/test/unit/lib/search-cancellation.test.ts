@@ -65,6 +65,7 @@ describe.each(providers)("%s parent cancellation", (name, load) => {
     })));
     expect(await search({ query: "fixture", maxResults: 1, timeoutMs: 10, abortSignal: new AbortController().signal })).toEqual([]);
   });
+  // Wikipedia classifies non-OK statuses without reading an error body.
   if (name !== "Wikipedia") it("does not classify an aborted error-body read as provider failure", async () => {
     const search = await load(); const parent = new AbortController(); const reason = new Error("request ended");
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 429, text: async () => { parent.abort(reason); throw reason; } })));

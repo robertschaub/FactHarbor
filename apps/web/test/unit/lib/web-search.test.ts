@@ -359,7 +359,9 @@ describe("searchWebWithProvider", () => {
     expect(mockSearchBrave).not.toHaveBeenCalled(); expect(mockSearchWikipedia).not.toHaveBeenCalled();
     expect(mockRecordSuccess).not.toHaveBeenCalled(); expect(mockRecordFailure).not.toHaveBeenCalled();
     expect(mockCacheSearchResults).not.toHaveBeenCalled();
-    expect(mockRecordSearchQuery).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ success: false, cached: false }));
+    expect(mockRecordSearchQuery).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      success: false, cached: false, provider: provider === "auto" ? "auto" : "Google-CSE",
+    }));
   });
 
   it("rejects a cache lookup completed after cancellation without inventing a call", async () => {
@@ -367,6 +369,16 @@ describe("searchWebWithProvider", () => {
     mockGetCachedSearchResults.mockImplementationOnce(async () => { parent.abort(reason); return { results: [], provider: "cache" }; });
     await expect(searchWebWithProvider({ query: "fixture", maxResults: 1, abortSignal: parent.signal })).rejects.toBe(reason);
     expect(mockRecordSearchQuery).not.toHaveBeenCalled(); expect(mockSearchGoogleCse).not.toHaveBeenCalled();
+  });
+
+  it("records one failed logical query when cancellation arrives during a cache write", async () => {
+    const parent = new AbortController(); const reason = new Error("cancelled while caching");
+    mockSearchGoogleCse.mockResolvedValueOnce([{ url: "https://reference.test/item", title: "Reference", snippet: "fixture" }]);
+    mockCacheSearchResults.mockImplementationOnce(async () => { parent.abort(reason); });
+    await expect(searchWebWithProvider({ query: "fixture", maxResults: 1, abortSignal: parent.signal,
+      config: { ...DEFAULT_SEARCH_CONFIG, provider: "google-cse" } })).rejects.toBe(reason);
+    expect(mockCacheSearchResults).toHaveBeenCalledTimes(1);
+    expect(mockRecordSearchQuery).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ success: false, provider: "Google-CSE" }));
   });
 
   it("cancelled supplementary search stops the next provider and records one failed logical query", async () => {

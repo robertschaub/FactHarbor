@@ -256,8 +256,11 @@ export async function POST(req: Request) {
   }
 
   const deadline = new AbortController();
-  const timeout = setTimeout(() => deadline.abort(new DOMException("Source reliability evaluation deadline exceeded", "TimeoutError")),
-    Math.max(0, requestBudgetMs - (Date.now() - requestStartedAtMs)));
+  const deadlineReason = new DOMException("Source reliability evaluation deadline exceeded", "TimeoutError");
+  const remainingMs = requestBudgetMs - (Date.now() - requestStartedAtMs);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  if (remainingMs > 0) timeout = setTimeout(() => deadline.abort(deadlineReason), remainingMs);
+  else deadline.abort(deadlineReason);
   config.abortSignal = AbortSignal.any([req.signal, deadline.signal]);
   try {
     // Evaluate. This request runs outside the analysis job's metrics context, so the

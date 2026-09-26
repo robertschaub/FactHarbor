@@ -331,7 +331,8 @@ export async function generateTextWithTimeout(
   try {
     result = await generateText({ ...params, timeout: timeoutMs });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const diagnosticError = params.abortSignal?.aborted ? params.abortSignal.reason : error;
+    const message = diagnosticError instanceof Error ? diagnosticError.message : String(diagnosticError);
     record(call(false, message.includes(operationName) ? message : `${operationName}: ${message}`), { error });
     params.abortSignal?.throwIfAborted();
     throw error;
