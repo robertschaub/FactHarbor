@@ -22,6 +22,26 @@ describe.each(providers)("%s parent cancellation", (name, load) => {
     await expect(search({ query: "fixture", maxResults: 1, abortSignal: signal })).rejects.toBe(signal.reason);
     expect(send).not.toHaveBeenCalled();
   });
+  if (name === "Google-CSE" || name === "Semantic-Scholar") it("settles cancelled throttle waiters without waiting for their slots or sending HTTP", async () => {
+    const search = await load();
+    const send = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ items: [], data: [] }) }));
+    vi.stubGlobal("fetch", send);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2030-01-01"));
+    try {
+      await search({ query: "fixture", maxResults: 1 });
+      send.mockClear();
+      const parent = new AbortController();
+      const pending = Promise.allSettled(Array.from({ length: 5 }, () => search({ query: "fixture", maxResults: 1, abortSignal: parent.signal })));
+      await vi.advanceTimersByTimeAsync(0);
+      parent.abort();
+      const results = await pending;
+      await vi.advanceTimersByTimeAsync(0);
+      expect(results.every(result => result.status === "rejected" && result.reason === parent.signal.reason)).toBe(true);
+      expect(send).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
   it.each(["headers", "body"])("propagates parent TimeoutError during %s without swallowing it", async (phase) => {
     const search = await load(); const parent = new AbortController();
     const reason = new DOMException("upstream deadline", "TimeoutError");

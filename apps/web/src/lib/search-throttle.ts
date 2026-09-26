@@ -8,26 +8,44 @@
  * different evidence pool). Spacing CSE calls a fixed minimum apart smooths the bursts.
  */
 
-export function createMinIntervalThrottle(intervalMs: number): () => Promise<void> {
+export function createMinIntervalThrottle(intervalMs: number): (abortSignal?: AbortSignal) => Promise<void> {
   let gate: Promise<unknown> = Promise.resolve();
   let lastStart = 0;
 
-  return function acquire(): Promise<void> {
+  return function acquire(abortSignal?: AbortSignal): Promise<void> {
+    if (abortSignal?.aborted) return Promise.reject(abortSignal.reason);
+    // Each waiter owns its listener; native composition avoids listener growth on
+    // one request signal when several provider queries share the queue.
+    const signal = abortSignal ? AbortSignal.any([abortSignal]) : undefined;
+    let cancelWait: (() => void) | undefined;
     const run = gate.then(async () => {
-      if (intervalMs <= 0) {
-        lastStart = Date.now();
-        return;
-      }
+      signal?.throwIfAborted();
       const now = Date.now();
-      const wait = Math.max(0, lastStart + intervalMs - now);
+      const wait = intervalMs <= 0 ? 0 : Math.max(0, lastStart + intervalMs - now);
       if (wait > 0) {
-        await new Promise((resolve) => setTimeout(resolve, wait));
+        await new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(() => { cancelWait = undefined; resolve(); }, wait);
+          cancelWait = () => {
+            clearTimeout(timer);
+            cancelWait = undefined;
+            reject(signal!.reason);
+          };
+        });
       }
+      signal?.throwIfAborted();
       lastStart = Date.now();
     });
-    // Keep the gate chain alive even if a waiter is cancelled/rejected upstream.
+    // Cancelled entries skip their slot without consuming the interval or
+    // poisoning the existing queue. Active cancellation also clears its timer.
     gate = run.catch(() => {});
-    return run;
+    if (!signal) return run;
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => signal.removeEventListener("abort", onAbort);
+      const onAbort = () => { cancelWait?.(); cleanup(); reject(signal.reason); };
+      signal.addEventListener("abort", onAbort, { once: true });
+      void run.then(() => { cleanup(); resolve(); }, error => { cleanup(); reject(error); });
+      if (signal.aborted) onAbort();
+    });
   };
 }
 

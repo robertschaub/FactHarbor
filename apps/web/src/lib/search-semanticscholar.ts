@@ -6,6 +6,7 @@
 
 import { WebSearchOptions, WebSearchResult } from "./web-search";
 import { warnIfMissingApiKey, extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
+import { createMinIntervalThrottle } from "./search-throttle";
 
 type SemanticScholarPaper = {
   paperId: string;
@@ -31,31 +32,14 @@ const S2_API_BASE = "https://api.search.semanticscholar.org/graph/v1/paper/searc
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 // MSR-M2: Concurrency-safe serialized async queue rate limiter.
-// Each call chains onto `pending`, guaranteeing 1.1s gaps even under concurrent invocations.
-// First call proceeds immediately (lastCallTime=0 → elapsed is huge → delay=0).
+// Use the shared abort-aware queue with the existing 1.1s spacing.
+// First call proceeds immediately; cancelled waiters consume no slot.
 //
 // Runtime assumption: single long-lived Node.js process (not edge/serverless).
 // Cold restarts safely reset the chain (first call proceeds immediately).
 // Hot module replacement during dev may break the chain (non-critical, dev-only).
 const MIN_INTERVAL_MS = 1100;
-let pending: Promise<void> = Promise.resolve();
-let lastCallTime = 0;
-
-function acquireSlot(): Promise<void> {
-  const slot = pending.then(() => {
-    const now = Date.now();
-    const elapsed = now - lastCallTime;
-    const delay = elapsed >= MIN_INTERVAL_MS ? 0 : MIN_INTERVAL_MS - elapsed;
-    return new Promise<void>(resolve => {
-      setTimeout(() => {
-        lastCallTime = Date.now();
-        resolve();
-      }, delay);
-    });
-  });
-  pending = slot;
-  return slot;
-}
+const acquireSlot = createMinIntervalThrottle(MIN_INTERVAL_MS);
 
 export async function searchSemanticScholar(options: WebSearchOptions): Promise<WebSearchResult[]> {
   options.abortSignal?.throwIfAborted();
@@ -81,7 +65,7 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
   const urlForLog = `${S2_API_BASE}?${params.toString()}`;
   console.log(`[Search] Semantic-Scholar: Fetching URL: ${urlForLog}`);
 
-  await acquireSlot();
+  await acquireSlot(options.abortSignal);
   options.abortSignal?.throwIfAborted();
 
   try {

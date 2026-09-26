@@ -54,7 +54,7 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
 
   // Stay under Google-CSE "queries per minute per user": space concurrent calls apart
   // so bursts don't 429 into mid-run provider fallback (a verdict-variance driver).
-  await acquireGoogleCseSlot();
+  await acquireGoogleCseSlot(options.abortSignal);
   options.abortSignal?.throwIfAborted();
 
   try {
