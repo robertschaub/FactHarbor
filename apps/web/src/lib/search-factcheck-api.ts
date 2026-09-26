@@ -36,6 +36,7 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 // Standard provider contract (for web-search.ts AUTO mode)
 export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Google-FactCheck: Starting search for query: "${options.query.substring(0, 50)}..."`);
   const apiKey = requireApiKey("Google-FactCheck", "GOOGLE_FACTCHECK_API_KEY");
   if (!apiKey) return [];
@@ -77,21 +78,23 @@ export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<
       headers: {
         "Accept": "application/json",
       },
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])]),
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Google-FactCheck: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] Google-FactCheck: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("Google-FactCheck", res);
+      const errorBody = await extractErrorBody("Google-FactCheck", res, options.abortSignal);
       classifyHttpError("Google-FactCheck", res.status, errorBody);
       // FactCheck-specific: 400 = bad query, just return empty
       return [];
     }
 
     const data = (await res.json()) as FactCheckApiResult;
+    options.abortSignal?.throwIfAborted();
     const claims = data.claims ?? [];
     console.log(`[Search] Google-FactCheck: ✅ Received ${claims.length} claims`);
 
@@ -125,7 +128,7 @@ export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<
     console.log(`[Search] Google-FactCheck: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    return handleFetchError("Google-FactCheck", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Google-FactCheck", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }
 

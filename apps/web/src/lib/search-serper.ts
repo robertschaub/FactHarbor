@@ -22,6 +22,7 @@ const SERPER_BASE = "https://google.serper.dev/search";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchSerper(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Serper: Starting search for query: "${options.query.substring(0, 50)}..."`);
   const apiKey = requireApiKey("Serper", "SERPER_API_KEY", { throwOnPlaceholder: true });
   if (!apiKey) return [];
@@ -50,15 +51,16 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])]),
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Serper: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] Serper: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("Serper", res);
+      const errorBody = await extractErrorBody("Serper", res, options.abortSignal);
       // Serper-specific: throw non-fatal for 5xx server errors
       if (res.status >= 500 && res.status < 600) {
         throw new SearchProviderError(
@@ -73,6 +75,7 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
     }
 
     const data = (await res.json()) as SerperResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.organic ?? [];
     console.log(`[Search] Serper: ✅ Received ${results.length} organic results`);
 
@@ -94,6 +97,6 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
     console.log(`[Search] Serper: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    return handleFetchError("Serper", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Serper", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

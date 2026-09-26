@@ -63,7 +63,8 @@ export function warnIfMissingApiKey(providerName: string, envVarName: string): s
  * Extract error body text from a failed HTTP response and log it.
  * Returns the body string (empty string if extraction fails).
  */
-export async function extractErrorBody(providerName: string, response: Response): Promise<string> {
+export async function extractErrorBody(providerName: string, response: Response, abortSignal?: AbortSignal): Promise<string> {
+  abortSignal?.throwIfAborted();
   let errorBody = "";
   try {
     errorBody = await response.text();
@@ -71,6 +72,7 @@ export async function extractErrorBody(providerName: string, response: Response)
   } catch {
     // Ignore parse errors
   }
+  abortSignal?.throwIfAborted();
   return errorBody;
 }
 
@@ -120,7 +122,9 @@ export function handleFetchError(
   providerName: string,
   timeoutMs: number,
   error: unknown,
+  abortSignal?: AbortSignal,
 ): WebSearchResult[] {
+  abortSignal?.throwIfAborted();
   if (error instanceof SearchProviderError) {
     throw error;
   }

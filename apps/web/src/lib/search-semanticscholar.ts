@@ -58,6 +58,7 @@ function acquireSlot(): Promise<void> {
 }
 
 export async function searchSemanticScholar(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Semantic-Scholar: Starting search for query: "${options.query.substring(0, 50)}..."`);
   const apiKey = warnIfMissingApiKey("Semantic-Scholar", "SEMANTIC_SCHOLAR_API_KEY");
 
@@ -81,6 +82,7 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
   console.log(`[Search] Semantic-Scholar: Fetching URL: ${urlForLog}`);
 
   await acquireSlot();
+  options.abortSignal?.throwIfAborted();
 
   try {
     const startTime = Date.now();
@@ -93,20 +95,22 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
 
     const res = await fetch(`${S2_API_BASE}?${params.toString()}`, {
       headers,
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])]),
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Semantic-Scholar: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] Semantic-Scholar: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("Semantic-Scholar", res);
+      const errorBody = await extractErrorBody("Semantic-Scholar", res, options.abortSignal);
       classifyHttpError("Semantic-Scholar", res.status, errorBody);
       return [];
     }
 
     const data = (await res.json()) as SemanticScholarResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.data ?? [];
     console.log(`[Search] Semantic-Scholar: ✅ Received ${results.length} results`);
 
@@ -145,6 +149,6 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
     console.log(`[Search] Semantic-Scholar: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    return handleFetchError("Semantic-Scholar", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Semantic-Scholar", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

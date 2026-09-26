@@ -16,6 +16,7 @@ const GOOGLE_CSE_BASE = "https://www.googleapis.com/customsearch/v1";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   const apiKey = process.env.GOOGLE_CSE_API_KEY;
   const cx = process.env.GOOGLE_CSE_ID;
   console.log(`[Search] Google CSE: Starting search for query: "${options.query.substring(0, 50)}..."`);
@@ -54,24 +55,27 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
   // Stay under Google-CSE "queries per minute per user": space concurrent calls apart
   // so bursts don't 429 into mid-run provider fallback (a verdict-variance driver).
   await acquireGoogleCseSlot();
+  options.abortSignal?.throwIfAborted();
 
   try {
     const startTime = Date.now();
     const res = await fetch(`${GOOGLE_CSE_BASE}?${params.toString()}`, {
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])])
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Google CSE: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] Google CSE: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("Google-CSE", res);
+      const errorBody = await extractErrorBody("Google-CSE", res, options.abortSignal);
       classifyHttpError("Google-CSE", res.status, errorBody, ["quota", "limit exceeded"]);
       return [];
     }
 
     const data = (await res.json()) as GoogleCseResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.items ?? [];
     console.log(`[Search] Google CSE: ✅ Received ${results.length} results`);
 
@@ -107,6 +111,6 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Google CSE: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    return handleFetchError("Google-CSE", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Google-CSE", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

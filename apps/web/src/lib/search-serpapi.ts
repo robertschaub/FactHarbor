@@ -15,6 +15,7 @@ const SERPAPI_BASE = "https://serpapi.com/search.json";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] SerpAPI: Starting search for query: "${options.query.substring(0, 50)}..."`);
   const apiKey = requireApiKey("SerpAPI", "SERPAPI_API_KEY");
   if (!apiKey) return [];
@@ -41,20 +42,22 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
   try {
     const startTime = Date.now();
     const res = await fetch(`${SERPAPI_BASE}?${params.toString()}`, {
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])])
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] SerpAPI: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] SerpAPI: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("SerpAPI", res);
+      const errorBody = await extractErrorBody("SerpAPI", res, options.abortSignal);
       classifyHttpError("SerpAPI", res.status, errorBody, ["out of searches", "quota"]);
       return [];
     }
 
     const data = (await res.json()) as SerpApiResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.organic_results ?? [];
     console.log(`[Search] SerpAPI: ✅ Received ${results.length} organic results`);
 
@@ -90,6 +93,6 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     console.log(`[Search] SerpAPI: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    return handleFetchError("SerpAPI", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("SerpAPI", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

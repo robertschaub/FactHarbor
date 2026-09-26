@@ -27,6 +27,8 @@ export type WebSearchOptions = {
   /** Optional per-query cache freshness cap in days. Shorter than the global cache TTL for freshness-sensitive searches. */
   cacheTtlDaysOverride?: number;
   timeoutMs?: number;
+  /** Runtime cancellation; excluded from persistent search identity. */
+  abortSignal?: AbortSignal;
   config?: SearchConfig;
   /** BCP-47 language code detected from claim input (e.g., "de", "fr"). Threaded to language-aware supplementary providers like Wikipedia. */
   detectedLanguage?: string;
@@ -225,6 +227,8 @@ export function getActiveSearchProviders(config?: SearchConfig): string[] {
 }
 
 export async function searchWebWithProvider(options: WebSearchOptions): Promise<WebSearchResponse> {
+  options.abortSignal?.throwIfAborted();
+  let providerDispatched = false;
   const config = options.config ?? DEFAULT_SEARCH_CONFIG;
   const primaryProviderKey = config.provider.toLowerCase();
   const results: WebSearchResult[] = [];
@@ -240,6 +244,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
 
   // 1. Check cache first (if enabled)
   const cached = await getCachedSearchResults(options, cacheConfig);
+  options.abortSignal?.throwIfAborted();
   if (cached) {
     console.log(`[Search] 🎯 Cache HIT - returning ${cached.results.length} cached results from ${cached.provider}`);
 
@@ -264,143 +269,170 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
   // 2. Execute Primary Search
   // ... (existing search logic) ...
   // (Adding recording at the end of the function)
-  const response = await (async () => {
-    if (isSearchProviderKey(primaryProviderKey) && !isSupplementaryProvider(primaryProviderKey)) {
-      const primaryResponse = await runExplicitProviderSearch({
-        provider: SEARCH_PROVIDER_DEFINITIONS[primaryProviderKey],
-        options,
-        providersUsed: [], // Collect separately to avoid duplicates
-        errors,
-        cacheConfig,
-        cbConfig,
-      });
-      results.push(...primaryResponse.results);
-      providersUsed.push(...primaryResponse.providersUsed);
-    } else if (primaryProviderKey === "auto") {
-      const autoMode = config.autoMode ?? "accumulate";
-      console.log(`[Search] Using AUTO mode (${autoMode}) for primary providers...`);
+  try {
+    const response = await (async () => {
+      if (isSearchProviderKey(primaryProviderKey) && !isSupplementaryProvider(primaryProviderKey)) {
+        const primaryResponse = await runExplicitProviderSearch({
+          provider: SEARCH_PROVIDER_DEFINITIONS[primaryProviderKey],
+          options,
+          providersUsed: [], // Collect separately to avoid duplicates
+          errors,
+          cacheConfig,
+          cbConfig,
+          onDispatch: () => { providerDispatched = true; },
+        });
+        results.push(...primaryResponse.results);
+        providersUsed.push(...primaryResponse.providersUsed);
+      } else if (primaryProviderKey === "auto") {
+        const autoMode = config.autoMode ?? "accumulate";
+        console.log(`[Search] Using AUTO mode (${autoMode}) for primary providers...`);
 
-      // Filter to only primary providers for the auto-loop
-      const primaryCandidates = buildAutoProviderInfos(config, cbConfig)
-        .filter(p => !isSupplementaryProvider(p.provider.key));
+        // Filter to only primary providers for the auto-loop
+        const primaryCandidates = buildAutoProviderInfos(config, cbConfig)
+          .filter(p => !isSupplementaryProvider(p.provider.key));
 
-      // Sort by priority
-      primaryCandidates.sort((a, b) => a.priority - b.priority || a.provider.name.localeCompare(b.provider.name));
+        // Sort by priority
+        primaryCandidates.sort((a, b) => a.priority - b.priority || a.provider.name.localeCompare(b.provider.name));
 
-      for (const providerInfo of primaryCandidates) {
-        if (results.length >= options.maxResults) break;
+        for (const providerInfo of primaryCandidates) {
+          options.abortSignal?.throwIfAborted();
+          if (results.length >= options.maxResults) break;
 
-        if (!providerInfo.available) {
-          providersUsed.push(`${providerInfo.provider.name} (circuit-open)`);
+          if (!providerInfo.available) {
+            providersUsed.push(`${providerInfo.provider.name} (circuit-open)`);
+            continue;
+          }
+
+          const remaining = options.maxResults - results.length;
+          console.log(`[Search] Trying primary ${providerInfo.provider.name} (need ${remaining} results)...`);
+          providersUsed.push(providerInfo.provider.name);
+
+          try {
+            providerDispatched = true;
+            const providerResults = await providerInfo.provider.execute({ ...options, maxResults: remaining });
+            options.abortSignal?.throwIfAborted();
+            results.push(...providerResults);
+            // 0 results is a valid response (not a failure); reset consecutive failures
+            recordSuccess(providerInfo.provider.name, cbConfig);
+            // In "first-success" mode, stop after first provider with results (legacy behavior).
+            // In "accumulate" mode (default), continue to fill remaining slots from next providers.
+            if (autoMode === "first-success" && providerResults.length > 0) break;
+          } catch (err) {
+            options.abortSignal?.throwIfAborted();
+            if (err instanceof SearchProviderError) {
+              recordFailure(providerInfo.provider.name, err.message, cbConfig);
+              errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
+            } else throw err;
+          }
+        }
+      }
+
+      // 3. Execute Supplementary Providers.
+      // Controlled by UCM supplementaryProviders.mode:
+      //   "fallback_only"      → only when primary providers returned zero results (legacy behavior)
+      //   "always_if_enabled"  → run bounded supplementary providers even when primary search succeeded
+      //   "demote_on_freshness"→ keep supplementaries available, but reduce their footprint for current-snapshot claims
+      const suppPolicy = config.supplementaryProviders;
+      const suppMode = suppPolicy?.mode ?? "always_if_enabled";
+      const demoteSupplementaries = shouldDemoteSupplementaryProviders(options, suppMode);
+      const effectiveSuppMode = suppMode === "demote_on_freshness"
+        ? "always_if_enabled"
+        : suppMode;
+      const suppMaxPerProvider = demoteSupplementaries
+        ? 1
+        : (suppPolicy?.maxResultsPerProvider ?? 3);
+      const shouldRunSupplementaryProviders =
+        primaryProviderKey !== "auto"                       // explicit provider mode: always run supplementaries
+        || effectiveSuppMode === "always_if_enabled"        // UCM policy: always run
+        || (effectiveSuppMode === "fallback_only" && results.length === 0); // fallback: only when primary returned nothing
+
+      const supplementaryKeys: SearchProviderKey[] = ["wikipedia", "semantic-scholar", "google-factcheck"];
+      for (const suppKey of supplementaryKeys) {
+        options.abortSignal?.throwIfAborted();
+        const def = SEARCH_PROVIDER_DEFINITIONS[suppKey];
+        const cand = AUTO_PROVIDER_CANDIDATES.find(c => c.providerKey === suppKey);
+
+        if (!shouldRunSupplementaryProviders || !cand || !cand.isEnabled(config) || !cand.hasCredentials()) {
+          continue;
+        }
+        if (!isProviderAvailable(def.name, cbConfig)) {
+          providersUsed.push(`${def.name} (circuit-open)`);
           continue;
         }
 
-        const remaining = options.maxResults - results.length;
-        console.log(`[Search] Trying primary ${providerInfo.provider.name} (need ${remaining} results)...`);
-        providersUsed.push(providerInfo.provider.name);
-
+        console.log(
+          `[Search] Executing supplementary provider: ${def.explicitLabel} ` +
+          `(mode: ${suppMode}, effective max: ${suppMaxPerProvider})`,
+        );
+        providersUsed.push(def.name);
         try {
-          const providerResults = await providerInfo.provider.execute({ ...options, maxResults: remaining });
-          results.push(...providerResults);
-          // 0 results is a valid response (not a failure); reset consecutive failures
-          recordSuccess(providerInfo.provider.name, cbConfig);
-          // In "first-success" mode, stop after first provider with results (legacy behavior).
-          // In "accumulate" mode (default), continue to fill remaining slots from next providers.
-          if (autoMode === "first-success" && providerResults.length > 0) break;
+          // Thread detected language into supplementary options for language-aware providers (Wikipedia)
+          const suppOptions: WebSearchOptions = {
+            ...options,
+            maxResults: suppMaxPerProvider,
+          };
+          providerDispatched = true;
+          const suppResults = await def.execute(suppOptions);
+          options.abortSignal?.throwIfAborted();
+          results.push(...suppResults);
+          recordSuccess(def.name, cbConfig);
         } catch (err) {
+          options.abortSignal?.throwIfAborted();
           if (err instanceof SearchProviderError) {
-            recordFailure(providerInfo.provider.name, err.message, cbConfig);
+            recordFailure(def.name, err.message, cbConfig);
             errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
-          } else throw err;
+          } else {
+            console.error(`[Search] Supplementary provider ${def.name} failed:`, err);
+          }
         }
       }
-    }
 
-    // 3. Execute Supplementary Providers.
-    // Controlled by UCM supplementaryProviders.mode:
-    //   "fallback_only"      → only when primary providers returned zero results (legacy behavior)
-    //   "always_if_enabled"  → run bounded supplementary providers even when primary search succeeded
-    //   "demote_on_freshness"→ keep supplementaries available, but reduce their footprint for current-snapshot claims
-    const suppPolicy = config.supplementaryProviders;
-    const suppMode = suppPolicy?.mode ?? "always_if_enabled";
-    const demoteSupplementaries = shouldDemoteSupplementaryProviders(options, suppMode);
-    const effectiveSuppMode = suppMode === "demote_on_freshness"
-      ? "always_if_enabled"
-      : suppMode;
-    const suppMaxPerProvider = demoteSupplementaries
-      ? 1
-      : (suppPolicy?.maxResultsPerProvider ?? 3);
-    const shouldRunSupplementaryProviders =
-      primaryProviderKey !== "auto"                       // explicit provider mode: always run supplementaries
-      || effectiveSuppMode === "always_if_enabled"        // UCM policy: always run
-      || (effectiveSuppMode === "fallback_only" && results.length === 0); // fallback: only when primary returned nothing
-
-    const supplementaryKeys: SearchProviderKey[] = ["wikipedia", "semantic-scholar", "google-factcheck"];
-    for (const suppKey of supplementaryKeys) {
-      const def = SEARCH_PROVIDER_DEFINITIONS[suppKey];
-      const cand = AUTO_PROVIDER_CANDIDATES.find(c => c.providerKey === suppKey);
-
-      if (!shouldRunSupplementaryProviders || !cand || !cand.isEnabled(config) || !cand.hasCredentials()) {
-        continue;
-      }
-      if (!isProviderAvailable(def.name, cbConfig)) {
-        providersUsed.push(`${def.name} (circuit-open)`);
-        continue;
+      if (providersUsed.length === 0) {
+        console.error("[Search] ❌ No search providers executed! Check configuration and API keys.");
+        providersUsed.push("None");
       }
 
-      console.log(
-        `[Search] Executing supplementary provider: ${def.explicitLabel} ` +
-        `(mode: ${suppMode}, effective max: ${suppMaxPerProvider})`,
-      );
-      providersUsed.push(def.name);
-      try {
-        // Thread detected language into supplementary options for language-aware providers (Wikipedia)
-        const suppOptions: WebSearchOptions = {
-          ...options,
-          maxResults: suppMaxPerProvider,
-        };
-        const suppResults = await def.execute(suppOptions);
-        results.push(...suppResults);
-        recordSuccess(def.name, cbConfig);
-      } catch (err) {
-        if (err instanceof SearchProviderError) {
-          recordFailure(def.name, err.message, cbConfig);
-          errors.push({ provider: err.provider, status: err.status, message: err.message, fatal: err.fatal });
-        } else {
-          console.error(`[Search] Supplementary provider ${def.name} failed:`, err);
-        }
+      // Apply domain filters and cache final results
+      const finalResults = await applyDomainFilters(Promise.resolve(results), options);
+      options.abortSignal?.throwIfAborted();
+      console.log(`[Search] Final results after domain filtering: ${finalResults.length}`);
+
+      if (finalResults.length > 0 && providersUsed.some(p => !p.includes("circuit-open"))) {
+        const primaryProvider = providersUsed.find((p) => !p.includes("circuit-open")) || providersUsed[0];
+        await cacheSearchResults(options, finalResults, primaryProvider, cacheConfig);
       }
+
+      options.abortSignal?.throwIfAborted();
+      // Record Search Query Metric
+      recordSearchQuery({
+        query: options.query,
+        provider: primaryProviderKey === "auto" ? "auto" : (providersUsed[0] || primaryProviderKey),
+        resultsCount: finalResults.length,
+        durationMs: Date.now() - startTime,
+        cached: false,
+        success: true, // Successfully executed the search pipeline
+        timestamp: new Date(),
+      });
+
+      return { results: finalResults, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
+    })();
+
+    return response;
+  } catch (error) {
+    if (options.abortSignal?.aborted) {
+      if (providerDispatched) recordSearchQuery({
+        query: options.query,
+        provider: primaryProviderKey,
+        resultsCount: 0,
+        durationMs: Date.now() - startTime,
+        cached: false,
+        success: false,
+        timestamp: new Date(),
+      });
+      throw options.abortSignal.reason;
     }
-
-    if (providersUsed.length === 0) {
-      console.error("[Search] ❌ No search providers executed! Check configuration and API keys.");
-      providersUsed.push("None");
-    }
-
-    // Apply domain filters and cache final results
-    const finalResults = await applyDomainFilters(Promise.resolve(results), options);
-    console.log(`[Search] Final results after domain filtering: ${finalResults.length}`);
-
-    if (finalResults.length > 0 && providersUsed.some(p => !p.includes("circuit-open"))) {
-      const primaryProvider = providersUsed.find((p) => !p.includes("circuit-open")) || providersUsed[0];
-      await cacheSearchResults(options, finalResults, primaryProvider, cacheConfig);
-    }
-
-    // Record Search Query Metric
-    recordSearchQuery({
-      query: options.query,
-      provider: primaryProviderKey === "auto" ? "auto" : (providersUsed[0] || primaryProviderKey),
-      resultsCount: finalResults.length,
-      durationMs: Date.now() - startTime,
-      cached: false,
-      success: true, // Successfully executed the search pipeline
-      timestamp: new Date(),
-    });
-
-    return { results: finalResults, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
-  })();
-
-  return response;
+    throw error;
+  }
 }
 
 /**
@@ -435,8 +467,10 @@ async function runExplicitProviderSearch(params: {
   errors: SearchProviderErrorInfo[];
   cacheConfig: SearchCacheSettings;
   cbConfig: SearchConfig["circuitBreaker"] | undefined;
+  onDispatch: () => void;
 }): Promise<WebSearchResponse> {
-  const { provider, options, providersUsed, errors, cacheConfig, cbConfig } = params;
+  const { provider, options, providersUsed, errors, cacheConfig, cbConfig, onDispatch } = params;
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Using ${provider.explicitLabel} (explicit)`);
 
   if (!isProviderAvailable(provider.name, cbConfig)) {
@@ -446,16 +480,20 @@ async function runExplicitProviderSearch(params: {
 
   providersUsed.push(provider.name);
   try {
+    onDispatch();
     const results = await applyDomainFilters(provider.execute(options), options);
+    options.abortSignal?.throwIfAborted();
     console.log(`[Search] Final results from ${provider.explicitLabel}: ${results.length}`);
 
     // Valid response (even with 0 results) counts as success for circuit breaker health
     recordSuccess(provider.name, cbConfig);
 
     await cacheSearchResults(options, results, provider.name, cacheConfig);
+    options.abortSignal?.throwIfAborted();
 
     return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };
   } catch (err) {
+    options.abortSignal?.throwIfAborted();
     if (err instanceof SearchProviderError) {
       recordFailure(provider.name, err.message, cbConfig);
       errors.push({

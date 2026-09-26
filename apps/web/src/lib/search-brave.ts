@@ -23,6 +23,7 @@ const BRAVE_API_BASE = "https://api.search.brave.com/res/v1/web/search";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchBrave(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Brave: Starting search for query: "${options.query.substring(0, 50)}..."`);
   const apiKey = requireApiKey("Brave", "BRAVE_API_KEY");
   if (!apiKey) return [];
@@ -59,20 +60,22 @@ export async function searchBrave(options: WebSearchOptions): Promise<WebSearchR
         "Accept-Encoding": "gzip",
         "X-Subscription-Token": apiKey,
       },
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])]),
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Brave: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       console.error(`[Search] Brave: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      const errorBody = await extractErrorBody("Brave", res);
+      const errorBody = await extractErrorBody("Brave", res, options.abortSignal);
       classifyHttpError("Brave", res.status, errorBody, ["quota", "rate limit"]);
       return [];
     }
 
     const data = (await res.json()) as BraveSearchResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.web?.results ?? [];
     console.log(`[Search] Brave: ✅ Received ${results.length} results`);
 
@@ -96,6 +99,6 @@ export async function searchBrave(options: WebSearchOptions): Promise<WebSearchR
     console.log(`[Search] Brave: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    return handleFetchError("Brave", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Brave", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

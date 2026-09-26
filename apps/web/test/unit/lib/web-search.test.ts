@@ -351,4 +351,34 @@ describe("searchWebWithProvider", () => {
       expect(callArgs.detectedLanguage).toBeUndefined();
     });
   });
+  it.each(["google-cse", "auto"])("cancelled %s primary records failure once without fallback/health/cache updates", async (provider) => {
+    const parent = new AbortController(); const reason = new DOMException("parent deadline", "TimeoutError");
+    mockSearchGoogleCse.mockImplementationOnce(async () => { parent.abort(reason); return []; });
+    await expect(searchWebWithProvider({ query: "fixture", maxResults: 3, abortSignal: parent.signal,
+      config: { ...DEFAULT_SEARCH_CONFIG, provider } as any })).rejects.toBe(reason);
+    expect(mockSearchBrave).not.toHaveBeenCalled(); expect(mockSearchWikipedia).not.toHaveBeenCalled();
+    expect(mockRecordSuccess).not.toHaveBeenCalled(); expect(mockRecordFailure).not.toHaveBeenCalled();
+    expect(mockCacheSearchResults).not.toHaveBeenCalled();
+    expect(mockRecordSearchQuery).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ success: false, cached: false }));
+  });
+
+  it("rejects a cache lookup completed after cancellation without inventing a call", async () => {
+    const parent = new AbortController(); const reason = new Error("cancelled");
+    mockGetCachedSearchResults.mockImplementationOnce(async () => { parent.abort(reason); return { results: [], provider: "cache" }; });
+    await expect(searchWebWithProvider({ query: "fixture", maxResults: 1, abortSignal: parent.signal })).rejects.toBe(reason);
+    expect(mockRecordSearchQuery).not.toHaveBeenCalled(); expect(mockSearchGoogleCse).not.toHaveBeenCalled();
+  });
+
+  it("cancelled supplementary search stops the next provider and records one failed logical query", async () => {
+    const parent = new AbortController(); const reason = new Error("cancelled");
+    mockSearchWikipedia.mockImplementationOnce(async () => { parent.abort(reason); throw reason; });
+    await expect(searchWebWithProvider({ query: "fixture", maxResults: 3, abortSignal: parent.signal,
+      config: { ...DEFAULT_SEARCH_CONFIG, provider: "google-cse", providers: { ...DEFAULT_SEARCH_CONFIG.providers,
+        wikipedia: { enabled: true, priority: 1, dailyQuotaLimit: 0, language: "en" },
+        semanticScholar: { enabled: true, priority: 2, dailyQuotaLimit: 0 } } } })).rejects.toBe(reason);
+    expect(mockSearchSemanticScholar).not.toHaveBeenCalled(); expect(mockRecordFailure).not.toHaveBeenCalled();
+    expect(mockRecordSuccess.mock.calls.map(args => args[0])).toEqual(["Google-CSE"]);
+    expect(mockRecordSearchQuery).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ success: false }));
+  });
+
 });

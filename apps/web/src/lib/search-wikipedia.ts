@@ -19,6 +19,7 @@ type WikipediaSearchResponse = {
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 export async function searchWikipedia(options: WebSearchOptions): Promise<WebSearchResult[]> {
+  options.abortSignal?.throwIfAborted();
   console.log(`[Search] Wikipedia: Starting search for query: "${options.query.substring(0, 50)}..."`);
 
   // Language priority: detected claim language > UCM configured language > "en"
@@ -46,8 +47,9 @@ export async function searchWikipedia(options: WebSearchOptions): Promise<WebSea
         "Accept": "application/json",
         "User-Agent": "FactHarbor/1.0 (contact@factharbor.com)",
       },
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      signal: AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS), ...(options.abortSignal ? [options.abortSignal] : [])]),
     });
+    options.abortSignal?.throwIfAborted();
     const elapsed = Date.now() - startTime;
 
     console.log(`[Search] Wikipedia: Response received in ${elapsed}ms - Status: ${res.status} ${res.statusText}`);
@@ -78,6 +80,7 @@ export async function searchWikipedia(options: WebSearchOptions): Promise<WebSea
     }
 
     const data = (await res.json()) as WikipediaSearchResponse;
+    options.abortSignal?.throwIfAborted();
     const results = data.query?.search ?? [];
     console.log(`[Search] Wikipedia: ✅ Received ${results.length} results`);
 
@@ -107,6 +110,6 @@ export async function searchWikipedia(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Wikipedia: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    return handleFetchError("Wikipedia", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
+    return handleFetchError("Wikipedia", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error, options.abortSignal);
   }
 }

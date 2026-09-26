@@ -635,6 +635,7 @@ Output format (JSON only, no markdown):
  * 3. No domain/TLD hardcoding - applies equally to all domains
  */
 export async function buildEvidencePack(domain: string, config: SrEvalConfig): Promise<EvidencePack> {
+  config.abortSignal?.throwIfAborted();
   const { enabled, providersUsed } = isSearchEnabledForSrEval(config);
   if (!enabled) return { enabled: false, providersUsed, queries: [], items: [] };
 
@@ -828,6 +829,7 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
     q: string,
     maxResultsOverride?: number,
   ): Promise<number> {
+    config.abortSignal?.throwIfAborted();
     allQueries.push(q);
     let added = 0;
     try {
@@ -839,8 +841,10 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
         domainBlacklist: config.searchConfig.domainBlacklist,
         timeoutMs: config.searchConfig.timeoutMs,
         config: config.searchConfig,
+        abortSignal: config.abortSignal,
       });
 
+      config.abortSignal?.throwIfAborted();
       const provider = resp.providersUsed.join("+") || "unknown";
       for (const r of resp.results) {
         if (!r.url) continue;
@@ -853,6 +857,7 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
         if (rawItems.length >= maxEvidenceItems) break;
       }
     } catch (err) {
+      config.abortSignal?.throwIfAborted();
       console.warn(`[SR-Eval] Search failed for query "${q}":`, err);
     }
     return added;
@@ -865,6 +870,7 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
     opts?: { maxResultsOverride?: number }
   ): Promise<void> {
     for (const q of queries) {
+      config.abortSignal?.throwIfAborted();
       if (rawItems.length >= budget) break;
       await runQuery(q, opts?.maxResultsOverride);
     }
@@ -890,7 +896,7 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
   // All run in parallel — independent and fill remaining budget.
   if (rawItems.length < maxEvidenceItems) {
     debugLog(`[SR-Eval] Wave 3: negative signals + deep signal queries for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
-    await Promise.all([
+    for (const outcome of await Promise.allSettled([
       // Merged negative signals (English + translated) — covers propaganda + negative signals
       runPhase(
         [...negativeSignalQueries, ...negativeSignalQueriesTranslated],
@@ -905,22 +911,27 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
         maxEvidenceItems,
         widerOpts
       ),
-    ]);
+    ])) {
+      if (outcome.status === "rejected") throw outcome.reason;
+    }
   }
 
   // ── WAVE 4 (parallel, if budget remains): Science denial + Identity + Entity
   if (rawItems.length < maxEvidenceItems) {
     debugLog(`[SR-Eval] Wave 4: science denial + identity + entity for ${domain} (${rawItems.length}/${maxEvidenceItems} items)`);
-    await Promise.all([
+    for (const outcome of await Promise.allSettled([
       // Science denial (separate topic, kept distinct)
       runPhase(scienceDenialQueries, maxEvidenceItems, widerOpts),
       // Neutral/identity queries (entity detection)
       runPhase(neutralSignalQueries, maxEvidenceItems),
       // Entity-focused queries (lowest priority)
       runPhase(entityQueries, maxEvidenceItems),
-    ]);
+    ])) {
+      if (outcome.status === "rejected") throw outcome.reason;
+    }
   }
 
+  config.abortSignal?.throwIfAborted();
   const items: EvidencePackItem[] = rawItems.slice(0, maxEvidenceItems).map((it, idx) => ({
     id: `E${idx + 1}`,
     url: it.r.url,
