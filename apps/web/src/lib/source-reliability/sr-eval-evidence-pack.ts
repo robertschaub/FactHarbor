@@ -455,10 +455,47 @@ ${textContent}`,
 /**
  * Process cache shares in-flight translations and retains failures as empty results.
  */
-const translationProcess = globalThis as typeof globalThis & {
-  __fhSrTranslationCache?: Map<string, Promise<Record<string, string>>>;
+type TranslationEntry = {
+  promise: Promise<Record<string, string>>;
+  controller: AbortController;
+  consumers: number;
+  settled: boolean;
 };
-const translationCache = translationProcess.__fhSrTranslationCache ??= new Map<string, Promise<Record<string, string>>>();
+const translationProcess = globalThis as typeof globalThis & {
+  __fhSrTranslationCache?: Map<string, TranslationEntry>;
+};
+const translationCache = translationProcess.__fhSrTranslationCache ??= new Map<string, TranslationEntry>();
+
+function consumeTranslation(entry: TranslationEntry, abortSignal?: AbortSignal, owner = false): Promise<Record<string, string>> {
+  entry.consumers++;
+  let released = false;
+  const leave = () => {
+    if (released) return;
+    released = true;
+    abortSignal?.removeEventListener("abort", onAbort);
+    if (--entry.consumers === 0 && !entry.settled) entry.controller.abort();
+  };
+  let rejectConsumer: (reason: unknown) => void;
+  const onAbort = () => {
+    leave();
+    // The originating capture must wait for the shared call's cost record.
+    if (!owner) rejectConsumer(abortSignal!.reason);
+  };
+  if (!abortSignal) {
+    void entry.promise.then(leave, leave);
+    return entry.promise;
+  }
+  return new Promise((resolve, reject) => {
+    rejectConsumer = reject;
+    abortSignal.addEventListener("abort", onAbort, { once: true });
+    void entry.promise.then(value => {
+      leave();
+      if (abortSignal.aborted) reject(abortSignal.reason);
+      else resolve(value);
+    }, error => { leave(); reject(abortSignal.aborted ? abortSignal.reason : error); });
+    if (abortSignal.aborted) onAbort();
+  });
+}
 
 /**
  * Key search terms that need translation for fact-checker searches.
@@ -552,12 +589,15 @@ const SEARCH_TERMS_TO_TRANSLATE = [
  * Get translated search terms for a language, using LLM with caching.
  */
 export function getTranslatedSearchTerms(
-  language: string
+  language: string,
+  abortSignal?: AbortSignal,
 ): Promise<Record<string, string>> {
+  if (abortSignal?.aborted) return Promise.reject(abortSignal.reason);
   // Check cache first
   const cached = translationCache.get(language);
-  if (cached) return cached;
+  if (cached) return consumeTranslation(cached, abortSignal);
 
+  const controller = new AbortController();
   const pending = (async (): Promise<Record<string, string>> => {
     debugLog(`[SR-Eval] Translating search terms to ${language}`, { language });
 
@@ -580,6 +620,7 @@ Output format (JSON only, no markdown):
           prompt,
           temperature: 0,
           maxOutputTokens: 800,
+          abortSignal: controller.signal,
         },
       );
 
@@ -618,8 +659,10 @@ Output format (JSON only, no markdown):
       return {};
     }
   })();
-  translationCache.set(language, pending);
-  return pending;
+  const entry: TranslationEntry = { promise: pending, controller, consumers: 0, settled: false };
+  entry.promise = pending.then(value => { entry.settled = true; return value; }, error => { entry.settled = true; throw error; });
+  translationCache.set(language, entry);
+  return consumeTranslation(entry, abortSignal, true);
 }
 
 // ============================================================================
@@ -651,7 +694,8 @@ export async function buildEvidencePack(domain: string, config: SrEvalConfig): P
 
   if (sourceLanguage) {
     debugLog(`[SR-Eval] Detected language for ${domain}: ${sourceLanguage}`, { domain, sourceLanguage });
-    translatedTerms = await getTranslatedSearchTerms(sourceLanguage);
+    translatedTerms = await getTranslatedSearchTerms(sourceLanguage, config.abortSignal);
+    config.abortSignal?.throwIfAborted();
   }
 
   // Helper to get translated term or fallback to English
