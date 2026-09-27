@@ -111,7 +111,7 @@ Strategic decisions needed before implementation:
 === 6.1 Critical Decisions ===
 |= Decision |= Options |= Consideration |
 | **Serve EU users day 1?** | Yes/No/Later | Affects DPO requirement |
-| **Code licensing** | MIT / MIT+AGPL | Simpler vs. stronger copyleft |
+| **Code licensing** | AGPL-3.0-only for original software | Apply the repository licence map and preserve third-party terms |
 | **Hosting location** | CH/EU/US | Swiss aligns with mission |
 | **AI model** | Open/API | Infrastructure vs. simplicity |
 === 6.2 Organisational Decisions ===

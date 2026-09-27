@@ -1,31 +1,14 @@
 = License & Disclaimer =
 
-(% class="box infomessage" %)
-(((
-**FactHarbor uses a multi-license model to ensure code, documentation, and data remain public assets.**
-Our mission is to prevent black-box proprietary control of truth-seeking tools by using **AGPL/MIT** for code and **CC BY-SA** for documentation.
+== Licensing ==
+Original software is licensed under **GNU AGPL version 3 only**. Original documentation, specifications and graphics are licensed under **CC BY-SA 4.0**. Expressly designated curated databases use **ODbL 1.0**; individual contents may have separate terms.
 
-**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
-)))
+The [[repository licence map>>https://github.com/robertschaub/FactHarbor/blob/main/LICENSE.md]] defines scope and exceptions. Third-party terms and required notices remain applicable. Commercial use is permitted under the applicable public licence. Alternative permissions may be agreed in writing with Robert Schaub for rights he owns or is authorised to license.
 
-== Licensing Framework ==
+AGPL source obligations apply in the circumstances specified by that licence. CC BY-SA covers protected expression and shared adaptations; it does not require every implementation of a specification to be open source. Names, logos and trust marks are reserved as branding, subject to uses independently permitted by law.
 
-FactHarbor is an open-source non-profit project. We use specific licenses to maximize reuse while protecting the project's long-term transparency mission.
-
-=== 1. Documentation (CC BY-SA 4.0) ===
-All organizational and technical documentation is licensed under **[[CC BY-SA 4.0>>http://creativecommons.org/licenses/by-sa/4.0/]]**.
-* **You may**: Share, adapt, and use commercially.
-* **You must**: Provide attribution and share derivative works under the same license.
-
-=== 2. Code (MIT & AGPL-3.0) ===
-* **Default**: **[[MIT License>>https://opensource.org/licenses/MIT]]** for general utilities and UI components.
-* **Core Components**: **[[AGPL-3.0>>https://www.gnu.org/licenses/agpl-3.0.en.html]]** for the core verdict engine and AKEL reasoning logic.
-* **Rationale**: AGPL-3.0 prevents "black-box" network services by requiring that anyone running the engine over a network must share their source code.
-
-=== 3. Structured Data (ODbL) ===
-Curated knowledge and datasets are licensed under the **[[Open Database License (ODbL)>>https://opendatacommons.org/licenses/odbl/]]**. This ensures our evidence models remain a community asset and cannot be captured by proprietary silos.
-
-----
+== Contributions ==
+Contributors retain ownership and explicitly grant Robert Schaub public-licensing and alternative-licensing permissions under the [[contributor agreement>>https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTOR-AGREEMENT.md]]. A submission alone is not acceptance. Third-party material and any required employer permissions must be identified before acceptance.
 
 == Disclaimer ==
 

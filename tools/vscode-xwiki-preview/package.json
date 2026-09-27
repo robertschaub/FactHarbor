@@ -1,5 +1,6 @@
 {
   "name": "xwiki-preview",
+  "license": "AGPL-3.0-only",
   "displayName": "XWiki Preview",
   "description": "Live preview for XWiki 2.1 markup files",
   "version": "1.0.0",

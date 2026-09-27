@@ -296,3 +296,7 @@ This project uses AI coding agents extensively. If you are an AI agent, read:
 ## Questions?
 
 Open a GitHub issue or discuss with the project lead.
+
+## Licensing contributions
+
+Contributors retain ownership. Before accepting contributions, we require explicit acceptance of [the contributor agreement](CONTRIBUTOR-AGREEMENT.md), which grants Robert Schaub permission to offer both the project's public licences and separate alternative licences. Identify third-party material and any required employer or other rights-holder approval. Submission alone is not acceptance of the agreement. Disclose material sponsorship relationships in contribution metadata where applicable.

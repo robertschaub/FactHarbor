@@ -3,7 +3,7 @@
 (% class="box infomessage" %)
 (((
 **FactHarbor maintains independence and user protection through a formal legal and financial framework.**
-Our commitment to open source (**AGPL-3.0 / MIT**) and our "20% Donor Rule" ensure that the project remains a transparent public asset.
+Our commitment to open source (**AGPL-3.0-only**) and our "20% Donor Rule" ensure that the project remains a transparent public asset.
 
 **Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
 )))

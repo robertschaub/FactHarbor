@@ -37,16 +37,7 @@ For detailed configuration of internal keys and service synchronization, see **[
 **Tech stack:** Next.js + ASP.NET Core + LLM orchestration (Anthropic, OpenAI, Google, Mistral)
 ## License
 
-FactHarbor uses a multi-license model to maximize openness while protecting transparency:
-
-| Content | License |
-|---------|---------|
-| Documentation | CC BY-SA 4.0 |
-| Code (default) | MIT |
-| Code (core engine) | AGPL-3.0 |
-| Structured data | ODbL |
-
-See [LICENSE.md](LICENSE.md) for full details.
+Software is licensed under GNU AGPL version 3 only. Documentation and graphics are licensed under CC BY-SA 4.0. See [LICENSE.md](LICENSE.md) for scope, database licences and third-party exceptions. Alternative permissions may be agreed in writing with Robert Schaub for rights he owns or is authorised to license.
 
 ---
 

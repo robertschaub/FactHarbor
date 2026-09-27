@@ -1,107 +1,35 @@
 # License and Disclaimer
 
-## Overview
+| Material | Licence |
+|---|---|
+| Original application, library, frontend, API, integration, tooling and test software; executable examples, prompts, schemas and machine configuration | [AGPL-3.0-only](LICENSES/AGPL-3.0-only.txt) |
+| Original documentary specifications, guidance, articles, diagrams and publication graphics, including documentary material within software directories | [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) |
+| Curated databases expressly identified as ODbL databases | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
 
-FactHarbor is an **open-source nonprofit project** committed to transparency and accessibility. All resources are licensed under multiple open licenses to maximize reuse while protecting the project's transparency mission.
+Database contents may have separate terms. Analysis outputs, individual facts, synthetic fixtures and source articles are not automatically designated ODbL databases.
 
-**FactHarbor operates under a multi-license model:**
+## Path assignments
 
-- Documentation and specifications: CC BY-SA 4.0
-- Code: MIT (default) or AGPL-3.0 (core components)
-- Structured data: Open Database License (ODbL)
+| Paths and content | Licence |
+|---|---|
+| Original software in `apps/`, `packages/`, `scripts/`, `tools/`; root executable scripts and build configuration; executable workflows and hooks | AGPL-3.0-only |
+| Operative prompts in `apps/web/prompts/`, configuration in `apps/web/configs/`, executable schemas, tests and code examples | AGPL-3.0-only, including when stored in Markdown |
+| Documentary Markdown and XWiki pages in `Docs/`, README files, contributor and agent guidance, specifications and original publication graphics | CC BY-SA 4.0 |
+| Executable viewer, conversion and document-generation software within `Docs/` | AGPL-3.0-only |
 
-## Licensing
+Material type takes precedence over a directory default: documentary README files within software directories remain CC BY-SA; operative prompts and executable code within documentation directories remain AGPL. Third-party components and embedded quotations retain their own terms. A documentary specification's licence covers its expression, not an independent implementation of its ideas. No entire directory is designated as an ODbL database without an explicit database notice.
 
-### Documentation
+## Scope and permissions
 
-All general **documentation** (organizational and technical) is licensed under:
+These assignments cover only rights held by the respective project contributors. Third-party material, dependencies, quotations and licence texts retain their applicable terms and notices. Explicit file or component exceptions take precedence over directory defaults. Generated material is covered only to the extent protectable rights are held.
 
-- **[Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/)**
+Commercial use is permitted under the applicable public licence. Alternative permissions may be agreed in writing with Robert Schaub for rights he owns or is authorised to license. This notice alone grants no alternative permission.
 
-**You may:**
-- Use, share, and adapt the documentation (including commercially)
+Copyright licences do not grant permission to use project names, logos or trust marks as branding or to imply endorsement, assurance or certification. Uses permitted independently by applicable law remain unaffected.
 
-**You must:**
-- Provide attribution to FactHarbor
-- Share derivative works under CC BY-SA 4.0
+AGPL obligations apply as specified in its text, including applicable distribution and modified network-interaction cases. CC BY-SA governs covered expression and shared adaptations; it does not require every implementation of a specification to be open source. No additional restrictions are added to either licence.
 
-**Exception:** Security-sensitive documentation may be published partially or kept internal.
-
-### Core Protocol & Data Model
-
-The **core protocol** and **data model** are licensed under:
-
-- **[Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)](http://creativecommons.org/licenses/by-sa/4.0/)**
-
-**You may:**
-- Use, implement, and modify the protocol/data model
-- Publish derivative specifications under CC BY-SA 4.0
-
-**You must:**
-- Attribute to FactHarbor
-- Use different branding (the "FactHarbor" name is trademark-protected)
-- State derivation from FactHarbor protocol
-- Share derivatives under CC BY-SA 4.0
-
-### Code
-
-**Default License:** **[MIT License](https://opensource.org/licenses/MIT)**
-
-**Core Components License:** **[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)** for:
-- Core verdict engine
-- AKEL reasoning logic
-- Scenario evaluation engine
-
-**Rationale:** AGPL-3.0 prevents black-box network services that contradict our transparency mission.
-
-### Structured Data
-
-Curated knowledge and datasets are licensed under:
-
-- **[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/)**
-
-This ensures derivative databases remain open and prevents proprietary capture of community data.
-
-## Attribution
-
-When creating derivative works, attribute as follows:
-
-**Documentation/Specifications:**
-```
-This work, '[Your Work Name]', is a derivative of 'FactHarbor' by Robert Schaub
-and the FactHarbor community. Licensed under CC BY-SA 4.0 by [Your Name].
-```
-
-**Code (MIT):**
-```
-Based on FactHarbor by Robert Schaub and contributors
-Licensed under MIT License
-```
-
-**Code (AGPL):**
-```
-Based on FactHarbor Core Engine by Robert Schaub and contributors
-Licensed under GNU AGPL v3.0
-Source code available at: [repository URL]
-```
-
-**Databases (ODbL):**
-```
-Derived from FactHarbor data by Robert Schaub and the FactHarbor community.
-Licensed under ODbL by [Your Name].
-```
-
-## AI Models & Third-Party Components
-
-**AKEL (AI Knowledge Extraction Layer):**
-- Open-source models preferred
-- Proprietary models allowed but must be disclosed to users
-- AI-generated content marked with **AuthorType = AI**
-- Integration code remains open (MIT/AGPL)
-
-**Third-Party Libraries:**
-- Must be license-compatible with MIT/AGPL
-- Documented in LICENSE/NOTICE files
+For original documentary expression embedded in software, the relevant rights holder must also authorise its inclusion under AGPL-3.0-only. The documentation licence alone is not a direct compatibility grant for AGPL.
 
 ## Organizational Transparency
 
@@ -157,34 +85,7 @@ User privacy is protected per applicable laws (Swiss FADP, EU GDPR).
 
 ## Governing Law
 
-These terms are governed by **Swiss law** under Swiss jurisdiction.
+Swiss law applies to the Disclaimer section, subject to mandatory applicable law; jurisdiction is determined by applicable law. This clause does not amend the governing terms of AGPL, Creative Commons or third-party licences.
 
-## Changes to Terms
 
-License terms may be updated with:
-- Clear versioning and documentation
-- Community announcement
-- Prospective application (existing content remains under original terms)
-
-## License Summary
-
-| **Content Type** | **License** | **Key Principle** |
-|---|---|---|
-| Documentation | CC BY-SA 4.0 | Share openly, attribute, share-alike |
-| Protocol & Data Model | CC BY-SA 4.0 | Open specs, trademark-protected brand |
-| Code (Default) | MIT | Maximum reuse |
-| Code (Core/AKEL) | AGPL-3.0 | Network transparency |
-| Structured Data | ODbL | Open data, share-alike |
-
-## Contact
-
-- **Project Website**: [https://factharbor.ch](https://factharbor.ch)
-- **Licensing Questions**: [To be established]
-
----
-
-**© 2024-2025 by Robert Schaub and the FactHarbor Community**
-
-**FactHarbor** is a trademark. Use of the name and logo requires permission.
-
-**Core Values:** Non-profit | Open Source | Transparent | Accessible to All
+**© 2024–2026 Robert Schaub and contributors.**
