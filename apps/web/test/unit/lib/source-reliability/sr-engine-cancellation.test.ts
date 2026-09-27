@@ -6,6 +6,7 @@ vi.mock("@/lib/source-reliability/sr-eval-types", async (original) => ({ ...awai
 vi.mock("@/lib/source-reliability/sr-eval-evidence-pack", () => ({ buildEvidencePack: mocks.build }));
 vi.mock("@/lib/source-reliability/sr-eval-enrichment", async (original) => ({ ...await original<object>(), enrichEvidencePackWithQualityAssessment: mocks.enrich }));
 vi.mock("@/lib/analyzer/llm", () => ({ getPromptCachingOptions: () => undefined }));
+vi.mock("@/lib/analyzer/debug", () => ({ debugLog: vi.fn() }));
 // loadPromptFile uses this DB-backed seam. Keep real parsing/sections while
 // supplying the unchanged file prompt explicitly, with no config DB bootstrap.
 vi.mock("@/lib/config-loader", () => ({ loadPromptConfig: async () => {
@@ -24,6 +25,72 @@ beforeEach(() => {
   mocks.build.mockReset().mockResolvedValue(pack); mocks.enrich.mockReset().mockResolvedValue(pack);
 });
 afterEach(() => vi.unstubAllEnvs());
+describe("SR refinement entity contract", () => {
+  const initial = {
+    score: 0.5, confidence: 0.6, reasoning: "Primary assessment of Verlag A, grounded in E1.",
+    factualRating: "mixed", sourceType: "editorial_publisher", identifiedEntity: "Verlag A",
+    evidenceCited: [{ claim: "Assessment", basis: "E1", evidenceId: "E1" }],
+    caveats: ["Fixture caveat."],
+  };
+  const refinement = (entity: string | null, score: number) => ({
+    crossCheckFindings: "Cross-check grounded in E1.",
+    entityRefinement: { identifiedEntity: entity, organizationType: "publisher", isWellKnown: false, notes: "Fixture." },
+    scoreAdjustment: { originalScore: 0.5, refinedScore: score, adjustmentReason: "Evidence reassessed." },
+    refinedRating: score === 0.5 ? "mixed" : "leaning_reliable", refinedConfidence: 0.6,
+    // Field-only correction must not rewrite the model's reasoning, even if it mentions the old name.
+    combinedReasoning: "Refined assessment mentions Verlag A and E1.",
+  });
+
+  describe.each([0.5, 0.65])("with refined score %s", (score) => {
+    it.each([
+      { label: "retained", before: "Verlag A", after: "Verlag A" },
+      { label: "changed", before: "Verlag A", after: "Éditeur B" },
+      { label: "cleared", before: "Verlag A", after: null },
+      { label: "already unknown", before: null, after: null },
+    ])("returns the $label entity with unchanged non-entity fields", async ({ before, after }) => {
+      const refined = refinement(after, score);
+      mocks.generate
+        .mockResolvedValueOnce({ text: JSON.stringify({ ...initial, identifiedEntity: before }) })
+        .mockResolvedValueOnce({ text: JSON.stringify(refined) });
+      const result = await evaluateSourceWithPinnedEvidencePack("outlet.test", pack, true, 0.8, config());
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected successful refinement");
+      // Real parsing, post-processing, confidence boost and final payload assembly all run.
+      expect(result.data).toMatchObject({
+        score, confidence: score === 0.5 ? 0.6 : 0.7, category: refined.refinedRating,
+        reasoning: refined.combinedReasoning, sourceType: initial.sourceType,
+        evidenceCited: initial.evidenceCited, consensusAchieved: true,
+        originalScore: initial.score, refinementApplied: score !== initial.score,
+        caveats: score === 0.5 ? initial.caveats : [
+          ...initial.caveats,
+          "Score refined from 50% to 65%: Evidence reassessed.",
+          "✓ Score refined by cross-check: 50% → 65%",
+        ],
+      });
+      expect(result.data.identifiedEntity).toBe(after);
+      expect(mocks.generate).toHaveBeenCalledTimes(2);
+      expect(mocks.build).not.toHaveBeenCalled();
+    });
+  });
+
+  it.each(["missing entity", "provider failure"])("preserves the primary fallback for %s", async (failure) => {
+    mocks.generate.mockResolvedValueOnce({ text: JSON.stringify(initial) });
+    if (failure === "provider failure") mocks.generate.mockRejectedValueOnce(new Error("Offline fixture failure"));
+    else {
+      const { identifiedEntity: _omitted, ...entityWithoutRequiredField } = refinement(null, 0.5).entityRefinement;
+      mocks.generate.mockResolvedValueOnce({ text: JSON.stringify({ ...refinement(null, 0.5), entityRefinement: entityWithoutRequiredField }) });
+    }
+    const result = await evaluateSourceWithPinnedEvidencePack("outlet.test", pack, true, 0.8, config());
+    expect(result).toMatchObject({ success: true, data: {
+      identifiedEntity: initial.identifiedEntity, score: initial.score, confidence: initial.confidence * 0.9,
+      category: initial.factualRating, reasoning: initial.reasoning, sourceType: initial.sourceType,
+      evidenceCited: initial.evidenceCited, consensusAchieved: false,
+      caveats: [...initial.caveats, "⚠️ Refinement pass failed; using initial evaluation only."],
+    } });
+    expect(mocks.generate).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("SR engine cancellation boundaries", () => {
   it("starts no work for a pre-aborted request", async () => {
     const signal = AbortSignal.abort();

@@ -420,7 +420,7 @@ async function refineEvaluation(
       confidence: refinement.refinedConfidence,
       factualRating: refinement.refinedRating,
       reasoning: refinement.combinedReasoning,
-      identifiedEntity: refinement.entityRefinement.identifiedEntity ?? initialResult.identifiedEntity,
+      identifiedEntity: refinement.entityRefinement.identifiedEntity,
       caveats: [
         ...(initialResult.caveats ?? []),
         ...(scoreChanged ? [`Score refined from ${originalScore !== null ? (originalScore * 100).toFixed(0) + '%' : 'null'} to ${refinedScore !== null ? (refinedScore * 100).toFixed(0) + '%' : 'null'}: ${refinement.scoreAdjustment.adjustmentReason}`] : []),
