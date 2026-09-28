@@ -51,8 +51,8 @@ These tasks are strongly recommended before launch.
 | **Set up backup systems** | ✅ Done | HIGH - Daily DB backups, 14-day retention (see scripts/DEPLOYMENT.md) |
 === 3.3 Licensing & Open Source ===
 |= Task |= Status |= Priority |
-| **Decide: Code licensing model** | ✅ Done | AGPL-3.0-only for original software; CC BY-SA 4.0 for documentation; see LICENSE.md |
-| **Create LICENSE files** | ✅ Done | Complete standard texts in LICENSE and LICENSES/; scope in LICENSE.md |
+| **Decide: Code licensing model** | ✅ Done | AGPL-3.0-only for original software; CC BY-SA 4.0 for documentation; see LICENSING.md |
+| **Create LICENSE files** | ✅ Done | Complete standard texts in LICENSE and LICENSES/; scope in LICENSING.md |
 | **Set up code repository** | ✅ Done | HIGH - github.com/robertschaub/FactHarbor (public) |
 | **Create CONTRIBUTING.md** | ✅ Done | MEDIUM |
 == 4. Recommended Tasks (Can Be Post-Launch) ==

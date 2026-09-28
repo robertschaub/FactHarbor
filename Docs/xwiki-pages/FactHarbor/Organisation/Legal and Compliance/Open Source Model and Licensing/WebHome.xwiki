@@ -1,7 +1,7 @@
 = Open Source Model and Licensing =
 
 == Public licences ==
-Original software uses **GNU AGPL version 3 only**. Original documentary specifications, guidance and graphics use **CC BY-SA 4.0**. The [[repository licence map>>https://github.com/robertschaub/FactHarbor/blob/main/LICENSE.md]] defines material and path assignments and links to the complete, unchanged standard texts.
+Original software uses **GNU AGPL version 3 only**. Original documentary specifications, guidance and graphics use **CC BY-SA 4.0**. The [[licensing guide>>https://github.com/robertschaub/FactHarbor/blob/main/LICENSING.md]] defines material and path assignments and links to the complete, unchanged standard texts.
 
 AGPL governs covered software distribution and modified network-interactive versions. CC BY-SA governs protected documentary expression and shared adaptations. These licences do not require every private productive use or independently written implementation of ideas to be published. Compliant commercial use is permitted; no extra approval condition is added to the public grants.
 

@@ -1,6 +1,8 @@
-# FactHarbor licensing
+# Licensing guide — which licence applies?
 
-Full unchanged texts: [GNU AGPL version 3](LICENSES/AGPL-3.0-only.txt) and [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt). The root [LICENSE](LICENSE) repeats AGPL v3; the material assignments below determine which licence applies. AGPL assignments are version 3 only.
+This repository contains material under different licences. The table below identifies which licence applies to each type of material.
+
+Full unchanged texts: [GNU AGPL version 3](LICENSES/AGPL-3.0-only.txt) and [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt). The root [LICENSE](LICENSE) repeats AGPL v3. AGPL assignments are version 3 only.
 
 | Original material | Licence |
 |---|---|
