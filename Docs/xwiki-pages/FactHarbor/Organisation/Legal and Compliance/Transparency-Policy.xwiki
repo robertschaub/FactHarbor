@@ -68,7 +68,7 @@ Published regularly:
  * Technical dependencies
 === 3.4 Source Code and Technical Specifications ===
 Published continuously:
-* All source code per open source licenses (MIT, AGPL, CC BY-SA)
+* All source code under the applicable licences in the [[repository licence map>>https://github.com/robertschaub/FactHarbor/blob/main/LICENSE.md]] (AGPL-3.0-only for original project software; third-party terms remain applicable)
 * Technical architecture documentation
 * Protocol and data model specifications
 * API documentation

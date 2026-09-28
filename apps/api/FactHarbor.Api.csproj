@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -15,4 +16,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="LICENSE" Pack="true" PackagePath="LICENSE" />
+    <None Update="LICENSE.md" Pack="true" PackagePath="LICENSE.md" />
+    <None Update="LICENSES/CC-BY-SA-4.0.txt" Pack="true" PackagePath="LICENSES/CC-BY-SA-4.0.txt" />
+    <None Update="NOTICE" Pack="true" PackagePath="NOTICE" />
+  </ItemGroup>
 </Project>

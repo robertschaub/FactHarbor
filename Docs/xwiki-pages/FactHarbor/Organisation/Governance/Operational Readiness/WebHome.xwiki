@@ -40,7 +40,7 @@ These tasks are strongly recommended before launch.
 | **Appoint DPO (if serving EU users from day 1)** | ⬜ Not Started | HIGH - Can be yourself |
 | **Create Terms of Service** | 🟡 Draft | HIGH - Draft written (June 2026); review and effective date pending |
 | **Create basic Security Policy** | ⬜ Not Started | MEDIUM |
-| **Create simple CLA** | ⬜ Not Started | HIGH - Adapt existing |
+| **Record contributor agreements** | ⬜ Pending | Obtain explicit acceptance of the contributor copyright agreement for identified contributions; verify rights-holder authority |
 | **Document internal escalation** | ⬜ Not Started | LOW |
 === 3.2 Technical & Operational ===
 |= Task |= Status |= Priority |
@@ -51,8 +51,8 @@ These tasks are strongly recommended before launch.
 | **Set up backup systems** | ✅ Done | HIGH - Daily DB backups, 14-day retention (see scripts/DEPLOYMENT.md) |
 === 3.3 Licensing & Open Source ===
 |= Task |= Status |= Priority |
-| **Decide: Code licensing model** | ✅ Done | HIGH - Multi-license model, see LICENSE.md |
-| **Create LICENSE files** | ✅ Done | HIGH - LICENSE.md at repository root |
+| **Decide: Code licensing model** | ✅ Done | AGPL-3.0-only for original software; CC BY-SA 4.0 for documentation; see LICENSE.md |
+| **Create LICENSE files** | ✅ Done | Complete standard texts in LICENSE and LICENSES/; scope in LICENSE.md |
 | **Set up code repository** | ✅ Done | HIGH - github.com/robertschaub/FactHarbor (public) |
 | **Create CONTRIBUTING.md** | ✅ Done | MEDIUM |
 == 4. Recommended Tasks (Can Be Post-Launch) ==
@@ -111,7 +111,7 @@ Strategic decisions needed before implementation:
 === 6.1 Critical Decisions ===
 |= Decision |= Options |= Consideration |
 | **Serve EU users day 1?** | Yes/No/Later | Affects DPO requirement |
-| **Code licensing** | MIT / MIT+AGPL | Simpler vs. stronger copyleft |
+| **Code licensing** | AGPL-3.0-only for original software | Apply the repository licence map and preserve third-party terms |
 | **Hosting location** | CH/EU/US | Swiss aligns with mission |
 | **AI model** | Open/API | Infrastructure vs. simplicity |
 === 6.2 Organisational Decisions ===

@@ -1,31 +1,10 @@
 = License & Disclaimer =
 
-(% class="box infomessage" %)
-(((
-**FactHarbor uses a multi-license model to ensure code, documentation, and data remain public assets.**
-Our mission is to prevent black-box proprietary control of truth-seeking tools by using **AGPL/MIT** for code and **CC BY-SA** for documentation.
+Original software uses **GNU AGPL version 3 only**; original documentation and graphics use **CC BY-SA 4.0**. The [[repository licence map>>https://github.com/robertschaub/FactHarbor/blob/main/LICENSE.md]] defines scope, full texts and third-party exceptions. Both standard texts are unchanged.
 
-**Project Repository:** [[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]
-)))
+Commercial use complying with those public licences is permitted. Robert Schaub may separately agree alternative licences for rights he controls; scope, duration and compensation are negotiated individually. No alternative permission is promised.
 
-== Licensing Framework ==
-
-FactHarbor is an open-source non-profit project. We use specific licenses to maximize reuse while protecting the project's long-term transparency mission.
-
-=== 1. Documentation (CC BY-SA 4.0) ===
-All organizational and technical documentation is licensed under **[[CC BY-SA 4.0>>http://creativecommons.org/licenses/by-sa/4.0/]]**.
-* **You may**: Share, adapt, and use commercially.
-* **You must**: Provide attribution and share derivative works under the same license.
-
-=== 2. Code (MIT & AGPL-3.0) ===
-* **Default**: **[[MIT License>>https://opensource.org/licenses/MIT]]** for general utilities and UI components.
-* **Core Components**: **[[AGPL-3.0>>https://www.gnu.org/licenses/agpl-3.0.en.html]]** for the core verdict engine and AKEL reasoning logic.
-* **Rationale**: AGPL-3.0 prevents "black-box" network services by requiring that anyone running the engine over a network must share their source code.
-
-=== 3. Structured Data (ODbL) ===
-Curated knowledge and datasets are licensed under the **[[Open Database License (ODbL)>>https://opendatacommons.org/licenses/odbl/]]**. This ensures our evidence models remain a community asset and cannot be captured by proprietary silos.
-
-----
+Contributors other than Robert Schaub retain ownership and explicitly accept the [[contributor copyright agreement>>https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTOR-AGREEMENT.md]] for identified contributions. Organisational publication commitments are in the separate [[Transparency Policy>>FactHarbor.Organisation.Legal and Compliance.Transparency-Policy]].
 
 == Disclaimer ==
 
