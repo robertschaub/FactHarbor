@@ -69,13 +69,19 @@ The restricted-writer definition is canonical in [Collaboration Rules §4.3](../
 
 Restricted reviewers return findings, warnings, learnings, and exact reviewed-revision evidence in chat without writing completion files or indexes. The designated integrator writes their completion artifacts under the normal tiers below, preserving reviewer attribution and outcome. For scoped workers, file ownership governs where they may write; return out-of-scope completion material in chat for the integrator. During concurrent writing, the integrator serializes shared output/log/index changes and rebuilds, including `Role_Learnings.md`; this exception applies to the persistence instructions throughout this protocol. See [Collaboration Rules §4.3](../Multi_Agent_Collaboration_Rules.md#43-concurrent-editing).
 
+#### Source and output scope
+
+Use public contracts and current source for ordinary contributions. Load other references only when supplied or explicitly authorized for the task. Missing or empty historical discovery results are context gaps; do not infer resolution or fabricate a replacement history.
+
+The public output locations below apply to concise public task records. Full research, experimental histories and non-public handoffs use the task's authorized record and access boundary. Do not create those collections publicly by default, or publish destination catalogs. Preserve decisions, provenance, holds and permitted next actions in the record accessible to the authorized next reader; public instructions must still work without that access.
+
 #### Modes
 
 | Mode | When | Where Output Lives |
 |------|------|-------------------|
 | **Completion** | Finishing a task | Chat, existing task record, or a warranted handoff/index entry under the tiers below |
 | **Role Handoff** | Switching from one role to another | Same as Completion, with Warnings/Learnings and the relevant incoming-role checklist |
-| **Investigation** | Multi-agent parallel research (Captain-directed) | `Docs/WIP/` hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
+| **Investigation** | Multi-agent parallel research (Captain-directed) | the task's authorized output location (`Docs/WIP/` only for concise public-safe work) hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
 
 #### Output tiers (Completion and Role Handoff modes)
 

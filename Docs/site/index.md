@@ -30,7 +30,7 @@ It evaluates evidence quality and source reliability, then compares, challenges,
 ## Where FactHarbor stands out
 
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI), and only evidence-backed objections can change the verdict.
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; [model allocation depends on the active configuration](verdict-debate.md).
 
 Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
 
@@ -49,7 +49,7 @@ Each verdict is fully auditable: cited evidence, source-quality scores, and whic
 *   **[Organisation](organisation/index.md)** — Governance, culture, and legal frameworks.
 *   **[Product Development](product-development/index.md)** — Requirements, architecture, and developer guides.
 *   **[Analysis Test Reports](test-reports.md)** — Claim analysis reports from test runs.
-*   **[Media Source Database](product-development/media-source-database/index.md)** — Our transparent credibility database for 1000+ sources.
+*   **[Quality and trust](product-development/specification/architecture/quality-and-trust/index.md)** — How evidence, source reliability and uncertainty inform a report.
 *   **[LinkedIn: Facts are the foundation of democracy and journalism](linkedin.md)** — Published 1 April 2026.
 *   **[FactHarbor for Newsrooms](fact-checker-cooperation.md)** — How FactHarbor supports fact-checking in newsrooms.
 *   **[Support FactHarbor](funding.md)** — Funding and contribution options.
@@ -95,10 +95,10 @@ FactHarbor structures reasoning into transparent, inspectable steps:
 
 
 *   **Claims** – The system extracts the key assertions from your input and identifies what actually needs to be verified. Related statements are grouped together to avoid duplication and keep the analysis focused.
-*   **Analytical Contexts** – A claim might be well-supported in one context but contradicted in another. FactHarbor identifies the different perspectives, assumptions, and definitions that shape how a claim should be evaluated — and analyzes each one independently.
+*   **Assessment boundaries** – Evidence can address different methods, periods or definitions. FactHarbor groups compatible evidence scopes into [ClaimAssessmentBoundaries](product-development/specification/reference/terminology/index.md) so these distinctions remain visible in the assessment.
 *   **Evidence** – AI searches across fact-checkers, academic studies, reports, and the open web. Each piece of evidence is assessed for quality, relevance, and linked to the specific context it applies to — not just to the claim in general.
 *   **Source Reliability** – Every source is scored for credibility using multi-model AI evaluation. Track record matters: a peer-reviewed study carries different weight than a social media post.
-*   **Verdicts** – For each analytical perspective, FactHarbor produces an evidence-based rating (e.g., "Well Supported", "Mixed Evidence", "Contradicted") with explicit confidence levels and full reasoning.
+*   **Verdicts** – For each claim and assessment boundary, FactHarbor produces an evidence-based rating using the [seven-band verdict scale](product-development/diagrams/verdict-scale/index.md) with explicit confidence levels and full reasoning.
 *   **Evidence Landscape** – The result is not a single label, but a multi-perspective view showing where a claim is well-supported, where it's contradicted, and where reasonable people may still disagree — with every conclusion traceable back to its sources.
 
 
@@ -108,7 +108,7 @@ FactHarbor structures reasoning into transparent, inspectable steps:
 Data in FactHarbor flows through a structured, auditable process:
 
 
-*   **Submission:** Registered users submit text or URLs; the system normalises the input.
+*   **Submission:** Invited users submit text or URLs; the system normalises the input.
 *   **Evidence Research:** AI extracts AtomicClaims and iteratively researches evidence per claim.
 *   **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
 *   **Verdict Creation:** Generating per-boundary, per-claim verdicts via structured debate.

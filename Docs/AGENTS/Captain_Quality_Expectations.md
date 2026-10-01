@@ -1,49 +1,12 @@
 # Captain Quality Expectations
 
-**Status:** Living reference · **Last updated:** 2026-09-24 · **Purpose:** Captain's one-page human-readable quality bar for FactHarbor analysis reports.
+The human-readable quality contract for analysis review. The JSONs win on mechanical bands and Q-code checks; this file governs intent and qualifications. Source observations below retain their original dates: references to "current HEAD" describe the recorded run, not today's checkout.
 
-**Authority rule (applies when this MD and the JSONs disagree):** JSONs win on mechanical bands and Q-code checks; this MD wins on intent, rationale, and current "what to do next" status. When a band changes, this MD is updated to match — it is the derived narrative view.
+Use [benchmark-expectations.json](benchmark-expectations.json), [report-quality-expectations.json](report-quality-expectations.json) and root AGENTS.md together. Do not invent, translate or normalize benchmark inputs. The eight scored families below remain distinct from authorized unscored controls, which have no inferred bands.
 
-## How Agents Should Use This File
+Comparator-bearing runs must be isolated, one job at a time. Provider/configuration era changes and cache carryover can confound comparisons. Distinguish exact from variant inputs, local from deployed reports, and historical from current-stack evidence. A past pass never establishes today's pass. Paid runs require separate authority.
 
-Use this file as the fast human-readable reference for Captain intent. It is not a replacement for the machine-readable JSONs, live job inspection, or the Captain-defined input list in `AGENTS.md`.
-
-| Section | Use it for | Do not use it for |
-|---|---|---|
-| Release Summary | Current family status and active caution flags. | Changing bands or deciding a current rerun passed without inspecting the job. |
-| Benchmark Families | Captain intent, exact canonical input wording, and JSON-aligned band summary. | Inventing nearby inputs, translating inputs, or adding implementation-specific fixes. |
-| Comparator Reports | Recognizing acceptable report shape and useful historical/local/deployed examples. | Treating examples as new benchmark inputs, replacement bands, or proof current HEAD is fixed. |
-| Generic Expectations | Cross-family quality rules every report must satisfy. | Waiving family-specific bands or Q-code checks. |
-| Next Actions | The next operational question to answer. | Assuming a family is solved when the row explicitly says validation remains open. |
-
-Agent checklist:
-- Use only Captain-approved exact inputs for validation, planning, and benchmark comparison.
-- When judging report quality, compare the target report against this file, the JSON expectation files, and the best usable comparator reports below; do not judge a report in isolation when a Captain expectation or comparator exists.
-- Confirm mechanical bands, `latestVerifiedJobId`, and Q-code annotations in `benchmark-expectations.json` / `report-quality-expectations.json`.
-- Treat comparator jobs as report-shape references unless they are explicitly described as exact current-stack validation.
-- If a family has no official band, do not infer one from comparator reports.
-- Never turn benchmark examples into report-specific code, prompt, or search-query hacks.
-
-## Release Summary (as of 2026-05-12)
-
-**2026-05-09 Captain correction:** Prior tables incorrectly listed `MIXED` as acceptable for `bolsonaro-en`, `bolsonaro-pt`, and `asylum-235000-de`. That was not Captain's original expectation. These families must be true-side: Bolsonaro is legal-basis strongly supported and procedural-fairness largely supported with caveats; asylum-current-total is an official SEM aggregate/threshold claim where caveats belong in confidence and reasoning, not a neutral verdict direction. The same correction pass also moved `bundesrat-simple` to the high-true chronology expectation based on Captain-preferred exact comparators.
-
-**Comparator protocol (2026-06-12):** comparator-bearing benchmark runs are submitted **isolated** (one job at a time) — every Captain-accepted comparator was produced that way; concurrent batches degrade evidence acquisition (two documented `_failed_rerun` cases) and are smoke tests only. Additionally, **all current comparators predate the 2026-06-01 provider-era change** (Serper→P1 swap + output-token reduction): band deltas on the current stack are provider-confounded until a family gets an isolated re-baseline. See `_comparatorEraNote` in `benchmark-expectations.json`.
-
-- **Good expectation / comparator set (7/8):** `bundesrat-rechtskraftig`, `bundesrat-simple`, `asylum-wwii-de`, `bolsonaro-en`, `bolsonaro-pt`, `hydrogen-en`, `plastic-en`
-- **Watch (3/8):** `asylum-235000-de`, `asylum-wwii-de`, `bolsonaro-en` — asylum-current now has a Captain-accepted very good exact current report (`bb2133a191894da9bacf4f63e4b458ac`) but remains watch-listed because one prior stability rerun flipped false-side and the latest pass is just above the nominal truth-band edge; asylum-WWII now has a first exact current-stack false-side pair but needs Captain acceptance / later spot-check before closure; Bolsonaro EN has a Captain-accepted OK current exact report (`aedb3a05046441aba3eb2f6047ca0e22`), with low confidence kept as watch debt rather than a blocker
-- **Not validated (0/8):** none — all approved families now have at least one current or accepted comparator-backed expectation band
-- **Release-blockers:** none formally declared in this file; `asylum-235000-de`, `asylum-wwii-de`, and `bolsonaro-en` have current exact passes but should stay in watch/review lanes rather than be treated as fully closed.
-
-**Bundesrat-simple current-state note:** Current exact job `1de78d0a5a2c428baba3f40d189e46a7` on `bce6365f` confirms the corrected high-true expectation (`TRUE` 97/93) and matches the Captain-preferred comparators on literal chronology plus procedural caveat. It is a report-quality pass, but not an operational clean pass: the run hit a user-visible `budget_exceeded` warning after the research budget and took about 23.7 minutes wall-clock. Treat it as current-head confirmed with timing watch, not a reason to spend another immediate Bundesrat-simple job.
-
-**Bolsonaro current-state caution:** Captain accepted current exact job `aedb3a05046441aba3eb2f6047ca0e22` on `9b0e8efd` as OK on 2026-05-12. It recovered the corrected true-side expectation overall (`LEANING-TRUE` 64/43) with the intended three AtomicClaims and no user-visible warnings. AC_02 and AC_03 are both verifiable and true-side, but confidence remains low (`32` and `30`) and overall confidence is 2pp below the canonical band; treat this as current-watch accepted, not broad closure or a replacement for the stronger `91bf6083` / deployed `85812d61` comparators.
-
-**Bundesrat-rechtskräftig current-state note:** Current isolated exact job `f8e72c84fb004f23945e23c81973fc26` is accepted by Captain as good. It resolves the old zero-evidence/concurrent-run ambiguity: 3 AtomicClaims, 5 boundaries, 88 evidence items, no user-visible warnings, and a coherent `rechtskräftig` dominance analysis. The v0.3 reference dossier makes the legal-force / entry-into-force reading primary (`LEANING-FALSE` / `MIXED`, truth 29-57), records the Captain-confirmed 3-AtomicClaim C1 shape (signature before Parliament, signature before people, legal-force/final-binding status), and records a less likely secondary signed-text/authentication reading as a conditional alternative that must explicitly say the treaty/package is not yet in force.
-
-**Asylum-WWII current-state caution:** Exact current jobs `9e1f0f0014564edeaa0e673b43dc27e6` (`MOSTLY-FALSE` 25/73) and `ce265797d3fc4540a45aaeac99510e4a` (`LEANING-FALSE` 30/63) establish the first false-side band. Reports may treat the present 235k asylum-area count as true-side or definition-caveated, but the historical comparison must use endpoint stock at the end of WWII rather than cumulative wartime admissions/flows.
-
-**Plastic current-state note (recalibrated 2026-05-31):** Band recalibrated to a **centered** expectation (`LEANING-FALSE / MIXED / LEANING-TRUE`; truth 42–65, target 50–60; conf 50–75) from an evidence-grounded analysis of all 108 stored exact-input reports (2026-05-31 Plastic Pointless AtomicClaim Independent Proposal). "Pointless" is interpretation-laden: the **literal** reading ("achieves nothing") is trivially FALSE, while the **reasonable/effectiveness** reading is MIXED-to-TRUE (~9% global recycling rate, pervasive downcycling). The fact-checking norm assesses the reasonable meaning, so neither the prior false-side band (10–42) nor the earlier true-side band (40–75) is correct — the honest expectation is centered with capped confidence. The verdict narrative must state which reading it assesses. Prior false-side jobs `939563ec` (LF 37/62) and `32f00bb` (MF 21/68) are real reports that sit at the lower edge of the centered band. This supersedes the earlier "Captain accepts LEANING-FALSE" stance.
+The source register's watch status remains: asylum-current, asylum-WWII and Bolsonaro EN need continued review; hydrogen is improved, not closed. Plastic uses the centered interpretation-dependent expectation and capped confidence. None of these observations overrides the [current holds](../STATUS/Backlog.md#holds-and-required-decisions).
 
 ## Benchmark Families
 
@@ -125,22 +88,11 @@ Each item has a concrete next step, owner expectation, and whether it blocks rel
 | `plastic-en` | Band recalibrated 2026-05-31 to a centered expectation (LEANING-FALSE/MIXED/LEANING-TRUE, 42–65, conf ≤75) per the 108-report evidence analysis (2026-05-31 Plastic Pointless AtomicClaim Independent Proposal). Do not spend a new plastic job to "confirm"; if validated later, prefer an exact run landing MIXED/LEANING-TRUE with an explicit reading declaration. Old false-side jobs `939563ec`/`32f00bb` remain lower-edge comparators only. | No — control lane; centered band is intentional |
 | `asylum-235000-de` | Captain accepted current exact canary `bb2133a191894da9bacf4f63e4b458ac` as very good. Do not spend another immediate asylum-current job; next work is local cleanup / deployment-readiness review around diagnostics and stability, then a small cross-input validation batch only if Captain wants broader release confidence. | Yes — active watch lane; a very good current exact report exists, but not broad closure |
 | `bolsonaro-en` current accepted/watch | Captain accepted current exact canary `aedb3a05046441aba3eb2f6047ca0e22` as OK. It gives AC_02/AC_03 true-side, verifiable verdicts after the Stage-4 direction-summary and repair-band fixes. Next work is review/simplification, not another immediate prompt patch: compare against `91bf6083` / `85812d61` if release-readiness asks for comparator-level confidence. | No — Captain accepted current report as OK; low confidence remains watch debt and not a best-comparator promotion |
-| Q-S1.3 / Q-S1.1 / Q-V6 / Q-ST5 check activation | Add per-family annotations (`anchorTokens`, `minDistinctEvents`, `trueButMisleading`, `crossLanguageVariantOf`) to `benchmark-expectations.json` as data becomes available. | No — the checks are dormant until then |
+| Q-S1.3 / Q-S1.1 / Q-V6 / Q-ST5 annotations | Use the existing per-family annotations and their documented limits. QCODE-ANNOT remains open for conflicting multi-branch requirements; changes need Captain decision. | No automatic annotation or band change |
 
 ## Reading Order
 
-1. **This doc** — one-page scan for direction and open items.
+1. **This doc** — quality intent, comparator distinctions and open items.
 2. `Docs/AGENTS/benchmark-expectations.json` — exact per-family bands and latest verified job IDs.
 3. `Docs/AGENTS/report-quality-expectations.json` — Q-code check catalog consumed by `/report-review`.
 4. `AGENTS.md` — the non-negotiable project rules (generic by design, input neutrality, pipeline integrity, warning severity).
-
-## Background Sources
-
-Not part of the runtime loop; consult when researching rationale:
-
-- `Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md` — origin of the Q-code taxonomy.
-- `Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md` — underlying assessment that produced the Q-codes.
-- `Docs/DEVELOPMENT/Captains Prompting Notes.md` — Captain's direct wording on report quality, confidence, evidence quality.
-- `Docs/site/product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/index.md` — original Bolsonaro true-side expectation: legal basis strongly supported; procedural fairness largely supported with legitimate concerns.
-- `Docs/site/product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/analysis-summary/index.md` — compact Bolsonaro summary: legal basis 85%, procedural fairness 70% with caveats.
-- Captain Comments Consolidated 2026-02-16 — earlier Captain comments that became formal rules.

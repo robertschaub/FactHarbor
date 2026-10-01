@@ -1,5 +1,7 @@
 # Support FactHarbor — Why and How?
 
+> Status, 1 October 2026: FactHarbor is an invite-gated Alpha. Development is paused pending funding; the roadmap below describes intended future work, without a committed delivery schedule.
+
 
 
 > **Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026 (Updated: 4 April 2026)
@@ -62,7 +64,7 @@ The sector needs independent, sustainable infrastructure that no single platform
 ## How It Works
 
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI), and only evidence-backed objections can change the verdict.
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; [model allocation depends on the active configuration](verdict-debate.md).
 
 ![funding diagram](diagrams/fact-checker-cooperation-1.svg)
 
@@ -126,14 +128,14 @@ The value is not just a verdict — it's the structured reasoning, cited evidenc
 | Area | Status |
 | --- | --- |
 |**Full pipeline**|5 stages operational: extract claims, research evidence, cluster, AI debate, aggregation |
-|**Independent AI challenger**|Claude-led debate, challenged on every claim by a model from a second provider (OpenAI) |
+|**Independent AI challenger**|Claude-led debate with an OpenAI challenger in the current default configuration; allocation is configurable |
 |**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin |
 |**Source evaluation**|Automatic per-domain credibility scoring |
 |**Multilingual**|German, English, French, Portuguese tested — multilingual by design |
 |**Analysis time**|~15 minutes per claim (target: under 5 minutes) |
 
 
-The system is in **Alpha** and under active development.
+The system is in **Alpha**; further development depends on funding.
 
 
 | Phase | What It Unlocks |
@@ -239,7 +241,7 @@ FactHarbor's governance ensures that funding never compromises editorial indepen
 **Live Demo:**
 **[app.FactHarbor.ch](https://app.factharbor.ch)**
 
-Submit any claim — the system researches and delivers a transparent verdict with full source citations.
+Invited testers can submit text or URLs for evidence-based analysis. Access and availability are subject to the Alpha invitation and quota controls.
 
 ----
 
@@ -256,4 +258,4 @@ Robert Schaub — Founder and Lead Developer
 
 ----
 
-**Navigation:** [Presentations](organisation/partner-user-relations/presentations/index.md) | [Organisation](organisation/index.md) | [LinkedIn Article](linkedin.md)
+**Navigation:** [Presentations](product-development/presentations/index.md) | [Organisation](organisation/index.md) | [LinkedIn Article](linkedin.md)

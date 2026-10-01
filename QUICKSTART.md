@@ -1,6 +1,6 @@
 # Quick Start Guide - Metrics
 
-> ⚠️ _Updated 2026-09-23: removed the Orchestrated-era metrics hooks, the `dotnet ef` migration step, the baseline and A/B test runners and the unused environment variables. The previous version is archived in Docs/ARCHIVE/QUICKSTART._
+> ⚠️ _Updated 2026-09-23: removed the Orchestrated-era metrics hooks, the `dotnet ef` migration step, the baseline and A/B test runners and the unused environment variables._
 
 ## 🚀 Start the Services
 
@@ -47,8 +47,8 @@ Analysis settings such as models, thresholds, limits and prompts are UCM setting
 ## 📚 Documentation
 
 - **Getting Started**: `Docs/site/product-development/devops/guidelines/getting-started/index.md`
-- **Metrics Schema**: `Docs/site/product-development/specification/reference/data-models-and-schemas/metrics-schema/index.md`
-- **Testing Strategy**: `Docs/site/product-development/devops/guidelines/testing-strategy/index.md`
+- **Metrics Schema**: `apps/web/src/lib/analyzer/metrics.ts`
+- **Testing Strategy**: `apps/web/test/README.md`
 - **Current Status**: `Docs/STATUS/Current_Status.md`
 
 ---

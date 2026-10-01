@@ -6,7 +6,7 @@ This page tracks significant funding sources and expenses to ensure financial tr
 
 ## 2. Expenses (Phase 0)
 
-**Note:** In Phase 0, small infrastructure costs are covered by Founder self-funding. No external donations have been accepted yet.
+**Historical Phase 0 note:** Small infrastructure costs were covered by Founder self-funding; no external donations had been accepted at the time of this record. This is not a current fundraising or accounting statement.
 
 | Date | Type | Description | Amount (Approx) | Source/Recipient | Notes |
 |------|------|-------------|-----------------|------------------|-------|

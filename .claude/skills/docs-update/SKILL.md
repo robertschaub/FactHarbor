@@ -10,6 +10,8 @@ description: >
 allowed-tools: Bash Read Write Edit
 ---
 
+Use the task's authorized source and output scope. Public records carry concise current contracts and findings needed for public implementation. Full research, experimental histories and non-public handoffs use the assigned task record; do not create or recreate them publicly by default. Missing history is a context gap, not closure. The handoff protocol governs preservation and discovery.
+
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
 
 # Documentation reconciliation

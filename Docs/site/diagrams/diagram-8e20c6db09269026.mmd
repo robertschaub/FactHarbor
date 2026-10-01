@@ -1,9 +1,0 @@
-graph TD
-    A[TypeScript Input] -->|Variables| B[Prompt Template]
-    B -->|Prompt String| C[LLM API Call]
-    C -->|JSON String| D[Parse Response]
-    D -->|Raw Object| E[Zod Validation]
-    E -->|Valid?| F{Schema Match?}
-    F -->|Yes| G[TypeScript Output]
-    F -->|No| H[Validation Error]
-    H --> I[Fallback or Retry]

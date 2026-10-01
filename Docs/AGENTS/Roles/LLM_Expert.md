@@ -24,11 +24,11 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, analysis prompt rules |
-| `/Docs/ARCHITECTURE/Prompt_Architecture.md` | How prompts are structured |
-| `/Docs/site/product-development/specification/reference/prompt-engineering/prompt-guidelines/index.md` | Prompt guidelines |
-| `/Docs/site/product-development/specification/reference/prompt-engineering/provider-specific-formatting/index.md` | Provider-specific formatting |
-| `/Docs/ARCHITECTURE/Calculations.md` | Verdict calculations |
-| `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` | Evidence quality filtering |
+| `/Docs/site/prompt-architecture.md` | How prompts are structured |
+| `/AGENTS.md` | Prompt guidelines |
+| `/apps/web/prompts/README.md` | Provider-specific formatting |
+| `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` | Verdict calculations |
+| `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` | Evidence quality filtering |
 | `/Docs/AGENTS/Captain_Quality_Expectations.md` | Current quality requirements and comparator boundaries |
 | `/Docs/AGENTS/report-quality-expectations.json` | Operative structural quality checks |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow, verdict stage, prompt architecture) |

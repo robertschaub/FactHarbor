@@ -1,5 +1,7 @@
 # Fact-Checked Claims
 
+> Historical runs from February–March 2026, on earlier pipeline versions (report schemas 3.0.0–3.2.0-cb). These outputs do not establish current configuration or quality.
+
 
 Below are outputs from FactHarbor test runs.
 The Reports capture the complete analysis result for a given input claim, including verdict, evidence items, ClaimAssessmentBoundary breakdowns, challenge responses, sources, and quality gate outcomes.

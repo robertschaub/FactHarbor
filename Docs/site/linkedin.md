@@ -78,4 +78,4 @@ If you know someone in media, fact-checking, or research who should see this —
 
 ----
 
-**Navigation:** [Presentations](organisation/partner-user-relations/presentations/index.md) | [Organisation](organisation/index.md)
+**Navigation:** [Presentations](product-development/presentations/index.md) | [Organisation](organisation/index.md)

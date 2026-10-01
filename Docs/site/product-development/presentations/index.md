@@ -2,12 +2,11 @@
 
 > **Info**
 >
-> Presentation materials for meetings, conferences, and demos. Each sub-page contains a self-contained Markdown presentation, readable on GitHub and the documentation website.
+> These overviews explain FactHarbor's Alpha, its limitations and possible cooperation. They do not establish an agreed partnership or completed evaluation.
 
--   [Academic Cooperation — ZHAW / UZH / ETH](../../academic-cooperation.md) — Cooperation presentation for Swiss research partners
+- [Academic cooperation](../../academic-cooperation.md): research questions, evaluation and possible project formats.
+- [Fact-checker cooperation](../../fact-checker-cooperation.md): inspectable evidence research for newsroom workflows.
+- [Support FactHarbor](../../funding.md): funding and infrastructure support.
+- [Project introduction](../../linkedin.md) and [German introduction](../../linkedin-de.md).
 
-*See also: [Partner & User Relations Presentations](../../organisation/partner-user-relations/presentations/index.md) for Fact-Checker Cooperation and Funding pages.*
-
-------------------------------------------------------------------------
-
-**Navigation:** [Product Development](../index.md) \| [Diagrams](../diagrams/index.md)
+[Product development](../index.md) · [Architecture](../specification/architecture/index.md)

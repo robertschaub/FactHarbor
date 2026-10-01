@@ -138,7 +138,7 @@ If a gate run is intentionally stopped before completion:
 - **Purpose:** baseline, governance, promotion decisions
 - **Decision basis:** operational gate first, diagnostic skew second (telemetry/trend)
 - **Artifact prefix:** `gate-full-*`
-- **Profile target:** actual production debate profile with `debateModelProviders.challenger = openai`
+- **Profile target:** actual production debate profile with `debateRoles.challenger.provider = "openai"`; confirm each role's `provider` and `strength` in the active configuration
 - **Preflight rule:** logs active provider overrides for operator awareness (no hard-fail — changed 2026-02-27)
 
 ### Smoke lane (non-gating)
@@ -225,8 +225,7 @@ npm run test:calibration:validate -- test/output/bias/<artifact>.json
 
 ## 13. References
 
-- `Docs/STATUS/Calibration_Baseline_v1.md`
-- `Docs/STATUS/Current_Status.md#tigerscore-usage-alpha`
-- Calibration Cost Optimization Review Plan 2026-02-22
-- Decision Log D1-D5
-- CrossProvider Calibration Execution Report 2026-02-21
+- [Historical baseline and current calibration constraints](Calibration_Baseline_v1.md)
+- [Current status](Current_Status.md)
+- [Quality expectations](../AGENTS/Captain_Quality_Expectations.md)
+- [Open decisions and holds](Backlog.md)

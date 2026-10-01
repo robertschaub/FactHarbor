@@ -1,19 +1,7 @@
-# Calibration Report Output (gitignored)
+# Calibration output
 
-This directory is the **active runtime output** for Framing Symmetry Calibration runs.
+This gitignored directory holds local Framing Symmetry Calibration outputs. Running provider-backed calibration requires current action, input and budget authorization.
 
-## Active vs Deprecated
+Keep complete outputs, fixture/profile identities and hashes in the task's authorized evidence location. Do not create tracked report archives by copying this directory. Public summaries may include reviewed results with their limitations; follow [documentation guidance](../../../../../Docs/DEVELOPMENT/Documentation.md).
 
-- Active (v3+): `apps/web/test/output/bias/`
-- Deprecated (pre-v3 fixture): `apps/web/test/output/bias/deprecated/pre-v3-fixture/`
-
-Pre-v3 artifacts were archived to avoid confusion with current gate decisions.
-
-## Promotion to tracked QA folder
-
-Copy selected v3+ artifacts to:
-- `Docs/QAReports/` (active tracked reports)
-- Legacy archived reports remain under `Docs/QAReports/deprecated/pre-v3-fixture/`
-
-Update:
-- `Docs/QAReports/reports-manifest.json` for active v3+ entries only.
+[Calibration policy](../../../../../Docs/STATUS/Calibration_Run_Policy.md) governs comparison and promotion. The [historical baseline](../../../../../Docs/STATUS/Calibration_Baseline_v1.md) retains its original identities; do not rewrite them to match a new run.

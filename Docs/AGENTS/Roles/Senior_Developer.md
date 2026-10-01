@@ -22,7 +22,7 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, key files, commands |
-| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
+| `/AGENTS.md` | Code quality standards |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the task's area |
 

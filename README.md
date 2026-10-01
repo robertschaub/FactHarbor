@@ -7,7 +7,7 @@ FactHarbor is an AI-powered platform that turns complex, contested information i
 An Evidence Model contains:
 
 - **Claims** — Key assertions extracted from the source material
-- **Analysis Contexts** — The frames and conditions under which claims may hold or fail
+- **Assessment boundaries** — The frames and conditions under which claims may hold or fail
 - **Evidence** — Supporting and opposing sources with quality ratings and reliability scores
 - **Verdicts** — Conclusions with explicit confidence levels and cited evidence
 - **Full Transparency** — Every assumption, algorithm, and data source is exposed

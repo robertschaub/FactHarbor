@@ -57,10 +57,14 @@ Detailed legal policies for day-to-day operations are maintained in dedicated do
 |**Founding assembly held**|✅ Complete|April 23, 2026 |
 |**Commercial Register (Handelsregister)**|✅ Complete|UID CHE-448.446.098; visible on Zefix since May 7, 2026 |
 |**Nonprofit verification (Goodstack)**|✅ Complete|Verified May 2026; basis for nonprofit software programs (Claude for Nonprofits and OpenAI for Nonprofits, active since May 10, 2026) |
-|**Tax exemption (Steuerbefreiung)**|🟡 Applied for|Application submitted May 6, 2026 to the Canton of Zürich tax office; decision pending (typical processing 4–12 weeks) |
+|**Tax exemption (Steuerbefreiung)**|🟡 Applied for|Application submitted May 6, 2026 to the Canton of Zürich tax office; decision pending in the May 2026 record; current status requires confirmation |
 
 
-For a detailed task list, see the **[Operational Readiness Checklist](organisation/governance/operational-readiness/index.md)**.
+## Public launch and wider access
+
+The restricted Alpha does not satisfy all wider-launch prerequisites. Swiss legal-advisor review of policies and bylaws remains a required gate; the Terms of Service remains a draft pending its identified decisions, review and adoption. Governing Team launch approval, working contact infrastructure and incident/breach procedures remain required.
+
+Follow the effective [Privacy Policy, section 20](privacy-policy.md#20-expansion-gates-and-operating-reviews) for the processing register, DPIA, infrastructure verification, retention automation, private-person and source-rights expansion gates. Do not treat documentation publication as approval to expand access or as evidence those tasks are complete.
 
 ----
 

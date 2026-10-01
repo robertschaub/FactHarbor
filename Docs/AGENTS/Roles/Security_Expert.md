@@ -24,9 +24,9 @@
 |----------|-----|
 | `/AGENTS.md` | Auth headers, safety rules |
 | `/Docs/site/product-development/specification/architecture/security-and-operations/index.md` | Security architecture |
-| `/Docs/site/product-development/devops/deployment/index.md` | Deployment security |
+| `/DEPLOYMENT_CHECKLIST.md` | Deployment security |
 | `apps/web/.env.example` | Environment variable patterns |
-| `apps/api/appsettings.Development.json.example` | API configuration patterns |
+| `apps/api/appsettings.Development.example.json` | API configuration patterns |
 
 ## Key Source Files
 

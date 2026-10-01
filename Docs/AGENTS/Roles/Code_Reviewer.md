@@ -23,8 +23,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Key files, patterns, terminology |
-| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
-| `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md` | Testing requirements |
+| `/AGENTS.md` | Code quality standards |
+| `/apps/web/test/README.md` | Testing requirements |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the code being reviewed |
 
 ## Key Source Files

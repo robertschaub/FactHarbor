@@ -1,10 +1,10 @@
 # Terms of Service
 
 **Effective Date:** [NEEDS DECISION: set before the alpha is exposed to any user not personally known to the team — align with the Privacy Policy effective date]
-**Last Updated:** September 17, 2026 (V0.3.0 — public-report decision aligned)
+**Last Updated:** October 1, 2026 (V0.3.1 — licensing reference aligned)
 
 
-> **Status: DRAFT — not yet effective.** Rewritten to match the service FactHarbor **actually operates today**: an invite-gated, AI-assisted claim-analysis service in **alpha**, not a community-contribution platform with user accounts. Items marked **[NEEDS DECISION: …]** require a human/legal decision before adoption and entry into effect; this draft may be published for review. Reviewed internally and by a GPT-5.5 counsel-style pass; not yet signed off by retained Swiss counsel (a launch blocker — see [Operational Readiness](organisation/governance/operational-readiness/index.md) §2.1).
+> **Status: DRAFT — not yet effective.** Rewritten to match the service FactHarbor **actually operates today**: an invite-gated, AI-assisted claim-analysis service in **alpha**, not a community-contribution platform with user accounts. Items marked **[NEEDS DECISION: …]** require a human/legal decision before adoption and entry into effect; this draft may be published for review. Reviewed internally and by a GPT-5.5 counsel-style pass; not yet signed off by retained Swiss counsel (a launch blocker — see [public launch requirements](legal-framework.md#public-launch-and-wider-access)).
 
 
 
@@ -90,7 +90,7 @@ You may **not**:
 ### 6.3 Platform and Trademarks
 
 
-*   FactHarbor's source code and documentation **will be released** under the project's open-source licences (see [Open Source Model and Licensing](organisation/legal-and-compliance/open-source-model-and-licensing/index.md)). **[NEEDS DECISION: finalise the code-licensing model — listed as not-yet-decided in Operational Readiness §3.3.]**
+*   Public source code is available under AGPL-3.0-only and public documentation under CC-BY-SA-4.0, subject to the path-specific coverage and notices in [Open Source Model and Licensing](organisation/legal-and-compliance/open-source-model-and-licensing/index.md).
 *   The FactHarbor name and marks remain our property.
 
 
@@ -167,17 +167,19 @@ For questions about these Terms: **FactHarbor (Verein), c/o Robert Schaub, In Le
 ## 16. Version
 
 
-*   **Version:** 0.3.0 (public-report decision aligned), superseding the unnumbered December 17, 2025 draft.
-*   **Last Updated:** September 17, 2026
+*   **Version:** 0.3.1 (licensing reference aligned), superseding the unnumbered December 17, 2025 draft.
+*   **Last Updated:** October 1, 2026
 *   **Effective Date:** [NEEDS DECISION — see header]
 
 **Changelog:**
+
+*   **0.3.1 (2026-10-01):** updated §6.3 to the adopted repository licensing and removed licensing from the open-decision list. This remains a draft without an effective date.
 
 *   **0.3.0 (2026-09-17):** recorded full submissions and reports as deliberately public by design; replaced the visibility and report-reuse decisions with a direct confidentiality warning and binding reuse conditions; clarified that the draft may be published for review before adoption; and added the serviceable contact address.
 *   **0.2.1 → 0.2.2 (GPT-5.5 counsel review):** added a click-through-incorporation requirement (§1); preserved mandatory liability under OR Art. 100 + consumer caveat (§9); narrowed the indemnity to *culpable* breach + consumer caveat (§10); added a personality-rights/no-defamation duty (§5) and a cross-reference to the Privacy Policy §6.2 takedown route (§6.2); added report-use rules for shared reports (§6.2); made the provider-training position explicit (§6.1); flagged a possible 16/18 minimum age for public launch (§11).
 *   **0.2.0 → 0.2.1 (Fable-5 advisor review):** children's-age clause fixed; invite-code wording aligned to Privacy Policy §3.1; §6.3 "will be released"; visibility pointer to Privacy Policy §3.3.
 
-**Open decisions before adoption and use as effective terms:** §1 click-through acceptance; §6.1 provider training/retention; §6.3 code-licensing model; §10 indemnity scope; §11 minimum age; effective date. The broader compliance checklist lives in the [Privacy Policy](privacy-policy.md) §20.
+**Open decisions before adoption and use as effective terms:** §1 click-through acceptance; §6.1 provider training/retention; §10 indemnity scope; §11 minimum age; effective date. The broader compliance checklist lives in the [Privacy Policy](privacy-policy.md) §20.
 
 
 ## 17. Related Policies

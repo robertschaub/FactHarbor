@@ -1545,7 +1545,7 @@ export async function validateVerdicts(
           // path fires. Without this trace, the only way to attribute the
           // policy that initiated a downgrade was code archaeology against the
           // call site of safeDowngradeVerdict. See:
-          // Docs/WIP/2026-05-26_Telemetry_Observation_Plan_First_4_Jobs.md
+          // Docs/STATUS/Backlog.md (observation scope requires its own authorization)
           // and the Eiffel-job retrospective for context.
           debugLogFileOnly(`[VerdictStage] Direction repair entered for claim ${verdict.claimId}`, {
             claimId: verdict.claimId,

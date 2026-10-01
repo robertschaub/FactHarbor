@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
-**Version:** 2.3
-**Date:** 2026-09-08
+**Version:** 2.4
+**Date:** 2026-10-01
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -17,15 +17,17 @@ This document defines the rules, roles, and workflow for multi-agent collaborati
 
 Root AGENTS.md is mandatory. Read only the reference sections needed for the current task; client adapters apply to their own client and remain subordinate to canonical policy. Relevant prior-work lookup is for non-trivial tasks, not every typo.
 
+For public implementation, the mappings below are entry points to current contracts and source, not substitutes for a task's approved specification. Use only explicitly authorized reference material and output destinations. Full research and experimental histories are not default public outputs; never copy confidential context into an investigation template. When context is unavailable, state the gap and preserve current holds.
+
 ### 1.1 Knowledge Sources
 
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **AGENTS.md** | `/AGENTS.md` | Fundamental coding rules, architecture reference, safety rules |
 | **GEMINI.md** | `/GEMINI.md` | Gemini CLI discovery and session-specific limitations |
-| **Coding Guidelines** | `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards, testing requirements, prompt engineering |
+| **Coding Guidelines** | `/AGENTS.md` | Code quality standards, testing requirements, prompt engineering |
 | **Terminology Reference** | `/Docs/site/product-development/specification/reference/terminology/index.md` | Authoritative glossary for all technical terms |
-| **Architecture Overview** | `/Docs/site/product-development/specification/architecture/system-design/index.md` | System architecture, data models, component interactions |
+| **Architecture Overview** | `/Docs/site/product-development/specification/architecture/index.md` | System architecture, data models, component interactions |
 | **Current Status** | `/Docs/STATUS/Current_Status.md` | Current implementation status and known issues |
 
 ### 1.2 Area-to-Documents Mapping
@@ -34,16 +36,16 @@ When a task specifies an **Area**, read the corresponding documents:
 
 | Area | Required Documents |
 |------|-------------------|
-| **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/site/product-development/specification/reference/prompt-engineering/provider-specific-formatting/index.md`, `/Docs/site/product-development/specification/reference/prompt-engineering/prompt-guidelines/index.md` |
-| **Calculations** | `/Docs/ARCHITECTURE/Calculations.md`, `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` |
+| **Prompts** | `/Docs/site/prompt-architecture.md`, `/apps/web/prompts/README.md`, `/AGENTS.md` |
+| **Calculations** | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` |
 | **Configuration** | `/Docs/site/product-development/devops/subsystems-and-components/unified-config-management/index.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
-| **Context-Detection** | `/Docs/site/product-development/devops/guidelines/scope-definition-guidelines/index.md`, `/Docs/site/product-development/specification/architecture/deep-dive/context-detection/index.md` |
-| **Source-Reliability** | `/Docs/site/product-development/specification/architecture/deep-dive/source-reliability/index.md` |
-| **Pipeline** | `/Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md`, `/Docs/site/akel-pipeline.md` |
-| **UI** | `/apps/web/AGENTS.md`, `/Docs/site/product-development/specification/architecture/data-model/index.md` |
-| **Testing** | `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md`, `/Docs/site/product-development/devops/tooling/promptfoo-testing/index.md`, `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` |
-| **Schema** | `/Docs/site/product-development/specification/architecture/deep-dive/schema-migration/index.md`, `/Docs/site/product-development/specification/reference/data-models-and-schemas/metrics-schema/index.md` |
-| **Deployment** | `/Docs/site/product-development/devops/deployment/zero-cost-hosting-implementation-guide/index.md` |
+| **Assessment boundaries** | `/Docs/site/product-development/specification/reference/terminology/index.md`, `/Docs/site/product-development/specification/architecture/index.md` |
+| **Source-Reliability** | `/Docs/site/shared-modules.md` |
+| **Pipeline** | `/Docs/site/akel-pipeline.md` |
+| **UI** | `/apps/web/AGENTS.md`, `/apps/web/src/lib/analyzer/types.ts` |
+| **Testing** | `/apps/web/test/README.md`, `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` |
+| **Schema** | `/apps/web/src/lib/analyzer/types.ts`, `/apps/web/src/lib/analyzer/metrics.ts` |
+| **Deployment** | `/DEPLOYMENT_CHECKLIST.md` |
 | **Documentation** | `/Docs/AGENTS/Roles/Technical_Writer.md`, `/Docs/DEVELOPMENT/Documentation.md` |
 
 **If no Area is specified:** Agent should intelligently identify relevant documents based on the task description.
@@ -67,7 +69,7 @@ When activated in a role, use this table to identify which areas are within your
 ### 1.4 WIP Folder Protocol
 
 - **Location:** `/Docs/WIP/`
-- **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
+- **Purpose:** Concise records needed for an authorized public implementation or review. Full investigations and experimental histories use the task's approved output scope (§3.4).
 - **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
 - **On Completion:** Keep useful reference material in its appropriate living document; retire completed records only within assigned preservation and removal scope
 
@@ -140,6 +142,8 @@ For complex tasks where the Captain wants multiple agents to independently inves
 
 **When to use:** The Captain assigns the same investigation task to 2+ agents (potentially different roles, tools, or models) and wants a single unified output document.
 
+Hub and spoke files live in the task's explicitly authorized output location. Use `Docs/WIP/` only for concise, public-safe work. In the templates below, `<authorized-output>` means that assigned location; it is not a new directory to create automatically.
+
 **Concurrency model: Hub-and-Spoke.** Each agent writes to their own spoke file (zero contention). The consolidator is the only agent that reads all spoke files and merges them into the hub.
 
 **Workflow:**
@@ -186,7 +190,7 @@ Use §4.3 to assign task worktrees and one integrator before parallel writing. T
 2. **If the hub document exists** (subsequent agents):
    a. Read the Investigation Brief
    b. Report your role and spoke file path to the integrator for the **Participant Tracker**
-3. **Create your spoke file**: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
+3. **Create your spoke file**: `<authorized-output>/{Topic}_Report_{Role}_{Agent}.md` using the Spoke File Format (§4.5)
 4. Perform investigation (read code, analyze data, research) — write everything to **your spoke file**
 5. When done: report `DONE` to the integrator for your Participant Tracker row
 6. Do NOT read other agents' spoke files (anti-anchoring instruction; separate files aid discipline but do not enforce read isolation)
@@ -231,7 +235,7 @@ The Captain uses these standardized prompts to direct agents. Copy, fill in the 
 **INVESTIGATE** — Assign an agent to investigate (Phase 1):
 ```
 As {Role}, investigate using the Multi-Agent Investigation Workflow (§3.4).
-Document: Docs/WIP/{filename}.md
+Document: <authorized-output>/{filename}.md
 Task: {what to investigate — clear questions to answer}
 Inputs: {files, data, reports, or artifacts to examine}
 Scope: {what is NOT in scope}
@@ -243,7 +247,7 @@ Report your role and spoke path to the integrator for the Participant Tracker; c
 
 **CONSOLIDATE** — Assign the consolidator (Phase 2):
 ```
-As {Role}, consolidate the investigation in Docs/WIP/{filename}.md
+As {Role}, consolidate the investigation in <authorized-output>/{filename}.md
 Set document status to CONSOLIDATING.
 Read ALL spoke files listed in the Participant Tracker (where Status = DONE), then write:
 - ## Consolidated Analysis (summary, agreement matrix, strongest contributions)
@@ -255,14 +259,14 @@ Set document status to READY_FOR_REVIEW when done.
 
 **REVIEW** — Assign a reviewer (Phase 3):
 ```
-As {Role}, review the consolidated plan in Docs/WIP/{filename}.md
+As {Role}, review the consolidated plan in <authorized-output>/{filename}.md
 Assess the plan for completeness, feasibility, and risks.
 Add your review under ## Review Log using the Review Comment Format (§4.4).
 ```
 
 **STATUS** — Check investigation progress (any phase):
 ```
-Read Docs/WIP/{filename}.md and report:
+Read <authorized-output>/{filename}.md and report:
 - Document status
 - Participant Tracker state (who is done, who is still working)
 - Any agents with ABANDONED status or stale sessions
@@ -270,7 +274,7 @@ Read Docs/WIP/{filename}.md and report:
 
 **PROPOSE** — Ask an agent to propose next steps (after any phase):
 ```
-As {Role}, read Docs/WIP/{filename}.md and propose next steps.
+As {Role}, read <authorized-output>/{filename}.md and propose next steps.
 Consider the current document status, completed reports, and open questions.
 Append your proposal as a new report under # INVESTIGATION REPORTS:
 ### Proposal: {Role} ({Agent/Model}) — {Date}
@@ -280,7 +284,7 @@ Do NOT write into the # CONSOLIDATED OUTPUT sections — those are reserved for 
 
 **IMPLEMENT** — Assign an agent to execute the approved plan (after Phase 3):
 ```
-As {Role}, implement the approved plan in Docs/WIP/{filename}.md
+As {Role}, implement the approved plan in <authorized-output>/{filename}.md
 Read ## Consolidated Plan and execute it phase by phase.
 After each phase: run only the assigned relevant checks within permitted writable state, and report progress/status to the integrator. The integrator updates shared documents; a restricted reviewer runs no tests/builds.
 If you encounter blockers or deviations from the plan, stop and report to the Captain.
@@ -325,19 +329,19 @@ See `Docs/AGENTS/Policies/Handoff_Protocol.md` for the full template, output tie
 
 ## 4. Collaboration Document Protocol
 
-> This section governs **formal collaborative documents** (plans, reviews, investigations) that live in `Docs/WIP/`. For agent task-completion outputs and role handoffs, see `Docs/AGENTS/Policies/Handoff_Protocol.md`.
+> This section governs **formal collaborative documents** (plans, reviews, investigations) in the task's explicitly authorized output location. For agent task-completion outputs and role handoffs, see `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 
 ### 4.1 Document Naming Convention
 
 ```
-Docs/WIP/{TaskTitle}_{DocumentType}.md
+<authorized-output>/{TaskTitle}_{DocumentType}.md
 
 Examples:
-- Docs/WIP/Shadow_Mode_Implementation_Plan.md
-- Docs/WIP/Shadow_Mode_Architecture_Review.md
-- Docs/WIP/Shadow_Mode_Code_Review.md
-- Docs/WIP/Report_Quality_Analysis.md
-- Docs/WIP/Grounding_Logic_Investigation_2026-02-13.md  (§3.4 multi-agent investigation)
+- <authorized-output>/Shadow_Mode_Implementation_Plan.md
+- <authorized-output>/Shadow_Mode_Architecture_Review.md
+- <authorized-output>/Shadow_Mode_Code_Review.md
+- <authorized-output>/Report_Quality_Analysis.md
+- <authorized-output>/Grounding_Logic_Investigation_2026-02-13.md  (§3.4 multi-agent investigation)
 ```
 
 ### 4.2 Document Structure
@@ -421,7 +425,7 @@ When adding review comments:
 
 ### 4.5 Investigation Document Template
 
-Used with the Multi-Agent Investigation Workflow (§3.4). File naming: `Docs/WIP/{Topic}_Investigation_{date}.md`
+Used with the Multi-Agent Investigation Workflow (§3.4). File naming: `<authorized-output>/{Topic}_Investigation_{date}.md`
 
 #### Hub Document (shared)
 
@@ -442,7 +446,7 @@ The integrator records each agent's registration and state changes (§4.3).
 |---|------|-----------------|-------------|--------|---------|
 
 Status values: `INVESTIGATING` → `WRITING` → `DONE` | `ABANDONED` | `CONSOLIDATING` → `DONE` | `REVIEWING` → `DONE`
-Report File: path to the agent's spoke file (e.g., `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`).
+Report File: path to the agent's spoke file (e.g., `<authorized-output>/{Topic}_Report_{Role}_{Agent}.md`).
 
 ---
 
@@ -511,13 +515,13 @@ Report File: path to the agent's spoke file (e.g., `Docs/WIP/{Topic}_Report_{Rol
 
 #### Spoke File Format (one per agent)
 
-File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
+File naming: `<authorized-output>/{Topic}_Report_{Role}_{Agent}.md`
 
 ```markdown
 # {Topic} — Report: {Role} ({Agent/Model})
 
 **Date:** {date}
-**Hub Document:** Docs/WIP/{Topic}_Investigation_{date}.md
+**Hub Document:** <authorized-output>/{Topic}_Investigation_{date}.md
 **Status:** INVESTIGATING | WRITING | DONE
 
 ---
@@ -662,7 +666,7 @@ See the root client adapter for supported discovery and session-control guidance
 
 Before completion, apply only the checks relevant to the task and report material omissions:
 
-- [ ] Code follows `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md`
+- [ ] Code follows `/AGENTS.md`
 - [ ] Terminology matches `/Docs/site/product-development/specification/reference/terminology/index.md`
 - [ ] No hardcoded domain-specific terms
 - [ ] Focused verification completed within the assignment; broad suites/builds only when justified
@@ -683,4 +687,4 @@ Before completion, apply only the checks relevant to the task and report materia
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-09-08
+**Last Reviewed:** 2026-10-01 (documentation authority, references and task-output routing)

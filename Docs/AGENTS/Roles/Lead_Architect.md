@@ -22,8 +22,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, architecture overview |
-| `/Docs/site/product-development/specification/architecture/system-design/index.md` | Current system architecture |
-| `/Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md` | Pipeline architecture |
+| `/Docs/site/product-development/specification/architecture/index.md` | Current system architecture |
+| `/Docs/site/akel-pipeline.md` | Pipeline architecture |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 | `/Docs/STATUS/Current_Status.md` | Current state and known issues |
 

@@ -11,6 +11,8 @@ description: >
 allowed-tools: Bash Read Write Edit
 ---
 
+Use the task's authorized source and output scope. Public records carry concise current contracts and findings needed for public implementation. Full research, experimental histories and non-public handoffs use the assigned task record; do not create or recreate them publicly by default. Missing history is a context gap, not closure. The handoff protocol governs preservation and discovery.
+
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
 
 
@@ -27,7 +29,7 @@ records have an explicit disposition, and the three status documents are up to d
 
 Read relevant sections of these references for the requested WIP scope:
 
-1. `Docs/WIP/README.md` — current active-file registry and cleanup history
+1. `Docs/WIP/README.md` — current public task and preservation guidance
 2. `Docs/STATUS/Backlog.md` — current backlog items
 3. `Docs/STATUS/Current_Status.md` — live system status and recent changes
 4. `Docs/DEVELOPMENT/Documentation.md` — preservation and maintenance boundaries
@@ -77,7 +79,7 @@ matching row wins:
 
 1. The file itself — completion markers, phase labels, explicit "REVERTED / PARKED / APPROVED"
 2. `git log --oneline --all -- <source files named in the doc>` — verify whether related code landed
-3. `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` → "Recently Completed" section
+3. `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` → the current item status section
 4. Helper-agent or self investigation for genuinely ambiguous files (Step 3)
 
 **Do not delegate Step 3 for:**
@@ -113,7 +115,7 @@ Steps:
 1. Run: git log --oneline --all -- <list of source files or patterns if known>
 2. Read the most relevant recent commits (last 30 days) touching those files.
 3. If no relevant file is obvious, search: rg -l "<key identifier from the doc>" apps -g "*.ts" -g "*.cs"
-4. Read Docs/STATUS/Current_Status.md, section "Recent Changes".
+4. Read the relevant existing sections of Docs/STATUS/Current_Status.md.
 
 Return exactly this structure:
 STATUS: implemented | partial | not-implemented | cannot-determine
@@ -189,23 +191,13 @@ Include in the Step 6 report with the helper investigation evidence (or lack of 
 
 ## Step 5 — Sync status documents
 
-After all individual files are processed, update these three documents:
+Update the sections that already exist in the current public documents:
 
-**`Docs/STATUS/Backlog.md`**
-- Add all extracted forward-looking items (from Step 4 Q1).
-- Move items to "Recently Completed" for every file newly classified DONE.
-- Remove items that are now demonstrably irrelevant.
-- Verify: every open WIP item should have a matching backlog entry. Add any that are missing.
+- `Docs/STATUS/Backlog.md`: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
+- `Docs/STATUS/Current_Status.md`: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
+- `Docs/WIP/README.md`: keep its current-work guidance and links accurate for the remaining public-safe records.
 
-**`Docs/STATUS/Current_Status.md`**
-- Update "Recent Changes" if any completed WIP marks a completed milestone.
-- Update "Known Issues" if any WIP surfaces an issue not already listed.
-
-**`Docs/WIP/README.md`**
-- Rebuild the "Currently Active" and "Active Future Proposals" sections to exactly match the
-  files that remain.
-- Add a new row to "Cleanup History": date, consolidation number (increment from last row),
-  files retired count, files remaining count.
+Do not add public cleanup histories, completed-work collections or investigation logs. Full completion evidence uses the task's authorized output location under the handoff protocol.
 
 ---
 
@@ -234,7 +226,7 @@ Report any changed handoff sources to the designated integrator. WIP/status edit
 
 ### Backlog changes
 - Added: [new items with source file]
-- Moved to Recently Completed: [items]
+- Closed or updated: [items and evidence location within the authorized scope]
 
 ### Needs your decision — N files
 - <filename> — STALE since [date]. [One-sentence summary.] Retire or revive?

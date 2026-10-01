@@ -1,30 +1,15 @@
-# Product Development
+# Product development
 
-**We build a high-scale, automated analysis pipeline (AKEL) for evidence-based reasoning.** FactHarbor uses **Next.js**, **.NET 8**, and **multi-provider LLMs** to deliver auditable results. Our development is metrics-driven, open-source, and follows a strict "system-over-data" philosophy.
+FactHarbor builds evidence-based claim analysis with inspectable reports. The application is an invite-gated Alpha; broader development is paused pending funding. Current limitations and approved work are recorded in [project status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md).
 
-**Project Repository:** <a href="https://github.com/robertschaub/FactHarbor" rel="noopener" target="_blank">FactHarbor on GitHub</a>
+| Reader need | Start here |
+|---|---|
+| Understand the method | [Architecture](specification/architecture/index.md), [analysis pipeline](../akel-pipeline.md) |
+| Interpret a report | [Quality and trust](specification/architecture/quality-and-trust/index.md), [verdict scale](diagrams/verdict-scale/index.md), [report examples](specification/fh-analysis-reports/index.md) |
+| Run or contribute to the application | [Getting started](devops/guidelines/getting-started/index.md), [contributing](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md) |
+| Operate configuration and integrations | [UCM](devops/subsystems-and-components/unified-config-management/index.md), [API contract](specification/poc/api-and-schemas/rest-api-contract/index.md) |
+| Discuss cooperation | [Presentations](presentations/index.md) |
 
-## Quick Start: I am a...
+The public checkout includes source, schemas, operative prompts, configuration defaults and checks. Contributions must remain generic across topics, robust across languages and grounded in evidence. Semantic decisions use language-model reasoning; structural code manages contracts and resource control. Analysis settings belong in UCM, with infrastructure and secrets kept in environment configuration.
 
--   **New Developer** → [DevOps & Setup](devops/index.md)
--   **System Architect** → [Specification & Deep Dives](specification/index.md)
--   **Product Owner** → [Requirements & User Needs](requirements/index.md)
--   **Project Manager** → [Planning & Roadmap](planning/index.md)
-
-------------------------------------------------------------------------
-
-## Core Documentation
-
--   **[Requirements](requirements/index.md)** — Functional features, user roles, and quality standards.
--   **[Specification](specification/index.md)** — Technical architecture, data models, and implementation deep-dives.
--   **[Planning](planning/index.md)** — Project status, phase definitions (Alpha/Beta), and roadmaps.
--   **[DevOps](devops/index.md)** — Coding guidelines, local setup, and deployment guides.
-
-------------------------------------------------------------------------
-
-## Engineering Mandates
-
--   **No Domain Hardcoding**: The system must remain generic and strictly evidence-driven.
--   **LLM Intelligence**: Use semantic reasoning for analysis, never regex/heuristics.
--   **Input Neutrality**: Phrasing must not bias the depth or direction of analysis.
--   **UCM-Driven**: All tunable parameters reside in Unified Config Management (SQLite).
+[Pipeline V2](pipeline-v2/index.md) is a historical design reference, not an active implementation restart.

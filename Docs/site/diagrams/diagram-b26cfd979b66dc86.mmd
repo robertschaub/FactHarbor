@@ -1,7 +1,0 @@
-flowchart LR
-    AN[Analyzer] -->|1. Collect| MC[MetricsCollector]
-    MC -->|2. Finalize| AJ[Analysis Job]
-    AJ -->|3. POST /api/fh/metrics| API[.NET API]
-    API -->|4. Store| DB[(factharbor.db)]
-    
-    UI[Admin Dashboard /admin/metrics] -->|5. Query| API

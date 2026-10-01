@@ -1,334 +1,49 @@
-# REST API Contract
+# REST API contract
 
-<span id="3-1-user-credit-tracking"></span>
+This page describes the current Alpha job interface in the public API source. It is not a commitment to a stable externally hosted service. Development Swagger at `http://localhost:5000/swagger` and the checked-out controllers define the available routes.
 
-## 3.1 User Credit Tracking
+## Create an analysis
 
-**Endpoint:** GET /v1/user/credit
+`POST /v1/analyze` accepts these JSON fields:
 
-**Response:** 200 OK
+| Field | Contract |
+|---|---|
+| `inputType` | `text` or `url` |
+| `inputValue` | Non-empty input; maximum 32,000 characters for text or 2,000 for a URL. URLs require HTTP(S) |
+| `pipelineVariant` | `claimboundary`; used by default when omitted |
+| `inviteCode` | Required for non-admin submission; an authorized admin key bypasses the invite check |
 
-```
-{
- "user_id": "user_abc123",
- "tier": "free",
- "credit_limit": 10.00,
- "credit_used": 7.42,
- "credit_remaining": 2.58,
- "reset_date": "2025-02-01T00:00:00Z",
- "cache_only_mode": false,
- "usage_stats": {
- "articles_analyzed": 67,
- "claims_from_cache": 189,
- "claims_newly_analyzed": 113,
- "cache_hit_rate": 0.626
- }
-}
-```
+The endpoint applies structural validation, invite quota and rate limits. Success currently returns **200 OK** with `jobId` and `status`; processing continues asynchronously. A successful creation response is not a finished report. Invalid input/invite conditions return an error; quota contention can return 503 and rate limiting can return 429. The endpoint does not establish a client idempotency-key guarantee: do not blindly resubmit after an ambiguous response.
 
-------------------------------------------------------------------------
+Analysis submission can call paid model/search providers. Project agents need current submission authority and approved exact wording; an API description is not such authority.
 
-#### Stage 2 Output Schema: ClaimAnalysis
+The web client reaches these API operations through its `/api/fh/*` proxy routes. The API paths below are the underlying service contract.
 
-**Complete schema for each claim's analysis result:**
+## Read jobs and progress
 
-```
-{
-  "claim_id": "claim_abc123",
-  "claim_text": "Biden won the 2020 election",
-  "scenarios": [
-    {
-      "scenario_id": "scenario_1",
-      "description": "Interpreting 'won' as Electoral College victory",
-      "verdict": {
-        "label": "TRUE",
-        "confidence": 0.95,
-        "explanation": "Joe Biden won 306 electoral votes vs Trump's 232"
-      },
-      "evidence": {
-        "supporting": [
-          {
-            "text": "Biden certified with 306 electoral votes",
-            "source_url": "https://www.archives.gov/electoral-college/2020",
-            "source_title": "2020 Electoral College Results",
-            "credibility_score": 0.98
-          }
-        ],
-        "opposing": []
-      }
-    }
-  ],
-  "recommended_scenario": "scenario_1",
-  "metadata": {
-    "analysis_timestamp": "2024-12-24T18:00:00Z",
-    "model_used": "claude-sonnet-4-5-20250929",
-    "processing_time_seconds": 8.5
-  }
-}
-```
+| Route | Purpose |
+|---|---|
+| `GET /v1/jobs` | Paginated jobs; `page`, `pageSize`, `q`, and admin-only `gitHash` filtering |
+| `GET /v1/jobs/{jobId}` | Status, progress, timestamps, inputs, available verdict fields, parsed `resultJson` and `reportMarkdown` |
+| `GET /v1/jobs/{jobId}/events/history` | Recorded job events |
+| `GET /v1/jobs/{jobId}/events` | Server-sent progress events |
+| `GET /v1/analyze/status` | Invite status using the `X-Invite-Code` header |
 
-**Required Fields:**
+When `q` is provided, list search takes precedence over `gitHash`; those filters do not combine.
 
--   **claim_id**: Unique identifier matching Stage 1 output
--   **claim_text**: The exact claim being analyzed
--   **scenarios**: Array of interpretation scenarios (minimum 1)
-    -   **scenario_id**: Unique ID for this scenario
-    -   **description**: Clear interpretation of the claim
-    -   **verdict**: Verdict object with label, confidence, explanation
-    -   **evidence**: Supporting and opposing evidence arrays
--   **recommended_scenario**: ID of the primary/recommended scenario
--   **metadata**: Processing metadata (timestamp, model, timing)
+Readers receive only reports accessible to them; hidden jobs and administrative diagnostic fields have additional checks. Clients must handle absent results until processing finishes and preserve warnings, evidence citations, confidence and publishability qualifications.
 
-**Optional Fields:**
+Jobs normally move from `QUEUED` to `RUNNING`, then `SUCCEEDED`, `FAILED` or `CANCELLED`. Startup recovery also uses `INTERRUPTED`. Final-state writes are protected by the job service; clients must not infer success from progress alone.
 
--   Additional context, warnings, or quality scores
+## Administrative and internal operations
 
-**Minimum Viable Example:**
+The current controller also exposes cancellation/retry, visibility and annotation operations under administrative authorization. These are mutations, not health checks. Internal status/result routes and the runner use their configured shared-secret controls. Keep credentials out of URLs, reports and source control.
 
-```
-{
-  "claim_id": "c1",
-  "claim_text": "The sky is blue",
-  "scenarios": [{
-    "scenario_id": "s1",
-    "description": "Under clear daytime conditions",
-    "verdict": {"label": "TRUE", "confidence": 0.99, "explanation": "Rayleigh scattering"},
-    "evidence": {"supporting": [], "opposing": []}
-  }],
-  "recommended_scenario": "s1",
-  "metadata": {"analysis_timestamp": "2024-12-24T18:00:00Z"}
-}
-```
+## Source contracts
 
-#### Stage 3 Output Schema: ArticleAssessment
+- [Analysis controller](https://github.com/robertschaub/FactHarbor/blob/main/apps/api/Controllers/AnalyzeController.cs): request validation, access and creation response.
+- [Job controller](https://github.com/robertschaub/FactHarbor/blob/main/apps/api/Controllers/JobsController.cs): reads, events, filtering and administrative operations.
+- [Analysis types](https://github.com/robertschaub/FactHarbor/blob/main/apps/web/src/lib/analyzer/types.ts): current result fields and optionality.
+- [API instructions](https://github.com/robertschaub/FactHarbor/blob/main/apps/api/AGENTS.md) and [getting started](../../../../devops/guidelines/getting-started/index.md): configuration and local operation.
 
-**Complete schema for holistic article-level assessment:**
-
-```
-{
-  "article_id": "article_xyz789",
-  "overall_assessment": {
-    "credibility_score": 0.72,
-    "risk_tier": "B",
-    "summary": "Article contains mostly accurate claims with one disputed claim requiring expert review",
-    "confidence": 0.85
-  },
-  "claim_aggregation": {
-    "total_claims": 5,
-    "verdict_distribution": {
-      "TRUE": 3,
-      "PARTIALLY_TRUE": 1,
-      "DISPUTED": 1,
-      "FALSE": 0,
-      "UNSUPPORTED": 0,
-      "UNVERIFIABLE": 0
-    },
-    "avg_confidence": 0.82
-  },
-  "contextual_factors": [
-    {
-      "factor": "Source credibility",
-      "impact": "positive",
-      "description": "Published by reputable news organization"
-    },
-    {
-      "factor": "Claim interdependence",
-      "impact": "neutral",
-      "description": "Claims are independent; no logical chains"
-    }
-  ],
-  "recommendations": {
-    "publication_mode": "AI_GENERATED",
-    "requires_review": false,
-    "review_reason": null,
-    "suggested_disclaimers": [
-      "One claim (Claim 4) has conflicting expert opinions"
-    ]
-  },
-  "metadata": {
-    "holistic_timestamp": "2024-12-24T18:00:10Z",
-    "model_used": "claude-sonnet-4-5-20250929",
-    "processing_time_seconds": 4.2,
-    "cache_used": false
-  }
-}
-```
-
-**Required Fields:**
-
--   **article_id**: Unique identifier for this article
--   **overall_assessment**: Top-level assessment
-    -   **credibility_score**: 0.0-1.0 composite score
-    -   **risk_tier**: A, B, or C (per AKEL quality gates)
-    -   **summary**: Human-readable assessment
-    -   **confidence**: How confident the holistic assessment is
--   **claim_aggregation**: Statistics across all claims
-    -   **total_claims**: Count of claims analyzed
-    -   **verdict_distribution**: Count per verdict label
-    -   **avg_confidence**: Average confidence across verdicts
--   **contextual_factors**: Array of contextual considerations
--   **recommendations**: Publication decision support
-    -   **publication_mode**: DRAFT_ONLY, AI_GENERATED, or HUMAN_REVIEWED
-    -   **requires_review**: Boolean flag
-    -   **suggested_disclaimers**: Array of disclaimer texts
--   **metadata**: Processing metadata
-
-**Minimum Viable Example:**
-
-```
-{
-  "article_id": "a1",
-  "overall_assessment": {
-    "credibility_score": 0.95,
-    "risk_tier": "C",
-    "summary": "All claims verified as true",
-    "confidence": 0.98
-  },
-  "claim_aggregation": {
-    "total_claims": 1,
-    "verdict_distribution": {"TRUE": 1},
-    "avg_confidence": 0.99
-  },
-  "contextual_factors": [],
-  "recommendations": {
-    "publication_mode": "AI_GENERATED",
-    "requires_review": false,
-    "suggested_disclaimers": []
-  },
-  "metadata": {"holistic_timestamp": "2024-12-24T18:00:00Z"}
-}
-```
-
-<span id="3-2-create-analysis-job-3-stage"></span>
-
-## 3.2 Create Analysis Job (3-Stage)
-
-**Endpoint:** POST /v1/analyze
-
-### Idempotency Support:
-
-To prevent duplicate job creation on network retries, clients SHOULD include **either**:
-
--   Header: `Idempotency-Key: <client-generated-uuid>` (preferred)
--   OR body: `client.request_id`
-
-**Example request (header):**
-
-```
-POST /v1/analyze
-Authorization: Bearer <API_KEY>
-Idempotency-Key: 0f3c6c0e-2d2b-4b4a-9d6f-1a1f6b0c9f7e
-Content-Type: application/json
-```
-
-**Example request (body):**
-
-```
-{
-  "input_url": "https://example.org/article",
-  "options": { "max_claims": 5, "cache_preference": "prefer_cache" },
-  "client": { "request_id": "0f3c6c0e-2d2b-4b4a-9d6f-1a1f6b0c9f7e" }
-}
-```
-
-**Server behavior:**
-
--   Same idempotency key + same request body ⇒ return existing job (`200`) and include:
-
-`idempotent=true` and `original_request_at`.
-
--   Same key + different body ⇒ `409` with `VALIDATION_ERROR` describing the mismatch.
-
-**Idempotency TTL:** 24 hours (minimum).
-
-### Request Body:
-
-```
-{
- "input_type": "url",
- "input_url": "https://example.com/medical-report-01",
- "input_text": null,
- "options": {
- "browsing": "on",
- "depth": "standard",
- "max_claims": 5,
-
-* **cache_preference** (optional): Cache usage preference
- * **Type:** string
- * **Enum:** {{code}}["prefer_cache", "allow_partial", "skip_cache"]{{/code}}
- * **Default:** {{code}}"prefer_cache"{{/code}}
- * **Semantics:**
-  * {{code}}"prefer_cache"{{/code}}: Use full cache if available, otherwise run all stages
-  * {{code}}"allow_partial"{{/code}}: Use cached Stage 2 results if available, rerun only Stage 3
-  * {{code}}"skip_cache"{{/code}}: Always rerun all stages (ignore cache)
- * **Behavior:** When set to {{code}}"allow_partial"{{/code}} and Stage 2 cached results exist:
-  * Stage 1 & 2 are skipped
-  * Stage 3 (holistic assessment) runs fresh with cached claim analyses
-  * Response includes {{code}}"cache_used": true{{/code}} and {{code}}"stages_cached": ["stage1", "stage2"]{{/code}}
-
- "scenarios_per_claim": 2,
- "max_evidence_per_scenario": 6,
- "context_aware_analysis": true
- },
- "client": {
- "request_id": "optional-client-tracking-id",
- "source_label": "optional"
- }
-}
-```
-
-**Options:**
-
--   browsing: on \| off (retrieve web sources or just output queries)
--   depth: standard \| deep (evidence thoroughness)
--   max_claims: 1-10 (default: **5** for cost control)
--   scenarios_per_claim: 1-5 (default: **2** for cost control)
--   max_evidence_per_scenario: 3-10 (default: **6**)
--   context_aware_analysis: true \| false (experimental)
-
-**Response:** 202 Accepted
-
-```
-{
- "job_id": "01J...ULID",
- "status": "QUEUED",
- "created_at": "2025-12-24T10:31:00Z",
- "estimated_cost": 0.114,
- "cost_breakdown": {
- "stage1_extraction": 0.003,
- "stage2_new_claims": 0.081,
- "stage2_cached_claims": 0.000,
- "stage3_holistic": 0.030
- },
- "cache_info": {
- "claims_to_extract": 5,
- "estimated_cache_hits": 4,
- "estimated_new_claims": 1
- },
- "links": {
- "self": "/v1/jobs/01J...ULID",
- "result": "/v1/jobs/01J...ULID/result",
- "report": "/v1/jobs/01J...ULID/report",
- "events": "/v1/jobs/01J...ULID/events"
- }
-}
-```
-
-**Error Responses:**
-
-402 Payment Required - Free tier limit reached, cache-only mode
-
-```
-{
- "error": "credit_limit_reached",
- "message": "Monthly credit limit reached. Entering cache-only mode.",
- "cache_only_mode": true,
- "credit_remaining": 0.00,
- "reset_date": "2025-02-01T00:00:00Z",
- "action": "Resubmit with cache_preference=allow_partial for cached results"
-}
-```
-
-------------------------------------------------------------------------
-
-**Navigation:** [API & Schemas](../index.md) \| Prev: [LLM Abstraction Layer](../llm-abstraction-layer/index.md) \| Next: [Data Schemas and Cache](../data-schemas-and-cache/index.md)
+The current source has no public user-credit/billing API contract or the older scenario-based three-stage schema. Integration work should use the current public types rather than assuming those proposed capabilities exist.

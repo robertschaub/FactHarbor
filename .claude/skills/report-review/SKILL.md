@@ -5,6 +5,8 @@ allowed-tools: Read Glob Grep Bash Agent
 disable-model-invocation: true
 ---
 
+Use the task's authorized source and output scope. Public records carry concise current contracts and findings needed for public implementation. Full research, experimental histories and non-public handoffs use the assigned task record; do not create or recreate them publicly by default. Missing history is a context gap, not closure. The handoff protocol governs preservation and discovery.
+
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
 
 
@@ -172,7 +174,7 @@ resultJson.*:
   searchQueries[*].{query, iteration, focus, resultsCount, searchProvider}
 ```
 
-**Note on `promptContentHash: null` on SUCCEEDED jobs:** the pipeline has a `.catch()` at [claimboundary-pipeline.ts:396-398](apps/web/src/lib/analyzer/claimboundary-pipeline.ts#L396) that swallows provenance-capture errors without failing the job. A null hash on SUCCEEDED is a provenance side-effect, NOT a verdict-failure signal. Do not use it as a primary diagnostic. Verify via `meta.evidenceBalance.total` and `meta.llmCalls` instead.
+**Note on `promptContentHash: null` on SUCCEEDED jobs:** the pipeline has a `.catch()` at [claimboundary-pipeline.ts:396-398](../../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) that swallows provenance-capture errors without failing the job. A null hash on SUCCEEDED is a provenance side-effect, NOT a verdict-failure signal. Do not use it as a primary diagnostic. Verify via `meta.evidenceBalance.total` and `meta.llmCalls` instead.
 
 Filter to scope from Phase 0. For each in-scope job, split the commit hash on `+` to derive `COMMIT-HASH` and `DIRTY-STATE` (same convention as `/prompt-diagnosis §1c`).
 
@@ -209,7 +211,7 @@ Build `TARGET-REPORTS[...]`.
 
 3. `Docs/AGENTS/Role_Learnings.md` — filter to entries with `gotcha` or `wrong-assumption` category, or any entry naming a pipeline stage, prompt file, schema, or model route.
 
-   `Docs/AGENTS/Skills_Learnings.md` (if it exists — created on first Captain-approved Phase 9 write) — filter to entries where `Skill: /report-review`. Read every entry — all four categories (`for-agents`, `for-captain`, `skill-improvement`, `expectations-improvement`) are in-scope for context. `for-agents` entries are the primary feed-back loop from prior runs. Different file from Role_Learnings.md: Role_Learnings is tips-per-role; Skills_Learnings is tips-per-skill-execution.
+   A task-authorized skill-learning record, when supplied, — filter to entries where `Skill: /report-review`. All four categories (`for-agents`, `for-captain`, `skill-improvement`, `expectations-improvement`) are in-scope for context. Do not assume a public experiment-history file exists or create one. `Role_Learnings.md` carries concise public operational lessons.
 
 4. `Docs/AGENTS/Handoffs/` — **index-first per constraint 9**. Query `Docs/AGENTS/index/handoff-index.json` and filter entries where `roles ∩ {llm_expert, lead_developer, lead_architect, senior_developer, devops_expert, code_reviewer, agents_supervisor, unassigned}` is non-empty AND `topics ∩ {report, quality, bug_scan, analyzer, prompt, verdict, evidence, boundary, drift, rollout, concurrency, timeout} ∪ {any benchmark family slug in scope}` is non-empty. **The `unassigned` role is included deliberately** — daily bug-scan entries (e.g. `*_Unassigned_Daily_Bug_Scan_*.md`) often carry the most recent operational prior art on prompt-rollout drift and test-suite state, and excluding them hides the exact context this skill needs. Read only the matched files. If `handoff-index.json` does not exist, fall back to filename scan with the same keyword set (and note the index gap as a Phase 6 meta-recommendation).
 
@@ -223,7 +225,7 @@ Extract into `KNOWN-ISSUES[id, category, scope, source, status, description]`. P
 
 For each distinct stage, warning type, or error fingerprint present in `TARGET-REPORTS`:
 - **Handoffs — index-first per constraint 9.** Re-query `Docs/AGENTS/index/handoff-index.json` with the stage name / fingerprint added to the `topics` filter from 2a. Read only the newly-matched files. Do NOT grep the `Docs/AGENTS/Handoffs/` directory directly — that violates rule 9 and was the exact self-contradiction the debate missed. Only if `handoff-index.json` is absent, fall back to a `Grep` on the directory with the stage/fingerprint as the pattern (and record the index gap as a Phase 6 meta-recommendation).
-- `Grep` `Role_Learnings.md` AND `Skills_Learnings.md` (if it exists) for the stage name or fingerprint (case-insensitive). Both are single flat files, not indexed directories, so grep is the correct tool here. Skills_Learnings matches are filtered to `Skill: /report-review` entries for relevance.
+- Search `Role_Learnings.md` and any supplied task-authorized skill-learning record for the stage name or fingerprint (case-insensitive). Filter skill-learning matches to `Skill: /report-review`. Missing context remains a stated limitation, not authority to search outside the assigned scope.
 - For any family in scope that has `knownOpenIssues` in `benchmark-expectations.json`, read the corresponding `latestVerifiedJobId` result JSON from `test-output/` if present — use it as the baseline comparator.
 
 Append findings to `KNOWN-ISSUES` with `source=dynamic-scan`.
@@ -565,7 +567,7 @@ Based on recurring patterns across `TARGET-REPORTS` AND handoffs already read in
 
 Examples of what belongs here (pick only those that actually apply — no speculative list):
 - **Quality-expectations drift guard** — propose a structural CI validation that: (a) every Phase 8 register block can represent `qCode` explicitly; (b) every `structuralCheck` field path in `report-quality-expectations.json` exists in live `types.ts`; (c) every family band in `Captain_Quality_Expectations.md` prose matches `benchmark-expectations.json`. The goal is to detect cross-file drift mechanically instead of relying on cross-model review. Respects rule 2 — it is structural validation, not analytical decision logic.
-- Prompt activation verification (active blob vs. file drift has recurred multiple times — see `feedback_deploy_config_state.md`)
+- Prompt activation verification (active blob vs. file drift has recurred multiple times — see `Docs/AGENTS/Procedures/Prod_Prompt_Config_Reseed.md`)
 - `analysisIssueCode` taxonomy gaps if Phase 3 flagged uncoded failure modes
 - `benchmark-expectations.json` update procedures — when to update after a rerun wave, who is responsible
 - Cross-run quality trend aggregator (read-only structural tool — no analysis logic, rule 2 not violated)
@@ -701,7 +703,7 @@ CAPTAIN ESCALATION <A|B|C|E|G|H> — <one-line problem statement>
 
 ### 7h. Proposed learnings (Phase 9 output)
 
-Emits the learning and improvement proposals Phase 9 produced. Entries remain proposals unless current Captain authorization covers the exact file write — rule 13 applies identically to new writes and updates, to `Skills_Learnings.md` and to the skill/expectation files.
+Emits the learning and improvement proposals Phase 9 produced. Entries remain proposals unless current Captain authorization covers the exact file write — rule 13 applies identically to new writes and updates, to the task-authorized skill-learning record and to the skill/expectation files.
 
 **Output format (one block per learning, grouped by category A→D):**
 
@@ -709,7 +711,7 @@ Emits the learning and improvement proposals Phase 9 produced. Entries remain pr
 [L##] <for-agents | for-captain | skill-improvement | expectations-improvement> — <one-line summary>
   Observation (what happened this run):  <concrete, 1-3 sentences>
   Relevance (why others need it):        <1 sentence>
-  Target file if approved:               <Skills_Learnings.md | SKILL.md:<section> | benchmark-expectations.json | report-quality-expectations.json | Captain_Quality_Expectations.md>
+  Target file if approved:               <task-authorized learning record | SKILL.md:<section> | benchmark-expectations.json | report-quality-expectations.json | Captain_Quality_Expectations.md>
   Proposed text block:
     ---
     ### YYYY-MM-DD — <Title>
@@ -725,7 +727,7 @@ Emits the learning and improvement proposals Phase 9 produced. Entries remain pr
 **Rules:**
 - If NO Phase 9 learning fires, 7h is omitted entirely (no "learnings: none" noise header). Match the 7g convention.
 - Multiple learnings emit in category order: for-agents → for-captain → skill-improvement → expectations-improvement.
-- `Skill: /report-review` is mandatory on every persisted-entry block so the shared `Skills_Learnings.md` stays searchable as other skills start writing there.
+- `Skill: /report-review` is mandatory on every persisted-entry block so the shared the task-authorized skill-learning record stays searchable as other skills start writing there.
 - For `skill-improvement` and `expectations-improvement` categories, the `Target file` must specify the exact location (e.g., `SKILL.md §Phase 3h` or `benchmark-expectations.json families.bolsonaro-en.anchorTokens`) so Captain can scope the approval precisely.
 
 ---
@@ -803,7 +805,7 @@ After Phases 1–8 complete and before Self-check, reflect on what executing thi
 
 **9b. Threshold: propose only concrete learnings.** If the run had nothing novel — everything went as specified, no surprises, no gaps — emit nothing. Do NOT manufacture learnings to fill space. Empty 9 = empty 7h = section omitted (no "learnings: none" noise header).
 
-**9c. Format the persisted entry** (mandatory fields so `Skills_Learnings.md` stays searchable and dedupable as other skills start writing there):
+**9c. Format the persisted entry** (mandatory fields so the task-authorized skill-learning record stays searchable and dedupable as other skills start writing there):
 
 ```
 ---
@@ -823,7 +825,7 @@ Related: <file paths, Q-codes, or slugs — used for Phase 2 filtering on future
 
 | Category | Proposed target |
 |---|---|
-| `for-agents`, `for-captain` | `Docs/AGENTS/Skills_Learnings.md` (created on first Captain-approved write; do NOT pre-create) |
+| `for-agents`, `for-captain` | The task-authorized learning record; concise public operational lessons may use `Docs/AGENTS/Role_Learnings.md`. Do not create a public experiment-history collection |
 | `skill-improvement` | `.claude/skills/report-review/SKILL.md` (specific section to edit) |
 | `expectations-improvement` | `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, or `Docs/AGENTS/Captain_Quality_Expectations.md` (specify which + where in file) |
 

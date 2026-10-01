@@ -78,4 +78,4 @@ Kennen Sie jemanden in Medien, Faktencheck oder Forschung, für den das relevant
 
 ----
 
-**Navigation:** [Presentations](organisation/partner-user-relations/presentations/index.md) | [Organisation](organisation/index.md) | [English Version](linkedin.md)
+**Navigation:** [Presentations](product-development/presentations/index.md) | [Organisation](organisation/index.md) | [English Version](linkedin.md)

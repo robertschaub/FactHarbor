@@ -334,7 +334,7 @@ Rules evolve with platform. Major changes require notice and community input.
 
 ## 11. Related Documents
 
--   [Requirements](../../../product-development/requirements/index.md)
+-   [Quality and trust](../../../product-development/specification/architecture/quality-and-trust/index.md)
 -   [Privacy Policy](../../../privacy-policy.md)
 -   [Transparency Policy](../../legal-and-compliance/transparency-policy.md)
 -   [Terms of Service](../../../terms-of-service.md)

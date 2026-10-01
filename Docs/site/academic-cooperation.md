@@ -86,4 +86,4 @@ Proposed directions include broader integrations, evidence reuse, multimedia ver
 
 ----
 
-**Navigation:** [Presentations](product-development/presentations/index.md) | [Support FactHarbor](funding.md) | [LinkedIn Article](linkedin.md) | [Architecture](product-development/specification/architecture/index.md) | [Diagrams](product-development/diagrams/index.md)
+**Navigation:** [Presentations](product-development/presentations/index.md) | [Support FactHarbor](funding.md) | [LinkedIn Article](linkedin.md) | [Architecture](product-development/specification/architecture/index.md) | [Method diagram](product-development/diagrams/akel-engine-overview/index.md)

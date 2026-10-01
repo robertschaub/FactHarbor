@@ -1,9 +1,0 @@
-flowchart LR
-    RAW["Raw Evidence<br/>~50% false positive rate"] --> SOFT["Layer 1: LLM Prompts<br/>~85-90% compliance"]
-    SOFT --> DET["Layer 2: Deterministic Filter<br/>filterByProbativeValue()"]
-    DET --> CLEAN["Clean Evidence<br/>~0% false positive rate"]
-
-    style RAW fill:#ffcdd2,color:#000
-    style SOFT fill:#fff9c4,color:#000
-    style DET fill:#c8e6c9,color:#000
-    style CLEAN fill:#c8e6c9,color:#000

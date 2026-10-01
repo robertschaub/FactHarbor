@@ -105,7 +105,7 @@ These rules apply specifically to the LLM prompts used in the analysis pipeline 
 
 | Term | Meaning | Variable names | NEVER call it |
 |------|---------|---------------|---------------|
-| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
+| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/site/akel-pipeline.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
 | **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimAssessmentBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
 | **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
 | **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
@@ -257,6 +257,8 @@ When submitting **live analysis jobs or validation batches** after changing sour
 
 Read [Documentation guidance](Docs/DEVELOPMENT/Documentation.md) for Markdown authoring and diagram verification. Website pages live in `Docs/site/`; contributor and agent references retain their documented repository paths.
 
+Keep public documentation focused on the method, supported interfaces, current issues and contribution contracts. Use a task-supplied authorized record for full research, experimental histories and non-public work; do not recreate those collections here by default. Public task records may contain the concise evidence needed to implement and review a public change. Missing historical context is a gap, never evidence of closure or permission to restart held work.
+
 Each edition has one authoritative editable source. Use this checkout's public contracts for implementation, and only task-specific material explicitly supplied within the current access scope. Access never grants disclosure permission.
 ---
 
@@ -300,7 +302,7 @@ During concurrent writing, the designated integrator serializes shared-index reb
 
 | Index | File | Use for |
 |-------|------|---------|
-| All handoffs — searchable by role + topic | `Docs/AGENTS/index/handoff-index.json` | Finding relevant prior work without scanning 193+ filenames. **Agent task history ONLY — NEVER query for source code locations; use grep for that.** |
+| All handoffs — searchable by role + topic | `Docs/AGENTS/index/handoff-index.json` | Finding relevant prior work without manually scanning available task records. **Agent task history ONLY — NEVER query for source code locations; use grep for that.** |
 | Pipeline stage → file → function | `Docs/AGENTS/index/stage-map.json` | Locating which file implements a given stage |
 | LLM task → model tier | `Docs/AGENTS/index/stage-manifest.json` | Model tier lookups without grepping code |
 

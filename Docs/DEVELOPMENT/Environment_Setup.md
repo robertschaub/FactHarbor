@@ -45,7 +45,9 @@ FH_INTERNAL_RUNNER_KEY=your_shared_runner_secret
 
 The analysis pipeline requires keys for LLM and Search providers. These are configured in `apps/web/.env.local`.
 
-### LLM Providers (At least one required)
+### LLM providers
+
+Provide credentials for every provider selected by the active configuration. The default debate configuration uses both Anthropic and OpenAI; a single key does not cover all default roles.
 *   `ANTHROPIC_API_KEY`: Required for Claude (default).
 *   `OPENAI_API_KEY`: Required for GPT models.
 *   `GOOGLE_GENERATIVE_AI_API_KEY`: Required for Gemini models.
@@ -65,7 +67,7 @@ powershell -ExecutionPolicy Bypass -File scripts/health.ps1
 
 A healthy system will return:
 *   `API health: {"ok":true,...}`
-*   `Web health: {"ok":true,...}`
+*   `Web health: {"status":"healthy",...}`
 
 ---
 **See Also:**

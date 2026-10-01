@@ -1,7 +1,7 @@
 # Privacy Policy
 
 **Effective Date:** September 18, 2026
-**Last Updated:** September 18, 2026 (V1.0 — effective alpha notice)
+**Last Updated:** October 1, 2026 (V1.0.1 — editorial status clarification)
 
 
 > **Effective for the current restricted alpha from September 18, 2026.** This notice describes the systems FactHarbor operates today: an invite-gated claim-analysis service and a public documentation site, not a community-contribution platform. Its adoption does **not** authorize wider public access, accounts, community features, or additional providers. The expansion gates in §20 must be completed before that scope changes. This notice was checked against the current public code and documentation; it is not retained-counsel advice or sign-off.
@@ -28,7 +28,7 @@ This Privacy Policy explains:
 
 ## 2. Who We Are
 
-FactHarbor is a Swiss non-profit association (Verein) under Swiss law, registered in the Commercial Register of the Canton of Zürich (UID **CHE-448.446.098**; daily-register entry April 27, 2026; SOGC publication April 30, 2026). Our statutes are dated April 23, 2026. An application for tax-exempt status was submitted to the cantonal tax authority on May 6, 2026 and is pending. Our long-term mission is to create a transparent, community-driven platform for evaluating factual claims (this is **not** the current alpha — see §3).
+FactHarbor is a Swiss non-profit association (Verein) under Swiss law, registered in the Commercial Register of the Canton of Zürich (UID **CHE-448.446.098**; daily-register entry April 27, 2026; SOGC publication April 30, 2026). Our statutes are dated April 23, 2026. An application for tax-exempt status was submitted to the cantonal tax authority on May 6, 2026; the May 2026 record describes the decision as pending. Our long-term mission is to create a transparent, community-driven platform for evaluating factual claims (this is **not** the current alpha — see §3).
 
 **Governance:** A founding Governing Team (President and Treasurer) was appointed on April 23, 2026. FactHarbor remains a small organization; one person may handle several functions. Requests are handled under the applicable statutory requirements and the operational target in §9.
 
@@ -395,11 +395,13 @@ This Privacy Policy is governed primarily by the **Swiss Federal Act on Data Pro
 ## 19. Version and Effective Date
 
 
-*   **Version:** 1.0 (effective restricted-alpha notice)
-*   **Last Updated:** September 18, 2026
+*   **Version:** 1.0.1 (effective restricted-alpha notice; editorial clarification)
+*   **Last Updated:** October 1, 2026
 *   **Effective Date:** September 18, 2026
 
 **Changelog:**
+
+*   **1.0.1 (2026-10-01):** clarified that the tax-exemption application status in §2 is a May 2026 record. Processing scope, rights, retention commitments and the September 18 effective date are unchanged.
 
 *   **1.0 (2026-09-18):** adopted by the Governing Team and set effective for the current restricted alpha; adopted the privacy contact and manual name-free invite-description rule while disclosing the unrestricted field; recorded provider roles and default API retention disclosures; adopted a 12-month analysis-record limit, 14-day backup target, 30-day manual access-log rule and two-year correspondence period; disclosed the absence of a private-person pre-publication gate and adopted the notice-and-action target; corrected production storage to the documented SQLite-on-Infomaniak deployment; and separated effectiveness from the gates for wider access.
 *   **0.12.1 (2026-09-18):** documented completion of the Workers KV minimization: all historical per-browser UUID maps were removed while aggregate page-view totals were retained privately; documented removal of the former browser identifier by the current viewer; and closed the corresponding adoption gate.
@@ -432,4 +434,4 @@ This notice is effective for the current restricted alpha. The following items d
 *   [Transparency Policy](organisation/legal-and-compliance/transparency-policy.md)
 *   [Terms of Service](terms-of-service.md)
 *   [Open Source Model and Licensing](organisation/legal-and-compliance/open-source-model-and-licensing/index.md)
-*   [Operational Readiness Checklist](organisation/governance/operational-readiness/index.md)
+*   [Public launch and wider access](legal-framework.md#public-launch-and-wider-access)

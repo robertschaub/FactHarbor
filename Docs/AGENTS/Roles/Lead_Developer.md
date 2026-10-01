@@ -22,8 +22,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, key files reference |
-| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
-| `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md` | Testing requirements |
+| `/AGENTS.md` | Code quality standards |
+| `/apps/web/test/README.md` | Testing requirements |
 | `/Docs/STATUS/Current_Status.md` | Current state and known issues |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 

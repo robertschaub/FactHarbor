@@ -1,331 +1,38 @@
-# FactHarbor Current Status
+# FactHarbor current status
 
-**Version**: v2.11.0
-**Last Updated**: 2026-09-26 (local SR cancellation integration; 2026-09-24: CI, .NET test coverage, live-test and cost-metrics notes; 2026-09-09: pause decision and F-35 work reconciled; earlier measurements retain their dates)
-**Phase**: **Alpha** — development paused since 2026-07-02 for funding reasons
-**Status**: The ClaimAssessmentBoundary pipeline is operational and deployed (`app.factharbor.ch`, invite-gated alpha). **Development remains paused because the metered third-party API cost of running analyses exceeds what the project can fund.** The active engineering plan remains intact. A separately authorized local F-35 repair (`e29773c71`, 2026-09-09) changed pipeline code and ran paid verification; its implementation session recorded **1,991 passing / 1 skipped across 103 files**. That bounded work does not resume the broader plan. See the [F-35 handoff](../AGENTS/Handoffs/2026-09-09_LLM_Expert_F35_Fixed_Price_Retrieval_Diagnosis.md) for its evidence and remaining issues, and [Why development is paused](#why-development-is-paused) below.
+FactHarbor is an invite-gated **Alpha**. Broader engineering has been paused since 2 July 2026 pending funding. Separately authorized repairs and documentation work do not restart that program. The existing application remains available; this document is not a fresh production-health attestation.
 
----
+## Supported application
+
+The public checkout contains the Next.js web application and runner, ASP.NET Core API, SQLite persistence, configuration defaults, prompts and offline tests. The supported analysis pipeline is `claimboundary`. Reports expose claims, cited evidence, confidence and material limitations. See [architecture](../site/product-development/specification/architecture/index.md), [getting started](../site/product-development/devops/guidelines/getting-started/index.md) and [known issues](KNOWN_ISSUES.md).
+
+Source and effective runtime configuration are separate. Admin-owned prompt/configuration versions can remain active after a source deployment. Verify actual versions and per-job provenance before attributing an outcome to a change; a commit or `/version` response alone does not identify the loaded runtime.
 
 ## Why development is paused
 
-Paused since **2026-07-02**. The pause is a funding decision, not a technical one.
+Restart requires an explicit maintainer decision with a bounded outcome, time and spending allowance, verified baseline and backups, appropriate review, and measurable stop criteria. Preserve local evidence, worktrees and services unless their change is specifically authorized. Budget or credit availability does not reopen a stopped experiment.
 
-- **The cost driver is metered API spend, not tooling.** Each analysis job consumes third-party LLM and search API calls costing roughly **$1**. The recurring bill is the analysis product itself — production jobs, local development runs, and eval/diagnostic scripts. It is not agentic coding, which runs on a nonprofit team subscription rather than an API key. Measured breakdown by model, task and stage: [LLM API Cost Reduction & NPO Discounts](../WIP/2026-06-01_LLM_API_Cost_Reduction_and_NPO_Discounts.md).
-- **The nonprofit programs FactHarbor holds do not reach that cost line.** Claude for Nonprofits and OpenAI for Nonprofits (both active since 2026-05-10) cover team and workspace **seats only**. There is no self-serve nonprofit discount for the Claude API runtime the pipeline actually consumes.
-- **The one documented lever on that line got no answer.** A nonprofit / social-impact API-pricing request went to Anthropic sales on 2026-06-11. As of 2026-08-06 there has been no reply, so the working assumption is a "no" and cost planning no longer waits on it.
-- **No grant or academic funding replaced it.** Both academic cooperation tracks — the ZHAW/Innosuisse Innovation Cheque and the DIZH Rapid Action Call — will not materialize (confirmed 2026-06-10). Swiss foundation applications are not credible before **Q1 2027**: the Verein has no banking history, no first-year financials, and no independent board member yet. One programme assessment exists (Stiftung Mercator Prototype Fund, 2026-08-04) and its own risk register notes that a grant won now could not be delivered while the project is paused.
-- **Revenue is zero.** Alpha is invite-gated to a handful of testers; there is no paid tier and no pilot contract.
+The active operating restrictions are in [Backlog](Backlog.md#holds-and-required-decisions). In particular:
 
-**What would resume development** — either side of the same equation:
+- Model comparison remains stopped; retain the deployed allocation. No model promotion, paid rerun or reuse of an earlier experiment slot/budget follows from documentation work.
+- `DECOMP-RULES` and its Stage 5 design, `NARR-INPUT`, `ADJ-INPUT`, `CLUSTER-CEIL` option C, SR translation cap/UCM changes and EQA eligibility remain held or require separate decisions.
+- `C14-UNAVAILABLE`: keep current count-floor and MT-5 eligibility. The proposed skip was not selected.
+- The entity-null correction is implemented and offline verified. Evidence-applicability capture remains **unimplemented**: the next bounded investigation task is default-off offline implementation, subject to its own assignment. Enablement, observation window, retention and any spending require separate authority. It is not a score/cache repair.
+- EN supplementary retrieval remains experimental/default-off. Source-native retrieval has a default-off scaffold; its planner is unimplemented. Follow the [multilingual promotion contract](../ARCHITECTURE/Multilingual_Language_Handling.md).
+- Do not prune the main analysis prompt before measurement and stage isolation exist. A failed quality attempt requires the recovery record in root `AGENTS.md` before another edit.
 
-1. **Cost inside budget**: nonprofit API pricing or credits; routing the lower-judgment extraction share of spend to a cheaper model behind an audit gate; Batch API for the eval bucket; and the Serper search-priority re-seed, already shipped to `main` but not yet applied in production — worth roughly **$170/month at 2026-05 development volume**, and correspondingly less until that volume returns.
-2. **External money**: a sponsor, a grant, or one supervised paid pilot.
+## Validation and contribution
 
-**Before unpausing (2026-09-09 conclusion):** choose and authorize one affordable development cycle with a clear finish line:
+[Captain Quality Expectations](../AGENTS/Captain_Quality_Expectations.md), the benchmark JSON and Q-code catalog govern quality review. Use the exact approved inputs; unscored controls have no inferred bands. A successful build is not analysis-quality evidence.
 
-1. **Budget and time:** cover investigation, failed attempts and validation. The F-35 implementation session reported $6.68 for verification against a $4 estimate; do not budget only for successful runs.
-2. **One outcome:** use the existing engineering plan and decide whether reviewing or completing the F-35 repair is a prerequisite. Do not open a separate optimization track by default.
-3. **Success evidence:** define the mechanism and report-quality checks before editing. For the F-35 handoff, require retained evidence to reach the correct final claim without contaminating sibling claims, with no regression on Captain-approved controls. A changed truth percentage alone is insufficient.
-4. **Stopping rule:** set a time/spend ceiling and a review point at which work either meets its acceptance criteria or pauses again.
-5. **Recoverable, verified baseline:** confirm backups and access, then record the actual code, prompt and configuration versions before any paid validation.
+Select focused offline checks for a change. `npm test` excludes designated real-provider suites, but inspect each selected command for service or state effects. Calibration, promptfoo and validation batches can spend provider credits and require current authorization. [Calibration run policy](Calibration_Run_Policy.md) governs its lanes.
 
-Further F-35 repairs and the repeated wording experiment are deferred to that decision. This conclusion preserves the existing allowance for authorized zero-spend work; it supplies no new live-run or deployment authority.
+Before authorized paid validation, verify active prompt/configuration versions (`F2-PROD` and `PROD-PINS`), isolate comparator-bearing jobs, and retain execution provenance. Production deployment, configuration activation and local service changes remain separate actions.
 
-**Production stays live during the pause.** The deployed alpha at `app.factharbor.ch` keeps serving and keeps accepting jobs — the pause applies to development, not to the service. Two consequences follow:
+Current contribution priorities and known coverage gaps are in [Backlog](Backlog.md). Public contributors can build and work from this repository's [contribution instructions](../../CONTRIBUTING.md) and current source contracts.
 
-- **Metered spend from production is minimal, because the deployed app is very rarely used** — roughly **1–2 jobs per week**. The measured 2026-05/06 API bill was dominated by development and by eval/diagnostic batches, not by production traffic — so pausing development should already have removed most of it on its own. The residual monthly cost is standing subscriptions and hosting rather than per-job API spend. The search-priority re-seed and the model-routing cost levers only pay off once search and analysis volume returns, which makes them resume-time items, not live ones.
-- **The remaining cost risk is anomaly, not baseline.** Low usage plus an unattended service plus a provider spend limit set far above any legitimate alpha bill means an outlier — invite-code probing at roughly $1 per job (`SEC-INVITE`), a drifted premium model pin, a runaway loop — would be both possible and unnoticed (`OPS-MONITOR`). A low spend cap and a billing alert are worth more here than any per-token optimization.
+## Operational limits
 
-Until funding or cost resolves, development work stays confined to zero-spend activities. The engineering plan is sequenced accordingly: its Phases 4–5 are fixture- and dry-run-based, and Phase 6 is the first step that needs the funding question answered.
+The [privacy policy](../site/privacy-policy.md) applies to the restricted Alpha. Wider access remains gated by the required privacy, retention, private-person and source-rights controls. Invite-code lockout is declined and external monitoring deferred under the existing decisions; see [security concerns](KNOWN_ISSUES.md#security-concerns). These decisions must be reconsidered on changed exposure or new evidence, not silently presented as implemented controls.
 
-Cost accounting, funding correspondence and the organizational record live in the private operations repository, not here.
-
----
-
-## Current Focus (2026-09-09)
-
-- **F-35 review concluded; broader development stays paused.** The diagnosis review identified actionable evidence-handoff losses but did not establish wording as the dominant cause. A later implementation session recorded local repairs and verification, including increased cost, a clustering fallback and one damaged report. Independent review of the code fix and its deployment decision remain open under backlog `F35-FOLLOWUP`; no further experiment is queued by this conclusion.
-- **The engineering plan is paused mid-sequence, not stuck.** The active track is the **[Analysis Quality Consolidated Execution Plan](../WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md)** (2026-06-18). Phases 0–3 and the Phase-4 scaffold are shipped; the Phase-4 LLM retrieval-language planner slice is simply unstarted. Two mid-June live-validation attempts did fail their gates — the Cycle-1 prune (reverted, `a56fed6f4`) and the Stage2/D5 recovery chain (`0396ea47`) — but both were classified as failed attempts with baselines recorded, and `main` was left green. Resuming means executing the plan, not re-planning it.
-- **The measured problem is failure *attribution*, not a single known bug.** Read-only censuses on 2026-06-18 over 1,640 `SUCCEEDED` jobs: Q-HF1 hard failures **8.2%** (135 jobs), top-level `UNVERIFIED` **15.4%** (253), checkworthy-AtomicClaim `UNVERIFIED` **24.6%** (992/4,038). These rates are why narrow prompt tuning was ruled a low-confidence next move.
-- **Two failure classes are isolated and unfixed**: (1) English-Bolsonaro source-native retrieval gap — evidence exists but not in the input language's likely source routes; (2) asylum-current D5/Stage-4 decisive-metric sufficiency gap — authoritative evidence is present but not admitted to verdict reasoning. Phases 4 and 5 of the plan target these respectively.
-- **F2 surgical contract repair is shipped and live-validated once, not at volume.** `bb4de5f7` + `33ed6f74` (2026-06-11) stop `report_damaged` aborts by repairing individual claims instead of failing the bundle. One confirmed firing (job `b84ebbfe`, 2026-06-12) rescued a report that would have aborted. The 13%→~0 design claim is **unmeasured** — see backlog `F2-CENSUS`.
-- **F2 can silently no-op in production.** It depends on prompt section `CLAIM_CONTRACT_SURGICAL_REPAIR` (claimboundary prompt 1.0.12). Admin-owned prompt blobs do not auto-refresh from file, so a stale production blob disables the fix invisibly. Bounded by volume: at roughly 1–2 production jobs per week, a stale blob costs 1–2 imperfect reports a week, so it is **not urgent** — but it is a prerequisite, because a paid validation run on an unverified blob is wasted spend. See backlog `F2-PROD` (low urgency, high importance).
-- **Two production config verifications are still pending**, both the same class of risk — a shipped change that a stale admin-owned DB blob silently ignores: the F2 prompt blob above, and the Serper→P1 search-priority re-seed (`362a9312`, 2026-06-01; local DB live, production outstanding). Neither is worth acting on at current volume; both must be verified before Phase 6 live validation.
-- **Selective prune is the ratified debt approach; rebuild-from-POC was rejected.** The plan's non-negotiable stands: do not prune `claimboundary.prompt.md` before measurement and stage isolation exist.
-- **Cross-linguistic neutrality remains the largest comparative quality gap.** Multilingual/report-language groundwork is shipped; the EN and source-native supplementary lanes are both experimental and default-off, awaiting validation and a promotion decision. Mechanism reference: [Multilingual_Language_Handling.md](../ARCHITECTURE/Multilingual_Language_Handling.md).
-- **Volume measurement is out of scope while paused.** Repeated-run statistics (N≥5 reps/arm) and population censuses need paid runs, so they wait on the funding question. The F2 efficacy re-measurement is the exception worth watching: its census is read-only and free, and because production stays live its input accumulates on its own — just slowly, at real alpha traffic rates rather than batch rates.
-
----
-
-## Recent Changes (2026-04-15 → 2026-08-10)
-
-Grouped by theme rather than by day. Full commit history is available in Git.
-
-### Analysis quality — the main track
-
-- ✅ **Verdict citation publication contract** (`ca143468`, `ac3b33da`, `6b9c562f`): Stage-4 verdicts must cite publishable evidence; repaired verdicts must carry plausible citations; invalid challenge citations are separated rather than silently absorbed.
-- ✅ **Verdict label separated from publishability** (`45c51b31`, `999f78b7`, `046430ff`, `776bf455`): a claim can be labelled without being publishable; legacy `UNVERIFIED` truth-signal fallbacks removed from the web layer.
-- ✅ **Reconciliation now runs against the full evidence pool** (`54fe23c3`) instead of a role-partitioned subset.
-- ✅ **F2 surgical per-claim contract repair** (`bb4de5f7`, `33ed6f74`, 2026-06-11): replaces the all-or-nothing contract gate abort — the root cause of `report_damaged` — with per-claim repair, plus prompt 1.0.12, UCM knobs, and `contract_surgical_repair_fired` / `_diagnostic` telemetry. Live-validated on one firing; efficacy at volume open (`F2-CENSUS`).
-- ✅ **D5 gating corrected to per-claim** (`4c140ca4`) and the **applicability classifier now fails open** on infrastructure failure (`85f129a9`) rather than closed job-wide.
-- ✅ **Zero-citation INSUFFICIENT claims excluded from article aggregation** (`82a1aa17`); narrative confidence downgrade bounded by a configurable max delta (`551e714b`).
-- ✅ **Prompt audit fixes F01–F09 applied** (`bcae3239`, `fd5ce7e2`): generic-hygiene, neutrality, and output-schema alignment across the claimboundary and source-reliability prompts.
-- ⚠️ **Two attempts failed their live gates and were reverted or classified**: the Stage-1 broad-comparative classification fix (`ed7698a8` → reverted `1c790a05`, ineffective in live validation) and the Stage2/D5 recovery chain (`0396ea47`, both Captain inputs returned `UNVERIFIED` 50/0). Both are recorded as failed attempts with baselines, per the Failed-Attempt Recovery rule.
-- ⚠️ **A published quality claim was retracted** (`5f58a7e2`): the earlier "F1 44.5% / F4 36.1%" UNVERIFIED census cited a plan file that never existed. Superseded by the reproducible censuses now cited in Current Focus.
-
-### Measurement and diagnostics — mostly zero-spend, read-only
-
-- ✅ **Phase-1 report-quality scorer** (`7296f4a7`) plus reference dossiers and manual alignment artifacts for the Captain benchmark families (Bundesrat, Bolsonaro, plastic, hydrogen, asylum), including a frame-dominance contract and aggregation modes.
-- ✅ **Reason-coded failure censuses and abort drills** (`ccb526e2`, `716de649`, `a4338753`, `7fdf78d0`, `66bcdca3`): established that `report_damaged` is 94% Stage-1 contract gate, and rejected the fetch-failure hypothesis for checkworthy `UNVERIFIED` on base-rate grounds.
-- ✅ **Longitudinal quality-over-time tooling** (`0811d9aa` … `a1b43c13`): per-branch attribution, build-date x-axis, production DB folded into coverage.
-- ✅ **Pipeline telemetry Phase 1/2 + derivable D5 subcounts** (`746c4c66`, 2026-06-01): additive `pipelineTelemetry` and `qualityHealth.d5` with denominator-correct rates, no pipeline behavior change and no DB migration.
-- ✅ **Evidence-pool comparator** (`b67a50c1`) confirmed same-input verdict variance is dominated by evidence-pool drift (Jaccard 0.10–0.29), not sampling temperature.
-- ✅ **Failure-attribution and stage-isolation fixtures** (`66ddc0cf`, 2026-07-01): frozen fixtures + `scripts/diag/current-build-failure-attribution.cjs`, satisfying plan Phases 1–2.
-
-### Retrieval, search, and reliability
-
-- **Local SR cancellation integration** (`98a5b864`, 2026-09-26): deadline/disconnect cancellation and accounting propagation are integrated locally. Prior verification (297 offline tests and TypeScript) remains applicable; three real-socket component cases and five HTTP smoke checks after cold startup now pass. Zero provider calls/jobs in this verification; no production deployment, model promotion or demonstrated savings. [Evidence and limits](../WIP/2026-09-22_Model_Configuration_Upgrade_Investigation.md#sr-cancellation-local-integration-closeout--2026-09-26).
-
-- ✅ **Search priority swapped Serper→P1, Google CSE→free-tier fallback** (`362a9312`). Local DB live; **production re-seed still pending**.
-- ✅ **Google-CSE throttle** (`406393c9`) to curb 429-driven evidence drift under runner concurrency — a verdict-variance driver, not just a latency issue.
-- ✅ **Content-type-aware PDF detection + configurable response cap** (`af026923`, `d09d1973`) from the source-fetch failure investigation (`0b38dd8b`). Fetch failure is chronic (~87% of jobs see at least one, 72% of those 403) but non-degenerate: the pipeline over-provisions.
-- ✅ **Research coverage preserved before D5** (`0396ea47`) — shipped, but the surrounding chain failed live validation.
-- ✅ **Default-off source-native supplementary lane scaffold** (`b72b5111`, 2026-07-01): the Phase-4 landing surface. Scaffold only; no planner behind it yet.
-
-### Cost and models
-
-- ✅ **Anthropic prompt caching disabled on `main`** (`b692ae17`) — measured net-negative for this workload.
-- ✅ **Discarded output tokens cut** (`871cbf24`) via cluster/applicability schema tightening and guard caps.
-- ✅ **Cost-tracking corrections**: Opus family repriced to $5/$25 (`0a2c9d40`), gpt-5.x entries added (`c8e8cdd1`), Haiku model ID corrected (`45606613`), Gemini references updated to 3.1-pro-preview (`e649b6e5`).
-- ✅ **Short sequential evidence IDs** (`a446b7cc`, `582911fb`): `EV_001`-style per-analysis IDs replace the prior scheme, with monotonic-continuity coverage.
-
-### Platform, security, and hygiene
-
-- ✅ **Security posture re-verified against code** (2026-08-06, commit `0d76f0ef`): SSRF protection and per-IP rate limiting are **implemented** — [KNOWN_ISSUES.md](KNOWN_ISSUES.md) previously understated this. Admin auth downgraded to PARTIAL with the one remaining exempt route named; a new invite-code brute-force gap recorded.
-- ✅ **Dependency and CI maintenance**: 7 npm vulnerabilities patched (`beae2e16`, `064b7240`), ~12 Dependabot bumps merged, GitHub Actions moved to Node 24 (`a7f091a0`).
-- ✅ **Deployment guide and test artifacts untracked** from git (`6d2f7710`).
-- ✅ **Harness environment leak fixed** (`3fc2b26b`): `restart-clean.ps1` strips the injected `ANTHROPIC_BASE_URL`/`MODEL` that made every agent-started pipeline LLM call return 404.
-- ✅ **DB write-guard hook scoped to writes only** (`f1afdeef`), so read-only `sqlite3` inspection works while destructive statements stay blocked.
-- ✅ **Admin job annotations + job search** (`6444126d`, `34f009f8`) and automatic claim selection (`d2d06f83`).
-- ✅ **Privacy Policy effective for the restricted alpha** (2026-09-18): the notice now matches the current invite-gated service, public report visibility, provider flows, retention decisions, absence of a private-person pre-publication gate, and manual rights/takedown process. The Terms of Service remains a separate document; wider public access is still blocked by the policy's expansion gates.
-- ✅ **Verein founded and registered; NPO status verified** (`a48feedd`, `bfd466f5`); Steuerbefreiung applied for, pending.
-
-### Documentation and process
-
-- ✅ **Handoff index rebuilt; April and May handoffs archived** (`688ef2411`, `8f750374`).
-- ✅ **`/doc-guard` and slim `/debt-guard` skills restored** (`3fee2839`, `d6804bef`, `12f1e492`) after a repair-drift pile-up recurred.
-- ✅ **JIT model + effort routing for Claude Code** (`4a2a8367`, `6a1c3a46`) — agent tooling, not product code.
-- 📋 **Evidence-based action tools product concept** (`7cd90803`, `ccf43df9`, `db830328`, 2026-07-01/02): three-tool concept (Evidence Compass, Honest Inquiry Engine, Agent Provenance Contract) plus competitive landscape. Concept only — no build sequence committed; the open crux is a minimum Estuarine map usable without expert facilitation (backlog `EVACT-1`).
-
----
-
-## Quick Status
-
-### ✅ What works
-
-**Core analysis pipeline** — ClaimAssessmentBoundary, 5 stages, single production pipeline:
-
-- Evidence-emergent boundary clustering; claim extraction with dependency tracking; temporal reasoning with current-date awareness
-- Two-pass evidence-grounded claim extraction (Haiku scan → preliminary search → evidence-grounded re-extraction) with Gate 1 validation and LLM-backed claim-contract validation
-- 5-step LLM debate for verdicts (advocate → challenger → reconciliation → self-consistency → validation), 7-point verdict scale, MIXED vs UNVERIFIED distinction
-- Source triangulation, per-source evidence caps, claim-local source portfolios, derivative-evidence tracking
-- Quality gates (Gate 1 claim validation, Gate 4 confidence distribution) surfaced in UI via `QualityGatesPanel`
-- Provenance validation, harm-potential detection, doubted-vs-contested distinction, pseudoscience escalation
-- F2 surgical per-claim contract repair on the Stage-1 contract gate
-
-**Infrastructure:**
-
-- Job lifecycle (QUEUED → RUNNING → SUCCEEDED/FAILED/CANCELLED/INTERRUPTED) with SSE progress, monotonic progress guard, orphan re-queue on restart
-- Multi-provider LLM (Anthropic, OpenAI, Google, Mistral) with tiered per-task routing; multi-provider search — enabled by default: Serper (priority 1), Google CSE (priority 2), Wikipedia (priority 3, supplementary, capped at 3 results); supported but off by default: Brave, SerpAPI, Semantic Scholar, Google Fact Check
-- Unified Configuration Management: DB-backed config for prompt/search/calculation/pipeline/sr/lexicons with validation, history, rollback, import/export, per-job snapshots, hot reload
-- SSRF protection and per-IP rate limiting; invite-code access control with daily and lifetime quotas
-- Per-job metrics isolation via `AsyncLocalStorage`; metrics wired into the CB pipeline; `pipelineTelemetry` + `qualityHealth.d5` aggregates persisted
-- SQLite locally and in the documented production/test VPS deployment; automated retry with exponential backoff; VPS deployment with Caddy/TLS and backup cron
-
-**UI:**
-
-- Analysis submission, job history with search, report display (Summary / JSON / Report), analysis timeline, boundary findings, admin annotations shown at report top
-- Self-contained dark-themed HTML report export
-- Admin: config editors, metrics dashboard, invite-code management, source-reliability view
-
-### ⚠️ Known issues
-
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md) is authoritative and its security section was re-verified against code on 2026-08-06. The items that matter for the next work session:
-
-| Item | State |
-|---|---|
-| F2 prompt 1.0.12 unverified in production | F2 silently no-ops on a stale admin-owned prompt blob. Low urgency at 1–2 jobs/week; must precede any paid validation (`F2-PROD`) |
-| Serper→P1 priority not re-seeded in production | Shipped to `main` 2026-06-01; production still on the old order. Volume-proportional, so a resume-time item |
-| `/admin/source-reliability` bypasses the admin login gate | Read-only, no paid calls, no personal data — but inconsistent (`SEC-ADMIN-SR`) |
-| No invite-code brute-force lockout | Real gap; **risk accepted 2026-08-10** — cost amplification only, rate-limited to 5/min/IP, bounded provider-side by a spend cap instead (`SEC-INVITE`, DECLINED) |
-| Thin .NET test coverage | CI runs `apps/api.Tests`, which covers only the `JobService` job-status rules; auth, invite quotas, rate limiting and the runner client have no tests (`CI-DOTNET`) |
-| No uptime monitoring or error aggregation | **Deferred 2026-08-10** in favour of manual checks when appropriate; little to be down for at 1–2 jobs/week (`OPS-MONITOR`) |
-| No claim caching; no normalized data model | Results are JSON blobs; every analysis recomputes from scratch |
-
-`KNOWN_ISSUES.md` and `Backlog.md` were reconciled against code and git on 2026-08-10: no open entry there is CRITICAL or HIGH severity, and the previously stale claims (metrics not wired, `parallel-verdicts.ts`, 8 skipped budget tests, Phase 7 / Shape B as the active track) are corrected with file/line or commit evidence.
-
----
-
-## Current Priorities
-
-[Backlog.md](Backlog.md) is the canonical prioritized list. Priorities 1–3 apply **now** — they keep the paused state cheap, safe and reversible. Priority 4 onward is the engineering sequence on resume:
-
-1. **Confirm the bill actually collapsed.** One console check of the current month against 2026-05/06. Every cost lever sized during active development was sized against a workload that the pause removed; until the current figure is known, further optimization is guesswork. What remains after that is a subscription question — hosting plus dev-tool seats, some of which only served active development — not an engineering one.
-2. **Cap the tail while unattended** — lower the provider monthly spend limit to something an alpha bill can justify, and add a billing alert. With usage this thin there is no legitimate volume to compare against, so an anomaly would run unnoticed: invite-code probing, a drifted premium model pin, a runaway loop. This provider-side cap is the *chosen* control for that tail — building invite-code lockout (`SEC-INVITE`) is declined and uptime/error monitoring (`OPS-MONITOR`) is deferred in favour of manual checks, both by explicit decision on 2026-08-10.
-3. **Protect the ability to resume** — verify a database restore actually works once, and write the pause/resume runbook (stop/start, credential locations, billing contacts, restore procedure) in the private operations repository. Bus factor is 1 and access decays over a long pause; this is what keeps the pause reversible.
-4. **Verify prompt blob 1.0.12 is active in production** (`F2-PROD`) — an Admin-UI check, minutes of work, and the gate for anything paid that follows. Not urgent on its own: at roughly 1–2 production jobs per week a stale blob costs 1–2 imperfect reports a week. It sits here rather than above because a paid validation run on an unverified blob is wasted spend, so it must precede Phases 4–6 — not because the current exposure warrants acting today.
-5. **Execute plan Phase 4** — generic LLM retrieval-language / source-native route planning behind the shipped default-off scaffold. Zero-spend: planner unit tests, dry-run plan snapshots, lane-bloat checks.
-6. **Execute plan Phase 5** — authoritative-evidence sufficiency admission for D5/Stage-4, validated against frozen fixtures including negative fixtures that must stay `UNVERIFIED`.
-7. **Then Phase 6 live validation** — one Captain-defined job at a time, starting with an accepted comparator as regression sentinel, under the documented stop rules. The Serper search-priority re-seed and the model-routing cost levers belong here, at the point volume returns.
-8. **Re-measure F2 efficacy at volume** (`F2-CENSUS`) — read-only and free, but its input accumulates only as fast as real traffic allows.
-
-Deferred by explicit decision: optimization reopening (`OPT-GATE`), volume statistics and population censuses, Gemini provider swap during alpha, foundation applications before Q1 2027.
-
----
-
-## Architecture Status
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **Next.js Web App** | ✅ Operational | Runner + orchestrator, port 3000 |
-| **.NET API** | ✅ Operational | SQLite locally and in the documented VPS deployment; CI runs only the `JobService` status tests |
-| **Job Orchestration** | ✅ Working | SSE events, exponential backoff, orphan re-queue |
-| **Analysis Pipeline** | ✅ Operational | ClaimAssessmentBoundary only — Orchestrated, Monolithic Canonical and Monolithic Dynamic all removed |
-| **LLM Integration** | ✅ Multi-provider | Anthropic (default), OpenAI, Google, Mistral |
-| **LLM Tiering** | ✅ Implemented | Per-task model selection; salience still rides the shared `understand` lane |
-| **Search Integration** | ✅ Multi-provider | Serper primary, Google CSE fallback, Wikipedia supplementary; Brave/SerpAPI/S2/FactCheck off by default. Both multilingual lanes default-off |
-| **Provenance Validation** | ✅ Implemented | All paths validate URL provenance |
-| **PDF/HTML Extraction** | ✅ Working | Content-type-aware detection, configurable response cap, timeout handling |
-| **Quality Gates** | ✅ Implemented | Applied and displayed (`QualityGatesPanel`) |
-| **Source Reliability** | ✅ Implemented | LLM evaluation with cache, multi-model consensus, pinned evidence-pack replay |
-| **Metrics / Telemetry** | ✅ Wired | Per-job isolation, `pipelineTelemetry`, `qualityHealth.d5`; no admin UI for the aggregates yet (`TELEM-UI`) |
-| **Uptime Monitoring** | ❌ Not implemented | `OPS-MONITOR` |
-| **Claim Caching** | ❌ Not implemented | Recomputes per job |
-| **Normalized Data Model** | ❌ Not implemented | Job blobs only, no claim/evidence tables |
-| **Rate Limiting** | ✅ Implemented | Per-IP fixed window, admin-key bypass; no per-user quotas beyond invite caps |
-| **AuthN/AuthZ** | 🟡 Partial | Admin key + login gate, one exempt admin route; no end-user accounts |
-
-### Data model
-
-**Implemented**: analysis result with claims, verdicts, sources and evidence; article verdict with aggregation; claim verdicts with dependency tracking; quality gate statistics; per-job config and prompt-hash provenance; pipeline telemetry.
-
-**Missing**: normalized relational tables, quality-metrics persistence beyond the metrics blob, error pattern tracking, historical source track record over time.
-
----
-
-## Test Status
-
-**Safe suite** (`npm test` — mocked, no API calls, verified 2026-09-24):
-
-- **107 test files, 2,104 passing, 1 skipped**
-- Covers the CB pipeline, verdict stage, prompt contracts, evidence filtering, aggregation, truth scale, quality gates, confidence calibration, admin API routes
-
-**Expensive tests** (explicit scripts only, $1–5+ per run — do not run without asking):
-
-- `npm run test:calibration:canary` / `:smoke` / `:gate` — framing-symmetry lanes, per [Calibration_Run_Policy.md](Calibration_Run_Policy.md)
-- Full-pipeline checks run as validation batches (`npm run validate:run`) with Captain-defined inputs. The `test:llm`, `test:neutrality`, `test:cb-integration`, `test:smoke` and `test:expensive` suites could not run and were deleted on 2026-09-24 (Backlog `TEST-LIVE-EXCL`). No test checks question/statement neutrality until Captain-defined pairs exist (`NEUTRALITY-PAIRS`).
-
-**Missing coverage**: .NET API controllers and most of the database layer (CI runs only the `JobService` status tests), frontend components, automated E2E.
-
----
-
-## TIGERScore (Alpha)
-
-Optional Stage-6 holistic audit pass scoring Truth, Insight, Grounding, Evidence, Relevance. Disabled by default (`tigerScoreMode: "off"`).
-
-**Enable** via Admin → Config → Pipeline: `tigerScoreMode: "on"`, `tigerScoreStrength` (`budget` | `standard` | `premium`, default `standard`; legacy `tigerScoreTier` still normalizes on load), `tigerScoreTemperature` (default `0.1`). Defaults live in `apps/web/configs/pipeline.default.json` and `apps/web/src/lib/config-schemas.ts`.
-
-**Verify active**: run a normal job and confirm a populated `tigerScore` object in `OverallAssessment` and a rendered TIGERScore panel in the report and HTML export.
-
-**Calibration policy**: keep the setting identical on both sides of any A/B and record it in run metadata. If the baseline ran with TIGERScore off, keep it off.
-
----
-
-## Environment Configuration
-
-### Required
-
-```bash
-# LLM provider keys (provider selected in UCM pipeline config)
-ANTHROPIC_API_KEY=sk-ant-...
-# OPENAI_API_KEY=sk-...
-# GOOGLE_GENERATIVE_AI_API_KEY=AIza...
-# MISTRAL_API_KEY=...
-
-# Search provider keys (priority set in UCM search config)
-SERPER_API_KEY=...                 # P1 primary since 2026-06-01
-# GOOGLE_CSE_API_KEY=... + GOOGLE_CSE_ID=...   # free-tier fallback
-# BRAVE_API_KEY=...
-# Optional: SEMANTIC_SCHOLAR_API_KEY=..., GOOGLE_FACTCHECK_API_KEY=...
-# Wikipedia needs no key (enabled in UCM)
-
-# Internal keys (must match between web and API)
-FH_ADMIN_KEY=your-secure-admin-key
-FH_INTERNAL_RUNNER_KEY=your-secure-runner-key
-# API side: Admin:Key and Runner:RunnerKey in apps/api/appsettings.Development.json
-```
-
-### Optional
-
-```bash
-FH_RUNNER_MAX_CONCURRENCY=3   # max parallel analysis jobs
-# Read from the shell by validate:run and scripts/diag/verdict-stability-batch.cjs:
-FH_JOB_TIMEOUT_MS=7200000     # per-job wait bound (default 2 h); a job not finished by then stops the batch
-```
-
----
-
-## Performance and Cost
-
-**Typical analysis time**: 30–60 s for 1–2 claims, 2–5 min for a medium article, 5–15 min for 20+ claims.
-
-**Measured cost**: roughly **$1.10 per job** on the current stack. The dominant spend is the pipeline itself, not agent tooling. Anthropic prompt caching is disabled on `main` (measured net-negative for this workload) and result caching is deliberately off during alpha so per-run variance stays visible. Per-job figures taken from job metrics (`AnalysisMetrics`) before `6840e90d9` (2026-09-24) leave out source-reliability calls and searches, so they are lower bounds (Backlog `SR-COST`).
-
-**Search behaviour**: 3–6 queries per analysis, 4–8 sources fetched, parallel fetch with per-domain 401/403 short-circuiting and same-domain staggering. Fetch failure is chronic at the environment level (publisher bot-walls) but the pipeline over-provisions so reports stay non-degenerate.
-
----
-
-## Compliance Status (AGENTS.md rules)
-
-| Rule | Status | Notes |
-|---|---|---|
-| **Generic by Design** | ✅ Compliant | No domain-specific keyword tables; prompt audit F01–F09 applied 2026-06-01 |
-| **Input Neutrality** | ⚠️ Monitored | Heuristic question→statement normalization was removed in favour of LLM-first handling; equivalence has to be measured, not enforced, but no working test measures question/statement equivalence (`NEUTRALITY-PAIRS`). The framing-symmetry calibration lane checks mirrored framings |
-| **Pipeline Integrity** | ✅ Compliant | All 5 stages execute; no stage skipping; fail-fast on damaged jobs rather than fabricated fallback verdicts |
-| **Evidence Transparency** | ✅ Compliant | Verdict citation publication contract enforced; single citation channel; counter-evidence tracked |
-| **No deterministic semantic logic** | ⚠️ Partial | Ranked residual hotspots tracked as `LLMINT-2`; the top two are Stage-1 anchor preservation and Stage-4 direction plausibility |
-| **UCM-managed tunables** | ✅ Compliant | All analysis-affecting parameters in UCM; JSON and TypeScript defaults drift-tested |
-
----
-
-## Getting Help
-
-- **Known issues**: [KNOWN_ISSUES.md](KNOWN_ISSUES.md) · **Backlog**: [Backlog.md](Backlog.md) · **History**: Git commit history
-- **Active plan**: [Analysis Quality Consolidated Execution Plan](../WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md)
-- **Quality bar**: `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`
-- **Architecture**: [Multilingual_Language_Handling.md](../ARCHITECTURE/Multilingual_Language_Handling.md), [Calculations.md](../ARCHITECTURE/Calculations.md), and the [System Design pages](../site/product-development/specification/architecture/system-design/index.md)
-- **Logs**: `apps/web/debug-analyzer.log`, API console, browser DevTools
-- **Config check**: http://localhost:3000/admin/test-config · **API**: http://localhost:5000/swagger
-
-| Symptom | Fix |
-|---|---|
-| Job stuck in QUEUED | `FH_INTERNAL_RUNNER_KEY` must match `Runner:RunnerKey` |
-| Job fails immediately | Check LLM API key; if the error URL is missing `/v1`, a harness-injected `ANTHROPIC_BASE_URL` leaked — use `scripts/restart-clean.ps1` |
-| No progress updates | `FH_ADMIN_KEY` must match `Admin:Key` |
-| API not starting | DB auto-creates on startup; locally, delete `apps/api/factharbor.db` to recreate |
-| No sources fetched | Enable at least one search provider in UCM and set its key |
-| A prompt fix has no effect | Admin-owned prompt blobs do not auto-refresh from file — check the active version in the Admin UI, or re-seed |
-
----
-
-## POC Closure Statement (2026-02-19)
-
-The FactHarbor Proof of Concept is complete, tagged `v1.0.0-poc`. It demonstrated that a pipeline can extract claims from arbitrary text, gather web evidence, and produce structured evidence-backed verdicts with quality controls — via the 5-stage ClaimAssessmentBoundary architecture, the LLM debate pattern, enforced quality gates, LLM-based source reliability, evidence quality filtering, multi-provider tiered LLM routing, and runtime UCM configuration. Everything since is Alpha scope.
-
----
-
-**Last Updated**: 2026-08-10
-**Actual Version**: 2.11.0 (code) | 3.0.0-cb (schema) | `v1.0.0-poc` (tag)
-**HEAD at last update**: `89b45abd` (2026-08-09) · last code commit `5c76e0e3` (2026-07-02)
-**Document status**: Current Alpha snapshot. Historical changes remain in Git; prioritization lives in [Backlog.md](Backlog.md).
+For startup problems, inspect logs and configuration before changing state. Back up data before an authorized recovery; never delete a database as a routine startup remedy. A stale prompt should be diagnosed through its active version and provenance before any authorized reseed.

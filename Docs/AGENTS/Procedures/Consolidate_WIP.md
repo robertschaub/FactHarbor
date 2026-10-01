@@ -2,6 +2,8 @@
 
 Use the canonical [wip-update workflow](../../../.claude/skills/wip-update/SKILL.md) for the requested WIP scope. Read the relevant WIP registry, backlog, current status and task record before classification.
 
+Apply the current task's source and disclosure scope. Reconcile concise public implementation records against public contracts; use explicitly supplied records for full research or non-public work. Do not recreate missing historical collections in public or interpret their absence as closure.
+
 Verify implementation claims against current source and Git history. Keep active work, operative controls and unresolved decisions. For mixed records, preserve current meaning and carry each open item into the appropriate living reference or backlog before considering retirement.
 
 Completed and superseded records may be retired only within the task's authorized preservation and removal scope. When that scope is missing or classification is uncertain, retain the material and report the specific gap. Do not create additional history collections or publish destination catalogs during routine consolidation.

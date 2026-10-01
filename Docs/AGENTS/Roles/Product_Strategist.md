@@ -23,9 +23,7 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Project overview and current state |
-| `/Docs/site/product-development/requirements/index.md` | Current requirements |
-| `/Docs/site/product-development/requirements/user-needs/index.md` | User needs analysis |
-| `/Docs/site/product-development/planning/index.md` | Roadmap and milestones |
+| `/Docs/site/about-factharbor/index.md` | User needs analysis |
 | `/Docs/STATUS/Current_Status.md` | Current implementation status |
 | `/Docs/STATUS/Backlog.md` | Development backlog |
 

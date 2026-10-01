@@ -45,7 +45,7 @@ const BoundaryClusteringOutputSchema = z.object({
   })),
   // Cost (2026-06-01): `rationale` removed from both arrays — they were emitted
   // (post-decision, high output-token cost on Sonnet) but never read downstream.
-  // See Docs/WIP/2026-06-01_LLM_API_Cost_Reduction_and_NPO_Discounts.md §9.
+  // See Docs/STATUS/Backlog.md for current clustering constraints.
   scopeToBoundaryMapping: z.array(z.object({
     scopeIndex: z.number(),
     boundaryId: z.string(),

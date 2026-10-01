@@ -6,7 +6,7 @@
  *
  * Runs a fixed input set N times on the CURRENT build and records, per run, the
  * verdict + truth% + evidence-source set. From that it answers three questions the
- * read-only Phase-1 data could not (see Docs/WIP/2026-06-01_Verdict_Direction_Instability_Phase1_Findings.md):
+ * read-only Phase-1 data could not (see Docs/AGENTS/Captain_Quality_Expectations.md for the current quality contract):
  *   (1) RATE      — per-input polarity / UNVERIFIED / label flip frequency.
  *   (2) DRIVER    — for runs that disagree, is the evidence-source overlap LOW
  *                   (pool-substitution drift) or HIGH (within-pool sensitivity)?

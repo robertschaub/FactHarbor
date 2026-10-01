@@ -148,7 +148,7 @@ Manual config example:
     "fhAgentKnowledge": {
       "type": "local",
       "command": "node",
-      "args": ["C:\\DEV\\FactHarbor\\scripts\\fh-knowledge-mcp.mjs"],
+      "args": ["<repo>\\scripts\\fh-knowledge-mcp.mjs"],
       "env": {},
       "tools": ["*"]
     }
@@ -169,7 +169,7 @@ Manual config example:
   "mcpServers": {
     "fhAgentKnowledge": {
       "command": "node",
-      "args": ["C:\\DEV\\FactHarbor\\scripts\\fh-knowledge-mcp.mjs"],
+      "args": ["<repo>\\scripts\\fh-knowledge-mcp.mjs"],
       "env": {},
       "disabled": false
     }

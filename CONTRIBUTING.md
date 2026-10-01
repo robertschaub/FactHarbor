@@ -49,7 +49,7 @@ This setup runs live services and analyses. Worker checks use the separate recip
    - **API**: `cd apps/api && dotnet watch run` (ASP.NET on port 5000, Swagger at `/swagger`)
 6. Open http://localhost:3000
 
-See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/?page=Product+Development.DevOps.Guidelines.Getting+Started.WebHome) for detailed configuration and troubleshooting.
+See the [Getting Started Guide](Docs/site/product-development/devops/guidelines/getting-started/index.md) for detailed configuration and troubleshooting.
 
 **Repository structure:**
 
@@ -283,7 +283,7 @@ Exclude `first-run.ps1`, restart/stop/build-and-restart scripts, hook installers
 
 - Commit messages: conventional commits (`type(scope): description`)
 - No hardcoded domain-specific terms in code or prompts (see AGENTS.md "Generic by Design")
-- **AnalysisContext** != **EvidenceScope** (see AGENTS.md terminology section)
+- **ClaimAssessmentBoundary** != **EvidenceScope** (see AGENTS.md terminology section)
 - Platform: Windows (use PowerShell-compatible commands)
 
 ## AI Agent Workflow

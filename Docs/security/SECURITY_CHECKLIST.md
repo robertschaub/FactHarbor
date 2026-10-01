@@ -1,5 +1,7 @@
 # FactHarbor Security Checklist
 
+> Historical assessment from 9 February 2026. Its implementation checklist is not the current security posture; see [Known issues — Security concerns](../STATUS/KNOWN_ISSUES.md#security-concerns) for verified controls and remaining gaps.
+
 Quick reference checklist for maintaining security standards.
 
 ## 🎯 Critical Security Items

@@ -17,6 +17,8 @@ Why?
 - Risk level: low / medium / high
 - Follow-up work:
 
+Contributor copyright agreement: accepted for the identified contribution (agreement version/hash), or not applicable with reason. See [the agreement](../CONTRIBUTOR-AGREEMENT.md); submission alone is not acceptance.
+
 ## Verification
 
 Relevant checks, expected results, actual commands/results and omissions with reasons:

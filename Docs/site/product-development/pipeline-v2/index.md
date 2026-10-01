@@ -19,4 +19,4 @@ The existing runtime remains authoritative until an explicitly approved replacem
 
 This reference authorizes no implementation restart, cutover or paid validation. Consult [current project status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md) and the public contributor instructions before implementation work.
 
-**Further reading:** [Current architecture](../specification/architecture/index.md) · [Calculations and verdicts](../specification/architecture/deep-dive/calculations-and-verdicts/index.md) · [Product development](../index.md).
+**Further reading:** [Current architecture](../specification/architecture/index.md) · [Quality and trust](../specification/architecture/quality-and-trust/index.md) · [Product development](../index.md).

@@ -1,99 +1,33 @@
-# FactHarbor Architecture
+# FactHarbor architecture
 
-FactHarbor is an **AI-powered fact-checking platform** that analyses claims and articles using multiple LLM providers and web search, producing structured verdicts with evidence provenance and confidence scores.
+FactHarbor researches claims and articles, assesses supporting and opposing evidence, and produces reports whose conclusions can be examined alongside their sources. It remains an invite-gated Alpha; broader development is paused pending funding.
 
-This section provides a comprehensive view of the system architecture, organised for different audiences — from executive overview to developer reference.
+## Analysis method
 
-## How It Works
+![Claims, evidence, boundaries, debate and an explained report](../../../diagrams/homepage-method.svg)
 
-FactHarbor's core is the **AKEL pipeline** (AI Knowledge Extraction Layer): a 5-stage analysis engine that extracts claims, researches evidence, clusters boundaries, and generates verdicts on a 7-point scale.
+[Full-size diagram](../../../diagrams/homepage-method.svg) · [Mermaid source](../../../diagrams/homepage-method.mmd)
 
-![Architecture diagram 1](../../../diagrams/diagram-1b83192b18cb5388.svg)
+The method separates what the user asserts from what the sources establish. **AtomicClaims** identify the assertions to assess. **EvidenceScopes** record the conditions under which individual evidence applies. **ClaimAssessmentBoundaries** group compatible evidence after research, so differences in methodology, time or geography remain visible instead of being flattened into one answer.
 
-[Full-size diagram](../../../diagrams/diagram-1b83192b18cb5388.svg) · [Mermaid source](../../../diagrams/diagram-1b83192b18cb5388.mmd)
+The [debate method](../../../verdict-debate.md) tests an assessment against evidence-backed challenges. The resulting report distinguishes truth assessment from confidence, cites evidence, and describes limitations. Neither agreement among models nor a confident narrative establishes correctness by itself.
 
-*The pipeline extracts verifiable claims from input, gathers evidence from the web, clusters compatible evidence into boundaries, generates verdicts via LLM debate, and aggregates results into a final narrative report.*
+## Application components
 
-## System Context
+| Component | Responsibility |
+|---|---|
+| Next.js web application | Reader interface, administration and analysis execution |
+| ASP.NET Core API | Jobs, persisted reports and progress events |
+| SQLite storage | Local persistence for jobs and configuration |
+| Configured model and search services | Language-model tasks and evidence retrieval |
 
-# System Context
+Current implementation, schemas, prompts and default settings are part of the [public repository](https://github.com/robertschaub/FactHarbor). Language models perform semantic judgments; structural code handles contracts, identifiers and resource control. Providers and active configuration affect execution and must be recorded when comparing results.
 
-![System Context diagram 1](../../../diagrams/diagram-6d90013027fb2a60.svg)
+## Read and contribute
 
-[Full-size diagram](../../../diagrams/diagram-6d90013027fb2a60.svg) · [Mermaid source](../../../diagrams/diagram-6d90013027fb2a60.mmd)
+- [Analysis responsibilities](../../../akel-pipeline.md) and [stage contracts](../../../akel-stage-details.md).
+- [Quality and trust](quality-and-trust/index.md): evidence, uncertainty and report interpretation.
+- [Security and operations](security-and-operations/index.md): access boundaries and operational limits.
+- [Getting started](../../devops/guidelines/getting-started/index.md), [API contract](../poc/api-and-schemas/rest-api-contract/index.md) and [terminology](../reference/terminology/index.md).
 
-*FactHarbor uses a two-service architecture: a Next.js app for the user interface and AKEL analysis engine, backed by a .NET API for job persistence. The system integrates with multiple LLM and search providers for vendor independence.*
-
-## Core Principles
-
--   **AI-First** — The AKEL pipeline is the primary analytical system; humans supplement, not gate-keep
--   **Publish by Default** — No centralised approval; every verdict carries confidence scores and evidence provenance
--   **System Over Data** — Improve algorithms, not individual outputs
--   **Measure Everything** — Quality metrics drive all improvements
--   **No Vendor Lock-In** — Switch LLM or search providers based on cost, quality, or availability without code changes
--   **Start Simple** — Add complexity only when metrics prove it necessary
-
-## Technology Stack
-
-| Layer | Technology | Purpose |
-|----|----|----|
-| **Frontend** | Next.js (TypeScript, React) | User interface, admin dashboard |
-| **Analysis Engine** | TypeScript, Vercel AI SDK | AKEL pipeline, LLM orchestration |
-| **API Backend** | ASP.NET Core 8 (C#) | Job scheduling, persistence, SSE events |
-| **Storage** | SQLite (3 databases) | Jobs, configuration, source reliability cache |
-| **LLM Providers** | Anthropic, OpenAI, Google, Mistral | Multi-provider AI with per-task model tiering |
-| **Web Search** | Google CSE, SerpAPI, Brave,\nWikipedia, Semantic Scholar,\nGoogle Fact Check | Evidence retrieval with provider fallback |
-| **Quality** | Vitest, PromptFoo | Automated testing and prompt evaluation |
-
-## Architecture Documentation
-
-### Architectural Views (for Architects and Product Owners)
-
-| Page | What You'll Learn |
-|----|----|
-| [System Design](system-design/index.md) | Two-service architecture, request lifecycle, technology stack, inter-service communication |
-| [AKEL Pipeline](../../../akel-pipeline.md) | 5-step analysis flow, pipeline variants, shared analysis modules |
-| [Data Model](data-model/index.md) | Complete entity model (CB pipeline: CBClaimUnderstanding, AtomicClaim, ClaimAssessmentBoundary, CBClaimVerdict, OverallAssessment, VerdictNarrative, etc.), quality gate and configuration entities, 7-point verdict scale, job lifecycle |
-| [External Dependencies](external-dependencies/index.md) | LLM providers and model tiering, search providers, provider health monitoring |
-| [Storage and Configuration](storage-and-configuration/index.md) | Three-database architecture, UCM configuration management, storage evolution roadmap |
-| [Quality and Trust](quality-and-trust/index.md) | Quality gates, evidence filtering, source reliability, confidence calibration |
-| [Security and Operations](security-and-operations/index.md) | Security model, deployment topology, user roles, monitoring |
-
-### Deep Dives (for Developers and Testers)
-
-|  |  |
-|----|----|
-| [Deep Dive Index](deep-dive/index.md) | Role-based navigation to detailed implementation references |
-
-Includes: ClaimAssessmentBoundary Pipeline internals, Pipeline Variants, Verdict Debate Pattern, Quality Gates Reference, Boundary Clustering, Evidence Quality Filtering, Source Reliability System, Calculations and Verdicts, Prompt Architecture, Confidence Calibration.
-
-### Future Architecture
-
-|  |  |
-|----|----|
-| [Future](future/index.md) | Target production architecture, federation vision, automation roadmap |
-
-## Reading Paths
-
-> **Info**
->
-> **Sponsor or executive?** Start here, then optionally read [Quality and Trust](quality-and-trust/index.md) to understand what makes the analysis trustworthy.
->
-> **Product Owner or Architect?** Read the 7 Architectural Views above in order (~30-45 minutes for a thorough understanding).
->
-> **Developer or Tester?** Complete the Architect path first for context, then use the [Deep Dive Index](deep-dive/index.md) to navigate to references relevant to your task.
-
-## Project Status
-
-| Phase | Status | Description |
-|----|----|----|
-| **Alpha** | Current | Invite-code limited testing, rate limiting, VPS deployment, core AKEL pipeline |
-| **Beta** | Planned | User accounts, PostgreSQL migration, production hardening, monitoring |
-| **V1.0** | Planned | Public launch, public API, observability, disaster recovery |
-| **V2.0+** | Vision | Federation, semantic search, cross-node analysis |
-
-## Related
-
--   [Design Decisions](../design-decisions.md) — Rationale for key architectural choices
--   [When to Add Complexity](../../devops/guidelines/when-to-add-complexity/index.md) — Decision triggers for technology additions
--   [Requirements](../../requirements/index.md) — User needs and system requirements
+Research proposals, historical designs and current behavior are different kinds of evidence. Consult [current status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md) before treating a capability as available.
