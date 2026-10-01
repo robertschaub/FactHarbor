@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.23.3"
   },
   "scripts": {
     "dev": "next dev --webpack -p 3000",

@@ -61,7 +61,7 @@ cd apps/web && npm run dev
 
 | Stage | Runner | Actions |
 |----|----|----|
-| Build | Windows (GitHub Actions) | Node 20 setup, .NET 8 setup, `npm ci`, `npm build` (Next.js), `dotnet build` (.NET Release) |
+| Build | Windows (GitHub Actions) | Node 22.23.3 setup, .NET 8 setup, `npm ci`, `npm build` (Next.js), `dotnet build` (.NET Release) |
 
 ## User Roles
 

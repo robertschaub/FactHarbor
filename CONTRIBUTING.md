@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js >=20.19.0
+- Node.js >=22.23.3
 - .NET SDK 8.0.x
 - Python 3.12+ (for the optional documentation preview)
 - Git
@@ -68,7 +68,7 @@ scripts/        Setup and management scripts
 
 ### Credential-free worker checks
 
-Use a fresh, disposable worktree at a recorded commit. The checks follow [Main Guardrail CI](.github/workflows/ci.yml), with the additional worker exclusions below. Node.js >=20.19.0 and a selected .NET SDK 8.0.x are prerequisites; do not invoke tools to check versions until preparation is complete. Do not copy environment files, development settings, credentials, or development databases into the worktree. Check filenames/presence only: stop if the root or `apps/web` contains an actual `.env`/`.env.*` file (the checked-in `.env.example` is only a template), either contains `.npmrc`, or `apps/api/appsettings.Development.json` exists. Do not read their values or delete them to proceed.
+Use a fresh, disposable worktree at a recorded commit. The checks follow [Main Guardrail CI](.github/workflows/ci.yml), with the additional worker exclusions below. Node.js >=22.23.3 and a selected .NET SDK 8.0.x are prerequisites; do not invoke tools to check versions until preparation is complete. Do not copy environment files, development settings, credentials, or development databases into the worktree. Check filenames/presence only: stop if the root or `apps/web` contains an actual `.env`/`.env.*` file (the checked-in `.env.example` is only a template), either contains `.npmrc`, or `apps/api/appsettings.Development.json` exists. Do not read their values or delete them to proceed.
 
 Keep services off throughout. Before installation and again after checks, record `git status --short` and inspect listeners:
 

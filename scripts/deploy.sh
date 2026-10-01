@@ -18,7 +18,7 @@ DEPLOY_DIR="/opt/factharbor"
 API_PUBLISH_DIR="$DEPLOY_DIR/deploy/api"
 HEALTH_WAIT=5
 HEALTH_RETRIES=3
-REQUIRED_NODE_VERSION="20.19.0"
+REQUIRED_NODE_VERSION="22.23.3"
 
 # Colors
 RED='\033[0;31m'
@@ -43,7 +43,7 @@ check_min_node_version() {
 
     if ! node -e "const cur=process.versions.node.split('.').map(Number); const min='${REQUIRED_NODE_VERSION}'.split('.').map(Number); const ok=cur[0]>min[0] || (cur[0]===min[0] && (cur[1]>min[1] || (cur[1]===min[1] && cur[2]>=min[2]))); process.exit(ok ? 0 : 1)"; then
         err "Node.js ${REQUIRED_NODE_VERSION}+ required for current dependencies, found ${current}."
-        err "Upgrade Node before running deploy (sqlite3/undici transitive requirements)."
+        err "Upgrade Node before running deploy to meet the repository and dependency requirements."
         exit 1
     fi
 
