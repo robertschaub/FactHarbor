@@ -4,7 +4,7 @@
 **Erstellt von:** Claude Opus 4.6 (2026-03-11)
 **Quellen:** innosuisse.admin.ch, bridge.ch, BFS UID-Register (alle Links am Ende)
 
-> **Verwandte Dokumente:** [Meeting Prep Schimanski](Meeting_Prep_Schimanski_2026-03-18_DE.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
+> **Verwandte Dokumente:** [Executive Summary](EXECUTIVE_SUMMARY.md)
 
 ---
 

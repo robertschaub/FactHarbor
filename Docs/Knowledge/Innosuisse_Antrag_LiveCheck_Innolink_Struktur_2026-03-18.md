@@ -953,7 +953,6 @@ FactHarbor Verein ist eine Non-Profit-Organisation ohne Einnahmen, verfügt aber
 
 33. `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md` — Detaillierter Literaturreview mit 33 Quellen
 34. `Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md` — Bewerbungsprozess und Finanzierungsstruktur
-35. `Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md` — Forschungspartner-Vorbereitung
-36. `Docs/Knowledge/Global_FactChecking_Landscape_2026.md` — Marktlandschaft
-37. `Docs/Knowledge/Factiverse_Lessons_for_FactHarbor.md` — Wettbewerberanalyse
-38. `Docs/Knowledge/FullFact_AI_Lessons_for_FactHarbor.md` — Wettbewerberanalyse
+35. `Docs/Knowledge/Global_FactChecking_Landscape_2026.md` — Marktlandschaft
+36. `Docs/Knowledge/Factiverse_Lessons_for_FactHarbor.md` — Wettbewerberanalyse
+37. `Docs/Knowledge/FullFact_AI_Lessons_for_FactHarbor.md` — Wettbewerberanalyse
