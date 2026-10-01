@@ -2,7 +2,6 @@
 
 **Date:** 2026-03-19  
 **Status:** Active as a **future feature-flagged experiment summary**. Detailed design history moved to archive.  
-**Historical detail:** [2026-03-19_SR_LLM_Calibration_Plan_arch.md](../ARCHIVE/2026-03-19_SR_LLM_Calibration_Plan_arch.md)
 
 ---
 

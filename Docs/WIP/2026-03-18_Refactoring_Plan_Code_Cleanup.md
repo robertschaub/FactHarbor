@@ -3,7 +3,6 @@
 **Author:** Lead Architect (Claude Code, Opus 4.6)  
 **Date:** 2026-03-18  
 **Status:** Active as a **residual source plan** only. `WS-1` through `WS-4` are complete; only `WS-5`/`WS-6`/`WS-7` remain as deferred cleanup candidates.  
-**Historical detail:** [2026-03-18_Refactoring_Plan_Code_Cleanup_arch.md](../ARCHIVE/2026-03-18_Refactoring_Plan_Code_Cleanup_arch.md)
 
 ---
 

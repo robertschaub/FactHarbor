@@ -1,7 +1,7 @@
 # FactHarbor Calculations and Verdicts V2
 
 **Status:** V2 target specification companion
-**Canonical reader page:** `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts V2/WebHome.xwiki`
+**Canonical reader page:** `Docs/site/product-development/pipeline-v2/specification/architecture/deep-dive/calculations-and-verdicts-v2/index.md`
 
 This document summarizes the calculation and verdict rules for the pipeline rebuild. The current `Calculations.md` file remains V1/ClaimAssessmentBoundary runtime documentation until cutover.
 

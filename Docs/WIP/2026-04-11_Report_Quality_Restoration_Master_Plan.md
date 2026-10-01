@@ -11,7 +11,7 @@ supersedes (in spirit, not delete): the April 10 handoffs cluster (Report_Qualit
 
 ## 0. Context & framing
 
-The user's lived experience: since the ClaimBoundary pipeline became default on **2026-02-16** (`a40b3a3f`), report quality has drifted unevenly — some reports improved, others regressed. The changes shipped on **2026-04-10** in particular produced mixed results, leaning more negative than positive. Roughly **60+ quality investigation documents** already exist across `Docs/ARCHIVE/`, `Docs/WIP/`, `Docs/AGENTS/Handoffs/`, and `Docs/Investigations/`. This plan is not "yet another investigation" — it is a **consolidation, historical bisection, and structured revert/improvement effort** on top of the existing body of work.
+The user's lived experience: since the ClaimBoundary pipeline became default on **2026-02-16** (`a40b3a3f`), report quality has drifted unevenly — some reports improved, others regressed. The changes shipped on **2026-04-10** in particular produced mixed results, leaning more negative than positive. Roughly **60+ quality investigation documents** already exist across `Docs/WIP/`, `Docs/AGENTS/Handoffs/`, and `Docs/Investigations/`. This plan is not "yet another investigation" — it is a **consolidation, historical bisection, and structured revert/improvement effort** on top of the existing body of work.
 
 ### 0.1 Hard constraints from the user (verbatim)
 
@@ -101,7 +101,7 @@ This plan is complete when **all** of these hold:
 |---|---|---|---|
 | 1.1 | Inventory all report-quality docs (ARCHIVE + WIP + Handoffs + Investigations) | Explore agent | `Prior_Investigations_Index.md` (in WIP) |
 | 1.2 | Read the *prior scorecards* and *root-cause plans*: `Report_Quality_Criteria_Scorecard_2026-03-12`, `2026-03-24_Generic_Report_Quality_Signals_Scorecard`, `2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan`, `2026-04-06_Upstream_Report_Quality_Workstream_Proposal`, `2026-04-08_Complete_Quality_Assessment_and_Plan`, the April 10 handoff cluster | Lead Architect | Merged criteria draft |
-| 1.3 | Read `Docs/xwiki-pages/.../Quality-Standards.xwiki` for any product-level criteria | LLM Expert | Included in criteria draft |
+| 1.3 | Read `Docs/site/product-development/requirements/quality-standards.md` for any product-level criteria | LLM Expert | Included in criteria draft |
 | 1.4 | Read the most recent handoff cluster (Apr 10) for the current diagnosis of regressions | Lead Architect | Appendix to criteria draft |
 | 1.5 | Deduplicate overlapping criteria; separate **input signals**, **process signals**, **output signals**, and **user-perceived signals** | Lead Architect + LLM Expert | Canonical Quality Criteria Catalogue (draft) |
 | 1.6 | Present to user with priority-setting questions | Lead Architect + LLM Expert | Chat response with questions |

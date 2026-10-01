@@ -1,0 +1,120 @@
+# Open Source Model and Licensing
+
+## Public licences
+
+Original software uses **GNU AGPL version 3 only**. Original documentary specifications, guidance and graphics use **CC BY-SA 4.0**. The <a href="https://github.com/robertschaub/FactHarbor/blob/main/LICENSING.md" rel="noopener" target="_blank">licensing guide</a> defines material and path assignments and links to the complete, unchanged standard texts.
+
+AGPL governs covered software distribution and modified network-interactive versions. CC BY-SA governs protected documentary expression and shared adaptations. These licences do not require every private productive use or independently written implementation of ideas to be published. Compliant commercial use is permitted; no extra approval condition is added to the public grants.
+
+Curated databases use ODbL only when an explicit database notice designates them. Database contents and third-party source material may have separate terms; facts, analysis outputs and synthetic fixtures are not automatically ODbL databases.
+
+## Ownership, contributions and alternative licences
+
+Robert Schaub remains the sole copyright holder of his own protectable original contributions; other contributors retain copyright in theirs. The <a href="https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTOR-AGREEMENT.md" rel="noopener" target="_blank">contributor copyright agreement</a> requires explicit acceptance for identified contributions by people other than Robert and grants Robert nonexclusive public- and alternative-licensing permission. Acting for an association does not itself transfer copyright.
+
+Robert may individually agree alternative licences, including closed-use permissions, for rights he controls. Scope, duration and compensation are negotiated in writing. No exception is promised. Third-party rights must be cleared separately.
+
+## Third-party components
+
+Dependencies, quotations, external model services, model weights and third-party data retain their own terms and notices. Check compatibility for the actual combined work and distribution. A project licence does not grant rights to an external provider's technology or require every independent dependency to adopt the project's licence.
+
+Preserve applicable copyright, attribution and licence notices. Project names, logos and trust marks do not confer branding permission, endorsement or certification.
+
+## 6. AI Models and Licensing (AKEL)
+
+AKEL (AI Knowledge Extraction Layer) may rely on different types of models. Licensing and transparency rules are crucial here.
+
+<span id="6-1-open-vs-proprietary-models"></span>
+
+### 6.1 Open vs Proprietary Models
+
+AKEL may use:
+
+-   **Open-source models (preferred)**:
+    -   weights and code are openly available under compatible licenses,
+    -   prompts, evaluation logic and integration code are made public where licenses permit.
+-   **Proprietary / hosted models (allowed but constrained)**:
+    -   used only when necessary for quality or feasibility,
+    -   must be clearly **disclosed to the user** at point of use,
+    -   AKEL must label which parts of its output derive from proprietary tools,
+    -   surrounding **integration logic remains open** (AGPL-3.0-only for original project software; compatible terms for third-party components) and is documented.
+
+Rules:
+
+-   No deployment may suggest "fully open" AI if proprietary models are used without disclosure.
+-   For high-impact reasoning (e.g. health, politics, safety-critical topics), **open, auditable models** are preferred wherever feasible.
+-   Where proprietary models are unavoidable, additional care is taken to:
+    -   document limitations,
+    -   avoid overstating certainty,
+    -   and keep reasoning layers as transparent as possible.
+
+AI-generated knowledge must be tagged `authorType = AI`.
+
+<span id="6-2-prompts-pipelines-and-integration-code"></span>
+
+### 6.2 Prompts, Pipelines and Integration Code
+
+-   Orchestration code, pipelines and evaluation logic around AKEL are treated as part of the **open FactHarbor codebase** (AGPL-3.0-only).
+-   Where prompts or model configurations are licensed in a way that restricts publication, this must be documented clearly, and safe abstractions should be used in public documentation.
+
+<span id="6-3-ai-prompts-and-orchestration"></span>
+
+### 6.3 AI Prompts and Orchestration
+
+-   Prompts, system instructions, and orchestration code are considered **Code** and licensed under **AGPL-3.0-only**, to the extent protectable.
+-   They must be visible in the repository to ensure the system is not a 'black box'.
+-   If a proprietary model requires a prompt that cannot be shared (e.g. contractual restriction), that component cannot be part of the open core.
+
+## 7. Third-Party Libraries and Components
+
+FactHarbor depends on third-party libraries under:
+
+-   permissive licenses (MIT, Apache-2.0, BSD), and/or
+-   other compatible open-source licenses.
+
+Requirements:
+
+-   All dependencies must be **license-compatible** with:
+    -   the AGPL-3.0-only-licensed code,
+    -   and the overall FactHarbor licensing strategy.
+-   License information is documented in:
+    -   `/LICENSE` and, where applicable, `/NOTICE`,
+    -   and a dedicated "Third-Party Licenses" section in project documentation.
+
+FactHarbor actively avoids dependencies that:
+
+-   restrict redistribution in ways incompatible with open-source norms,
+-   prevent network users from accessing the relevant source,
+-   or conflict with the project's transparency and licensing goals.
+
+## 8. Repository Standards
+
+Each official FactHarbor repository must follow a minimum standard.
+
+<span id="8-1-required-files"></span>
+
+### 8.1 Required Files
+
+Each repository should contain at least:
+
+-   `README` – purpose, scope, status, and how to use it.
+-   `LICENSE` – the applicable license(s) for the repository.
+-   `CONTRIBUTING` – how to propose changes; coding/writing guidelines.
+-   `CODEOWNERS` – who is responsible for which parts.
+-   `CHANGELOG` – human-readable log of important changes.
+-   `SECURITY` (or `SECURITY.md`) – how to report vulnerabilities and how they are handled.
+
+<span id="8-2-prohibited-content"></span>
+
+### 8.2 Prohibited Content
+
+FactHarbor repositories must **not** contain:
+
+-   purely ideological advocacy texts unrelated to the project's purpose,
+-   opaque binaries or artefacts that cannot reasonably be inspected or reproduced,
+-   embedded secrets (API keys, passwords, private tokens),
+-   content that materially contradicts the stated licenses or governance rules.
+
+## Separate policies
+
+Organisational publication commitments are governed by the [Transparency Policy](../transparency-policy.md). Data-handling provisions are in the [Privacy Policy](../../../privacy-policy.md). Product-use guidance is in [License and Disclaimer](../../../license-and-disclaimer/index.md). Those documents do not amend the public copyright licences.

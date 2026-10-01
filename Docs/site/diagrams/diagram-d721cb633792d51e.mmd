@@ -1,0 +1,63 @@
+erDiagram
+    EVIDENCE_ITEM }o--|| FETCHED_SOURCE : extracted_from
+    EVIDENCE_ITEM ||--o| EVIDENCE_SCOPE : has_scope
+
+    SEARCH_QUERY ||--o{ FETCHED_SOURCE : found
+
+    EVIDENCE_ITEM {
+        string id_PK "EV_001_EV_002"
+        string statement
+        string category "statistic_expert_quote_event_legal_provision_etc"
+        string sourceId_FK
+        string sourceUrl
+        string sourceTitle
+        string sourceExcerpt
+        string claimDirection "supports_contradicts_neutral"
+        string sourceAuthority "primary_secondary_opinion"
+        string evidenceBasis "scientific_documented_anecdotal_theoretical_pseudoscientific"
+        string probativeValue "high_medium_low"
+        float extractionConfidence "0-100"
+        string sourceType "peer_reviewed_study_etc"
+        json relevantClaimIds
+        string claimBoundaryId_FK "Assigned_in_Stage_3"
+        boolean isDerivative
+        string derivedFromSourceUrl
+        boolean derivativeClaimUnverified
+        string scopeQuality "complete_partial_incomplete"
+        boolean isContestedClaim
+        boolean fromOppositeClaimSearch
+    }
+
+    EVIDENCE_SCOPE {
+        string name
+        string methodology
+        string temporal
+        string boundaries
+        string geographic
+        string sourceType
+        map additionalDimensions
+    }
+
+    FETCHED_SOURCE {
+        string id_PK
+        string url
+        string title
+        string fullText
+        float trackRecordScore "0.0-1.0"
+        float trackRecordConfidence "0.0-1.0"
+        boolean trackRecordConsensus
+        string category
+        boolean fetchSuccess
+        string fetchedAt
+        string searchQuery
+    }
+
+    SEARCH_QUERY {
+        string query
+        int iteration
+        string focus
+        int resultsCount
+        string searchProvider
+        string timestamp
+        string error
+    }

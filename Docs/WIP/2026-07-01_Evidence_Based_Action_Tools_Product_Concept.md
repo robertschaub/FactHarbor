@@ -171,7 +171,7 @@ These are concept gaps, not a build backlog. They should be resolved only if the
 
 | Gap | Why it matters |
 |---|---|
-| **First wedge / first user** | "Humans and AI agents" is directionally right but too broad for a first product. The concept does not yet choose between founder/PM, leadership team, AI-agent builder, compliance/audit, or FactHarbor-internal dogfood as the first wedge. |
+| **First wedge / first user** | "Humans and AI agents" is directionally right but too broad for a first product. The concept does not yet choose between founder/PM, leadership team, AI-agent builder, compliance/audit, or internal FactHarbor use as the first wedge. |
 | **Evidence threshold by risk** | The rule "actions must be evidence-based" still needs a risk-sensitive interpretation. Low-risk reversible actions, high-impact external actions, and irreversible actions cannot require the same evidence standard. |
 | **Evidence creation boundary** | Bounded interventions create contextual evidence, not universal proof. The concept must prevent small probes from becoming pseudo-certainty or post-hoc justification. |
 | **Minimum usable Estuarine map** | The current map is faithful to complexity but may be too heavy without facilitation. The unresolved concept question is the smallest non-expert map that changes a decision without importing the whole method. |
@@ -283,8 +283,8 @@ This document is intentionally not a product specification. It does not define s
 ## Related Local Docs
 
 - `Docs/WIP/2026-07-02_Evidence_Based_Action_Tools_Competitive_Landscape.md` (grounded market sweep: what exists, what's commoditized, where the white space is)
-- `Docs/xwiki-pages/FactHarbor/Product Development/Requirements/User Needs/WebHome.xwiki`
-- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Quality and Trust/WebHome.xwiki`
+- `Docs/site/product-development/requirements/user-needs/index.md`
+- `Docs/site/product-development/specification/architecture/quality-and-trust/index.md`
 - `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md`
 - `Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md`
 - `Docs/AGENTS/Handoffs/2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md`

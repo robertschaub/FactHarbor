@@ -1,6 +1,6 @@
 # FactHarbor Setup & Deployment Checklist
 
-> ⚠️ _Updated 2026-09-23: rewritten for the current local stack. Removed the manual database migration options, the 2026-03-10 release notes, the Orchestrated-era metrics and performance instructions, and the baseline and A/B test runners. The previous version is archived in [Docs/ARCHIVE/DEPLOYMENT_CHECKLIST_arch.md](Docs/ARCHIVE/DEPLOYMENT_CHECKLIST_arch.md)._
+> ⚠️ _Updated 2026-09-23: rewritten for the current local stack. Removed the manual database migration options, the 2026-03-10 release notes, the Orchestrated-era metrics and performance instructions, and the baseline and A/B test runners. The previous version is archived in Docs/ARCHIVE/DEPLOYMENT CHECKLIST._
 
 ---
 
@@ -145,9 +145,9 @@ Metrics collection is built into the pipeline; no code changes are needed. Model
 | Document | Purpose |
 |----------|---------|
 | **QUICKSTART.md** | Start the services and view metrics |
-| **Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Getting Started/WebHome.xwiki** | Full setup, configuration and health checks |
-| **Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki** | Metrics API documentation |
-| **Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki** | Testing approach & cost management |
+| **Docs/site/product-development/devops/guidelines/getting-started/index.md** | Full setup, configuration and health checks |
+| **Docs/site/product-development/specification/reference/data-models-and-schemas/metrics-schema/index.md** | Metrics API documentation |
+| **Docs/site/product-development/devops/guidelines/testing-strategy/index.md** | Testing approach & cost management |
 
 ---
 

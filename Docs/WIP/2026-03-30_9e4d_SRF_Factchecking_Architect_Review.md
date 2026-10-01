@@ -29,8 +29,10 @@ The proposed fix in the investigation handoff (2026-03-30_Senior_Developer_9e4d_
 **Action:** Fix verdict-stage claim-local evidence scoping first (Option B).
 
 **Design:**
-Instead of passing the global videnceItem array as videncePool to unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair, we must strict-scope the evidence.
-- For bulk checks (unValidationCheckWithRetry): Redesign the prompt payload. Instead of passing separated arrays (erdicts array and videncePool array), embed the cited evidence *inside* the verdict object: erdicts: verdicts.map(v => ({ claimId, truthPercentage, citedEvidence: getCitedEvidenceMap(v, evidence) })). This prevents cross-claim hallucination natively.
+Instead of passing the global videnceItem array as videncePool to 
+unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair, we must strict-scope the evidence.
+- For bulk checks (
+unValidationCheckWithRetry): Redesign the prompt payload. Instead of passing separated arrays (erdicts array and videncePool array), embed the cited evidence *inside* the verdict object: erdicts: verdicts.map(v => ({ claimId, truthPercentage, citedEvidence: getCitedEvidenceMap(v, evidence) })). This prevents cross-claim hallucination natively.
 - For isolated checks (alidateDirectionOnly and ttemptDirectionRepair): Explicitly filter videncePool to include only items that exist in citedIds. Never pass the global pool.
 
 ## 6. What not to change

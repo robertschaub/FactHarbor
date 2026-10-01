@@ -1,0 +1,26 @@
+flowchart TB
+    subgraph Research[Evidence Input]
+        EVIDENCE[Clustered Evidence Items]
+        BOUNDARIES[ClaimAssessmentBoundaries]
+    end
+
+    subgraph Debate["Stage 4: LLM Debate Pattern (verdict-stage.ts)"]
+        ADV["1. Advocate<br/>(Build pro-case)"]
+        CONS["2. Consistency<br/>(Identify unstable areas)"]
+        CHAL["3. Challenger<br/>(Attack weaknesses)"]
+        RECON["4. Reconciler<br/>(Synthesize final view)"]
+        VAL["5. Validation<br/>(Structural & Grounding)"]
+        ADV --> CONS --> CHAL --> RECON --> VAL
+    end
+
+    subgraph Finalize["Stage 5: Aggregation"]
+        WEIGHT["Weight by Specificity<br/>and Probative Value"]
+        TRIANG["Source Triangulation"]
+        NARR["Generate Narrative"]
+        WEIGHT --> TRIANG --> NARR
+    end
+
+    EVIDENCE --> ADV
+    BOUNDARIES --> ADV
+    VAL --> WEIGHT
+    NARR --> RESULT["AnalysisResult"]

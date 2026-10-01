@@ -1,0 +1,64 @@
+# Verdict Debate Pattern V2
+
+> **Info**
+>
+> **Target Verdict Reference** - V2 preserves structured adversarial adjudication, evidence-backed contestation, reconciliation, and Gate 4. This page describes target architecture, not current implementation state.
+
+## Overview
+
+# V2 Verdict Debate Pattern
+
+> **Info**
+>
+> Target verdict adjudication pattern. This diagram describes target architecture, not current implementation state. V2 preserves structured adversarial adjudication while routing prompt/model mechanics through the shared gateway.
+
+![V2 Verdict Debate Pattern diagram 1](../../../../../../diagrams/diagram-6ef5493acf7447df.svg)
+
+[Full-size diagram](../../../../../../diagrams/diagram-6ef5493acf7447df.svg) · [Mermaid source](../../../../../../diagrams/diagram-6ef5493acf7447df.mmd)
+
+V2 must not collapse verdict generation into a one-shot prompt. The verdict stage remains a structured adjudication process that separates a baseline evidence-backed case, adversarial challenge, reconciliation, validation, and confidence gating.
+
+## Roles
+
+| Role | Purpose | Non-negotiable |
+|----|----|----|
+| **Advocate** | Build the strongest evidence-backed baseline verdict from the available claim, evidence, and boundary context. | Must cite provided evidence and respect boundary scope. |
+| **Self-consistency / Stability** | Measure verdict stability where configured by policy. | Repetition count and model tier are model-policy decisions, not hardcoded stage behavior. |
+| **Challenger** | Identify omitted counter-evidence, weak evidence, or overconfidence. | Challenges must be evidence-backed; opinion-only doubts cannot reduce verdicts. |
+| **Reconciler** | Produce the final evidence-weighted synthesis. | Must account for valid challenges and reject baseless ones. |
+| **Validator** | Check citations, grounding, direction, and confidence integrity. | Structural citation checks are deterministic; semantic validation is LLM-owned. |
+| **Gate 4** | Assign confidence integrity and safe downgrade/damage status when needed. | No trustworthy verdict can be published without a valid Gate 4 status. |
+
+## Evidence-Backed Contestation
+
+V2 keeps the distinction between:
+
+| Type | Meaning | Verdict impact |
+|----|----|----|
+| **Contested** | The challenge cites documented counter-evidence or incompatible evidence. | May change truth percentage or confidence. |
+| **Doubted** | The challenge is opinion, political criticism, speculation, or denial without counter-evidence. | Must not reduce truth percentage or confidence. |
+
+This rule applies to challenger outputs, reconciliation, aggregation weighting, and any future contestation logic.
+
+## Gate 4 Integrity Checks
+
+Verdict adjudication must produce:
+
+-   cited supporting and opposing EvidenceItem IDs
+-   grounding/traceability status
+-   direction validation and repair ledger
+-   confidence tier/status
+-   challenge responses
+-   safe downgrade or damaged-report status when recovery fails
+
+## Gateway Ownership
+
+The verdict stage requests model tasks through the Prompt / Model / LLM Gateway. The gateway owns prompt rendering, model routing, provider retry/fallback, structured parsing, and typed provider outcomes. The verdict stage owns adjudication semantics after it receives typed outputs.
+
+## Current Implementation Status
+
+Any V2 prompt text, prompt migration, model routing, or provider role changes require current prompt/model review before implementation.
+
+------------------------------------------------------------------------
+
+**Navigation:** [Deep Dive Index](../../../../../specification/architecture/deep-dive/index.md) \| [Current Verdict Debate Pattern](../../../../../../verdict-debate.md)

@@ -1,0 +1,76 @@
+# POC Specification
+
+> **Warning**
+>
+> **HISTORICAL SPECIFICATION — POC Phases (2025-2026)**
+>
+> This section contains specifications for the initial Proof of Concept phases. The **Orchestrated pipeline** described here (which used AnalysisContexts and KeyFactors) has been **removed** (v2.11.0) and replaced by the **ClaimAssessmentBoundary pipeline**. These documents are retained for historical context on the project's evolution. See [AKEL Pipeline](../../../akel-pipeline.md) for current production specifications.
+
+**This section contains detailed specifications for FactHarbor POC phases.**
+
+**Core Philosophy:** Prove the AKEL automation works before building production features. Each POC phase validates critical technical capabilities.
+
+> **Warning**
+>
+> **Critical Innovation in POC1 Context-Aware Analysis:**
+>
+> POC1 tests whether AI can understand that an article's overall credibility is not simply the average of its individual claim verdicts. An article with mostly accurate facts can still be misleading if it draws unsupported conclusions.
+>
+> See [Article Verdict Problem](article-verdict-problem.md) for full discussion.
+
+## POC Phase Navigation
+
+-   **[POC Requirements](requirements.md)** Complete POC1 & POC2 specification (v4.0)
+-   **[POC1 Specification](specification.md)** POC1 scope, requirements, and quality gate definitions
+-   **[POC Summary](summary.md)** Executive overview
+-   **[Article Verdict Problem](article-verdict-problem.md)** Why context-aware analysis matters
+-   **[API & Schemas](api-and-schemas/index.md)** POC1 API contract and endpoint specifications
+
+## Roadmap Navigation
+
+-   **[POC1 Roadmap](../../planning/poc1/index.md)** Core Workflow with Quality Gates
+-   **[POC2 Roadmap](../../planning/poc2/index.md)** Robust Quality & Reliability
+-   **[Planning overview](../../planning/index.md)** Phase assignments
+
+## Key Specifications
+
+**POC1 Goal:** Prove AI can extract claims and evaluate them with context-aware analysis
+
+**POC1 Output:** 5 components
+
+1.  Analysis Summary (context-aware, 4-6 sentences)
+2.  Claims Identification (3-5 claims)
+3.  Claims Verdicts (verdict + confidence + reasoning)
+4.  Article Summary (optional)
+5.  Usage Statistics (cost tracking)
+
+**POC1 Philosophy:**
+
+-   Context-aware analysis (article ≠ sum of claims)
+-   Cost efficiency tracking (viable at scale)
+-   Fail-fast learning (test critical capabilities)
+
+**POC1 Success Criteria:**
+
+-   AI quality ≥70% (including context-aware assessment)
+-   Cost per analysis \<\$0.05 (target)
+-   Minimal manual editing (\<30%)
+
+**POC1 → POC2 Decision Gate:** GO / NO-GO / ITERATE
+
+See [POC Requirements](requirements.md) for complete specification.
+
+## POC vs. Full System
+
+| Feature | POC1 (Actual) | POC2 | Full System |
+|----|----|----|----|
+| AnalysisContexts | \~~✅ Implemented (multi-context detection + KeyFactors)\~~ | **Superseded by CB** | ✅ ClaimAssessmentBoundary |
+| Evidence Display | ✅ With sources + quality scoring | ✅ Enhanced | ✅ + ML validation |
+| Quality Gates | ✅ Gate 1 (Claim Validation) + Gate 4 (Verdict Confidence) | ✅ + Gates 2 & 3 | ✅ + ML validation |
+| Database | 🟡 SQLite | ✅ PostgreSQL | ✅ + Redis + S3 |
+| User Submissions | ✅ URL/text submission | ✅ Enhanced | ✅ + Batch |
+| LLM Providers | ✅ Multi-provider (Anthropic, OpenAI, Google, Mistral) | ✅ + Admin UI | ✅ + Cost optimization |
+| A/B Testing | ✅ Implemented | ✅ Enhanced | ✅ + ML-driven |
+| API | ✅ ASP.NET Core 8.0 | ✅ Enhanced | ✅ + Public API |
+
+\*\*

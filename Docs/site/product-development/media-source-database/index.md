@@ -1,0 +1,70 @@
+# Media Source Database
+
+**An open, transparent, AI-powered credibility database for every media source on the internet.**
+
+**The Media Source Database provides on-demand, evidence-grounded credibility scores for 19 languages.** We replace static media rating lists with real-time AI evaluations cross-checked by multiple models against historical track records and regional fact-checkers.
+
+**Project Repository:** <a href="https://github.com/robertschaub/FactHarbor" rel="noopener" target="_blank">FactHarbor on GitHub</a>
+
+## Quick Start: How can we help you?
+
+-   **I am a Journalist** → [Evaluation process](#how-it-works)
+-   **I am a Researcher** → [Planned public API](#future-standalone-service-public-api)
+-   **I am a Developer** → [Implementation Details](../specification/architecture/deep-dive/source-reliability/index.md)
+-   **I want to see the scale** → [7-Band Credibility Scale](#the-7-band-credibility-scale)
+
+------------------------------------------------------------------------
+
+## The Problem
+
+Reliable information starts with reliable sources, but current tools fall short:
+
+-   **Static databases go stale**: pre-seeded lists can't keep up with ownership or editorial changes.
+-   **Hidden editorial bias**: Users cannot inspect the reasoning behind traditional ratings.
+-   **English-only coverage**: Regional sources are often ignored or misjudged.
+-   **Prestige over evidence**: Systems rely on institutional names rather than accuracy records.
+
+## Our Response: The Evidence-Grounded Approach
+
+FactHarbor's Media Source Database provides a transparent, auditable, and open-source alternative.
+
+-   **No Pre-seeded Data**: Every source is evaluated on-demand using the same evidence-based process.
+-   **Dual-AI Cross-Check**: Claude and OpenAI must reach a consensus before a score is accepted.
+-   **Evidence-Grounded**: Scores are backed by a retrieved "Evidence Pack" of fact-checks and ownership data.
+-   **Works in 19 Languages**: We search regional fact-checkers (e.g., CORRECTIV for German sources) to ensure local context.
+-   **Dynamic and Current**: Evaluations are refreshed every 90 days to reflect the last 24 months of performance.
+
+## The 7-Band Credibility Scale
+
+| Score | Rating | Meaning | Verdict Effect |
+|----|----|----|----|
+| 0.86 – 1.00 | **Highly Reliable** | Verified accuracy, rigorous corrections (e.g., wire services) | Verdict preserved |
+| 0.72 – 0.85 | **Reliable** | Consistent accuracy, professional editorial standards | Mostly preserved |
+| 0.58 – 0.71 | **Leaning Reliable** | Often accurate, corrects when notified | Moderate preservation |
+| 0.43 – 0.57 | **Mixed** | Variable accuracy or inconsistent quality | Neutral zone |
+| 0.29 – 0.42 | **Leaning Unreliable** | Often inaccurate; bias significantly affects reporting | Pulls toward 50% |
+| 0.15 – 0.28 | **Unreliable** | Pattern of false claims or ignores corrections | Strong pull toward 50% |
+| 0.00 – 0.14 | **Highly Unreliable** | Fabricates content or documented disinformation source | Maximum skepticism |
+
+**Unknown sources** receive a default score of **0.50** (neutral center).
+
+## How It Works
+
+1.  **Evidence Gathering**: System retrieves fact-checker ratings, journalism reviews, and correction records.
+2.  **Dual-Model Evaluation**: Claude produces a draft; OpenAI cross-checks. Consensus difference must be ≤ 0.20.
+3.  **Skeptical Acceptance**: High ratings require higher confidence and more evidence citations.
+4.  **Transparent Result**: Full reasoning, bias indicators, and evidence citations are stored and cached.
+
+------------------------------------------------------------------------
+
+## Future: Standalone Service & Public API
+
+The Media Source Database is moving from an internal module to a **standalone public service**.
+
+-   **Why**: Decoupling enables independent scaling and allows external tools to use our reliability data.
+-   **Public API**: Planned endpoints for `GET /api/v1/sources/{domain}` and `POST /evaluate`.
+-   **Sponsorship**: We are seeking funding to expand language coverage and build a one-click browser extension.
+
+------------------------------------------------------------------------
+
+**Maintained by**: Lead Architect \| **Status**: Operational \| **Last Review**: Feb 2026

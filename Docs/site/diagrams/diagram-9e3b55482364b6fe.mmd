@@ -1,0 +1,116 @@
+erDiagram
+    OVERALL_ASSESSMENT ||--o{ CB_CLAIM_VERDICT : aggregates
+    OVERALL_ASSESSMENT ||--o{ CLAIM_BOUNDARY : presents
+    OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : has
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : has
+    OVERALL_ASSESSMENT ||--|| QUALITY_GATES : has
+    OVERALL_ASSESSMENT ||--o| EXPLANATION_QUALITY_CHECK : has
+    OVERALL_ASSESSMENT ||--o| TRUTH_PERCENTAGE_RANGE : has
+
+    QUALITY_GATES ||--o| GATE1_STATS : claim_validation
+    QUALITY_GATES ||--o| GATE4_STATS : verdict_confidence
+    QUALITY_GATES ||--o| QUALITY_GATES_SUMMARY : high_level
+
+    EXPLANATION_QUALITY_CHECK ||--|| EXPLANATION_STRUCTURAL_FINDINGS : has
+    EXPLANATION_QUALITY_CHECK ||--o| EXPLANATION_RUBRIC_SCORES : has
+
+    OVERALL_ASSESSMENT {
+        float truthPercentage "0-100_weighted"
+        string verdict "7-point_label"
+        float confidence "0-100_weighted"
+        boolean hasMultipleBoundaries
+        json verdictNarrative
+        json claimBoundaries
+        json claimVerdicts
+        json coverageMatrix
+        json qualityGates
+        json truthPercentageRange
+        json explanationQualityCheck
+    }
+
+    VERDICT_NARRATIVE {
+        string headline
+        string evidenceBaseSummary
+        string keyFinding
+        json boundaryDisagreements
+        string limitations
+    }
+
+    COVERAGE_MATRIX {
+        json claims "Rows_(claim_IDs)"
+        json boundaries "Columns_(boundary_IDs)"
+        json counts "Evidence_per_cell"
+    }
+
+    QUALITY_GATES {
+        boolean passed
+    }
+
+    QUALITY_GATES_SUMMARY {
+        int totalEvidenceItems
+        int totalSources
+        int searchesPerformed
+        boolean contradictionSearchPerformed
+    }
+
+    GATE1_STATS {
+        int total
+        int passed
+        int filtered
+        int centralKept
+    }
+
+    GATE4_STATS {
+        int total
+        int publishable
+        int highConfidence
+        int mediumConfidence
+        int lowConfidence
+        int insufficient
+        int centralKept
+    }
+
+    TRUTH_PERCENTAGE_RANGE {
+        float min "0-100"
+        float max "0-100"
+    }
+
+    EXPLANATION_QUALITY_CHECK {
+        string mode "structural_or_rubric"
+    }
+
+    EXPLANATION_STRUCTURAL_FINDINGS {
+        boolean hasCitedEvidence
+        boolean hasVerdictCategory
+        boolean hasConfidenceStatement
+        boolean hasLimitations
+    }
+
+    EXPLANATION_RUBRIC_SCORES {
+        int clarity "1-5"
+        int completeness "1-5"
+        int neutrality "1-5"
+        int evidenceSupport "1-5"
+        int appropriateHedging "1-5"
+        float overallScore "weighted_average"
+        json flags
+    }
+
+    ANALYSIS_WARNING {
+        string type
+        string severity "error_warning_info"
+        string message
+        json details
+    }
+
+    TWO_PANEL_SUMMARY {
+        json articleSummary
+        json factharborAnalysis
+    }
+
+    PSEUDOSCIENCE_ANALYSIS {
+        boolean isPseudoscience
+        int confidence
+        json categories
+        json matchedPatterns
+    }

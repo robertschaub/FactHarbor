@@ -45,7 +45,7 @@ After completing a task, if you discovered something that would help future agen
 ### 2026-06-04 — Check for dormant seams before designing "new" infrastructure; generalize an abandoned spec instead of writing parallel docs
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.8, 1M)
 **Category:** useful-pattern
-**Learning:** Asked to design multi-variant pipeline support, the strongest move was discovering the codebase was *built* for variants and later collapsed to one — the `pipelineVariant` field still flows end-to-end (`AnalyzeController` → `JobService.CreateJobAsync` → `JobEntity`, persisted at creation "for reproducibility even if defaults change"), the historical "Pipeline Variants" xWiki documents a single-dispatcher twin-path era, and the May-12 Pipeline-Rebuild spec already had an isolated-namespace-with-stable-entry pattern (`analyzer-v2/` + `runClaimBoundaryPipelineV2(context)`). So the architecture became "revive + generalize a dormant pattern," not "build new machinery" — and the abandoned V2 spec was reframed as *one entry in the registry* rather than contradicted with parallel docs. Two concrete process wins: (1) the advisor caught that my role learnings pointed at two May-12 WIP files I hadn't read — reading them first prevented writing a contradictory parallel spec (always resolve continuity before authoring net-new design docs); (2) on provenance, embed the small thing (effective config, ~KB) and reference the big thing (212KB prompt → hash + git), and state the asymmetry + its limit explicitly (dirty-tree prompt edits unrecoverable; reconstruction relies on AGENTS commit-first discipline) rather than pretending hashes enable reconstruction. Also: a "pipeline fingerprint" = sha256(variantId + commit + prompt hashes + effective-config hashes + model map) is the right provenance primitive — commit hash ALONE is insufficient because the same commit runs different variants/prompts/configs; it generalizes the existing diag clustering (commit + promptContentHash).
+**Learning:** Asked to design multi-variant pipeline support, the strongest move was discovering the codebase was *built* for variants and later collapsed to one — the `pipelineVariant` field still flows end-to-end (`AnalyzeController` → `JobService.CreateJobAsync` → `JobEntity`, persisted at creation "for reproducibility even if defaults change"), the historical "Pipeline Variants" reference documents a single-dispatcher twin-path era, and the May-12 Pipeline-Rebuild spec already had an isolated-namespace-with-stable-entry pattern (`analyzer-v2/` + `runClaimBoundaryPipelineV2(context)`). So the architecture became "revive + generalize a dormant pattern," not "build new machinery" — and the abandoned V2 spec was reframed as *one entry in the registry* rather than contradicted with parallel docs. Two concrete process wins: (1) the advisor caught that my role learnings pointed at two May-12 WIP files I hadn't read — reading them first prevented writing a contradictory parallel spec (always resolve continuity before authoring net-new design docs); (2) on provenance, embed the small thing (effective config, ~KB) and reference the big thing (212KB prompt → hash + git), and state the asymmetry + its limit explicitly (dirty-tree prompt edits unrecoverable; reconstruction relies on AGENTS commit-first discipline) rather than pretending hashes enable reconstruction. Also: a "pipeline fingerprint" = sha256(variantId + commit + prompt hashes + effective-config hashes + model map) is the right provenance primitive — commit hash ALONE is insufficient because the same commit runs different variants/prompts/configs; it generalizes the existing diag clustering (commit + promptContentHash).
 **Files:** `Docs/WIP/2026-06-04_Multi_Variant_Pipeline_{Architecture,Specification,Implementation_Plan}.md`, `Docs/AGENTS/Handoffs/2026-06-04_Lead_Architect_Multi_Variant_Pipeline_Architecture.md`
 
 ### 2026-06-01 — Most candidate quality "bugs" turn out inherent/intentional/correct — size every lever before building
@@ -100,7 +100,7 @@ After completing a task, if you discovered something that would help future agen
 **Role:** Lead Architect  **Agent/Tool:** Codex (GPT-5) + Claude/Gemini review
 **Category:** wrong-assumption
 **Learning:** The abandoned `Pipeline_V2` branch preserved useful target architecture, but the implementation workstream became dominated by Captain-Deputy orchestration, slice/tranche paperwork, HighJump status packets, and hidden readiness machinery. Future pipeline rebuild attempts should start from the May 12 target specification and factual baselines, then use small direct implementation increments with targeted review. Do not recreate the old Captain-Deputy/HighJump process unless a concrete current risk truly requires it.
-**Files:** `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`, `Docs/ARCHIVE/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`, `Pipeline_V2` branch
+**Files:** 2026-05-12 Pipeline Rebuild Target Specification Draft, 2026-05-12 Pipeline Rebuild Specification Plan, `Pipeline_V2` branch
 
 ### 2026-05-24 — Preserve Pipeline V2 coordination lessons as principles, not workflows
 **Role:** Agents Supervisor  **Agent/Tool:** Codex (GPT-5) + Claude Opus 4.6 review
@@ -124,7 +124,7 @@ After completing a task, if you discovered something that would help future agen
 **Role:** Lead Architect  **Agent/Tool:** Claude Code (Opus 4.8 1M)
 **Category:** gotcha
 **Learning:** (1) The Hydrogen instability root was stochastic Stage-1 `single_atomic` ↔ `ambiguous_single_claim` classification at `understandTemperature 0.15`. A prompt tiebreaker (Fix A: broad comparative efficiency/optimization/resource-use predicates with frame-dependent answers → `ambiguous`) was Captain-approved, LLM-Expert-reviewed, landed (`ed7698a8`), and **FAILED live validation** — 2/3 Hydrogen runs still classified `single_atomic` (one UNVERIFIED), only 1/3 met the full bar; reverted (`1c790a05`). Lesson: a prompt instruction cannot reliably override a *stochastic* classification at temp>0 — the lever for classification *stability* is temperature reduction or a structural determinism change, not prompt wording. Always validate a prompt fix with **live runs scored against the FULL documented bar** (classification + ≥2 distinct-dimension boundaries + verdict band), not verdict bands alone, before trusting it. (2) **Operating gotcha (cost me many cycles):** launching the FactHarbor web dev server (`npm run dev`) from the Claude Code agent shell silently breaks analysis — the harness injects `ANTHROPIC_API_KEY` (empty), `ANTHROPIC_BASE_URL`, and `ANTHROPIC_MODEL`, and Next.js does NOT override an already-set `process.env` var with `.env.local`, so every LLM call 404s. `unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_MODEL OPENAI_API_KEY GOOGLE_GENERATIVE_AI_API_KEY MISTRAL_API_KEY` before `npm run dev` (or launch from a non-agent shell). Also `scripts/restart-clean.ps1` corrupts keys via a CRLF `$env:` prefix. And: surface a broken runtime to the Captain sooner instead of repeatedly restarting.
-**Files:** `Docs/ARCHIVE/WIP/2026-05-30_Stage1_Contract_Gate_Hardening_Proposal.md` §11, `apps/web/prompts/claimboundary.prompt.md`, `scripts/restart-clean.ps1`
+**Files:** 2026-05-30 Stage1 Contract Gate Hardening Proposal §11, `apps/web/prompts/claimboundary.prompt.md`, `scripts/restart-clean.ps1`
 
 ## Lead Developer
 
@@ -246,23 +246,11 @@ After completing a task, if you discovered something that would help future agen
 
 ## Technical Writer
 
-### 2026-02-15 — External link syntax for the xWiki viewer
-**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Opus 4.6)
-**Category:** gotcha
-**Learning:** The xwiki-viewer.html detects external links by checking if the href starts with `https://`. Use `[[label>>https://url]]` syntax. Do NOT use xWiki's `url:` prefix (`[[label>>url:https://...]]`) or `||target="_blank"` parameter — the viewer doesn't parse those. The viewer automatically adds `target="_blank" rel="noopener"` to all https:// links. Bold wrapping works: `**[[label>>https://url]]**`.
-**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (line ~721, `inl()` method)
-
 ### 2026-02-24 — Requirement and User Need documentation needs explicit effort during pivots
 **Role:** Technical Writer  **Agent/Tool:** Gemini CLI
 **Category:** tip
 **Learning:** High-level project documents like Requirements and User Needs are often the last to be updated during a major architectural pivot (e.g., AnalysisContext → ClaimAssessmentBoundary). Specific documentation sweeps are necessary to bridge the gap between low-level implementation changes and high-level project goals, ensuring that stakeholders see a consistent vision.
-**Files:** `Docs/xwiki-pages/FactHarbor/Requirements/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Requirements/User Needs/WebHome.xwiki`
-
-### 2026-02-19 — `!important` required to override JS inline styles in media queries
-**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
-**Category:** gotcha
-**Learning:** The viewer's `loadPage()` sets `document.getElementById('fileInfo').style.display = 'flex'` as an inline style. CSS media query rules (e.g. `.file-info{display:none}`) cannot override inline styles without `!important`. Any element whose visibility is toggled by JS must use `!important` in responsive CSS rules, otherwise the media query is silently ignored.
-**Files:** `Docs/xwiki-pages/viewer-impl/xwiki-viewer.html` (mobile `@media(max-width:480px)` block)
+**Files:** `Docs/site/product-development/requirements/index.md`, `Docs/site/product-development/requirements/user-needs/index.md`
 
 ## LLM Expert
 
@@ -331,7 +319,7 @@ After completing a task, if you discovered something that would help future agen
 
 3. **Capture a keyword-based rule-inventory baseline before editing and verify count is ≥ baseline after.** Grep for `MANDATORY|MUST|NEVER|always` across the root files pre-trim, save the count, and re-run post-trim across all affected files (including new Policies files). If the total drops, a rule was silently lost. In this refactor: 23 baseline → 24 post-refactor. Fast, cheap, catches regressions that line-diff review would miss in 450+-line files.
 
-**Files:** `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/AGENTS/Policies/Tool_Strengths.md`, `Docs/AGENTS/Policies/xWiki_Reading.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
+**Files:** `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/AGENTS/Policies/Tool_Strengths.md`, `Docs/DEVELOPMENT/Documentation.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
 
 ### 2026-04-15 — Prompt caching remains locked off after poor ROI
 **Role:** LLM Expert  **Agent/Tool:** GitHub Copilot (GPT-5.4)
@@ -421,11 +409,6 @@ _(No entries yet)_
 **Learning:** When creating a new repo and pushing `.github/workflows/` files, the `gh` CLI token may lack the `workflow` scope, causing a push rejection. Workaround: commit and push everything except the workflow file first, then add the workflow in a subsequent commit. Alternatively, re-authenticate with `gh auth login` and grant the `workflow` scope.
 **Files:** `.github/workflows/deploy-docs.yml`
 
-### 2026-02-19 — Cloudflare Worker + KV is the right fit for static-site analytics
-**Role:** Technical Writer / xWiki Expert  **Agent/Tool:** Claude Code (Sonnet 4.6)
-**Category:** useful-pattern
-**Learning:** For a GitHub Pages static site needing privacy-preserving page view tracking, a Cloudflare Worker + KV namespace is the minimal viable backend. Free tier handles 100K req/day. KV data is completely independent of the gh-pages branch — `force_orphan: true` deployments do not affect analytics data. The worker can be deployed and updated with `npx wrangler deploy` without touching any application code. Analytics is opt-in via `--analytics-url` build flag, keeping the viewer functional in standalone/local mode.
-**Files:** `Docs/xwiki-pages/analytics/worker.js`, `Docs/xwiki-pages/analytics/wrangler.toml`
 
 ---
 

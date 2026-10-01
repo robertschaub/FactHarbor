@@ -14,7 +14,7 @@ This directory contains only:
 - **future-facing proposals and organizational documents**
 - **reference analyses still relevant for future decisions**
 
-Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`.
+Keep this index focused on current decisions and open work. Preserve operative findings before retiring records under an explicitly authorized scope.
 
 ---
 
@@ -124,24 +124,6 @@ Superseded by the 2026-06-18 consolidated execution plan above (verified 2026-08
 - [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
 - [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
 - [LiveCheck_State_of_the_Art_Research_2026-03-18.md](../Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md)
-
----
-
-## Split Documents
-
-Historical detail from these WIP docs lives in `_arch` companion files under [Docs/ARCHIVE](../ARCHIVE/):
-
-- `2026-03-18_Refactoring_Plan_Code_Cleanup_arch.md`
-- `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19_arch.md`
-- `2026-03-19_Report_Quality_Evolution_Investigation_arch.md`
-- `2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`
-- `2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`
-- `2026-03-03_Wikipedia_SemanticScholar_Integration_Concept_arch.md`
-- `API_Cost_Reduction_Strategy_2026-02-13_arch.md`
-- `Infrastructure_and_Config_fwd_arch.md`
-- `LLM_Allocation_and_Cost_fwd_arch.md`
-- `Quality_Improvement_Pending_fwd_arch.md`
-- `2026-03-19_SR_LLM_Calibration_Plan_arch.md`
 
 ---
 

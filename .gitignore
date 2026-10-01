@@ -8,31 +8,10 @@
 # For Agents working on docs
 Docs/**/*extract*
 Docs/*ps1
-Docs/xar*
-FactHarbor.xar
 test-output
 
-# xWiki export (local-only extraction of Docs/*.xar)
-# Keep the .xar committed; keep the extracted pages out of git.
-Docs/xwiki-extract/
 
-# xWiki-work intermediate files (Cursor workflow)
-# Track .xar files, ignore extraction artifacts
-Docs/xWiki-work/*_fulltree.json
-Docs/xWiki-work/*_fulltree_pages/
-Docs/xWiki-work/*.xml
-!Docs/xWiki-work/.gitkeep
 
-# xwiki-export intermediate files
-# Track: final .xar packages (not *_updated.xar), conversion scripts, WORKFLOW.md, README.md
-# Ignore: JSON fulltrees, MD trees, unpacked XML, temp files, updated XARs
-Docs/xwiki-export/*_fulltree.json
-Docs/xwiki-export/*_fulltree_updated.json
-Docs/xwiki-export/*_md/
-Docs/xwiki-export/*_updated.xar
-Docs/xwiki-export/*.xml
-Docs/xwiki-export/package*.xml
-Docs/xwiki-export/temp*/
 
 # Local devserver artifacts (agent runs / redirected output)
 apps/web/devserver.out
@@ -116,7 +95,6 @@ apps/web/prompts/*Test*.prompt.md
 
 /job-*.json
 
-/Docs/FactHarbor Spec and Impl 20.Jan.26.xar.backup
 
 # Source Reliability cache
 apps/web/*.db
@@ -183,3 +161,7 @@ apps/web/scripts/tmp-sr-*
 
 # Obsidian workspace settings (machine-local)
 .obsidian/
+
+# Documentation build and local preview cache
+/site/
+/.cache/

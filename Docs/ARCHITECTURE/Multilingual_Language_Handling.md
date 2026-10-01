@@ -4,7 +4,7 @@
 **Date**: 2026-08-09
 **Status**: Mitigation layers implemented and live; EN supplementary lane shipped **default-off** pending live A/B validation (Backlog **NEUTRALITY-1**, state VALIDATION)
 **Verified against**: commit `c0333ad38` (all file/line references below checked at this commit; line numbers drift — grep the named functions/fields)
-**Related**: [Backlog NEUTRALITY-1](../STATUS/Backlog.md), [2026-04-01 Validation Status handoff](../ARCHIVE/Handoffs/2026-04/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md), [2026-04-01 Investigation (proposal-stage)](../WIP/2026-04-01_Multilingual_Output_Search_Policy_Investigation.md)
+**Related**: [Backlog NEUTRALITY-1](../STATUS/Backlog.md), [Validation state and promotion gate](#5-validation-state-and-promotion-gate), [2026-04-01 Investigation (proposal-stage)](../WIP/2026-04-01_Multilingual_Output_Search_Policy_Investigation.md)
 
 ---
 
@@ -82,7 +82,7 @@ interface LanguageIntent {
 
 Then it adds **max 1** forced-English query through the standard relevance/budget/warning path. Semantics: **coverage expansion only — "NEVER used as a contrarian-balancing proxy"** (code comment). Language lane is independent of evidential direction by design.
 
-**Why not "always add English":** a 2026-03-22 supplementary-language experiment failed — language selection and evidential direction became entangled and the supplementary pass could move verdicts the wrong way (see Investigation doc §"Why bilingual retrieval must be treated separately"; results handoff: `Docs/ARCHIVE/Handoffs/2026-03/2026-03-22_Senior_Developer_Phase2v2_CrossLinguistic_v2_Results.md`). The scarcity gate is the accepted alternative, ratified in Proposal 2 with the acceptance criterion "English supplementary retrieval is not always-on."
+**Why not "always add English":** a 2026-03-22 supplementary-language experiment failed — language selection and evidential direction became entangled and the supplementary pass could move verdicts the wrong way (see Investigation doc §"Why bilingual retrieval must be treated separately"; results handoff: 2026-03-22 Senior Developer Phase2v2 CrossLinguistic v2 Results). The scarcity gate is the accepted alternative, ratified in Proposal 2 with the acceptance criterion "English supplementary retrieval is not always-on."
 
 ### 3.7 Source-native lane — scaffold only
 
@@ -97,8 +97,46 @@ Then it adds **max 1** forced-English query through the standard relevance/budge
 ## 5. Validation state and promotion gate
 
 - **Shipped & review-clean** (2026-04-01, commits `e9002e9c`, `06fab2e5`, `8f9d4fae`, `ac51975c`): contract, threading, EN lane hardening.
-- **Open gate**: live A/B (lane OFF vs ON) on Plastik-DE, Plastik-FR, Bolsonaro-PT + DE/EN controls; metrics and promotion criteria in the [validation-status handoff](../ARCHIVE/Handoffs/2026-04/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md). Do not promote past default-off without it.
+- **Open gate:** matched lane-OFF/lane-ON validation must satisfy the criteria below before promotion beyond default-off.
 - **Test-coverage caveat**: there is **no automated cross-language divergence test**, and no working question-vs-statement test either (the old `input-neutrality.test.ts` could not run and was deleted on 2026-09-24; Backlog `NEUTRALITY-PAIRS`). Cross-language evidence so far: C10 calibration baseline (10 pairs, 3 languages) and the NEUTRALITY-1 measurements. C17 (multi-language adversarial benchmark) is open backlog, as is full ES/DE/FR/PT support.
+
+
+The following gate remains a validation requirement, not authorization to submit jobs or enable a lane. Use only the current Captain-approved exact inputs and action scope.
+
+### Goal
+Validate that:
+- non-English report-authored prose follows `reportLanguage`
+- source-authored evidence remains original-language
+- the EN supplementary lane fires only under intended scarcity
+- enabling the EN lane does not introduce verdict-direction or confidence regressions
+
+### Live A/B Validation
+Keep `supplementaryEnglishLane.enabled`:
+- `OFF` for baseline
+- `ON` for experimental comparison
+
+Run the same scenario set under both configurations.
+
+### Metrics To Record Per Run
+- detected input language
+- `reportLanguage`
+- whether EN lane fired
+- number of primary-lane queries/results/evidence items
+- number of EN-lane queries/results/evidence items
+- final verdict direction and truth%
+- final confidence
+- whether source-authored evidence stayed original-language
+- whether report-authored text stayed in the input language
+
+### Promotion gate
+
+Do **not** promote beyond default-off unless:
+- report-language purity improves or holds
+- source-language evidence preservation holds
+- EN lane fires only on intended scarcity cases
+- no scenario shows an unexplained verdict-direction regression
+- no scenario suggests the EN lane is acting as a balancing proxy
+
 
 ## 6. Operational caveats for agents
 

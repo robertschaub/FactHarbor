@@ -612,7 +612,7 @@ All calculations are designed to be **transparent**, **traceable**, and **LLM-in
 ---
 
 *See also:*
-- *[Quality Gates Reference](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Quality%20Gates/WebHome.xwiki) for full quality gates documentation*
-- *[Source Reliability System](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Source%20Reliability/WebHome.xwiki) for full Source Reliability system documentation*
-- *[Calculations and Verdicts (xWiki)](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Calculations%20and%20Verdicts/WebHome.xwiki) — xWiki counterpart (structural reference)*
-- *[Pipeline Variants](../xwiki-pages/FactHarbor/Product%20Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) — CB pipeline vs Monolithic Dynamic*
+- *[Quality Gates Reference](../site/product-development/specification/architecture/deep-dive/quality-gates/index.md) for full quality gates documentation*
+- *[Source Reliability System](../site/product-development/specification/architecture/deep-dive/source-reliability/index.md) for full Source Reliability system documentation*
+- *[Calculations and Verdicts](../site/product-development/specification/architecture/deep-dive/calculations-and-verdicts/index.md) — website structural reference*
+- *[Pipeline Variants](../site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md) — CB pipeline vs Monolithic Dynamic*

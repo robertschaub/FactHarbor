@@ -1,0 +1,40 @@
+erDiagram
+    ATOMIC_CLAIM ||--o{ CB_CLAIM_VERDICT : receives
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : cited_by
+    EVIDENCE_ITEM }o--|| SOURCE : from
+    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : clustered_into
+
+    ATOMIC_CLAIM {
+        string id_PK
+        string statement
+        string category
+        boolean isCentral
+        float specificityScore
+    }
+
+    CB_CLAIM_VERDICT {
+        string id_PK
+        string claimId_FK
+        string verdict "7-point scale"
+        float truthPercentage
+        float confidence
+        string reasoning
+        json boundaryFindings
+        json challengeResponses
+    }
+
+    EVIDENCE_ITEM {
+        string id_PK
+        string sourceUrl
+        string statement
+        string sourceExcerpt
+        string probativeValue "high|medium|low"
+        json evidenceScope
+    }
+
+    SOURCE {
+        string id_PK
+        string url
+        float trackRecordScore
+        string sourceType
+    }

@@ -145,7 +145,7 @@ Items marked * are validated in Climinator code; items marked † are paper-only
 | **5** | **GlobalFact 2026** | Poynter / IFCN ecosystem | Networking route: `2026-06-17` to `2026-06-19` | Meetings, ecosystem entry, narrower cooperation asks |
 | — | **Ash / Schimanski / Stammbach / Leippold** | ETH / UZH / Princeton | Research-context contacts, not the immediate outreach sequence | Research framing, faithfulness metrics, evidence and relevance methods |
 
-Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). The current execution order now lives primarily in `../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki` and `../WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`.
+Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). The current execution order now lives primarily in `../site/organisation/strategy/cooperation-opportunities/index.md` and `../WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`.
 
 ---
 
@@ -155,7 +155,7 @@ Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Resear
 - ✅ A-2 fixes: structured error telemetry (A-2c), TPM guard/fallback (A-2b), crash fix (A-2a)
 - ✅ B-sequence quality improvements (from Quality Opportunity Map): B-5a (challenger prompt), B-4 (pro/con query separation), B-6 (verifiability annotation), B-7 (misleadingness flag), B-8 (explanation quality — structural + LLM rubric), B-5b (opus tier)
 - ✅ i18n hardening: all structural checks use Unicode-aware patterns, no English-keyword matching
-- ✅ xWiki architecture docs updated for CB pipeline (7 pages)
+- ✅ Architecture docs updated for CB pipeline (7 pages)
 
 **Immediate (in progress):**
 1. A-3 gate re-run (first attempt NO-GO: 7/10 pairs due to Anthropic credit exhaustion, not code issues)

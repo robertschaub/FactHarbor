@@ -3,7 +3,7 @@
 **Version**: 2.11.0
 **Date**: 2026-02-19
 **Status**: Implemented (Phase 1.5 + 7-Layer Defense documented)
-**Related**: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
+**Related**: [Schema Migration Strategy](../site/product-development/specification/architecture/deep-dive/schema-migration/index.md), Terminology Migration Plan
 
 ---
 
@@ -47,7 +47,7 @@ A **multi-layer defense strategy** combines LLM instruction (soft enforcement) w
 
 ## 2. Multi-Layer Claim Filtering Defense
 
-> **Source**: [Baseless_Tangential_Claims_Investigation_2026-02-02.md](../ARCHIVE/REVIEWS/Baseless_Tangential_Claims_Investigation_2026-02-02.md)
+> **Source**: Baseless Tangential Claims Investigation 2026-02-02
 
 ### Overview
 
@@ -109,7 +109,7 @@ All layers are configurable via UCM:
 | 3-6 | Aggregation rules | Admin → Config → Aggregation Lexicon |
 | 7 | Context detection | Admin → Config → Pipeline (`contextDetection*`) |
 
-For complete layer-by-layer details with code examples, see the [full investigation report](../ARCHIVE/REVIEWS/Baseless_Tangential_Claims_Investigation_2026-02-02.md).
+The layer descriptions below document the evidence-filtering mechanism and its code references.
 
 ---
 
@@ -1282,8 +1282,8 @@ Evidence Item
 
 ## Appendix B: Related Documents
 
-- [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki) - Backward compatibility approach
-- [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md) - Phase 1.5 context
+- [Schema Migration Strategy](../site/product-development/specification/architecture/deep-dive/schema-migration/index.md) - Backward compatibility approach
+- Terminology Migration Plan - Phase 1.5 context
 - [AGENTS.md](../../AGENTS.md) - LLM guidance for evidence extraction
 - [evidence-filter.ts](../../apps/web/src/lib/analyzer/evidence-filter.ts) - Implementation
 - [evidence-filter.test.ts](../../apps/web/test/unit/lib/analyzer/evidence-filter.test.ts) - Test suite

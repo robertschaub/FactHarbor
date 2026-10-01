@@ -530,7 +530,7 @@ this Windows repository. No real LLM calls.
 
 ### When to use
 
-- Cleaning up stale architecture, spec, reference, or xWiki docs
+- Cleaning up stale architecture, specification, or reference documentation
 - Reconciling documentation with the current codebase and terminology
 - Archiving clearly obsolete documentation without losing partially valid content
 - Doing a docs sweep that goes beyond `Docs/WIP/` only
@@ -545,12 +545,12 @@ Examples:
 ```
 /docs-update
 /docs-update Docs/ARCHITECTURE
-/docs-update xwiki diagrams and pipeline docs
+/docs-update website diagrams and pipeline docs
 ```
 
 ### What it does
 
-1. Reads the required xWiki, Mermaid, and AGENTS guidance before editing anything.
+1. Reads the applicable Markdown, Mermaid, and AGENTS guidance before editing anything.
 2. Splits the work into living-doc updates vs WIP/handoff archival so current docs are corrected
    in place instead of being prematurely archived.
 3. Verifies entities, types, stages, and diagrams against the actual code before changing prose.

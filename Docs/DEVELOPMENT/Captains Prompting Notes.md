@@ -67,24 +67,13 @@ Keep any content inside any document that either:
 -past analysis reports that are still relevant for the future
 In other words: keep anything that reflects present, looks into the future or is still relevant for the future.
 
-Move any other (=historical) content  that does not fullfil any of the mentioned criteria to keep into the Archive folder.
-Pages that contain both current and historical content shall be splitted and the historical part shall be moved into a file with _arch suffix.
+Retire historical content only within the current task's explicit preservation and removal scope. Keep operative rules, open questions and source provenance intact.
 
 ---
 
-Cleanup all documentation (.md and .xWiki):
+Documentation maintenance:
 
-Keep any content inside any page that either:
--documents current implementation and intent, current status, future plans and ideas
--current or envisioned future organisational aspects, future reccomended actions.
--discusses future implementation, intent and plans
--decisions important to remember (brief summaries are sufficient)
--past analysis reports that are still relevant for the future
-In other words: keep anything that reflects present, looks into the future or is still relevant for the future.
-
-Move any other (=historical) content  that does not fullfil any of the mentioned criteria to keep into an Archive folder; one Archive folder for .xWiki and one for .md file s, with sub-tree structure as from original location.
-Pages that contain both current and historical content shall be splitted and the historical part shall be moved into a file with _arch suffix.
-I will review the archived files before final deletion.
+Use `/doc-guard` and `/docs-update` for the assigned Markdown scope. Preserve current implementation, future intent, decisions and investigation findings that still matter. Reconcile diagrams with their source, keep shared Mermaid assets reusable, and preserve provenance before any authorized retirement. A general cleanup request is not permission to delete evidence.
 
 ---
 
@@ -97,13 +86,7 @@ Look into my findings and conclusions and propose fixes:
 There are much more counter-evidence found than evidence; search should aim equally to find evidence and counter-evidence, currently counter evidence get to much weight because many are found, and because some counter evidence overlap which may give even more weight.
 If a court and verdict was found to be impartial all together and by the law of a state governed by the rule of law, then an opposing vote of a court member should not get more weight that any other vote of the court members.
 ---
-Documentation update incl xWiki Specs, Make a plan:
-
-1. Cleanup all .md files to reflect current state (especially architecture, backlog, status) also take into account WIP .md files content - but note, do not touch the files currently uncommited in working directory, except the ones you have created Docs\WIP\POC_to_Alpha_Transition.md
-   Docs\WIP\Storage_DB_Caching_Strategy.md.
-2. After this is done, do a full update and cleanup of all the .xwiki files below Docs\xwiki-pages\FactHarbor_Spec_and_Impl\FactHarbor. But leave all requirements and "license and disclaimer" and FactHarbor Webhome untouched. Update The planning as just discussed,
-   Important: Make sure Entities, types and diagrams and their explanations reflect the curren state as in source-code. Keep future enhancements, but update everything to be an enhancemen or improvement based on current implementation - we don't have a plan for a major re-design, but to extend and adjust as discussed earlier in some oft the files.
-   Now analyze and make a plan and write it to docs\w
+Documentation update: make a plan for the assigned scope before editing. Preserve unrelated working changes, requirements, licensing, effective privacy terms and the homepage method. Verify entities, types, diagrams and explanations against current source; label future enhancements as proposals. Reconcile architecture, backlog, status and relevant WIP references using `/docs-update`.
 
 ---
 

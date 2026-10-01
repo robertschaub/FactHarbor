@@ -4,7 +4,7 @@
 
 - Node.js >=20.19.0
 - .NET SDK 8.0.x
-- Python 3.10+ (for xWiki conversion scripts, optional)
+- Python 3.12+ (for the optional documentation preview)
 - Git
 ## API Keys Required
 
@@ -56,7 +56,7 @@ See the [Getting Started Guide](https://robertschaub.github.io/FactHarbor/?page=
 ```
 apps/api/       ASP.NET Core API (jobs, persistence, status)
 apps/web/       Next.js app (UI + AI orchestration pipeline)
-Docs/           xWiki documentation (specs, guides, architecture)
+Docs/           Markdown documentation (specifications, guides, architecture)
 scripts/        Setup and management scripts
 ```
 

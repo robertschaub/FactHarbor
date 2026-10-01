@@ -13,7 +13,7 @@
 | Documentation + diagrams | Any agent with TECH_WRITER role | Mid | See Roles/Technical_Writer.md |
 | Deep investigation, consolidation | Claude Code | High | Best for reading large context, synthesizing findings |
 | .NET API work | Any agent | Any | Read apps/api/AGENTS.md first |
-| xWiki documentation | Any agent | Any | Read Docs/AGENTS/AGENTS_xWiki.md first |
+| Markdown documentation | Any agent | Any | Read Docs/DEVELOPMENT/Documentation.md first |
 
 ## Calling Claude Code from Codex
 

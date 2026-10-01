@@ -1,0 +1,35 @@
+flowchart TD
+    START{"Processing Evidence Item"}
+
+    START -->|"Stage 2: RESEARCH"| ES["Extract EvidenceScope<br/>(MANDATORY)"]
+
+    ES --> ESF["EvidenceScope Fields:<br/>- methodology (primary, optional)<br/>- temporal (primary, optional)<br/>- boundaries (optional)<br/>- geographic (optional)"]
+
+    ESF --> STORE["Store on EvidenceItem.<br/>evidenceScope"]
+
+    STORE --> NEXT{"All evidence<br/>extracted?"}
+
+    NEXT -->|"No"| START
+    NEXT -->|"Yes"| STAGE3["Stage 3:<br/>CLUSTER BOUNDARIES"]
+
+    STAGE3 --> COLLECT["Collect all unique<br/>EvidenceScopes"]
+
+    COLLECT --> LLM["LLM Congruence Assessment:<br/>Are scopes COMPATIBLE?"]
+
+    LLM -->|"Compatible<br/>(same/similar methodology,<br/>temporal, boundaries)"| MERGE["Cluster into<br/>SINGLE ClaimBoundary"]
+
+    LLM -->|"Incompatible<br/>(different methodology,<br/>boundaries, jurisdiction)"| SPLIT["Create<br/>SEPARATE ClaimBoundaries"]
+
+    MERGE --> EX1["Example:<br/>All evidence uses<br/>'Standard S, Period P'<br/>→ 1 boundary (CB_01)"]
+
+    SPLIT --> EX2["Example:<br/>'Method A (full)' vs<br/>'Method B (subsystem)'<br/>→ 2 boundaries (CB_01, CB_02)"]
+
+    EX1 --> ASSIGN["Assign claimBoundaryId<br/>to each EvidenceItem"]
+    EX2 --> ASSIGN
+
+    ASSIGN --> VERDICT["Stage 4: VERDICT<br/>(use boundaries for<br/>per-boundary findings)"]
+
+    style ES fill:#fff9c4,color:#000
+    style MERGE fill:#c8e6c9,color:#000
+    style SPLIT fill:#ffccbc,color:#000
+    style VERDICT fill:#e3f2fd,color:#000

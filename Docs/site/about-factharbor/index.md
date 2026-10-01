@@ -1,0 +1,27 @@
+# About FactHarbor
+
+We live in a time of overwhelming information.
+
+Some people believe bold claims with little evidence. Others step back entirely: *"I don't read the news anymore. I can't trust anything."*
+
+Both reactions are understandable.
+
+When reasoning is hidden and sources lack transparency, trust erodes. The problem is not that people don't care about truth — it's that the structure behind information is often invisible.
+
+FactHarbor was created to change that.
+
+We organize public debates into transparent evidence models, connecting claims with assumptions, supporting and opposing evidence, and the reliability of their sources. Instead of asking people to simply believe or reject, we make the reasoning visible.
+
+Not to win arguments. But to strengthen trust through clarity.
+
+Because when reasoning is transparent, judgment becomes possible again.
+
+------------------------------------------------------------------------
+
+## Founder
+
+**Robert Schaub**
+
+Founder & Lead Architect
+
+**Connect**: <a href="https://www.linkedin.com/in/robertschaub/" rel="noopener" target="_blank">LinkedIn</a> **Contact**: <info@factharbor.ch>

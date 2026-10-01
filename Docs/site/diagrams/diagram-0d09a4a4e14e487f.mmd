@@ -1,0 +1,67 @@
+flowchart TB
+    subgraph Stage1["Stage 1: EXTRACT CLAIMS"]
+        CLAIMS["AtomicClaims extracted<br/>(Pass 1 + Pass 2)"]
+        GATE1{{"Gate 1<br/>Claim Validation<br/>(LLM — Haiku, batched)"}}
+        PASS1["Validated claims<br/>proceed to research"]
+        FAIL1["Filtered claims<br/>(infidelity, opinion,<br/>prediction, low specificity)"]
+        RESCUE{{"Safety Net<br/>All filtered?"}}
+        RESCUED["Rescue highest-centrality<br/>claim (prevent empty pipeline)"]
+        VERIF["B-6: Verifiability Annotation<br/>(claimAnnotationMode)<br/>high|medium|low|none per claim"]
+    end
+
+    subgraph Stage23["Stage 2–3: RESEARCH + CLUSTER"]
+        EVIDENCE["Evidence gathered<br/>and clustered into<br/>ClaimAssessmentBoundaries"]
+    end
+
+    subgraph Stage4["Stage 4: VERDICT (5-step debate)"]
+        VERDICTS["CBClaimVerdicts<br/>generated via LLM debate<br/>(Steps 1–4)"]
+        STEP5["Step 5: Verdict Validation<br/>(Haiku x2 — grounding + direction)"]
+        STRUCT{{"Structural<br/>Consistency Check<br/>(deterministic)"}}
+        STRUCT_WARN["Warnings logged<br/>(non-blocking)"]
+        HARM["High-harm confidence floor<br/>(C8 — Stammbach/Ash)"]
+        GATE4{{"Gate 4<br/>Confidence Classification"}}
+        HIGH["HIGH confidence<br/>(>= 70)"]
+        MEDIUM["MEDIUM confidence<br/>(>= 40, < 70)"]
+        LOW["LOW confidence<br/>(> 0, < 40)<br/>flagged for review"]
+        INSUF["INSUFFICIENT<br/>(confidence = 0)<br/>marked UNVERIFIED"]
+    end
+
+    subgraph Stage5["Stage 5: AGGREGATE"]
+        AGG["Aggregation +<br/>Verdict Narrative"]
+        EQC{{"B-8: Explanation<br/>Quality Check<br/>(explanationQualityMode)"}}
+        EQC_STRUCT["Tier 1: Structural<br/>(deterministic — 4 checks)"]
+        EQC_RUBRIC["Tier 2: Rubric<br/>(LLM — Haiku, 5 dimensions)"]
+    end
+
+    CLAIMS --> GATE1
+    GATE1 -->|"Pass"| PASS1
+    GATE1 -->|"Fail"| FAIL1
+    GATE1 --> RESCUE
+    RESCUE -->|"Yes: all filtered"| RESCUED
+    RESCUED --> PASS1
+    RESCUE -->|"No: some passed"| PASS1
+    PASS1 --> VERIF
+    VERIF --> EVIDENCE
+    EVIDENCE --> VERDICTS
+    VERDICTS --> STEP5
+    STEP5 --> STRUCT
+    STRUCT -->|"Warnings"| STRUCT_WARN
+    STRUCT --> HARM
+    HARM --> GATE4
+    GATE4 -->|"HIGH"| HIGH
+    GATE4 -->|"MEDIUM"| MEDIUM
+    GATE4 -->|"LOW"| LOW
+    GATE4 -->|"INSUFFICIENT"| INSUF
+    HIGH --> AGG
+    MEDIUM --> AGG
+    LOW --> AGG
+    INSUF --> AGG
+    AGG --> EQC
+    EQC -->|"structural"| EQC_STRUCT
+    EQC -->|"rubric"| EQC_STRUCT
+    EQC_STRUCT -->|"rubric mode"| EQC_RUBRIC
+
+    style Stage1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Stage23 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Stage4 fill:#fff9c4,stroke:#f9a825,color:#000
+    style Stage5 fill:#f3e5f5,stroke:#7b1fa2,color:#000

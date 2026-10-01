@@ -14,7 +14,6 @@ This is the Phase 7 source-of-truth working baseline.
 - Use **Section 3** for Step 2: issues and root causes.
 - Use **Section 4** for Step 3: root fixes and specification.
 - Use the companion code/prompt review when the question is about implementation details, retry/repair semantics, or prompt architecture.
-- Fixed-blocker detail that is no longer forward-looking lives in `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
 
 What this document intentionally does **not** do:
 
@@ -49,7 +48,7 @@ What this document intentionally does **not** do:
 ### Primary supporting sources
 
 - `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md`
-- `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
+- 2026-04-14 Phase7 Status and E2 Measurement Plan
 - `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`
 
 ## 2. Step 1: Pains, Needs, And Expectations
@@ -59,9 +58,9 @@ What this document intentionally does **not** do:
 | Scope | Category | Statement | Acceptance / operating rule | Provenance | Confidence | Main source(s) |
 |---|---|---|---|---|---|---|
 | Phase 7 overall | Pain | Phase 5/6 did not solve the aggregate R2 problem. | Do not claim aggregate R2 improvement on current evidence. | Directly documented | High | `2026-04-13_C16_R2_Combined_Replay_Analysis.md`; `2026-04-13_Phase7_Salience_First_Charter.md` |
-| Phase 7 overall | Pain | Current `main` still shows mixed salience-preservation behavior across the intended corpus. | Treat current HEAD as unresolved, not stabilized. | Observed + documented | High | local `Jobs`; `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
-| Phase 7 overall | Pain | The biggest current gap is measurement / decision debt. | No further Phase 7 architecture claims without a review-honest measurement record. | Directly documented | High | `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
-| Phase 7 overall | Need | Freeze prompt/stage drift long enough to measure current HEAD. | Measure before adding new Phase 7 interventions. | Directly documented | High | `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
+| Phase 7 overall | Pain | Current `main` still shows mixed salience-preservation behavior across the intended corpus. | Treat current HEAD as unresolved, not stabilized. | Observed + documented | High | local `Jobs`; 2026-04-14 Phase7 Status and E2 Measurement Plan |
+| Phase 7 overall | Pain | The biggest current gap is measurement / decision debt. | No further Phase 7 architecture claims without a review-honest measurement record. | Directly documented | High | 2026-04-14 Phase7 Status and E2 Measurement Plan |
+| Phase 7 overall | Need | Freeze prompt/stage drift long enough to measure current HEAD. | Measure before adding new Phase 7 interventions. | Directly documented | High | 2026-04-14 Phase7 Status and E2 Measurement Plan |
 | Phase 7 overall | Need | Keep exact-input and exact-cohort discipline. | Match byte-identical `inputValue`; do not mix variants or cherry-pick windows. | Directly documented | High | `2026-04-13_C16_R2_Combined_Replay_Analysis.md` |
 | Phase 7 overall | Expectation | Phase 7 should solve a generic meaning-preservation problem, not a single-token patch. | Judge on a fixed corpus and explicit thresholds, not narrative optimism. | Directly documented + user-stated in docs | High | `2026-04-13_Phase7_Salience_First_Charter.md` |
 | Phase 7 overall | Expectation | Positive inputs should expose salient qualifiers; negative controls should stay empty or near-empty. | Precision metric must explicitly define whether bare subject/action anchors are acceptable. | Directly documented but still underspecified | Medium | `2026-04-13_Phase7_Salience_First_Charter.md` |
@@ -167,7 +166,6 @@ This means:
 | Metric wording | define negative-control precision precisely, including whether bare subject/action anchors are allowed | current precision language is still ambiguous | measurement spec | P0 | reviewer can classify every control run without interpretation drift |
 | Type contract | narrow persisted salience anchor `type` to the same enum family as the generation schema | current schema/types split weakens compile-time trust | code / type contract | P2 | invalid categories cannot silently flow into downstream consumers |
 
-Rows for already-addressed stale-summary refresh, quote persistence, repair-prompt governance, and validator precedence cleanup were moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
 
 ### 4.3 Phase 7 specification after Step 3
 
@@ -232,7 +230,6 @@ Implement in two bounded tracks.
 
 ### 5.2 Completed hardening and cleanup
 
-Completed `61815f41` hardening detail was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md` so this active baseline keeps only still-live forward-looking planning.
 
 ### 5.3 Phase 7b implementation track
 
@@ -247,7 +244,7 @@ Completed `61815f41` hardening detail was moved to `Docs/ARCHIVE/2026-04-14_Phas
 | Tighten anchor typing end-to-end | schema + persisted type | binding anchor contract is typed, not loose-string | build/type tests |
 | Run bounded verification set | focused canaries, not necessarily another full expensive corpus first | implementation sanity before broader validation | targeted scenario checks on R2a/R2b and one control |
 
-The resolved thesis-direct vs literal-substring precedence step was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
+The resolved thesis-direct vs literal-substring precedence step was moved to 2026-04-14 Phase7 Step1 Pains Issues Needs.
 
 ### 5.4 Empirical closeout hygiene track
 

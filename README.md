@@ -26,7 +26,7 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
-**[Privacy Policy](Docs/xwiki-pages/FactHarbor/Organisation/Legal%20and%20Compliance/Privacy-Policy.xwiki)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
+**[Privacy Policy](Docs/site/privacy-policy.md)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
 
 ## Getting Started
 

@@ -1,0 +1,22 @@
+flowchart TD
+    INPUT["CBClaimVerdict<br/>with pre-computed<br/>confidence value"] --> TIER{{"Classify<br/>confidence tier"}}
+
+    TIER -->|"confidence >= 70"| HIGH["HIGH<br/>Publish with<br/>full confidence"]
+    TIER -->|"confidence >= 40<br/>and < 70"| MEDIUM["MEDIUM<br/>Publish with<br/>caveats"]
+    TIER -->|"confidence > 0<br/>and < 40"| LOW["LOW<br/>Flag for<br/>review"]
+    TIER -->|"confidence = 0"| INSUF["INSUFFICIENT<br/>Mark as<br/>UNVERIFIED"]
+
+    HIGH --> PUB{{"Publishable?"}}
+    MEDIUM --> PUB
+    LOW --> PUB
+    INSUF --> PUB
+
+    PUB -->|"HIGH or MEDIUM"| PUBLISH["Publishable<br/>(included in aggregation)"]
+    PUB -->|"LOW or INSUFFICIENT"| REVIEW["Not publishable<br/>(included with flags)"]
+
+    style HIGH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style MEDIUM fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style LOW fill:#fff3e0,stroke:#e65100,color:#000
+    style INSUF fill:#ffcdd2,stroke:#c62828,color:#000
+    style PUBLISH fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style REVIEW fill:#fff3e0,stroke:#e65100,color:#000

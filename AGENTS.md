@@ -105,7 +105,7 @@ These rules apply specifically to the LLM prompts used in the analysis pipeline 
 
 | Term | Meaning | Variable names | NEVER call it |
 |------|---------|---------------|---------------|
-| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
+| **ClaimAssessmentBoundary** | Evidence-emergent grouping of compatible EvidenceScopes post-research. The top-level analytical frame. See `Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md`. | `claimBoundary`, `claimBoundaries`, `claimBoundaryId` | "context", "scope" |
 | **AtomicClaim** | Single verifiable assertion extracted from user input. The analytical unit in the ClaimAssessmentBoundary pipeline. | `atomicClaim`, `atomicClaims` | "context", "fact" |
 | **EvidenceScope** | Per-evidence source metadata (methodology, temporal bounds) | `evidenceScope` | "context" |
 | **EvidenceItem** | Extracted evidence from a source (NOT a verified fact) | — | "fact" (in new code) |
@@ -253,17 +253,16 @@ When submitting **live analysis jobs or validation batches** after changing sour
 
 ---
 
-## Reading .xwiki Files
+## Documentation sources
 
-Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring rules: `Docs/AGENTS/GlobalMasterKnowledge_for_xWiki.md`.
+Read [Documentation guidance](Docs/DEVELOPMENT/Documentation.md) for Markdown authoring and diagram verification. Website pages live in `Docs/site/`; contributor and agent references retain their documented repository paths.
 
-**Format rule:** Each document exists in exactly ONE authoritative format. If a `.md` file shows "Moved to xWiki", read the `.xwiki` file instead.
-
+Each edition has one authoritative editable source. Use this checkout's public contracts for implementation, and only task-specific material explicitly supplied within the current access scope. Access never grants disclosure permission.
 ---
 
 ## Documentation Discipline
 
-Use `/doc-guard` before adding or substantially rewriting Markdown/xWiki, explanatory sections, FAQs/templates, or reviewing documentation clutter. Write its DOC-GUARD block: reader, need, existing home, chosen option, rejected path, lean test, readability and whether `/docs-update` is needed. Prefer tightening, merging, moving or deleting before adding; preserve semantics, sources and normative controls. Use `/docs-update` when status, indexes, links, backlog/changelog or handoff references need reconciliation.
+Use `/doc-guard` before adding or substantially rewriting Markdown, explanatory sections, FAQs/templates, or reviewing documentation clutter. Write its DOC-GUARD block: reader, need, existing home, chosen option, rejected path, lean test, readability and whether `/docs-update` is needed. Prefer tightening, merging, moving or deleting before adding; preserve semantics, sources and normative controls. Use `/docs-update` when status, indexes, links, backlog/changelog or handoff references need reconciliation.
 
 ---
 

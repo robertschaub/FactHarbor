@@ -2,7 +2,6 @@
 
 **Date:** 2026-02-13  
 **Status:** Active as an **external cost/funding strategy reference**. Historical spend baseline and obsolete prompt-caching discussion were moved to archive.  
-**Historical detail:** [API_Cost_Reduction_Strategy_2026-02-13_arch.md](../ARCHIVE/API_Cost_Reduction_Strategy_2026-02-13_arch.md)
 
 ---
 

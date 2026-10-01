@@ -250,4 +250,4 @@ Before committing to cross-provider debate infrastructure, validate the **self-c
 ---
 
 *Filed by: LLM Expert (Claude Sonnet 4.6)*
-*Related refs: [TestTuning_Mode_Design_2026-02-17.md](../ARCHIVE/TestTuning_Mode_Design_2026-02-17.md), [Multi-Source_Evidence_Retrieval_Plan.md](../ARCHIVE/Multi-Source_Evidence_Retrieval_Plan.md)*
+*Related refs: TestTuning Mode Design 2026-02-17, Multi-Source Evidence Retrieval Plan*

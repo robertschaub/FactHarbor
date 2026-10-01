@@ -1,0 +1,25 @@
+graph TB
+    subgraph Layer4["Layer 4: VERDICT DIRECTION"]
+        V["verdict.truthPercentage: 0-100<br/>'Is this sub-claim TRUE or FALSE?'"]
+    end
+
+    subgraph Layer3["Layer 3: EVIDENCE DIRECTION"]
+        E["claimDirection: supports | contradicts | neutral<br/>'Does this evidence SUPPORT or CONTRADICT<br/>the ORIGINAL claim?'"]
+    end
+
+    subgraph Layer2["Layer 2: CLAIM DIRECTION"]
+        C["isCounterClaim: boolean<br/>'Does this sub-claim support or oppose<br/>the main thesis?'"]
+    end
+
+    subgraph Layer1["Layer 1: THESIS DIRECTION"]
+        T["impliedClaim: string<br/>'What is the original user claim?'"]
+    end
+
+    Layer1 --> Layer2
+    Layer2 --> Layer3
+    Layer3 --> Layer4
+
+    style Layer1 fill:#e8f5e9,color:#000
+    style Layer2 fill:#fff9c4,color:#000
+    style Layer3 fill:#e3f2fd,color:#000
+    style Layer4 fill:#f3e5f5,color:#000

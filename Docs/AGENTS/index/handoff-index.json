@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T23:37:27.259Z",
+  "generatedAt": "2026-09-30T22:19:32.077Z",
   "count": 48,
   "entries": [
     {
@@ -9,27 +9,11 @@
         "lead_architect"
       ],
       "topics": [
-        "applicability",
-        "fail_open",
-        "evidence_drift",
-        "report_damaged",
-        "checkworthy_unverified",
-        "fetch_failure"
+        "quality",
+        "lever",
+        "consolidation"
       ],
-      "files_touched": [
-        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
-        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
-        "apps/web/src/lib/analyzer/research-orchestrator.ts",
-        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
-        "apps/web/test/unit/lib/analyzer/research-orchestrator.test.ts",
-        "apps/web/test/integration/claim-auto-selection-pipeline.test.ts",
-        "scripts/restart-clean.ps1",
-        ".claude/settings.json",
-        "Docs/AGENTS/Captain_Quality_Expectations.md",
-        "Docs/WIP/2026-06-01_Review_Codex_2395f494_Direct_Sufficiency.md",
-        "scripts/diag/checkworthy-unverified-census.cjs",
-        "scripts/diag/fetch-failure-drift-sizing.cjs"
-      ],
+      "files_touched": [],
       "summary": "Lead Architect — Quality-Lever Consolidation (2026-06-01)"
     },
     {
@@ -308,9 +292,7 @@
       ],
       "files_touched": [
         "Docs/WIP/README.md",
-        "Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md",
-        "9931f468",
-        "Docs/ARCHIVE/WIP/"
+        "Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md"
       ],
       "summary": "Start with `Docs/WIP/2026-06-17_Clean_Main_Next_Cleanup_Plan.md`. Do not turn this into a Stage 1 F2 rewrite unless fresh triage shows Stage 1 contract recovery is causal. Do not edit `apps/web/prompts/` without Captain approval. Commit before any live jobs and rerun only Captain-defined inputs unle"
     },
@@ -344,14 +326,9 @@
         "recovery"
       ],
       "files_touched": [
-        "apps/web/src/lib/analyzer/",
-        "apps/web/prompts/",
-        "apps/web/configs/",
         "apps/web/test/unit/lib/analyzer/aggregation.test.ts",
-        "Docs/ARCHIVE/",
         "Docs/AGENTS/Agent_Outputs.md",
-        "Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md",
-        "Docs/AGENTS/index/"
+        "Docs/AGENTS/Handoffs/2026-06-17_Senior_Developer_Project_Cleanup_Recovery.md"
       ],
       "summary": "Clean baseline is `main` after recovery commits `a56fed6f4` and `209eca35d`, plus docs cleanup `688ef241` and this follow-up handoff/index cleanup. Verification already passed after the revert: targeted diff against baseline `6d76b28a4` was empty for analyzer/prompts/configs/target test, `npm test` "
     },
@@ -565,8 +542,7 @@
       "files_touched": [
         "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
         "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Diagrams.md",
-        "Docs/AGENTS/Agent_Outputs.md",
-        "Docs/AGENTS/index/"
+        "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start at the \"Concept diagrams\" subsection in `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. Preserve the diagram intent: clarify the concept, keep the 3-tool count, and avoid spec-level detail."
     },
@@ -588,8 +564,7 @@
         "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
         "Docs/WIP/README.md",
         "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Concept_Gaps_Consolidation.md",
-        "Docs/AGENTS/Agent_Outputs.md",
-        "Docs/AGENTS/index/"
+        "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start at `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` sections \"2026-07-01 current concept\", \"Conceptual gaps before spec\", and \"Spec boundary\". Treat this as concept documentation only."
     },
@@ -611,8 +586,7 @@
         "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
         "Docs/WIP/README.md",
         "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Estuarine_Product_Revision.md",
-        "Docs/AGENTS/Agent_Outputs.md",
-        "Docs/AGENTS/index/"
+        "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start with the current-state section of `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md`. Preserve these requirements: decompose mixed situations; map before prioritising; treat easy/fast change as potentially volatile; use intervention portfolios; remap each intervention to Cyne"
     },
@@ -624,20 +598,15 @@
         "llm_expert"
       ],
       "topics": [
-        "evidence_based_tools",
-        "debate",
-        "wizard_decisions",
-        "estuarine",
-        "decision_ledger",
-        "agent_provenance"
+        "llm",
+        "expert",
+        "evidence",
+        "action",
+        "debates",
+        "wizard",
+        "consolidation"
       ],
-      "files_touched": [
-        "Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md",
-        "Docs/AGENTS/Handoffs/2026-06-30_Product_Strategist_LLM_Expert_Evidence_Action_Tools_Proposal.md",
-        "Docs/AGENTS/Handoffs/2026-07-01_Product_Strategist_LLM_Expert_Evidence_Action_WIP_Documentation.md",
-        "Docs/AGENTS/Agent_Outputs.md",
-        "Docs/WIP/README.md"
-      ],
+      "files_touched": [],
       "summary": "Read `Docs/WIP/2026-07-01_Evidence_Based_Action_Tools_Product_Concept.md` top-to-bottom first (it changed under every session). Highest-value next pass: the open gap **\"minimum Estuarine map without expert facilitation\"** (the sophistication-vs-adoption crux), then the remaining \"Conceptual gaps bef"
     },
     {
@@ -892,8 +861,7 @@
       ],
       "files_touched": [
         "CONTRIBUTING.md",
-        "Docs/AGENTS/Agent_Outputs.md",
-        "test-output/preparation/p5-rehearsal/"
+        "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Treat P5 as complete. Do not repeat P2, resume the NU1301 diagnosis, or run the hardened build sequence. Continue with the next authorized preparation-plan item from this committed closure record."
     },
@@ -909,20 +877,7 @@
       ],
       "files_touched": [
         "Docs/AGENTS/Agent_Outputs.md",
-        "e29773c71",
-        "apps/web/src/lib/analyzer/claim-selection-filter.ts",
-        "research-acquisition-stage.ts",
-        "research-orchestrator.ts",
-        "boundary-clustering-stage.ts",
-        "claimboundary-pipeline.ts",
-        "types.ts",
-        "warning-display.ts",
-        "claim-selection-filter.test.ts",
-        "research-acquisition-stage.test.ts",
-        "warning-display.test.ts",
-        "boundary-clustering-fallback-warning.test.ts",
-        "9909fa41e",
-        "test-output/review/"
+        "apps/web/src/lib/analyzer/claim-selection-filter.ts"
       ],
       "summary": "Follow the closure below before selecting any open item. Job ids above are in the local `apps/api/factharbor.db`; report pages at `http://localhost:3000/jobs/<id>`; per-job cost in table `AnalysisMetrics`. Verification scripts (`verify-fix.js`, `analyze-run.js`) lived in the session scratchpad and a"
     }

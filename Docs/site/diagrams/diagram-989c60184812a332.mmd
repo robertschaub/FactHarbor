@@ -1,0 +1,79 @@
+flowchart TD
+    subgraph Extract["EXTRACT CLAIMS (Stage 1)"]
+        ICR["InputClassificationResult<br/>isComparative, isCompound<br/>claimType, complexity"]
+        G1M["Gate 1 Validation<br/>claims filtered, fidelity check"]
+    end
+
+    subgraph Research["RESEARCH (Stage 2)"]
+        RS["CBResearchState<br/>(main mutable container)<br/>understanding, evidenceItems<br/>sources, searchQueries, llmCalls<br/>mainIterationsUsed<br/>contradictionIterations<br/>queryBudgetUsageByClaim<br/>warnings"]
+        RD["ResearchDecision<br/>complete, focus, queries"]
+        EQR["EvidenceQualityResult<br/>qualityAssessment, issues<br/>reasoning (per evidence)"]
+        PV["ProvenanceValidation<br/>URL validation, excerpt check"]
+        BT["BudgetTracker<br/>tokens, iterations<br/>llmCalls, budgetExceeded"]
+    end
+
+    subgraph Cluster["CLUSTER BOUNDARIES (Stage 3)"]
+        SCOPE_CLUSTER["Scope Clustering<br/>EvidenceScope compatibility<br/>merge vs separate decision"]
+    end
+
+    subgraph Verdict["VERDICT (Stage 4)"]
+        ADV["Advocate Verdict<br/>initial per-claim verdicts"]
+        SC["Self-Consistency Check<br/>temp=0.3, spread measurement"]
+        CHAL["ChallengeDocument<br/>challenge points per claim<br/>with ChallengeValidation"]
+        REC["Reconciliation<br/>final verdicts"]
+        VV["Verdict Validation<br/>grounding + direction checks"]
+        G4M["Gate 4 Assessment<br/>confidence distribution"]
+    end
+
+    subgraph Metrics["METRICS (Full Pipeline)"]
+        MC["MetricsCollector<br/>accumulates all telemetry"]
+        LCM["LLMCallMetric<br/>tokens, duration, success"]
+        SQM["SearchQueryMetric<br/>query, provider, duration"]
+    end
+
+    ICR -->|"data flows into"| CU["CBClaimUnderstanding<br/>(STORED in result)"]
+    G1M -->|"summary"| QG["gate1Stats<br/>(STORED in result)"]
+    EQR -->|"filters"| EI["EvidenceItems<br/>(STORED in result)"]
+    PV -->|"filters"| EI
+    SCOPE_CLUSTER -->|"creates"| CB["ClaimBoundaries<br/>(STORED in result)"]
+    ADV -->|"initial"| VERD["CBClaimVerdicts<br/>(STORED in result)"]
+    SC -->|"consistency"| VERD
+    CHAL -->|"challenges"| VERD
+    REC -->|"final"| VERD
+    VV -->|"validates"| VERD
+    G4M -->|"summary"| QG4["gate4Stats<br/>(STORED in result)"]
+    BT -->|"summary"| BS["meta.budgetStats<br/>(STORED in result)"]
+    RD -->|"discarded"| DISC["Discarded"]
+    MC -->|"sent to API"| AM["AnalysisMetrics<br/>(STORED in separate DB)"]
+    LCM --> MC
+    SQM --> MC
+    RS -->|"fields flow into"| RES["resultJson fields<br/>(STORED in result)"]
+
+    style CU fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style QG fill:#fff9c4,stroke:#f9a825,color:#000
+    style EI fill:#fff3e0,stroke:#e65100,color:#000
+    style CB fill:#e1bee7,stroke:#7b1fa2,color:#000
+    style VERD fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style QG4 fill:#fff9c4,stroke:#f9a825,color:#000
+    style BS fill:#e3f2fd,stroke:#1565c0,color:#000
+    style AM fill:#e3f2fd,stroke:#1565c0,color:#000
+    style RES fill:#c8e6c9,stroke:#2e7d32,color:#000
+    style DISC fill:#f5f5f5,stroke:#9e9e9e,color:#666
+
+    style ICR fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style G1M fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style RS fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style RD fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style EQR fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style PV fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style BT fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style SCOPE_CLUSTER fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style ADV fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style SC fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style CHAL fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style REC fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style VV fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style G4M fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style MC fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style LCM fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style SQM fill:#f5f5f5,stroke:#9e9e9e,color:#000

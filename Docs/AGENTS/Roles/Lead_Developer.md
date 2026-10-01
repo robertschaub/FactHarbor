@@ -22,10 +22,10 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, key files reference |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` | Testing requirements |
+| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
+| `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md` | Testing requirements |
 | `/Docs/STATUS/Current_Status.md` | Current state and known issues |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki` | ClaimBoundary pipeline (5-stage workflow) |
+| `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 
 ## Key Source Files
 

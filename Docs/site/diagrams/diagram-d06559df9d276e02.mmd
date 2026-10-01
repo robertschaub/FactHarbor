@@ -1,0 +1,11 @@
+graph TD
+    Evidence["Evidence Items<br/>(per source)"] --> ClaimVerdicts["AtomicClaim Verdicts<br/>(per claim — Stage 4 LLM debate:<br/>Advocate → Challenger → Reconciliation)"]
+    ClaimVerdicts --> WeightCalc["Weight Calculation<br/>━━━━━━━━━━━━━<br/>centrality: high=3.0x / med=2.0x / low=1.0x<br/>harmPotential: high=1.5x<br/>confidence: 0–1 factor<br/>triangulation + derivative adjustments<br/>contestation: established=0.5x / disputed=0.7x"]
+    WeightCalc --> OverallAnswer["Overall Answer<br/>(Stage 5: aggregateAssessment)"]
+    OverallAnswer --> ArticleVerdict["Article Verdict<br/>(verdict label + narrative)"]
+
+    style Evidence fill:#e8f5e9,color:#000
+    style ClaimVerdicts fill:#c8e6c9,color:#000
+    style WeightCalc fill:#e3f2fd,color:#000
+    style OverallAnswer fill:#fff3e0,color:#000
+    style ArticleVerdict fill:#f3e5f5,color:#000

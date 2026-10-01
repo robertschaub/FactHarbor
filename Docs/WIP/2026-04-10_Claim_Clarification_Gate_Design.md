@@ -470,7 +470,7 @@ Feature flag can be flipped OFF without code rollback — the gate decision shor
 - `apps/api/Services/JobService.cs` (accept `AWAITING_CLARIFICATION` in status machine)
 - `apps/api/Data/FhDbContext.cs` (new column)
 - `apps/api/Services/RunnerClient.cs` (forward clarification resume call)
-- `Docs/xwiki-pages/.../AKEL Pipeline/WebHome.xwiki` (document new gate in Stage 1→2 handoff)
+- `Docs/site/akel-pipeline.md` (document new gate in Stage 1→2 handoff)
 
 ## 17. Compliance checklist
 

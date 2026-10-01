@@ -29,7 +29,6 @@ What should **not** be treated as latest-state blockers anymore:
 - missing quote persistence
 - stale-summary risk in the exact pre-`61815f41` form described here
 
-Detailed pre-hardening analysis for those now-fixed blockers was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`.
 
 ## Scope
 
@@ -40,7 +39,7 @@ Reviewed:
 - `apps/web/src/lib/analyzer/types.ts`
 - `apps/web/src/lib/config-schemas.ts`
 - `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md`
-- `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
+- 2026-04-14 Phase7 Status and E2 Measurement Plan
 - `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md`
 
 Reviewer debate participants:
@@ -134,7 +133,6 @@ Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/
 
 ### 3. Proven: post-repair contract observability can go stale
 
-Detailed pre-`61815f41` stale-summary analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 4. Proven: the prompt contract and the runtime contract are not perfectly aligned
 
@@ -161,11 +159,9 @@ Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/
 
 ### 6. Proven: traceability is lost between validator output and persisted summary
 
-Detailed pre-fix `preservedByQuotes` analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 7. Proven: part of the extraction architecture is still hidden in inline prompt text
 
-Detailed inline-prompt governance analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 8. Hypothesis: Shape B is still plausible, but the evidence threshold should be stricter than “E2 found anchors”
 
@@ -202,7 +198,6 @@ Without that split, Phase 7 will keep mixing:
 
 ### What should be fixed before using E2 as architecture-moving evidence
 
-Now-fixed stale-summary / quote-persistence / repair-prompt-governance items were moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`.
 
 Still-live forward-looking item:
 

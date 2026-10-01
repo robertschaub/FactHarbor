@@ -1,0 +1,36 @@
+erDiagram
+    JOB ||--o{ JOB_EVENT : "emits"
+    JOB ||--o| ANALYSIS_RESULT : "produces"
+
+    JOB {
+        string JobId PK "GUID"
+        string Status "QUEUED RUNNING SUCCEEDED FAILED PAUSED"
+        int Progress "0-100"
+        string InputType "text or url"
+        string InputValue "The submitted content"
+        string InputPreview "First N chars for display"
+        string PipelineVariant "claimboundary or monolithic_dynamic"
+        string PromptContentHash "SHA-256 of prompt used"
+        string ResultJson "Analysis result JSON blob"
+        string ReportMarkdown "Generated report"
+        datetime CreatedUtc "When submitted"
+        datetime UpdatedUtc "Last status change"
+        datetime PromptLoadedUtc "When prompt was loaded"
+    }
+
+    JOB_EVENT {
+        long Id PK "Auto-increment"
+        string JobId FK "Parent job"
+        string Level "info, warn, error"
+        string Message "Event description"
+        datetime TsUtc "Event timestamp"
+    }
+
+    ANALYSIS_RESULT {
+        string schemaVersion "2.7.0"
+        json meta "Providers, timing, gate stats"
+        string articleVerdict "7-point verdict"
+        int articleTruthPercentage "0-100"
+        json claimPattern "supported/uncertain/refuted counts"
+        int llmCalls "Total LLM invocations"
+    }

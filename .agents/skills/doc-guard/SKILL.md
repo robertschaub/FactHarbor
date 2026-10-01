@@ -1,6 +1,6 @@
 ---
 name: doc-guard
-description: Keep repository documentation lean, clear, and readable. Use automatically before adding a new document, substantially expanding or rewriting Markdown/xWiki content, adding explanatory/background sections, adding FAQs/glossaries/templates, introducing repeated framing, or reviewing a documentation diff for clutter, filler, duplication, over-broad prose, stale links, or readability problems.
+description: Keep repository documentation lean, clear, and readable. Use automatically before adding a new document, substantially expanding or rewriting Markdown content, adding explanatory/background sections, adding FAQs/glossaries/templates, introducing repeated framing, or reviewing a documentation diff for clutter, filler, duplication, over-broad prose, stale links, or readability problems.
 ---
 
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.

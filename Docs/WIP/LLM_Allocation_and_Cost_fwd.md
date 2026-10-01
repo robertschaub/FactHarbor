@@ -2,7 +2,6 @@
 
 **Created:** 2026-03-17  
 **Status:** Active — residual future cost/allocation ideas only  
-**Historical detail:** [LLM_Allocation_and_Cost_fwd_arch.md](../ARCHIVE/LLM_Allocation_and_Cost_fwd_arch.md)
 
 ---
 

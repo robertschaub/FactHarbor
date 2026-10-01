@@ -9,7 +9,7 @@
 
 ## 0. Reconciliation with the internal Finance analysis (read first)
 
-A prior, rigorous analysis already exists in `C:\DEV\FactHarbor-internal\Operations\Finance\` (May 2026). This proposal is reconciled against it — it does **not** supersede it. Key files: `API Costs/API_Cost_Analysis_2026-05-08.md`, `Finanzierung/AI_And_Search_Provider_Nonprofit_Programs.md`, `Finanzierung/FactHarbor_AI_Kostenbloecke_ZHAW_Beschaffungswege_2026-05-09.md`.
+Prior May 2026 cost analyses inform this proposal; it does not supersede approved financial records. Verify historical cost figures against current billing and provider terms before acting on them.
 
 **This investigation CONFIRMS:**
 - **API bill = 100% pipeline, ~0% coding.** Their cost-by-key analysis shows both API keys are pipeline keys; Opus was Feb experimentation only ("not routed anywhere in production"). My OAuth proof (§2) adds the mechanism: coding runs on the Team subscription. Two independent angles, same conclusion.

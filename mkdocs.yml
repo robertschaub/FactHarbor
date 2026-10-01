@@ -1,0 +1,1597 @@
+{
+  "site_name": "FactHarbor",
+  "site_description": "Evidence and reasoning you can inspect",
+  "site_url": "https://robertschaub.github.io/FactHarbor/",
+  "docs_dir": "Docs/site",
+  "site_dir": "site",
+  "use_directory_urls": false,
+  "strict": true,
+  "theme": {
+    "name": "material",
+    "font": false,
+    "palette": {
+      "primary": "teal",
+      "accent": "teal"
+    },
+    "features": [
+      "navigation.top"
+    ],
+    "custom_dir": "scripts/docs/overrides"
+  },
+  "plugins": [
+    "search"
+  ],
+  "markdown_extensions": [
+    "tables",
+    "sane_lists",
+    "pymdownx.superfences",
+    "pymdownx.tilde",
+    "toc"
+  ],
+  "hooks": [
+    "scripts/docs/site_hooks.py"
+  ],
+  "extra_css": [
+    "assets/reader.css"
+  ],
+  "extra_javascript": [
+    "assets/diagrams.js",
+    "assets/legacy-navigation.js"
+  ],
+  "extra": {
+    "generator": false
+  },
+  "copyright": "FactHarbor · Documentation: CC BY-SA 4.0",
+  "nav": [
+    {
+      "About FactHarbor": [
+        {
+          "Overview": "about-factharbor/index.md"
+        }
+      ]
+    },
+    {
+      "Organisation": [
+        {
+          "Governance": [
+            {
+              "Organisational Model": [
+                {
+                  "Overview": "organisation/governance/organisational-model/index.md"
+                }
+              ]
+            },
+            {
+              "Roles and Bodies": [
+                {
+                  "Overview": "organisation/governance/roles-and-bodies/index.md"
+                }
+              ]
+            },
+            {
+              "Decision Processes": [
+                {
+                  "Overview": "organisation/governance/decision-processes/index.md"
+                }
+              ]
+            },
+            {
+              "Transition Model": [
+                {
+                  "Overview": "organisation/governance/transition-model/index.md"
+                }
+              ]
+            },
+            {
+              "Operational Readiness": [
+                {
+                  "Overview": "organisation/governance/operational-readiness/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "organisation/governance/index.md"
+            }
+          ]
+        },
+        {
+          "How-We-Work-Together": [
+            {
+              "GlobalRules": [
+                {
+                  "Overview": "organisation/how-we-work-together/globalrules/index.md"
+                }
+              ]
+            },
+            {
+              "Contributor Processes": [
+                {
+                  "Overview": "organisation/how-we-work-together/contributor-processes/index.md"
+                }
+              ]
+            },
+            {
+              "Workplace-Culture": "organisation/how-we-work-together/workplace-culture.md"
+            },
+            {
+              "Continuous-Improvement": "organisation/how-we-work-together/continuous-improvement.md"
+            },
+            {
+              "Consent-Based-Decision-Making": "organisation/how-we-work-together/consent-based-decision-making.md"
+            },
+            {
+              "Overview": "organisation/how-we-work-together/index.md"
+            }
+          ]
+        },
+        {
+          "Legal and Compliance": [
+            {
+              "Legal Framework": [
+                {
+                  "Overview": "legal-framework.md"
+                }
+              ]
+            },
+            {
+              "Open Source Model and Licensing": [
+                {
+                  "Overview": "organisation/legal-and-compliance/open-source-model-and-licensing/index.md"
+                }
+              ]
+            },
+            {
+              "CLA": [
+                {
+                  "Overview": "organisation/legal-and-compliance/cla/index.md"
+                }
+              ]
+            },
+            {
+              "Finance and Compliance": [
+                {
+                  "Overview": "organisation/legal-and-compliance/finance-and-compliance/index.md"
+                }
+              ]
+            },
+            {
+              "Large Donations Policy": [
+                {
+                  "Overview": "organisation/legal-and-compliance/large-donations-policy/index.md"
+                }
+              ]
+            },
+            {
+              "Reimbursable Expenses": [
+                {
+                  "Overview": "organisation/legal-and-compliance/reimbursable-expenses/index.md"
+                }
+              ]
+            },
+            {
+              "Privacy-Policy": "privacy-policy.md"
+            },
+            {
+              "Terms-of-Service": "terms-of-service.md"
+            },
+            {
+              "Security-Policy": "organisation/legal-and-compliance/security-policy.md"
+            },
+            {
+              "Transparency-Policy": "organisation/legal-and-compliance/transparency-policy.md"
+            },
+            {
+              "Overview": "organisation/legal-and-compliance/index.md"
+            }
+          ]
+        },
+        {
+          "Strategy": [
+            {
+              "Core Problems FactHarbor Solves": [
+                {
+                  "Overview": "organisation/strategy/core-problems-factharbor-solves/index.md"
+                }
+              ]
+            },
+            {
+              "Automation Philosophy": [
+                {
+                  "Overview": "organisation/strategy/automation-philosophy/index.md"
+                }
+              ]
+            },
+            {
+              "Competitive Analysis": [
+                {
+                  "Overview": "organisation/strategy/competitive-analysis/index.md"
+                }
+              ]
+            },
+            {
+              "Ideal Customer Profile": [
+                {
+                  "Overview": "organisation/strategy/ideal-customer-profile/index.md"
+                }
+              ]
+            },
+            {
+              "Cooperation Opportunities": [
+                {
+                  "Overview": "organisation/strategy/cooperation-opportunities/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "organisation/strategy/index.md"
+            }
+          ]
+        },
+        {
+          "Diagrams": [
+            {
+              "Domain Interaction Map": [
+                {
+                  "Overview": "organisation/diagrams/domain-interaction-map/index.md"
+                }
+              ]
+            },
+            {
+              "Governance Structure": [
+                {
+                  "Overview": "organisation/diagrams/governance-structure/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "organisation/diagrams/index.md"
+            }
+          ]
+        },
+        {
+          "Partner & User Relations": [
+            {
+              "Presentations": [
+                {
+                  "Fact-Checker Cooperation": [
+                    {
+                      "Fact-Checker Doc": [
+                        {
+                          "Demo Script for Fact-Checkers": [
+                            {
+                              "Overview": "organisation/partner-user-relations/presentations/fact-checker-cooperation/fact-checker-doc/demo-script-for-fact-checkers/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Glossary": [
+                            {
+                              "Overview": "organisation/partner-user-relations/presentations/fact-checker-cooperation/fact-checker-doc/glossary/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Overview": "organisation/partner-user-relations/presentations/fact-checker-cooperation/fact-checker-doc/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "fact-checker-cooperation.md"
+                    }
+                  ]
+                },
+                {
+                  "Funding": [
+                    {
+                      "Overview": "funding.md"
+                    }
+                  ]
+                },
+                {
+                  "LinkedIn April 2026": [
+                    {
+                      "Overview": "linkedin.md"
+                    }
+                  ]
+                },
+                {
+                  "LinkedIn April 2026 DE": [
+                    {
+                      "Overview": "linkedin-de.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "organisation/partner-user-relations/presentations/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "organisation/partner-user-relations/index.md"
+            }
+          ]
+        },
+        {
+          "Overview": "organisation/index.md"
+        }
+      ]
+    },
+    {
+      "Product Development": [
+        {
+          "Requirements": [
+            {
+              "Roles": [
+                {
+                  "Overview": "product-development/requirements/roles/index.md"
+                }
+              ]
+            },
+            {
+              "User Needs": [
+                {
+                  "Overview": "product-development/requirements/user-needs/index.md"
+                }
+              ]
+            },
+            {
+              "Functional-Requirements": "product-development/requirements/functional-requirements.md"
+            },
+            {
+              "GapAnalysis": "product-development/requirements/gapanalysis.md"
+            },
+            {
+              "Non-Functional-Requirements": "product-development/requirements/non-functional-requirements.md"
+            },
+            {
+              "Quality-Standards": "product-development/requirements/quality-standards.md"
+            },
+            {
+              "Overview": "product-development/requirements/index.md"
+            }
+          ]
+        },
+        {
+          "Specification": [
+            {
+              "Data Model": [
+                {
+                  "Overview": "product-development/specification/data-model/index.md"
+                }
+              ]
+            },
+            {
+              "Workflows": [
+                {
+                  "Overview": "product-development/specification/workflows/index.md"
+                }
+              ]
+            },
+            {
+              "Automation": [
+                {
+                  "Overview": "product-development/specification/automation/index.md"
+                }
+              ]
+            },
+            {
+              "Architecture": [
+                {
+                  "AKEL Pipeline": [
+                    {
+                      "Overview": "akel-pipeline.md"
+                    }
+                  ]
+                },
+                {
+                  "AKEL Pipeline Detail": [
+                    {
+                      "Overview": "akel-stage-details.md"
+                    }
+                  ]
+                },
+                {
+                  "Data Model": [
+                    {
+                      "Overview": "product-development/specification/architecture/data-model/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Deep Dive": [
+                    {
+                      "Calculations and Verdicts": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/calculations-and-verdicts/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Confidence Calibration": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/confidence-calibration/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Context Detection": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/context-detection/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Direction Semantics": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/direction-semantics/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Evidence Quality Filtering": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/evidence-quality-filtering/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Pipeline Variants": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/pipeline-variants/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Prompt Architecture": [
+                        {
+                          "Overview": "prompt-architecture.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Quality Gates": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/quality-gates/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Schema Migration": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/schema-migration/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Source Reliability": [
+                        {
+                          "Admin and Implementation": [
+                            {
+                              "Overview": "product-development/specification/architecture/deep-dive/source-reliability/admin-and-implementation/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Architecture and Verdicts": [
+                            {
+                              "Overview": "product-development/specification/architecture/deep-dive/source-reliability/architecture-and-verdicts/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Configuration and Scoring": [
+                            {
+                              "Overview": "product-development/specification/architecture/deep-dive/source-reliability/configuration-and-scoring/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Overview and Quick Start": [
+                            {
+                              "Overview": "product-development/specification/architecture/deep-dive/source-reliability/overview-and-quick-start/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Refinement and Multi-Language": [
+                            {
+                              "Overview": "product-development/specification/architecture/deep-dive/source-reliability/refinement-and-multi-language/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/source-reliability/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Storage Technology": [
+                        {
+                          "Overview": "product-development/specification/architecture/deep-dive/storage-technology/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Verdict Debate Pattern": [
+                        {
+                          "Overview": "verdict-debate.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/architecture/deep-dive/index.md"
+                    }
+                  ]
+                },
+                {
+                  "External Dependencies": [
+                    {
+                      "Overview": "product-development/specification/architecture/external-dependencies/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Future": [
+                    {
+                      "Overview": "product-development/specification/architecture/future/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Quality and Trust": [
+                    {
+                      "Overview": "product-development/specification/architecture/quality-and-trust/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Security and Operations": [
+                    {
+                      "Overview": "product-development/specification/architecture/security-and-operations/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Storage and Configuration": [
+                    {
+                      "Overview": "product-development/specification/architecture/storage-and-configuration/index.md"
+                    }
+                  ]
+                },
+                {
+                  "System Design": [
+                    {
+                      "Overview": "product-development/specification/architecture/system-design/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/specification/architecture/index.md"
+                }
+              ]
+            },
+            {
+              "Reference": [
+                {
+                  "Terminology": [
+                    {
+                      "Overview": "product-development/specification/reference/terminology/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Data Models and Schemas": [
+                    {
+                      "LLM Schema Mapping": [
+                        {
+                          "Overview": "product-development/specification/reference/data-models-and-schemas/llm-schema-mapping/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Metrics Schema": [
+                        {
+                          "Overview": "product-development/specification/reference/data-models-and-schemas/metrics-schema/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/reference/data-models-and-schemas/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Prompt Engineering": [
+                    {
+                      "Prompt Guidelines": [
+                        {
+                          "Overview": "product-development/specification/reference/prompt-engineering/prompt-guidelines/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Provider-Specific Formatting": [
+                        {
+                          "Overview": "product-development/specification/reference/prompt-engineering/provider-specific-formatting/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/reference/prompt-engineering/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/specification/reference/index.md"
+                }
+              ]
+            },
+            {
+              "FAQ": [
+                {
+                  "Overview": "product-development/specification/faq/index.md"
+                }
+              ]
+            },
+            {
+              "Review & Data Use": [
+                {
+                  "Overview": "product-development/specification/review-data-use/index.md"
+                }
+              ]
+            },
+            {
+              "Federation & Decentralization": [
+                {
+                  "Overview": "product-development/specification/federation-decentralization/index.md"
+                }
+              ]
+            },
+            {
+              "FH Analysis Reports": [
+                {
+                  "FactHarbor_Analyse_Chemtrails_Verschwoerungstheorie_DE_Claude": [
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/factharbor-analyse-chemtrails-verschwoerungstheorie-de-claude/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FactHarbor_Analyse_Schweiz_Gerontokratie_DE_Claude": [
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/factharbor-analyse-schweiz-gerontokratie-de-claude/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FactHarbor_Analysis_Bolsonaro_Trial_Fairness": [
+                    {
+                      "Analysis Summary": [
+                        {
+                          "Overview": "product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/analysis-summary/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FHA - AHA Alcohol CVD Statement": [
+                    {
+                      "Analysis Summary": [
+                        {
+                          "Overview": "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/analysis-summary/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Claim Summary": [
+                        {
+                          "Overview": "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/claim-summary/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FHA - CitizenGO UN Doha Petition": [
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/fha-citizengo-un-doha-petition/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FHA - F-35 Remote Control and 'Kill Switch' Claims": [
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/fha-f-35-remote-control-and-kill-switch-claims/index.md"
+                    }
+                  ]
+                },
+                {
+                  "FHA Claude - Hagebuttenpulver Arthrose DE": [
+                    {
+                      "Overview": "product-development/specification/fh-analysis-reports/fha-claude-hagebuttenpulver-arthrose-de/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/specification/fh-analysis-reports/index.md"
+                }
+              ]
+            },
+            {
+              "POC": [
+                {
+                  "API-and-Schemas": [
+                    {
+                      "Codegen Contract": [
+                        {
+                          "Overview": "product-development/specification/poc/api-and-schemas/codegen-contract/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Data Schemas and Cache": [
+                        {
+                          "Overview": "product-development/specification/poc/api-and-schemas/data-schemas-and-cache/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "LLM Abstraction Layer": [
+                        {
+                          "Overview": "product-development/specification/poc/api-and-schemas/llm-abstraction-layer/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Pipeline Architecture": [
+                        {
+                          "Overview": "product-development/specification/poc/api-and-schemas/pipeline-architecture/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "REST API Contract": [
+                        {
+                          "Overview": "product-development/specification/poc/api-and-schemas/rest-api-contract/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/specification/poc/api-and-schemas/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Article-Verdict-Problem": "product-development/specification/poc/article-verdict-problem.md"
+                },
+                {
+                  "Requirements": "product-development/specification/poc/requirements.md"
+                },
+                {
+                  "Specification": "product-development/specification/poc/specification.md"
+                },
+                {
+                  "Summary": "product-development/specification/poc/summary.md"
+                },
+                {
+                  "Overview": "product-development/specification/poc/index.md"
+                }
+              ]
+            },
+            {
+              "Data Model Examples": [
+                {
+                  "Overview": "product-development/specification/data-model-examples/index.md"
+                }
+              ]
+            },
+            {
+              "Design-Decisions": "product-development/specification/design-decisions.md"
+            },
+            {
+              "System-Performance-Metrics": "product-development/specification/system-performance-metrics.md"
+            },
+            {
+              "Overview": "product-development/specification/index.md"
+            }
+          ]
+        },
+        {
+          "Diagrams": [
+            {
+              "System Architecture": [
+                {
+                  "Overview": "product-development/diagrams/system-architecture/index.md"
+                }
+              ]
+            },
+            {
+              "System Context": [
+                {
+                  "Overview": "product-development/diagrams/system-context/index.md"
+                }
+              ]
+            },
+            {
+              "Request Lifecycle": [
+                {
+                  "Overview": "product-development/diagrams/request-lifecycle/index.md"
+                }
+              ]
+            },
+            {
+              "Technology Stack": [
+                {
+                  "Overview": "product-development/diagrams/technology-stack/index.md"
+                }
+              ]
+            },
+            {
+              "External Dependencies Map": [
+                {
+                  "Overview": "product-development/diagrams/external-dependencies-map/index.md"
+                }
+              ]
+            },
+            {
+              "LLM Model Tiering": [
+                {
+                  "Overview": "product-development/diagrams/llm-model-tiering/index.md"
+                }
+              ]
+            },
+            {
+              "LLM Abstraction Architecture": [
+                {
+                  "Overview": "product-development/diagrams/llm-abstraction-architecture/index.md"
+                }
+              ]
+            },
+            {
+              "Storage Architecture": [
+                {
+                  "Overview": "product-development/diagrams/storage-architecture/index.md"
+                }
+              ]
+            },
+            {
+              "Storage Roadmap": [
+                {
+                  "Overview": "product-development/diagrams/storage-roadmap/index.md"
+                }
+              ]
+            },
+            {
+              "Deployment Topology": [
+                {
+                  "Overview": "product-development/diagrams/deployment-topology/index.md"
+                }
+              ]
+            },
+            {
+              "Security Model": [
+                {
+                  "Overview": "product-development/diagrams/security-model/index.md"
+                }
+              ]
+            },
+            {
+              "Circuit Breaker States": [
+                {
+                  "Overview": "product-development/diagrams/circuit-breaker-states/index.md"
+                }
+              ]
+            },
+            {
+              "Federation Architecture": [
+                {
+                  "Overview": "product-development/diagrams/federation-architecture/index.md"
+                }
+              ]
+            },
+            {
+              "AKEL Engine Overview": [
+                {
+                  "Overview": "product-development/diagrams/akel-engine-overview/index.md"
+                }
+              ]
+            },
+            {
+              "AKEL Analysis Pipeline": [
+                {
+                  "Overview": "product-development/diagrams/akel-analysis-pipeline/index.md"
+                }
+              ]
+            },
+            {
+              "AKEL Pipeline Detail": [
+                {
+                  "Overview": "akel-diagram.md"
+                }
+              ]
+            },
+            {
+              "AKEL Shared Modules": [
+                {
+                  "Overview": "shared-modules.md"
+                }
+              ]
+            },
+            {
+              "AKEL Quality Assurance": [
+                {
+                  "Overview": "product-development/diagrams/akel-quality-assurance/index.md"
+                }
+              ]
+            },
+            {
+              "Analysis Entity Model ERD": [
+                {
+                  "Overview": "product-development/diagrams/analysis-entity-model-erd/index.md"
+                }
+              ]
+            },
+            {
+              "Core Data Model ERD": [
+                {
+                  "Overview": "product-development/diagrams/core-data-model-erd/index.md"
+                }
+              ]
+            },
+            {
+              "Entity Views": [
+                {
+                  "Overview": "product-development/diagrams/entity-views/index.md"
+                }
+              ]
+            },
+            {
+              "Job Lifecycle ERD": [
+                {
+                  "Overview": "product-development/diagrams/job-lifecycle-erd/index.md"
+                }
+              ]
+            },
+            {
+              "Verdict Scale": [
+                {
+                  "Overview": "product-development/diagrams/verdict-scale/index.md"
+                }
+              ]
+            },
+            {
+              "Audit Trail ERD": [
+                {
+                  "Overview": "product-development/diagrams/audit-trail-erd/index.md"
+                }
+              ]
+            },
+            {
+              "UCM Config Precedence": [
+                {
+                  "Overview": "product-development/diagrams/ucm-config-precedence/index.md"
+                }
+              ]
+            },
+            {
+              "UCM Config Architecture": [
+                {
+                  "Overview": "product-development/diagrams/ucm-config-architecture/index.md"
+                }
+              ]
+            },
+            {
+              "Monolithic Dynamic Pipeline Internal": [
+                {
+                  "Overview": "product-development/diagrams/monolithic-dynamic-pipeline-internal/index.md"
+                }
+              ]
+            },
+            {
+              "Pipeline Shared Primitives": [
+                {
+                  "Overview": "product-development/diagrams/pipeline-shared-primitives/index.md"
+                }
+              ]
+            },
+            {
+              "Pipeline Variant Dispatch": [
+                {
+                  "Overview": "product-development/diagrams/pipeline-variant-dispatch/index.md"
+                }
+              ]
+            },
+            {
+              "Evidence and Verdict Workflow": [
+                {
+                  "Overview": "product-development/diagrams/evidence-and-verdict-workflow/index.md"
+                }
+              ]
+            },
+            {
+              "Quality and Audit Workflow": [
+                {
+                  "Overview": "product-development/diagrams/quality-and-audit-workflow/index.md"
+                }
+              ]
+            },
+            {
+              "Quality Gates Flow": [
+                {
+                  "Overview": "product-development/diagrams/quality-gates-flow/index.md"
+                }
+              ]
+            },
+            {
+              "Quality Gates Integration": [
+                {
+                  "Overview": "product-development/diagrams/quality-gates-integration/index.md"
+                }
+              ]
+            },
+            {
+              "Evidence Defence in Depth": [
+                {
+                  "Overview": "product-development/diagrams/evidence-defence-in-depth/index.md"
+                }
+              ]
+            },
+            {
+              "Evidence Quality Filtering Pipeline": [
+                {
+                  "Overview": "product-development/diagrams/evidence-quality-filtering-pipeline/index.md"
+                }
+              ]
+            },
+            {
+              "Context Detection Phases": [
+                {
+                  "Overview": "product-development/diagrams/context-detection-phases/index.md"
+                }
+              ]
+            },
+            {
+              "Context Detection Decision Tree": [
+                {
+                  "Overview": "product-development/diagrams/context-detection-decision-tree/index.md"
+                }
+              ]
+            },
+            {
+              "Doubted vs Contested Flow": [
+                {
+                  "Overview": "product-development/diagrams/doubted-vs-contested-flow/index.md"
+                }
+              ]
+            },
+            {
+              "Source Reliability Overview": [
+                {
+                  "Overview": "product-development/diagrams/source-reliability-overview/index.md"
+                }
+              ]
+            },
+            {
+              "Source Reliability Flow": [
+                {
+                  "Overview": "product-development/diagrams/source-reliability-flow/index.md"
+                }
+              ]
+            },
+            {
+              "Source Reliability Prefetch Flow": [
+                {
+                  "Overview": "product-development/diagrams/source-reliability-prefetch-flow/index.md"
+                }
+              ]
+            },
+            {
+              "Human User Roles": [
+                {
+                  "Overview": "product-development/diagrams/human-user-roles/index.md"
+                }
+              ]
+            },
+            {
+              "Technical and System Users": [
+                {
+                  "Overview": "product-development/diagrams/technical-and-system-users/index.md"
+                }
+              ]
+            },
+            {
+              "User Class Diagram": [
+                {
+                  "Overview": "product-development/diagrams/user-class-diagram/index.md"
+                }
+              ]
+            },
+            {
+              "Role-Based Access Control": [
+                {
+                  "Overview": "product-development/diagrams/role-based-access-control/index.md"
+                }
+              ]
+            },
+            {
+              "Development Roadmap": [
+                {
+                  "Overview": "product-development/diagrams/development-roadmap/index.md"
+                }
+              ]
+            },
+            {
+              "Architecture Roadmap": [
+                {
+                  "Overview": "product-development/diagrams/architecture-roadmap/index.md"
+                }
+              ]
+            },
+            {
+              "Promptfoo Test Coverage": [
+                {
+                  "Overview": "product-development/diagrams/promptfoo-test-coverage/index.md"
+                }
+              ]
+            },
+            {
+              "Automation Level": [
+                {
+                  "Overview": "product-development/diagrams/automation-level/index.md"
+                }
+              ]
+            },
+            {
+              "Automation Roadmap": [
+                {
+                  "Overview": "product-development/diagrams/automation-roadmap/index.md"
+                }
+              ]
+            },
+            {
+              "Manual vs Automated matrix": [
+                {
+                  "Overview": "product-development/diagrams/manual-vs-automated-matrix/index.md"
+                }
+              ]
+            },
+            {
+              "Outdated": [
+                {
+                  "Overview": "product-development/diagrams/outdated/index.md"
+                }
+              ]
+            },
+            {
+              "ClaimAssessmentBoundary Pipeline Detail": [
+                {
+                  "Overview": "cb-pipeline.md"
+                }
+              ]
+            },
+            {
+              "Analysis Pipeline Overview": "product-development/diagrams/analysis-pipeline-overview.md"
+            },
+            {
+              "Overview": "product-development/diagrams/index.md"
+            }
+          ]
+        },
+        {
+          "Planning": [
+            {
+              "Project Status": [
+                {
+                  "Overview": "product-development/planning/project-status/index.md"
+                }
+              ]
+            },
+            {
+              "POC1": [
+                {
+                  "Overview": "product-development/planning/poc1/index.md"
+                }
+              ]
+            },
+            {
+              "POC2": [
+                {
+                  "Overview": "product-development/planning/poc2/index.md"
+                }
+              ]
+            },
+            {
+              "Beta0": [
+                {
+                  "Overview": "product-development/planning/beta0/index.md"
+                }
+              ]
+            },
+            {
+              "V10": [
+                {
+                  "Overview": "product-development/planning/v10/index.md"
+                }
+              ]
+            },
+            {
+              "Alpha Roadmap": [
+                {
+                  "Overview": "product-development/planning/alpha-roadmap/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "product-development/planning/index.md"
+            }
+          ]
+        },
+        {
+          "Presentations": [
+            {
+              "Academic Cooperation": [
+                {
+                  "Overview": "academic-cooperation.md"
+                }
+              ]
+            },
+            {
+              "Overview": "product-development/presentations/index.md"
+            }
+          ]
+        },
+        {
+          "DevOps": [
+            {
+              "Guidelines": [
+                {
+                  "Getting Started": [
+                    {
+                      "Overview": "product-development/devops/guidelines/getting-started/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Coding Guidelines": [
+                    {
+                      "Overview": "product-development/devops/guidelines/coding-guidelines/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Scope Definition Guidelines": [
+                    {
+                      "Overview": "product-development/devops/guidelines/scope-definition-guidelines/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Testing Strategy": [
+                    {
+                      "Overview": "product-development/devops/guidelines/testing-strategy/index.md"
+                    }
+                  ]
+                },
+                {
+                  "When to Add Complexity": [
+                    {
+                      "Overview": "product-development/devops/guidelines/when-to-add-complexity/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/devops/guidelines/index.md"
+                }
+              ]
+            },
+            {
+              "Tooling": [
+                {
+                  "1st Run Checklist": [
+                    {
+                      "Overview": "product-development/devops/tooling/1st-run-checklist/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Installation Checklist": [
+                    {
+                      "Overview": "product-development/devops/tooling/installation-checklist/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Tools Decisions": [
+                    {
+                      "Overview": "product-development/devops/tooling/tools-decisions/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Documentation Viewer": [
+                    {
+                      "Overview": "product-development/devops/tooling/documentation-viewer/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Promptfoo Testing": [
+                    {
+                      "Overview": "product-development/devops/tooling/promptfoo-testing/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Source Reliability Bundle": [
+                    {
+                      "Overview": "product-development/devops/tooling/source-reliability-bundle/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/devops/tooling/index.md"
+                }
+              ]
+            },
+            {
+              "Deployment": [
+                {
+                  "Zero-Cost Hosting Implementation Guide": [
+                    {
+                      "Overview": "product-development/devops/deployment/zero-cost-hosting-implementation-guide/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/devops/deployment/index.md"
+                }
+              ]
+            },
+            {
+              "Subsystems and Components": [
+                {
+                  "Admin Interface": [
+                    {
+                      "Overview": "product-development/devops/subsystems-and-components/admin-interface/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Unified Config Management": [
+                    {
+                      "Overview": "product-development/devops/subsystems-and-components/unified-config-management/index.md"
+                    }
+                  ]
+                },
+                {
+                  "LLM Configuration": [
+                    {
+                      "Debate Role Configuration": [
+                        {
+                          "Overview": "product-development/devops/subsystems-and-components/llm-configuration/debate-role-configuration/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Overview": "product-development/devops/subsystems-and-components/llm-configuration/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Source Reliability Export": [
+                    {
+                      "Overview": "product-development/devops/subsystems-and-components/source-reliability-export/index.md"
+                    }
+                  ]
+                },
+                {
+                  "Overview": "product-development/devops/subsystems-and-components/index.md"
+                }
+              ]
+            },
+            {
+              "Overview": "product-development/devops/index.md"
+            }
+          ]
+        },
+        {
+          "Media Source Database": [
+            {
+              "Overview": "product-development/media-source-database/index.md"
+            }
+          ]
+        },
+        {
+          "Pipeline V2": [
+            {
+              "Diagrams": [
+                {
+                  "V2 Analysis Session UX": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-analysis-session-ux/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Entity Model ERD": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-entity-model-erd/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Pipeline Detail": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-pipeline-detail/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Pipeline Overview": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-pipeline-overview/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Prompt Architecture": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-prompt-architecture/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Quality Gates Flow": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-quality-gates-flow/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Report Regression Control": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-report-regression-control/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Request Lifecycle": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-request-lifecycle/index.md"
+                    }
+                  ]
+                },
+                {
+                  "V2 Verdict Debate Pattern": [
+                    {
+                      "Overview": "product-development/pipeline-v2/diagrams/v2-verdict-debate-pattern/index.md"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Specification": [
+                {
+                  "Architecture": [
+                    {
+                      "AKEL Pipeline Detail V2": [
+                        {
+                          "Overview": "product-development/pipeline-v2/specification/architecture/akel-pipeline-detail-v2/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "AKEL Pipeline V2": [
+                        {
+                          "Overview": "product-development/pipeline-v2/specification/architecture/akel-pipeline-v2/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Data Model V2": [
+                        {
+                          "Overview": "product-development/pipeline-v2/specification/architecture/data-model-v2/index.md"
+                        }
+                      ]
+                    },
+                    {
+                      "Deep Dive": [
+                        {
+                          "Calculations and Verdicts V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/calculations-and-verdicts-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Evidence Lifecycle V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/evidence-lifecycle-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Pipeline Variants V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/pipeline-variants-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Prompt Architecture V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/prompt-architecture-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Quality Gates V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/quality-gates-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Source Reliability V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/source-reliability-v2/index.md"
+                            }
+                          ]
+                        },
+                        {
+                          "Verdict Debate Pattern V2": [
+                            {
+                              "Overview": "product-development/pipeline-v2/specification/architecture/deep-dive/verdict-debate-pattern-v2/index.md"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Quality and Trust V2": [
+                        {
+                          "Overview": "product-development/pipeline-v2/specification/architecture/quality-and-trust-v2/index.md"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Overview": "product-development/pipeline-v2/index.md"
+            }
+          ]
+        },
+        {
+          "TestReports": [
+            {
+              "Overview": "test-reports.md"
+            }
+          ]
+        },
+        {
+          "Overview": "product-development/index.md"
+        }
+      ]
+    },
+    {
+      "License and Disclaimer": [
+        {
+          "Overview": "license-and-disclaimer/index.md"
+        }
+      ]
+    },
+    {
+      "Home": "index.md"
+    }
+  ]
+}

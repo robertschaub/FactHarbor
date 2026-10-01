@@ -60,7 +60,7 @@ Cost accounting, funding correspondence and the organizational record live in th
 
 ## Recent Changes (2026-04-15 → 2026-08-10)
 
-Grouped by theme rather than by day. Full commit history in git; dated sections for 2026-02-13 → 2026-04-15 are in [Current_Status_arch.md](../ARCHIVE/STATUS/Current_Status_arch.md).
+Grouped by theme rather than by day. Full commit history is available in Git.
 
 ### Analysis quality — the main track
 
@@ -301,10 +301,10 @@ FH_JOB_TIMEOUT_MS=7200000     # per-job wait bound (default 2 h); a job not fini
 
 ## Getting Help
 
-- **Known issues**: [KNOWN_ISSUES.md](KNOWN_ISSUES.md) · **Backlog**: [Backlog.md](Backlog.md) · **History**: [HISTORY.md](../ARCHIVE/HISTORY.md)
+- **Known issues**: [KNOWN_ISSUES.md](KNOWN_ISSUES.md) · **Backlog**: [Backlog.md](Backlog.md) · **History**: Git commit history
 - **Active plan**: [Analysis Quality Consolidated Execution Plan](../WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md)
 - **Quality bar**: `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`
-- **Architecture**: [Multilingual_Language_Handling.md](../ARCHITECTURE/Multilingual_Language_Handling.md), [Calculations.md](../ARCHITECTURE/Calculations.md), and the xWiki System Design pages
+- **Architecture**: [Multilingual_Language_Handling.md](../ARCHITECTURE/Multilingual_Language_Handling.md), [Calculations.md](../ARCHITECTURE/Calculations.md), and the [System Design pages](../site/product-development/specification/architecture/system-design/index.md)
 - **Logs**: `apps/web/debug-analyzer.log`, API console, browser DevTools
 - **Config check**: http://localhost:3000/admin/test-config · **API**: http://localhost:5000/swagger
 
@@ -328,4 +328,4 @@ The FactHarbor Proof of Concept is complete, tagged `v1.0.0-poc`. It demonstrate
 **Last Updated**: 2026-08-10
 **Actual Version**: 2.11.0 (code) | 3.0.0-cb (schema) | `v1.0.0-poc` (tag)
 **HEAD at last update**: `89b45abd` (2026-08-09) · last code commit `5c76e0e3` (2026-07-02)
-**Document status**: Current Alpha snapshot. Dated changelog entries before 2026-04-15 are in [Current_Status_arch.md](../ARCHIVE/STATUS/Current_Status_arch.md); prioritization lives in [Backlog.md](Backlog.md).
+**Document status**: Current Alpha snapshot. Historical changes remain in Git; prioritization lives in [Backlog.md](Backlog.md).

@@ -4,7 +4,6 @@ This file is a **triage-weight index**, not a full log. Each entry is a 3-line s
 with a link to the full handoff file in `Docs/AGENTS/Handoffs/`.
 
 Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
-Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
 ### 2026-09-04 | Technical Writer | Codex (GPT-5) | Final Prototype Fund Pitch — [Standard] [open-items: yes]

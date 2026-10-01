@@ -295,7 +295,7 @@ Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vite
 | [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | §5.5 | Baseline v1 canonical record |
 | [Backlog.md](Backlog.md) | Recently Completed | C10 baseline + threshold ratification |
 | [Current_Status.md](Current_Status.md) | Recent Changes | Calibration Baseline v1 entry |
-| [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) | — | Pipeline design underlying the baseline |
+| ClaimBoundary Pipeline Architecture 2026-02-15 | — | Pipeline design underlying the baseline |
 | [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) | Top entries | Implementation handoff trail |
 
 ---

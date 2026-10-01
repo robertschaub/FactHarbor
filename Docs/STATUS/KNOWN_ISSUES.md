@@ -297,7 +297,7 @@ The old entry described reports highlighting the submitted URL string instead of
 **Status**: ✅ CLOSED as not-planned  
 **Verified**: 2026-08-10
 
-`FH_REPORT_STYLE` is not read anywhere in the codebase; `reportStyle` is hardcoded to `"standard"` at `apps/web/src/lib/analyzer/config.ts:41`. The only surviving mention of the variable outside this file is an **archived** xWiki page (`Docs/xwiki-pages-ARCHIVE/…/Specification vs. Implementation Analysis 1.Jan.26`). So it was never a live documented feature with a missing implementation — it is a stale line in a superseded spec.
+`FH_REPORT_STYLE` is not read anywhere in the codebase; `reportStyle` is hardcoded to `"standard"` at `apps/web/src/lib/analyzer/config.ts:41`. The variable appeared in a superseded specification. It was never a live documented feature with a missing implementation — it is a stale line in a superseded spec.
 
 Reports today ship as Summary / JSON / Report views plus a self-contained dark-themed HTML export. Reopen only if a concrete reader need for a second report style appears.
 
@@ -443,8 +443,8 @@ Recounted 2026-08-10 after the 2026-08-06 security rewrite and this pass. Counts
 - [Current Status](Current_Status.md) — overall system status and why development is paused
 - [Backlog](Backlog.md) — prioritized task list; canonical for open work
 - [Analysis Quality Consolidated Execution Plan](../WIP/2026-06-18_Analysis_Quality_Consolidated_Execution_Plan.md) — the active engineering plan
-- [Development History](../ARCHIVE/HISTORY.md) — full version history and investigations
-- [Improvement Recommendations](../ARCHIVE/Improvement_Recommendations.md) — historical enhancement analysis (archived)
+- Development History — full version history and investigations
+- Improvement Recommendations — historical enhancement analysis (archived)
 
 ---
 

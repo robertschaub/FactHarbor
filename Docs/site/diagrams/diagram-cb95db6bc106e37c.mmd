@@ -1,0 +1,197 @@
+erDiagram
+    CB_CLAIM_UNDERSTANDING ||--o{ ATOMIC_CLAIM : "extracts"
+    CB_CLAIM_UNDERSTANDING ||--|| GATE_1_STATS : "produces"
+
+    ATOMIC_CLAIM ||--|| CB_CLAIM_VERDICT : "receives"
+
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : "contains"
+    CB_CLAIM_VERDICT ||--|| CONSISTENCY_RESULT : "has"
+    CB_CLAIM_VERDICT ||--o{ CHALLENGE_RESPONSE : "has"
+    CB_CLAIM_VERDICT ||--|| TRIANGULATION_SCORE : "has"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_supporting"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_contradicting"
+
+    EVIDENCE_ITEM }o--|| FETCHED_SOURCE : "from"
+    EVIDENCE_ITEM |o--o| EVIDENCE_SCOPE : "has_scope"
+
+    EVIDENCE_SCOPE }o--|| CLAIM_ASSESSMENT_BOUNDARY : "clusters_into"
+    EVIDENCE_ITEM }o--|| CLAIM_ASSESSMENT_BOUNDARY : "assigned_to"
+
+    BOUNDARY_FINDING }o--|| CLAIM_ASSESSMENT_BOUNDARY : "per_boundary"
+
+    OVERALL_ASSESSMENT ||--o{ CB_CLAIM_VERDICT : "aggregates"
+    OVERALL_ASSESSMENT ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "presents"
+    OVERALL_ASSESSMENT ||--|| VERDICT_NARRATIVE : "has"
+    OVERALL_ASSESSMENT ||--|| COVERAGE_MATRIX : "has"
+    OVERALL_ASSESSMENT ||--|| QUALITY_GATES : "has"
+
+    CB_CLAIM_UNDERSTANDING {
+        string detectedInputType "claim_or_article"
+        string impliedClaim "LLM-extracted_thesis"
+        string articleThesis "Article_thesis"
+        string backgroundDetails "Broader_frame"
+        string riskTier "A_B_or_C"
+        json distinctEvents "name_date_description"
+        json preliminaryEvidence "sourceUrl_snippet_claimId"
+    }
+
+    GATE_1_STATS {
+        int totalClaims
+        int passedOpinion
+        int passedSpecificity
+        int passedFidelity "Fidelity_to_original_input"
+        int filteredCount
+        boolean overallPass
+    }
+
+    ATOMIC_CLAIM {
+        string id_PK "AC_01_AC_02"
+        string statement "Verifiable_assertion"
+        string category "factual_evaluative_procedural"
+        string centrality "high_medium"
+        string harmPotential "critical_high_medium_low"
+        boolean isCentral "Always_true_filtered"
+        string claimDirection "supports_thesis_contradicts_thesis_contextual"
+        string verifiability "high_medium_low_none_optional"
+        string checkWorthiness "high_medium"
+        float specificityScore "0-1_Gate1_min_0.6"
+        string groundingQuality "strong_moderate_weak_none"
+        json keyEntities "Named_entities_referenced"
+        json expectedEvidenceProfile "methodologies_metrics_sourceTypes"
+    }
+
+    CB_CLAIM_VERDICT {
+        string id_PK
+        string claimId_FK "FK_to_AtomicClaim"
+        float truthPercentage "0-100"
+        string verdict "7-point_scale_label"
+        float confidence "0-100"
+        string reasoning "LLM-generated_includes_challenges"
+        string harmPotential "critical_high_medium_low"
+        boolean isContested "Documented_counter-evidence"
+        json supportingEvidenceIds_FK "EvidenceItem_IDs"
+        json contradictingEvidenceIds_FK "EvidenceItem_IDs"
+        json truthPercentageRange "min_max_plausible_range"
+        string misleadingness "not_potentially_highly_optional"
+        string misleadingnessReason "Reason_optional"
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId_FK "FK_to_ClaimAssessmentBoundary"
+        string boundaryName
+        float truthPercentage "Per-boundary_0-100"
+        float confidence "Per-boundary_0-100"
+        string evidenceDirection "supports_contradicts_mixed_neutral"
+        int evidenceCount
+    }
+
+    CONSISTENCY_RESULT {
+        string claimId_FK
+        json percentages "Truth_pct_from_each_run"
+        float average
+        float spread "max_minus_min"
+        boolean stable "spread_below_threshold"
+        boolean assessed "false_if_skipped"
+    }
+
+    TRIANGULATION_SCORE {
+        int boundaryCount "Boundaries_with_evidence"
+        int supporting "Boundaries_supports_direction"
+        int contradicting "Boundaries_contradicts_direction"
+        string level "strong_moderate_weak_conflicted"
+        float factor "Multiplicative_weight_from_UCM"
+    }
+
+    CHALLENGE_RESPONSE {
+        string challengeType "assumption_missing_evidence_methodology_independence"
+        string response "Reconciler_response"
+        boolean verdictAdjusted "Whether_verdict_changed"
+        json adjustmentBasedOnChallengeIds "Challenge_point_IDs_optional"
+    }
+
+    EVIDENCE_ITEM {
+        string id_PK "EV_001_EV_002"
+        string statement "Extracted_evidence_text"
+        string category "statistic_expert_quote_event_legal_provision_etc"
+        string specificity "high_medium"
+        string sourceId_FK
+        string sourceUrl
+        string sourceTitle
+        string sourceExcerpt
+        string claimDirection "supports_contradicts_neutral"
+        string probativeValue "high_medium_low"
+        float extractionConfidence "0-100"
+        string claimBoundaryId_FK "Assigned_in_Stage_3"
+        json relevantClaimIds "Related_atomic_claims"
+        string scopeQuality "complete_partial_incomplete"
+        string sourceType "peer_reviewed_study_news_primary_etc"
+        boolean isDerivative "Cites_another_source_study"
+        string derivedFromSourceUrl "Original_source_URL"
+        boolean derivativeClaimUnverified "Original_source_not_fetched"
+    }
+
+    EVIDENCE_SCOPE {
+        string name "Short_label_WTW_TTW_EU-LCA"
+        string methodology "ISO_14040_EU_RED_II_etc"
+        string temporal "Source_data_time_period"
+        string boundaries "What_is_included_or_excluded"
+        string geographic "Source_data_geography"
+        string sourceType "peer_reviewed_study_government_report_etc"
+        map additionalDimensions "Domain-specific_scope_data"
+    }
+
+    FETCHED_SOURCE {
+        string id_PK
+        string url
+        string title
+        float trackRecordScore "0.0-1.0"
+        float trackRecordConfidence "0.0-1.0"
+        boolean trackRecordConsensus
+        string category
+        boolean fetchSuccess
+        string fetchedAt
+    }
+
+    CLAIM_ASSESSMENT_BOUNDARY {
+        string id_PK "CB_01_CB_02"
+        string name "Human-readable_label"
+        string shortName "Short_label_for_UI_tabs"
+        string description "What_this_boundary_represents"
+        string methodology "Dominant_methodology"
+        string boundaries "Scope_boundaries"
+        string geographic "Geographic_scope"
+        string temporal "Temporal_scope"
+        json constituentScopes "EvidenceScopes_composing_boundary"
+        float internalCoherence "0-1_consistency"
+        int evidenceCount
+    }
+
+    VERDICT_NARRATIVE {
+        string headline "One_sentence_finding"
+        string evidenceBaseSummary "Quantitative_summary"
+        string keyFinding "Main_synthesis_2-3_sentences"
+        json boundaryDisagreements "Where_boundaries_diverge"
+        string limitations "What_could_not_be_determined"
+    }
+
+    COVERAGE_MATRIX {
+        json claims "Claim_IDs_rows"
+        json boundaries "Boundary_IDs_columns"
+        json counts "Evidence_count_per_cell"
+    }
+
+    QUALITY_GATES {
+        boolean passed "Overall_pass"
+        json gate1Stats "Claim_validation_stats"
+        json gate4Stats "Confidence_assessment_stats"
+        json summary "totalEvidenceItems_totalSources_etc"
+    }
+
+    OVERALL_ASSESSMENT {
+        float truthPercentage "0-100_weighted"
+        string verdict "7-point_scale_label"
+        float confidence "0-100_weighted"
+        boolean hasMultipleBoundaries
+        json truthPercentageRange "min_max_plausible_range"
+        json explanationQualityCheck "B-8_quality_check_optional"
+    }

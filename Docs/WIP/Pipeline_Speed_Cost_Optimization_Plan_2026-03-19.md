@@ -3,7 +3,6 @@
 **Date:** 2026-03-19  
 **Last Revised:** 2026-03-31  
 **Status:** Active as a **residual optimization source plan**. `P1-B/C/D/E` are complete, `P1-A2` is retired as stale, `P1-A` remains blocked pending a fresh baseline + explicit approval, and `P2/P3` remain deferred future work.  
-**Historical detail:** [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19_arch.md](../ARCHIVE/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19_arch.md)
 
 ---
 

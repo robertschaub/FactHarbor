@@ -278,5 +278,5 @@ Safe verification throughout: `npm test`, `npm -w apps/web run build`, focused c
 
 - Re-implementing or "cleaning" the analysis stages (that is the separate May-12 rebuild track; an `analyzer-v2` entry would simply register as another variant here).
 - Any prompt **content** changes (require approval + LLM Expert review).
-- Updating the stale "Pipeline Variants" xWiki (flagged for a docs pass).
+- Updating the stale "Pipeline Variants" reference (flagged for a docs pass).
 - Process-per-variant infrastructure (rejected; see Architecture §10).

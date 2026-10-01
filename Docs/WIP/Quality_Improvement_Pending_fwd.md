@@ -2,7 +2,6 @@
 
 **Created:** 2026-03-17  
 **Status:** Active — residual forward-looking quality items only  
-**Historical detail:** [Quality_Improvement_Pending_fwd_arch.md](../ARCHIVE/Quality_Improvement_Pending_fwd_arch.md)
 
 ---
 
@@ -31,4 +30,4 @@ Still open:
 
 ## 2. Dormant / Conditional Items
 
-Some historical contingencies remain valid only if a problem reappears, for example jurisdiction-contamination fallback plans. Those are preserved in the archived `_arch` companion and should be reactivated only if the triggering failure mode returns.
+Some historical contingencies remain valid only if a problem reappears, for example jurisdiction-contamination fallback plans. Reopen them only if the triggering failure mode returns, using the applicable current quality plan and failure evidence; this note authorizes no implementation or live validation.

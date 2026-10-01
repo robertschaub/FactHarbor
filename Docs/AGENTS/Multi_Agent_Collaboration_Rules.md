@@ -23,9 +23,9 @@ Root AGENTS.md is mandatory. Read only the reference sections needed for the cur
 |----------|----------|---------|
 | **AGENTS.md** | `/AGENTS.md` | Fundamental coding rules, architecture reference, safety rules |
 | **GEMINI.md** | `/GEMINI.md` | Gemini CLI discovery and session-specific limitations |
-| **Coding Guidelines** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards, testing requirements, prompt engineering |
-| **Terminology Reference** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki` | Authoritative glossary for all technical terms |
-| **Architecture Overview** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/System Design/WebHome.xwiki` | System architecture, data models, component interactions |
+| **Coding Guidelines** | `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards, testing requirements, prompt engineering |
+| **Terminology Reference** | `/Docs/site/product-development/specification/reference/terminology/index.md` | Authoritative glossary for all technical terms |
+| **Architecture Overview** | `/Docs/site/product-development/specification/architecture/system-design/index.md` | System architecture, data models, component interactions |
 | **Current Status** | `/Docs/STATUS/Current_Status.md` | Current implementation status and known issues |
 
 ### 1.2 Area-to-Documents Mapping
@@ -34,17 +34,17 @@ When a task specifies an **Area**, read the corresponding documents:
 
 | Area | Required Documents |
 |------|-------------------|
-| **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt Engineering/Provider-Specific Formatting/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Prompt Engineering/Prompt Guidelines/WebHome.xwiki` |
+| **Prompts** | `/Docs/ARCHITECTURE/Prompt_Architecture.md`, `/Docs/site/product-development/specification/reference/prompt-engineering/provider-specific-formatting/index.md`, `/Docs/site/product-development/specification/reference/prompt-engineering/prompt-guidelines/index.md` |
 | **Calculations** | `/Docs/ARCHITECTURE/Calculations.md`, `/Docs/ARCHITECTURE/Evidence_Quality_Filtering.md` |
-| **Configuration** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Subsystems and Components/Unified Config Management/WebHome.xwiki`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
-| **Context-Detection** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Scope Definition Guidelines/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Context Detection/WebHome.xwiki` |
-| **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` |
-| **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki` |
-| **UI** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/KeyFactors Design/WebHome.xwiki` |
-| **Testing** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Promptfoo Testing/WebHome.xwiki`, `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` |
-| **Schema** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Schema Migration/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
-| **Deployment** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/Zero-Cost Hosting Implementation Guide/WebHome.xwiki` |
-| **Documentation** | `/Docs/AGENTS/Roles/Technical_Writer.md`, `/Docs/xwiki-pages/README.md`, `/Docs/xwiki-pages/scripts/WORKFLOW.md` |
+| **Configuration** | `/Docs/site/product-development/devops/subsystems-and-components/unified-config-management/index.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
+| **Context-Detection** | `/Docs/site/product-development/devops/guidelines/scope-definition-guidelines/index.md`, `/Docs/site/product-development/specification/architecture/deep-dive/context-detection/index.md` |
+| **Source-Reliability** | `/Docs/site/product-development/specification/architecture/deep-dive/source-reliability/index.md` |
+| **Pipeline** | `/Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md`, `/Docs/site/akel-pipeline.md` |
+| **UI** | `/apps/web/AGENTS.md`, `/Docs/site/product-development/specification/architecture/data-model/index.md` |
+| **Testing** | `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md`, `/Docs/site/product-development/devops/tooling/promptfoo-testing/index.md`, `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` |
+| **Schema** | `/Docs/site/product-development/specification/architecture/deep-dive/schema-migration/index.md`, `/Docs/site/product-development/specification/reference/data-models-and-schemas/metrics-schema/index.md` |
+| **Deployment** | `/Docs/site/product-development/devops/deployment/zero-cost-hosting-implementation-guide/index.md` |
+| **Documentation** | `/Docs/AGENTS/Roles/Technical_Writer.md`, `/Docs/DEVELOPMENT/Documentation.md` |
 
 **If no Area is specified:** Agent should intelligently identify relevant documents based on the task description.
 
@@ -69,7 +69,7 @@ When activated in a role, use this table to identify which areas are within your
 - **Location:** `/Docs/WIP/`
 - **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
 - **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
-- **On Completion:** Move finalized documents to an appropriate `Docs/` subfolder or `Docs/ARCHIVE/`
+- **On Completion:** Keep useful reference material in its appropriate living document; retire completed records only within assigned preservation and removal scope
 
 ### 1.5 Live Validation Hygiene
 
@@ -94,7 +94,7 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 | 2.1 | Lead Architect | Senior Architect, Principal Architect | [Roles/Lead_Architect.md](Roles/Lead_Architect.md) |
 | 2.2 | Lead Developer | — | [Roles/Lead_Developer.md](Roles/Lead_Developer.md) |
 | 2.3 | Senior Developer | — | [Roles/Senior_Developer.md](Roles/Senior_Developer.md) |
-| 2.4 | Technical Writer | Tech Writer, xWiki Expert, xWiki Developer | [Roles/Technical_Writer.md](Roles/Technical_Writer.md) |
+| 2.4 | Technical Writer | Tech Writer | [Roles/Technical_Writer.md](Roles/Technical_Writer.md) |
 | 2.5 | LLM Expert | FH Analysis Expert, AI Consultant | [Roles/LLM_Expert.md](Roles/LLM_Expert.md) |
 | 2.6 | Product Strategist | Product Manager, Product Owner, Sponsor | [Roles/Product_Strategist.md](Roles/Product_Strategist.md) |
 | 2.7 | Code Reviewer | — | [Roles/Code_Reviewer.md](Roles/Code_Reviewer.md) |
@@ -545,7 +545,7 @@ File naming: `Docs/WIP/{Topic}_Report_{Role}_{Agent}.md`
 - `CONSOLIDATING` → Set when all investigators are `DONE`; consolidator is working
 - `READY_FOR_REVIEW` → Consolidator sets when synthesis is complete
 - `APPROVED` → Captain sets after review; implementation may begin
-- `IMPLEMENTED` → Move to `Docs/ARCHIVE/` or appropriate subfolder
+- `IMPLEMENTED` → Reconcile living references and review record lifecycle under the assigned preservation scope
 
 ---
 
@@ -662,8 +662,8 @@ See the root client adapter for supported discovery and session-control guidance
 
 Before completion, apply only the checks relevant to the task and report material omissions:
 
-- [ ] Code follows `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki`
-- [ ] Terminology matches `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Terminology/WebHome.xwiki`
+- [ ] Code follows `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md`
+- [ ] Terminology matches `/Docs/site/product-development/specification/reference/terminology/index.md`
 - [ ] No hardcoded domain-specific terms
 - [ ] Focused verification completed within the assignment; broad suites/builds only when justified
 - [ ] Any provider-spending/live operation had current authorization for its action and scope
@@ -678,8 +678,7 @@ Before completion, apply only the checks relevant to the task and report materia
 
 - [Meta-Prompt Template](./Multi_Agent_Meta_Prompt.md) - Reusable prompt for starting tasks
 - [Role Learnings Log](./Role_Learnings.md) - Agent-contributed tips, gotchas, and patterns per role
-- [GlobalMasterKnowledge for xWiki](./GlobalMasterKnowledge_for_xWiki.md) - XWiki-specific rules
-- [AGENTS_xWiki.md](./AGENTS_xWiki.md) - XWiki agent configurations
+- [Documentation authoring and preview](../DEVELOPMENT/Documentation.md) - Markdown, Mermaid, links and publication checks
 
 ---
 

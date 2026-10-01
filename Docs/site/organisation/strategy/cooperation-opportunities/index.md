@@ -1,0 +1,105 @@
+# Cooperation Opportunities
+
+> **Info**
+>
+> This is the internal strategy document for FactHarbor's next cooperation and funding moves. It prioritizes action over landscape coverage. The public-facing version is the [Funding Presentation](../../../funding.md). Detailed background in `Docs/Knowledge`.
+
+## Strategic Thesis
+
+-   FactHarbor's strongest cooperation story is **complementarity**, not replacement: existing networks already do monitoring, editorial distribution, or research; FactHarbor adds transparent, evidence-backed verdict depth.
+-   The most credible near-term research themes are **multi-source evidence retrieval**, **multilingual robustness / report stability**, and **resource-efficient fact verification**.
+-   The most important bottlenecks are still **evidence quality**, **cross-linguistic stability**, and **Swiss applicant readiness** for grants.
+-   The Swiss and DACH ecosystem is more actionable than a broad global sweep. Local validation will strengthen both partner discussions and funding applications.
+-   Therefore the next phase should focus on a **small number of high-probability routes** instead of maintaining a long global target directory.
+
+## Top Priorities (Next 90 Days)
+
+| Priority lane | Why now | Gate | Next action |
+|----|----|----|----|
+| **1. Swiss academic lead + Innosuisse path** | Most realistic near-term funding route; strongest bridge from Alpha to funded research and credibility. | Clear Swiss entity / UID path and one agreed project thesis. | Approach **ZHAW CAI / NLP** first. Keep ETH / UZH as fallback options. Frame the first conversation around one concrete Innosuisse-ready topic, not a broad wishlist. |
+| **2. One Innosuisse-ready project thesis** | Partner and funding conversations need one problem statement that clearly matches current product gaps. | Choose one lead theme: **multi-source retrieval**, **multilingual stability**, or **low-resource verification**. | Write a 1-page brief and reuse it across academic and grant outreach. |
+| **3. DACH pilot outreach: Catherine Gilbert (dpa)** | First concrete fact-checking contact. Catherine Gilbert (ex-Keystone-SDA Verification Officer, now dpa OSINT Freelance) confirmed interest. **Video call scheduled April 8, 2026, 16:00.** | Demo-ready claim, known limitations prepared, clear questions. | Run the call. Ask about workflow pain points, Swiss network contacts, and willingness to give ongoing feedback. |
+| **4. Swiss broadcaster lane: EBU Spotlight (not SRF)** | SRG SSR corporate declined interest (March 27, 2026). SRF/Melanie Koemle friendly but not engaged. **Do not re-approach SRG/SRF until a concrete external milestone exists** (Beta, benchmark, or pilot with another newsroom). EBU Headquarters (Geneva) remains a separate channel. | Pilot evidence from dpa call or other DACH contact. | Approach **EBU Spotlight** independently of SRF, only after the dpa conversation produces signal. |
+| **5. One high-value international route** | **Full Fact** remains the strongest strategic fit, but only after the proof pack exists. **GlobalFact 2026** is the best realistic networking tactic before membership pushes. | Proof pack, benchmark/demo evidence, and a narrow cooperation ask. | Prepare one focused Full Fact note and a meeting plan for **GlobalFact 2026**. Do not treat IFCN / EFCSN membership as the immediate first move. |
+
+**Credibility multipliers:** ClaimReview readiness and external benchmarking remain important, but they should support the sequence above rather than replace it. They are enablers, not the first priority lane.
+
+## Funding Routes by Readiness
+
+### Apply or Prepare Now
+
+| Route | Status as of April 2026 | Why it fits | Gate / note |
+|----|----|----|----|
+| **Innosuisse Innovation Cheque** | **Best first Swiss route** | Low-friction way to convert one scoped research theme into a joint feasibility study. | Needs a Swiss research partner and applicant readiness. |
+| **NLNet NGI Zero Commons Fund** | **Conditional live option** | Strong founder / open-source / digital-commons fit if the proposal can be framed as reusable infrastructure. | The **13th call is open from April 1 to June 1, 2026 (12:00 CEST)**. Only pursue this round if the reusable open-infrastructure slice is strong enough by mid-May. |
+| **Mozilla Democracy x AI** | **Prepare for next intake** | Good thematic fit for a working democracy-supporting AI tool with open commitments. | Current cohort is closed. Legal ability to receive Mozilla funding is required. |
+
+### Requires Research Partner or Institutional Lead
+
+| Route | Role for FactHarbor | Why it matters | Gate / note |
+|----|----|----|----|
+| **Innosuisse Innovation Project** | Primary scale-up route after the cheque. | Best Swiss path for applied joint R&D. | Not the first step. Requires a committed research partner, in-kind contribution, and cash contribution. |
+| **BRIDGE / Hasler / similar Swiss research funding** | Useful when an academic partner wants to co-own the research agenda. | Good for deeper research work once a collaboration is real. | Partner-led or strongly partner-shaped. |
+| **Horizon Europe Cluster 2** | Medium-term consortium route. | Relevant 2026 topics exist around electoral integrity, media viability, and media literacy. | Requires a consortium. Current 2026 deadlines are **23 September 2026**. |
+
+### Later or Partner-Led Only
+
+| Route | Why it is not a lead priority now | Note |
+|----|----|----|
+| **Media Forward Fund** | Not a strong FactHarbor-led route at current stage. | Next call starts **September 2026**. Better only with a newsroom lead; the fund is not aimed at early-stage technology/service providers as standalone applicants. |
+| **IFCN SUSTAIN Fund / early IFCN or EFCSN membership push** | Too early without stronger operational track record. | Keep as later-stage credibility work. |
+| **Google.org AI for Government Innovation** | High upside, but extremely conditional. | Round closed **April 3, 2026**. Required a credible government partner. Monitor for future rounds. |
+| **Prototype Fund Switzerland** | Interesting public-interest route, but not reliable enough to anchor the plan. | Keep on watchlist until the next call and theme are confirmed. |
+
+## Direct Support Platforms
+
+Platforms for individual donations and recurring support. Low effort to set up, run in parallel with grant applications.
+
+| Platform | Status | Fees | Action |
+|----|----|----|----|
+| **<a href="https://github.com/sponsors" rel="noopener" target="_blank">GitHub Sponsors</a>** | **Set up now** | 0% | Apply with AHV-Nummer + Swiss bank account. Approval in days. Tiers: CHF 5/15/50 pro Monat. |
+| **<a href="https://en.liberapay.com/" rel="noopener" target="_blank">Liberapay</a>** | **Set up now** | 0% platform, ~2-3% payment processing | Register, create profile. European, open-source-focused, recurring donations. |
+| **<a href="https://opencollective.com/europe" rel="noopener" target="_blank">Open Collective Europe</a>** | **Available now** | 4-10% fiscal host fee | Verein registered (UID CHE-448.446.098). Contact hello@oceurope.org to confirm Swiss eligibility. Transparent public budgets. |
+| **<a href="https://wemakeit.com/" rel="noopener" target="_blank">wemakeit</a>** | **Campaign when ready** | 10% (only on success) | Swiss crowdfunding, 67% success rate. Best for one-time campaign with specific milestone. CHF 5-15K realistic for Alpha stage. |
+
+**Priority:** GitHub Sponsors and Liberapay now (zero cost, passive). Open Collective now available (Verein registered). wemakeit only with a defined campaign goal and enough community to reach 30% in the first week.
+
+## Secondary Targets / Watchlist
+
+-   **ClaimReview / Duke Reporters' Lab** — important ecosystem integration, but it should be treated as a V1.0 credibility multiplier rather than an immediate outreach priority.
+-   **AVeriTeC / broader benchmark ecosystem** — important for external proof and reproducibility; useful for credibility and measurement.
+-   **Open Technology Fund** — only relevant if FactHarbor is framed explicitly as internet-freedom / information-control infrastructure.
+-   **Broader European broadcaster and fact-checking networks** — revisit after one Swiss or DACH pilot conversation produces traction.
+
+## Risks That Change Priorities
+
+-   If the Swiss legal setup or UID path slips, Swiss grant routes slow down immediately.
+-   If outreach stays broad instead of choosing one lead academic lane, partner discussions will remain exploratory and not fundable.
+-   If there is no short proof pack (demo, Alpha status, one project thesis, one ask), EBU / Full Fact outreach will be premature. (dpa call April 8 is confirmed regardless.)
+-   If ClaimReview and external benchmarking remain undefined for too long, media credibility will lag behind technical progress.
+
+## Recommended Sequence
+
+1.  Finalize the Swiss applicant-readiness path.
+2.  Pick **one** lead academic lane and **one** research thesis.
+3.  Build one concise partner pack: demo, Alpha status, current technical gap, and the specific cooperation ask.
+4.  Use that pack for **ZHAW first**, then **Catherine Gilbert / dpa** (call April 8), then **EBU Spotlight** (not SRF directly — declined March 27).
+5.  Prepare the **Innovation Cheque** path immediately and decide by mid-May whether the current **NLNet** call is strong enough to pursue.
+6.  Keep ClaimReview and benchmark planning as credibility work, not as substitutes for partner development.
+7.  Approach **Full Fact** only after the pack exists and the ask is narrow.
+8.  Treat **GlobalFact 2026** as the most realistic short-term networking route into the broader fact-checking field.
+
+## Not a Priority Yet
+
+-   Broad global university outreach without a single lead research thesis
+-   Generic LLM-vendor partnership discussions
+-   Deepfake / multimedia tooling partnerships before the core evidence and stability gaps are addressed
+-   Large ecosystem membership applications before FactHarbor has more operational proof
+
+## Related Pages
+
+-   [Funding Presentation](../../../funding.md)
+-   [Academic Cooperation](../../../academic-cooperation.md)
+-   [Strategy](../index.md)
+
+Detailed background remains in `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/Knowledge/Swiss_FactChecking_Landscape_2026.md`, and `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md`.

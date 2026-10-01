@@ -1,0 +1,11 @@
+{
+  "name": "factharbor-documentation-tools",
+  "private": true,
+  "scripts": {
+    "render": "node render-diagrams.mjs"
+  },
+  "devDependencies": {
+    "mermaid": "11.17.2",
+    "playwright": "1.63.0"
+  }
+}

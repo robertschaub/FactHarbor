@@ -46,8 +46,8 @@
 - Fixed stale Haiku model ID (claude-3-haiku-20240307 → claude-3-5-haiku-20241022)
 
 ### Documentation
-- xWiki documentation consolidation: 21+ pages updated (Phase 3 of doc consolidation)
-- POC to Alpha Transition: xWiki conversion complete
+- Documentation consolidation: 21+ pages updated (Phase 3 of doc consolidation)
+- POC to Alpha Transition: documentation conversion complete
 - Comprehensive documentation cleanup plan created and approved
 - Phase labels updated across STATUS/ docs (POC→Alpha transition)
 
@@ -67,7 +67,6 @@
 
 ### Documentation
 - Created consolidated [Prompt Optimization Summary](WIP/Prompt_Optimization_Investigation.md)
-- Archived detailed reviews to [ARCHIVE/REVIEWS/](ARCHIVE/REVIEWS/)
   - Prompt_Optimization_Code_Review.md
   - Prompt_Optimization_Architecture_Review.md
 

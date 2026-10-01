@@ -116,7 +116,7 @@ Contains 13 named sections covering every LLM call point across all 5 CB pipelin
 | `VERDICT_NARRATIVE` | Stage 4 | Generate human-readable verdict explanation |
 | `CLAIM_GROUPING` | Stage 5 | Group related AtomicClaims for report output |
 
-> **Note**: `orchestrated.prompt.md` (40+ sections, used by the Orchestrated pipeline) was removed in v2.11.0 when the Orchestrated pipeline was replaced by ClaimAssessmentBoundary. See `Docs/xwiki-pages-ARCHIVE/` for the archived reference.
+> **Note**: `orchestrated.prompt.md` (40+ sections, used by the Orchestrated pipeline) was removed in v2.11.0 when the Orchestrated pipeline was replaced by ClaimAssessmentBoundary.
 
 ### Monolithic Dynamic Pipeline (`monolithic-dynamic.prompt.md`)
 
@@ -284,7 +284,7 @@ function detectProvider(modelName: string): ProviderType {
 
 - [LLM Classification System](./LLM_Classification_System.md) - Deep dive into semantic analysis calls
 - [OUTPUT_SCHEMAS.md](../../apps/web/src/lib/analyzer/prompts/OUTPUT_SCHEMAS.md) - Centralized JSON schema reference for all LLM phases
-- [LLM Configuration Guide](../xwiki-pages/FactHarbor/Product%20Development/DevOps/Subsystems%20and%20Components/LLM%20Configuration/WebHome.xwiki) - User-facing provider setup
-- [LLM Schema Mapping](../xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data%20Models%20and%20Schemas/LLM%20Schema%20Mapping/WebHome.xwiki) - TypeScript to LLM output mapping
-- [Pipeline Architecture](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) - Overall pipeline design
+- [LLM Configuration Guide](../site/product-development/devops/subsystems-and-components/llm-configuration/index.md) - User-facing provider setup
+- [LLM Schema Mapping](../site/product-development/specification/reference/data-models-and-schemas/llm-schema-mapping/index.md) - TypeScript to LLM output mapping
+- [Pipeline Architecture](../site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md) - Overall pipeline design
 - [Calculations](./Calculations.md) - Verdict calculation methodology including multi-context averaging

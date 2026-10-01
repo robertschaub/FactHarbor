@@ -1,0 +1,29 @@
+graph LR
+    subgraph QA[Quality Assurance Evolution]
+        QA1[Initial High Sampling]
+        QA2[Intermediate Strategic]
+        QA3[Mature Anomaly-Triggered]
+
+        QA1 --> QA2
+        QA2 --> QA3
+    end
+
+    subgraph POC[POC CURRENT]
+        POC_F[POC Features]
+    end
+
+    subgraph R05[Release 0.5]
+        R05_F[Limited Production]
+    end
+
+    subgraph R10[Release 1.0]
+        R10_F[Full Production]
+    end
+
+    subgraph Future[Future]
+        Future_F[Distributed Intelligence]
+    end
+
+    POC_F --> R05_F
+    R05_F --> R10_F
+    R10_F --> Future_F

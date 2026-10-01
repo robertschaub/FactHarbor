@@ -1,0 +1,3 @@
+# Outdated Diagrams
+
+*No outdated diagrams at this time. Previously archived diagrams were reviewed on 2026-02-12: four were deleted (replaced by current diagrams), one (LLM Abstraction Architecture) was updated and restored to the active Diagrams folder.*

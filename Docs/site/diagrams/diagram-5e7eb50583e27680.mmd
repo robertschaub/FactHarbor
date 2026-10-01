@@ -1,0 +1,19 @@
+erDiagram
+    JOBS ||--o{ JOB_EVENTS : logs
+
+    JOBS {
+        int JobId_PK
+        string Status
+        datetime CreatedAt
+        datetime UpdatedAt
+        json ResultJson
+        text ReportMarkdown
+    }
+
+    JOB_EVENTS {
+        int Id_PK
+        int JobId_FK
+        datetime TsUtc
+        string Level
+        string Message
+    }

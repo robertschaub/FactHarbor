@@ -158,7 +158,7 @@ Per variant (do one end-to-end first, then template the rest):
 ## Phase 5 — Inspector UI + documentation
 
 - Read-only inspector UI over the Phase-2 endpoints (effective config with overridden keys highlighted; prompt + hashes; fingerprint; matrix provenance diff).
-- Update the **stale** "Pipeline Variants" xWiki (`Docs/xwiki-pages/…/Deep Dive/Pipeline Variants/WebHome.xwiki`) — it still documents the removed `monolithic_dynamic`/`orchestrated` variants; replace with the registry/manifest/override/provenance model.
+- Update the **stale** "Pipeline Variants" reference (`Docs/site/product-development/specification/architecture/deep-dive/pipeline-variants/index.md`) — it still documents the removed `monolithic_dynamic`/`orchestrated` variants; replace with the registry/manifest/override/provenance model.
 - Update `AGENTS.md` Configuration Placement + UCM pointers (config is now file-authoritative; DB removed).
 - **Reconcile residual refactor streams** in `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`: WS‑1–4 (analyzer/pipeline) are already complete. **WS‑6 (admin config page decomposition) is superseded** — Phase 1 deletes the config editing UI — close it as obsolete. **WS‑5 (job report page) and WS‑7 (admin route boilerplate)** lightly overlap this phase's UI work; absorb opportunistically or leave deferred.
 

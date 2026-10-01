@@ -4,7 +4,7 @@
 
 **Tier:** Significant. **Task:** Resume `2026-06-01_Senior_Architect_BestCommit_Investigation_Pause.md` and consolidate: which commit/range produced the best ClaimBoundary reports; rate quality vs Captain's documented bar; investigate local+deployed job history; document regression-causing changes; get agent help; write a new findings doc.
 
-**Primary artifact:** `Docs/ARCHIVE/WIP/2026-06-02_BestCommit_and_Report_Regression_Consolidated_Findings.md` — archived findings, tables, and agent results; historical reference only.
+**Primary artifact:** 2026-06-02 BestCommit and Report Regression Consolidated Findings — archived findings, tables, and agent results; historical reference only.
 
 ## Bottom line
 - **Best-reports range = the April-2026 quality-restoration window (~Apr 3 → Apr 22)**, screened composite peak `424b9652` (Apr 22, composite 87/6 families on current bands; **75** equalized to discriminating families — still the leader, no challenger overtakes). Strongest clean examples are the **deployed-production** reports (bolsonaro `eb02cd2e`/`cfd508bc`; asylum-235000 `6a60b3eb`/`2e3cb0da`). **No single global best commit — quality is family-specific** (adversarially confirmed: no n≥3 multi-family epoch is on-band across all its families; bolsonaro-en breaks every one).

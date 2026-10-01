@@ -1,0 +1,66 @@
+erDiagram
+    CB_CLAIM_VERDICT ||--o{ BOUNDARY_FINDING : contains
+    CB_CLAIM_VERDICT ||--|| CONSISTENCY_RESULT : has
+    CB_CLAIM_VERDICT ||--o{ CHALLENGE_RESPONSE : has
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_supporting"
+    CB_CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites_contradicting"
+    CB_CLAIM_VERDICT ||--|| TRIANGULATION_SCORE : has
+    CB_CLAIM_VERDICT ||--o| TRUTH_PERCENTAGE_RANGE : has
+
+    CB_CLAIM_VERDICT {
+        string id_PK
+        string claimId_FK
+        float truthPercentage "0-100"
+        string verdict "7-point_label"
+        float confidence "0-100"
+        string reasoning
+        string harmPotential "critical_high_medium_low"
+        boolean isContested
+        json supportingEvidenceIds
+        json contradictingEvidenceIds
+        json boundaryFindings
+        json consistencyResult
+        json challengeResponses
+        json triangulationScore
+        json truthPercentageRange
+        string misleadingness "not_potentially_highly_(optional)"
+        string misleadingnessReason
+    }
+
+    BOUNDARY_FINDING {
+        string boundaryId_FK
+        string boundaryName
+        float truthPercentage "Per-boundary_0-100"
+        float confidence "Per-boundary_0-100"
+        string evidenceDirection "supports_contradicts_mixed_neutral"
+        int evidenceCount
+    }
+
+    CONSISTENCY_RESULT {
+        string claimId_FK
+        json percentages "Truth_%_from_each_run"
+        float average
+        float spread "max_minus_min"
+        boolean stable "spread_within_threshold"
+        boolean assessed "false_if_disabled"
+    }
+
+    CHALLENGE_RESPONSE {
+        string challengeType "assumption_missing_evidence_methodology_weakness_independence_concern"
+        string response
+        boolean verdictAdjusted
+        json adjustmentBasedOnChallengeIds
+    }
+
+    TRIANGULATION_SCORE {
+        int boundaryCount
+        int supporting
+        int contradicting
+        string level "strong_moderate_weak_conflicted"
+        float factor "Weight_adjustment"
+    }
+
+    TRUTH_PERCENTAGE_RANGE {
+        float min "0-100"
+        float max "0-100"
+    }

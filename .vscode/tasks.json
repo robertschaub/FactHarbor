@@ -1,100 +1,56 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "msbuild",
-                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
-                "/t:Compile",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "XWiki Viewer: Open",
-            "type": "shell",
-            "command": "powershell",
-            "args": [
-                "-ExecutionPolicy", "Bypass",
-                "-File", "${workspaceFolder}/Docs/xwiki-pages/viewer-impl/Open-XWikiViewer.ps1"
-            ],
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "dedicated",
-                "showReuseMessage": false,
-                "clear": true
-            },
-            "isBackground": true,
-            "group": "none",
-            "detail": "Start local server and open XWiki Viewer in Chrome with folder picker"
-        },
-        {
-            "label": "XWiki Viewer: Open (Edge)",
-            "type": "shell",
-            "command": "powershell",
-            "args": [
-                "-ExecutionPolicy", "Bypass",
-                "-File", "${workspaceFolder}/Docs/xwiki-pages/viewer-impl/Open-XWikiViewer.ps1",
-                "-Browser", "edge"
-            ],
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "dedicated",
-                "showReuseMessage": false,
-                "clear": true
-            },
-            "isBackground": true,
-            "group": "none",
-            "detail": "Start local server and open XWiki Viewer in Edge"
-        },
-        {
-            "label": "XWiki Viewer: Quick Open (no server)",
-            "type": "shell",
-            "command": "powershell",
-            "args": [
-                "-Command",
-                "$viewerUrl = 'file:///' + ('${workspaceFolder}/Docs/xwiki-pages/viewer-impl/xwiki-viewer.html' -replace '\\\\','/') + '?open=folder'; $chrome = @(\"$env:ProgramFiles\\Google\\Chrome\\Application\\chrome.exe\", \"${env:ProgramFiles(x86)}\\Google\\Chrome\\Application\\chrome.exe\", \"$env:LOCALAPPDATA\\Google\\Chrome\\Application\\chrome.exe\") | Where-Object { Test-Path $_ } | Select-Object -First 1; if ($chrome) { Start-Process $chrome $viewerUrl } else { Start-Process 'msedge' $viewerUrl }"
-            ],
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "silent",
-                "panel": "shared"
-            },
-            "detail": "Open viewer directly via file:// in Chrome (Edge fallback), no server needed"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "msbuild",
+        "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
+        "/t:Compile",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "${workspaceFolder}/apps/api/FactHarbor.Api.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Documentation: Preview",
+      "type": "process",
+      "command": "python",
+      "args": [
+        "-m",
+        "mkdocs",
+        "serve",
+        "--dev-addr",
+        "127.0.0.1:8000"
+      ],
+      "problemMatcher": [],
+      "isBackground": true
+    }
+  ]
 }

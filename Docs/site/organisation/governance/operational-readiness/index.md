@@ -1,0 +1,374 @@
+# Operational Readiness Checklist
+
+## 1. Purpose and Scope
+
+This checklist documents prerequisite tasks that must be completed before FactHarbor can launch to the public. **Organization Reality:** Starting as a solo project with team growth expected within the first year. **Status as of:** September 18, 2026 **Target Launch Date:** \[To be determined\] **Important:** Initially, one person handles multiple functions. This is normal and legal. As the team grows, responsibilities can be distributed.
+
+## 2. Critical Tasks (MUST Complete Before Launch)
+
+These tasks are mandatory for legal compliance and core functionality.
+
+<span id="2-1-legal-compliance"></span>
+
+### 2.1 Legal & Compliance
+
+| Task | Status | Notes |
+|----|----|----|
+| **Engage Swiss legal advisor for policy review** | ⬜ Not Started | Review all policies, bylaws |
+| **Draft and adopt Verein bylaws (statutes)** | ✅ Complete | Adopted at founding assembly, April 23, 2026 |
+| **Appoint founding Governing Team (minimum two members)** | ✅ Complete | President and Treasurer appointed, April 23, 2026 |
+| **Apply for Swiss tax-exempt status** | 🟡 Submitted | Submitted May 6, 2026 to the Canton of Zürich tax office; decision pending |
+| **Swiss representative** | ➖ Not Applicable | FactHarbor is domiciled in Switzerland; Robert Schaub is the privacy contact. EU/EEA targeting would trigger a separate GDPR Art. 27 review. |
+| **Create processing activities register** | ⬜ Not Started | Internal document |
+| **Conduct initial DPIA for AKEL system** | ⬜ Not Started | Can use templates |
+| **Set Privacy Policy effective date** | ✅ Complete | Governing Team approval confirmed; effective 18 September 2026 for the restricted alpha; expansion gates remain in Privacy Policy §20 |
+
+<span id="2-2-technical-implementation"></span>
+
+### 2.2 Technical Implementation
+
+| Task | Status | Notes |
+|----|----|----|
+| **Implement opt-in cookie consent banner** | ⬜ Not Started | Open source libraries available |
+| **Build user data export functionality** | ⬜ Not Started | JSON/CSV export |
+| **Build account deletion functionality** | ⬜ Not Started | With grace period |
+| **Implement data retention automation** | ⬜ Not Started | Automated cleanup |
+| **Set up breach notification procedures** | ⬜ Not Started | Document + FDPIC contact |
+| **Implement TLS/HTTPS encryption** | ✅ Done | app.factharbor.ch serves HTTPS |
+| **Set up security logging** | ⬜ Not Started | One year retention |
+
+<span id="2-3-organisational-infrastructure"></span>
+
+### 2.3 Organisational Infrastructure
+
+| Task | Status | Notes |
+|----|----|----|
+| **Set up contact infrastructure** | ⬜ Not Started | See Section 5 |
+| **Establish document storage** | ⬜ Not Started | Secure storage for bylaws, minutes |
+| **Create incident response plan** | ⬜ Not Started | Brief document |
+| **Set up basic accounting** | ⬜ Not Started | Spreadsheet initially acceptable |
+| **Establish board meeting schedule** | ⬜ Not Started | Quarterly minimum |
+
+## 3. Important Tasks (SHOULD Complete Before Launch)
+
+These tasks are strongly recommended before launch.
+
+<span id="3-1-governance-policy"></span>
+
+### 3.1 Governance & Policy
+
+| Task | Status | Priority |
+|----|----|----|
+| **Appoint DPO (if serving EU users from day 1)** | ⬜ Not Started | HIGH - Can be yourself |
+| **Create Terms of Service** | 🟡 Draft | HIGH - Draft written (June 2026); review and effective date pending |
+| **Create basic Security Policy** | ⬜ Not Started | MEDIUM |
+| **Record contributor agreements** | ⬜ Pending | Obtain explicit acceptance of the contributor copyright agreement for identified contributions; verify rights-holder authority |
+| **Document internal escalation** | ⬜ Not Started | LOW |
+
+<span id="3-2-technical-operational"></span>
+
+### 3.2 Technical & Operational
+
+| Task | Status | Priority |
+|----|----|----|
+| **Set up vulnerability disclosure** | ⬜ Not Started | HIGH |
+| **Implement 2FA** | ⬜ Not Started | MEDIUM |
+| **Create user documentation** | ⬜ Not Started | HIGH |
+| **Set up monitoring** | ⬜ Not Started | HIGH |
+| **Set up backup systems** | ✅ Done | HIGH - Daily DB backups, 14-day retention (see scripts/DEPLOYMENT.md) |
+
+<span id="3-3-licensing-open-source"></span>
+
+### 3.3 Licensing & Open Source
+
+| Task | Status | Priority |
+|----|----|----|
+| **Decide: Code licensing model** | ✅ Done | AGPL-3.0-only for original software; CC BY-SA 4.0 for documentation; see LICENSING.md |
+| **Create LICENSE files** | ✅ Done | Complete standard texts in LICENSE and LICENSES/; scope in LICENSING.md |
+| **Set up code repository** | ✅ Done | HIGH - github.com/robertschaub/FactHarbor (public) |
+| **Create CONTRIBUTING.md** | ✅ Done | MEDIUM |
+
+## 4. Recommended Tasks (Can Be Post-Launch)
+
+These can wait until after launch or until team grows.
+
+| Task                       | Priority | Notes                              |
+|----------------------------|----------|------------------------------------|
+| **Trademark registration** | MEDIUM   | When budget allows                 |
+| **Penetration testing**    | MEDIUM   | When feasible                      |
+| **Transparency Committee** | LOW      | When team grows                    |
+| **Independent audit**      | LOW      | When required by revenue threshold |
+
+## 5. Required Infrastructure
+
+<span id="5-1-contact-infrastructure"></span>
+
+### 5.1 Contact Infrastructure
+
+**Minimum Required:** At minimum, you need contact methods for:
+
+-   General inquiries
+-   Privacy/data requests (FADP/GDPR requirement)
+-   Security/abuse reports
+-   Governing Team/governance
+
+**Options:** **Option A: Single Contact Point**
+
+-   One email or contact form
+-   Routes internally as needed
+-   State response times clearly
+
+**Option B: Functional Separation**
+
+-   Few key addresses for different purposes
+-   Still manageable by one person
+
+**Recommendation:** Wait to set up infrastructure until you have domain and email hosting.
+
+<span id="5-2-documentation-to-prepare"></span>
+
+### 5.2 Documentation to Prepare
+
+**Must Exist Before Launch:**
+
+-   Processing activities register (internal)
+-   Initial DPIA for AKEL (internal)
+-   Breach response procedure
+-   Privacy Policy (effective for the restricted alpha; wider access remains gated)
+-   Transparency Policy (done, set effective date)
+
+**Should Exist:**
+
+-   Terms of Service
+-   Simple security policy
+-   CLA
+
+**Can Wait:**
+
+-   Detailed security documentation
+-   Complex governance processes
+
+<span id="5-3-tools-and-services"></span>
+
+### 5.3 Tools and Services
+
+**Hosting:**
+
+-   Swiss providers (Hetzner, Infomaniak) or other reliable hosting
+-   Start small, scale up
+
+**Email/Contact:**
+
+-   Swiss privacy-focused providers (ProtonMail, Tutanota)
+-   Free tiers available initially
+
+**Development:**
+
+-   GitHub or GitLab (free for public repos)
+
+**Monitoring:**
+
+-   Free tier services available (UptimeRobot, etc.)
+
+**Documentation:**
+
+-   Markdown documentation with a MkDocs website
+
+## 6. Decision Points
+
+Strategic decisions needed before implementation:
+
+<span id="6-1-critical-decisions"></span>
+
+### 6.1 Critical Decisions
+
+| Decision | Options | Consideration |
+|----|----|----|
+| **Serve EU users day 1?** | Yes/No/Later | Affects DPO requirement |
+| **Code licensing** | AGPL-3.0-only for original software | Apply the repository licence map and preserve third-party terms |
+| **Hosting location** | CH/EU/US | Swiss aligns with mission |
+| **AI model** | Open/API | Infrastructure vs. simplicity |
+
+<span id="6-2-organisational-decisions"></span>
+
+### 6.2 Organisational Decisions
+
+| Decision                    | Options                       |
+|-----------------------------|-------------------------------|
+| **Governing Team size**     | Two minimum, can expand later |
+| **Governing Team meetings** | Quarterly minimum             |
+| **DPO**                     | Only if/when needed           |
+| **Commercial Register**     | Optional for non-profit       |
+
+<span id="7-launch-blockers-go-no-go-checklist"></span>
+
+## 7. Launch Blockers - Go/No-Go Checklist
+
+**Cannot launch until ALL are complete:** **Legal:** - \[x\] Verein bylaws adopted (founding assembly, April 23, 2026) - \[x\] Verein registered in Commercial Register (UID CHE-448.446.098, visible on Zefix since May 7, 2026) - \[x\] Governing Team appointed (two members minimum) - \[x\] Swiss controller and privacy contact identified - \[x\] Privacy Policy effective date set (restricted alpha) - \[ \] Processing activities register created - \[ \] Initial DPIA completed **Technical:** - \[x\] HTTPS encryption implemented - \[ \] Cookie consent (opt-in) working - \[ \] Data export functionality working - \[ \] Account deletion working - \[ \] Breach notification procedure documented **Operational:** - \[ \] Contact infrastructure established - \[ \] Security incident procedure documented - \[ \] Data retention automation configured - \[ \] Terms of Service created
+
+## 8. Post-Launch Compliance
+
+**Immediate Response Required:**
+
+-   Data subject requests (within required timeframe)
+-   Security breaches (immediate FDPIC notification if high risk)
+-   Abuse reports (timely)
+
+**Recurring:**
+
+-   Governing Team meeting
+-   Review data retention
+-   Security check
+-   Publish transparency report
+-   Review policies
+
+**Periodic:**
+
+-   Publish financial statements
+-   Policy review
+-   Privacy audit
+-   External audit (if above revenue threshold)
+
+## 9. As Team Grows
+
+**Initial (Solo):**
+
+-   One person handles all functions
+-   Document everything
+-   Use templates and tools
+
+**Early Growth (First Helpers):**
+
+-   Distribute technical vs. governance tasks
+-   Cross-training important
+-   Keep communication clear
+
+**Established Team:**
+
+-   Specialized roles emerge naturally
+-   Formal responsibility assignments
+-   More sophisticated processes
+
+**Key:** Start simple, scale processes as team and complexity grow.
+
+## 10. Budget Considerations
+
+**Pre-Launch:**
+
+-   Legal advisor (essential)
+-   Minimal infrastructure
+-   Free tools where possible
+
+**Ongoing:**
+
+-   Hosting (start small)
+-   Email/contact infrastructure
+-   Legal support as needed
+-   Scale as revenue permits
+
+**Later:**
+
+-   Security assessments
+-   Trademark registration
+-   Professional audits
+-   Better tooling
+
+**Philosophy:** Start lean, invest as you validate product-market fit.
+
+## 11. Risk Management
+
+**Key Risks:**
+
+-   Legal delays
+-   Technical complexity
+-   Time management (solo)
+-   Volunteer coordination
+-   Burnout
+
+**Mitigation:**
+
+-   Start legal work early
+-   Build MVP, iterate
+-   Realistic scope
+-   Good documentation
+-   Don't overcommit
+
+## 12. Success Criteria
+
+**Ready to launch when:**
+
+-   All launch blockers complete
+-   Legal advisor approves policies
+-   Governing Team formally approves launch
+-   Contact infrastructure works
+-   Core functions operational
+-   Capacity to handle support exists
+
+**Remember:** Launch with working MVP, not perfect system.
+
+## 13. Timeline Considerations
+
+**Factors:**
+
+-   Legal processes take time
+-   Technical implementation scope
+-   Part-time vs. full-time work
+-   Availability of help
+-   Budget constraints
+
+**Approach:**
+
+-   Start critical path items early
+-   Build in buffer time
+-   Be realistic about capacity
+-   Iterate after launch
+
+## 14. Final Notes
+
+**Don't Let Perfect Be the Enemy of Good:** You don't need:
+
+-   Complex infrastructure
+-   Large team
+-   Expensive tools
+
+You do need:
+
+-   Legal compliance
+-   Working functionality
+-   Clear communication
+
+**You can launch with:**
+
+-   Yourself initially
+-   Basic infrastructure
+-   MVP implementation
+-   Free/low-cost tools
+-   Volunteers for help
+
+**Focus on:**
+
+-   Legal requirements (non-negotiable)
+-   Core functionality (working \> perfect)
+-   Good documentation (for future team)
+-   Clear communication (honest about solo start)
+
+**Scale when:**
+
+-   You have users
+-   You have validation
+-   Team grows naturally
+-   Revenue supports it
+
+## 15. Version History
+
+-   **V0.9.30** (2025-12-17): Adapted for small organization reality
+
+## 16. Related Documents
+
+-   [Privacy Policy](../../../privacy-policy.md)
+-   [Transparency Policy](../../legal-and-compliance/transparency-policy.md)
+-   [Open Source Model and Licensing](../../legal-and-compliance/open-source-model-and-licensing/index.md)
+-   [Finance & Compliance](../../legal-and-compliance/finance-and-compliance/index.md)
+-   [Governance](../index.md)
+
+**Last Updated:** September 18, 2026 **Status:** Adapted for solo start with team growth expected

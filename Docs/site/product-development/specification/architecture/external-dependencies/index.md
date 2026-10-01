@@ -1,0 +1,112 @@
+# External Dependencies
+
+FactHarbor depends on external LLM providers for AI analysis and search providers for evidence retrieval. This page documents the integration architecture, model tiering strategy, and provider health monitoring.
+
+## Dependencies Map
+
+# External Dependencies Map
+
+![External Dependencies Map diagram 1](../../../../diagrams/diagram-4b0158243f6583c7.svg)
+
+[Full-size diagram](../../../../diagrams/diagram-4b0158243f6583c7.svg) · [Mermaid source](../../../../diagrams/diagram-4b0158243f6583c7.mmd)
+
+*FactHarbor's external dependency map showing integrations with 4 LLM providers, 6 search providers, and web content sources, all routed through abstraction layers and monitored by the provider health system.*
+
+*FactHarbor integrates with 4 LLM providers, 2 search providers, and web content sources. All external calls are routed through abstraction layers (model-tiering, web-search, retrieval) and monitored by the provider health system.*
+
+## LLM Provider Integration
+
+### Model Tiering
+
+The AKEL pipeline uses **per-task model tiering** to balance cost and quality. Lightweight tasks (claim extraction, evidence parsing) use cheaper budget models; critical tasks (verdict reasoning) use premium models.
+
+# LLM Model Tiering
+
+![LLM Model Tiering diagram 1](../../../../diagrams/diagram-48a116b9e2e10f71.svg)
+
+[Full-size diagram](../../../../diagrams/diagram-48a116b9e2e10f71.svg) · [Mermaid source](../../../../diagrams/diagram-48a116b9e2e10f71.mmd)
+
+*Per-task model tiering: lightweight tasks (extraction, understanding) use budget models, while critical tasks (verdict reasoning) use premium models. All calls routed through the Vercel AI SDK.*
+
+*Pipeline tasks are routed to the appropriate model tier via model-tiering.ts. All LLM calls go through the Vercel AI SDK, which provides a unified interface across providers.*
+
+For detailed provider model mapping, tiered routing configuration, and implementation status, see [LLM Abstraction Architecture](../../../diagrams/llm-abstraction-architecture/index.md).
+
+### Provider Model Mapping
+
+| Task | Tier | Anthropic | OpenAI | Google | Mistral |
+|----|----|----|----|----|----|
+| understand | Budget | Claude Haiku 4.5 | GPT-4.1-mini | Gemini 2.5-flash | (Anthropic fallback) |
+| extract_evidence | Budget | Claude Haiku 4.5 | GPT-4.1-mini | Gemini 2.5-flash | (Anthropic fallback) |
+| context_refinement | Standard | Claude Haiku 4.5 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback) |
+| verdict | Premium | Claude Sonnet 4.5 | GPT-4.1 | Gemini 2.5-pro | (Anthropic fallback) |
+
+### LLM Configuration
+
+-   **Provider selection**: Single provider for all tasks, set via `LLM_PROVIDER` environment variable (default: `anthropic`)
+-   **Model overrides**: Individual models configurable via UCM (`modelUnderstand`, `modelExtractEvidence`, `modelVerdict`)
+-   **Deterministic mode**: `FH_DETERMINISTIC=true` sets temperature to 0 for reproducible results
+-   **Structured output**: Uses Zod schemas with `generateObject()` for type-safe LLM responses
+
+## Search Providers
+
+| Provider              | Role           | Credentials Required                  |
+|-----------------------|----------------|---------------------------------------|
+| **Google CSE**        | Primary search | `GOOGLE_CSE_API_KEY`, `GOOGLE_CSE_ID` |
+| **SerpAPI**           | Primary search | `SERPAPI_API_KEY`                     |
+| **Brave**             | Primary search | `BRAVE_API_KEY`                       |
+| **Wikipedia**         | Supplementary  | (none required)                       |
+| **Semantic Scholar**  | Supplementary  | (none required)                       |
+| **Google Fact Check** | Supplementary  | `GOOGLE_FACTCHECK_API_KEY`            |
+
+**Auto mode** (default): Prioritizes primary providers (Google CSE, SerpAPI, Brave) based on priority and availability. Supplementary providers (Wikipedia, Semantic Scholar, Google Fact Check) are always executed if enabled to provide deep-domain grounding. Configurable via `SearchConfig.provider` (`"auto"` or explicit provider key).
+
+## Content Extraction
+
+| Source Type   | Library  | Capabilities                                  |
+|---------------|----------|-----------------------------------------------|
+| HTML pages    | cheerio  | DOM parsing, text extraction, link extraction |
+| PDF documents | pdf2json | Text extraction from PDF files                |
+
+Content is fetched with configurable timeouts and retry logic. No caching is currently implemented for fetched content (each analysis re-fetches all sources).
+
+## Provider Health Monitoring
+
+FactHarbor includes a **circuit breaker** per provider type (search, LLM) that detects outages and auto-pauses the system to prevent cascading failures.
+
+# Circuit Breaker States
+
+![Circuit Breaker States diagram 1](../../../../diagrams/diagram-2d40592a1f61f6fe.svg)
+
+[Full-size diagram](../../../../diagrams/diagram-2d40592a1f61f6fe.svg) · [Mermaid source](../../../../diagrams/diagram-2d40592a1f61f6fe.mmd)
+
+*The circuit breaker starts CLOSED (healthy). After consecutive failures reach the threshold (default: 3), it opens — the system auto-pauses, queued jobs wait, and a webhook notifies the admin. When the admin resumes, the circuit enters HALF_OPEN to test recovery.*
+
+### Health Features
+
+| Feature | Description |
+|----|----|
+| **Circuit breaker** | Per-provider (search/LLM) with configurable threshold (`heuristicCircuitBreakerThreshold`, default: 3) |
+| **Auto-pause** | Runner queue halts when circuit trips; jobs stay QUEUED (not lost) |
+| **Webhook notifications** | Fire-and-forget POST to `FH_WEBHOOK_URL` with optional HMAC signing (`FH_WEBHOOK_SECRET`) |
+| **Admin API** | `GET /api/fh/system-health` (status), `POST /api/fh/system-health` (resume/pause) |
+| **UI banner** | Amber warning banner when system is paused, with admin resume/pause controls |
+| **Error classification** | Categorises errors as provider_outage, rate_limit, timeout, or unknown |
+
+## Credential Requirements
+
+| Variable | Required | Purpose |
+|----|----|----|
+| `ANTHROPIC_API_KEY` | If using Anthropic | Claude API access |
+| `OPENAI_API_KEY` | If using OpenAI | GPT API access |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | If using Google | Gemini API access |
+| `MISTRAL_API_KEY` | If using Mistral | Mistral API access |
+| `GOOGLE_CSE_API_KEY` | For search | Google Custom Search API |
+| `GOOGLE_CSE_ID` | For search | Google Custom Search Engine ID |
+| `SERPAPI_API_KEY` | For fallback search | SerpAPI access |
+| `FH_WEBHOOK_URL` | Optional | Provider health webhook endpoint |
+| `FH_WEBHOOK_SECRET` | Optional | HMAC-SHA256 webhook signature |
+
+------------------------------------------------------------------------
+
+**Navigation:** [Architecture](../index.md) \| Prev: [Data Model](../data-model/index.md) \| Next: [Storage and Configuration](../storage-and-configuration/index.md)

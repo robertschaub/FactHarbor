@@ -23,8 +23,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Key files, patterns, terminology |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki` | Testing requirements |
+| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
+| `/Docs/site/product-development/devops/guidelines/testing-strategy/index.md` | Testing requirements |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the code being reviewed |
 
 ## Key Source Files

@@ -1,0 +1,57 @@
+flowchart LR
+    INPUT["User Input<br/>(text or URL)"] --> STAGE1
+
+    subgraph STAGE1["1. Extract Claims"]
+        direction TB
+        CLAIMS["Extract AtomicClaims<br/>(Pass 1 + Pass 2)"]
+        GATE1{{"Gate 1<br/>Claim Validation"}}
+        FIDELITY["Fidelity & Specificity<br/>Filtering"]
+        CLAIMS --> GATE1 --> FIDELITY
+    end
+
+    STAGE1 --> STAGE2
+
+    subgraph STAGE2["2. Research Evidence"]
+        direction TB
+        QUERY["Generate pro/con<br/>search queries"]
+        FETCH["Fetch & parse<br/>sources"]
+        FILTER["Filter evidence<br/>(probativeValue)"]
+        QUERY --> FETCH --> FILTER
+        FILTER -.->|"sufficiency check"| QUERY
+    end
+
+    STAGE2 --> STAGE3
+
+    subgraph STAGE3["3. Cluster Boundaries"]
+        direction TB
+        SCOPES["Extract EvidenceScopes<br/>(methodology, temporal)"]
+        CLUSTER["Cluster into emergent<br/>ClaimAssessmentBoundaries"]
+        SCOPES --> CLUSTER
+    end
+
+    STAGE3 --> STAGE4
+
+    subgraph STAGE4["4. Generate Verdicts"]
+        direction TB
+        DEBATE["LLM Debate Pattern<br/>(Advocate/Challenger/Reconciler)"]
+        CONSISTENCY["Self-consistency<br/>& grounding check"]
+        DEBATE --> CONSISTENCY
+    end
+
+    STAGE4 --> STAGE5
+
+    subgraph STAGE5["5. Aggregate & Report"]
+        direction TB
+        TRIANG["Triangulation & Weighted<br/>Aggregation"]
+        GATE4{{"Gate 4<br/>Confidence Tiering"}}
+        REPORT["Structured Report<br/>(Narrative & Findings)"]
+        TRIANG --> GATE4 --> REPORT
+    end
+
+    STAGE5 --> RESULT["AnalysisResult<br/>(schema 3.0.0-cb)"]
+
+    style STAGE1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style STAGE2 fill:#fff9c4,stroke:#f57f17,color:#000
+    style STAGE3 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style STAGE4 fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    style STAGE5 fill:#fce4ec,stroke:#c2185b,color:#000

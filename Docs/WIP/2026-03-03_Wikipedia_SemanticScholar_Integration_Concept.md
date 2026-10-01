@@ -3,7 +3,6 @@
 **Date:** 2026-03-03  
 **Last Updated:** 2026-04-03  
 **Status:** Active as a future integration concept. The provider-layer implementation is already in the codebase; the open work is deeper pipeline integration.  
-**Historical detail:** [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept_arch.md](../ARCHIVE/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept_arch.md)
 
 ---
 
@@ -48,7 +47,7 @@ Important current behavior (updated 2026-04-04):
   - `always_if_enabled` **(current default)** — supplementary providers run bounded alongside primary search
 - `supplementaryProviders.maxResultsPerProvider` (default: 3) caps each supplementary provider's contribution
 - Wikipedia now threads detected claim language (preferred) → configured language → `”en”` for subdomain selection
-- these orchestration changes were validated on 5 scenarios (2026-04-04): see `Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`
+- these orchestration changes were validated on 5 scenarios (2026-04-04): see 2026-04-03 Wikipedia Supplementary Completion Plan
 
 So the remaining open gap is no longer “when supplementary providers should run” or “language routing”. The remaining gap is:
 

@@ -22,8 +22,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, key files, commands |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Coding Guidelines/WebHome.xwiki` | Code quality standards |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki` | ClaimBoundary pipeline (5-stage workflow) |
+| `/Docs/site/product-development/devops/guidelines/coding-guidelines/index.md` | Code quality standards |
+| `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the task's area |
 
 ## Key Source Files

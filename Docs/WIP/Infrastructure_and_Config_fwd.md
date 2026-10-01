@@ -2,7 +2,6 @@
 
 **Created:** 2026-03-17  
 **Status:** Active — residual forward-looking infrastructure items only  
-**Historical detail:** [Infrastructure_and_Config_fwd_arch.md](../ARCHIVE/Infrastructure_and_Config_fwd_arch.md)
 
 ---
 

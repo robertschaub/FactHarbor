@@ -1,0 +1,44 @@
+flowchart TB
+    subgraph Admin["Admin UI"]
+        EDITOR["Config Editor<br/>(JSON / Form view)"]
+        HISTORY["Version History<br/>& Compare"]
+    end
+
+    subgraph Types["Configuration Types"]
+        PIPELINE["Pipeline Config"]
+        SEARCH["Search Config"]
+        CALC["Calculation Config"]
+        SR["Source Reliability"]
+        PROMPTS["Prompt Templates"]
+    end
+
+    subgraph Validation["Validation"]
+        ZOD["Zod Schema<br/>Validation"]
+        CANON["SHA-256<br/>Content Hash"]
+    end
+
+    subgraph Storage["SQLite (config.db)"]
+        BLOBS["config_blobs<br/>(immutable, content-addressed)"]
+        ACTIVE["config_active<br/>(activation pointers)"]
+        SNAPSHOTS["job_config_snapshots<br/>(per-job tracking)"]
+    end
+
+    subgraph Runtime["Runtime"]
+        CACHE["In-memory Map<br/>(60s TTL)"]
+        JOB["Analysis Job<br/>(reads snapshot)"]
+    end
+
+    EDITOR --> Types
+    Types --> ZOD
+    ZOD -->|"valid"| CANON
+    CANON --> BLOBS
+    BLOBS --> ACTIVE
+    ACTIVE --> SNAPSHOTS
+    ACTIVE --> CACHE
+    CACHE --> JOB
+    HISTORY --> BLOBS
+
+    style Admin fill:#f3e5f5,stroke:#6a1b9a,color:#000
+    style Validation fill:#fff9c4,stroke:#f9a825,color:#000
+    style Storage fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Runtime fill:#e8f5e9,stroke:#2e7d32,color:#000

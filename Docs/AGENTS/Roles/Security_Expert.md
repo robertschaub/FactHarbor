@@ -23,8 +23,8 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Auth headers, safety rules |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Security and Operations/WebHome.xwiki` | Security architecture |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/WebHome.xwiki` | Deployment security |
+| `/Docs/site/product-development/specification/architecture/security-and-operations/index.md` | Security architecture |
+| `/Docs/site/product-development/devops/deployment/index.md` | Deployment security |
 | `apps/web/.env.example` | Environment variable patterns |
 | `apps/api/appsettings.Development.json.example` | API configuration patterns |
 

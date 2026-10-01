@@ -24,10 +24,11 @@ Per-role definition files. Each contains mission, focus areas, authority, requir
 
 ### Additional Role Resources
 
+All documentation authors: [Markdown authoring and preview](../DEVELOPMENT/Documentation.md).
+
 | Role | Document | Description |
 |------|----------|-------------|
 | **Any agent (coding)** | [/AGENTS.md](/AGENTS.md) | Fundamental rules, terminology, architecture — read first |
-| **xWiki Editor** | [AGENTS_xWiki.md](AGENTS_xWiki.md) | Rules for editing .xwiki files directly |
 | **.NET API Developer** | [/apps/api/AGENTS.md](/apps/api/AGENTS.md) | .NET-specific patterns, structure, and conventions |
 
 ---
@@ -78,8 +79,6 @@ The first three rows form the **quality-expectations triad** consumed by `/repor
 | [Captain_Quality_Expectations.md](Captain_Quality_Expectations.md) | Human-readable summary of current Captain benchmark and generic quality expectations |
 | [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 scored benchmark families |
 | [report-quality-expectations.json](report-quality-expectations.json) | Machine-readable cross-input Q-code quality criteria used by `/report-review` |
-| [GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md) | Core rules and document handling for xWiki work |
-| [InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md) | Chat initialization prompt for xWiki-focused sessions |
 | [Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md) | Syntax reference for Mermaid diagrams in documentation |
 
 Shared FactHarbor skills are authoritative under `.claude/skills`, with fourteen declared `.agents/skills` copies. Run `node scripts/agents/check-skill-mirrors.mjs` after changes. Invocation metadata is client-specific; Gemini workspace disabled-skill settings and Cline visible skill toggles require separate session verification. A clone does not contain ignored local settings.

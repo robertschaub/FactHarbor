@@ -1,7 +1,7 @@
 # Evidence Lifecycle and Quality V2
 
 **Status:** V2 target specification companion
-**Canonical reader page:** `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Evidence Lifecycle V2/WebHome.xwiki`
+**Canonical reader page:** `Docs/site/product-development/pipeline-v2/specification/architecture/deep-dive/evidence-lifecycle-v2/index.md`
 
 This document summarizes the V2 replacement for the V1 evidence-quality-filter approach. V2 treats evidence quality as a lifecycle responsibility rather than as a late deterministic cleanup pass.
 

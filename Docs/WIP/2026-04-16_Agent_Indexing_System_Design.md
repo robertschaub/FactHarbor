@@ -120,9 +120,8 @@ The index rebuild is wired into every process that changes the handoff corpus or
 |---|---|---|
 | Agent writes a handoff (`Write` tool on `Docs/AGENTS/Handoffs/**`) | PostToolUse hook fires `rebuild-index-on-change.cjs` → `--tier=2` | `.claude/settings.json` |
 | Agent edits pipeline code (`Edit`/`Write` on `apps/web/src/lib/analyzer/**`) | PostToolUse hook fires `rebuild-index-on-change.cjs` → `--tier=1` | `.claude/settings.json` |
-| `/wip-update` skill runs | Step 5b instructs agent to run `build-index.mjs --tier=2` after archiving | `.claude/skills/wip-update/SKILL.md` |
+| `/wip-update` skill runs | The assigned integrator rebuilds the relevant index after approved lifecycle changes | `.claude/skills/wip-update/SKILL.md` |
 | `/docs-update` skill runs | Step 4b instructs agent to run `build-index.mjs --tier=2` (and `--tier=1` if analyzer files changed) | `.claude/skills/docs-update/SKILL.md` |
-| `monthly-prune-handoffs.mjs` runs | Script calls `execSync('node scripts/build-index.mjs --tier=2')` before exit | `scripts/monthly-prune-handoffs.mjs` |
 | Manual / first-time seed | `npm run index` at repo root | `package.json` |
 
 **Hook implementation**: `scripts/hooks/rebuild-index-on-change.cjs` — reads tool input from stdin, checks file path, runs the appropriate tier. Never blocks on errors.

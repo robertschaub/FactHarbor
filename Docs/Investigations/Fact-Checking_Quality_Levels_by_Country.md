@@ -147,4 +147,4 @@ Over 50% of IFCN organizations now use AI tools, but almost exclusively for:
 - [Swiss Fact-Checking Landscape 2026](../Knowledge/Swiss_FactChecking_Landscape_2026.md) — detailed Swiss actors, tools, contacts
 - [Global Fact-Checking Landscape 2026](../Knowledge/Global_FactChecking_Landscape_2026.md) — AI systems, competitive positioning, action plan
 - [Faktencheck Tools Schweizer Redaktionen](../Knowledge/Faktencheck_Tools_Schweizer_Redaktionen_2025.md) — tools in use in Swiss newsrooms
-- [Cooperation Opportunities](../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation%20Opportunities/WebHome.xwiki) — strategy and priority lanes
+- [Cooperation Opportunities](../site/organisation/strategy/cooperation-opportunities/index.md) — strategy and priority lanes
