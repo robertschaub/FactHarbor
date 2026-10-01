@@ -11,9 +11,19 @@ export function normalizeHeading(value) {
 export function extractSections(text) {
   const lines = text.split(/\r?\n/);
   const sections = [];
+  let fence = null;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+      continue;
+    }
+    if (marker) {
+      fence = marker[1];
+      continue;
+    }
     const markdownMatch = line.match(/^(#{1,6})\s+(.+?)\s*$/);
     if (markdownMatch) {
       sections.push({
@@ -26,16 +36,6 @@ export function extractSections(text) {
       continue;
     }
 
-    const xwikiMatch = line.match(/^(=+)\s*(.+?)\s*\1\s*$/);
-    if (xwikiMatch) {
-      sections.push({
-        heading: xwikiMatch[2].trim(),
-        normalizedHeading: normalizeHeading(xwikiMatch[2]),
-        level: xwikiMatch[1].length,
-        startLine: index + 1,
-        endLine: lines.length,
-      });
-    }
   }
 
   for (let index = 0; index < sections.length; index += 1) {

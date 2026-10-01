@@ -1,163 +1,26 @@
-# Links Inventory — FactHarbor
+# Documentation links
 
-Live site: https://robertschaub.github.io/FactHarbor/
+The [documentation website](https://robertschaub.github.io/FactHarbor/) is built from `Docs/site/` using `mkdocs.yml`. Ordinary Markdown links connect current pages; shared images and Mermaid sources live under `Docs/site/diagrams/`.
 
----
+## Stable destinations
 
-## Redirect Aliases (`_redirects.json`)
+`Docs/site/assets/legacy-routes.json` contains the explicit page-key and directory aliases. Query and root-hash page keys resolve only through this map. Unknown destinations show the not-found page.
 
-Each entry creates both an HTML redirect page (`/slug/` clean URL) and a bundle alias (`#slug` hash URL).
+| Address | Destination |
+|---|---|
+| `/TestReports/` | `test-reports.html` |
+| `/LegalFramework/` | `legal-framework.html` |
+| `/Product Development.Presentations.Meeting UZH.WebHome/` | `academic-cooperation.html` |
+| `/FactCheckerCooperation/` | `fact-checker-cooperation.html` |
+| `/Product Development.Presentations.Fact-Checker Cooperation.WebHome/` | `fact-checker-cooperation.html` |
+| `/Funding/` | `funding.html` |
+| `/LinkedIn/` | `linkedin.html` |
+| `/LinkedInDE/` | `linkedin-de.html` |
 
-| Slug | Target Page Ref | URL |
-|------|----------------|-----|
-| `TestReports` | `Product Development.TestReports.WebHome` | `/TestReports/` or `#TestReports` |
-| `LegalFramework` | `Organisation.Legal and Compliance.Legal Framework.WebHome` | `/LegalFramework/` or `#LegalFramework` |
+The report HTML files in `Docs/TESTREPORTS/` and the pitch assets in `Docs/prototype-fund-pitch/` retain their published URL paths. Their source files are copied unchanged by the build.
 
-**File:** `Docs/xwiki-pages/_redirects.json` (object format: `{ "slug": "#encodedRef" }`)
-**Legacy:** `Docs/xwiki-pages/viewer-impl/_redirects.json` (array format, still supported)
+## Publication
 
----
+`.github/workflows/deploy-docs.yml` publishes the strict MkDocs build after an authorized push to `main`. CI owns `gh-pages`; do not push directly to it. An authorized redeploy can use `gh workflow run "Deploy Docs to GitHub Pages" --ref main`.
 
-## Internal Cross-Links (doc: references)
-
-657 internal links across 117 xWiki files, linking to 160+ unique target pages.
-
-### Most-Referenced Targets
-
-| Target Page | Context |
-|-------------|---------|
-| `FactHarbor.Organisation.Governance.WebHome` | Governance structure |
-| `FactHarbor.Organisation.How-We-Work-Together.WebHome` | Working agreements |
-| `FactHarbor.Product Development.WebHome` | Product development root |
-| `FactHarbor.Product Development.Specification.WebHome` | Specification root |
-| `FactHarbor.Product Development.DevOps.Guidelines.Getting Started.WebHome` | Developer onboarding |
-| `FactHarbor.Organisation.How-We-Work-Together.Privacy-Policy` | Privacy policy |
-| `FactHarbor.Organisation.How-We-Work-Together.Terms-of-Service` | Terms of service |
-| `FactHarbor.Organisation.How-We-Work-Together.Consent-Based-Decision-Making` | Decision-making process |
-
-### Key Cross-Link Clusters
-
-**Governance & Policy:**
-- Privacy Policy, Terms of Service, Transparency Policy, Security Policy
-- Consent-Based Decision Making, Continuous Improvement, Workplace Culture
-
-**Architecture & Specification:**
-- System Design, Data Model, AKEL Pipeline
-- Quality Gates, Source Reliability
-
-**DevOps & Deployment:**
-- Getting Started, Deployment, Zero-Cost Hosting
-
----
-
-## Cross-Project Links
-
-| Source | Target | URL |
-|--------|--------|-----|
-| `Organisation/How-We-Work-Together/WebHome.xwiki` | BestWorkplace home | `https://robertschaub.github.io/BestWorkplace/#The%20Best%20Workplace.WebHome` |
-| `Organisation/How-We-Work-Together/Workplace-Culture.xwiki` | BestWorkplace home | `https://robertschaub.github.io/BestWorkplace/#The%20Best%20Workplace.WebHome` |
-
----
-
-## Deep-Link Mechanisms
-
-Both mechanisms work for every redirect entry:
-
-1. **HTML redirect pages** — `/TestReports/index.html` serves `<script>window.location.replace("../#ref")</script>`
-2. **Bundle aliases** — `loadBundle()` adds `pageIndex["TestReports"] = pageIndex["Product Development.TestReports.WebHome"]`
-3. **Hash navigation** — `#Product%20Development.TestReports.WebHome` resolves directly via `hashchange` listener
-4. **Query parameter** — `?page=Product+Development.TestReports.WebHome` also works
-
----
-
-## Deep-Link URL Patterns
-
-All patterns for linking to a specific page:
-
-```
-https://robertschaub.github.io/FactHarbor/#Organisation.Governance.WebHome
-https://robertschaub.github.io/FactHarbor/?page=Organisation.Governance.WebHome
-https://robertschaub.github.io/FactHarbor/TestReports/  (via redirect alias)
-https://robertschaub.github.io/FactHarbor/LegalFramework/ (via redirect alias)
-```
-
----
-
-## CI/CD and audience-measurement status
-
-| Setting | Value |
-|---------|-------|
-| Workflow | `.github/workflows/deploy-docs.yml` |
-| Trigger | Push to `main` (watched paths) + `workflow_dispatch` |
-| Audience analytics | Disabled for the FactHarbor documentation build |
-| Deploy tool | `peaceiris/actions-gh-pages@v4` (`force_orphan: true`) |
-| Re-trigger | `gh workflow run "Deploy Docs to GitHub Pages" --ref main` |
-
-### `deploy-ghpages.ps1` — local preview only, NOT for publishing
-
-**File:** `Docs/xwiki-pages/scripts/deploy-ghpages.ps1`
-
-**What it does now:**
-1. Runs `build_ghpages.py` to generate `index.html` + `pages.json` in `gh-pages-build/`
-2. Switches to the local `gh-pages` branch
-3. Copies generated files
-4. Commits locally
-5. Switches back to the original branch — **does NOT push**
-
-**What it used to do (before 2026-02-21):**
-The original script included `git push origin gh-pages` as step 6. AI agents ran this script when asked to "publish" or "deploy" docs. This overwrote the CI-built `gh-pages` branch, bypassing the controlled publication path.
-
-**Why the push was removed:**
-- CI (`.github/workflows/deploy-docs.yml`) uses `peaceiris/actions-gh-pages@v4` with `force_orphan: true`, which replaces the entire `gh-pages` branch on every deploy.
-- The FactHarbor CI build intentionally passes no analytics endpoint, so the viewer does not track page views.
-- A manual `git push origin gh-pages` from the local script would bypass this controlled publication path.
-- BestWorkplace uses the same viewer architecture but makes its own deployment and analytics decision.
-
-**How to publish:** Push to `main`. CI deploys automatically.
-**How to re-trigger without a content change:** `gh workflow run "Deploy Docs to GitHub Pages" --ref main`
-
----
-
-## External Dependencies (viewer)
-
-| Resource | URL |
-|----------|-----|
-| Mermaid.js | `https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js` |
-| Google Fonts | `https://fonts.googleapis.com/css2?family=Crimson+Pro&family=JetBrains+Mono&family=Outfit` |
-| GitHub API | `https://api.github.com/repos/{repo}/contents/{path}` (for `{{github-files}}` macro) |
-
----
-
-## External URLs in Content
-
-Key external references across xWiki pages:
-
-**Project & Repository:**
-- GitHub: `https://github.com/robertschaub/FactHarbor`
-- XWiki server: `https://schaubgroup.ch/bin/view/FactHarbor/`
-
-**Licenses:**
-- Creative Commons BY-SA 4.0: `http://creativecommons.org/licenses/by-sa/4.0/`
-- MIT: `https://opensource.org/licenses/MIT`
-- AGPL-3.0: `https://www.gnu.org/licenses/agpl-3.0.en.html`
-
-**Hosting & Infrastructure:**
-- Fly.io: `https://fly.io/docs`
-- Upstash: `https://docs.upstash.com`
-- Cloudflare Pages: `https://pages.cloudflare.com`
-
-**AI/LLM Providers:**
-- Anthropic: `https://console.anthropic.com/`
-- OpenAI: `https://platform.openai.com/`
-- Google AI Studio: `https://aistudio.google.com/`
-- Mistral: `https://console.mistral.ai/`
-
-**Development Tools:**
-- Node.js, .NET, Git, VS Code, Cursor, Postman, Insomnia
-
-**Frameworks:**
-- Sociocracy 3.0: `https://sociocracy30.org/`
-
----
-
-*Last updated: 2026-02-21*
+See [authoring and preview guidance](DEVELOPMENT/Documentation.md) for local checks. Documentation fonts, scripts, search assets and rendered diagrams are served with the site; content links can lead to external services under their own terms.

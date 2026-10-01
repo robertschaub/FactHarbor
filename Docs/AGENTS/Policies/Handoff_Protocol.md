@@ -32,7 +32,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 | "Senior Architect", "Principal Architect" | Lead Architect | `Docs/AGENTS/Roles/Lead_Architect.md` |
 | "Lead Developer" | Lead Developer | `Docs/AGENTS/Roles/Lead_Developer.md` |
 | "Senior Developer" | Senior Developer | `Docs/AGENTS/Roles/Senior_Developer.md` |
-| "Tech Writer", "xWiki Expert", "xWiki Developer" | Technical Writer | `Docs/AGENTS/Roles/Technical_Writer.md` |
+| "Tech Writer" | Technical Writer | `Docs/AGENTS/Roles/Technical_Writer.md` |
 | "LLM Expert", "AI Consultant", "FH Analysis Expert" | LLM Expert | `Docs/AGENTS/Roles/LLM_Expert.md` |
 | "Product Manager", "Product Owner", "Sponsor" | Product Strategist | `Docs/AGENTS/Roles/Product_Strategist.md` |
 | "Code Reviewer" | Code Reviewer | `Docs/AGENTS/Roles/Code_Reviewer.md` |
@@ -56,7 +56,7 @@ Full role definitions: `Docs/AGENTS/Roles/`. Shared workflows, area-to-document 
 - **Verify your work.** After implementing, run tests, build, or check output. Don't mark work done without verification.
 - **Be cost-aware.** Minimize unnecessary LLM calls, file reads, and token usage. Don't re-read files you already have in context. Don't generate verbose output when concise will do.
 - **Don't gold-plate.** Deliver what was requested — don't also refactor the file, add comments, and update docs unrequested. But DO report issues, inconsistencies, or improvement opportunities you notice along the way — just flag them, don't act on them without asking.
-- **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/xwiki-pages/FactHarbor/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
+- **Cross-check code against docs.** When working on code, consult the related documentation under `Docs/site/` (see the area-to-document mapping in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §1.2). When working on docs, check the code it describes. Report any mismatches — stale docs and diverged implementations are high-value catches.
 - **Summarize when done.** Follow the Agent Exchange Protocol below — use chat or the existing task record when sufficient; create a handoff only when continuity needs it, under the output tiers below.
 
 ### Agent Exchange Protocol (MANDATORY)
@@ -69,13 +69,19 @@ The restricted-writer definition is canonical in [Collaboration Rules §4.3](../
 
 Restricted reviewers return findings, warnings, learnings, and exact reviewed-revision evidence in chat without writing completion files or indexes. The designated integrator writes their completion artifacts under the normal tiers below, preserving reviewer attribution and outcome. For scoped workers, file ownership governs where they may write; return out-of-scope completion material in chat for the integrator. During concurrent writing, the integrator serializes shared output/log/index changes and rebuilds, including `Role_Learnings.md`; this exception applies to the persistence instructions throughout this protocol. See [Collaboration Rules §4.3](../Multi_Agent_Collaboration_Rules.md#43-concurrent-editing).
 
+#### Source and output scope
+
+Use public contracts and current source for ordinary contributions. Load other references only when supplied or explicitly authorized for the task. Missing or empty historical discovery results are context gaps; do not infer resolution or fabricate a replacement history.
+
+The public output locations below apply to concise public task records. Full research, experimental histories and non-public handoffs use the task's authorized record and access boundary. Do not create those collections publicly by default, or publish destination catalogs. Preserve decisions, provenance, holds and permitted next actions in the record accessible to the authorized next reader; public instructions must still work without that access.
+
 #### Modes
 
 | Mode | When | Where Output Lives |
 |------|------|-------------------|
 | **Completion** | Finishing a task | Chat, existing task record, or a warranted handoff/index entry under the tiers below |
 | **Role Handoff** | Switching from one role to another | Same as Completion, with Warnings/Learnings and the relevant incoming-role checklist |
-| **Investigation** | Multi-agent parallel research (Captain-directed) | `Docs/WIP/` hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
+| **Investigation** | Multi-agent parallel research (Captain-directed) | the task's authorized output location (`Docs/WIP/` only for concise public-safe work) hub+spoke — see `Multi_Agent_Collaboration_Rules.md` §3.4 |
 
 #### Output tiers (Completion and Role Handoff modes)
 
@@ -137,7 +143,7 @@ The assignment and reviewed-revision fields above are required for concurrent wo
   **For next agent:** <summary, include 1–2 key symbols: class names / endpoints / file paths>
   → Docs/AGENTS/Handoffs/<filename>.md
   ```
-- **Lifecycle:** Consumed by the next agent. Handoff files and their index rows are archived together on the 1st of each month (see §Archival Thresholds). NOT long-lived design docs (those go in `Docs/WIP/`).
+- **Lifecycle:** Consumed by the next agent. Keep useful completion evidence available. Retirement is assigned maintenance, never an automatic calendar or completion side effect. NOT long-lived design docs (those go in `Docs/WIP/`).
 
 #### Role Handoff — incoming role checklist
 
@@ -157,25 +163,13 @@ When you are the **incoming** role (receiving a handoff or starting a role mid-p
 - **Append, don't overwrite.** When writing to `Agent_Outputs.md`, always append below the header — never delete or modify previous entries.
 - **Be concise.** The "For next agent" field is the most important — focus on what someone picking up this work needs to know.
 
-### Archival Thresholds — Calendar-month procedure
+### Record lifecycle
 
-Only an authorized integrator performs archival as part of assigned maintenance, typically on or after the 1st of each month. It is not a read-only or ordinary completion side effect. The procedure is fully deterministic and implemented in `scripts/monthly-prune-handoffs.mjs`:
+An authorized integrator reviews completed records within a defined maintenance scope. Age alone does not authorize removal. Preserve active decisions, open items, provenance and operative rules before retiring any record; verify the assigned preservation procedure and repair affected references together.
 
-1. Identify the previous calendar month (e.g., on 2026-06-01 → 2026-05).
-2. Move every `Docs/AGENTS/Handoffs/<YYYY-MM>-*.md` file whose date prefix falls in the previous month → `Docs/ARCHIVE/Handoffs/<YYYY-MM>/` (preserving filenames).
-3. Move every index row in `Agent_Outputs.md` whose date falls in the previous month → `Docs/ARCHIVE/Agent_Outputs_<YYYY-MM>.md`. Rewrite each `→ Docs/AGENTS/Handoffs/<file>` link to `→ Docs/ARCHIVE/Handoffs/<YYYY-MM>/<file>` so the archived index resolves.
-4. The active `Agent_Outputs.md` and active `Handoffs/` retain current-month content only.
+Routine completion does not create additional history collections, destination catalogs or relocation notices. Keep the active registry and tracked-source index consistent with the records retained here. If preservation or removal authority is missing, keep the record and report what is needed.
 
-**Why calendar boundaries:** Steady-state active size averages ½ monthly volume, peaks at full monthly volume on day 30. No arbitrary count or 30-day-rolling thresholds.
-
-**Invocation:**
-```
-node scripts/monthly-prune-handoffs.mjs --dry-run   # preview
-node scripts/monthly-prune-handoffs.mjs             # execute
-node scripts/monthly-prune-handoffs.mjs --month 2026-05   # override target month
-```
-
-**Role_Learnings.md** archival: Captain curates quarterly. Promote best learnings into role files or collaboration rules; archive dated entries.
+Captain curates durable role learnings; promote useful guidance into the relevant role or collaboration rules before retiring dated notes.
 
 ### Consolidate WIP Procedure
 

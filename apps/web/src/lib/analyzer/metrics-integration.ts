@@ -583,7 +583,7 @@ function buildD5QualityHealthTelemetry(
 // PIPELINE TELEMETRY BUILDER
 // ============================================================================
 //
-// See Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md and the type
+// See Docs/STATUS/Backlog.md for observability constraints, and the type
 // docs in metrics.ts. Pure functions over already-collected structured outputs:
 // no LLM calls, no behavior change, no severity change.
 

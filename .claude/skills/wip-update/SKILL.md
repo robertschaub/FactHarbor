@@ -3,13 +3,15 @@ name: wip-update
 description: >
   Consolidate all documentation in Docs/WIP/. Investigates implementation status of WIP topics
   using helper agents when the tool supports delegation, ensures all open items are well-described
-  and present in the backlog, updates and cleans up backlog and status files, and moves
-  historical/completed content to the Archive.
+  and present in the backlog, updates and cleans up backlog and status files, and
+  handles completed records within the task's explicit preservation scope.
   Use this skill whenever the user says "consolidate WIP", "clean up WIP", "tidy WIP docs",
   "audit WIP", or asks to update the backlog from WIP — even if phrased differently.
   Note: this skill covers Docs/WIP/ only. To clean up the entire Docs/ tree use docs-update.
 allowed-tools: Bash Read Write Edit
 ---
+
+Use the task's authorized source and output scope. Public records carry concise current contracts and findings needed for public implementation. Full research, experimental histories and non-public handoffs use the assigned task record; do not create or recreate them publicly by default. Missing history is a context gap, not closure. The handoff protocol governs preservation and discovery.
 
 Bind this workflow to the documents, diff or question in the current authorized task and any explicit invocation arguments (`TASK_ARGUMENTS`). This name is a description, not a client-expanded variable or shell expression; do not guess the active editor file. Skill loading does not expand action, path or writable-state authority. Follow root AGENTS.md and the assigned session profile; return proposals/findings in chat when read-only.
 
@@ -19,7 +21,7 @@ Bind this workflow to the documents, diff or question in the current authorized 
 This skill audits `Docs/WIP/`, reconciles each file against the codebase and backlog, dispatches
 helper agents to investigate ambiguous implementation status when the active tool supports
 delegation, and leaves the workspace in a clean state: active work is well-described, completed
-or historical content is archived, and the three status documents are up to date.
+records have an explicit disposition, and the three status documents are up to date.
 
 ---
 
@@ -27,10 +29,10 @@ or historical content is archived, and the three status documents are up to date
 
 Read relevant sections of these references for the requested WIP scope:
 
-1. `Docs/WIP/README.md` — current active-file registry and cleanup history
+1. `Docs/WIP/README.md` — current public task and preservation guidance
 2. `Docs/STATUS/Backlog.md` — current backlog items
 3. `Docs/STATUS/Current_Status.md` — live system status and recent changes
-4. `Docs/ARCHIVE/README_ARCHIVE.md` — archive naming rules and entry format
+4. `Docs/DEVELOPMENT/Documentation.md` — preservation and maintenance boundaries
 5. `Docs/AGENTS/Procedures/Consolidate_WIP.md` — base procedure (this skill extends it)
 
 The base procedure gives the underlying classification mechanics. This skill extends it with
@@ -68,7 +70,7 @@ matching row wins:
 |----------|----------|
 | **STILL ACTIVE** | Dated today or within 7 days; OR explicitly flagged as the current active phase/charter; OR part of a named open workstream |
 | **DONE** | Every item bears ✅ or "SHIPPED/IMPLEMENTED" marker; OR a commit hash confirms the work landed and no follow-up tasks remain |
-| **SUPERSEDED** | A newer document explicitly replaces this one; OR the same topic is now fully covered in a spec/arch doc or xWiki page |
+| **SUPERSEDED** | A newer document explicitly replaces this one; OR the same topic is now fully covered in a current specification or architecture page |
 | **PARTIALLY DONE** | Some items have ✅ / commit confirmation; other items are clearly still open |
 | **HISTORICAL** | Pure investigation report, meeting note, QA batch run, or one-off analysis — no forward-looking action items whatsoever |
 | **STALE** | Dated 3+ months ago; not referenced in README active sections; no open items blocking current work |
@@ -77,7 +79,7 @@ matching row wins:
 
 1. The file itself — completion markers, phase labels, explicit "REVERTED / PARKED / APPROVED"
 2. `git log --oneline --all -- <source files named in the doc>` — verify whether related code landed
-3. `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` → "Recently Completed" section
+3. `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` → the current item status section
 4. Helper-agent or self investigation for genuinely ambiguous files (Step 3)
 
 **Do not delegate Step 3 for:**
@@ -113,7 +115,7 @@ Steps:
 1. Run: git log --oneline --all -- <list of source files or patterns if known>
 2. Read the most relevant recent commits (last 30 days) touching those files.
 3. If no relevant file is obvious, search: rg -l "<key identifier from the doc>" apps -g "*.ts" -g "*.cs"
-4. Read Docs/STATUS/Current_Status.md, section "Recent Changes".
+4. Read the relevant existing sections of Docs/STATUS/Current_Status.md.
 
 Return exactly this structure:
 STATUS: implemented | partial | not-implemented | cannot-determine
@@ -135,7 +137,7 @@ Use the helper investigation's `STATUS` and `OPEN_ITEMS` to finalize the classif
 
 ## Step 4 — Act on each classification
 
-### DONE / SUPERSEDED / HISTORICAL → Archive
+### DONE / SUPERSEDED / HISTORICAL → Review retirement
 
 Before moving the file, answer two questions:
 
@@ -158,18 +160,11 @@ A file is **mixed** when it passes *both* of these tests:
 A file is **NOT mixed** just because it happens to describe completed work — completion
 descriptions are historical and can be archived whole.
 
-**If mixed:** Split the file:
-1. Write the current/forward-looking content back to the original path (trimmed version).
-2. Write the historical content to `Docs/ARCHIVE/<same-relative-path>/<stem>_arch.md`.
-3. Add this note at the top of the trimmed original:
-   `> _Historical detail moved to [Docs/ARCHIVE/…/<stem>_arch.md]._`
+**If mixed:** Keep current meaning, operative controls and forward-looking content at the original path. Preserve historical material only through the task's authorized procedure before removing it.
 
-**If not mixed:** Move the whole file to `Docs/ARCHIVE/` preserving the relative path under
-`Docs/WIP/` (i.e., flat into `Docs/ARCHIVE/` since WIP is already one level deep).
+**If not mixed:** Retire the whole file only when preservation, dependency repairs and removal are covered by the assigned task. Otherwise retain it and report the missing scope.
 
-After archiving:
-- Update `Docs/ARCHIVE/README_ARCHIVE.md` with the new entry.
-- Remove the entry from `Docs/WIP/README.md`; add a line to "Cleanup History".
+Routine consolidation does not create additional history collections, destination catalogs or relocation notices. After authorized retirement, reconcile the active WIP registry and links without publishing the preservation inventory.
 
 ### PARTIALLY DONE → Update in place
 
@@ -196,23 +191,13 @@ Include in the Step 6 report with the helper investigation evidence (or lack of 
 
 ## Step 5 — Sync status documents
 
-After all individual files are processed, update these three documents:
+Update the sections that already exist in the current public documents:
 
-**`Docs/STATUS/Backlog.md`**
-- Add all extracted forward-looking items (from Step 4 Q1).
-- Move items to "Recently Completed" for every file newly classified DONE.
-- Remove items that are now demonstrably irrelevant.
-- Verify: every open WIP item should have a matching backlog entry. Add any that are missing.
+- `Docs/STATUS/Backlog.md`: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
+- `Docs/STATUS/Current_Status.md`: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
+- `Docs/WIP/README.md`: keep its current-work guidance and links accurate for the remaining public-safe records.
 
-**`Docs/STATUS/Current_Status.md`**
-- Update "Recent Changes" if any newly-archived WIP marks a completed milestone.
-- Update "Known Issues" if any WIP surfaces an issue not already listed.
-
-**`Docs/WIP/README.md`**
-- Rebuild the "Currently Active" and "Active Future Proposals" sections to exactly match the
-  files that remain.
-- Add a new row to "Cleanup History": date, consolidation number (increment from last row),
-  files archived count, files remaining count.
+Do not add public cleanup histories, completed-work collections or investigation logs. Full completion evidence uses the task's authorized output location under the handoff protocol.
 
 ---
 
@@ -227,11 +212,11 @@ Report any changed handoff sources to the designated integrator. WIP/status edit
 ```
 ## WIP Consolidation Summary
 
-### Archived — N files
-- <filename> → ARCHIVE — [reason: DONE / SUPERSEDED / HISTORICAL]
+### Retired — N files
+- <filename> — [reason: DONE / SUPERSEDED / HISTORICAL]
 
 ### Split — N files
-- <filename> (current part kept) + <filename>_arch.md → ARCHIVE — [what was split out]
+- <filename> (current part kept) — [what was split out]
 
 ### Updated in place (PARTIALLY DONE) — N files
 - <filename> — [what was marked done; what remains open]
@@ -241,10 +226,10 @@ Report any changed handoff sources to the designated integrator. WIP/status edit
 
 ### Backlog changes
 - Added: [new items with source file]
-- Moved to Recently Completed: [items]
+- Closed or updated: [items and evidence location within the authorized scope]
 
 ### Needs your decision — N files
-- <filename> — STALE since [date]. [One-sentence summary.] Archive or revive?
+- <filename> — STALE since [date]. [One-sentence summary.] Retire or revive?
 - <filename> — UNCERTAIN. [What the helper investigation found / didn't find.] How should I classify this?
 ```
 

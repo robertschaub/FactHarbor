@@ -8,7 +8,7 @@ Full unchanged texts: [GNU AGPL version 3](LICENSES/AGPL-3.0-only.txt) and [CC B
 |---|---|
 | Original software in `apps/`, `packages/`, `scripts/`, `tools/`; executable software within `Docs/`; root build scripts, machine configuration, workflows and hooks | AGPL-3.0-only |
 | Operative prompts, executable schemas, tests and configuration, including `apps/web/prompts/` and `apps/web/configs/` | AGPL-3.0-only, to the extent protectable |
-| Documentary specifications, XWiki and Markdown guidance, articles, diagrams, original graphics, README files and agent/contributor guidance | CC BY-SA 4.0 |
+| Documentary specifications, Markdown guidance, articles, diagrams, original graphics, README files and agent/contributor guidance | CC BY-SA 4.0 |
 
 Curated databases use [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) only when an explicit database notice designates them. Contents may have separate terms. Facts, analysis outputs, source articles and synthetic fixtures are not automatically ODbL databases.
 

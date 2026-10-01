@@ -46,7 +46,7 @@ Do not edit `source-reliability.prompt.md` expecting the main SR evaluation prom
 
 ## Text Analysis
 
-Lightweight specialized prompts. See [text-analysis/README.md](text-analysis/README.md).
+The retained specialized prompt is `text-analysis/inverse-claim-verification.prompt.md`. Its loader and provenance behavior must be checked in current source; its presence does not establish a supported UCM profile.
 
 ## Reseeding Prompts
 

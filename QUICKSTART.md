@@ -1,6 +1,6 @@
 # Quick Start Guide - Metrics
 
-> ⚠️ _Updated 2026-09-23: removed the Orchestrated-era metrics hooks, the `dotnet ef` migration step, the baseline and A/B test runners and the unused environment variables. The previous version is archived in [Docs/ARCHIVE/QUICKSTART_arch.md](Docs/ARCHIVE/QUICKSTART_arch.md)._
+> ⚠️ _Updated 2026-09-23: removed the Orchestrated-era metrics hooks, the `dotnet ef` migration step, the baseline and A/B test runners and the unused environment variables._
 
 ## 🚀 Start the Services
 
@@ -46,9 +46,9 @@ Analysis settings such as models, thresholds, limits and prompts are UCM setting
 
 ## 📚 Documentation
 
-- **Getting Started**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Getting Started/WebHome.xwiki`
-- **Metrics Schema**: `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki`
-- **Testing Strategy**: `Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`
+- **Getting Started**: `Docs/site/product-development/devops/guidelines/getting-started/index.md`
+- **Metrics Schema**: `apps/web/src/lib/analyzer/metrics.ts`
+- **Testing Strategy**: `apps/web/test/README.md`
 - **Current Status**: `Docs/STATUS/Current_Status.md`
 
 ---

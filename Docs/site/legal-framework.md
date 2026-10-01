@@ -1,0 +1,75 @@
+# Legal Framework
+
+
+
+## 1. Legal Status: Registered Swiss Verein
+
+
+FactHarbor is a **Swiss Verein** (non-profit association) under Art. 60 ff. of the Swiss Civil Code (ZGB), based in the Canton of Zürich. The association was **founded on April 23, 2026** at its founding assembly, where the statutes were adopted and the Governing Team elected.
+
+FactHarbor is entered in the **Commercial Register (Handelsregister)** of the Canton of Zürich under **UID CHE-448.446.098**; the entry is publicly visible on [Zefix](https://www.zefix.ch).
+
+This structure was selected for its simplicity, flexibility, and strong alignment with FactHarbor's mission-driven, automation-first philosophy.
+
+
+## 2. Core Non-Profit Principles
+
+
+Regardless of its stage, the organization is bound by several "mission-lock" principles:
+
+
+*   **Public-Benefit Purpose**: The entity exists exclusively to help people understand complex, contested information on an evidence-based foundation.
+*   **No Profit Distribution**: Any surplus is reinvested into the mission. There is no distribution of profits to founders, members, or donors.
+*   **Independence**: Governance rules prevent any single donor or interest group from overriding the organization's neutrality or algorithms.
+*   **Asset Stewardship**: Domains, code repositories, and trademarks are held by the Verein for the benefit of the public.
+*   **Dissolution Clause**: Upon dissolution, remaining assets must be transferred to another mission-compatible non-profit.
+
+
+## 3. Statutes (Bylaws)
+
+
+The statutes (Vereinsstatuten) were **adopted at the founding assembly on April 23, 2026** and govern the association:
+
+
+*   **[Vereinsstatuten (German, legally binding)](https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md)**
+*   **[Verein Statutes (English reference translation)](https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_EN.md)**
+
+
+## 4. Intellectual Property & Privacy
+
+
+Detailed legal policies for day-to-day operations are maintained in dedicated documents:
+
+
+*   **[Open Source Model & Licensing](organisation/legal-and-compliance/open-source-model-and-licensing/index.md)**: Covers original software (AGPL-3.0-only), documentation (CC BY-SA 4.0), and third-party exceptions.
+*   **[Privacy Policy](privacy-policy.md)**: Compliance with Swiss FADP and EU GDPR.
+*   **[Transparency Policy](organisation/legal-and-compliance/transparency-policy.md)**: Our commitment to open finances and decision-making.
+
+
+## 5. Formation & Recognition Status
+
+
+
+| Milestone | Status | Notes |
+| --- | --- | --- |
+|**Statutes adopted**|✅ Complete|Founding assembly, April 23, 2026 |
+|**Governing Team appointed**|✅ Complete|President and Treasurer (statutory minimum of two members) |
+|**Founding assembly held**|✅ Complete|April 23, 2026 |
+|**Commercial Register (Handelsregister)**|✅ Complete|UID CHE-448.446.098; visible on Zefix since May 7, 2026 |
+|**Nonprofit verification (Goodstack)**|✅ Complete|Verified May 2026; basis for nonprofit software programs (Claude for Nonprofits and OpenAI for Nonprofits, active since May 10, 2026) |
+|**Tax exemption (Steuerbefreiung)**|🟡 Applied for|Application submitted May 6, 2026 to the Canton of Zürich tax office; decision pending in the May 2026 record; current status requires confirmation |
+
+
+## Public launch and wider access
+
+The restricted Alpha does not satisfy all wider-launch prerequisites. Swiss legal-advisor review of policies and bylaws remains a required gate; the Terms of Service remains a draft pending its identified decisions, review and adoption. Governing Team launch approval, working contact infrastructure and incident/breach procedures remain required.
+
+Follow the effective [Privacy Policy, section 20](privacy-policy.md#20-expansion-gates-and-operating-reviews) for the processing register, DPIA, infrastructure verification, retention automation, private-person and source-rights expansion gates. Do not treat documentation publication as approval to expand access or as evidence those tasks are complete.
+
+----
+
+**Analysis Metadata**
+
+*   **Last Updated:** June 11, 2026
+*   **Sources:** FactHarbor founding minutes (April 23, 2026), Commercial Register / Zefix entry (UID CHE-448.446.098), Swiss Civil Code (Art. 60-79)
+*   **Author:** AI Assistant (Technical Writer)

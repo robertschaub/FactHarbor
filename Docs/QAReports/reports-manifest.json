@@ -1,8 +1,0 @@
-{
-  "description": "Internal QA calibration reports — framing symmetry calibration (v3+).",
-  "reports": {},
-  "retiredArtifacts": {
-    "purgedDate": "2026-02-24",
-    "reason": "Pre-v3 fixture quality (asymmetric pairs) made historical runs non-comparable and misleading for current gate decisions."
-  }
-}

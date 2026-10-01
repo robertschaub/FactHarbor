@@ -4,11 +4,14 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'Docs/xwiki-pages/FactHarbor/**'
-      - 'Docs/xwiki-pages/viewer-impl/**'
-      - 'Docs/xwiki-pages/scripts/*.py'
-      - 'Docs/TESTREPORTS/*.html'
+      - 'Docs/site/**'
+      - 'Docs/TESTREPORTS/**'
       - 'Docs/prototype-fund-pitch/**'
+      - 'scripts/docs/**'
+      - 'tools/docs/**'
+      - 'mkdocs.yml'
+      - 'requirements-docs.txt'
+      - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,19 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-
-      - name: Build gh-pages
-        run: |
-          python Docs/xwiki-pages/scripts/build_ghpages.py
-          cp -a Docs/prototype-fund-pitch gh-pages-build/prototype-fund-pitch
-
+      - name: Install documentation dependencies
+        run: python -m pip install -r requirements-docs.txt
+      - name: Check diagram assets
+        run: python scripts/docs/check_diagrams.py
+      - name: Build documentation
+        run: python -m mkdocs build --strict
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gh-pages-build
+          publish_dir: ./site
           force_orphan: true

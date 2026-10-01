@@ -18,15 +18,26 @@
 import {
   readFileSync, writeFileSync, readdirSync,
   mkdirSync, renameSync, unlinkSync, existsSync,
+  lstatSync, realpathSync,
 } from 'node:fs';
 import { resolve, join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO      = resolve(__dirname, '..');
 const INDEX_DIR = join(REPO, 'Docs/AGENTS/index');
 const HANDOFFS  = join(REPO, 'Docs/AGENTS/Handoffs');
 const ANALYZER  = join(REPO, 'apps/web/src/lib/analyzer');
+const REAL_REPO = realpathSync(REPO);
+const TRACKED = new Set(execFileSync('git', ['ls-files', '-s', '-z'], {
+  cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+}).split('\0').filter(row => /^(100644|100755) [a-f0-9]+ 0\t/.test(row))
+  .map(row => row.slice(row.indexOf('\t') + 1)).filter(path => {
+    const file = join(REPO, path);
+    return existsSync(file) && lstatSync(file).isFile()
+      && realpathSync(file) === join(REAL_REPO, path);
+  }));
 
 const args      = process.argv.slice(2);
 const tierArg   = args.find(a => a.startsWith('--tier='));
@@ -60,6 +71,7 @@ function writeAtomic(filePath, data) {
 // LLM task key → tier → model IDs per provider
 // ---------------------------------------------------------------------------
 function buildStageManifest() {
+  if (!TRACKED.has('apps/web/src/lib/analyzer/model-tiering.ts')) throw new Error('Model tiering must be a tracked regular input');
   const src = readFileSync(join(ANALYZER, 'model-tiering.ts'), 'utf8');
 
   // Extract DEFAULT_TASK_TIER_MAPPING block
@@ -126,7 +138,8 @@ function buildStageManifestSafely() {
 // Pipeline stage name → file path → exported function names
 // ---------------------------------------------------------------------------
 function buildStageMap() {
-  const stageFiles = readdirSync(ANALYZER).filter(f => f.endsWith('-stage.ts'));
+  const stageFiles = readdirSync(ANALYZER).filter(f => f.endsWith('-stage.ts')
+    && TRACKED.has(`apps/web/src/lib/analyzer/${f}`));
   const stages = {};
 
   for (const file of stageFiles) {
@@ -246,6 +259,7 @@ function parseHandoff(file, content) {
     }
   }
 
+  files_touched = files_touched.filter(path => TRACKED.has(path.replace(/\\/g, '/')));
   return { file, date, roles, topics, files_touched, summary };
 }
 
@@ -255,7 +269,8 @@ function buildHandoffIndex() {
   }
 
   const files = readdirSync(HANDOFFS)
-    .filter(f => f.endsWith('.md') && f !== 'README.md')
+    .filter(f => f.endsWith('.md') && f !== 'README.md'
+      && TRACKED.has(`Docs/AGENTS/Handoffs/${f}`))
     .sort();
 
   const entries = files.map(file => {

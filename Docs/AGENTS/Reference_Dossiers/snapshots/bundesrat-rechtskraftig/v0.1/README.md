@@ -14,4 +14,4 @@ Captured pages:
 | `SRC_ADMIN_EUPA_20250410` | `SRC_ADMIN_EUPA_20250410.html` | `8ca6ad791b1ece119d30ddf8ec1ec543998a5c5abd24838b9990922c0be18214` |
 | `SRC_EDA_LAW_RELATION_20260201` | `../../bundesrat-shared/v0.1/SRC_EDA_LAW_RELATION_20260201.html` | `8f1b3c5b1672587a36a29a95219345da9aed457461acd7fb8b79c6464a8c3bf2` |
 
-Status note: the dossier remains `draft` after this capture because `source_grounded` requires a separate adjudicator pass under `Docs/WIP/2026-06-06_AtomicClaim_Reference_Data_Model.md`; source snapshots alone are not sufficient for promotion.
+Status note: the dossier remains `draft` after this capture because `source_grounded` requires a separate adjudicator pass under the current `REF-ALIGN` constraints in `Docs/STATUS/Backlog.md`; source snapshots alone are not sufficient for promotion.

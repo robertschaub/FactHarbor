@@ -23,9 +23,7 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Project overview and current state |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Requirements/WebHome.xwiki` | Current requirements |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Requirements/User Needs/WebHome.xwiki` | User needs analysis |
-| `/Docs/xwiki-pages/FactHarbor/Product Development/Planning/WebHome.xwiki` | Roadmap and milestones |
+| `/Docs/site/about-factharbor/index.md` | User needs analysis |
 | `/Docs/STATUS/Current_Status.md` | Current implementation status |
 | `/Docs/STATUS/Backlog.md` | Development backlog |
 

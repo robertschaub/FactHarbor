@@ -2,7 +2,7 @@ import { basename, extname, resolve } from "node:path";
 
 import { PATHS, toRepoRelativePath } from "../utils/paths.mjs";
 import { extractDocumentTitle, extractSectionText, extractSections } from "../utils/sections.mjs";
-import { listFilesRecursive, pathExists, readTextFile } from "../utils/fs.mjs";
+import { listFilesRecursive, listTrackedFiles, pathExists, readTextFile } from "../utils/fs.mjs";
 
 const DOC_ROOTS = [
   PATHS.rolesDir,
@@ -14,18 +14,20 @@ const DOC_ROOTS = [
 ];
 
 function listAllowedDocs() {
-  const docs = new Set([PATHS.agents, PATHS.currentStatus, PATHS.agentOutputs, PATHS.roleLearnings]);
+  const docs = new Set([PATHS.agents, PATHS.currentStatus, PATHS.agentOutputs, PATHS.roleLearnings, ...PATHS.methodSummaries]);
 
   for (const rootPath of DOC_ROOTS) {
-    for (const filePath of listFilesRecursive(rootPath, (path) => {
+    for (const filePath of listFilesRecursive(rootPath, (path, entry) => {
       const extension = extname(path).toLowerCase();
-      return extension === ".md" || extension === ".xwiki";
+      return extension === ".md" && !entry.isSymbolicLink();
     })) {
       docs.add(filePath);
     }
   }
 
-  return [...docs].sort((left, right) => left.localeCompare(right));
+  const tracked = new Set(listTrackedFiles().map((path) => resolve(PATHS.repoRoot, path)));
+  return [...docs].filter((path) => tracked.has(path) && pathExists(path))
+    .sort((left, right) => left.localeCompare(right));
 }
 
 export function buildDocSectionIndex() {

@@ -7,7 +7,7 @@ FactHarbor is an AI-powered platform that turns complex, contested information i
 An Evidence Model contains:
 
 - **Claims** — Key assertions extracted from the source material
-- **Analysis Contexts** — The frames and conditions under which claims may hold or fail
+- **Assessment boundaries** — The frames and conditions under which claims may hold or fail
 - **Evidence** — Supporting and opposing sources with quality ratings and reliability scores
 - **Verdicts** — Conclusions with explicit confidence levels and cited evidence
 - **Full Transparency** — Every assumption, algorithm, and data source is exposed
@@ -26,7 +26,7 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
-**[Privacy Policy](Docs/xwiki-pages/FactHarbor/Organisation/Legal%20and%20Compliance/Privacy-Policy.xwiki)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
+**[Privacy Policy](Docs/site/privacy-policy.md)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
 
 ## Getting Started
 

@@ -236,7 +236,7 @@ export interface SchemaComplianceMetric {
 // PIPELINE TELEMETRY (neutral control-flow instrumentation)
 // ============================================================================
 //
-// See Docs/WIP/2026-05-28_Pipeline_Telemetry_Concept_and_Plan.md.
+// See Docs/STATUS/Backlog.md for current observability constraints.
 //
 // Design rules enforced here:
 // - Computed AFTER analysis from existing structured outputs only. Never adds

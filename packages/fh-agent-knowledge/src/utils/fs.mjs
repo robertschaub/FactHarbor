@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
+  lstatSync,
+  realpathSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -28,6 +30,22 @@ export function readTextFile(path) {
 
 export function readJsonFile(path) {
   return JSON.parse(readTextFile(path));
+}
+
+export function listTrackedFiles(repoRoot = PATHS.repoRoot) {
+  // Fail closed if repository metadata is unavailable. Local untracked notes are
+  // not publication inputs, even when placed inside an allowed documentation root.
+  const realRoot = realpathSync(repoRoot);
+  return execFileSync("git", ["ls-files", "-s", "-z"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).split("\0").filter(Boolean).filter((row) => /^(100644|100755) [a-f0-9]+ 0\t/.test(row))
+    .map((row) => row.slice(row.indexOf("\t") + 1)).filter((path) => {
+      const file = join(repoRoot, path);
+      return existsSync(file) && lstatSync(file).isFile()
+        && realpathSync(file) === join(realRoot, path);
+    });
 }
 
 export function writeJsonAtomic(path, value, { platform = process.platform } = {}) {

@@ -1,9 +1,7 @@
-# Agent Handoffs
+# Agent handoffs
 
-Dedicated output files from significant agent tasks (multi-file changes, design decisions, investigations).
+Concise continuing records for authorized public tasks, when chat or an existing record is insufficient. Use `YYYY-MM-DD_<Role>_<Short_Description>.md`, the required metadata and a valid entry in [Agent Outputs](../Agent_Outputs.md).
 
-- **Naming:** `YYYY-MM-DD_<Role>_<Short_Description>.md`
-- **Lifecycle:** Consumed by the next agent, then archived during Consolidate WIP.
-- **Cross-reference:** Each file here should have a one-line pointer in `../Agent_Outputs.md`.
+Preserve current decisions, unresolved work, provenance and operative controls before retiring a record within an authorized scope. Full research, experimental histories and non-public handoffs use the task's assigned record; they are not default public outputs. An empty history lookup does not establish closure.
 
-See AGENTS.md § Agent Exchange Protocol for the full template and rules.
+Follow the [handoff protocol](../Policies/Handoff_Protocol.md).

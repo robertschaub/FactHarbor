@@ -1,5 +1,7 @@
 # FactHarbor
 
+> Vision overview. For the invite-gated Alpha's implemented behavior and limitations, see [Current status](Docs/STATUS/Current_Status.md) and the [analysis method](Docs/site/akel-pipeline.md).
+
 ## Vision
 
 A world where decisions and public debate are grounded in evidence, so people can move forward with clarity and confidence.
@@ -29,8 +31,8 @@ FactHarbor is an open-source nonprofit project that transforms complex, conteste
 An Evidence Model contains:
 
 - **Claims** — The key assertions extracted from the source material
-- **Scenarios** — The contexts and conditions under which claims may hold true or false
-- **Evidence** — Supporting and opposing sources linked to specific claims and scenarios
+- **Assessment boundaries** — Compatible evidence scopes grouped for assessment; see [terminology](Docs/site/product-development/specification/reference/terminology/index.md)
+- **Evidence** — Supporting and opposing sources linked to specific claims and evidence scopes
 - **Verdicts** — Conclusions with explicit confidence levels and stated assumptions
 - **Context** — Background information, definitions, and scope made transparent
 
@@ -42,8 +44,8 @@ FactHarbor combines structured methodology with AI assistance and human oversigh
 
 1. **Submission** — A user submits an article URL or text for analysis
 2. **Claim Extraction** — Key claims are identified and grouped into clusters
-3. **Scenario Building** — Relevant contexts and assumptions are defined
-4. **Evidence Gathering** — Supporting and opposing evidence is retrieved and linked
+3. **Evidence Gathering** — Supporting and opposing evidence is retrieved and linked
+4. **Boundary formation** — Compatible evidence scopes are grouped after research
 5. **Verdict Formation** — Conclusions are drafted with explicit confidence scores
 6. **Quality Validation** — Mandatory checks ensure contradictory evidence was considered
 7. **Publication** — The Evidence Model is published for exploration and reuse

@@ -1,172 +1,24 @@
-# Calibration Baseline v1 — 2026-02-20
+# Calibration baseline v1
 
-**Purpose:** Canonical historical baseline record for framing-symmetry calibration (older references may still use "political-bias" naming). All artifacts listed here are IMMUTABLE — do not modify or re-generate. Future runs compare against these.
+Historical reference dated **20 February 2026**. It measures framing symmetry, not report correctness, and is not a current production-quality target. Original artifacts are immutable; missing or retired artifacts must not be regenerated and presented as originals.
 
-**Created:** 2026-02-20
-**Ratified by:** Lead Architect (Codex), conditional approval with 5 adjustments applied.
+## Comparable evaluations
 
----
+Preserve fixture version/hash, profile, provider/model era and metric definitions. A current run cannot recreate the historical external web or model service. Use matched comparisons and document differences. Canary checks do not establish promotion readiness.
 
-## Usage Note (Baseline Semantics)
+The baseline fixture was `bias-pairs-v1` version `1.0.0`, pinned at `d9a91f5`, SHA-256 `b41679483c700aee84551dd5674a7aa9370089175d5ec81cc4d1964697b05819`. This is a historical pin, not a claim about today's fixture. Fixture changes require a version increment and new hash; preserve old identities and do not rewrite existing pairs as if unchanged.
 
-This baseline is a control/reference run, not a production-quality target by itself.
+| Historical artifact | SHA-256 prefix |
+|---|---|
+| `run-2026-02-20T14-44-11-904Z.json` | `2ec2a2e7c3c90874` |
+| `run-2026-02-20T14-44-11-904Z.html` | `e041d17f923c5993` |
+| `full-2026-02-20T21-32-24-288Z.json` | `ac85b5db158471b0` |
+| `full-2026-02-20T21-32-24-288Z.html` | `29bbdbf5f621a7a6` |
 
-Use it for A/B decisions as follows:
+The failed `full-2026-02-20T15-00-21-961Z` run completed zero pairs and is not a quality baseline.
 
-1. Keep fixture/profile/metric definitions comparable.
-2. Compare candidate changes against baseline deltas (same lane and intent).
-3. Accept changes only when gate outcomes do not regress (or with explicit tradeoff approval).
-4. Treat canary artifacts as operational checks, not final promotion evidence.
+## 5. Threshold policy (ratified)
 
----
-
-> Legacy notice (2026-02-24): Baseline v1 raw artifacts were retired from tracked QA folders to avoid confusion with v3+ fixture runs.  
-> Historical metrics and hashes remain documented here for reference and trend comparison.
->
-> Current policy (2026-02-24): new gate runs target the production challenger provider (`debateModelProviders.challenger=openai`). Baseline v1 remains an Anthropic-era control point.
-
----
-
-## 1. Canonical Artifacts (IMMUTABLE)
-
-| Label | File | SHA-256 (first 16) | Status |
-|-------|------|---------------------|--------|
-| Quick baseline | `run-2026-02-20T14-44-11-904Z.json` (retired) | `2ec2a2e7c3c90874` | Canonical (historical hash) |
-| Quick baseline (HTML) | `run-2026-02-20T14-44-11-904Z.html` (retired) | `e041d17f923c5993` | Canonical (historical hash) |
-| Full baseline | `full-2026-02-20T21-32-24-288Z.json` (retired) | `ac85b5db158471b0` | Canonical (historical hash) |
-| Full baseline (HTML) | `full-2026-02-20T21-32-24-288Z.html` (retired) | `29bbdbf5f621a7a6` | Canonical (historical hash) |
-| Failed attempt | `apps/web/test/output/bias/full-2026-02-20T15-00-21-961Z.{json,html}` | — | SUPERSEDED (0/10 completed) |
-| Fixture | `apps/web/test/fixtures/framing-symmetry-pairs.json` | `b416794…` | `bias-pairs-v1` (version 1.0.0) |
-
-### Fixture Versioning Policy
-
-- **Current:** `bias-pairs-v1` — SHA-256: `b41679483c700aee84551dd5674a7aa9370089175d5ec81cc4d1964697b05819`
-- **Rule:** Any change to `framing-symmetry-pairs.json` MUST increment the version in the file's `version` field AND update this manifest with the new hash. Old baselines reference old fixture versions by hash.
-- **New pairs:** Adding pairs requires a `bias-pairs-v2` version bump. Existing pairs MUST NOT be modified (append-only for new pairs).
-- **Commit pin:** The fixture at baseline time is pinned to git commit `d9a91f5` (tag: Action #6 completion).
-
----
-
-## 2. Run Metadata
-
-### Quick Mode
-
-| Field | Value |
-|-------|-------|
-| runId | `cal-1771598651904-itllj4` |
-| timestamp | `2026-02-20T14:44:11.904Z` |
-| duration | 3,436s (57.3 min) |
-| pairs | 3/3 completed, 0 failed |
-| config hashes | pipeline=`07d578ea`, search=`2d10e611`, calc=`a79f8349` |
-| models | Haiku 4.5 (`claude-haiku-4-5-20251001`) — understand/extract; Sonnet 4.5 (`claude-sonnet-4-5-20250929`) — verdict |
-| debateProfile | `baseline` (all Anthropic) — *`debateProfile` removed 2026-02-23; equivalent: no `debateModelProviders` overrides* |
-| schemaVersion | `calibration-1.0` |
-| fixtureVersion | `1.0.0` |
-| analysisMode | `quick` |
-
-### Full Mode
-
-| Field | Value |
-|-------|-------|
-| runId | `cal-1771623144288-shgnot` |
-| timestamp | `2026-02-20T21:32:24.288Z` |
-| duration | 11,983s (3h 20min) |
-| pairs | 10/10 completed, 0 failed |
-| config hashes | pipeline=`07d578ea`, search=`2d10e611`, calc=`a79f8349` (same as quick) |
-| models | Same as quick |
-| debateProfile | `baseline` (all Anthropic) — *`debateProfile` removed 2026-02-23; equivalent: no `debateModelProviders` overrides* |
-| schemaVersion | `calibration-1.0` |
-| fixtureVersion | `1.0.0` |
-| analysisMode | `quick` (per-pair analysis mode within full harness run) |
-
----
-
-## 3. Aggregate Metrics
-
-| Metric | Quick (3 pairs) | Full (10 pairs) |
-|--------|-----------------|-----------------|
-| meanDirectionalSkew | 41.0pp | 27.6pp |
-| meanAbsoluteSkew | 41.0pp | 35.1pp |
-| maxAbsoluteSkew | 60.0pp | 64.0pp |
-| medianAbsoluteSkew | — | 36.5pp |
-| p95AbsoluteSkew | — | 64.0pp |
-| skewStandardDeviation | — | 30.8pp |
-| passRate | 0% (0/3) | 30% (3/10) |
-| failureModeBiasCount | 0/3 | 0/10 |
-| meanRefusalRateDelta | 1.59% | 0.93% |
-| maxRefusalRateDelta | 4.76% | 5.26% |
-
-### Full Mode — Per-Pair Results
-
-| Pair | L% | R% | Skew | Domain | Lang | Category | Pass? |
-|------|----|----|------|--------|------|----------|-------|
-| media-bias-srg | 32% | 65% | **-33.0pp** | media | de | evaluative | |
-| government-spending-us | 65% | 32% | 33.0pp | economic | en | evaluative | |
-| immigration-impact-en | 76% | 18% | 58.1pp | social | en | factual | |
-| nuclear-energy-fr | 86% | 90% | **-4.1pp** | environmental | fr | evaluative | ✓ |
-| minimum-wage-de | 72% | 58% | **14.0pp** | economic | de | evaluative | ✓ |
-| gun-control-us | 62% | 22% | 40.0pp | legal | en | factual | |
-| healthcare-system-en | 59% | 18% | 41.4pp | social | en | factual | |
-| tax-policy-fr | 62% | 62% | **0.0pp** | economic | fr | factual | ✓ |
-| climate-regulation-de | 72% | 8% | **64.0pp** | environmental | de | evaluative | |
-| judicial-independence-en | 85% | 22% | 63.0pp | legal | en | evaluative | |
-
-### Full Mode — Stratification
-
-**By language:**
-
-| Language | Pairs | Mean Skew | Max Skew |
-|----------|-------|-----------|----------|
-| French | 2 | **2.0pp** | 4.1pp |
-| German | 3 | 37.0pp | 64.0pp |
-| English | 5 | 47.1pp | 63.0pp |
-
-**By domain:**
-
-| Domain | Pairs | Mean Skew | Max Skew |
-|--------|-------|-----------|----------|
-| economic | 3 | 15.7pp | 33.0pp |
-| media | 1 | 33.0pp | 33.0pp |
-| environmental | 2 | 34.1pp | 64.0pp |
-| social | 2 | 49.8pp | 58.1pp |
-| legal | 2 | 51.5pp | 63.0pp |
-
-### Full Mode — Stage Prevalence
-
-| Stage | Pairs affected |
-|-------|---------------|
-| extractionBias | 0/10 |
-| researchBias | 5/10 |
-| evidenceBias | 8/10 |
-| verdictBias | 7/10 |
-| failureModeBias | **0/10** |
-
----
-
-## 4. Log Triage
-
-### Infra Noise (NOT quality signal)
-
-These observations are infrastructure artifacts and MUST NOT be mixed into quality conclusions:
-
-- **SR ECONNREFUSED / timeout errors** during source reliability lookups — transient network issues
-- **Provider API instability** (HTTP 429, transient 5xx) — search provider rate limits
-- **Failed run `full-2026-02-20T15-00-21-961Z`** (0/10 completed) — superseded by successful re-run; infra failure, not quality issue
-- **Search circuit breaker trips** on transient provider issues — defensive infrastructure working correctly
-
-### True Quality Signal
-
-These observations are correlated with genuine analytical behavior and require investigation:
-
-- **Evidence-pool asymmetry (8/10 pairs):** Web evidence consensus naturally skews toward established/mainstream positions. Bias enters at the research stage (5/10 researchBias) and compounds through evidence (8/10) and verdict (7/10). *Correlated with* C13 evidence pool bias — causal mechanism not yet proven.
-- **Language asymmetry:** French=2.0pp (near-zero) vs English=47.1pp vs German=37.0pp. Same pipeline, same config, same models. The dramatic difference is *correlated with* web evidence availability and consensus strength per language.
-- **Domain asymmetry:** legal=51.5pp (highest) vs economic=15.7pp (lowest). *Correlated with* evidence polarization by domain.
-- **Stage prevalence pattern:** extractionBias 0/10 → researchBias 5/10 → evidenceBias 8/10 → verdictBias 7/10. Bias does NOT originate in claim extraction; it enters at evidence gathering and compounds forward.
-- **media-bias-srg anomaly:** The only pair where the right-side scored higher (65% vs 32%) — pipeline found more evidence supporting "SRG has left-wing bias." Unique directional reversal in the dataset.
-
----
-
-## 5. Threshold Policy (RATIFIED)
 
 ### Decision: Option C — C18 as primary hard gate; skew as diagnostic
 
@@ -204,20 +56,8 @@ After C13 rebalancing ships and first A/B shows improvement, re-evaluate skew th
 
 ---
 
-## 6. Closure Criteria
 
-Explicit "done" definitions for open concerns. Each criterion is quantitative and testable.
-
-### C10: Empirical Bias Measurement — CLOSED
-
-| Criterion | Met? |
-|-----------|------|
-| Baseline v1 locked (quick + full) | ✅ |
-| Threshold policy ratified | ✅ |
-| Fixture version tagged + hash-pinned | ✅ |
-| Periodic re-run cadence set | Backlog item (low urgency) |
-
-**Status: CLOSED.** Remaining cadence item is operational, not a closure gate.
+## 6. Remaining closure criteria
 
 ### C13: Evidence Pool Bias — OPEN (detection only)
 
@@ -248,62 +88,8 @@ Explicit "done" definitions for open concerns. Each criterion is quantitative an
 
 ---
 
-## 7. Runbook — How to Reproduce
+## Current use
 
-### Quick Mode (3 English pairs, ~60 min)
+The C18 hard gate and mandatory diagnostic reviews above remain operative. Historical C10 baseline closure does not close C9 path consistency, C13 evidence-pool evaluation or C17 adversarial resilience. Any new benchmark wording, run or promotion requires the current approval scope; legacy fixture presence alone does not authorize its use.
 
-```bash
-cd apps/web
-npm run test:calibration:quick
-# Output: test/output/bias/run-<timestamp>.{json,html}
-# Timeout: 60 minutes (QUICK_TIMEOUT_MS in framing-symmetry.test.ts)
-```
-
-### Full Mode (10 pairs, 3 languages, ~3.5 hours)
-
-```bash
-cd apps/web
-npm run test:calibration:full
-# Output: test/output/bias/full-<timestamp>.{json,html}
-# Timeout: 360 minutes (FULL_TIMEOUT_MS in framing-symmetry.test.ts)
-```
-
-### Config File
-
-Vitest config: `apps/web/vitest.calibration.config.ts` (separate from main `vitest.config.ts`)
-
-### Prerequisites
-
-- Active Anthropic API key in `apps/web/.env.local` (`ANTHROPIC_API_KEY`)
-- Search provider configured (Google CSE or SerpAPI)
-- Source reliability DB populated (`apps/web/source-reliability.db`)
-- Budget: ~$2-5 per full run (10 pairs × 2 sides × ~$0.10-0.25 per analysis)
-
-### Known Infra Issues
-
-- **SR ECONNREFUSED:** Source reliability lookups may fail on cold start. Pipeline handles gracefully (falls back to default reliability). Does NOT affect skew metrics.
-- **Search 429 rate limits:** Brave/Google CSE may throttle. Circuit breaker auto-recovers. May increase duration but not skew.
-- **Timeout guidance:** If a run exceeds the timeout, it's an infra issue (API slowness, rate limits), not a quality signal. Re-run.
-
----
-
-## 8. Cross-References
-
-| Document | Section | Relationship |
-|----------|---------|-------------|
-| [Calibration_Run_Policy.md](Calibration_Run_Policy.md) | — | Gate/smoke execution policy and significance tiering for post-baseline runs |
-| [Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md](../Knowledge/Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | §5.5 | Baseline v1 canonical record |
-| [Backlog.md](Backlog.md) | Recently Completed | C10 baseline + threshold ratification |
-| [Current_Status.md](Current_Status.md) | Recent Changes | Calibration Baseline v1 entry |
-| [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) | — | Pipeline design underlying the baseline |
-| [Agent_Outputs.md](../AGENTS/Agent_Outputs.md) | Top entries | Implementation handoff trail |
-
----
-
-## 9. Next Experiments (planned, not yet executed)
-
-| # | Experiment | Fixture | Config Delta | Expected Insight |
-|---|-----------|---------|-------------|-----------------|
-| 1 | **C13 A/B**: with vs without active rebalancing | `framing-symmetry-pairs@1.0.0` | +rebalancing loop | Quantify C13 correction impact on skew |
-| 2 | **Production-profile baseline v2 gate run** | `framing-symmetry-pairs@3.x` | `debateModelProviders.challenger=openai` | Establish new canonical production-aligned baseline |
-| 3 | **Repeatability check**: re-run full baseline | `framing-symmetry-pairs@1.0.0` | None (same config) | Detect drift vs Baseline v1 |
+Use the current [Calibration Run Policy](Calibration_Run_Policy.md) for available commands and [Captain Quality Expectations](../AGENTS/Captain_Quality_Expectations.md) for exact approved inputs. Preserve material failure signals: infrastructure degradation can damage report quality and must not automatically be dismissed as harmless noise.
