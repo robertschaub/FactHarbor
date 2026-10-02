@@ -11,5 +11,3 @@ FactHarbor builds evidence-based claim analysis with inspectable reports. The ap
 | Discuss cooperation | [Presentations](presentations/index.md) |
 
 The public checkout includes source, schemas, operative prompts, configuration defaults and checks. Contributions must remain generic across topics, robust across languages and grounded in evidence. Semantic decisions use language-model reasoning; structural code manages contracts and resource control. Analysis settings belong in UCM, with infrastructure and secrets kept in environment configuration.
-
-[Pipeline V2](pipeline-v2/index.md) is a historical design reference, not an active implementation restart.

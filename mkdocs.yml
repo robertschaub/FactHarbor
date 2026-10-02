@@ -308,11 +308,6 @@
           ]
         },
         {
-          "Pipeline V2": [
-            "product-development/pipeline-v2/index.md"
-          ]
-        },
-        {
           "TestReports": [
             "test-reports.md"
           ]

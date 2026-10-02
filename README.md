@@ -24,7 +24,7 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[Project context and stewardship](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance)** — how FactHarbor and Our AI Charter relate and are stewarded.
 
-**[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
+**[Browse the documentation](https://robertschaub.github.io/FactHarbor/)** — the method, architecture overview, project status, setup and contribution guidance.
 
 **[Privacy Policy](Docs/site/privacy-policy.md)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
 
