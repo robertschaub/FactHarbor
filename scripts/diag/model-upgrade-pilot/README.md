@@ -28,4 +28,4 @@ Keep comparator-bearing submissions isolated. Cache carryover and any inter-arm 
 
 A long duration is a timeout proxy; confirm a Headers Timeout from its error marker. Separate retries and fallback events where their records overlap or are missing. Distinguish transport/schema failure, semantic failure and unavailable evidence; neither a schema pass nor a damaged report alone establishes general model intelligence or superiority.
 
-The entity-null correction is complete; evidence-applicability capture is unimplemented and must start offline/default-off if separately assigned. C14, semantic-design and source-reliability eligibility/cap holds remain unchanged. Do not repair historical records or infer missing telemetry.
+The entity-null correction is complete. Evidence-applicability capture is implemented and offline tested, with runtime opt-in disabled by default. Its compact-envelope limit does not bound stored report size; activation still requires reviewed retention, capacity and execution scope. C14, semantic-design and source-reliability eligibility/cap holds remain unchanged. Do not repair historical records or infer missing telemetry.
