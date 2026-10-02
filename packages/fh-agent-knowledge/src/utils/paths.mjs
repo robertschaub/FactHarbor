@@ -26,7 +26,7 @@ export const PATHS = {
   policiesDir: join(REPO_ROOT, "Docs", "AGENTS", "Policies"),
   wipDir: join(REPO_ROOT, "Docs", "WIP"),
   developmentDir: join(REPO_ROOT, "Docs", "DEVELOPMENT"),
-  methodSummaries: ["akel-pipeline.md", "akel-stage-details.md", "verdict-debate.md", "prompt-architecture.md"]
+  methodSummaries: ["akel-pipeline.md", "akel-stage-details.md"]
     .map((name) => join(REPO_ROOT, "Docs", "site", name)),
   architectureDir: join(
     REPO_ROOT,

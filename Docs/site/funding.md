@@ -64,7 +64,7 @@ The sector needs independent, sustainable infrastructure that no single platform
 ## How It Works
 
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; [model allocation depends on the active configuration](verdict-debate.md).
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; model allocation depends on the active configuration.
 
 ![funding diagram](diagrams/fact-checker-cooperation-1.svg)
 

@@ -16,7 +16,7 @@ Group compatible EvidenceScopes into **ClaimAssessmentBoundaries**. Boundaries e
 
 ## 4. Generate, challenge and validate verdicts
 
-Assess claims against evidence through the [structured debate](verdict-debate.md). Evidence-backed challenges may change an assessment; unsupported disagreement must not reduce truth or confidence. Validation checks grounding and the alignment between the verdict and its explanation.
+Assess claims against evidence through the structured debate. Evidence-backed challenges may change an assessment; unsupported disagreement must not reduce truth or confidence. Validation checks grounding and the alignment between the verdict and its explanation.
 
 ## 5. Aggregate and explain
 

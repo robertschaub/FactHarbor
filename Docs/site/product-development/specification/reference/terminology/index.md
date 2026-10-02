@@ -34,4 +34,4 @@ An EvidenceScope describes the conditions of an individual source's evidence. A 
 - Keep evidence references, claim IDs and boundary IDs consistent with the current public schemas. Do not introduce names from removed pipelines into new code.
 - Semantic classification remains LLM-owned and multilingual; structural validation remains deterministic.
 
-See [stage responsibilities](../../../../akel-stage-details.md), [prompt management](../../../../prompt-architecture.md) and [agent instructions](https://github.com/robertschaub/FactHarbor/blob/main/AGENTS.md) for the operative rules.
+See [stage responsibilities](../../../../akel-stage-details.md), [operative prompts](https://github.com/robertschaub/FactHarbor/tree/main/apps/web/prompts) and [agent instructions](https://github.com/robertschaub/FactHarbor/blob/main/AGENTS.md) for the operative rules.

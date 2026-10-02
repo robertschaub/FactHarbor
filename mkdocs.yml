@@ -129,16 +129,6 @@
                   "AKEL Pipeline Detail": "akel-stage-details.md"
                 },
                 {
-                  "Deep Dive": [
-                    {
-                      "Prompt Architecture": "prompt-architecture.md"
-                    },
-                    {
-                      "Verdict Debate Pattern": "verdict-debate.md"
-                    }
-                  ]
-                },
-                {
                   "Quality and Trust": "product-development/specification/architecture/quality-and-trust/index.md"
                 },
                 {

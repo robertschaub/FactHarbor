@@ -10,7 +10,7 @@ FactHarbor researches claims and articles, assesses supporting and opposing evid
 
 The method separates what the user asserts from what the sources establish. **AtomicClaims** identify the assertions to assess. **EvidenceScopes** record the conditions under which individual evidence applies. **ClaimAssessmentBoundaries** group compatible evidence after research, so differences in methodology, time or geography remain visible instead of being flattened into one answer.
 
-The [debate method](../../../verdict-debate.md) tests an assessment against evidence-backed challenges. The resulting report distinguishes truth assessment from confidence, cites evidence, and describes limitations. Neither agreement among models nor a confident narrative establishes correctness by itself.
+The [debate stage](../../../akel-stage-details.md#4-generate-challenge-and-validate-verdicts) tests an assessment against evidence-backed challenges. The resulting report distinguishes truth assessment from confidence, cites evidence, and describes limitations. Neither agreement among models nor a confident narrative establishes correctness by itself.
 
 ## Application components
 

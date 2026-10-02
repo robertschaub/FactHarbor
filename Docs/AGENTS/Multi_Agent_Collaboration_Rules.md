@@ -36,7 +36,7 @@ When a task specifies an **Area**, read the corresponding documents:
 
 | Area | Required Documents |
 |------|-------------------|
-| **Prompts** | `/Docs/site/prompt-architecture.md`, `/apps/web/prompts/README.md`, `/AGENTS.md` |
+| **Prompts** | `/apps/web/prompts/README.md`, `/AGENTS.md` |
 | **Calculations** | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` |
 | **Configuration** | `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
 | **Assessment boundaries** | `/Docs/site/product-development/specification/reference/terminology/index.md`, `/Docs/site/product-development/specification/architecture/index.md` |

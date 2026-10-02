@@ -10,7 +10,7 @@ Sources may use different methods, time periods or geographic coverage. **Eviden
 
 ## Challenging an assessment
 
-The [debate method](../../../../verdict-debate.md) separates an initial assessment, evidence-backed challenge, reconciliation and validation. Documented counter-evidence or a supported coverage problem can change a conclusion. Opinion and unsupported doubt alone must not reduce truth or confidence. Model agreement can still reflect shared gaps.
+The [debate stage](../../../../akel-stage-details.md#4-generate-challenge-and-validate-verdicts) separates an initial assessment, evidence-backed challenge, reconciliation and validation. Documented counter-evidence or a supported coverage problem can change a conclusion. Opinion and unsupported doubt alone must not reduce truth or confidence. Model agreement can still reflect shared gaps.
 
 ## Truth, confidence and publication
 
