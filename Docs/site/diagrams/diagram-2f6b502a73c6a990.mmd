@@ -11,7 +11,7 @@ graph TD
     
     subgraph SC ["Team & Community"]
         DEV["Developers / Core Ops"]
-        UA["UCM Administrators"]
+        UA["Administrators"]
         MOD["Moderators"]
     end
     
@@ -19,12 +19,11 @@ graph TD
     
     subgraph AS ["Application & Services"]
         AKEL["Core Logic & Infrastructure"]
-        CFG["UCM System Config"]
     end
     
     DEV -->|"Implement"| AKEL
     MOD -->|"Moderate"| CNT["Reports (Claims & Evidence)"]
-    UA -->|"Configure"| CFG
+    UA -->|"Adminster"| AS
     AS -->|"Generates"| CNT
     
     USR["Registered Users"] -->|"Submit/Flag"| CNT
