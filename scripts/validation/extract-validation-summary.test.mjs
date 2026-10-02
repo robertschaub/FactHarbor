@@ -181,3 +181,18 @@ test("batch continues after a rejected submission, a FAILED job at progress 100,
     { jobId: "job-3", inputText: "Entity fam_c did X", verdict: "MOSTLY-TRUE" },
   );
 });
+
+test("unsupported successful-job result records ERROR without writing a family summary", async (t) => {
+  const api = await startFakeApi(t, {
+    poll: (jobId) => ({status:"SUCCEEDED", progress:100, resultJson:jobId === "job-1"
+      ? {verdict:{label:"TRUE"}}
+      : {truthPercentage:50, verdict:"MIXED", confidence:60}}),
+  });
+  const batch = createBatch(t, ["rejected_format", "supported_format"]);
+  writeFileSync(batch.familiesFile, JSON.stringify(["rejected_format", "supported_format"].map(familyName => ({familyName, inputType:"text", inputValue:"Using hydrogen for cars is more efficient than using electricity"}))));
+  const {code, output} = await runBatch(batch, api.url);
+  assert.equal(code, 0, output); // Existing terminal-job continuation/exit policy is unchanged.
+  assert.deepEqual(batch.readManifest().results.map(r => r.status), ["ERROR", "OK"]);
+  assert.throws(() => batch.readJson("rejected_format.json"), {code:"ENOENT"});
+  assert.equal(batch.readJson("supported_format.json").article.verdict, "MIXED");
+});

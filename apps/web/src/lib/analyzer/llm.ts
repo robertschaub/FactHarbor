@@ -479,8 +479,7 @@ export function getProviderType(modelInfo: ModelInfo): ProviderType {
  * 366k input tokens): zero cacheReadInputTokens and zero cacheCreationInputTokens
  * across the entire pipeline, even on the four Sonnet verdict calls that each
  * sent exactly 15,277 identical-sized inputs. The cache-write premium did not
- * outweigh the ~zero hit rate, matching the cost-optimization rationale that
- * led Pipeline_V2 to opt the full-source extraction stage out.
+ * outweigh the ~zero hit rate.
  *
  * Returning undefined globally keeps the wiring at every call site as a no-op.
  * This is intentional policy, mirrored by the locked-off UCM default

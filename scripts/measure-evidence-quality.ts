@@ -106,7 +106,7 @@ interface QualityMetrics {
 // ANALYSIS FUNCTIONS
 // ============================================================================
 
-type ResultSchemaKind = "v2" | "legacy-v1" | "unknown";
+type ResultSchemaKind = "legacy-v1" | "unknown";
 
 interface EvidenceReadModel {
   evidenceItems: EvidenceItem[];
@@ -140,13 +140,6 @@ export function getResultSchemaKind(resultJson: unknown): ResultSchemaKind {
   const meta = asRecord(result.meta);
   const pipeline = asString(meta?.pipeline);
 
-  if (
-    (schemaVersion === "4.0.0-cb-precutover" || schemaVersion === "4.0.0-cb") &&
-    pipeline === "claimboundary-v2"
-  ) {
-    return "v2";
-  }
-
   if (schemaVersion === "3.2.0-cb" && pipeline === "claimboundary") {
     return "legacy-v1";
   }
@@ -157,13 +150,9 @@ export function getResultSchemaKind(resultJson: unknown): ResultSchemaKind {
 function readStoredResultPayload(job: AnalysisJob | Record<string, unknown>): unknown {
   const resultJson = (job as AnalysisJob).resultJson;
   if (typeof resultJson === "string") {
-    try {
-      return JSON.parse(resultJson);
-    } catch {
-      return job;
-    }
+    return JSON.parse(resultJson);
   }
-  if (resultJson && typeof resultJson === "object") return resultJson;
+  if (resultJson != null) return resultJson;
   return job;
 }
 
@@ -173,40 +162,31 @@ function sourceIdsFromSources(sources: unknown): string[] {
     .filter((sourceId): sourceId is string => sourceId !== null);
 }
 
-function normalizeV2EvidenceItem(item: unknown): EvidenceItem | null {
-  const record = asRecord(item);
-  if (!record) return null;
-
-  const evidenceScope = asRecord(record.evidenceScope);
-  const sourceType = asString(record.sourceType);
-  const normalizedScope = evidenceScope
-    ? { ...evidenceScope, sourceType: asString(evidenceScope.sourceType) ?? sourceType ?? undefined }
-    : sourceType
-      ? { sourceType }
-      : undefined;
-
-  return {
-    ...(record as unknown as EvidenceItem),
-    evidenceScope: normalizedScope as EvidenceItem["evidenceScope"],
-  };
+function assertFlatEvidence(result: unknown): asserts result is Record<string, unknown> {
+  const fail = (): never => { throw new Error("Unsupported report format: expected a flat report"); };
+  const record = asRecord(result);
+  if (!record) fail();
+  const value = record!;
+  if (value.meta != null && !asRecord(value.meta)) fail();
+  const versions = [value._schemaVersion, asRecord(value.meta)?.schemaVersion].filter(version => version != null);
+  if (versions.some(version => typeof version !== "string" || Number(version.split(".")[0]) > 3) || new Set(versions).size > 1) fail();
+  if (value.evidence != null || value.compatibility != null || asRecord(value.claims) || (value.verdict != null && typeof value.verdict !== "string")) fail();
+  for (const key of ["facts", "evidenceItems", "sources"]) {
+    const items = value[key];
+    if (items != null && (!Array.isArray(items) || items.some(item => !asRecord(item)))) fail();
+  }
+  for (const item of [...asArray(value.facts), ...asArray(value.evidenceItems)]) {
+    const evidence = asRecord(item)!;
+    if (evidence.evidenceScope != null && !asRecord(evidence.evidenceScope)) fail();
+  }
+  if (!["facts", "evidenceItems", "sources"].some(key => Object.hasOwn(value, key))) fail();
 }
 
 export function extractEvidenceReadModel(job: AnalysisJob | Record<string, unknown>): EvidenceReadModel {
   const result = readStoredResultPayload(job);
-  const resultRecord = asRecord(result);
+  assertFlatEvidence(result);
+  const resultRecord = result;
   const schemaKind = getResultSchemaKind(resultRecord);
-
-  if (schemaKind === "v2" && resultRecord) {
-    const evidenceGroup = asRecord(resultRecord.evidence);
-    const sourcesGroup = asRecord(resultRecord.sources);
-    const evidenceItems = asArray(evidenceGroup?.evidenceItems)
-      .map(normalizeV2EvidenceItem)
-      .filter((item): item is EvidenceItem => item !== null);
-    return {
-      evidenceItems,
-      sourceIds: sourceIdsFromSources(sourcesGroup?.items),
-    };
-  }
 
   if (schemaKind === "legacy-v1" && resultRecord) {
     return {
@@ -215,7 +195,7 @@ export function extractEvidenceReadModel(job: AnalysisJob | Record<string, unkno
     };
   }
 
-  const rawJob = job as AnalysisJob;
+  const rawJob = resultRecord as AnalysisJob;
   return {
     evidenceItems: Array.isArray(rawJob.facts)
       ? rawJob.facts
@@ -226,6 +206,7 @@ export function extractEvidenceReadModel(job: AnalysisJob | Record<string, unkno
   };
 }
 
+/** Every selected export must be readable; fail instead of reporting partial metrics. */
 export function analyzeJobFiles(dirPath: string): QualityMetrics {
   const files = fs.readdirSync(dirPath)
     .filter(f => f.endsWith('.json') && !f.includes('baseline'))
@@ -258,7 +239,7 @@ export function analyzeJobFiles(dirPath: string): QualityMetrics {
         sourceToEvidenceCount.set(evidence.sourceId, count + 1);
       }
     } catch (error) {
-      console.warn(`Failed to parse ${path.basename(filePath)}: ${error}`);
+      throw new Error(`Failed to read ${path.basename(filePath)}: ${error}`);
     }
   }
 
