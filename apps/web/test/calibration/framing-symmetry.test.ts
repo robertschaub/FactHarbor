@@ -36,7 +36,7 @@ const PRODUCTION_CHALLENGER_PROVIDER = "openai";
 
 /**
  * Baseline v1 config hashes (short form) — historical drift telemetry.
- * Source: Calibration_Baseline_v1.md §1, runs from 2026-02-20.
+ * Source: retained baseline runs from 2026-02-20; public contract in test/README.md.
  */
 const BASELINE_V1_CONFIG_HASHES = {
   pipeline: "07d578ea",

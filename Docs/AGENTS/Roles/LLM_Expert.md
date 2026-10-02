@@ -24,7 +24,6 @@
 | Document | Why |
 |----------|-----|
 | `/AGENTS.md` | Fundamental rules, analysis prompt rules |
-| `/Docs/site/prompt-architecture.md` | How prompts are structured |
 | `/AGENTS.md` | Prompt guidelines |
 | `/apps/web/prompts/README.md` | Provider-specific formatting |
 | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` | Verdict calculations |

@@ -1,5 +1,22 @@
 # Contributing to FactHarbor
 
+## Project state and change authority
+
+FactHarbor remains an invite-gated Alpha. Broader engineering is paused; a bounded approved task does not reopen the full development plan. Use current source and effective UCM versions for implementation claims. A commit, successful build or service version alone does not establish deployed behavior or active prompt/configuration versions.
+
+Read the task's assigned status and backlog before status-dependent work, following [agent routing](AGENTS.md#current-implementation). Public contributors can use this checkout's source, quality contracts and setup instructions independently. Missing task context is a gap to report; it is not evidence that an issue is closed or a held action is allowed.
+
+Existing constraints remain in force:
+
+- Model comparisons remain stopped. Decomposition/aggregation, narrative/adjudication input changes, the proposed clustering-schema change, source-reliability eligibility and cap changes require their separate decisions. Preserve the current validator count-floor and MT-5 eligibility; the proposed validator-unavailability skip was not selected.
+- Evidence-applicability capture and experimental supplementary/source-native retrieval stay default-off. Offline implementation or a credit balance does not authorize activation, retention, observation or paid runs. Do not prune the main analysis prompt before measurement and stage isolation exist.
+- Paid evaluation requires current action, exact-input and budget authority, verified active prompt/configuration provenance, isolated comparator jobs and explicit stop criteria. Keep stopped experiments stopped. See the [quality contract](Docs/AGENTS/Captain_Quality_Expectations.md) and [calibration contract](apps/web/test/README.md#calibration-contract).
+- Deployment, configuration activation, service changes and evidence cleanup are separate actions. Preserve existing evidence and worktrees; recovery requires an authorized, verified backup. Do not delete a database as a startup remedy.
+
+### Known limits
+
+Input phrasing/language, evidence attribution, decomposition and grounding have unresolved quality or validation gaps. There is no general cross-provider failover; test coverage and observability remain incomplete. Source-reliability identity/cache limitations and a visible configuration toggle do not establish a working quality control. Verify behavior against current code and task evidence. The dated [security and operating limitations](Docs/site/product-development/specification/architecture/security-and-operations/index.md#operational-limits) must be checked before wider access.
+
 ## Prerequisites
 
 - Node.js >=22.23.3

@@ -236,7 +236,7 @@ export interface SchemaComplianceMetric {
 // PIPELINE TELEMETRY (neutral control-flow instrumentation)
 // ============================================================================
 //
-// See Docs/STATUS/Backlog.md for current observability constraints.
+// See the assigned backlog (AGENTS.md status routing) for current observability constraints.
 //
 // Design rules enforced here:
 // - Computed AFTER analysis from existing structured outputs only. Never adds

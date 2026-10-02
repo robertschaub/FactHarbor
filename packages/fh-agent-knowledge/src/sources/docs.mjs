@@ -14,7 +14,7 @@ const DOC_ROOTS = [
 ];
 
 function listAllowedDocs() {
-  const docs = new Set([PATHS.agents, PATHS.currentStatus, PATHS.agentOutputs, PATHS.roleLearnings, ...PATHS.methodSummaries]);
+  const docs = new Set([PATHS.agents, PATHS.contributionGuide, PATHS.agentOutputs, PATHS.roleLearnings, ...PATHS.methodSummaries]);
 
   for (const rootPath of DOC_ROOTS) {
     for (const filePath of listFilesRecursive(rootPath, (path, entry) => {

@@ -27,11 +27,11 @@ records have an explicit disposition, and the three status documents are up to d
 
 ## Before you begin
 
-Read relevant sections of these references for the requested WIP scope:
+Resolve the assigned status collection using root AGENTS.md before reading or writing its backlog/status records. Missing access does not authorize a replacement public queue. Read relevant sections of these references for the requested WIP scope:
 
 1. `Docs/WIP/README.md` — current public task and preservation guidance
-2. `Docs/STATUS/Backlog.md` — current backlog items
-3. `Docs/STATUS/Current_Status.md` — live system status and recent changes
+2. the assigned backlog — current backlog items
+3. the assigned current-status record — live system status and recent changes
 4. `Docs/DEVELOPMENT/Documentation.md` — preservation and maintenance boundaries
 5. `Docs/AGENTS/Procedures/Consolidate_WIP.md` — base procedure (this skill extends it)
 
@@ -79,7 +79,7 @@ matching row wins:
 
 1. The file itself — completion markers, phase labels, explicit "REVERTED / PARKED / APPROVED"
 2. `git log --oneline --all -- <source files named in the doc>` — verify whether related code landed
-3. `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` → the current item status section
+3. the assigned current-status record and the assigned backlog → the current item status section
 4. Helper-agent or self investigation for genuinely ambiguous files (Step 3)
 
 **Do not delegate Step 3 for:**
@@ -115,7 +115,7 @@ Steps:
 1. Run: git log --oneline --all -- <list of source files or patterns if known>
 2. Read the most relevant recent commits (last 30 days) touching those files.
 3. If no relevant file is obvious, search: rg -l "<key identifier from the doc>" apps -g "*.ts" -g "*.cs"
-4. Read the relevant existing sections of Docs/STATUS/Current_Status.md.
+4. Read the relevant existing sections of the assigned current-status record.
 
 Return exactly this structure:
 STATUS: implemented | partial | not-implemented | cannot-determine
@@ -145,7 +145,7 @@ Before moving the file, answer two questions:
 Forward-looking content = open questions, deferred items, future goals, "future work" sections,
 known issues not yet fixed, or unresolved decisions.
 
-If yes: extract each item and add it to `Docs/STATUS/Backlog.md` under the most appropriate
+If yes: extract each item and add it to the assigned backlog under the most appropriate
 section (use "Future Research" if unsure). Note the source file in the backlog item description.
 
 **Q2: Is the file mixed — does it contain both archivable historical content AND current/future
@@ -172,7 +172,7 @@ Routine consolidation does not create additional history collections, destinatio
 2. Mark remaining items: 🧭 pending decision · 🔧 in progress · 🔬 research needed.
 3. Remove obsolete content (rejected approaches, outdated alternatives).
 4. Update the file's header status line.
-5. For each remaining open item, verify it appears in `Docs/STATUS/Backlog.md`. Add it if missing.
+5. For each remaining open item, verify it appears in the assigned backlog. Add it if missing.
 
 ### STILL ACTIVE → Keep as-is
 
@@ -191,10 +191,10 @@ Include in the Step 6 report with the helper investigation evidence (or lack of 
 
 ## Step 5 — Sync status documents
 
-Update the sections that already exist in the current public documents:
+Update the sections that already exist in the assigned maintained documents:
 
-- `Docs/STATUS/Backlog.md`: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
-- `Docs/STATUS/Current_Status.md`: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
+- the assigned backlog: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
+- the assigned current-status record: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
 - `Docs/WIP/README.md`: keep its current-work guidance and links accurate for the remaining public-safe records.
 
 Do not add public cleanup histories, completed-work collections or investigation logs. Full completion evidence uses the task's authorized output location under the handoff protocol.

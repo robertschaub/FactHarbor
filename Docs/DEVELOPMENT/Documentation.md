@@ -1,6 +1,6 @@
 # Writing and previewing documentation
 
-The website uses Markdown in `Docs/site/`. Contributor and agent documentation also lives in the relevant `Docs/` directories. Keep one editable source for each edition, and link to its current home. Public build, setup and contribution instructions must work from this checkout alone.
+The website uses Markdown in `Docs/site/`. Contributor and agent documentation also lives in the relevant `Docs/` directories. Keep one editable source for each edition, and link to its current home. Public build, setup and contribution instructions must work from this checkout alone. Fonts, scripts, search assets and diagrams are served with the site; external content links use their destination services.
 
 ## Local preview
 
@@ -18,7 +18,7 @@ python scripts/docs/check_diagrams.py
 python -m mkdocs build --strict
 ```
 
-The output is `site/`. Publication follows the authorized push to `main`; CI owns `gh-pages`. A local build or commit does not authorize deployment.
+The output is `site/`. The [documentation workflow](../../.github/workflows/deploy-docs.yml) publishes after an authorized push to `main` that changes its configured documentation paths. CI owns `gh-pages`; do not push directly to it. For an authorized manual redeploy, use the command in [AGENTS.md](../../AGENTS.md#commands). A local build or commit does not authorize deployment.
 
 ## Content and links
 
@@ -27,7 +27,8 @@ The output is `site/`. Publication follows the authorized push to `main`; CI own
 - Keep headings, lists and tables readable on GitHub and the website. Use relative links to repository files and public URLs for external references. Do not add local-machine paths or dependencies on inaccessible material.
 - Keep public essentials, including licensing and effective privacy terms, authoritative. Review changes to obligations separately from formatting.
 - For new website pages, update `mkdocs.yml` navigation and stage the intended publication files before verifying the site. The build and agent index use tracked public inputs; untracked local notes are not publication inputs.
-- Review links when renaming a page. Existing page destinations are recorded in `Docs/site/assets/legacy-routes.json`; retain useful destinations without exposing unrelated records.
+- Review links when renaming a page. The page-key and directory aliases in `Docs/site/assets/legacy-routes.json` are the source of truth for stable destinations. Query and root-hash page keys resolve through that explicit map; unknown destinations show the not-found page. Retain useful destinations without exposing unrelated records.
+- HTML reports in `Docs/TESTREPORTS/` are copied unchanged by the build and retain their published URL paths.
 
 ## Mermaid diagrams
 

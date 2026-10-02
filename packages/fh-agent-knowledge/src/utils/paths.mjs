@@ -15,7 +15,7 @@ export const PATHS = {
   repoRoot: REPO_ROOT,
   cacheDir: CACHE_DIR,
   agents: join(REPO_ROOT, "AGENTS.md"),
-  currentStatus: join(REPO_ROOT, "Docs", "STATUS", "Current_Status.md"),
+  contributionGuide: join(REPO_ROOT, "CONTRIBUTING.md"),
   agentOutputs: join(REPO_ROOT, "Docs", "AGENTS", "Agent_Outputs.md"),
   handoffsDir: join(REPO_ROOT, "Docs", "AGENTS", "Handoffs"),
   handoffIndex: join(REPO_ROOT, "Docs", "AGENTS", "index", "handoff-index.json"),
@@ -26,7 +26,7 @@ export const PATHS = {
   policiesDir: join(REPO_ROOT, "Docs", "AGENTS", "Policies"),
   wipDir: join(REPO_ROOT, "Docs", "WIP"),
   developmentDir: join(REPO_ROOT, "Docs", "DEVELOPMENT"),
-  methodSummaries: ["akel-pipeline.md", "akel-stage-details.md", "verdict-debate.md", "prompt-architecture.md"]
+  methodSummaries: ["akel-pipeline.md", "akel-stage-details.md"]
     .map((name) => join(REPO_ROOT, "Docs", "site", name)),
   architectureDir: join(
     REPO_ROOT,

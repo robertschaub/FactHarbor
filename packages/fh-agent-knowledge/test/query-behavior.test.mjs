@@ -89,9 +89,9 @@ function createKnowledgeContext() {
             sections: [{ heading: "5. V1 CLI surface" }],
           },
           {
-            file: "Docs/STATUS/Current_Status.md",
-            title: "Current Status",
-            sections: [{ heading: "Current State" }],
+            file: "CONTRIBUTING.md",
+            title: "Contributing to FactHarbor",
+            sections: [{ heading: "Project state and change authority" }],
           },
         ],
       },

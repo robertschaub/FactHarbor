@@ -32,7 +32,7 @@ test('untracked and ignored local notes never enter tracked publication inputs',
 test('public Markdown architecture and method summaries remain readable', () => {
   const index=buildDocSectionIndex();
   assert.ok(index.some(doc=>doc.file==='Docs/site/product-development/specification/architecture/index.md'));
-  const result=readAllowedDocSection('Docs/site/prompt-architecture.md','Prompt management');
+  const result=readAllowedDocSection('Docs/site/akel-stage-details.md','Stage responsibilities and public contracts');
   assert.ok(result.text.length>30);
   assert.throws(()=>readAllowedDocSection('../outside.md','Anything'),/allowlisted/);
   assert.throws(()=>readAllowedDocSection('Docs/local.md','Anything'),/allowlisted/);

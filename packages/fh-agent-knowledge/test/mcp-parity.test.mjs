@@ -139,12 +139,17 @@ test("stdio and CLI queries preserve missing and stale cache states", async () =
   ensureFreshCache();
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   writeFileSync(manifestPath, JSON.stringify({ ...manifest, repoHead: "__stale__" }));
+  writeFileSync(join(TEST_CACHE_DIR, "handoffs.json"), JSON.stringify({
+    entries: [{ id: "retired-cache-entry", file: "retired-cache-entry.md", date: "2026-01-01", summary: "knowledge" }],
+  }));
   const staleBefore = cacheSnapshot();
   const cliStale = runCliJson(args);
   const mcpStale = await withStdioClient(async (client) =>
     (await client.callTool({ name: "search_handoffs", arguments: { query: "knowledge" } })).structuredContent);
   assert.equal(cliStale.cacheStale, true);
+  assert.equal(cliStale.cacheSource, "fallback");
   assert.equal(cliStale.cacheRefreshed, false);
+  assert.equal(JSON.stringify(cliStale).includes("retired-cache-entry"), false);
   assert.deepEqual(stripScores(mcpStale), stripScores(cliStale));
   assert.deepEqual(cacheSnapshot(), staleBefore);
 });

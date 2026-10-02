@@ -8,4 +8,4 @@ Source-file edits are limited to documentation comments. This documentation upda
 
 ## Application status
 
-FactHarbor remains an invite-gated Alpha. See [Current status](STATUS/Current_Status.md), [Known issues](STATUS/KNOWN_ISSUES.md) and [Backlog](STATUS/Backlog.md) for supported behavior, limitations and planned work. Use the repository's commit history for exact source changes; a source commit does not establish production deployment or active configuration.
+FactHarbor remains an invite-gated Alpha. See [contribution scope](../CONTRIBUTING.md#project-state-and-change-authority) and [known limits](../CONTRIBUTING.md#known-limits) for project state and constraints; approved tasks define the work to undertake. Use the repository's commit history for exact source changes; a source commit does not establish production deployment or active configuration.

@@ -49,7 +49,7 @@ Analysis settings such as models, thresholds, limits and prompts are UCM setting
 - **Getting Started**: `Docs/site/product-development/devops/guidelines/getting-started/index.md`
 - **Metrics Schema**: `apps/web/src/lib/analyzer/metrics.ts`
 - **Testing Strategy**: `apps/web/test/README.md`
-- **Current Status**: `Docs/STATUS/Current_Status.md`
+- **Project scope**: [Contribution rules](CONTRIBUTING.md#project-state-and-change-authority)
 
 ---
 

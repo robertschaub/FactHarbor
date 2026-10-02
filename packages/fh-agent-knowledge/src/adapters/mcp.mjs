@@ -10,8 +10,8 @@ const SERVER_INFO = {
 };
 
 const SERVER_INSTRUCTIONS = [
-  "FactHarbor internal knowledge query server.",
-  "Queries never write, including when the cache is stale or missing. Only explicit bootstrap_knowledge and refresh_knowledge operations write local cache state and require a writable assignment.",
+  "FactHarbor public-checkout knowledge query server. Only selected sources in the identified checkout are searched; other repositories require their task-authorized discovery. Empty results do not establish absence of prior work.",
+  "Queries never write. A missing or stale cache is bypassed using current repo sources in memory. Only explicit bootstrap_knowledge and refresh_knowledge operations write local cache state and require a writable assignment.",
   "Startup suggestions are advisory. Historical matches may be superseded; check current authority before acting.",
   "Do not use this server for job submission, report mutation, config writes, database writes, or arbitrary shell access.",
   "Tool outputs mirror the existing fh-knowledge CLI JSON responses via structuredContent.",

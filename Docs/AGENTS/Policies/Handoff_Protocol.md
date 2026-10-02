@@ -42,7 +42,7 @@ When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 
 **If the role is NOT in the table above:**
 1. Tell the user which existing role is closest (if any) and ask whether to use that one
-2. If no close match: read `/AGENTS.md` + `/Docs/STATUS/Current_Status.md` as baseline, then ask the user what documents and source files are relevant for this role
+2. If no close match: read `/AGENTS.md`, `/CONTRIBUTING.md` and the assigned current-status record (when available) as baseline, then ask the user what documents and source files are relevant for this role
 3. Proceed with steps 3-5 above once clarified
 
 Full role definitions: `Docs/AGENTS/Roles/`. Shared workflows, area-to-document mapping, and protocols: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`

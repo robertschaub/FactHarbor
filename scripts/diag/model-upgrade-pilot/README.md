@@ -1,6 +1,6 @@
 # Model-comparison diagnostic tools
 
-The stored pilot controls and outcomes are historical. **No run, replacement observation, model promotion, configuration activation or service restart is authorized by this directory.** Do not reuse completed/stopped output paths or prior budgets. Current restrictions are in [Backlog](../../../Docs/STATUS/Backlog.md#holds-and-required-decisions).
+The stored pilot controls and outcomes are historical. **No run, replacement observation, model promotion, configuration activation or service restart is authorized by this directory.** Do not reuse completed/stopped output paths or prior budgets. Follow the [execution constraints](../../../CONTRIBUTING.md#project-state-and-change-authority) and the task's assigned status records.
 
 ## Offline checks
 

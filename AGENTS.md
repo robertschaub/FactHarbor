@@ -292,6 +292,8 @@ Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-ti
 
 ## Current implementation
 
-Use `Docs/STATUS/Current_Status.md` and current code/configuration for status, runtime defaults and model selection. Do not treat an adapter snapshot or historical handoff as the current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.
+Use current code/configuration for implementation, runtime defaults and model selection. Resolve the task's assigned current-status, backlog and known-issues records through explicit scope or the verified adopted profile, then read that repository's root guidance for their maintained locations. Role and skill references to the **assigned status collection** mean these resolved records, including their current holds. Read them before status-dependent work; if unavailable, report the gap and do not infer that a hold is lifted or recreate the records publicly.
+
+Codex, Claude Code and Gemini share this routing through root guidance. Existing sessions must reload it before their next status-dependent write; a fresh session avoids stale loaded paths. Public-only contributions use [project state and change authority](CONTRIBUTING.md#project-state-and-change-authority), public quality contracts and the current task scope. Do not treat an adapter snapshot or historical handoff as current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.
 
 Contributors without an assigned private home may use the public record paths for intentionally public, public-safe work; uncertain or non-public material stays in the authorized task/chat scope.

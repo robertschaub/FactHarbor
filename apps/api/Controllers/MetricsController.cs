@@ -669,7 +669,7 @@ public class MetricsController : ControllerBase
     /// <c>jobsMissingTelemetry</c> (never read as zero), present-but-unavailable
     /// telemetry is counted as errored, and each per-section rate divides only by
     /// the jobs where that section is available. See
-    /// Docs/STATUS/Backlog.md (observability work and current constraints).
+    /// the assigned backlog (AGENTS.md status routing) (observability work and current constraints).
     /// </summary>
     private sealed class PipelineTelemetryAccumulator
     {

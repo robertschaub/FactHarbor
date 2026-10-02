@@ -40,7 +40,7 @@ For types and entities, inspect relevant source definitions, starting with `apps
 
 For stages and control flow, inspect `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` and relevant stage implementations. For configuration, inspect authoritative file-backed defaults and schema definitions. Distinguish implemented, default-on, default-off and proposed behavior.
 
-Check decisions and status against `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md` and the relevant active task record. A format-only task preserves meaning; do not silently turn it into architectural revision. Report a discovered behavior discrepancy separately unless its correction is in scope.
+Check decisions and status against the assigned current-status record, the assigned backlog and the relevant active task record. A format-only task preserves meaning; do not silently turn it into architectural revision. Report a discovered behavior discrepancy separately unless its correction is in scope.
 
 ## Edit living content
 
@@ -69,7 +69,7 @@ Propose a missing diagram when it would clarify a concrete concept; add it only 
 - Preserve authoritative public setup, contribution, licensing, policy and implementation-contract guidance.
 - For WIP and handoff retirement, inspect next actions and unresolved decisions before classification. Use `/wip-update` for the bounded WIP procedure.
 - Add genuinely open work to the backlog; mark work complete only when source or a verified decision supports that conclusion.
-- Update `Current_Status.md` and relevant indexes only where the task changes their facts. Do not rewrite unrelated history.
+- Update the assigned current-status record and relevant indexes only where the task changes their facts. Do not rewrite unrelated history.
 
 Only the designated integrator rebuilds necessary indexes in the assigned worktree. Inspect effective Git hooks and outputs first; avoid duplicate rebuilding. Handoff changes use `node scripts/build-index.mjs --tier=2`; analyzer source changes use `--tier=1`. Ordinary documentation edits alone do not require either. Limit index inputs to tracked public sources. Workers and read-only reviewers report required updates in chat.
 
