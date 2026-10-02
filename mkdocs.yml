@@ -46,29 +46,21 @@
   "copyright": "FactHarbor · Documentation: CC BY-SA 4.0",
   "nav": [
     {
-      "About FactHarbor": [
-        "about-factharbor/index.md"
-      ]
+      "About FactHarbor": "about-factharbor/index.md"
     },
     {
       "Organisation": [
         "organisation/index.md",
         {
-          "Governance": [
-            "organisation/governance/index.md"
-          ]
+          "Governance": "organisation/governance/index.md"
         },
         {
           "How-We-Work-Together": [
             {
-              "GlobalRules": [
-                "organisation/how-we-work-together/globalrules/index.md"
-              ]
+              "GlobalRules": "organisation/how-we-work-together/globalrules/index.md"
             },
             {
-              "Contributor Processes": [
-                "organisation/how-we-work-together/contributor-processes/index.md"
-              ]
+              "Contributor Processes": "organisation/how-we-work-together/contributor-processes/index.md"
             }
           ]
         },
@@ -76,29 +68,19 @@
           "Legal and Compliance": [
             "organisation/legal-and-compliance/index.md",
             {
-              "Legal Framework": [
-                "legal-framework.md"
-              ]
+              "Legal Framework": "legal-framework.md"
             },
             {
-              "Open Source Model and Licensing": [
-                "organisation/legal-and-compliance/open-source-model-and-licensing/index.md"
-              ]
+              "Open Source Model and Licensing": "organisation/legal-and-compliance/open-source-model-and-licensing/index.md"
             },
             {
-              "CLA": [
-                "organisation/legal-and-compliance/cla/index.md"
-              ]
+              "CLA": "organisation/legal-and-compliance/cla/index.md"
             },
             {
-              "Finance and Compliance": [
-                "organisation/legal-and-compliance/finance-and-compliance/index.md"
-              ]
+              "Finance and Compliance": "organisation/legal-and-compliance/finance-and-compliance/index.md"
             },
             {
-              "Large Donations Policy": [
-                "organisation/legal-and-compliance/large-donations-policy/index.md"
-              ]
+              "Large Donations Policy": "organisation/legal-and-compliance/large-donations-policy/index.md"
             },
             {
               "Privacy-Policy": "privacy-policy.md"
@@ -117,24 +99,16 @@
         {
           "Presentations": [
             {
-              "Fact-Checker Cooperation": [
-                "fact-checker-cooperation.md"
-              ]
+              "Fact-Checker Cooperation": "fact-checker-cooperation.md"
             },
             {
-              "Funding": [
-                "funding.md"
-              ]
+              "Funding": "funding.md"
             },
             {
-              "LinkedIn April 2026": [
-                "linkedin.md"
-              ]
+              "LinkedIn April 2026": "linkedin.md"
             },
             {
-              "LinkedIn April 2026 DE": [
-                "linkedin-de.md"
-              ]
+              "LinkedIn April 2026 DE": "linkedin-de.md"
             }
           ]
         }
@@ -149,66 +123,46 @@
               "Architecture": [
                 "product-development/specification/architecture/index.md",
                 {
-                  "AKEL Pipeline": [
-                    "akel-pipeline.md"
-                  ]
+                  "AKEL Pipeline": "akel-pipeline.md"
                 },
                 {
-                  "AKEL Pipeline Detail": [
-                    "akel-stage-details.md"
-                  ]
+                  "AKEL Pipeline Detail": "akel-stage-details.md"
                 },
                 {
                   "Deep Dive": [
                     {
-                      "Prompt Architecture": [
-                        "prompt-architecture.md"
-                      ]
+                      "Prompt Architecture": "prompt-architecture.md"
                     },
                     {
-                      "Verdict Debate Pattern": [
-                        "verdict-debate.md"
-                      ]
+                      "Verdict Debate Pattern": "verdict-debate.md"
                     }
                   ]
                 },
                 {
-                  "Quality and Trust": [
-                    "product-development/specification/architecture/quality-and-trust/index.md"
-                  ]
+                  "Quality and Trust": "product-development/specification/architecture/quality-and-trust/index.md"
                 },
                 {
-                  "Security and Operations": [
-                    "product-development/specification/architecture/security-and-operations/index.md"
-                  ]
+                  "Security and Operations": "product-development/specification/architecture/security-and-operations/index.md"
                 }
               ]
             },
             {
-              "Terminology": [
-                "product-development/specification/reference/terminology/index.md"
-              ]
+              "Terminology": "product-development/specification/reference/terminology/index.md"
             },
             {
               "FH Analysis Reports": [
                 "product-development/specification/fh-analysis-reports/index.md",
                 {
-                  "FactHarbor_Analyse_Chemtrails_Verschwoerungstheorie_DE_Claude": [
-                    "product-development/specification/fh-analysis-reports/factharbor-analyse-chemtrails-verschwoerungstheorie-de-claude/index.md"
-                  ]
+                  "FactHarbor_Analyse_Chemtrails_Verschwoerungstheorie_DE_Claude": "product-development/specification/fh-analysis-reports/factharbor-analyse-chemtrails-verschwoerungstheorie-de-claude/index.md"
                 },
                 {
-                  "FactHarbor_Analyse_Schweiz_Gerontokratie_DE_Claude": [
-                    "product-development/specification/fh-analysis-reports/factharbor-analyse-schweiz-gerontokratie-de-claude/index.md"
-                  ]
+                  "FactHarbor_Analyse_Schweiz_Gerontokratie_DE_Claude": "product-development/specification/fh-analysis-reports/factharbor-analyse-schweiz-gerontokratie-de-claude/index.md"
                 },
                 {
                   "FactHarbor_Analysis_Bolsonaro_Trial_Fairness": [
                     "product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/index.md",
                     {
-                      "Analysis Summary": [
-                        "product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/analysis-summary/index.md"
-                      ]
+                      "Analysis Summary": "product-development/specification/fh-analysis-reports/factharbor-analysis-bolsonaro-trial-fairness/analysis-summary/index.md"
                     }
                   ]
                 },
@@ -216,57 +170,39 @@
                   "FHA - AHA Alcohol CVD Statement": [
                     "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/index.md",
                     {
-                      "Analysis Summary": [
-                        "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/analysis-summary/index.md"
-                      ]
+                      "Analysis Summary": "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/analysis-summary/index.md"
                     },
                     {
-                      "Claim Summary": [
-                        "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/claim-summary/index.md"
-                      ]
+                      "Claim Summary": "product-development/specification/fh-analysis-reports/fha-aha-alcohol-cvd-statement/claim-summary/index.md"
                     }
                   ]
                 },
                 {
-                  "FHA - CitizenGO UN Doha Petition": [
-                    "product-development/specification/fh-analysis-reports/fha-citizengo-un-doha-petition/index.md"
-                  ]
+                  "FHA - CitizenGO UN Doha Petition": "product-development/specification/fh-analysis-reports/fha-citizengo-un-doha-petition/index.md"
                 },
                 {
-                  "FHA - F-35 Remote Control and 'Kill Switch' Claims": [
-                    "product-development/specification/fh-analysis-reports/fha-f-35-remote-control-and-kill-switch-claims/index.md"
-                  ]
+                  "FHA - F-35 Remote Control and 'Kill Switch' Claims": "product-development/specification/fh-analysis-reports/fha-f-35-remote-control-and-kill-switch-claims/index.md"
                 },
                 {
-                  "FHA Claude - Hagebuttenpulver Arthrose DE": [
-                    "product-development/specification/fh-analysis-reports/fha-claude-hagebuttenpulver-arthrose-de/index.md"
-                  ]
+                  "FHA Claude - Hagebuttenpulver Arthrose DE": "product-development/specification/fh-analysis-reports/fha-claude-hagebuttenpulver-arthrose-de/index.md"
                 }
               ]
             },
             {
-              "REST API Contract": [
-                "product-development/specification/poc/api-and-schemas/rest-api-contract/index.md"
-              ]
+              "REST API Contract": "product-development/specification/poc/api-and-schemas/rest-api-contract/index.md"
             }
           ]
         },
         {
           "Diagrams": [
             {
-              "AKEL Engine Overview": [
-                "product-development/diagrams/akel-engine-overview/index.md"
-              ]
+              "AKEL Engine Overview": "product-development/diagrams/akel-engine-overview/index.md"
             },
             {
-              "AKEL Shared Modules": [
-                "shared-modules.md"
-              ]
+              "AKEL Shared Modules": "shared-modules.md"
             },
             {
-              "Verdict Scale": [
-                "product-development/diagrams/verdict-scale/index.md"
-              ]
+              "Verdict Scale": "product-development/diagrams/verdict-scale/index.md"
             }
           ]
         },
@@ -274,51 +210,37 @@
           "Presentations": [
             "product-development/presentations/index.md",
             {
-              "Academic Cooperation": [
-                "academic-cooperation.md"
-              ]
+              "Academic Cooperation": "academic-cooperation.md"
             }
           ]
         },
         {
           "DevOps": [
             {
-              "Getting Started": [
-                "product-development/devops/guidelines/getting-started/index.md"
-              ]
+              "Getting Started": "product-development/devops/guidelines/getting-started/index.md"
             },
             {
               "Subsystems and Components": [
                 {
-                  "Admin Interface": [
-                    "product-development/devops/subsystems-and-components/admin-interface/index.md"
-                  ]
+                  "Admin Interface": "product-development/devops/subsystems-and-components/admin-interface/index.md"
                 },
                 {
-                  "Unified Config Management": [
-                    "product-development/devops/subsystems-and-components/unified-config-management/index.md"
-                  ]
+                  "Unified Config Management": "product-development/devops/subsystems-and-components/unified-config-management/index.md"
                 }
               ]
             }
           ]
         },
         {
-          "TestReports": [
-            "test-reports.md"
-          ]
+          "TestReports": "test-reports.md"
         }
       ]
     },
     {
-      "License and Disclaimer": [
-        "license-and-disclaimer/index.md"
-      ]
+      "License and Disclaimer": "license-and-disclaimer/index.md"
     },
     {
-      "Home": [
-        "index.md"
-      ]
+      "Home": "index.md"
     }
   ],
   "validation": {

@@ -19,9 +19,9 @@ This overview invites discussion about academic cooperation: which research ques
 
 FactHarbor analyses claims and articles. It identifies verifiable claims, researches supporting and opposing evidence, and produces reports with assessments, source citations and stated uncertainty. The evidence found may be incomplete or point in different directions.
 
-![academic cooperation diagram](diagrams/academic-cooperation-1.svg)
+![Evidence research and structured challenge support an inspectable report](diagrams/fact-checker-cooperation-1.svg)
 
-[Full-size diagram](diagrams/academic-cooperation-1.svg) · [Mermaid source](diagrams/academic-cooperation-1.mmd)
+[Full-size diagram](diagrams/fact-checker-cooperation-1.svg) · [Mermaid source](diagrams/fact-checker-cooperation-1.mmd)
 
 The aim is to help readers examine why an assessment was reached and where the evidence leaves questions open.
 
