@@ -106,10 +106,6 @@ function asString(value) {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function asNumber(value) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
 function readSchemaVersion(result) {
   const meta = asRecord(result.meta);
   return asString(result._schemaVersion) || asString(meta.schemaVersion);
@@ -120,13 +116,6 @@ function getResultSchemaKind(result) {
   const schemaVersion = readSchemaVersion(result);
   const pipeline = asString(meta.pipeline);
 
-  if (
-    (schemaVersion === "4.0.0-cb-precutover" || schemaVersion === "4.0.0-cb") &&
-    pipeline === "claimboundary-v2"
-  ) {
-    return "v2";
-  }
-
   if (schemaVersion === "3.2.0-cb" && pipeline === "claimboundary") {
     return "legacy-v1";
   }
@@ -134,49 +123,41 @@ function getResultSchemaKind(result) {
   return "unknown";
 }
 
-function readV2FallbackFields(result) {
-  const compatibility = asRecord(result.compatibility);
-  const v1 = asRecord(compatibility.v1);
-  return asRecord(v1.fallbackFields);
-}
-
-function normalizeV2Warnings(warnings) {
-  return normalizeArray(warnings).map((warning) => {
-    const item = asRecord(warning);
-    return {
-      ...item,
-      type: asString(item.type) || "unknown",
-      severity: asString(item.severity) || "info",
-      message: asString(item.message) || asString(item.materialityRationale) || "",
-    };
-  });
+function assertFlatReport(result) {
+  const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
+  const fail = () => { throw new Error("Unsupported report format: expected a flat report"); };
+  const object = value => { if (value != null && !record(value)) fail(); };
+  const records = value => { if (value != null && (!Array.isArray(value) || value.some(item => !record(item)))) fail(); };
+  const number = value => { if (value != null && (typeof value !== "number" || !Number.isFinite(value))) fail(); };
+  if (!record(result)) fail();
+  object(result.meta);
+  const versions = [result._schemaVersion, result.meta?.schemaVersion].filter(value => value != null);
+  if (versions.some(version => typeof version !== "string" || Number(version.split(".")[0]) > 3) || new Set(versions).size > 1) fail();
+  number(result.truthPercentage);
+  number(result.confidence);
+  if (result.verdict != null && typeof result.verdict !== "string") fail();
+  if (result.evidence != null || result.compatibility != null || record(result.claims)) fail();
+  for (const key of ["claimVerdicts", "analysisWarnings", "evidenceItems", "facts", "sources"]) records(result[key]);
+  for (const claim of normalizeArray(result.claimVerdicts)) {
+    number(claim.truthPercentage);
+    number(claim.confidence);
+  }
+  for (const key of ["understanding", "qualityGates", "analysisObservability"]) object(result[key]);
+  records(result.understanding?.atomicClaims);
+  for (const key of ["gate1Stats", "gate4Stats", "summary"]) object(result.qualityGates?.[key]);
+  const waste = result.analysisObservability?.acsResearchWaste;
+  object(waste);
+  records(waste?.selectedClaimResearchCoverage);
+  records(waste?.selectedClaimResearch);
+  number(waste?.zeroTargetedSelectedClaimCount);
+  if (waste?.zeroTargetedSelectedClaimIds != null && (!Array.isArray(waste.zeroTargetedSelectedClaimIds) || waste.zeroTargetedSelectedClaimIds.some(id => typeof id !== "string"))) fail();
+  if (!["truthPercentage", "verdict", "confidence", "claimVerdicts", "understanding", "analysisWarnings", "qualityGates"].some(key => Object.hasOwn(result, key))) fail();
 }
 
 function buildSummaryReadModel(result) {
+  assertFlatReport(result);
   const schemaKind = getResultSchemaKind(result);
   const meta = asRecord(result.meta);
-
-  if (schemaKind === "v2") {
-    const verdict = asRecord(result.verdict);
-    const fallbackFields = readV2FallbackFields(result);
-    const claimsGroup = asRecord(result.claims);
-    const analysisObservability = asRecord(result.analysisObservability);
-
-    return {
-      schemaKind,
-      meta,
-      article: {
-        truthPercentage: asNumber(verdict.truthPercentage),
-        verdict: asString(verdict.label),
-        confidence: asNumber(verdict.confidence),
-      },
-      claimVerdicts: normalizeArray(fallbackFields.claimVerdicts),
-      atomicClaims: normalizeArray(claimsGroup.atomicClaims),
-      warnings: normalizeV2Warnings(result.warnings),
-      qualityGates: asRecord(fallbackFields.qualityGates),
-      acsResearchWaste: asRecord(analysisObservability.acsResearchWaste),
-    };
-  }
 
   const understanding = asRecord(result.understanding);
   const analysisObservability = asRecord(result.analysisObservability);
@@ -196,23 +177,15 @@ function buildSummaryReadModel(result) {
   };
 }
 
-function readClaimStatement(schemaKind, atomicClaims, claimVerdict) {
+function readClaimStatement(atomicClaims, claimVerdict) {
   const claimId = claimVerdict.claimId;
   const atomicClaim = atomicClaims.find((claim) => claim?.id === claimId);
-  if (schemaKind === "v2") {
-    return atomicClaim?.statement ||
-      atomicClaim?.claim ||
-      atomicClaim?.text ||
-      claimVerdict.claimText ||
-      claimId;
-  }
-
   return atomicClaim?.claim || atomicClaim?.text || claimId;
 }
 
 function extractSummary(family, job) {
+  if (job.resultJson == null) return null;
   const result = typeof job.resultJson === "string" ? JSON.parse(job.resultJson) : job.resultJson;
-  if (!result) return null;
 
   const readModel = buildSummaryReadModel(result);
   const meta = readModel.meta;
@@ -228,7 +201,7 @@ function extractSummary(family, job) {
     const cv = asRecord(rawClaimVerdict);
     return {
       claimId: cv.claimId,
-      statement: readClaimStatement(readModel.schemaKind, readModel.atomicClaims, cv),
+      statement: readClaimStatement(readModel.atomicClaims, cv),
       truthPercentage: cv.truthPercentage,
       verdict: cv.verdict,
       confidence: cv.confidence,
