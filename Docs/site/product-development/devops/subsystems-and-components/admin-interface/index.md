@@ -23,7 +23,7 @@ Environment variables hold credentials and infrastructure settings. Analysis beh
 
 Use the job detail page and administrative audit tools to inspect the recorded configuration and available execution provenance. A job's API creation revision and web execution revision can differ; current responses prefer the execution-time hash when present and otherwise use the legacy creation hash. Missing provenance remains unknown and must not be backfilled by assumption.
 
-The API supports an admin-only `gitHash` filter on `/v1/jobs`. A hash identifies a recorded build, not proof that a model call used a particular active prompt. Compare configuration snapshots and prompt-content hashes as well. See [API contracts](../../../specification/poc/api-and-schemas/rest-api-contract/index.md) and the current [job controller](https://github.com/robertschaub/FactHarbor/blob/main/apps/api/Controllers/JobsController.cs).
+The API supports an admin-only `gitHash` filter on `/v1/jobs`. A hash identifies a recorded build, not proof that a model call used a particular active prompt. Compare configuration snapshots and prompt-content hashes as well. See the current [job controller](https://github.com/robertschaub/FactHarbor/blob/main/apps/api/Controllers/JobsController.cs).
 
 ## Operational checks
 

@@ -147,9 +147,6 @@
                   "FHA Claude - Hagebuttenpulver Arthrose DE": "product-development/specification/fh-analysis-reports/fha-claude-hagebuttenpulver-arthrose-de/index.md"
                 }
               ]
-            },
-            {
-              "REST API Contract": "product-development/specification/poc/api-and-schemas/rest-api-contract/index.md"
             }
           ]
         },
