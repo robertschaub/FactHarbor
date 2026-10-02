@@ -63,7 +63,9 @@ The framing-symmetry lane runs full analyses with real LLM calls. `vitest.config
 
 From `apps/web`, `npm run test:calibration:smoke` selects the quick non-gating lane; `npm run test:calibration:gate` selects the full gate lane. `npm run test:calibration:validate -- test/output/bias/<artifact>.json` validates a retained artifact. Smoke/canary results cannot approve promotion. The recorded gate profile uses `debateRoles.challenger.provider = "openai"`; verify every role's active provider/strength and the authorized profile before a comparison.
 
-Decision-grade evidence requires complete pair coverage, zero `failureModeBiasCount`, refusal/degradation deltas within configured limits and adequate provider attribution. Aborted or partial runs are diagnostic-only and cannot promote a profile or replace a baseline. Keep their evidence under the task's retention rules; use only final completed artifacts for governance comparisons.
+Decision-grade evidence requires complete pair coverage, zero `failureModeBiasCount`, refusal/degradation deltas within configured limits and adequate provider attribution. Show non-decision-grade conditions prominently in the HTML report's top-level significance notice. Aborted or partial runs are diagnostic-only and cannot promote a profile or replace a baseline. Keep their evidence under the task's retention rules; use only final completed artifacts for governance comparisons.
+
+Smoke acceptance requires all five: quick-mode runtime at most 45 minutes, estimated API cost at most $2.50, at least three completed pairs, failed-pair diagnostics, and generated JSON plus HTML artifacts. These acceptance targets do not supply spending authority or justify changing active settings without approval.
 
 Interpret metrics consistently:
 

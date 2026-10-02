@@ -191,7 +191,7 @@ Include in the Step 6 report with the helper investigation evidence (or lack of 
 
 ## Step 5 — Sync status documents
 
-Update the sections that already exist in the current public documents:
+Update the sections that already exist in the assigned maintained documents:
 
 - the assigned backlog: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
 - the assigned current-status record: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
