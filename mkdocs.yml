@@ -10,8 +10,8 @@
     "name": "material",
     "font": false,
     "palette": {
-      "primary": "teal",
-      "accent": "teal"
+      "primary": "custom",
+      "accent": "custom"
     },
     "features": [
       "navigation.top",
@@ -25,6 +25,7 @@
   "markdown_extensions": [
     "tables",
     "sane_lists",
+    "md_in_html",
     "pymdownx.superfences",
     "pymdownx.tilde",
     "toc"
@@ -33,7 +34,7 @@
     "scripts/docs/site_hooks.py"
   ],
   "extra_css": [
-    "assets/reader.css"
+    "assets/reader.css?v=20261002-7"
   ],
   "extra_javascript": [
     "assets/diagrams.js",

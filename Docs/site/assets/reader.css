@@ -1,10 +1,23 @@
 
-.md-grid{max-width:1600px}.md-typeset{font-size:.86rem;line-height:1.65}
-.md-typeset h1{font-weight:650;color:#124840}.md-typeset h2{margin-top:1.8em}
+/* Fluid reading space with a warm, restrained documentation palette. */
+[data-md-color-scheme="default"]{--md-default-bg-color:#faf9f6}
+[data-md-color-primary="custom"]{--md-primary-fg-color:#4276c8;--md-primary-fg-color--light:#e8effb;--md-primary-fg-color--dark:#274777;--md-typeset-a-color:#3461a9}
+[data-md-color-accent="custom"]{--md-accent-fg-color:#3461a9;--md-accent-fg-color--transparent:#3461a91a}
+.md-grid{max-width:none}.md-typeset{font-size:.86rem;line-height:1.65}
+.md-typeset h1{font-weight:700;color:#274777;border-bottom:1px solid #dcded8;padding-bottom:.4em;margin-bottom:.8em}
+.md-typeset h2{font-weight:600;color:#274777;margin-top:1.5em}
+.md-nav__title{color:#274777}
+.md-nav__link--active{background:#e8effb;border-radius:4px;padding:.3em .5em}
+.fh-callout{margin:1em 0;padding:1em 1.15em;border-left:4px solid;border-radius:6px;color:#292d2b}
+.md-typeset .fh-callout p{margin:0}
+.fh-callout--vision{background:#eaf4e9;border-color:#77a874}
+.fh-callout--mission{background:#fbe9ec;border-color:#be7c88}
+.fh-callout--mission strong{color:#8c3347}
+.fh-callout--nonprofit{background:#fcf5df;border-color:#c9ac49}
 .md-typeset table:not([class]){font-size:.78rem}.md-typeset table:not([class]) th{background:#e9f2ef}
 .diagram-box{border:1px solid #d0ded9;border-radius:8px;overflow:hidden;margin:1.2rem 0;background:white}
 .diagram-controls{display:flex;gap:.5rem;align-items:center;padding:.45rem .65rem;background:#f0f6f3;font-size:.75rem}
 .diagram-controls button{border:1px solid #a7bdb2;border-radius:4px;background:white;padding:.2rem .55rem;cursor:pointer;color:#153e31}
 .diagram-viewport{overflow:auto;max-height:70vh;padding:14px}.md-typeset .diagram-viewport img{display:block;width:auto;max-width:100%;margin:auto}
 .md-typeset a{overflow-wrap:anywhere}.md-typeset pre{overflow:auto}
-@media(max-width:600px){.md-typeset h1{font-size:1.5em}}
+@media(max-width:600px){.md-typeset h1{font-size:1.5em}.fh-callout{padding:.85em 1em}}

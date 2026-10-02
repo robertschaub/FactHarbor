@@ -7,15 +7,27 @@ Open-source applications and web services for AI-powered fact-checking — every
 ## Our Vision and Mission
 
 
+<div class="fh-callout fh-callout--vision" markdown="1">
+
 **Our Vision**
 A world where decisions and public debate are grounded in evidence so people can move forward with clarity and confidence.
+
+</div>
+
+<div class="fh-callout fh-callout--mission" markdown="1">
 
 **Our Mission**
 FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
 
+</div>
+
+<div class="fh-callout fh-callout--nonprofit" markdown="1">
+
 **Non-profit and Transparent**
 FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
 We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
+
+</div>
 
 
 ## What we do for you
