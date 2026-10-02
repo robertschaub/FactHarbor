@@ -26,7 +26,7 @@ Run the copy commands only for a new setup; preserve existing settings. Edit the
 | `FH_INTERNAL_RUNNER_KEY` | `Runner:RunnerKey` |
 | Web runner address | `Runner:BaseUrl`, normally `http://localhost:3000` |
 
-Set keys for the configured model/search providers. Model selection, prompts and analysis settings belong in [UCM](../../subsystems-and-components/unified-config-management/index.md); environment files hold infrastructure and secrets.
+Set keys for the configured model/search providers. Model selection, prompts and analysis settings belong in [UCM](https://github.com/robertschaub/FactHarbor/blob/main/Docs/USER_GUIDES/UCM_Administrator_Handbook.md); environment files hold infrastructure and secrets.
 
 ## Start services
 
@@ -54,7 +54,7 @@ The API initializes/migrates its configured database on startup. Preserve an exi
 
 Open `http://localhost:5000/health` and `http://localhost:3000/api/health`; successful health responses establish reachability. Development Swagger is at `http://localhost:5000/swagger`. Open the web UI at `http://localhost:3000`.
 
-Use [administration](../../subsystems-and-components/admin-interface/index.md) to inspect active configuration before an analysis. Connectivity tests and analysis submission can call paid providers. Project agents must use approved exact inputs and have current authorization for live calls; setup success alone does not grant that authority.
+Open `/admin/config` to inspect active configuration before an analysis. Connectivity tests and analysis submission can call paid providers. Project agents must use approved exact inputs and have current authorization for live calls; setup success alone does not grant that authority.
 
 ## Troubleshooting
 

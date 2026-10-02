@@ -12,7 +12,7 @@ FactHarbor's Alpha uses a web application and an API service. Its current contro
 | Reports | Public readers can inspect available reports; hidden reports and diagnostic fields have additional access checks |
 | Source retrieval | Input and network-target validation, with bounded retrieval |
 
-Keys belong in local environment/configuration files, never in source control, screenshots or issue reports. Keep `FH_ADMIN_KEY` and `FH_INTERNAL_RUNNER_KEY` aligned with their API settings. The [setup guide](../../../devops/guidelines/getting-started/index.md) and [admin guide](../../../devops/subsystems-and-components/admin-interface/index.md) describe their use.
+Keys belong in local environment/configuration files, never in source control, screenshots or issue reports. Keep `FH_ADMIN_KEY` and `FH_INTERNAL_RUNNER_KEY` aligned with their API settings. The [setup guide](../../../devops/guidelines/getting-started/index.md) and [administrator handbook](https://github.com/robertschaub/FactHarbor/blob/main/Docs/USER_GUIDES/UCM_Administrator_Handbook.md) describe their use.
 
 ## Local development
 

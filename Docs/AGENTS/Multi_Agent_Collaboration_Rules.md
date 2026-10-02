@@ -38,7 +38,7 @@ When a task specifies an **Area**, read the corresponding documents:
 |------|-------------------|
 | **Prompts** | `/Docs/site/prompt-architecture.md`, `/apps/web/prompts/README.md`, `/AGENTS.md` |
 | **Calculations** | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` |
-| **Configuration** | `/Docs/site/product-development/devops/subsystems-and-components/unified-config-management/index.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
+| **Configuration** | `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
 | **Assessment boundaries** | `/Docs/site/product-development/specification/reference/terminology/index.md`, `/Docs/site/product-development/specification/architecture/index.md` |
 | **Source-Reliability** | `/Docs/site/shared-modules.md` |
 | **Pipeline** | `/Docs/site/akel-pipeline.md` |

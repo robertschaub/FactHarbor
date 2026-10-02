@@ -286,20 +286,6 @@
               "Getting Started": [
                 "product-development/devops/guidelines/getting-started/index.md"
               ]
-            },
-            {
-              "Subsystems and Components": [
-                {
-                  "Admin Interface": [
-                    "product-development/devops/subsystems-and-components/admin-interface/index.md"
-                  ]
-                },
-                {
-                  "Unified Config Management": [
-                    "product-development/devops/subsystems-and-components/unified-config-management/index.md"
-                  ]
-                }
-              ]
             }
           ]
         },

@@ -1,6 +1,6 @@
 # UCM administrator handbook
 
-Use `/admin/config` to inspect and manage the application's versioned configuration. Administrative access and an explicit change scope are required for mutations. The [UCM interface](../site/product-development/devops/subsystems-and-components/unified-config-management/index.md) explains the configuration domains and ownership; this handbook covers operator workflow.
+Use `/admin/config` to inspect and manage the application's versioned configuration. Administrative access and an explicit change scope are required for mutations.
 
 ## Inspect before changing
 
