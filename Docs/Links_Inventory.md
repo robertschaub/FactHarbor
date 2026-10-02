@@ -17,7 +17,7 @@ The [documentation website](https://robertschaub.github.io/FactHarbor/) is built
 | `/LinkedIn/` | `linkedin.html` |
 | `/LinkedInDE/` | `linkedin-de.html` |
 
-The report HTML files in `Docs/TESTREPORTS/` and the pitch assets in `Docs/prototype-fund-pitch/` retain their published URL paths. Their source files are copied unchanged by the build.
+The report HTML files in `Docs/TESTREPORTS/` retain their published URL paths. Their source files are copied unchanged by the build.
 
 ## Publication
 
