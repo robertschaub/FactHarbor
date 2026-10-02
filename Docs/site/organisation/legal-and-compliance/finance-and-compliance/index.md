@@ -33,9 +33,9 @@ Examples of prohibited or highly discouraged funding:
 -   Every significant expense must be linked to a budget line and justification.
 -   The Finance & Compliance Lead is responsible for keeping the ledger up-to-date.
 
-## 6. Reimbursable Expense Report
+## 6. Transparency Ledger
 
-See [Reimbursable Expense Report](../reimbursable-expenses/index.md). FactHarbor maintains a transparency ledger that records:
+FactHarbor maintains a transparency ledger that records:
 
 -   incoming donations and grants
 -   major expenses

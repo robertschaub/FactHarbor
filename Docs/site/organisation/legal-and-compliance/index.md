@@ -21,4 +21,3 @@
 
 -   **[Finance and Compliance](finance-and-compliance/index.md)** — Non-profit budgeting and reporting.
 -   **[Large Donations Policy](large-donations-policy/index.md)** — Protecting our independence from external influence.
--   **[Reimbursable Expenses](reimbursable-expenses/index.md)** — Our public transparency ledger for costs.
