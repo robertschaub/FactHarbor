@@ -1,6 +1,6 @@
 # FactHarbor
 
-> Vision overview. For the invite-gated Alpha's implemented behavior and limitations, see [Current status](Docs/STATUS/Current_Status.md) and the [analysis method](Docs/site/akel-pipeline.md).
+> Vision overview. For the invite-gated Alpha's implemented behavior and limitations, see [Current status](CONTRIBUTING.md#project-state-and-change-authority) and the [analysis method](Docs/site/akel-pipeline.md).
 
 ## Vision
 

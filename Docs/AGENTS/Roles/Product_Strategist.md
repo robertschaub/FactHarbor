@@ -24,8 +24,8 @@
 |----------|-----|
 | `/AGENTS.md` | Project overview and current state |
 | `/Docs/site/about-factharbor/index.md` | User needs analysis |
-| `/Docs/STATUS/Current_Status.md` | Current implementation status |
-| `/Docs/STATUS/Backlog.md` | Development backlog |
+| Assigned current-status record (root AGENTS.md routing) | Current implementation status |
+| Assigned backlog (root AGENTS.md routing) | Development backlog |
 
 ## Key Source Files
 

@@ -1,202 +1,55 @@
-# FactHarbor Agent Knowledge MCP Setup
+# Agent knowledge tools
 
-This guide covers rollout of the local `fh-agent-knowledge` MCP server after implementation.
+`fh-agent-knowledge` provides local CLI and stdio MCP lookups for development agents. Use it when indexed navigation helps the task; routine edits do not require preflight. Current source and applicable instructions remain authoritative.
 
-The server is local-only, uses stdio, and exposes the internal knowledge tools for task startup:
+## Search scope
 
-- `preflight_task`
-- `search_handoffs`
-- `lookup_stage`
-- `lookup_model_task`
-- `get_role_context`
-- `get_doc_section`
-- `bootstrap_knowledge`
-- `refresh_knowledge`
-- `check_knowledge_health`
+The tool reads selected files and generated indexes from its own checkout: agent roles and skills, selected Markdown sections, public task records, and stage/model-task indexes. Markdown section discovery is limited to tracked files; role and skill discovery can include local files in their configured directories. A file's location does not authorize its disclosure. The tool does not search every repository file or other repositories.
 
-The executable entrypoint is:
+For other task-authorized records, resolve their discovery through the task or a verified adopted workspace profile under [root documentation guidance](../../AGENTS.md#documentation-sources). Empty public handoff results mean no matching records in this index; they do not establish that prior work is absent or an investigation is closed. Never copy another collection into a public index to fill that gap.
 
-```powershell
-node scripts/fh-knowledge-mcp.mjs
-```
+| Tools | Use |
+|---|---|
+| `lookup_stage`, `lookup_model_task` | Navigation to analyzer stages and model-task definitions; verify exact implementation with source search |
+| `get_role_context`, `get_doc_section` | Read a role brief or an allowlisted documentation section |
+| `search_handoffs` | Search the handoffs indexed in this checkout |
+| `preflight_task` | Optionally combine relevant public references and advisory startup suggestions |
+| `check_knowledge_health` | Inspect the serving checkout, cache freshness and coverage without writing |
+| `bootstrap_knowledge`, `refresh_knowledge` | Explicit cache writes for an authorized writer; never a required read-only startup step |
 
-## Recommended Startup Pattern
+## Use from the repository
 
-When the client supports MCP and the `fhAgentKnowledge` server is configured, the first knowledge action for a non-trivial task should be:
-
-- call `preflight_task` with the current task description
-- include `role` when the user activated one
-- include `skill` when a workflow skill is already active or explicitly requested
-- only fall back to manual handoff scanning if the returned anchors are insufficient
-
-`preflight_task` returns the raw context anchors plus `startupAdvice`, which tells agents the likely role, workflow skills, first actions, docs, handoffs, code-search hints, tool plan, and guardrail warnings for the task.
-
-### Role Prompt Trigger
-
-Agents should treat a leading role prompt as a preflight trigger:
-
-```text
-As Senior Developer,
-
-Run a post-change pipeline health check.
-
-Skill: debug
-```
-
-This should become:
-
-```json
-{
-  "task": "Run a post-change pipeline health check.",
-  "role": "Senior Developer",
-  "skill": "debug"
-}
-```
-
-If the prompt lists multiple skills, pass the first/primary skill to `preflight_task` and then read every named workflow file manually. `As <Role>,` defines the active role for the task even when the user does not separately say "use this role".
-
-The tool is tolerant of the short form: if an agent passes the full prompt as `task` without separate `role` or `skill` fields, `preflight_task` extracts a leading `As <Role>,` / `As <Role>:` and the first `Skill:` value itself. Passing explicit fields is still preferred when the client makes that easy.
-
-Example request shape:
-
-```json
-{
-  "task": "Continue the internal knowledge layer MCP rollout",
-  "role": "Lead Architect",
-  "skill": "pipeline"
-}
-```
-
-If MCP is not configured in the active client, use the CLI fallback:
+Read-only CLI examples:
 
 ```powershell
-npm run fh-knowledge -- preflight-task -- --task "Continue the internal knowledge layer MCP rollout" --role "Lead Architect"
+node scripts/fh-knowledge.mjs health
+node scripts/fh-knowledge.mjs preflight-task --task "<current task>"
 ```
 
-## Project-Scoped Configs Deferred
+Pass `--role` or `--skill` when explicitly assigned or selected for the task. Preflight also recognizes leading `As <Role>,` and `Skill:` directives, but inferred matches are suggestions, not role activation, permission or proof that a workflow fits. Read applicable root/nested instructions and the relevant skill before acting.
 
-This first tranche intentionally does not commit project-scoped `.cursor/mcp.json` or `.vscode/mcp.json`. Prove CLI/MCP health locally first, then add shared IDE configs in a separate tranche if the team wants automatic workspace activation.
+The equivalent MCP tools use underscore names, for example `preflight_task` with a `task` argument. CLI and MCP share the same operations and result format. `npm run fh-knowledge -- <command>` remains an alternative CLI entry point.
 
-When added later, those configs should point at:
+## Connect an MCP client
 
-```text
-${workspaceFolder}/scripts/fh-knowledge-mcp.mjs
-```
+The server uses stdio. Configure the client's executable as the appropriate Node runtime and its argument as the absolute path to `scripts/fh-knowledge-mcp.mjs` in the intended checkout. Use the client's supported local configuration; this guide does not install or enable a server automatically.
 
-## Claude Code
+The same entry point supports Codex, Claude Code, Gemini and other stdio MCP clients. Tool visibility and permissions depend on the active client configuration. A read-only client can expose the query tools without exposing bootstrap or refresh.
 
-Claude Code supports project-scoped `.mcp.json`, but its docs note that relative command and argument paths resolve from the directory Claude is launched from, not from the `.mcp.json` file location. Because of that, this repo does not commit an always-on `.mcp.json`.
+For a task worktree, use that worktree's entry point. Changing only the process working directory does not retarget a server loaded from another checkout. After updating the server code or changing its binding, restart the MCP connection or use a fresh client session, then call `check_knowledge_health` and verify `binding.repoRoot` and `binding.repoHead`.
 
-Recommended options:
+## Cache and freshness
 
-1. Use a local or user-scoped config with an absolute path.
-2. If you prefer project scope, use an environment variable for the repo root and expand it in `.mcp.json`.
+The default cache is `.cache/fh-agent-knowledge` inside the tool's checkout. `FH_AGENT_KNOWLEDGE_CACHE_DIR` can select an assigned disposable cache for checks. A cache bound to another checkout is refused; an older cache without checkout identity is ignored.
 
-### Windows local-scope example
+Queries use a fresh cache when available. For a missing or stale cache they read current repository sources in memory, without changing cache bytes or timestamps. Generated stage/handoff indexes are still navigation aids; source reads remain authoritative. If a governing source is unavailable, report the gap rather than reconstructing private history.
 
-From PowerShell:
+In health output, `builtAt` and `repoHead` describe the stored cache, or are null when no usable cache exists. `binding` identifies the tool checkout; `cacheSource` identifies whether results came from cache or repository sources, and `coverage` counts the sources actually served. `stale: true` can therefore accompany current source results while the on-disk cache remains stale.
+
+An assigned writer may rebuild the intended cache explicitly:
 
 ```powershell
-$repo = (Resolve-Path .).Path
-claude mcp add-json fhAgentKnowledge ("{`"type`":`"stdio`",`"command`":`"node`",`"args`":[`"$repo\\scripts\\fh-knowledge-mcp.mjs`"],`"env`":{}}") --scope local
+node scripts/fh-knowledge.mjs refresh
 ```
 
-After setup, ask Claude Code to use `preflight_task` first.
-
-## Gemini CLI
-
-Gemini CLI stores MCP configurations in its workspace `.gemini/settings.json`.
-
-You can automatically add the project-scoped configuration by running this command from the root of the project:
-
-```powershell
-gemini mcp add fhAgentKnowledge node scripts/fh-knowledge-mcp.mjs
-```
-
-After adding, you can verify it in the CLI with `/mcp list`. The CLI will automatically use it for tool calls.
-
-## Cursor
-
-No Cursor MCP config is committed in this tranche.
-
-If you add a local or workspace config manually:
-
-1. Check the MCP server list.
-2. Approve `fhAgentKnowledge` if prompted.
-3. Start tasks by asking Cursor to call `preflight_task` before manual scanning.
-
-Cursor CLI shares the same MCP config, so `cursor-agent` can use the same server once configured.
-
-## VS Code / GitHub Copilot Chat
-
-No VS Code MCP config is committed in this tranche.
-
-If you add a local or workspace config manually:
-
-1. Use the MCP commands or chat UI to verify that `fhAgentKnowledge` is present.
-2. Start tasks by asking Copilot Chat to use `preflight_task`.
-
-## GitHub Copilot CLI
-
-Copilot CLI uses `~/.copilot/mcp-config.json`, not the workspace `.vscode/mcp.json`.
-
-Manual config example:
-
-```json
-{
-  "mcpServers": {
-    "fhAgentKnowledge": {
-      "type": "local",
-      "command": "node",
-      "args": ["<repo>\\scripts\\fh-knowledge-mcp.mjs"],
-      "env": {},
-      "tools": ["*"]
-    }
-  }
-}
-```
-
-Use your actual local repo path in `args`.
-
-## Cline
-
-Cline CLI stores MCP config in `~/.cline/data/settings/cline_mcp_settings.json` and uses the same JSON shape as the extension/VS Code flow, plus optional fields like `alwaysAllow`.
-
-Manual config example:
-
-```json
-{
-  "mcpServers": {
-    "fhAgentKnowledge": {
-      "command": "node",
-      "args": ["<repo>\\scripts\\fh-knowledge-mcp.mjs"],
-      "env": {},
-      "disabled": false
-    }
-  }
-}
-```
-
-Use your actual local repo path in `args`.
-
-## Verification
-
-CLI health:
-
-```powershell
-npm run fh-knowledge -- health
-```
-
-If you need to force-refresh the local cache before testing:
-
-```powershell
-npm run fh-knowledge -- refresh -- --force
-```
-
-If the MCP server appears connected but tools seem stale, reset the client’s cached tool list or restart the MCP server in that client.
-
-## Notes
-
-- The MCP server is intentionally read-only except for local cache bootstrap and refresh.
-- Shared project-scoped IDE configs are deferred until the CLI and MCP server are proven stable on the restored main line.
-- For Claude Code, Cline, and Copilot CLI, machine-local absolute paths remain the most reliable rollout path on Windows.
+Use `--force` only when an otherwise fresh cache needs rebuilding. Do not refresh another task's cache or a frozen recovery checkout as a startup step. These commands grant no service, configuration, deployment, model-call or provider-spending authority.

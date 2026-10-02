@@ -42,7 +42,7 @@ It evaluates evidence quality and source reliability, then compares, challenges,
 ## Where FactHarbor stands out
 
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; [model allocation depends on the active configuration](verdict-debate.md).
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; model allocation depends on the active configuration.
 
 Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
 

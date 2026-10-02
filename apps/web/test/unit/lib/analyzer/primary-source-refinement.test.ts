@@ -22,6 +22,7 @@ vi.mock("@/lib/analyzer/research-acquisition-stage", () => ({
 }));
 
 vi.mock("@/lib/analyzer/research-extraction-stage", () => ({
+  observeEvidenceCapture: vi.fn(),
   classifyRelevance: (...args: unknown[]) => mockClassifyRelevance(...args),
   extractResearchEvidence: (...args: unknown[]) => mockExtractResearchEvidence(...args),
   assessEvidenceApplicability: vi.fn(),

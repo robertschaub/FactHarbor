@@ -25,7 +25,7 @@
 | `/Docs/site/product-development/specification/architecture/index.md` | Current system architecture |
 | `/Docs/site/akel-pipeline.md` | Pipeline architecture |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
-| `/Docs/STATUS/Current_Status.md` | Current state and known issues |
+| Assigned current-status record (root AGENTS.md routing) | Current state and known issues |
 
 ## Key Source Files
 

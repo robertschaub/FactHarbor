@@ -3,15 +3,15 @@ import { loadKnowledgeCache, loadKnowledgeContext } from "../cache/build-cache.m
 import { PATHS } from "../utils/paths.mjs";
 
 export function checkKnowledgeHealth() {
-  const context = loadKnowledgeContext({ allowFallback: true, refreshIfStale: false });
+  const context = loadKnowledgeContext({ allowFallback: true });
   const cache = loadKnowledgeCache();
 
   return buildCommandResult("health", {
     cacheDir: PATHS.cacheDir,
     cacheExists: Boolean(cache),
     cacheSource: context.source,
-    builtAt: context.manifest?.builtAt ?? null,
-    repoHead: context.manifest?.repoHead ?? null,
+    builtAt: cache?.manifest?.builtAt ?? null,
+    repoHead: cache?.manifest?.repoHead ?? null,
     stale: context.freshness.isStale,
     coverage: context.data
       ? {

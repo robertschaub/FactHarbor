@@ -28,7 +28,7 @@ For public implementation, the mappings below are entry points to current contra
 | **Coding Guidelines** | `/AGENTS.md` | Code quality standards, testing requirements, prompt engineering |
 | **Terminology Reference** | `/Docs/site/product-development/specification/reference/terminology/index.md` | Authoritative glossary for all technical terms |
 | **Architecture Overview** | `/Docs/site/product-development/specification/architecture/index.md` | System architecture, data models, component interactions |
-| **Current Status** | `/Docs/STATUS/Current_Status.md` | Current implementation status and known issues |
+| **Current Status** | Assigned status collection ([root routing](../../AGENTS.md#current-implementation)) | Current implementation status and known issues |
 
 ### 1.2 Area-to-Documents Mapping
 
@@ -36,9 +36,9 @@ When a task specifies an **Area**, read the corresponding documents:
 
 | Area | Required Documents |
 |------|-------------------|
-| **Prompts** | `/Docs/site/prompt-architecture.md`, `/apps/web/prompts/README.md`, `/AGENTS.md` |
+| **Prompts** | `/apps/web/prompts/README.md`, `/AGENTS.md` |
 | **Calculations** | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` |
-| **Configuration** | `/Docs/site/product-development/devops/subsystems-and-components/unified-config-management/index.md`, `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
+| **Configuration** | [Configuration placement](../../AGENTS.md#configuration-placement), `/apps/web/configs/`, `/apps/web/src/lib/config-schemas.ts`; resolve task-assigned operating guidance through [root documentation routing](../../AGENTS.md#documentation-sources) |
 | **Assessment boundaries** | `/Docs/site/product-development/specification/reference/terminology/index.md`, `/Docs/site/product-development/specification/architecture/index.md` |
 | **Source-Reliability** | `/Docs/site/shared-modules.md` |
 | **Pipeline** | `/Docs/site/akel-pipeline.md` |

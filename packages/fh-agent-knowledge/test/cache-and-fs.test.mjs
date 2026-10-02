@@ -175,18 +175,31 @@ test("Windows case and separator variants identify the same checkout", { skip: p
   }
 });
 
-test("stale queries preserve cache bytes and mtimes; explicit refresh rebuilds", () => {
+test("stale queries bypass retired entries without writes; explicit refresh rebuilds", () => {
   executeKnowledgeOperation("bootstrap");
   writeCacheManifest({ ...readCacheManifest(), repoHead: "__stale_cache_marker__" });
+  writeJsonAtomic(join(PATHS.cacheDir, "handoffs.json"), {
+    entries: [{ id: "retired-cache-entry", file: "retired-cache-entry.md", date: "2026-01-01", summary: "knowledge" }],
+  });
+  const direct = loadKnowledgeContext({ allowFallback: false });
+  assert.equal(direct.source, "none");
+  assert.equal(direct.data, null);
   const before = collectDirectorySnapshot(PATHS.cacheDir);
   for (const [command, input] of QUERIES) {
     const result = executeKnowledgeOperation(command, input);
-    assert.equal(result.cacheSource, "cache", command);
+    assert.equal(result.cacheSource, "fallback", command);
     assert.equal(result.cacheStale, true, command);
     assert.equal(result.cacheRefreshed, false, command);
-    assert.ok(result.warnings.length > 0, command);
+    assert.ok(result.warnings.some((warning) => warning.code === "cache_served_from_repo"), command);
+    assert.equal(JSON.stringify(result).includes("retired-cache-entry"), false, command);
     assert.deepEqual(collectDirectorySnapshot(PATHS.cacheDir), before, command);
   }
+  const health = executeKnowledgeOperation("health");
+  assert.equal(health.cacheSource, "fallback");
+  assert.equal(health.repoHead, "__stale_cache_marker__");
+  assert.equal(health.stale, true);
+  assert.equal(health.coverage.handoffs, loadKnowledgeContext().data.handoffs.entries.length);
+  assert.match(health.binding.scope, /other repositories are not searched/i);
   // Even a legacy caller cannot opt a query into mutation.
   const legacy = loadKnowledgeContext({ refreshIfStale: true });
   assert.equal(legacy.freshness.isStale, true);
@@ -195,4 +208,6 @@ test("stale queries preserve cache bytes and mtimes; explicit refresh rebuilds",
   executeKnowledgeOperation("refresh");
   assert.notEqual(readCacheManifest().repoHead, "__stale_cache_marker__");
   assert.equal(loadKnowledgeContext().freshness.isStale, false);
+  assert.equal(loadKnowledgeContext().source, "cache");
+  assert.equal(JSON.stringify(executeKnowledgeOperation("search-handoffs", { query: "knowledge" })).includes("retired-cache-entry"), false);
 });

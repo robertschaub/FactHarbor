@@ -33,7 +33,7 @@
 | `/Docs/AGENTS/Agent_Outputs.md` | Current state of agent collaboration log |
 | `/Docs/AGENTS/Handoffs/` | Any pending handoff files |
 | `/Docs/AGENTS/Role_Learnings.md` | Cross-agent learnings |
-| `/Docs/STATUS/Current_Status.md` | Current project state |
+| Assigned current-status record (root AGENTS.md routing) | Current project state |
 
 ## Key Files
 

@@ -10,7 +10,7 @@ Sources may use different methods, time periods or geographic coverage. **Eviden
 
 ## Challenging an assessment
 
-The [debate method](../../../../verdict-debate.md) separates an initial assessment, evidence-backed challenge, reconciliation and validation. Documented counter-evidence or a supported coverage problem can change a conclusion. Opinion and unsupported doubt alone must not reduce truth or confidence. Model agreement can still reflect shared gaps.
+The [debate stage](../../../../akel-stage-details.md#4-generate-challenge-and-validate-verdicts) separates an initial assessment, evidence-backed challenge, reconciliation and validation. Documented counter-evidence or a supported coverage problem can change a conclusion. Opinion and unsupported doubt alone must not reduce truth or confidence. Model agreement can still reflect shared gaps.
 
 ## Truth, confidence and publication
 
@@ -28,4 +28,4 @@ Material retrieval, interpretation or verdict failures must remain visible in th
 
 FactHarbor remains an Alpha. Repeated runs, different phrasings and languages can produce different results, and citations can be misread. Use the linked sources and claim-level explanations to assess a report rather than relying only on its headline.
 
-Contributors must preserve the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md), [current issues](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/KNOWN_ISSUES.md), multilingual robustness and approved exact-input controls. New paid evaluations require their own authorization.
+Contributors must preserve the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md), [documented limitations](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#known-limits), multilingual robustness and approved exact-input controls. New paid evaluations require their own authorization.

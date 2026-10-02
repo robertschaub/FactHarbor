@@ -144,7 +144,7 @@ export function loadKnowledgeContext({ allowFallback = true } = {}) {
   const currentSnapshot = readCurrentSourceSnapshot(indexes);
   const freshness = evaluateCacheFreshness(cached?.manifest ?? null, currentSnapshot);
 
-  if (cached) {
+  if (cached && !freshness.isStale) {
     return buildKnowledgeContext({
       source: "cache",
       manifest: cached.manifest,
@@ -172,7 +172,7 @@ export function loadKnowledgeContext({ allowFallback = true } = {}) {
     freshness,
     warnings: [
       ...freshness.warnings,
-      buildWarning("cache_served_from_repo", "Served directly from repo sources because no cache is available."),
+      buildWarning("cache_served_from_repo", "Served directly from current repo sources because the cache is missing or stale. Cache files were not changed."),
     ],
   });
 }

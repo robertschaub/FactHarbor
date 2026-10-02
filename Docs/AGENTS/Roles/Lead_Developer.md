@@ -24,7 +24,7 @@
 | `/AGENTS.md` | Fundamental rules, key files reference |
 | `/AGENTS.md` | Code quality standards |
 | `/apps/web/test/README.md` | Testing requirements |
-| `/Docs/STATUS/Current_Status.md` | Current state and known issues |
+| Assigned current-status record (root AGENTS.md routing) | Current state and known issues |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 
 ## Key Source Files

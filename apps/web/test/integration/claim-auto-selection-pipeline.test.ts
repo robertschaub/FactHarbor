@@ -136,6 +136,7 @@ vi.mock("@/lib/analyzer/research-orchestrator", () => ({
 }));
 
 vi.mock("@/lib/analyzer/research-extraction-stage", () => ({
+  observeEvidenceCapture: vi.fn(),
   classifyRelevance: vi.fn(),
   extractResearchEvidence: vi.fn(),
   assessEvidenceApplicability: mocks.assessEvidenceApplicability,

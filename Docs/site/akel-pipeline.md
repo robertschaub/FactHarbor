@@ -8,7 +8,7 @@ The AI Knowledge Extraction Layer (AKEL) is the analysis layer behind FactHarbor
 
 ## Responsibilities
 
-Research follows the claims that need assessment. Evidence carries source and scope information throughout the process. Analytical boundaries emerge from that evidence. The [debate stage](verdict-debate.md) assesses each claim using the relevant evidence and boundaries, and the report connects conclusions to their supporting or opposing evidence.
+Research follows the claims that need assessment. Evidence carries source and scope information throughout the process. Analytical boundaries emerge from that evidence. The [debate stage](akel-stage-details.md#4-generate-challenge-and-validate-verdicts) assesses each claim using the relevant evidence and boundaries, and the report connects conclusions to their supporting or opposing evidence.
 
 The pipeline separates semantic analysis from structural processing. Language models perform interpretation, relevance assessment and other meaning-dependent judgements. Structural code manages identifiers, schemas, configuration, resource limits and result assembly. See [stage responsibilities](akel-stage-details.md) for the public contracts contributors need to preserve.
 
