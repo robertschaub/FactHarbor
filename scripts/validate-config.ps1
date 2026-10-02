@@ -124,3 +124,4 @@ if ($errors.Count -eq 0) {
 }
 
 Write-Host ""
+if ($errors.Count -gt 0) { exit 1 }

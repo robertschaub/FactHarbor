@@ -52,6 +52,7 @@ if ($RunnerBaseUrl) { $restartArgs += '-RunnerBaseUrl', $RunnerBaseUrl }
 if ($ApiBaseUrl) { $restartArgs += '-ApiBaseUrl', $ApiBaseUrl }
 
 & powershell @restartArgs
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
 Write-Host "Done!" -ForegroundColor Green

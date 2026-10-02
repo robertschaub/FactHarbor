@@ -1,6 +1,7 @@
+[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$ApiUrls = "http://localhost:5000",
-    [int]$WebPort = 3000,
+    [ValidateRange(1, 65535)][int]$WebPort = 3000,
     [string]$ApiDbPath = "",
     [string]$RunnerBaseUrl = "",
     [string]$ApiBaseUrl = ""
@@ -11,95 +12,23 @@ $ErrorActionPreference = "Stop"
 Write-Host "== FactHarbor POC1 Clean Restart =="
 Write-Host ""
 
-# Guard: AI coding harnesses (e.g. Claude Code) inject ANTHROPIC_BASE_URL /
-# ANTHROPIC_MODEL into their tool shells. Services spawned from such a shell
-# inherit them, and @ai-sdk/anthropic prefers ANTHROPIC_BASE_URL over its
-# correct default (https://api.anthropic.com/v1) — the harness value lacks
-# /v1, so every pipeline LLM call 404s. Strip both before spawning services.
-foreach ($leak in "ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL") {
-    if (Test-Path "Env:$leak") {
-        Write-Host "WARNING: removing inherited $leak ('$((Get-Item Env:$leak).Value)') from service environment (harness leak guard)." -ForegroundColor Yellow
-        Remove-Item "Env:$leak"
-    }
+. "$PSScriptRoot\service-ownership.ps1"
+$repoRoot = Get-ServiceDirectoryIdentity (Join-Path $PSScriptRoot '..')
+$ports = @(Get-ServicePorts $ApiUrls $WebPort)
+$apiPorts = @($ports | Where-Object { $_ -ne $WebPort })
+if ($WhatIfPreference) {
+    Stop-CheckoutServices -Root $repoRoot -Ports $ports -WhatIf
+    Write-Host 'WhatIf: configuration validation, reseeding and startup were not run.'
+    return
 }
+if (-not $PSCmdlet.ShouldProcess($repoRoot, 'Validate, stop verified services, reseed and restart')) { return }
+& powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
+if ($LASTEXITCODE -ne 0) { throw 'Configuration validation failed; services were not stopped.' }
+Stop-CheckoutServices -Root $repoRoot -Ports $ports -Confirm:$false
 
-Write-Host "Validating configuration..."
-powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
-Write-Host ""
+function ConvertTo-ServiceLiteral([string]$Value) { return "'" + $Value.Replace("'", "''") + "'" }
 
-function Stop-Gracefully([string]$label, $cimProcesses) {
-    if (!$cimProcesses) {
-        Write-Host "No running $label processes found."
-        return
-    }
-
-    foreach ($cim in $cimProcesses) {
-        try {
-            $proc = Get-Process -Id $cim.ProcessId -ErrorAction Stop
-            Write-Host "Stopping $label PID $($proc.Id) ($($proc.ProcessName))..." -ForegroundColor Yellow
-            $closed = $proc.CloseMainWindow()
-            if (-not $closed) {
-                throw "Could not close $label owner PID $($proc.Id). Stop that service tree explicitly before restarting; no replacement will be launched."
-            }
-            Wait-Process -Id $proc.Id -Timeout 10 -ErrorAction SilentlyContinue
-            if (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue) {
-                Write-Host "  PID $($proc.Id) is still running; force-killing." -ForegroundColor Yellow
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-            }
-        } catch {
-            throw "Could not stop $label owner PID $($cim.ProcessId): $($_.Exception.Message)"
-        }
-    }
-}
-
-function Get-ConfiguredPorts([string]$urls, [int[]]$fallbackPorts) {
-    $ports = @()
-    foreach ($rawUrl in ($urls -split ';' | Where-Object { $_ -match '^https?://' })) {
-        try {
-            $uri = [Uri]$rawUrl
-            $port = if ($uri.IsDefaultPort) {
-                if ($uri.Scheme -eq 'https') { 443 } else { 80 }
-            } else {
-                $uri.Port
-            }
-            if ($port -and $ports -notcontains $port) {
-                $ports += $port
-            }
-        } catch {
-            Write-Host "  Could not parse URL '$rawUrl' while determining listener ports." -ForegroundColor Yellow
-        }
-    }
-
-    if ($ports.Count -gt 0) {
-        return $ports
-    }
-
-    return $fallbackPorts
-}
-
-function Stop-ListeningProcesses([int[]]$ports, [string]$label) {
-    foreach ($port in $ports) {
-        Write-Host "Checking for processes using $label port $port..."
-        $connections = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-        if ($connections) {
-            foreach ($conn in ($connections | Select-Object -Unique OwningProcess)) {
-                $procId = $conn.OwningProcess
-                try {
-                    $proc = Get-Process -Id $procId -ErrorAction Stop
-                    Write-Host ("Killing process on port {0}: PID {1} ({2})" -f $port, $procId, $proc.ProcessName) -ForegroundColor Yellow
-                    Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
-                } catch {
-                    Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
-                }
-            }
-        } else {
-            Write-Host "No process listening on port $port."
-        }
-        Write-Host ""
-    }
-}
-
-function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [int[]]$ports, [string]$stdoutPath, [string]$stderrPath, [int]$timeoutSeconds = 90) {
+function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [datetime]$serviceShellStartedAt, [int[]]$ports, [string]$stdoutPath, [string]$stderrPath, [int]$timeoutSeconds = 90) {
     $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
     do {
         $output = (@($stdoutPath, $stderrPath) | ForEach-Object {
@@ -109,7 +38,9 @@ function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [int
             throw "$label startup failed: new service reported a build/startup error. See $stdoutPath and $stderrPath."
         }
         $processes = @(Get-CimInstance Win32_Process)
-        if (-not ($processes | Where-Object ProcessId -eq $serviceShellProcessId)) {
+        $owner = $processes | Where-Object ProcessId -eq $serviceShellProcessId
+        $ownerHandle = Get-Process -Id $serviceShellProcessId -ErrorAction SilentlyContinue
+        if (-not $owner -or -not $owner.CreationDate -or -not $ownerHandle -or $ownerHandle.StartTime.ToUniversalTime() -ne $serviceShellStartedAt.ToUniversalTime()) {
             throw "$label startup failed: new shell $serviceShellProcessId exited. See $stdoutPath and $stderrPath."
         }
         $allListening = $true
@@ -123,7 +54,7 @@ function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [int
                     $visited += $ancestorId
                     $child = $processes | Where-Object ProcessId -eq $ancestorId
                     $parent = $processes | Where-Object ProcessId -eq $child.ParentProcessId
-                    if (-not $child -or -not $parent -or $parent.CreationDate -gt $child.CreationDate) { break }
+                    if (-not $child -or -not $parent -or -not $child.CreationDate -or -not $parent.CreationDate -or $parent.CreationDate -gt $child.CreationDate) { break }
                     $ancestorId = $parent.ProcessId
                 }
                 if ($ancestorId -ne $serviceShellProcessId) {
@@ -137,33 +68,24 @@ function Assert-ServiceStartup([string]$label, [int]$serviceShellProcessId, [int
     throw "$label startup failed: no verified listener within $timeoutSeconds seconds. See $stdoutPath and $stderrPath."
 }
 
-Write-Host "Stopping existing services (graceful)..."
-$apiShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\api" -and $_.CommandLine -match "dotnet watch run"
-}
-$webShells = Get-CimInstance Win32_Process | Where-Object {
-    $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\web" -and $_.CommandLine -match "npm run dev"
-}
-
-Stop-Gracefully -label "API" -cimProcesses $apiShells
-Stop-Gracefully -label "Web" -cimProcesses $webShells
-Write-Host ""
-
-$apiPorts = Get-ConfiguredPorts -urls $ApiUrls -fallbackPorts @(5000)
-Stop-ListeningProcesses -ports $apiPorts -label "API"
-Stop-ListeningProcesses -ports @($WebPort) -label "Web"
-
 Write-Host "Starting API and Web services..."
 
+# Do not pass harness provider routing into product services.
+$savedProviderRouting = @{}
+foreach ($key in @('ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL')) {
+    $savedProviderRouting[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
+    [Environment]::SetEnvironmentVariable($key, $null, 'Process')
+}
+try {
 # Start API with retained logs (creates DB on startup if missing)
 Write-Host "Starting API..."
-$apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='$ApiUrls'; "
+$apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS=$(ConvertTo-ServiceLiteral $ApiUrls); "
 if (-not $RunnerBaseUrl) {
     $RunnerBaseUrl = "http://localhost:$WebPort"
 }
-$apiEnvPrefix += "`$env:Runner__BaseUrl='$RunnerBaseUrl'; "
+$apiEnvPrefix += "`$env:Runner__BaseUrl=$(ConvertTo-ServiceLiteral $RunnerBaseUrl); "
 if ($ApiDbPath) {
-    $apiEnvPrefix += "`$env:ConnectionStrings__FhDbSqlite='Data Source=$ApiDbPath'; "
+    $apiEnvPrefix += "`$env:ConnectionStrings__FhDbSqlite=$(ConvertTo-ServiceLiteral ('Data Source=' + $ApiDbPath)); "
 }
 $startupLogDir = Join-Path $PSScriptRoot '..\test-output\service-startup'
 New-Item -ItemType Directory -Force -Path $startupLogDir | Out-Null
@@ -171,12 +93,12 @@ $startupId = [Guid]::NewGuid().ToString('N')
 $apiStdout = Join-Path $startupLogDir "$startupId-api.stdout.log"
 $apiStderr = Join-Path $startupLogDir "$startupId-api.stderr.log"
 $apiShell = Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -RedirectStandardOutput $apiStdout -RedirectStandardError $apiStderr -ArgumentList @(
-  "-NoExit",
+  "-NoProfile", "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\api`"; $apiEnvPrefix dotnet watch run"
+  "Set-Location -LiteralPath $(ConvertTo-ServiceLiteral (Join-Path $repoRoot 'apps\api')); $apiEnvPrefix dotnet watch run"
 )
 try {
-    Assert-ServiceStartup -label "API" -serviceShellProcessId $apiShell.Id -ports $apiPorts -stdoutPath $apiStdout -stderrPath $apiStderr
+    Assert-ServiceStartup -label "API" -serviceShellProcessId $apiShell.Id -serviceShellStartedAt $apiShell.StartTime -ports $apiPorts -stdoutPath $apiStdout -stderrPath $apiStderr
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
@@ -197,7 +119,7 @@ try {
 $webEnvPrefix = ""
 # Allow explicit shell env to override .env.local
 if ($env:FH_RUNNER_MAX_CONCURRENCY) {
-    $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY='$($env:FH_RUNNER_MAX_CONCURRENCY)'; "
+    $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY=$(ConvertTo-ServiceLiteral $env:FH_RUNNER_MAX_CONCURRENCY); "
 }
 $selectedApiUrl = ""
 if ($ApiUrls) {
@@ -213,19 +135,19 @@ if (-not $ApiBaseUrl) {
     $ApiBaseUrl = "http://localhost:5000"
 }
 $ApiBaseUrl = $ApiBaseUrl.TrimEnd('/')
-$webEnvPrefix += "`$env:FH_API_BASE_URL='$ApiBaseUrl'; `$env:PORT='$WebPort'; "
+$webEnvPrefix += "`$env:FH_API_BASE_URL=$(ConvertTo-ServiceLiteral $ApiBaseUrl); `$env:PORT='$WebPort'; "
 
 # Reseed prompts and configs into config.db so the dev server picks up file changes
 Write-Host "Reseeding prompts and configs..."
 try {
     Push-Location "$PSScriptRoot\..\apps\web"
     & npx tsx scripts/reseed-all-prompts.ts --quiet 2>&1 | ForEach-Object { Write-Host "  $_" }
+    if ($LASTEXITCODE -ne 0) { throw "Prompt/configuration reseed failed." }
     Pop-Location
     Write-Host "Reseed complete." -ForegroundColor Green
 } catch {
-    Write-Host "  Reseed failed: $($_.Exception.Message)" -ForegroundColor Yellow
-    Write-Host "  Dev server will use existing config.db contents." -ForegroundColor Yellow
     Pop-Location
+    throw "Reseed failed; Web was not started. API may already be running: $($_.Exception.Message)"
 }
 Write-Host ""
 
@@ -234,12 +156,12 @@ Write-Host "Starting Web..."
 $webStdout = Join-Path $startupLogDir "$startupId-web.stdout.log"
 $webStderr = Join-Path $startupLogDir "$startupId-web.stderr.log"
 $webShell = Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -RedirectStandardOutput $webStdout -RedirectStandardError $webStderr -ArgumentList @(
-  "-NoExit",
+  "-NoProfile", "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\web`"; $webEnvPrefix npm run dev"
+  "Set-Location -LiteralPath $(ConvertTo-ServiceLiteral (Join-Path $repoRoot 'apps\web')); $webEnvPrefix npm run dev"
 )
 try {
-    Assert-ServiceStartup -label "Web" -serviceShellProcessId $webShell.Id -ports @($WebPort) -stdoutPath $webStdout -stderrPath $webStderr
+    Assert-ServiceStartup -label "Web" -serviceShellProcessId $webShell.Id -serviceShellStartedAt $webShell.StartTime -ports @($WebPort) -stdoutPath $webStdout -stderrPath $webStderr
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
@@ -254,3 +176,7 @@ Write-Host "API:    $ApiBaseUrl"
 Write-Host "Swagger:$ApiBaseUrl/swagger"
 Write-Host ""
 Write-Host "Note: Make sure apps/web/.env.local exists with required environment variables."
+
+} finally {
+    foreach ($key in $savedProviderRouting.Keys) { [Environment]::SetEnvironmentVariable($key, $savedProviderRouting[$key], 'Process') }
+}
