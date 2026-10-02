@@ -31,7 +31,7 @@ export const KNOWLEDGE_OPERATION_DEFINITIONS = [
     cliCommand: "preflight-task",
     mcpTool: "preflight_task",
     cliUsage: "fh-knowledge preflight-task --task \"...\" [--role ...] [--skill ...] [--limit 5]",
-    description: "Bundle startup context and advice for a task from recent outputs, handoffs, stages, role context, skills, and doc anchors. If role/skill are omitted, extracts a leading 'As <Role>,' prompt and first 'Skill:' value from task.",
+    description: "Optionally bundle advisory context from this public checkout's outputs, handoffs, stages, roles, skills and docs. Other repositories are not searched. Explicit role/skill fields or leading 'As <Role>,' and 'Skill:' directives guide matching; suggestions do not activate roles or authorize work.",
     execute(input = {}) {
       return buildQueryResult("preflight-task", (knowledgeContext) => ({
         result: preflightTask(knowledgeContext, input),
@@ -42,7 +42,7 @@ export const KNOWLEDGE_OPERATION_DEFINITIONS = [
     cliCommand: "search-handoffs",
     mcpTool: "search_handoffs",
     cliUsage: "fh-knowledge search-handoffs --query \"...\" [--role ...] [--after YYYY-MM-DD] [--limit 10]",
-    description: "Search historical handoffs with role/date filters and field-level match reasons.",
+    description: "Search handoffs indexed in this public checkout, with role/date filters and match reasons. Empty results do not establish that no prior work exists elsewhere.",
     execute(input = {}) {
       return buildQueryResult("search-handoffs", (knowledgeContext) => ({
         results: searchHandoffs(knowledgeContext, input),

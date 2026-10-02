@@ -3,7 +3,7 @@ import { bootstrapKnowledgeCache, loadKnowledgeContext } from "../cache/build-ca
 import { PATHS } from "../utils/paths.mjs";
 
 export function refreshKnowledge({ force = false } = {}) {
-  const current = loadKnowledgeContext({ allowFallback: true, refreshIfStale: false });
+  const current = loadKnowledgeContext({ allowFallback: false });
   if (!force && current.source === "cache" && !current.freshness.isStale) {
     return buildCommandResult("refresh", {
       cacheDir: PATHS.cacheDir,
