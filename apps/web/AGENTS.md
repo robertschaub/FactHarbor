@@ -4,7 +4,7 @@ Applies to all files under `apps/web/`. For project-wide rules, see `/AGENTS.md`
 
 ## Technology
 
-- Next.js 15 (App Router)
+- Next.js 16 (App Router; `package.json` pins the supported release range)
 - AI SDK (Vercel AI SDK) for LLM orchestration
 - Vitest for unit and integration testing
 - Tailwind CSS for styling

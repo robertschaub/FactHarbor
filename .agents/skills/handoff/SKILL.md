@@ -4,7 +4,7 @@ description: Preserve task decisions, verification, ownership and next steps for
 allowed-tools: Read Glob Grep
 ---
 
-Use the task's authorized source and output scope. Public records carry concise current contracts and findings needed for public implementation. Full research, experimental histories and non-public handoffs use the assigned task record; do not create or recreate them publicly by default. Missing history is a context gap, not closure. The handoff protocol governs preservation and discovery.
+Resolve source, discovery and durable output locations from the current task or a verified adopted workspace profile before using the public paths below. Working handoffs, full investigations and unpublished prototypes default to that assigned non-public home; existing public implementation and clearly public task records stay public. Query assigned private discovery as well as relevant public history; an empty public index is not evidence of closure or no prior work. Missing access is a stated gap, not authority to recreate the collection publicly. The handoff protocol governs preservation, pending records and persistence status. For historical/WIP/output steps, the Handoff Protocol source-and-output rule governs collection substitution and index metadata; never put private record names or summaries in a public index.
 
 Bind the handoff to the current authorized task, named base/diff and any explicit arguments. Do not infer scope from the last three commits or an active editor selection.
 

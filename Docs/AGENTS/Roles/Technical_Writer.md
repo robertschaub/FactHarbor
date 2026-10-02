@@ -11,6 +11,8 @@ Read [AGENTS.md](../../../AGENTS.md), [documentation guidance](../../DEVELOPMENT
 
 ## Source locations
 
+These are public-edition locations. Resolve working investigations and completion records through the assigned home under the Handoff Protocol before using them.
+
 - `Docs/site/`: website Markdown, public specifications and diagrams.
 - `Docs/ARCHITECTURE/`: current architecture references.
 - `Docs/STATUS/`: current status, backlog and known issues.
@@ -32,3 +34,5 @@ Each edition has one editable source. Link to an existing home rather than copyi
 7. Report changes, evidence, limitations and genuinely unresolved decisions. Follow the handoff protocol when significant continuity evidence is needed; keep trivial completion in chat.
 
 Resolve routine choices within existing authorization. Ask only for a material missing decision, unclear technical meaning or additional action scope. Pushes and deployments require current authority covering the specific destination and action; a role name or local preview supplies none.
+
+For historical discovery and durable working outputs, resolve the assigned record home under [Handoff Protocol](../Policies/Handoff_Protocol.md#source-and-output-scope) before using public paths above. Empty public collections do not establish absence or closure of prior work.

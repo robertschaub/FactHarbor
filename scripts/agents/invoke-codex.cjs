@@ -6,7 +6,8 @@
  * ChatGPT subscription login, with a supplied review packet. Never uses OPENAI_API_KEY.
  *
  * Procedure: Docs/AGENTS/Policies/Tool_Strengths.md → "Calling Codex from Claude Code".
- * Siblings: invoke-claude.cjs (Claude subscription), invoke-gpt.cjs (paid OpenAI API).
+ * Claude subscription review: Docs/AGENTS/Policies/Tool_Strengths.md.
+ * invoke-gpt.cjs is the separate paid OpenAI API route.
  *
  * Usage:
  *   node scripts/agents/invoke-codex.cjs --model <slug> [--effort minimal|low|medium|high|xhigh]

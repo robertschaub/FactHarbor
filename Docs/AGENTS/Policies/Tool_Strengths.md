@@ -23,11 +23,11 @@ The established review route is a local Claude Code CLI process using subscripti
 
 1. Locate the installed executable (`Get-Command claude` on Windows; a common native-install location is `%USERPROFILE%\.local\bin\claude.exe`). Check its `--help` for the flags below. Do not install or update it as a side effect.
 2. Copy the environment for the child process only. Remove inherited `ANTHROPIC_*`, `CLAUDE_CODE_OAUTH_TOKEN*`, `CLAUDE_CODE_USE_BEDROCK*`, `CLAUDE_CODE_USE_VERTEX*`, `CLAUDE_CODE_USE_FOUNDRY*`, `CLAUDE_MODEL` and `CLAUDECODE` overrides. Leave global environment and credential stores unchanged. Run `auth status --json` with that same child environment and working directory; require `loggedIn: true` and `authMethod: "claude.ai"` for this subscription route. Verify the account against the user's selection; an open Claude desktop window does not establish the CLI account. Keep account details in local evidence, not public documentation. A mismatch needs resolution before a model call; do not fall back to API credentials.
-3. For a tool-free review, use a fresh temporary directory outside the checkout and a fresh session. Spawn the executable through Node `child_process.spawn` with an argument array (preserving the empty `--tools` argument on Windows):
+3. Remove inherited `CLAUDE_CODE_EFFORT_LEVEL`, `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING` and `MAX_THINKING_TOKENS` unless specifically requested for that invocation. For a tool-free packet review, use `--setting-sources ''` on both the authentication check and review so user/project settings cannot reintroduce those overrides. Verify support in the installed CLI; managed settings still apply. Record requested effort and verified effective settings; a role label does not establish them. Preserve the user's global preferences. Use a fresh temporary directory outside the checkout and a fresh session. Spawn the executable through Node `child_process.spawn` with an argument array (preserving empty arguments on Windows):
 
    ```js
    const args = [
-     '--safe-mode', '--tools', '', '--strict-mcp-config',
+     '--setting-sources', '', '--safe-mode', '--tools', '', '--strict-mcp-config',
      '--disable-slash-commands', '--no-chrome',
      '--model', userSelectedModel, '--effort', reviewEffort,
      '--session-id', freshUuid,

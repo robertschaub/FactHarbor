@@ -59,3 +59,5 @@ Updated governance docs, protocol gap analyses, cross-reference consistency audi
 - Implementing application code (delegate to a developer role)
 - Changing rules without Captain awareness (propose changes, get sign-off for significant ones)
 - Gold-plating governance — keep rules lean and actionable, not bureaucratic
+
+For historical discovery and durable working outputs, resolve the assigned record home under [Handoff Protocol](../Policies/Handoff_Protocol.md#source-and-output-scope) before using public paths above. Empty public collections do not establish absence or closure of prior work.

@@ -235,6 +235,8 @@ Run from repository root unless noted; these commands remain subject to task/sta
 
 Dev/API commands are in their nested AGENTS.md. Lint is currently a placeholder, not verification evidence. Validation writes summaries under `test-output/validation/` and may submit live jobs.
 
+Quick start installs dependencies and starts services. The web build's `postbuild` can reseed UCM state. Index builders, knowledge bootstrap/refresh and installed Git hooks can write generated files or caches. Inspect their current effects and assign disposable output/state before restricted checks; a build or refresh is not read-only. Service stop/restart refuses unverified ownership; inspect an incomplete shutdown before starting another service.
+
 Documentation publication is triggered by pushing `main`; CI owns `gh-pages`. Never push to `gh-pages` directly. An authorized docs redeploy can use `gh workflow run "Deploy Docs to GitHub Pages" --ref main`. A local commit is not deployment authority.
 
 ### Test Cost Warning
@@ -257,7 +259,9 @@ When submitting **live analysis jobs or validation batches** after changing sour
 
 Read [Documentation guidance](Docs/DEVELOPMENT/Documentation.md) for Markdown authoring and diagram verification. Website pages live in `Docs/site/`; contributor and agent references retain their documented repository paths.
 
-Keep public documentation focused on the method, supported interfaces, current issues and contribution contracts. Use a task-supplied authorized record for full research, experimental histories and non-public work; do not recreate those collections here by default. Public task records may contain the concise evidence needed to implement and review a public change. Missing historical context is a gap, never evidence of closure or permission to restart held work.
+Keep public documentation focused on the method, supported interfaces, current issues and contribution contracts. Use the current task or a verified, human-adopted workspace profile for cross-repository scope. Durable working notes, detailed investigations, handoffs and unpublished prototypes use their assigned non-public record home unless clearly authorized as public. Existing public source, tests, operative configuration and contribution contracts stay here. A public cwd or a missing confidentiality marker does not select a public destination. If an assigned record home is unavailable, preserve permitted pending work outside this checkout and report the persistence gap; never recreate a private collection here.
+
+Select the primary checkout for the main deliverable. Explicitly read root and nested instructions for every target repository, run commands with an explicit working directory, and verify each tool's served source/revision. Additional-directory access does not load all instructions, hooks or skills; if required write controls cannot be verified, continue that write in a fresh target-primary session. A code worktree does not isolate a paired documentation checkout. Keep separate revisions and one owner per shared record. Use a task-supplied authorized record for full research, experimental histories and non-public work; do not recreate those collections here by default. Public task records may contain the concise evidence needed to implement and review a public change. Missing historical context is a gap, never evidence of closure or permission to restart held work.
 
 Each edition has one authoritative editable source. Use this checkout's public contracts for implementation, and only task-specific material explicitly supplied within the current access scope. Access never grants disclosure permission.
 ---
@@ -331,3 +335,5 @@ Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-ti
 ## Current implementation
 
 Use `Docs/STATUS/Current_Status.md` and current code/configuration for status, runtime defaults and model selection. Do not treat an adapter snapshot or historical handoff as the current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.
+
+Contributors without an assigned private home may use the public record paths for intentionally public, public-safe work; uncertain or non-public material stays in the authorized task/chat scope.

@@ -68,7 +68,7 @@ When activated in a role, use this table to identify which areas are within your
 
 ### 1.4 WIP Folder Protocol
 
-- **Location:** `/Docs/WIP/`
+- **Location:** the task's assigned record home; `/Docs/WIP/` only for clearly public proposals/investigations
 - **Purpose:** Concise records needed for an authorized public implementation or review. Full investigations and experimental histories use the task's approved output scope (§3.4).
 - **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
 - **On Completion:** Keep useful reference material in its appropriate living document; retire completed records only within assigned preservation and removal scope

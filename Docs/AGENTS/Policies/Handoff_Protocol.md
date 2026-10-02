@@ -73,7 +73,13 @@ Restricted reviewers return findings, warnings, learnings, and exact reviewed-re
 
 Use public contracts and current source for ordinary contributions. Load other references only when supplied or explicitly authorized for the task. Missing or empty historical discovery results are context gaps; do not infer resolution or fabricate a replacement history.
 
+First resolve the task's record home and discovery entry from explicit scope or a verified adopted workspace profile. Use that private home for working handoffs, investigations and unpublished prototypes; use the public paths below only for clearly public task records. If the assigned home is unavailable, use only authorized pending storage and report the gap. Empty public history is not proof that prior work is absent.
+
 The public output locations below apply to concise public task records. Full research, experimental histories and non-public handoffs use the task's authorized record and access boundary. Do not create those collections publicly by default, or publish destination catalogs. Preserve decisions, provenance, holds and permitted next actions in the record accessible to the authorized next reader; public instructions must still work without that access.
+
+For history, WIP and completion steps in roles or skills, use the assigned collection and its discovery schema. The public locations and index examples below apply only to the public edition. Keep public code/configuration/contract references at their existing paths. If an authorized index has different or incomplete role/topic metadata, search its permitted titles/paths and report the coverage gap; do not assume no prior work. Never append private record names or summaries to a public index.
+
+Contributors without an assigned private home may use the public record paths for intentionally public, public-safe work; uncertain or non-public material stays in the authorized task/chat scope.
 
 #### Modes
 
@@ -89,7 +95,7 @@ The public output locations below apply to concise public task records. Full res
 |-----------|----------|---------------|
 | **Trivial** | Single-file tweak, typo fix, quick answer, < 3 minutes of work | No file. Chat summary is sufficient. |
 | **Standard** | Bounded change or investigation | Concise chat completion or amend an existing task record. Create a handoff + index row only if needed for continuation or explicitly requested. |
-| **Significant** | Multi-file change, design decision, new module, investigation with findings that other agents need | **Dedicated .md file** in `Docs/AGENTS/Handoffs/` + **index row** in `Docs/AGENTS/Agent_Outputs.md` |
+| **Significant** | Multi-file change, design decision, new module, investigation with findings that other agents need | **Dedicated record in the assigned home**, unless an existing record suffices; public-safe records alone use `Docs/AGENTS/Handoffs/` and `Docs/AGENTS/Agent_Outputs.md` |
 
 A significant task may use an existing authoritative task record when it already holds the required evidence; avoid a second completion narrative. Restricted sessions never write artifacts: the integrator persists needed evidence and attribution.
 
@@ -134,23 +140,23 @@ The assignment and reviewed-revision fields above are required for concurrent wo
 
 #### Handoff file placement (Standard and Significant)
 
-- **Location:** `Docs/AGENTS/Handoffs/`
+- **Location:** the assigned record home; `Docs/AGENTS/Handoffs/` only for clearly public records
 - **Naming:** `YYYY-MM-DD_<Role>_<Short_Description>.md`
 - **Content:** Unified template fields. Significant tier adds detail (code snippets, diagrams, analysis); Standard tier stays concise.
-- **Index row (required):** Append a 3-line triage-weight row to `Docs/AGENTS/Agent_Outputs.md`:
+- **Discovery:** Update the assigned home's discovery convention. For a clearly public handoff only, append a 3-line triage-weight row to `Docs/AGENTS/Agent_Outputs.md`:
   ```
   ### YYYY-MM-DD | <Role> | <Agent/Tool> | <Title> — [<Tier>] [open-items: yes/no]
   **For next agent:** <summary, include 1–2 key symbols: class names / endpoints / file paths>
   → Docs/AGENTS/Handoffs/<filename>.md
   ```
-- **Lifecycle:** Consumed by the next agent. Keep useful completion evidence available. Retirement is assigned maintenance, never an automatic calendar or completion side effect. NOT long-lived design docs (those go in `Docs/WIP/`).
+- **Lifecycle:** Consumed by the next agent. Keep useful completion evidence available. Retirement is assigned maintenance, never an automatic calendar or completion side effect. Long-lived designs remain in their assigned subject home (`Docs/WIP/` for public work).
 
 #### Role Handoff — incoming role checklist
 
 When you are the **incoming** role (receiving a handoff or starting a role mid-project), **self-serve context before asking the Captain**:
 
 1. For relevant non-trivial work, inspect the current task record or query the handoff index for prior context; skip history lookup when it adds no value
-2. **Only when step 1 identifies a useful history lookup:** query `Docs/AGENTS/index/handoff-index.json`, filter by `roles` and `topics`, and read relevant matches. If the index is absent, use step 2b; otherwise skip this step.
+2. Use the assigned discovery entry first, including authorized non-public records. **For public history when step 1 identifies a useful lookup:** query `Docs/AGENTS/index/handoff-index.json`, filter by `roles` and `topics`, and read relevant matches. If the index is absent, use step 2b; otherwise skip this step.
    - 2b. *(fallback)* Scan filenames in `Docs/AGENTS/Handoffs/` directly
 3. Read your role brief and only the task-relevant sections of its references
 4. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
