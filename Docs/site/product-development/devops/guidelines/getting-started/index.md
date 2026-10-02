@@ -26,7 +26,7 @@ Run the copy commands only for a new setup; preserve existing settings. Edit the
 | `FH_INTERNAL_RUNNER_KEY` | `Runner:RunnerKey` |
 | Web runner address | `Runner:BaseUrl`, normally `http://localhost:3000` |
 
-Set keys for the configured model/search providers. Model selection, prompts and analysis settings belong in [UCM](https://github.com/robertschaub/FactHarbor/blob/main/Docs/USER_GUIDES/UCM_Administrator_Handbook.md); environment files hold infrastructure and secrets.
+Set keys for the configured model/search providers. Model selection, prompts and analysis settings belong in [UCM](#analysis-configuration); environment files hold infrastructure and secrets.
 
 ## Start services
 
@@ -54,7 +54,13 @@ The API initializes/migrates its configured database on startup. Preserve an exi
 
 Open `http://localhost:5000/health` and `http://localhost:3000/api/health`; successful health responses establish reachability. Development Swagger is at `http://localhost:5000/swagger`. Open the web UI at `http://localhost:3000`.
 
-Open `/admin/config` to inspect active configuration before an analysis. Connectivity tests and analysis submission can call paid providers. Project agents must use approved exact inputs and have current authorization for live calls; setup success alone does not grant that authority.
+## Analysis configuration
+
+Open `/admin/config` with administrative access to inspect the active type/profile and content hash. Repository [defaults](https://github.com/robertschaub/FactHarbor/tree/main/apps/web/configs) and [schemas](https://github.com/robertschaub/FactHarbor/blob/main/apps/web/src/lib/config-schemas.ts) describe configuration fields; they do not prove which settings a running job used.
+
+Before an authorized change, preserve the previous version and export a backup. Review the diff and validation results, distinguish saving from activation, and confirm the resulting active hash. Builds and reseeding can change the selected configuration database; follow the [reseed procedure](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Procedures/Prod_Prompt_Config_Reseed.md) and preserve existing state.
+
+Connectivity tests and analysis submission can call paid providers. Project agents must use approved exact inputs and have current authorization for live calls; setup success alone does not grant that authority. Check the [current operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority) before changing analysis settings.
 
 ## Troubleshooting
 

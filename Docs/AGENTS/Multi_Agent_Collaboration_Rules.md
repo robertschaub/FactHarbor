@@ -38,7 +38,7 @@ When a task specifies an **Area**, read the corresponding documents:
 |------|-------------------|
 | **Prompts** | `/apps/web/prompts/README.md`, `/AGENTS.md` |
 | **Calculations** | `/Docs/site/product-development/specification/architecture/quality-and-trust/index.md` |
-| **Configuration** | `/Docs/USER_GUIDES/UCM_Administrator_Handbook.md` |
+| **Configuration** | [Configuration placement](../../AGENTS.md#configuration-placement), `/apps/web/configs/`, `/apps/web/src/lib/config-schemas.ts`; resolve task-assigned operating guidance through [root documentation routing](../../AGENTS.md#documentation-sources) |
 | **Assessment boundaries** | `/Docs/site/product-development/specification/reference/terminology/index.md`, `/Docs/site/product-development/specification/architecture/index.md` |
 | **Source-Reliability** | `/Docs/site/shared-modules.md` |
 | **Pipeline** | `/Docs/site/akel-pipeline.md` |
