@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T08:14:01.403Z",
+  "generatedAt": "2026-10-02T09:01:11.018Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -79,6 +79,9 @@
     "research_extraction": {
       "file": "apps/web/src/lib/analyzer/research-extraction-stage.ts",
       "functions": [
+        "observeEvidenceCapture",
+        "evidenceCaptureFingerprint",
+        "createEvidenceApplicabilityCapture",
         "classifyRelevance",
         "extractResearchEvidence",
         "assessEvidenceApplicability",
