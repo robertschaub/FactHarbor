@@ -17,7 +17,10 @@
       "navigation.top",
       "navigation.indexes"
     ],
-    "custom_dir": "scripts/docs/overrides"
+    "custom_dir": "scripts/docs/overrides",
+    "icon": {
+      "repo": "fontawesome/brands/github"
+    }
   },
   "plugins": [
     "search"
@@ -46,71 +49,28 @@
   "copyright": "FactHarbor · Documentation: CC BY-SA 4.0",
   "nav": [
     {
+      "Home": "index.md"
+    },
+    {
       "About FactHarbor": "about-factharbor/index.md"
     },
     {
-      "Organisation": [
-        "organisation/index.md",
+      "Presentations": [
+        "product-development/presentations/index.md",
         {
-          "Governance": "organisation/governance/index.md"
+          "Academic Cooperation": "academic-cooperation.md"
         },
         {
-          "How-We-Work-Together": [
-            {
-              "GlobalRules": "organisation/how-we-work-together/globalrules/index.md"
-            },
-            {
-              "Contributor Processes": "organisation/how-we-work-together/contributor-processes/index.md"
-            }
-          ]
+          "Fact-Checker Cooperation": "fact-checker-cooperation.md"
         },
         {
-          "Legal and Compliance": [
-            "organisation/legal-and-compliance/index.md",
-            {
-              "Legal Framework": "legal-framework.md"
-            },
-            {
-              "Open Source Model and Licensing": "organisation/legal-and-compliance/open-source-model-and-licensing/index.md"
-            },
-            {
-              "CLA": "organisation/legal-and-compliance/cla/index.md"
-            },
-            {
-              "Finance and Compliance": "organisation/legal-and-compliance/finance-and-compliance/index.md"
-            },
-            {
-              "Large Donations Policy": "organisation/legal-and-compliance/large-donations-policy/index.md"
-            },
-            {
-              "Privacy-Policy": "privacy-policy.md"
-            },
-            {
-              "Terms-of-Service": "terms-of-service.md"
-            },
-            {
-              "Security-Policy": "organisation/legal-and-compliance/security-policy.md"
-            },
-            {
-              "Transparency-Policy": "organisation/legal-and-compliance/transparency-policy.md"
-            }
-          ]
+          "Funding": "funding.md"
         },
         {
-          "Presentations": [
-            {
-              "Fact-Checker Cooperation": "fact-checker-cooperation.md"
-            },
-            {
-              "Funding": "funding.md"
-            },
-            {
-              "LinkedIn April 2026": "linkedin.md"
-            },
-            {
-              "LinkedIn April 2026 DE": "linkedin-de.md"
-            }
-          ]
+          "LinkedIn April 2026": "linkedin.md"
+        },
+        {
+          "LinkedIn April 2026 DE": "linkedin-de.md"
         }
       ]
     },
@@ -207,14 +167,6 @@
           ]
         },
         {
-          "Presentations": [
-            "product-development/presentations/index.md",
-            {
-              "Academic Cooperation": "academic-cooperation.md"
-            }
-          ]
-        },
-        {
           "DevOps": [
             {
               "Getting Started": "product-development/devops/guidelines/getting-started/index.md"
@@ -237,15 +189,64 @@
       ]
     },
     {
-      "License and Disclaimer": "license-and-disclaimer/index.md"
+      "Organisation": [
+        "organisation/index.md",
+        {
+          "Governance": "organisation/governance/index.md"
+        },
+        {
+          "How-We-Work-Together": [
+            {
+              "GlobalRules": "organisation/how-we-work-together/globalrules/index.md"
+            },
+            {
+              "Contributor Processes": "organisation/how-we-work-together/contributor-processes/index.md"
+            }
+          ]
+        },
+        {
+          "Legal and Compliance": [
+            "organisation/legal-and-compliance/index.md",
+            {
+              "Legal Framework": "legal-framework.md"
+            },
+            {
+              "Open Source Model and Licensing": "organisation/legal-and-compliance/open-source-model-and-licensing/index.md"
+            },
+            {
+              "CLA": "organisation/legal-and-compliance/cla/index.md"
+            },
+            {
+              "Finance and Compliance": "organisation/legal-and-compliance/finance-and-compliance/index.md"
+            },
+            {
+              "Large Donations Policy": "organisation/legal-and-compliance/large-donations-policy/index.md"
+            },
+            {
+              "Privacy-Policy": "privacy-policy.md"
+            },
+            {
+              "Terms-of-Service": "terms-of-service.md"
+            },
+            {
+              "Security-Policy": "organisation/legal-and-compliance/security-policy.md"
+            },
+            {
+              "Transparency-Policy": "organisation/legal-and-compliance/transparency-policy.md"
+            }
+          ]
+        }
+      ]
     },
     {
-      "Home": "index.md"
+      "License and Disclaimer": "license-and-disclaimer/index.md"
     }
   ],
   "validation": {
     "links": {
       "anchors": "warn"
     }
-  }
+  },
+  "repo_url": "https://github.com/robertschaub/FactHarbor",
+  "repo_name": "GitHub repository"
 }
