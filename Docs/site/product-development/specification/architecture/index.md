@@ -28,6 +28,6 @@ Current implementation, schemas, prompts and default settings are part of the [p
 - [Analysis responsibilities](../../../akel-pipeline.md) and [stage contracts](../../../akel-stage-details.md).
 - [Quality and trust](quality-and-trust/index.md): evidence, uncertainty and report interpretation.
 - [Security and operations](security-and-operations/index.md): access boundaries and operational limits.
-- [Getting started](../../devops/guidelines/getting-started/index.md), [API contract](../poc/api-and-schemas/rest-api-contract/index.md) and [terminology](../reference/terminology/index.md).
+- [Getting started](../../devops/guidelines/getting-started/index.md), [API source](https://github.com/robertschaub/FactHarbor/tree/main/apps/api) and [terminology](../reference/terminology/index.md).
 
 Research proposals, historical designs and current behavior are different kinds of evidence. Consult [current status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md) before treating a capability as available.
