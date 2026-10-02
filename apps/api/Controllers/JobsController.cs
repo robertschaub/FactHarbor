@@ -112,10 +112,11 @@ public sealed class JobsController : ControllerBase
             try
             {
                 var result = JsonNode.Parse(j.ResultJson);
-                // Stage 1 candidate/validator capture is retained in storage and admin
+                // Diagnostic capture is retained in storage and admin
                 // responses only. Public warning outcomes and report fields are unchanged.
                 if (!isAdmin && result is JsonObject root)
                 {
+                    root.Remove("adminCapture");
                     if (root["understanding"] is JsonObject understanding
                         && understanding["contractValidationSummary"] is JsonObject summary)
                         summary.Remove("adminCapture");

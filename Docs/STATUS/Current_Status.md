@@ -17,7 +17,7 @@ The active operating restrictions are in [Backlog](Backlog.md#holds-and-required
 - Model comparison remains stopped; retain the deployed allocation. No model promotion, paid rerun or reuse of an earlier experiment slot/budget follows from documentation work.
 - `DECOMP-RULES` and its Stage 5 design, `NARR-INPUT`, `ADJ-INPUT`, `CLUSTER-CEIL` option C, SR translation cap/UCM changes and EQA eligibility remain held or require separate decisions.
 - `C14-UNAVAILABLE`: keep current count-floor and MT-5 eligibility. The proposed skip was not selected.
-- The entity-null correction is implemented and offline verified. Evidence-applicability capture remains **unimplemented**: the next bounded investigation task is default-off offline implementation, subject to its own assignment. Enablement, observation window, retention and any spending require separate authority. It is not a score/cache repair.
+- The entity-null correction is implemented and offline verified. Evidence-applicability capture is implemented, offline tested and independently reviewed, **default-off**. Enablement, observation window, retention, storage-capacity acceptance and any spending require separate authority. It is not a score/cache repair or demonstrated quality improvement.
 - EN supplementary retrieval remains experimental/default-off. Source-native retrieval has a default-off scaffold; its planner is unimplemented. Follow the [multilingual promotion contract](../ARCHITECTURE/Multilingual_Language_Handling.md).
 - Do not prune the main analysis prompt before measurement and stage isolation exist. A failed quality attempt requires the recovery record in root `AGENTS.md` before another edit.
 

@@ -16,6 +16,8 @@ import { getWebGitCommitHash } from "@/lib/build-info";
 import { clearAbortSignal, isJobAborted, setAbortSignal } from "@/lib/job-abort";
 
 type PipelineVariant = "claimboundary";
+// Infrastructure-only capture window; changing it requires a runner reload.
+const EVIDENCE_DIAGNOSTICS = process.env.FH_EVIDENCE_DIAGNOSTICS === "true";
 
 // Final at the API (JobService refuses later status changes). INTERRUPTED is not terminal:
 // it is re-queued below.
@@ -263,6 +265,7 @@ async function runJobBackground(jobId: string) {
       jobId,
       inputType,
       inputValue,
+      ...(EVIDENCE_DIAGNOSTICS ? { evidenceDiagnostics: { enabledBy: "runner_environment" as const } } : {}),
       onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
     });
 

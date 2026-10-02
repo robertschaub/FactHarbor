@@ -6,6 +6,9 @@ import {
   assessScopeQuality,
   assessEvidenceBalance,
   applyPerSourceCap,
+  createEvidenceApplicabilityCapture,
+  observeEvidenceCapture,
+  evidenceCaptureFingerprint,
 } from "@/lib/analyzer/research-extraction-stage";
 import {
   loadAndRenderSection,
@@ -57,6 +60,205 @@ const mockExtractOutput = vi.mocked(extractStructuredOutput);
 const mockDebugLog = vi.mocked(debugLog);
 const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
+
+describe("opt-in evidence diagnostics", () => {
+  const source = { url: "https://example.test/a", title: "Source A", text: "A source record: ä, ação, 東京 😀" };
+  const item = () => ({ statement: "Entity A recorded an observation", category: "evidence",
+    sourceUrl: "https://unmatched.test/", claimDirection: "supports", evidenceScope: { methodology: "Method A" },
+    probativeValue: "high", sourceType: "news_primary", relevantClaimIds: ["WRONG_ID"] });
+  const stateFor = (capture?: ReturnType<typeof createEvidenceApplicabilityCapture>) => ({
+    nextEvidenceId: 1, evidenceCapture: capture,
+    sources: [{ id: "S1", ...source, fullText: source.text + " rest of fetched document" }],
+  }) as any;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockMapCategory.mockImplementation(category => category as any);
+    mockLoadSection.mockResolvedValue({ content: "frozen system", contentHash: "prompt-hash", warnings: [], variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ usage: { inputTokens: 12, outputTokens: 5 }, finishReason: "stop", response: { modelId: "served-model" } } as any);
+    mockExtractOutput.mockReturnValue({ evidenceItems: [item()] });
+  });
+
+  it.each(["Plastik recycling bringt nichts", "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"])(
+    "preserves requests and outputs while recording exact extraction and source fallback: %s", async statement => {
+      const claim = createClaim({ statement });
+      const baseline = await extractResearchEvidence(claim, [source], {} as any, "2026-10-02", stateFor());
+      const request = mockGenerateText.mock.calls[0][0];
+      const capture = createEvidenceApplicabilityCapture("direct");
+      const callId = capture.beginExtraction();
+      const result = await extractResearchEvidence(claim, [source], {} as any, "2026-10-02", stateFor(capture), callId);
+      expect(result).toEqual(baseline);
+      expect(mockGenerateText.mock.calls[1][0]).toEqual(request);
+      expect(mockGenerateText).toHaveBeenCalledTimes(2);
+      const steps = capture.finish().extractions[0].steps as any;
+      const actualSourceContent = mockLoadSection.mock.calls[1][2].sourceContent;
+      expect(steps.extraction_input.bodies.sourceContent.content).toBe(actualSourceContent);
+      expect(steps.extraction_input.bodies.sourceContent.sha256).toBe(evidenceCaptureFingerprint(actualSourceContent).sha256);
+      expect(steps.extraction_request.links).toMatchObject({ promptContentHash: "prompt-hash", maxOutputTokens: 16384 });
+      const mapping = steps.extraction_mapped.links;
+      expect(Object.fromEntries(mapping.columns.map((key: string, i: number) => [key, mapping.items[0][i]]))).toMatchObject({
+        id: result[0].id, returnedUrlIndex: mapping.urls.indexOf(item().sourceUrl), resolvedUrlIndex: mapping.urls.indexOf(source.url),
+        matchedSourceId: "S1", assignedSourceId: "", returnedClaimIds: ["WRONG_ID"], assignedClaimIds: ["AC_01"] });
+      expect(steps.extraction_result.links).toMatchObject({ outcome: "success", responseModel: "served-model", finishReason: "stop" });
+      expect(JSON.stringify(request)).not.toContain("extraction_mapped");
+    });
+
+  it("captures post-SDK and application-parsed forms distinctly, including application schema failure", async () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const parsed = { evidenceItems: [{ ...item(), unrequested: true }], extra: "removed" };
+    mockExtractOutput.mockReturnValue(parsed);
+    await extractResearchEvidence(createClaim(), [source], {} as any, "2026-10-02", stateFor(capture), capture.beginExtraction());
+    let steps = capture.finish().extractions[0].steps as any;
+    expect(JSON.parse(steps.extraction_parsed.bodies.parsed.content)).toEqual(parsed);
+    expect(JSON.parse(steps.extraction_validated.bodies.validated.content)).not.toHaveProperty("extra");
+    mockExtractOutput.mockReturnValue({ evidenceItems: [{ statement: "incomplete" }] });
+    expect(await extractResearchEvidence(createClaim(), [source], {} as any, "2026-10-02", stateFor(capture), capture.beginExtraction())).toEqual([]);
+    steps = capture.finish().extractions[1].steps as any;
+    expect(steps.extraction_parsed).toBeDefined();
+    expect(steps.extraction_result.links).toMatchObject({ outcome: "failed", error: { name: "ZodError" }, applicationParseOutcome: "failed", schemaIssueCount: expect.any(Number) });
+  });
+
+  it("keeps an empty call's identity and cannot leak between concurrent analyses", async () => {
+    mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+    const a = createEvidenceApplicabilityCapture("direct"), b = createEvidenceApplicabilityCapture("direct");
+    await Promise.all([a, b].map(c => extractResearchEvidence(createClaim(), [source], {} as any, "2026-10-02", stateFor(c), c.beginExtraction())));
+    expect(a.finish().extractions[0].callId).toBe(0);
+    expect(b.finish().extractions[0].callId).toBe(0);
+    expect((a.finish().extractions[0].steps as any).extraction_mapped.links.items).toEqual([]);
+    a.record("pipeline", () => ({ links: { jobId: "a" } }));
+    expect(b.finish().stages).toEqual([]);
+  });
+
+  it("isolates a broken observer and does not evaluate disabled diagnostic arguments", async () => {
+    const builder = vi.fn(() => { throw Error("diagnostic failure"); });
+    observeEvidenceCapture(undefined, builder);
+    expect(builder).not.toHaveBeenCalled();
+    const broken = { record: builder, markFault: builder } as any;
+    const expected = await extractResearchEvidence(createClaim(), [source], {} as any, "2026-10-02", stateFor());
+    expect(await extractResearchEvidence(createClaim(), [source], {} as any, "2026-10-02", stateFor(broken), 0)).toEqual(expected);
+    const warnings: any[] = [];
+    mockExtractOutput.mockReturnValue({ assessments: [{ evidenceIndex: 0, applicability: "direct" }] });
+    const result = await assessEvidenceApplicability([], expected, "CH", {} as any, [], warnings, broken);
+    expect(result[0].applicability).toBe("direct");
+    expect(warnings).toEqual([]);
+    const healthy = createEvidenceApplicabilityCapture("direct");
+    observeEvidenceCapture(healthy, c => c.record("pipeline", builder));
+    expect(healthy.finish().faults).toBe(1);
+  });
+
+  it("retains exact applicability inputs, pre-mutation scope and consumed duplicate/out-of-range classifications", async () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const evidence = [createEvidence({ statement: "ä".repeat(240) }), createEvidence({ id: "EV_02" })];
+    const claims = [createClaim({ statement: "Plastik recycling bringt nichts" })];
+    mockExtractOutput.mockReturnValue({ assessments: [
+      { evidenceIndex: 0, applicability: "direct" }, { evidenceIndex: 0, applicability: "contextual" },
+      { evidenceIndex: 99, applicability: "foreign_reaction" }, { evidenceIndex: 1 },
+    ] });
+    capture.record("seeded", () => ({ links: { ids: evidence.map(e => e.id) } }));
+    const baseline = await assessEvidenceApplicability(claims, evidence, "CH", {} as any);
+    const captured = await assessEvidenceApplicability(claims, evidence, "CH", {} as any, undefined, [], capture);
+    expect(captured).toEqual(baseline);
+    expect(mockGenerateText.mock.calls[1][0]).toEqual(mockGenerateText.mock.calls[0][0]);
+    evidence[0].evidenceScope.methodology = "mutated";
+    const events = capture.finish().stages as any[];
+    const input = events.find(e => e.step === "applicability_input");
+    expect(input.links.identityAccounting).toEqual({ unexplainedAddedIds: [], unexplainedRemovedIds: [] });
+    expect(JSON.parse(input.bodies.items.content)[0].scope.methodology).toBe("standard analysis");
+    const request = events.find(e => e.step === "applicability_request" && e.bodies);
+    expect(JSON.parse(request.bodies.promptVariables.content)).toEqual(mockLoadSection.mock.calls[1][2]);
+    const result = events.find(e => e.step === "applicability_result");
+    expect(result.links.classificationMap).toEqual([[0, "contextual"], [99, "foreign_reaction"]]);
+    expect(result.links.counts.unclassified).toBe(0); // preserve the existing map-size arithmetic
+  });
+
+  it.each(["disabled", "no_geography", "no_evidence", "missing_prompt", "provider_failure"])("records %s without changing fallback behavior", async reason => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const evidence = reason === "no_evidence" ? [] : [createEvidence()];
+    if (reason === "missing_prompt") mockLoadSection.mockResolvedValue(null as any);
+    if (reason === "provider_failure") mockGenerateText.mockRejectedValue(Error("offline failure"));
+    const result = await assessEvidenceApplicability([], evidence, reason === "no_geography" ? null : "CH",
+      { applicabilityFilterEnabled: reason !== "disabled" } as any, undefined, [], capture);
+    expect(result).toBe(evidence);
+    const observation = capture.finish().stages.find(e => e.step === "applicability_result") as any;
+    expect(observation.links).toMatchObject(reason === "provider_failure" ? { outcome: "failed" } : { outcome: "skipped", reason });
+  });
+
+  it("retains complete joins and the result for five realistic sources/25 items after body exhaustion", async () => {
+    const sources = Array.from({ length: 5 }, (_, i) => ({ ...source, url: `https://example.test/source/${i}/document`.padEnd(100, "x"), title: `Source ${i}`.padEnd(80, "t"), text: source.text.repeat(40) }));
+    const capture = createEvidenceApplicabilityCapture("direct");
+    for (let i = 0; i < 4; i++) capture.record("extraction_input", () => ({ bodies: { sourceContent: "ação".repeat(100000) } }), capture.beginExtraction());
+    const state = { nextEvidenceId: 1, evidenceCapture: capture, sources: sources.map((s, i) => ({ ...s, id: `S_${i}`, fullText: s.text + " full document suffix" })) } as any;
+    mockGenerateText.mockResolvedValue({ usage: { inputTokens: 24000, outputTokens: 12000, inputTokenDetails: { noCacheTokens: 24000, cacheReadTokens: 0, cacheWriteTokens: 0 }, outputTokenDetails: { textTokens: 12000, reasoningTokens: 0 } }, finishReason: "stop", response: { modelId: "served-model" } } as any);
+    mockExtractOutput.mockReturnValue({ evidenceItems: Array.from({ length: 25 }, (_, i) => ({ ...item(), sourceUrl: i < 5 ? `https://unmatched.test/${i}/`.padEnd(100, "u") : sources[i % 5].url, relevantClaimIds: ["AC_01"] })) });
+    const callId = capture.beginExtraction();
+    const result = await extractResearchEvidence(createClaim(), sources, {} as any, "2026-10-02", state, callId);
+    capture.record("extraction_admission", () => ({ links: { rawIds: result.map(e => e.id), probativeKeptIds: result.map(e => e.id), keptIds: result.map(e => e.id), evictedIds: [] } }), callId);
+    const saved = capture.finish();
+    const steps = saved.extractions[4].steps as any;
+    expect(saved.linkCoverage).toBe("complete");
+    expect(steps.extraction_input.links.sources).toHaveLength(5);
+    expect(steps.extraction_mapped.links.items).toHaveLength(25);
+    expect(steps.extraction_result.links.outcome).toBe("success");
+    expect(steps.extraction_admission.links.keptIds).toHaveLength(25);
+    expect(steps.extraction_result.links.usage.outputTokens).toBe(12000);
+    expect(Buffer.byteLength(JSON.stringify(saved))).toBeLessThanOrEqual(2_097_152);
+  });
+
+  it("accounts for known applicability removals before scope capture", () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    capture.record("seeded", () => ({ links: { ids: ["EV_1", "EV_2"] } }));
+    capture.record("applicability_input", () => ({ links: { items: [["EV_1", 0], ["EV_2", 1]] } }));
+    capture.record("applicability_removed", () => ({ links: { removedIds: ["EV_2"] } }));
+    capture.record("scope_before", () => ({ links: { items: [["EV_1", 0]] } }));
+    expect((capture.finish().stages.at(-1)!.links as any).identityAccounting).toEqual({ unexplainedAddedIds: [], unexplainedRemovedIds: [] });
+  });
+
+  it("names omitted stages, preserves admission absence, and marks overflow explicitly", () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    capture.beginExtraction();
+    for (let i = 0; i < 300; i++) capture.record("pipeline", () => ({}));
+    capture.record("scope_after", () => ({ links: { outcome: "returned_unchanged" } }));
+    const saved = capture.finish();
+    expect((saved.extractions[0].steps.extraction_admission as any).links.outcome).toBe("not_recorded");
+    expect(saved.omittedStepCounts.scope_after).toBe(1);
+    expect(saved.omittedSteps.length).toBeLessThanOrEqual(32);
+    expect(saved.linkCoverage).toBe("partial");
+    // Force the final guard independently of the running accounting (invalid direct caller).
+    const overflow = createEvidenceApplicabilityCapture("x".repeat(2_097_152)).finish();
+    expect(overflow.overflowBytes).toBeGreaterThan(2_097_152);
+    expect(overflow.linkCoverage).toBe("partial");
+    expect(Buffer.byteLength(JSON.stringify(overflow))).toBeLessThan(4096);
+  });
+
+  it("bounds bodies independently of late admission links and a 300-item multilingual stage", () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const body = 'ação 東京 😀 <>&"'.repeat(24_000);
+    const started = performance.now();
+    const heapBefore = process.memoryUsage().heapUsed;
+    for (let i = 0; i < 64; i++) {
+      const callId = capture.beginExtraction();
+      capture.record("extraction_input", () => ({ links: { targetClaimId: "AC_01" }, bodies: { sourceContent: body } }), callId);
+      capture.record("extraction_admission", () => ({ links: { keptIds: [`EV_${i}`], evictedIds: [] } }), callId);
+    }
+    expect(capture.beginExtraction()).toBeUndefined();
+    capture.record("applicability_input", () => ({ links: { items: Array.from({ length: 300 }, (_, i) => ({ id: `EV_${i}` })) },
+      bodies: { items: Array.from({ length: 300 }, (_, i) => ({ id: i, statement: body.slice(0, 300) })) } }));
+    const result = capture.finish();
+    expect(Buffer.byteLength(JSON.stringify(result))).toBeLessThanOrEqual(2_097_152);
+    expect((result.extractions[63].steps.extraction_admission as any).links.keptIds).toEqual(["EV_63"]);
+    expect(result.stages.some(e => e.step === "applicability_input")).toBe(true);
+    expect(result.omittedCalls).toBe(1);
+    for (const extraction of result.extractions) {
+      for (const step of Object.values(extraction.steps) as any[]) {
+        for (const retained of Object.values(step.bodies ?? {}) as any[]) {
+          expect(Buffer.byteLength(JSON.stringify(retained))).toBeLessThanOrEqual(262_144);
+          expect(retained.content).not.toMatch(/[\uD800-\uDBFF]$/);
+        }
+      }
+    }
+    console.info("capture offline stress measurement", { durationMs: performance.now() - started,
+      heapDeltaBytes: process.memoryUsage().heapUsed - heapBefore, compactBytes: Buffer.byteLength(JSON.stringify(result)) });
+  });
+});
 
 // ============================================================================
 // HELPERS

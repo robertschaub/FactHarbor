@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import { generateText, Output } from "ai";
 import { loadAndRenderSection } from "./prompt-loader";
 import { 
@@ -24,8 +25,188 @@ import {
   AtomicClaim,
   CBResearchState,
   EvidenceItem,
+  EvidenceApplicabilityCapture,
+  EvidenceCaptureObserver,
+  EvidenceCapturePayload,
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
+
+/** All diagnostic-only work, including argument construction, belongs in this callback. */
+export function observeEvidenceCapture<T>(
+  observer: EvidenceCaptureObserver | undefined,
+  action: (capture: EvidenceCaptureObserver) => T,
+): T | undefined {
+  if (!observer) return undefined;
+  try { return action(observer); }
+  catch { try { observer.markFault(); } catch { /* Diagnostics cannot fail analysis. */ } }
+}
+
+export function evidenceCaptureFingerprint(text: string) {
+  return {
+    sha256: createHash("sha256").update(text, "utf8").digest("hex"),
+    utf16Length: text.length,
+    utf8Length: Buffer.byteLength(text, "utf8"),
+  };
+}
+
+/** One per-analysis, bounded observer; no persistence or analysis decisions here. */
+export function createEvidenceApplicabilityCapture(enabledBy: string): EvidenceCaptureObserver {
+  const envelope: EvidenceApplicabilityCapture = {
+    schemaVersion: 1, enabledBy, extractions: [], stages: [], faults: 0,
+    omittedCalls: 0, omittedObservations: 0, omittedStepCounts: {}, omittedSteps: [], linkCoverage: "complete",
+  };
+  const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
+  const callBytes: number[] = [];
+  let nextCall = 0;
+  let extractionBodyBytes = 0;
+  let stageBodyBytes = 0;
+  let stageLinkBytes = 0;
+  let identityTrackingComplete = true;
+  const admittedIds = new Set<string>();
+
+  // Bound structural lists/strings, retaining counts and hashes of omitted material.
+  function compact(value: unknown, entries: number, chars: number): unknown {
+    if (typeof value === "string" && value.length > Math.max(96, chars)) {
+      let end = chars;
+      if (/^[\uDC00-\uDFFF]$/.test(value[end] ?? "")) end--;
+      // The enclosing record retains its original hash. Never enlarge a string.
+      const shortened = { prefix: value.slice(0, end), originalLength: value.length };
+      return bytes(shortened) < bytes(value) ? shortened : value;
+    }
+    if (Array.isArray(value)) {
+      const kept = value.slice(0, entries).map(v => compact(v, entries, chars));
+      return value.length > entries
+        ? { entries: kept, originalCount: value.length, ...evidenceCaptureFingerprint(JSON.stringify(value)), truncated: true }
+        : kept;
+    }
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([key, v]) => [key, compact(v, entries, chars)]));
+    }
+    return value;
+  }
+
+  function links(value: unknown, limit: number): unknown {
+    const serialized = JSON.stringify(value);
+    if (Buffer.byteLength(serialized, "utf8") <= limit) return JSON.parse(serialized);
+    envelope.linkCoverage = "partial";
+    const identity = evidenceCaptureFingerprint(serialized);
+    for (const size of [32, 16, 8, 4, 2, 1]) {
+      const bounded = { value: compact(value, size, size * 16), ...identity, truncated: true };
+      if (bytes(bounded) <= limit) return bounded;
+    }
+    return { ...identity, omitted: true };
+  }
+
+  function body(value: unknown, available: number): Record<string, unknown> {
+    const text = typeof value === "string" ? value : JSON.stringify(value);
+    const identity = evidenceCaptureFingerprint(text);
+    const record = {
+      representation: typeof value === "string" ? "text" : "json",
+      ...identity, state: "complete", retainedUtf8Length: identity.utf8Length, content: text,
+    };
+    const limit = Math.min(262_144, available);
+    if (limit < 256) return { ...record, state: "omitted", retainedUtf8Length: 0, content: "" };
+    if (bytes(record) <= limit) return record;
+    let low = 0, high = text.length;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      const candidate = { ...record, state: "truncated", content: text.slice(0, mid) };
+      if (bytes(candidate) <= limit) low = mid; else high = mid - 1;
+    }
+    if (/^[\uDC00-\uDFFF]$/.test(text[low] ?? "")) low--;
+    const content = text.slice(0, Math.max(0, low));
+    return { ...record, state: content ? "truncated" : "omitted", content,
+      retainedUtf8Length: Buffer.byteLength(content, "utf8") };
+  }
+
+  function omit(step: import("./types").EvidenceCaptureStep, callId?: number) {
+    envelope.omittedObservations++;
+    envelope.omittedStepCounts[step] = (envelope.omittedStepCounts[step] ?? 0) + 1;
+    // Named step counts always survive. First 32 call links fit the 4 KiB reserve.
+    if (envelope.omittedSteps.length < 32) envelope.omittedSteps.push(callId === undefined ? [step] : [step, callId]);
+    envelope.linkCoverage = "partial";
+  }
+
+  return {
+    beginExtraction() {
+      const callId = nextCall++;
+      if (callId >= 64) { envelope.omittedCalls++; identityTrackingComplete = false; return undefined; }
+      envelope.extractions.push({ callId, steps: {
+        extraction_admission: { step: "extraction_admission", links: { outcome: "not_recorded" } },
+      } });
+      callBytes.push(256); // container, pending admission and punctuation allowance
+      return callId;
+    },
+    record(step, build, callId) {
+      const extraction = step.startsWith("extraction_");
+      const call = callId === undefined ? undefined : envelope.extractions[callId];
+      if ((extraction && !call) || (!extraction && envelope.stages.length >= 256)) {
+        omit(step, callId); return;
+      }
+      const payload: EvidenceCapturePayload = build();
+      const metadata = payload.links ?? {};
+      if (step === "seeded" || step === "extraction_admission") {
+        const kept = (metadata.keptIds ?? metadata.ids ?? []) as string[];
+        for (const id of kept) admittedIds.add(id);
+        for (const id of (metadata.evictedIds ?? []) as string[]) admittedIds.delete(id);
+        if (admittedIds.size > 4096 || bytes([...admittedIds]) > 65_536) {
+          admittedIds.clear(); identityTrackingComplete = false;
+        }
+      }
+      if (step === "applicability_removed") {
+        for (const id of (metadata.removedIds ?? []) as string[]) admittedIds.delete(id);
+      }
+      if (step === "applicability_input" || step === "scope_before") {
+        const current = new Set((metadata.items as Array<{ id: string } | [string, number]>).map(item => Array.isArray(item) ? item[0] : item.id));
+        metadata.identityAccounting = identityTrackingComplete ? {
+          unexplainedAddedIds: [...current].filter(id => !admittedIds.has(id)),
+          unexplainedRemovedIds: [...admittedIds].filter(id => !current.has(id)),
+        } : { complete: false };
+      }
+      // 10 KiB per call: protect 2 KiB admission + 1 KiB outcome from early steps.
+      // The extra 128 KiB across 64 calls comes from the extraction body allowance.
+      const allowance = extraction
+        ? (step === "extraction_admission" ? 10240 : step === "extraction_result" ? 8192 : 7168) - callBytes[callId!]
+        : 126_976 - stageLinkBytes; // 4 KiB reserved for envelope/counters
+      if (allowance < 256) {
+        omit(step, callId); return;
+      }
+      const stepLimit = step === "extraction_input" || step === "extraction_mapped" ? 2560 : 1536;
+      const record: Record<string, unknown> = { step, links: links(metadata, Math.min(allowance - 128, extraction ? stepLimit : 65_536)) };
+      const retainedBodies: Record<string, unknown> = {};
+      for (const [name, value] of Object.entries(payload.bodies ?? {})) {
+        const remaining = extraction ? 917_504 - extractionBodyBytes : 393_216 - stageBodyBytes;
+        const captured = body(value, remaining - 64);
+        const cost = bytes(captured) + Buffer.byteLength(JSON.stringify(name)) + 8;
+        if (cost <= remaining) {
+          retainedBodies[name] = captured;
+          if (extraction) extractionBodyBytes += cost; else stageBodyBytes += cost;
+        } else {
+          // Body omission metadata uses the protected link budget.
+          record.omittedBodies = [...((record.omittedBodies as unknown[]) ?? []),
+            { name, ...evidenceCaptureFingerprint(typeof value === "string" ? value : JSON.stringify(value)) }];
+        }
+      }
+      const linkCost = bytes(record) + 64;
+      if (linkCost > allowance) {
+        omit(step, callId); return;
+      }
+      if (Object.keys(retainedBodies).length) record.bodies = retainedBodies;
+      if (extraction) { call!.steps[step] = record; callBytes[callId!] += linkCost; }
+      else { envelope.stages.push(record as EvidenceApplicabilityCapture["stages"][number]); stageLinkBytes += linkCost; }
+    },
+    markFault() { envelope.faults++; envelope.linkCoverage = "partial"; },
+    finish() {
+      const json = JSON.stringify(envelope);
+      const measuredBytes = Buffer.byteLength(json, "utf8");
+      if (measuredBytes > 2_097_152) return {
+        ...envelope, enabledBy: envelope.enabledBy.slice(0, 64), extractions: [], stages: [],
+        overflowBytes: measuredBytes, linkCoverage: "partial",
+      };
+      return JSON.parse(json) as EvidenceApplicabilityCapture;
+    },
+  };
+}
 
 // ============================================================================
 // SCHEMAS
@@ -265,6 +446,7 @@ export async function extractResearchEvidence(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   state?: CBResearchState,
+  captureCallId?: number,
 ): Promise<EvidenceItem[]> {
   // Evidence-ID scope: when called from the orchestrator (production), the
   // shared per-analysis counter (state.nextEvidenceId) ensures IDs are unique
@@ -276,17 +458,40 @@ export async function extractResearchEvidence(
   if (typeof idScope.nextEvidenceId !== "number" || !Number.isFinite(idScope.nextEvidenceId)) {
     idScope.nextEvidenceId = 1;
   }
+  const sourceContent = sources.map((s, i) =>
+    `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
+  ).join("\n\n---\n\n");
+  observeEvidenceCapture(state?.evidenceCapture, capture => capture.record("extraction_input", () => ({
+    links: { targetClaimId: targetClaim.id, currentDate, config: evidenceCaptureFingerprint(JSON.stringify(pipelineConfig)),
+      sourceColumns: ["url", "title", "sourceId", "sentSha256", "sentUtf16Length", "sentUtf8Length", "fetchedSha256", "fetchedUtf16Length", "fetchedUtf8Length"],
+      sources: sources.map(s => {
+        const fetched = state?.sources.find(source => source.url === s.url);
+        const sent = evidenceCaptureFingerprint(s.text);
+        const full = fetched?.fullText == null ? null : evidenceCaptureFingerprint(fetched.fullText);
+        return [s.url, s.title, fetched?.id ?? null, sent.sha256, sent.utf16Length, sent.utf8Length,
+          full?.sha256 ?? null, full?.utf16Length ?? null, full?.utf8Length ?? null];
+      }) },
+    bodies: { sourceContent, targetClaim: { id: targetClaim.id, statement: targetClaim.statement } },
+  }), captureCallId));
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
     claim: targetClaim.statement,
-    sourceContent: sources.map((s, i) =>
-      `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
-    ).join("\n\n---\n\n"),
+    sourceContent,
     sourceUrl: sources.map((s) => s.url).join(", "),
   });
-  if (!rendered) return [];
+  if (!rendered) {
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: { outcome: "missing_prompt" } }), captureCallId));
+    return [];
+  }
 
   const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  const userContent = `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`;
+  observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_request", () => ({ links: {
+    section: "EXTRACT_EVIDENCE", promptContentHash: rendered.contentHash ?? null, rendererWarnings: rendered.warnings,
+    system: evidenceCaptureFingerprint(rendered.content), user: evidenceCaptureFingerprint(userContent),
+    model: model.modelName, provider: model.provider, providerOptionsProvider: pipelineConfig.llmProvider ?? "anthropic",
+    temperature: pipelineConfig.extractEvidenceTemperature ?? 0.1, maxOutputTokens: 16384,
+  } }), captureCallId));
   const llmCallStartedAt = Date.now();
   let result: any;
 
@@ -301,7 +506,7 @@ export async function extractResearchEvidence(
         },
         {
           role: "user",
-          content: `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`,
+          content: userContent,
         },
       ],
       temperature: pipelineConfig?.extractEvidenceTemperature ?? 0.1,
@@ -313,6 +518,10 @@ export async function extractResearchEvidence(
     });
 
     const parsed = extractStructuredOutput(result);
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_parsed", () => ({
+      links: { representation: "post_sdk_pre_application_parse", available: parsed != null },
+      bodies: parsed == null ? {} : { parsed },
+    }), captureCallId));
     if (!parsed) {
       recordLLMCall({
         taskType: "research",
@@ -328,10 +537,18 @@ export async function extractResearchEvidence(
         errorMessage: "Stage 2 evidence extraction returned no structured output",
         timestamp: new Date(),
       });
+      observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: {
+        outcome: "no_structured_output", usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId,
+      } }), captureCallId));
       return [];
     }
 
     const validated = Stage2ExtractEvidenceOutputSchema.parse(parsed);
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_validated", () => ({
+      links: { representation: "post_application_parse_pre_mapping", parseOutcome: "success",
+        parsed: evidenceCaptureFingerprint(JSON.stringify(parsed)), validated: evidenceCaptureFingerprint(JSON.stringify(validated)) },
+      bodies: JSON.stringify(parsed) === JSON.stringify(validated) ? {} : { validated },
+    }), captureCallId));
 
     // Map to full EvidenceItem format.
     // Evidence IDs are minted from the per-analysis counter on state so they
@@ -406,6 +623,17 @@ export async function extractResearchEvidence(
       } satisfies EvidenceItem;
     });
 
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_mapped", () => {
+      const urls = [...new Set(evidenceItems.flatMap((item, index) => [validated.evidenceItems[index].sourceUrl ?? null, item.sourceUrl]))];
+      return { links: {
+        columns: ["index", "id", "returnedUrlIndex", "resolvedUrlIndex", "assignedSourceId", "matchedSourceId", "returnedClaimIds", "assignedClaimIds"],
+        urls,
+        items: evidenceItems.map((item, index) => [index, item.id,
+          urls.indexOf(validated.evidenceItems[index].sourceUrl ?? null), urls.indexOf(item.sourceUrl), item.sourceId,
+          state?.sources.find(source => source.url === item.sourceUrl)?.id ?? null,
+          validated.evidenceItems[index].relevantClaimIds, item.relevantClaimIds]),
+      } };
+    }, captureCallId));
     if (
       claimIdMismatchCount > 0
       || categoryNormalizationCount > 0
@@ -438,8 +666,16 @@ export async function extractResearchEvidence(
       timestamp: new Date(),
     });
 
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: {
+      outcome: "success", usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId,
+    } }), captureCallId));
     return evidenceItems;
   } catch (err) {
+    observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: {
+      outcome: "failed", error: err instanceof Error ? { name: err.name, message: err.message.slice(0, 512) } : { name: "unknown" },
+      ...(err instanceof z.ZodError ? { applicationParseOutcome: "failed", schemaIssueCount: err.issues.length } : {}),
+      usage: result?.usage, finishReason: result?.finishReason, responseModel: result?.response?.modelId,
+    } }), captureCallId));
     const errorMessage = err instanceof Error ? err.message : String(err);
     recordLLMCall({
       taskType: "research",
@@ -485,18 +721,39 @@ export async function assessEvidenceApplicability(
   pipelineConfig: PipelineConfig,
   relevantGeographies?: string[] | null,
   warnings?: AnalysisWarning[],
+  capture?: EvidenceCaptureObserver,
 ): Promise<EvidenceItem[]> {
+  observeEvidenceCapture(capture, c => c.record("applicability_input", () => {
+    const sourceTable: unknown[][] = [];
+    const sourceIndexes = new Map<string, number>();
+    const items = evidenceItems.map((item, index) => {
+      const source = [item.sourceId, item.sourceUrl, item.sourceTitle];
+      const key = JSON.stringify(source);
+      if (!sourceIndexes.has(key)) { sourceIndexes.set(key, sourceTable.length); sourceTable.push(source); }
+      return [item.id, index, sourceIndexes.get(key), item.isSeeded ?? false];
+    });
+    return { links: { itemColumns: ["id", "index", "sourceIndex", "isSeeded"], items,
+      sourceColumns: ["sourceId", "sourceUrl", "sourceTitle"], sourceTable,
+      config: evidenceCaptureFingerprint(JSON.stringify(pipelineConfig)) },
+    bodies: { items: evidenceItems.map((item, index) => ({ index, id: item.id, statement: item.statement,
+      scope: item.evidenceScope, claimIds: item.relevantClaimIds })) },
+    };
+  }));
   const normalizedRelevantGeographies = normalizeRelevantGeographies(
     relevantGeographies,
     inferredGeography,
   );
   // Skip if no geography or disabled
   if (normalizedRelevantGeographies.length === 0 || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: {
+      outcome: "skipped", reason: !(pipelineConfig.applicabilityFilterEnabled ?? true) ? "disabled" : "no_geography",
+    } })));
     return evidenceItems;
   }
 
   // Skip if no evidence
   if (evidenceItems.length === 0) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "no_evidence" } })));
     return evidenceItems;
   }
 
@@ -509,14 +766,17 @@ export async function assessEvidenceApplicability(
     category: item.category,
   }));
 
-  const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", {
+  const promptVariables = {
     claims: JSON.stringify(claims.map(c => ({ id: c.id, statement: c.statement })), null, 2),
     inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
     relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     evidenceItems: JSON.stringify(evidenceSummaries, null, 2),
-  });
+  };
+  observeEvidenceCapture(capture, c => c.record("applicability_request", () => ({ links: { phase: "render_variables" }, bodies: { promptVariables } })));
+  const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", promptVariables);
 
   if (!rendered) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "missing_prompt" } })));
     debugLogFileOnly("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter", {
       claimIds: claims.map((claim) => claim.id),
     });
@@ -533,6 +793,13 @@ export async function assessEvidenceApplicability(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  const userContent = "Classify each evidence item by applicability.";
+  observeEvidenceCapture(capture, c => c.record("applicability_request", () => ({ links: {
+    phase: "model_request", section: "APPLICABILITY_ASSESSMENT", promptContentHash: rendered.contentHash ?? null, rendererWarnings: rendered.warnings,
+    system: evidenceCaptureFingerprint(rendered.content), user: evidenceCaptureFingerprint(userContent),
+    model: model.modelName, provider: model.provider, providerOptionsProvider: model.provider,
+    temperature: pipelineConfig.relevanceClassificationTemperature ?? 0.1, maxOutputTokens: 8192,
+  } })));
   const llmCallStartedAt = Date.now();
   let result: any;
 
@@ -545,7 +812,7 @@ export async function assessEvidenceApplicability(
           content: rendered.content,
           providerOptions: getPromptCachingOptions(model.provider),
         },
-        { role: "user", content: "Classify each evidence item by applicability." },
+        { role: "user", content: userContent },
       ],
       temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
       maxOutputTokens: 8192, // Cost: runaway guard. See WIP 2026-06-01 §9.
@@ -598,6 +865,11 @@ export async function assessEvidenceApplicability(
     // Count unclassified items not returned by the LLM. They remain usable as
     // contextual material, but they are not explicit direct evidence.
     counts.unclassified = evidenceItems.length - classificationMap.size;
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({
+      links: { outcome: "success", classificationMap: [...classificationMap], counts,
+        usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId },
+      bodies: { assessments: validated.assessments },
+    })));
 
     debugLogFileOnly(
       `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
@@ -611,6 +883,10 @@ export async function assessEvidenceApplicability(
 
     return assessed;
   } catch (err) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: {
+      outcome: "failed", error: err instanceof Error ? { name: err.name, message: err.message.slice(0, 512) } : { name: "unknown" },
+      usage: result?.usage, finishReason: result?.finishReason, responseModel: result?.response?.modelId,
+    } })));
     const errorMessage = err instanceof Error ? err.message : String(err);
     recordLLMCall({
       taskType: "understand",

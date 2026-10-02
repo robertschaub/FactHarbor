@@ -4083,6 +4083,55 @@ describe("Stage 2: fetchSources", () => {
 });
 
 describe("Stage 2: runResearchIteration", () => {
+  it.each(["main", "contrarian", "supplementary"])("joins %s extraction/admission without changing requests or evidence", async lane => {
+    const { createEvidenceApplicabilityCapture } = await import("@/lib/analyzer/research-extraction-stage");
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const run = async (mode: "off" | "on" | "fault") => {
+      vi.clearAllMocks();
+      const capture = createEvidenceApplicabilityCapture("direct");
+      if (mode === "fault") vi.spyOn(capture, "record").mockImplementation(() => { throw new Error("capture fixture"); });
+      const claim = createAtomicClaim({ statement: "Plastik recycling bringt nichts", expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] } });
+      const state = { searchQueries: [], queryBudgetUsageByClaim: {}, sources: [], evidenceItems: [], warnings: [],
+        llmCalls: 0, nextEvidenceId: 1, mainIterationsUsed: 0, contradictionIterationsUsed: 0, contradictionSourcesFound: 0,
+        languageIntent: { inputLanguage: "de", reportLanguage: "de", retrievalLanguages: [{ language: "de", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+        understanding: { atomicClaims: [claim], detectedLanguage: "de", distinctEvents: [] },
+        ...(mode !== "off" ? { evidenceCapture: capture } : {}),
+      } as any;
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      let ordinal = 0;
+      mockExtractOutput.mockImplementation(() => [
+        { queries: [{ query: "fixture query", rationale: "fixture" }] },
+        { relevantSources: [{ url: "https://example.com/1", relevanceScore: 0.9, reasoning: "fixture" }] },
+        { evidenceItems: Array.from({ length: 6 }, () => ({ statement: "Abstract evidence statement with sufficient length for filtering",
+          category: "statistic", claimDirection: "supports", evidenceScope: { methodology: "Method A" },
+          probativeValue: "high", sourceType: "government_report", isDerivative: false, relevantClaimIds: ["AC_01"] })) },
+      ][ordinal++] ?? { queries: [] });
+      mockSearch.mockResolvedValue({ results: [{ url: "https://example.com/1", title: "Source", snippet: "text" }], providersUsed: ["google"] } as any);
+      mockFetchUrl.mockResolvedValue({ text: "ä😀".repeat(200), title: "Source", contentType: "text/html" });
+      const config = { supplementaryEnglishLane: { enabled: true, triggerMode: "native_scarcity_only", minPrimaryRelevantResults: 3,
+        minPrimaryEvidenceItems: 2, applyInIterationTypes: ["main"], maxAdditionalQueriesPerClaim: 1 } } as any;
+      if (lane === "supplementary") await maybeRunSupplementaryEnglishLane(claim, "main", config, {} as any, "2026-10-02", state, 0, 0);
+      else await runResearchIteration(claim, lane as "main" | "contrarian", {} as any, {} as any, 8, "2026-10-02", state);
+      const { evidenceCapture: _observer, ...analytical } = state;
+      return { analytical, requests: mockGenerateText.mock.calls.map(([request]) => ({ ...request, output: undefined })), capture: capture.finish() };
+    };
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-02T12:00:00Z"));
+    try {
+      const { capture: _unused, ...baseline } = await run("off");
+      const { capture, ...enabled } = await run("on");
+      expect(enabled).toEqual(baseline);
+      expect(capture.extractions).toHaveLength(1);
+      expect(capture.extractions[0].steps.extraction_admission.links).toMatchObject({
+        iterationType: lane, rawIds: expect.any(Array), keptIds: enabled.analytical.evidenceItems.map((e: EvidenceItem) => e.id), evictedIds: [],
+      });
+      expect((capture.extractions[0].steps.extraction_admission.links as any).rawIds).toHaveLength(6);
+      expect(enabled.analytical.evidenceItems).toHaveLength(5);
+      const { capture: fault, ...faulty } = await run("fault");
+      expect(faulty).toEqual(baseline);
+      expect(fault.faults).toBeGreaterThan(0);
+    } finally { vi.useRealTimers(); }
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -11666,6 +11715,66 @@ describe("M2: evaluateExplanationRubric error handling", () => {
 // ============================================================================
 
 describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
+  it.each([false, true])("attaches optional evidence capture after metrics on returned reports (damaged=%s)", async damaged => {
+    const extraction = await import("@/lib/analyzer/claim-extraction-stage");
+    const research = await import("@/lib/analyzer/research-orchestrator");
+    const aggregation = await import("@/lib/analyzer/aggregation-stage");
+    const captures = await import("@/lib/analyzer/research-extraction-stage");
+    const metrics = await import("@/lib/analyzer/metrics-integration");
+    const config = await import("@/lib/config-loader");
+    const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const realCreate = captures.createEvidenceApplicabilityCapture;
+    const originalPipeline = vi.mocked(config.loadPipelineConfig).getMockImplementation();
+    vi.mocked(config.loadPipelineConfig).mockResolvedValue({ config: { claimAutoSelectionEnabled: false, applicabilityFilterEnabled: true }, contentHash: "capture-test" } as any);
+    const claimSpy = vi.spyOn(extraction, "extractClaims").mockImplementation(async () => ({
+      atomicClaims: [createAtomicClaim({ statement: "Plastic recycling is pointless" })], detectedLanguage: "en", distinctEvents: [],
+      ...(damaged ? { contractValidationSummary: { preservesContract: false, summary: "Fixture contract failure" } } : {}),
+    } as any));
+    const researchSpy = vi.spyOn(research, "researchEvidence").mockResolvedValue(undefined);
+    const aggregateSpy = vi.spyOn(aggregation, "aggregateAssessment").mockImplementation(async (verdicts, boundaries, _evidence, matrix) => ({
+      truthPercentage: 50, verdict: "UNVERIFIED", confidence: 0, hasMultipleBoundaries: false,
+      claimBoundaries: boundaries, claimVerdicts: verdicts, coverageMatrix: matrix,
+      qualityGates: { passed: false, gate1Stats: {}, gate4Stats: {}, summary: {} },
+    } as any));
+    const qualitySnapshots: unknown[] = [];
+    const qualitySpy = vi.spyOn(metrics, "recordOutputQuality").mockImplementation(result => { qualitySnapshots.push(JSON.parse(JSON.stringify(result))); });
+    const factorySpy = vi.spyOn(captures, "createEvidenceApplicabilityCapture");
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-02T12:00:00Z"));
+    try {
+      const input = { inputType: "text" as const, inputValue: "Plastic recycling is pointless" };
+      const off = await runClaimBoundaryAnalysis(input);
+      expect(factorySpy).not.toHaveBeenCalled();
+      expect(off.resultJson).not.toHaveProperty("adminCapture");
+      const on = await runClaimBoundaryAnalysis({ ...input, evidenceDiagnostics: { enabledBy: "direct" } });
+      expect(on.resultJson.adminCapture.evidenceApplicability.schemaVersion).toBe(1);
+      const { adminCapture: _capture, ...nonCapture } = on.resultJson;
+      // CoverageMatrix includes newly constructed lookup functions; storage is JSON.
+      expect(JSON.stringify(nonCapture)).toBe(JSON.stringify(off.resultJson));
+      expect(on.reportMarkdown).toBe(off.reportMarkdown);
+      expect(qualitySnapshots[1]).toEqual(qualitySnapshots[0]);
+      expect(qualitySnapshots[1]).not.toHaveProperty("adminCapture");
+      if (damaged) expect(on.resultJson.analysisWarnings).toEqual(expect.arrayContaining([expect.objectContaining({ type: "report_damaged" })]));
+      factorySpy.mockImplementation(by => {
+        const capture = realCreate(by);
+        capture.record = () => { throw new Error("observer failed"); };
+        capture.finish = () => { throw new Error("finish failed"); };
+        return capture;
+      });
+      const fault = await runClaimBoundaryAnalysis({ ...input, evidenceDiagnostics: { enabledBy: "direct" } });
+      expect(fault.resultJson.adminCapture.evidenceApplicability.unavailable).toBe(true);
+      delete fault.resultJson.adminCapture;
+      expect(JSON.stringify(fault)).toBe(JSON.stringify(off));
+      factorySpy.mockImplementation(() => { throw new Error("factory failed"); });
+      const factoryFault = await runClaimBoundaryAnalysis({ ...input, evidenceDiagnostics: { enabledBy: "direct" } });
+      expect(factoryFault.resultJson.adminCapture.evidenceApplicability.unavailable).toBe(true);
+      delete factoryFault.resultJson.adminCapture;
+      expect(JSON.stringify(factoryFault)).toBe(JSON.stringify(off));
+    } finally {
+      vi.useRealTimers();
+      [claimSpy, researchSpy, aggregateSpy, qualitySpy, factorySpy].forEach(spy => spy.mockRestore());
+      if (originalPipeline) vi.mocked(config.loadPipelineConfig).mockImplementation(originalPipeline);
+    }
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

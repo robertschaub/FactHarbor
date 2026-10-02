@@ -719,7 +719,43 @@ export type AnalysisInput = {
   inputType: "text" | "url";
   inputValue: string;
   onEvent?: (message: string, progress: number) => void;
+  /** Runtime-only, opt-in diagnostics. Never a prompt or analytical setting. */
+  evidenceDiagnostics?: { enabledBy: "runner_environment" | "direct" };
 };
+
+export type EvidenceCaptureStep =
+  | "pipeline" | "research_config" | "seeded"
+  | "extraction_input" | "extraction_request" | "extraction_parsed"
+  | "extraction_validated" | "extraction_mapped" | "extraction_result" | "extraction_admission"
+  | "applicability_input" | "applicability_request" | "applicability_result" | "applicability_removed"
+  | "scope_before" | "scope_after";
+
+export interface EvidenceCapturePayload {
+  links?: Record<string, unknown>;
+  bodies?: Record<string, unknown>;
+}
+
+export interface EvidenceApplicabilityCapture {
+  schemaVersion: 1;
+  enabledBy: string;
+  extractions: Array<{ callId: number; steps: Record<string, unknown> }>;
+  stages: Array<{ step: EvidenceCaptureStep; [key: string]: unknown }>;
+  faults: number;
+  omittedCalls: number;
+  omittedObservations: number;
+  omittedStepCounts: Partial<Record<EvidenceCaptureStep, number>>;
+  omittedSteps: Array<[EvidenceCaptureStep, number?]>;
+  linkCoverage: "complete" | "partial";
+  overflowBytes?: number;
+}
+
+/** Builders execute only inside the diagnostic fault boundary. No live aliases. */
+export interface EvidenceCaptureObserver {
+  beginExtraction(): number | undefined;
+  record(step: EvidenceCaptureStep, build: () => EvidenceCapturePayload, callId?: number): void;
+  markFault(): void;
+  finish(): EvidenceApplicabilityCapture;
+}
 
 // ============================================================================
 // ANALYSIS WARNINGS TYPES (v3.1)
@@ -1336,6 +1372,7 @@ export interface CBClaimUnderstanding {
  */
 export interface CBResearchState {
   jobId?: string;
+  evidenceCapture?: EvidenceCaptureObserver;
   originalInput: string;
   inputType: "text" | "url";
   // Pipeline-start timestamp for runtime budget checks (e.g., D5 contrarian ceiling)

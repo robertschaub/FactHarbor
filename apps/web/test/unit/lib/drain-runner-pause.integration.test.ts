@@ -322,8 +322,10 @@ describe("drainRunnerQueue pause integration", () => {
       );
     });
 
-    it("uses the admin key for internal job reads so hidden queued jobs can run", async () => {
+    it.each([undefined, "false", "true"])("uses admin reads and enables evidence capture only for true (%s)", async (captureFlag) => {
       process.env.FH_ADMIN_KEY = "admin-secret";
+      if (captureFlag === undefined) delete process.env.FH_EVIDENCE_DIAGNOSTICS;
+      else process.env.FH_EVIDENCE_DIAGNOSTICS = captureFlag;
       const hiddenJobId = "hidden-job-1";
       const getJobReads: Array<{ url: string; adminHeader: string | null }> = [];
       const putPayloads: Array<{ url: string; body: Record<string, unknown> }> = [];
@@ -359,7 +361,7 @@ describe("drainRunnerQueue pause integration", () => {
             updatedUtc: new Date().toISOString(),
             pipelineVariant: "claimboundary",
             inputType: "text",
-            inputValue: "hidden job input",
+            inputValue: "Plastic recycling is pointless",
           }), { status: 200 });
         }
 
@@ -398,6 +400,12 @@ describe("drainRunnerQueue pause integration", () => {
       expect(vi.mocked(runClaimBoundaryAnalysis)).toHaveBeenCalledWith(
         expect.objectContaining({ jobId: hiddenJobId }),
       );
+      const analysisInput = vi.mocked(runClaimBoundaryAnalysis).mock.calls[0][0];
+      if (captureFlag === "true") {
+        expect(analysisInput.evidenceDiagnostics).toEqual({ enabledBy: "runner_environment" });
+      } else {
+        expect(analysisInput).not.toHaveProperty("evidenceDiagnostics");
+      }
       expect(putPayloads.some((p) => p.body.status === "RUNNING")).toBe(true);
       expect(getJobReads.length).toBeGreaterThan(0);
       for (const read of getJobReads) {

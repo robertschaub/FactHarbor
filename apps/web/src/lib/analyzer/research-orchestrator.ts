@@ -55,6 +55,8 @@ import { fetchSources, reconcileEvidenceSourceIds } from "./research-acquisition
 import {
   classifyRelevance,
   extractResearchEvidence,
+  observeEvidenceCapture,
+  evidenceCaptureFingerprint,
   assessEvidenceApplicability,
   assessScopeQuality,
   assessEvidenceBalance,
@@ -461,6 +463,9 @@ export async function researchEvidence(
     loadCalcConfig("default", effectiveJobId),
   ]);
   const pipelineConfig = pipelineResult.config;
+  observeEvidenceCapture(state.evidenceCapture, c => c.record("research_config", () => ({ links: {
+    contentHash: pipelineResult.contentHash, config: evidenceCaptureFingerprint(JSON.stringify(pipelineConfig)),
+  } })));
   const searchConfig = searchResult.config;
   const calcConfig = calcResult.config;
 
@@ -1158,6 +1163,9 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   }
 
   if (seededItems.length > 0) {
+    observeEvidenceCapture(state.evidenceCapture, c => c.record("seeded", () => ({ links: {
+      ids: seededItems.map(item => item.id),
+    }, bodies: { items: seededItems.map(item => ({ id: item.id, isSeeded: item.isSeeded, scope: item.evidenceScope })) } })));
     recordSeededEvidenceTelemetry(state, seededItems);
   }
 
@@ -1356,12 +1364,14 @@ export async function runResearchIteration(
         // not during research iteration decisions. Deferring saves 15-25s per new domain.
 
         // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
+        const captureCallId = observeEvidenceCapture(state.evidenceCapture, c => c.beginExtraction());
         const rawEvidence = await extractResearchEvidence(
           targetClaim,
           fetchedSources,
           pipelineConfig,
           currentDate,
           state,
+          captureCallId,
         );
         state.llmCalls++;
         telemetry.rawEvidenceItems += rawEvidence.length;
@@ -1434,6 +1444,10 @@ export async function runResearchIteration(
           state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
         }
         state.evidenceItems.push(...cappedItems);
+        observeEvidenceCapture(state.evidenceCapture, c => c.record("extraction_admission", () => ({ links: {
+          outcome: "recorded", iterationType, rawIds: rawEvidence.map(item => item.id), probativeKeptIds: kept.map(item => item.id),
+          keptIds: cappedItems.map(item => item.id), evictedIds,
+        } }), captureCallId));
         const claimLocalCappedItems = cappedItems.filter(
           (item) => item.relevantClaimIds?.includes(targetClaim.id),
         );
@@ -1753,12 +1767,14 @@ export async function executeSupplementaryLanguageLane(
         return;
       }
 
+      const captureCallId = observeEvidenceCapture(state.evidenceCapture, c => c.beginExtraction());
       const rawEvidence = await extractResearchEvidence(
         targetClaim,
         fetchedSources,
         pipelineConfig,
         currentDate,
         state,
+        captureCallId,
       );
       state.llmCalls++;
       telemetry.rawEvidenceItems += rawEvidence.length;
@@ -1789,6 +1805,10 @@ export async function executeSupplementaryLanguageLane(
         state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
       }
       state.evidenceItems.push(...cappedItems);
+      observeEvidenceCapture(state.evidenceCapture, c => c.record("extraction_admission", () => ({ links: {
+        outcome: "recorded", iterationType: "supplementary", rawIds: rawEvidence.map(item => item.id), probativeKeptIds: kept.map(item => item.id),
+        keptIds: cappedItems.map(item => item.id), evictedIds,
+      } }), captureCallId));
       const claimLocalCappedItems = cappedItems.filter(
         (item) => item.relevantClaimIds?.includes(targetClaim.id),
       );

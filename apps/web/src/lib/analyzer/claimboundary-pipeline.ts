@@ -34,6 +34,7 @@ import type {
   ExplanationQualityCheck,
   FetchedSource,
   AnalysisInput,
+  EvidenceCaptureObserver,
   OverallAssessment,
   SourceType,
 } from "./types";
@@ -133,6 +134,9 @@ import {
   classifyRelevance,
   extractResearchEvidence,
   assessEvidenceApplicability,
+  createEvidenceApplicabilityCapture,
+  observeEvidenceCapture,
+  evidenceCaptureFingerprint,
   assessScopeQuality,
   assessEvidenceBalance,
   type EvidenceBalanceMetrics,
@@ -681,7 +685,16 @@ export async function runClaimBoundaryAnalysis(
 
   // Run the analysis inside a per-job metrics context. AsyncLocalStorage ensures
   // overlapping concurrent jobs each get their own isolated MetricsCollector.
-  return runWithMetrics(
+  let evidenceCapture: EvidenceCaptureObserver | undefined;
+  if (input.evidenceDiagnostics) {
+    try { evidenceCapture = createEvidenceApplicabilityCapture(input.evidenceDiagnostics.enabledBy); }
+    catch { /* The post-metrics envelope reports unavailable diagnostics. */ }
+  }
+  observeEvidenceCapture(evidenceCapture, c => c.record("pipeline", () => ({ links: {
+    jobId: input.jobId ?? null, pipelineContentHash: pipelineResult.contentHash,
+    config: evidenceCaptureFingerprint(JSON.stringify(initialPipelineConfig)),
+  } })));
+  const analysisResult = await runWithMetrics(
     input.jobId ?? "unknown",
     "claimboundary",
     initialPipelineConfig,
@@ -734,6 +747,7 @@ export async function runClaimBoundaryAnalysis(
     // Initialize research state
     const state: CBResearchState = {
       jobId: input.jobId,
+      ...(evidenceCapture ? { evidenceCapture } : {}),
       originalInput: analysisText,
       inputType: input.inputType,
       pipelineStartMs: Date.now(),
@@ -1204,11 +1218,15 @@ export async function runClaimBoundaryAnalysis(
         initialPipelineConfig,
         applicabilityRelevantGeographies,
         state.warnings,
+        evidenceCapture,
       );
       const removedItems = assessed.filter(
         (item) => item.applicability === "foreign_reaction"
       );
       recordApplicabilityRemovalTelemetry(state, removedItems);
+      observeEvidenceCapture(evidenceCapture, c => c.record("applicability_removed", () => ({ links: {
+        removedIds: removedItems.map(item => item.id),
+      } })));
       state.evidenceItems = assessed.filter(
         (item) => item.applicability !== "foreign_reaction"
       );
@@ -1224,6 +1242,10 @@ export async function runClaimBoundaryAnalysis(
           details: { removedCount, beforeCount: beforeApplicability, afterCount: state.evidenceItems.length },
         });
       }
+    }
+
+    if (!(initialPipelineConfig.applicabilityFilterEnabled ?? true)) {
+      observeEvidenceCapture(evidenceCapture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "disabled" } })));
     }
 
     // Stage 3: Cluster Boundaries
@@ -1616,6 +1638,15 @@ export async function runClaimBoundaryAnalysis(
   }
 
   }); // end runWithMetrics
+  if (input.evidenceDiagnostics) {
+    try {
+      const snapshot = observeEvidenceCapture(evidenceCapture, c => c.finish());
+      Object.assign(analysisResult.resultJson, { adminCapture: { evidenceApplicability: snapshot ?? {
+        schemaVersion: 1, enabledBy: input.evidenceDiagnostics.enabledBy, unavailable: true,
+      } } });
+    } catch { /* An attachment fault must not replace an analytical result. */ }
+  }
+  return analysisResult;
 }
 
 type RunVerdictStageWithPreflightArgs = {

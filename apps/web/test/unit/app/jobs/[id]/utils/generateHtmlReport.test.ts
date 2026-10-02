@@ -29,6 +29,12 @@ function makeReportInput(claimVerdicts: any[]): HtmlReportInput {
 }
 
 describe("generateHtmlReport claim verdict display", () => {
+  it("does not export an admin evidence capture even when given the admin result", () => {
+    const input = makeReportInput([]);
+    const baseline = generateHtmlReport(input);
+    input.result.adminCapture = { evidenceApplicability: { sourceContent: "capture-only-secret-ä-日本語" } };
+    expect(generateHtmlReport(input)).toBe(baseline);
+  });
   it("does not expose a truth signal for plain UNVERIFIED verdicts that only have evidence references", () => {
     const html = generateHtmlReport(makeReportInput([
       {

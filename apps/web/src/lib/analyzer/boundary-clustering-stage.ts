@@ -25,6 +25,7 @@ import { loadAndRenderSection } from "./prompt-loader";
 import { normalizeScopeEquivalence, repointEvidenceScopes } from "./scope-normalization";
 import { recordLLMCall } from "./metrics-integration";
 import { loadPipelineConfig } from "@/lib/config-loader";
+import { observeEvidenceCapture, evidenceCaptureFingerprint } from "./research-extraction-stage";
 import {
   mergeBoundaryDescriptions,
   mergeBoundaryNames,
@@ -81,8 +82,20 @@ export async function clusterBoundaries(
   const currentDate = new Date().toISOString().split("T")[0];
 
   const uniqueScopes = collectUniqueScopes(state.evidenceItems);
+  const beforeScopeHashes = observeEvidenceCapture(state.evidenceCapture, c => {
+    const hashes = new Map(state.evidenceItems.map(item => [item.id, evidenceCaptureFingerprint(JSON.stringify(item.evidenceScope ?? null)).sha256]));
+    c.record("scope_before", () => ({
+      links: { contentHash: pipelineResult.contentHash, config: evidenceCaptureFingerprint(JSON.stringify(pipelineConfig)),
+        scopeHashes: [...hashes],
+        itemColumns: ["id", "uniqueScopeIndex"],
+        items: state.evidenceItems.map((item, index) => [item.id, uniqueScopes.find(scope => scope.originalIndices.includes(index))?.index ?? -1]) },
+      bodies: { uniqueScopes, items: state.evidenceItems.map(item => ({ id: item.id, scope: item.evidenceScope })) },
+    }));
+    return hashes;
+  });
 
   if (uniqueScopes.length <= 1) {
+    observeEvidenceCapture(state.evidenceCapture, c => c.record("scope_after", () => ({ links: { outcome: "not_invoked", reason: "at_most_one_scope" } })));
     const boundary = createFallbackBoundary(uniqueScopes, state.evidenceItems);
     return finalizeClusterBoundaries(state, [boundary], uniqueScopes, pipelineConfig);
   }
@@ -99,9 +112,24 @@ export async function clusterBoundaries(
         effectiveScopes = normResult.normalizedScopes;
         state.llmCalls++;
       }
+      observeEvidenceCapture(state.evidenceCapture, c => c.record("scope_after", () => ({
+        links: { outcome: normResult.mergedCount > 0 ? "applied" : "returned_unchanged",
+          comparisonAvailable: beforeScopeHashes !== undefined,
+          changedScopeHashes: state.evidenceItems.map(item => [item.id, evidenceCaptureFingerprint(JSON.stringify(item.evidenceScope ?? null)).sha256])
+            .filter(([id, hash]) => beforeScopeHashes?.get(id) !== hash),
+          mergeMap: normResult.mergeMap },
+        bodies: { normalizationResult: normResult },
+      })));
     } catch (err) {
+      observeEvidenceCapture(state.evidenceCapture, c => c.record("scope_after", () => ({ links: {
+        outcome: "thrown", error: err instanceof Error ? { name: err.name, message: err.message.slice(0, 512) } : { name: "unknown" },
+      } })));
       console.info("[Stage3] Scope normalization failed (non-fatal), proceeding with original scopes:", err);
     }
+  } else {
+    observeEvidenceCapture(state.evidenceCapture, c => c.record("scope_after", () => ({ links: {
+      outcome: "not_invoked", reason: !scopeNormEnabled ? "disabled" : "below_minimum",
+    } })));
   }
 
   let boundaries: ClaimAssessmentBoundary[];
