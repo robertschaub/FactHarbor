@@ -6,7 +6,6 @@ on:
     paths:
       - 'Docs/site/**'
       - 'Docs/TESTREPORTS/**'
-      - 'Docs/prototype-fund-pitch/**'
       - 'scripts/docs/**'
       - 'tools/docs/**'
       - 'mkdocs.yml'

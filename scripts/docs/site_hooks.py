@@ -23,7 +23,7 @@ def on_files(files, config):
             # Installed theme assets are build dependencies, not project notes.
             approved.append(file)
     for path in sorted(tracked):
-        if path.startswith(('Docs/TESTREPORTS/','Docs/prototype-fund-pitch/')) and (repo/path).is_file() and (repo/path).resolve()==repo/path:
+        if path.startswith('Docs/TESTREPORTS/') and (repo/path).is_file() and (repo/path).resolve()==repo/path:
             approved.append(File(path.removeprefix('Docs/'),str(repo/'Docs'),config.site_dir,False))
     return Files(approved)
 
@@ -32,7 +32,7 @@ def on_page_content(content, page, config, files):
     # matching build outputs instead of fetching the deployed website.
     parent=Path(page.file.dest_uri).parent
     prefix=os.path.relpath('.',str(parent)).replace('\\','/')
-    for directory in ('TESTREPORTS','prototype-fund-pitch'):
+    for directory in ('TESTREPORTS',):
         content=content.replace('"https://robertschaub.github.io/FactHarbor/'+directory+'/',
                                 '"'+prefix+'/'+directory+'/')
     return content
