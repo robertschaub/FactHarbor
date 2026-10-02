@@ -33,4 +33,4 @@ A deployed file may remain unused for a customized prompt, or become active on a
 
 ## Known pending (2026-06)
 
-The June record listed search Serper→P1 (`362a9312`, a `configs` change) and output-token brevity (`871cbf24`, a `prompts` change) as pending production reseeding, tracked in [Backlog §Cost optimization](../../STATUS/Backlog.md). Their current active state was not checked for this documentation correction; verify it using the origin-sensitive rules above.
+The June record listed search Serper→P1 (`362a9312`, a `configs` change) and output-token brevity (`871cbf24`, a `prompts` change) as pending production reseeding. Any reseed must meet the [execution constraints](../../../CONTRIBUTING.md#project-state-and-change-authority). Their current active state was not checked for this documentation correction; verify it using the origin-sensitive rules above.

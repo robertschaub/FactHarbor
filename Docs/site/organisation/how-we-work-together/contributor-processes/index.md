@@ -25,4 +25,4 @@ Follow the [global rules](../globalrules/index.md), [governance](../../governanc
 - [Getting started](../../../product-development/devops/guidelines/getting-started/index.md) for a local checkout.
 - [Stage responsibilities](../../../akel-stage-details.md) and [terminology](../../../product-development/specification/reference/terminology/index.md) for implementation contracts.
 - [Documentation authoring](https://github.com/robertschaub/FactHarbor/blob/main/Docs/DEVELOPMENT/Documentation.md) for Markdown, links and Mermaid verification.
-- [Current status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md) and [known issues](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/KNOWN_ISSUES.md) before selecting work.
+- [Project state](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority) and [known limits](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#known-limits) before selecting work.

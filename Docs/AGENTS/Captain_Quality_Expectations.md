@@ -6,7 +6,11 @@ Use [benchmark-expectations.json](benchmark-expectations.json), [report-quality-
 
 Comparator-bearing runs must be isolated, one job at a time. Provider/configuration era changes and cache carryover can confound comparisons. Distinguish exact from variant inputs, local from deployed reports, and historical from current-stack evidence. A past pass never establishes today's pass. Paid runs require separate authority.
 
-The source register's watch status remains: asylum-current, asylum-WWII and Bolsonaro EN need continued review; hydrogen is improved, not closed. Plastic uses the centered interpretation-dependent expectation and capped confidence. None of these observations overrides the [current holds](../STATUS/Backlog.md#holds-and-required-decisions).
+The source register's watch status remains: asylum-current, asylum-WWII and Bolsonaro EN need continued review; hydrogen is improved, not closed. Plastic uses the centered interpretation-dependent expectation and capped confidence. None of these observations overrides the [current holds](../../CONTRIBUTING.md#project-state-and-change-authority).
+
+## Reference alignment
+
+Dossier-backed C1/C3 remain diagnostic-only until manual/judge agreement reaches at least 85% on every axis. Kappa applies only with at least 30 adjudicable units per axis and a non-degenerate distribution: target at least 0.70; below 0.60 is no-go. Adjudication and paid judge runs need their own scope. Source snapshots alone do not authorize promotion.
 
 ## Benchmark Families
 

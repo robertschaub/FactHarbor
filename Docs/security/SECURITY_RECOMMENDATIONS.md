@@ -1,6 +1,6 @@
 # FactHarbor GitHub Security Assessment & Recommendations
 
-> Historical assessment from 9 February 2026. Its implementation checklist is not the current security posture; see [Known issues — Security concerns](../STATUS/KNOWN_ISSUES.md#security-concerns) for verified controls and remaining gaps.
+> Historical assessment from 9 February 2026. Its implementation checklist is not the current security posture; see [Known issues — Security concerns](../site/product-development/specification/architecture/security-and-operations/index.md#operational-limits) for verified controls and remaining gaps.
 
 **Repository**: https://github.com/robertschaub/FactHarbor
 **Assessment Date**: 2026-02-09

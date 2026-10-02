@@ -1,6 +1,6 @@
 # Product development
 
-FactHarbor builds evidence-based claim analysis with inspectable reports. The application is an invite-gated Alpha; broader development is paused pending funding. Current limitations and approved work are recorded in [project status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md).
+FactHarbor builds evidence-based claim analysis with inspectable reports. The application is an invite-gated Alpha; broader development is paused pending funding. Read the [contribution scope and operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).
 
 | Reader need | Start here |
 |---|---|

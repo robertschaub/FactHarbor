@@ -1,6 +1,6 @@
 # Security Policy
 
-> Draft of intended security controls, originally dated December 2025. Account features below are design requirements, not a claim that the current Alpha implements them. For current controls and gaps, see [Known issues](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/KNOWN_ISSUES.md#security-concerns).
+> Draft of intended security controls, originally dated December 2025. Account features below are design requirements, not a claim that the current Alpha implements them. For current controls and gaps, see [Known issues](https://github.com/robertschaub/FactHarbor/blob/main/Docs/site/product-development/specification/architecture/security-and-operations/index.md#operational-limits).
 
 **Last Updated:** December 17, 2025
 

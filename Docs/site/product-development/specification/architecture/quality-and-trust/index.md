@@ -28,4 +28,4 @@ Material retrieval, interpretation or verdict failures must remain visible in th
 
 FactHarbor remains an Alpha. Repeated runs, different phrasings and languages can produce different results, and citations can be misread. Use the linked sources and claim-level explanations to assess a report rather than relying only on its headline.
 
-Contributors must preserve the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md), [current issues](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/KNOWN_ISSUES.md), multilingual robustness and approved exact-input controls. New paid evaluations require their own authorization.
+Contributors must preserve the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md), [documented limitations](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#known-limits), multilingual robustness and approved exact-input controls. New paid evaluations require their own authorization.

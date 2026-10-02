@@ -15,7 +15,7 @@ These are public-edition locations. Resolve working investigations and completio
 
 - `Docs/site/`: website Markdown, public specifications and diagrams.
 - `Docs/ARCHITECTURE/`: current architecture references.
-- `Docs/STATUS/`: current status, backlog and known issues.
+- Assigned status collection (root AGENTS.md routing): current status, backlog and known issues.
 - `Docs/WIP/`: active proposals and investigations.
 - `Docs/AGENTS/`: instructions, operative policies and completion evidence.
 - `Docs/DEVELOPMENT/` and `Docs/USER_GUIDES/`: contributor and administrator guidance.

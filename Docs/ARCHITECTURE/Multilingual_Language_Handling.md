@@ -32,4 +32,4 @@ Do not promote beyond default-off unless:
 
 There is no current automated cross-language divergence test, and the removed question/statement suite was not a working neutrality check. New exact question/statement pairs require Captain approval (`NEUTRALITY-PAIRS`). Framing-symmetry calibration measures a different property; a symmetry pass is not proof of correctness.
 
-See [quality expectations](../AGENTS/Captain_Quality_Expectations.md), [calibration policy](../STATUS/Calibration_Run_Policy.md) and [current holds](../STATUS/Backlog.md#holds-and-required-decisions).
+See [quality expectations](../AGENTS/Captain_Quality_Expectations.md), [calibration policy](../../apps/web/test/README.md#calibration-contract) and [current holds](../../CONTRIBUTING.md#project-state-and-change-authority).

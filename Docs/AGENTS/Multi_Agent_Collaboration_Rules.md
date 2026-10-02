@@ -28,7 +28,7 @@ For public implementation, the mappings below are entry points to current contra
 | **Coding Guidelines** | `/AGENTS.md` | Code quality standards, testing requirements, prompt engineering |
 | **Terminology Reference** | `/Docs/site/product-development/specification/reference/terminology/index.md` | Authoritative glossary for all technical terms |
 | **Architecture Overview** | `/Docs/site/product-development/specification/architecture/index.md` | System architecture, data models, component interactions |
-| **Current Status** | `/Docs/STATUS/Current_Status.md` | Current implementation status and known issues |
+| **Current Status** | Assigned status collection ([root routing](../../AGENTS.md#current-implementation)) | Current implementation status and known issues |
 
 ### 1.2 Area-to-Documents Mapping
 

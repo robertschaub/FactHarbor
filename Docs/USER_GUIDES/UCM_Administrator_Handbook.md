@@ -33,4 +33,4 @@ When rollback is authorized, select the correct type/profile and previously veri
 
 The public configuration routes under `apps/web/src/app/api/admin/config/` define available methods, authentication and response schemas. The Admin UI is the reader-facing entry point; use current source for automation contracts. Credentials belong in the configured environment, never exported into public records.
 
-Before changing analysis settings, check [current holds](../STATUS/Backlog.md#holds-and-required-decisions), [known limitations](../STATUS/KNOWN_ISSUES.md), root [AGENTS.md](../../AGENTS.md) and the task's approval. Feature availability in the UI is not permission to enable it.
+Before changing analysis settings, check [current holds](../../CONTRIBUTING.md#project-state-and-change-authority), [known limitations](../../CONTRIBUTING.md#known-limits), root [AGENTS.md](../../AGENTS.md) and the task's approval. Feature availability in the UI is not permission to enable it.

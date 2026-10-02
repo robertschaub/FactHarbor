@@ -30,4 +30,4 @@ Current implementation, schemas, prompts and default settings are part of the [p
 - [Security and operations](security-and-operations/index.md): access boundaries and operational limits.
 - [Getting started](../../devops/guidelines/getting-started/index.md), [API source](https://github.com/robertschaub/FactHarbor/tree/main/apps/api) and [terminology](../reference/terminology/index.md).
 
-Research proposals, historical designs and current behavior are different kinds of evidence. Consult [current status](https://github.com/robertschaub/FactHarbor/blob/main/Docs/STATUS/Current_Status.md) before treating a capability as available.
+Research proposals, historical designs and current behavior are different kinds of evidence. Consult [current status](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority) before treating a capability as available.

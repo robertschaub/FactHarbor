@@ -6,7 +6,7 @@
     "Docs/AGENTS/Captain_Quality_Expectations.md",
     "AGENTS.md (Fundamental Rules, Report Quality & Event Communication)",
     "Docs/AGENTS/Procedures/Prod_Prompt_Config_Reseed.md",
-    "Docs/STATUS/Backlog.md"
+    "Task-assigned backlog (AGENTS.md status routing)"
   ],
   "_qCodeProvenance": {
     "Q-HF*, Q-S1.*, Q-EV*, Q-V*, Q-ST*, Q-AH*": "Definitions in this catalogue — authoritative",
@@ -249,7 +249,7 @@
       "name": "Cross-linguistic verdict stability",
       "category": "stability",
       "severity": "HIGH",
-      "source": "This catalogue: Q-ST5 (stability) + Docs/STATUS/Backlog.md (NEUTRALITY-1)",
+      "source": "This catalogue: Q-ST5 (stability) + Task-assigned backlog (AGENTS.md status routing) (NEUTRALITY-1)",
       "description": "The same semantic claim across languages (when benchmark-expectations.json pairs slugs as cross-language variants) yields directionally equivalent verdicts. Truth% spread across language pairs ≤ 30pp.",
       "structuralCheck": "for each family pair declared as cross-language variants (e.g., bolsonaro-en and bolsonaro-pt): max truthPct delta <= 30pp AND verdict directions are on the same side of the 50% midpoint OR both are MIXED",
       "requiresMultipleRuns": "cross-family",
