@@ -1,11 +1,12 @@
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, normalize, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { realpathSync } from "node:fs";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const UTILS_DIR = dirname(THIS_FILE);
 const SRC_DIR = resolve(UTILS_DIR, "..");
 const PACKAGE_DIR = resolve(SRC_DIR, "..");
-const REPO_ROOT = resolve(PACKAGE_DIR, "..", "..");
+const REPO_ROOT = realpathSync(resolve(PACKAGE_DIR, "..", ".."));
 const CACHE_DIR = process.env.FH_AGENT_KNOWLEDGE_CACHE_DIR
   ? resolve(process.env.FH_AGENT_KNOWLEDGE_CACHE_DIR)
   : join(REPO_ROOT, ".cache", "fh-agent-knowledge");
@@ -59,6 +60,15 @@ export const PATHS = {
 
 export function resolveRepoPath(...segments) {
   return resolve(PATHS.repoRoot, ...segments);
+}
+
+export function sameRepoRoot(first, second) {
+  if (!first || !second) return false;
+  const canonical = (value) => {
+    const normalized = normalize(value).replace(/[\\/]+$/, "");
+    return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+  };
+  return canonical(first) === canonical(second);
 }
 
 export function toRepoRelativePath(absolutePath) {

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { PATHS } from "../utils/paths.mjs";
+import { PATHS, sameRepoRoot } from "../utils/paths.mjs";
 import { pathExists, readJsonFile, writeJsonAtomic } from "../utils/fs.mjs";
 import { buildWarning } from "../contracts/results.mjs";
 import { loadRecentAgentOutputs } from "../sources/agent-outputs.mjs";
@@ -85,6 +85,10 @@ function buildKnowledgeData() {
 }
 
 export function writeKnowledgeCache(payload) {
+  const previous = readCacheManifest();
+  if (previous?.repoRoot && !sameRepoRoot(previous.repoRoot, PATHS.repoRoot)) {
+    throw new Error("Knowledge cache belongs to another checkout; choose a separate cache directory.");
+  }
   writeJsonAtomic(CACHE_FILES.handoffs, payload.data.handoffs);
   writeJsonAtomic(CACHE_FILES.recentWindow, payload.data.recentWindow);
   writeJsonAtomic(CACHE_FILES.roles, payload.data.roles);
@@ -106,13 +110,21 @@ export function loadKnowledgeCache() {
     return null;
   }
 
+  const manifest = readCacheManifest();
+  if (!manifest?.repoRoot) {
+    return null; // Unbound legacy records cannot establish this checkout's provenance.
+  }
+  if (manifest?.repoRoot && !sameRepoRoot(manifest.repoRoot, PATHS.repoRoot)) {
+    throw new Error("Knowledge cache belongs to another checkout; use that checkout's tool or current source reads.");
+  }
+
   const requiredFiles = Object.values(CACHE_FILES);
   if (requiredFiles.some((path) => !pathExists(path))) {
     return null;
   }
 
   return {
-    manifest: readCacheManifest(),
+    manifest,
     data: {
       handoffs: readJsonFile(CACHE_FILES.handoffs),
       recentWindow: readJsonFile(CACHE_FILES.recentWindow),

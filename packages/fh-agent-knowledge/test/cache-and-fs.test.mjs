@@ -111,6 +111,8 @@ test("all queries use missing-cache fallback without creating cache state", () =
   for (const [command, input] of QUERIES) {
     const result = executeKnowledgeOperation(command, input);
     assert.equal(result.cacheSource, "fallback", command);
+    assert.equal(result.binding.repoRoot, PATHS.repoRoot, command);
+    assert.match(result.binding.repoHead, /^[0-9a-f]{40}$/, command);
     assert.equal(result.cacheStale, true, command);
     assert.equal(result.cacheRefreshed, false, command);
     assert.ok(result.warnings.some((warning) => warning.code === "cache_served_from_repo"), command);
@@ -119,6 +121,58 @@ test("all queries use missing-cache fallback without creating cache state", () =
   const context = loadKnowledgeContext({ allowFallback: false });
   assert.equal(context.source, "none");
   assert.equal(existsSync(PATHS.cacheDir), false);
+});
+
+test("legacy cache without checkout identity is ignored without writes", () => {
+  executeKnowledgeOperation("bootstrap");
+  const manifest = readCacheManifest();
+  const handoffsPath = join(PATHS.cacheDir, "handoffs.json");
+  const handoffs = readFileSync(handoffsPath);
+  const { repoRoot, ...legacy } = manifest;
+  writeCacheManifest(legacy);
+  writeJsonAtomic(handoffsPath, { entries: [{ id: "unbound-record", title: "Unbound cached fixture" }] });
+  const before = collectDirectorySnapshot(PATHS.cacheDir);
+  try {
+    for (const [command, input] of QUERIES) {
+      const result = executeKnowledgeOperation(command, input);
+      assert.equal(result.cacheSource, "fallback", command);
+      assert.equal(result.cacheStale, true, command);
+      assert.equal(JSON.stringify(result).includes("unbound-record"), false, command);
+    }
+    assert.deepEqual(collectDirectorySnapshot(PATHS.cacheDir), before);
+  } finally {
+    writeCacheManifest(manifest);
+    writeFileSync(handoffsPath, handoffs);
+  }
+});
+
+test("a cache from another checkout is refused without writes", () => {
+  executeKnowledgeOperation("bootstrap");
+  const manifest = readCacheManifest();
+  writeCacheManifest({ ...manifest, repoRoot: join(TEST_ROOT, "different-checkout") });
+  const before = collectDirectorySnapshot(PATHS.cacheDir);
+  try {
+    assert.throws(() => executeKnowledgeOperation("health"), /another checkout/);
+    assert.throws(() => executeKnowledgeOperation("bootstrap"), /another checkout/);
+    assert.deepEqual(collectDirectorySnapshot(PATHS.cacheDir), before);
+  } finally {
+    writeCacheManifest(manifest);
+  }
+});
+
+test("Windows case and separator variants identify the same checkout", { skip: process.platform !== "win32" }, () => {
+  executeKnowledgeOperation("bootstrap");
+  const manifest = readCacheManifest();
+  try {
+    writeCacheManifest({ ...manifest, repoRoot: PATHS.repoRoot.toUpperCase().replaceAll("\\", "/") + "/" });
+    const result = executeKnowledgeOperation("health");
+    assert.equal(result.ok, true);
+    assert.equal(loadKnowledgeContext().freshness.isStale, false);
+    executeKnowledgeOperation("refresh", { force: true });
+    assert.equal(readCacheManifest().repoRoot, PATHS.repoRoot);
+  } finally {
+    writeCacheManifest(manifest);
+  }
 });
 
 test("stale queries preserve cache bytes and mtimes; explicit refresh rebuilds", () => {

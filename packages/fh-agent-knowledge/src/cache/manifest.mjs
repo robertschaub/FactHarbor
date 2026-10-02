@@ -51,6 +51,7 @@ export function readCurrentSourceSnapshot(indexes) {
 
   return {
     schemaVersion: 1,
+    repoRoot: PATHS.repoRoot,
     builtAt: new Date().toISOString(),
     repoHead: getGitHead(),
     sources: {
