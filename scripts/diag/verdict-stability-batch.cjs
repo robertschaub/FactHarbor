@@ -118,9 +118,16 @@ function validateTemplate(template, root = ROOT) {
   if (template.runPolicy?.runsPerInvocation !== 1 || template.runPolicy?.requireFreshOutput !== true) {
     throw new Error('template runPolicy must require exactly one run and a fresh output');
   }
+  if (template.runPolicy.armMode !== undefined && template.runPolicy.armMode !== 'single') {
+    throw new Error('template armMode must be single or omitted for paired arms');
+  }
+  const expectedArms = template.runPolicy.armMode === 'single' ? ['A'] : ['A', 'B'];
+  if (expectedArms.length === 1 && (!Array.isArray(plan.sequence) || plan.sequence.length !== 1)) {
+    throw new Error('single-arm plan must contain exactly one A step');
+  }
   const arms = template.arms || {};
-  if (JSON.stringify(Object.keys(arms).sort()) !== JSON.stringify(['A', 'B'])) throw new Error('template must define exactly arms A and B');
-  for (const arm of ['A', 'B']) {
+  if (JSON.stringify(Object.keys(arms).sort()) !== JSON.stringify(expectedArms)) throw new Error(`template must define exactly arms ${expectedArms.join(' and ')}`);
+  for (const arm of expectedArms) {
     if (!arms[arm] || typeof arms[arm].outputPath !== 'string') throw new Error(`template arm ${arm} is required`);
     const output = resolveInside(root, arms[arm].outputPath, `template arm ${arm} output`);
     const outputRel = path.relative(root, output).replace(/\\/g, '/');
@@ -149,14 +156,15 @@ function validateExecutionManifest(manifest, root = ROOT) {
   if (manifest.planId !== template.planId) throw new Error('preflight planId does not match template');
   if (JSON.stringify(manifest.input) !== JSON.stringify(template.input)) throw new Error('preflight input contract does not match template');
   if (JSON.stringify(manifest.runPolicy) !== JSON.stringify(template.runPolicy)) throw new Error('preflight runPolicy does not match template');
-  if (JSON.stringify(Object.keys(manifest.arms || {}).sort()) !== JSON.stringify(['A', 'B'])) throw new Error('preflight must define exactly arms A and B');
+  const expectedArms = Object.keys(template.arms).sort();
+  if (JSON.stringify(Object.keys(manifest.arms || {}).sort()) !== JSON.stringify(expectedArms)) throw new Error(`preflight must define exactly arms ${expectedArms.join(' and ')}`);
   const artifactKeys = Object.keys(manifest.artifacts || {}).sort();
   const requiredArtifacts = [...template.artifactPaths].sort();
   if (JSON.stringify(artifactKeys) !== JSON.stringify(requiredArtifacts)) {
     throw new Error('preflight artifacts must match every template artifactPath exactly');
   }
   for (const [file, hash] of Object.entries(manifest.artifacts)) assertFullHash(hash, 64, `preflight artifact ${file}`);
-  for (const arm of ['A', 'B']) {
+  for (const arm of expectedArms) {
     if (!manifest.arms?.[arm]) throw new Error(`preflight arm ${arm} is required`);
     if (manifest.arms[arm].outputPath !== template.arms[arm].outputPath) throw new Error(`preflight arm ${arm} output does not match template`);
     const configs = manifest.arms[arm].activeConfigs || {};
@@ -164,16 +172,26 @@ function validateExecutionManifest(manifest, root = ROOT) {
     if (JSON.stringify(keys) !== JSON.stringify([...REQUIRED_CONFIG_KEYS].sort())) {
       throw new Error(`preflight arm ${arm} must define exactly the five required config keys`);
     }
-    for (const [key, hash] of Object.entries(configs)) assertFullHash(hash, 64, `arm ${arm} config ${key}`);
+    for (const [key, hash] of Object.entries(configs)) {
+      assertFullHash(hash, 64, `arm ${arm} config ${key}`);
+      // Only paired B's pipeline hash is supplied separately when freezing.
+      if (!(arm === 'B' && key === 'pipeline/default') && hash !== template.arms[arm].activeConfigs[key]) {
+        throw new Error(`preflight arm ${arm} config ${key} does not match template`);
+      }
+    }
   }
   return manifest;
 }
 
 function freezeExecutionManifest(templateFile, outputFile, armBConfigHash, options = {}) {
   const root = options.root || ROOT;
-  assertFullHash(armBConfigHash, 64, 'arm B config hash');
   const templatePath = resolveInside(root, templateFile, 'template path');
   const template = validateTemplate(JSON.parse(fs.readFileSync(templatePath, 'utf8')), root);
+  if (template.runPolicy.armMode === 'single') {
+    if (armBConfigHash != null) throw new Error('single-arm freeze does not accept an arm B config hash');
+  } else {
+    assertFullHash(armBConfigHash, 64, 'arm B config hash');
+  }
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   assertFullHash(commit, 40, 'current commit');
   const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { cwd: root, encoding: 'utf8' }).trim();
@@ -184,7 +202,7 @@ function freezeExecutionManifest(templateFile, outputFile, armBConfigHash, optio
     return [file, sha256File(artifact)];
   }));
   const arms = JSON.parse(JSON.stringify(template.arms));
-  arms.B.activeConfigs['pipeline/default'] = armBConfigHash;
+  if (arms.B) arms.B.activeConfigs['pipeline/default'] = armBConfigHash;
   const unresolved = JSON.stringify(arms).match(/__[A-Z0-9_]+__/);
   if (unresolved) throw new Error(`template contains unresolved placeholder ${unresolved[0]}`);
   const templateRel = path.relative(root, templatePath).replace(/\\/g, '/');
@@ -517,7 +535,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.freezeTemplate) {
-    if (!args.manifestOut || !args.armBConfigHash) throw new Error('--freeze-preflight-template requires --manifest-out and --arm-b-config-hash');
+    if (!args.manifestOut) throw new Error('--freeze-preflight-template requires --manifest-out');
     const frozen = freezeExecutionManifest(args.freezeTemplate, args.manifestOut, args.armBConfigHash);
     console.log(`EXECUTION PREFLIGHT FROZEN — ${path.relative(ROOT, frozen.outputPath)}`);
     console.log(`  approved commit: ${frozen.manifest.approvedCommit}`);

@@ -20,6 +20,10 @@ Require a fresh reviewed plan and explicit GO covering exact Captain-approved in
 
 The existing runner supports plan-only and preflight-only modes. Read `scripts/diag/verdict-stability-batch.cjs` for its current arguments. Generating a manifest writes state; activation, setup and `--run` require their own authorization. Reject an existing arm output, unexplained job-count change, unresolved cost ceiling, missing decisive capture or mismatched prompt/config provenance. Do not replace a failed assigned-arm outcome.
 
+For an approved single-job observation, set `runPolicy.armMode` to `"single"` in the template, define only arm `A`, and put exactly one matching A step in the pinned plan's `sequence`. Keep `runsPerInvocation: 1`, `requireFreshOutput: true`, one exact input, all five configuration hashes and the existing artifact/source pins. Freeze with `--freeze-preflight-template <template> --manifest-out <output>`; omit `--arm-b-config-hash`, which is rejected in this mode. Templates without `armMode` retain the two-arm contract and require the B hash when freezing.
+
+Use `--inputs <input> --n 1 --preflight <manifest> --arm A` for the guarded plan-only preview, add `--preflight-only` for active-state checks, and add `--run` only under the reviewed execution approval. The generic runner still permits unguarded runs; omitting `--preflight` does not invoke the single-arm policy and is not an approved substitute. Neither mode enforces a dollar ceiling; `FH_PER_JOB_USD` changes the estimate only.
+
 Keep comparator-bearing submissions isolated. Cache carryover and any inter-arm restart must follow the reviewed comparison design and be recorded. Before restoration, establish terminal status and pipeline exit; preserve the authorized baseline, exact active hashes and evidence. None of these instructions authorizes changing the currently running services.
 
 ## Reporting and limits

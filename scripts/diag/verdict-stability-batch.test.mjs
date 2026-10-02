@@ -19,6 +19,7 @@ const {
   verifyFinishedJob,
   validateExecutionManifest,
   freezeExecutionManifest,
+  verifyInvocationPreflight,
   sha256File,
 } = createRequire(import.meta.url)(script);
 
@@ -35,7 +36,7 @@ function json(file, value) {
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function preflightFixture() {
+function preflightFixture({ singleArm = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'verdict-preflight-repo-'));
   const inputValue = 'Entity A did X';
   const inputRel = 'pilot/input.json';
@@ -49,6 +50,9 @@ function preflightFixture() {
   json(inputPath, [{ inputType: 'text', inputValue }]);
   mkdirSync(dirname(artifactPath), { recursive: true });
   writeFileSync(artifactPath, 'runner');
+  const runnerRel = 'scripts/diag/verdict-stability-batch.cjs';
+  mkdirSync(dirname(join(root, runnerRel)), { recursive: true });
+  writeFileSync(join(root, runnerRel), readFileSync(script));
   writeFileSync(join(root, 'dirty-sentinel.txt'), 'clean');
   writeFileSync(join(root, '.gitignore'), 'test-output/\n');
   json(join(root, planRel), {
@@ -56,7 +60,7 @@ function preflightFixture() {
     input: { file: inputRel, runsPerArm: 1 },
     sequence: [
       { arm: 'A', n: 1, out: 'test-output/a.jsonl' },
-      { arm: 'B', n: 1, out: 'test-output/b.jsonl' },
+      ...singleArm ? [] : [{ arm: 'B', n: 1, out: 'test-output/b.jsonl' }],
     ],
   });
   const template = {
@@ -65,11 +69,11 @@ function preflightFixture() {
     planPath: planRel,
     requireClean: true,
     input: { path: inputRel, sha256: sha256File(inputPath), count: 1 },
-    artifactPaths: [artifactRel, templateRel, planRel, 'Docs/AGENTS/benchmark-expectations.json'],
-    runPolicy: { runsPerInvocation: 1, requireFreshOutput: true },
+    artifactPaths: [artifactRel, runnerRel, templateRel, planRel, 'Docs/AGENTS/benchmark-expectations.json'],
+    runPolicy: { runsPerInvocation: 1, requireFreshOutput: true, ...singleArm ? { armMode: 'single' } : {} },
     arms: {
       A: { outputPath: 'test-output/a.jsonl', activeConfigs: { ...CONFIG_HASHES } },
-      B: { outputPath: 'test-output/b.jsonl', activeConfigs: { ...CONFIG_HASHES, 'pipeline/default': '__SET_AFTER_UCM_SAVE__' } },
+      ...singleArm ? {} : { B: { outputPath: 'test-output/b.jsonl', activeConfigs: { ...CONFIG_HASHES, 'pipeline/default': '__SET_AFTER_UCM_SAVE__' } } },
     },
   };
   json(templatePath, template);
@@ -81,7 +85,7 @@ function preflightFixture() {
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const artifacts = Object.fromEntries(template.artifactPaths.map((file) => [file, sha256File(join(root, file))]));
   const arms = JSON.parse(JSON.stringify(template.arms));
-  arms.B.activeConfigs['pipeline/default'] = '6'.repeat(64);
+  if (arms.B) arms.B.activeConfigs['pipeline/default'] = '6'.repeat(64);
   const manifest = {
     schemaVersion: '1.0', planId: template.planId, approvedCommit: commit, requireClean: true,
     template: { path: templateRel, sha256: sha256File(templatePath) },
@@ -129,8 +133,9 @@ test('waitFor rejects when the job status cannot be read', async (t) => {
   await assert.rejects(waitFor('job-1', { timeoutMs: 1_000, pollMs: 1 }), /poll 503/);
 });
 
-test('static preflight fails closed on shape, input, artifact, commit and dirty-tree drift', () => {
-  const fixture = preflightFixture();
+for (const singleArm of [false, true]) {
+test(`static preflight fails closed on shape, input, artifact, commit and dirty-tree drift (${singleArm ? 'single' : 'paired'})`, () => {
+  const fixture = preflightFixture({ singleArm });
   try {
     assert.doesNotThrow(() => verifyStaticPreflight(fixture.preflight, fixture.inputPath, { root: fixture.root }));
 
@@ -160,6 +165,7 @@ test('static preflight fails closed on shape, input, artifact, commit and dirty-
     rmSync(fixture.root, { recursive: true, force: true });
   }
 });
+}
 
 test('execution manifest is generated after a clean reviewed commit without rewriting tracked files', () => {
   const fixture = preflightFixture();
@@ -171,9 +177,138 @@ test('execution manifest is generated after a clean reviewed commit without rewr
     assert.deepEqual(Object.keys(frozen.manifest.artifacts).sort(), Object.keys(fixture.manifest.artifacts).sort());
     assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: fixture.root, encoding: 'utf8' }).trim(), '');
     assert.throws(() => freezeExecutionManifest(fixture.templateRel, output, '6'.repeat(64), { root: fixture.root }), /EEXIST/);
+    assert.throws(() => freezeExecutionManifest(fixture.templateRel, 'test-output/no-b.json', undefined, { root: fixture.root }), /arm B config hash/);
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }
+});
+
+test('single-arm freeze preserves config/artifact pins and invocation guards without a B hash', () => {
+  const f = preflightFixture({ singleArm: true });
+  try {
+    const options = { root: f.root };
+    assert.throws(() => freezeExecutionManifest(f.templateRel, 'test-output/bad.json', '6'.repeat(64), options), /does not accept an arm B/);
+    const frozen = freezeExecutionManifest(f.templateRel, 'test-output/execution.json', undefined, options);
+    assert.deepEqual(Object.keys(frozen.manifest.arms), ['A']);
+    assert.deepEqual(frozen.manifest.arms.A.activeConfigs, CONFIG_HASHES);
+    assert.deepEqual(frozen.manifest.artifacts, f.manifest.artifacts);
+    const preflight = { arm: 'A', manifest: frozen.manifest };
+    assert.doesNotThrow(() => verifyStaticPreflight(preflight, f.inputPath, options));
+    assert.doesNotThrow(() => verifyInvocationPreflight(preflight, { n: 1 }, 'test-output/a.jsonl', options));
+    assert.throws(() => verifyInvocationPreflight(preflight, { n: 2 }, 'test-output/a.jsonl', options), /exactly 1 run/);
+    assert.throws(() => verifyInvocationPreflight(preflight, { n: 1 }, 'test-output/b.jsonl', options), /--out must resolve/);
+    writeFileSync(join(f.root, 'test-output/a.jsonl'), 'existing');
+    assert.throws(() => verifyInvocationPreflight(preflight, { n: 1 }, 'test-output/a.jsonl', options), /output already exists/);
+    assert.throws(() => freezeExecutionManifest(f.templateRel, 'test-output/execution.json', undefined, options), /EEXIST/);
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('single-arm manifests reject arm, policy and configuration-shape tampering', () => {
+  const f = preflightFixture({ singleArm: true });
+  try {
+    for (const [mutate, error] of [
+      [m => { m.arms.B = structuredClone(m.arms.A); }, /exactly arms A/],
+      [m => { delete m.arms.A; }, /exactly arms A/],
+      [m => { delete m.runPolicy.armMode; }, /runPolicy does not match/],
+      [m => { delete m.arms.A.activeConfigs['sr/default']; }, /five required config keys/],
+      [m => { m.arms.A.activeConfigs['sr/default'] = 'abc'; }, /64-character/],
+      [m => { m.arms.A.activeConfigs['sr/default'] = '9'.repeat(64); }, /does not match template/],
+    ]) {
+      const manifest = structuredClone(f.manifest);
+      mutate(manifest);
+      assert.throws(() => validateExecutionManifest(manifest, f.root), error);
+    }
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+  const paired = preflightFixture();
+  try {
+    for (const arm of ['A', 'B']) {
+      const changed = structuredClone(paired.manifest);
+      changed.arms[arm].activeConfigs['sr/default'] = '9'.repeat(64);
+      assert.throws(() => validateExecutionManifest(changed, paired.root), /does not match template/);
+    }
+    const selectedB = structuredClone(paired.manifest);
+    selectedB.arms.B.activeConfigs['pipeline/default'] = '9'.repeat(64);
+    assert.doesNotThrow(() => validateExecutionManifest(selectedB, paired.root));
+    delete paired.manifest.arms.B;
+    assert.throws(() => validateExecutionManifest(paired.manifest, paired.root), /exactly arms A and B/);
+  } finally { rmSync(paired.root, { recursive: true, force: true }); }
+});
+
+test('single-arm templates require explicit mode and exactly one matching A step', () => {
+  const f = preflightFixture({ singleArm: true });
+  try {
+    const originalTemplate = JSON.parse(readFileSync(f.templatePath, 'utf8'));
+    const planPath = join(f.root, originalTemplate.planPath);
+    const originalPlan = JSON.parse(readFileSync(planPath, 'utf8'));
+    for (const [mutate, error] of [
+      [(t, p) => { delete t.runPolicy.armMode; }, /exactly arms A and B/],
+      [(t, p) => { t.runPolicy.armMode = 'typo'; }, /armMode must be single/],
+      [(t, p) => { t.arms.B = structuredClone(t.arms.A); }, /exactly arms A/],
+      [(t, p) => { delete t.arms.A; }, /exactly arms A/],
+      [(t, p) => { p.sequence = []; }, /exactly one A step/],
+      [(t, p) => { p.sequence.push(structuredClone(p.sequence[0])); }, /exactly one A step/],
+      [(t, p) => { p.sequence[0].arm = 'B'; }, /does not match the pinned plan sequence/],
+      [(t, p) => { p.sequence[0].n = 2; }, /does not match the pinned plan sequence/],
+      [(t, p) => { p.sequence[0].out = 'test-output/b.jsonl'; }, /does not match the pinned plan sequence/],
+    ]) {
+      const template = structuredClone(originalTemplate), plan = structuredClone(originalPlan);
+      mutate(template, plan);
+      json(f.templatePath, template); json(planPath, plan);
+      const manifest = structuredClone(f.manifest);
+      manifest.template.sha256 = sha256File(f.templatePath);
+      assert.throws(() => validateExecutionManifest(manifest, f.root), error);
+    }
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('single-arm CLI freezes and plans with no network and rejects B before execution', () => {
+  const f = preflightFixture({ singleArm: true });
+  try {
+    const outputDir = join(f.root, 'test-output');
+    mkdirSync(outputDir);
+    const guard = join(outputDir, 'deny-network.cjs');
+    writeFileSync(guard, "globalThis.fetch = () => { throw new Error('Network forbidden in offline CLI fixture'); };\n");
+    const copiedScript = join(f.root, 'scripts/diag/verdict-stability-batch.cjs');
+    const invoke = args => execFileSync(process.execPath, ['--require', guard, copiedScript, ...args], {
+      cwd: f.root, encoding: 'utf8', timeout: 10_000, stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, FH_API_URL: 'http://127.0.0.1:1', FH_INVITE_CODE: 'OFFLINE',
+        FH_DB_PATH: join(outputDir, 'no-api.db'), FH_CONFIG_DB_PATH: join(outputDir, 'no-config.db') },
+    });
+    assert.match(invoke(['--freeze-preflight-template', f.templateRel, '--manifest-out', 'test-output/execution.json']), /EXECUTION PREFLIGHT FROZEN/);
+    const manifest = JSON.parse(readFileSync(join(outputDir, 'execution.json'), 'utf8'));
+    assert.deepEqual(Object.keys(manifest.arms), ['A']);
+    const args = ['--inputs', f.inputPath, '--n', '1', '--preflight', 'test-output/execution.json'];
+    assert.match(invoke([...args, '--arm', 'A']), /PLAN ONLY/);
+    assert.throws(() => invoke([...args, '--arm', 'B', '--run']), error => {
+      assert.match(error.stderr, /preflight requires --arm matching one of: A/);
+      assert.doesNotMatch(error.stderr, /Network forbidden/);
+      return true;
+    });
+    assert.throws(() => invoke([...args, '--arm', 'A', '--preflight-only']), error => {
+      assert.match(error.stderr, /unable to open database/i);
+      assert.match(error.stderr, /no-config\.db/);
+      assert.doesNotMatch(error.stderr, /Network forbidden/);
+      return true;
+    });
+    assert.equal(existsSync(join(outputDir, 'a.jsonl')), false);
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('shipped paired template remains valid without touching historical output paths', () => {
+  const root = join(here, '..', '..');
+  const templateRel = 'scripts/diag/model-upgrade-pilot/preflight-manifest.template.json';
+  const templatePath = join(root, templateRel);
+  const template = JSON.parse(readFileSync(templatePath, 'utf8'));
+  const arms = structuredClone(template.arms);
+  arms.B.activeConfigs['pipeline/default'] = '6'.repeat(64);
+  const manifest = {
+    schemaVersion: '1.0', planId: template.planId, approvedCommit: 'a'.repeat(40), requireClean: true,
+    template: { path: templateRel, sha256: sha256File(templatePath) },
+    input: template.input,
+    artifacts: Object.fromEntries(template.artifactPaths.map(file => [file, sha256File(join(root, file))])),
+    runPolicy: template.runPolicy, arms,
+  };
+  assert.doesNotThrow(() => validateExecutionManifest(manifest, root));
 });
 
 test('active and finished-job preflights enforce config and commit provenance', () => {
@@ -259,43 +394,19 @@ async function startFakeApi(t, { submit = () => ({}), poll }) {
   return { url: `http://127.0.0.1:${server.address().port}`, submissions };
 }
 
-function currentExecutionManifest() {
-  const root = join(here, '..', '..');
-  const templateRel = 'scripts/diag/model-upgrade-pilot/preflight-manifest.template.json';
-  const templatePath = join(root, templateRel);
-  const template = JSON.parse(readFileSync(templatePath, 'utf8'));
-  const arms = structuredClone(template.arms);
-  arms.B.activeConfigs['pipeline/default'] = '6'.repeat(64);
-  return {
-    schemaVersion: '1.0',
-    planId: template.planId,
-    approvedCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-    requireClean: true,
-    template: { path: templateRel, sha256: sha256File(templatePath) },
-    input: template.input,
-    artifacts: Object.fromEntries(template.artifactPaths.map((file) => [file, sha256File(join(root, file))])),
-    runPolicy: template.runPolicy,
-    arms,
-  };
-}
-
-function runControlledFailure(t, apiUrl, { n, populateOutput = false }) {
-  const root = join(here, '..', '..');
-  const dir = mkdtempSync(join(tmpdir(), 'verdict-controlled-'));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const manifest = currentExecutionManifest();
-  const manifestFile = join(dir, 'execution.json');
+function runControlledFailure(t, apiUrl, { n, populateOutput = false, singleArm = false }) {
+  const { root, manifest } = preflightFixture({ singleArm });
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const manifestFile = join(root, 'test-output/execution.json');
   json(manifestFile, manifest);
   const output = join(root, manifest.arms.A.outputPath);
-  if (existsSync(output)) throw new Error(`test requires absent pilot output: ${output}`);
   if (populateOutput) {
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, 'existing\n');
-    t.after(() => rmSync(output, { force: true }));
   }
   const env = { ...process.env, FH_API_URL: apiUrl, FH_JOB_TIMEOUT_MS: '200', FH_DB_PATH: dbPath };
   const args = [
-    script,
+    join(root, 'scripts/diag/verdict-stability-batch.cjs'),
     '--inputs', join(root, manifest.input.path),
     '--n', String(n),
     '--preflight', manifestFile,
@@ -313,21 +424,23 @@ function runControlledFailure(t, apiUrl, { n, populateOutput = false }) {
   });
 }
 
-test('controlled preflight rejects repeated counts before any submission', async (t) => {
+for (const singleArm of [false, true]) {
+test(`controlled preflight rejects repeated counts before any submission (${singleArm ? 'single' : 'paired'})`, async (t) => {
   const api = await startFakeApi(t, { poll: () => ({ status: 'SUCCEEDED', progress: 100 }) });
-  const result = await runControlledFailure(t, api.url, { n: 2 });
+  const result = await runControlledFailure(t, api.url, { n: 2, singleArm });
   assert.notEqual(result.code, 0, result.output);
   assert.match(result.output, /authorizes exactly 1 run/);
   assert.equal(api.submissions.length, 0);
 });
 
-test('controlled preflight rejects a populated arm output before any submission', async (t) => {
+test(`controlled preflight rejects a populated arm output before any submission (${singleArm ? 'single' : 'paired'})`, async (t) => {
   const api = await startFakeApi(t, { poll: () => ({ status: 'SUCCEEDED', progress: 100 }) });
-  const result = await runControlledFailure(t, api.url, { n: 1, populateOutput: true });
+  const result = await runControlledFailure(t, api.url, { n: 1, populateOutput: true, singleArm });
   assert.notEqual(result.code, 0, result.output);
   assert.match(result.output, /output already exists/);
   assert.equal(api.submissions.length, 0);
 });
+}
 
 // Two inputs x 2 runs, so a stop must end both the run loop and the input loop.
 function runBatch(t, apiUrl) {
