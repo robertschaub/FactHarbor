@@ -2,7 +2,7 @@ import { basename, dirname } from "node:path";
 
 import { PATHS, toRepoRelativePath } from "../utils/paths.mjs";
 import { extractSections } from "../utils/sections.mjs";
-import { listFilesRecursive, readTextFile } from "../utils/fs.mjs";
+import { listFilesRecursive, listTrackedFiles, readTextFile } from "../utils/fs.mjs";
 
 function parseFrontmatter(text) {
   if (!text.startsWith("---")) {
@@ -66,6 +66,8 @@ function parseSkillFile(skillFilePath) {
 }
 
 export function loadSkillEntries() {
-  const skillFiles = listFilesRecursive(PATHS.claudeSkillsDir, (path) => path.endsWith("SKILL.md"));
+  const tracked = new Set(listTrackedFiles());
+  const skillFiles = listFilesRecursive(PATHS.claudeSkillsDir, (path) =>
+    path.endsWith("SKILL.md") && tracked.has(toRepoRelativePath(path)));
   return skillFiles.map(parseSkillFile).sort((left, right) => left.name.localeCompare(right.name));
 }

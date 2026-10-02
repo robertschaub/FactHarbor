@@ -1,6 +1,6 @@
 import { PATHS, toRepoRelativePath } from "../utils/paths.mjs";
 import { extractSectionText } from "../utils/sections.mjs";
-import { listFilesRecursive, readTextFile } from "../utils/fs.mjs";
+import { listFilesRecursive, listTrackedFiles, readTextFile } from "../utils/fs.mjs";
 
 export function normalizeRoleKey(value) {
   return String(value ?? "")
@@ -28,8 +28,7 @@ function parseRequiredReading(sectionText) {
     .map(([document, why]) => ({ document, why }));
 }
 
-function parseRoleLearnings(roleName) {
-  const text = readTextFile(PATHS.roleLearnings);
+function parseRoleLearnings(roleName, text) {
   const section = extractSectionText(text, roleName);
   if (!section) {
     return [];
@@ -51,7 +50,7 @@ function parseRoleLearnings(roleName) {
   });
 }
 
-function parseRoleFile(roleFilePath) {
+function parseRoleFile(roleFilePath, learningsText) {
   const text = readTextFile(roleFilePath);
   const lines = text.split(/\r?\n/);
   const displayName = lines.find((line) => line.startsWith("# "))?.replace(/^# /, "").trim() ?? roleFilePath;
@@ -79,13 +78,17 @@ function parseRoleFile(roleFilePath) {
     requiredReading,
     antiPatterns,
     file: toRepoRelativePath(roleFilePath),
-    learnings: parseRoleLearnings(displayName),
+    learnings: parseRoleLearnings(displayName, learningsText),
   };
 }
 
 export function loadRoleEntries() {
-  const roleFiles = listFilesRecursive(PATHS.rolesDir, (path) => path.endsWith(".md"));
-  return roleFiles.map(parseRoleFile);
+  const tracked = new Set(listTrackedFiles());
+  const roleFiles = listFilesRecursive(PATHS.rolesDir, (path) =>
+    path.endsWith(".md") && tracked.has(toRepoRelativePath(path)));
+  const learningsText = tracked.has(toRepoRelativePath(PATHS.roleLearnings))
+    ? readTextFile(PATHS.roleLearnings) : "";
+  return roleFiles.map((path) => parseRoleFile(path, learningsText));
 }
 
 export function resolveRoleEntry(roleEntries, roleInput) {

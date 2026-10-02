@@ -1,11 +1,12 @@
 import { join } from "node:path";
 
-import { PATHS } from "../utils/paths.mjs";
+import { PATHS, toRepoRelativePath } from "../utils/paths.mjs";
 import {
   fingerprintPaths,
   getFileStatOrNull,
   getGitHead,
   listFilesRecursive,
+  listTrackedFiles,
   pathExists,
   readJsonFile,
   writeJsonAtomic,
@@ -38,12 +39,15 @@ export function writeCacheManifest(manifest) {
 }
 
 export function readCurrentSourceSnapshot(indexes) {
+  const tracked = new Set(listTrackedFiles());
   const handoffFiles = listFilesRecursive(PATHS.handoffsDir, (path) => path.endsWith(".md"));
-  const roleFiles = listFilesRecursive(PATHS.rolesDir, (path) => path.endsWith(".md"));
+  const roleFiles = listFilesRecursive(PATHS.rolesDir, (path) =>
+    path.endsWith(".md") && tracked.has(toRepoRelativePath(path)));
   const policyFiles = listFilesRecursive(PATHS.policiesDir, (path) => path.endsWith(".md"));
   const wipFiles = listFilesRecursive(PATHS.wipDir, (path) => path.endsWith(".md"));
   const developmentFiles = listFilesRecursive(PATHS.developmentDir, (path) => path.endsWith(".md"));
-  const skillFiles = listFilesRecursive(PATHS.claudeSkillsDir, (path) => path.endsWith("SKILL.md"));
+  const skillFiles = listFilesRecursive(PATHS.claudeSkillsDir, (path) =>
+    path.endsWith("SKILL.md") && tracked.has(toRepoRelativePath(path)));
   const stageSourceFiles = [
     PATHS.claimBoundaryPipeline,
     ...listFilesRecursive(PATHS.analyzerDir, (path) => path.endsWith("-stage.ts")),
@@ -59,7 +63,8 @@ export function readCurrentSourceSnapshot(indexes) {
       agentOutputsMtime: getOptionalMtimeIso(PATHS.agentOutputs),
       handoffsDigest: fingerprintIfAny(handoffFiles),
       rolesDigest: fingerprintIfAny(roleFiles),
-      roleLearningsMtime: getOptionalMtimeIso(PATHS.roleLearnings),
+      roleLearningsMtime: tracked.has(toRepoRelativePath(PATHS.roleLearnings))
+        ? getOptionalMtimeIso(PATHS.roleLearnings) : null,
       policiesDigest: fingerprintIfAny(policyFiles),
       selectedWipDigest: fingerprintIfAny(wipFiles),
       developmentDocsDigest: fingerprintIfAny(developmentFiles),
