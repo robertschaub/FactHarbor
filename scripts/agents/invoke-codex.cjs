@@ -14,7 +14,8 @@
  *        [--account <email>] [--packet <file>] [--evidence-dir <dir>] [--label <name>]
  *        [--repo] [--no-preamble] [--quiet]
  *
- *   --model is required: there is no default Codex model. The packet comes from --packet or stdin.
+ *   --model is required: honor the user's choice or select a suitable model under the agent rules.
+ *   The packet comes from --packet or stdin.
  *   Profile "packet" (default): fresh empty temporary working directory, user config ignored,
  *   shell, file, patch and image tools disabled by feature flags, read-only sandbox.
  *   --repo selects profile "repo-read-only": repository root as working directory, shell tool
@@ -107,7 +108,7 @@ function parseArgs(argv) {
     args[key] = value.trim();
   }
   if (args.help) return args;
-  if (!args.model) throw new UsageError('--model is required. There is no default Codex model; use the model the user selected for this task.');
+  if (!args.model) throw new UsageError('--model is required. Honor the user\'s choice or select a suitable model under the agent rules.');
   if (args.effort && !EFFORTS.includes(args.effort)) throw new UsageError(`--effort must be one of ${EFFORTS.join(', ')}.`);
   args.label = args.label.replace(/[^A-Za-z0-9._-]+/g, '-').slice(0, 40) || 'review';
   return args;
