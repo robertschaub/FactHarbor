@@ -49,6 +49,36 @@ Use stable node identifiers without spaces, quote labels with punctuation, and v
 
 Inspect diagrams at desktop and narrow widths. The website provides fit-width, 100% and full-size controls for detailed figures. Keep text legible without relying on color alone. Unique small diagrams may use fenced Mermaid where both target renderers support them; shared figures should use the canonical assets.
 
+### Mermaid ERD syntax
+
+Use a type and attribute name, followed by an optional key marker and quoted comment. `PK`, `FK` and `UK` are valid separate key markers. Existing figures also use names such as `id_PK`; these render as attribute names, without the separate key annotation. Keep pinned source/render pairs unchanged unless the figure itself is being revised. Use underscores inside multiword identifiers, and quoted comments for explanatory text or ranges.
+
+```mermaid
+erDiagram
+    RECORD ||--o{ REFERENCE : has
+    RECORD {
+        string id PK
+        string title
+    }
+    REFERENCE {
+        string id PK
+        string record_id FK
+        number score "0 to 100"
+    }
+```
+
+See the [Mermaid ERD syntax reference](https://mermaid.js.org/syntax/entityRelationshipDiagram.html#attribute-keys-and-comments). Validate with the repository's pinned renderer, then inspect the SVG and its labels.
+
+## Working records
+
+Start with the [contribution scope](../../CONTRIBUTING.md#project-state-and-change-authority) and the task's assigned status/backlog, resolved through [root guidance](../../AGENTS.md#current-implementation). Keep intentionally public task records in `Docs/WIP/` only within their approved scope. [Captain Quality Expectations](../AGENTS/Captain_Quality_Expectations.md) and its JSON companions define the quality contract.
+
+For an authorized public implementation task, create a concise working record only when it is needed to make the change reviewable. State the current symptom or objective, scope, governing decisions, verification and unresolved questions. Use public sources and the task's explicitly supplied references; access never grants disclosure permission.
+
+Do not recreate superseded investigations, detailed experiment histories or speculative design collections in `Docs/WIP/` by default. Preserve operative findings and open decisions in their appropriate current contract before retiring a record, using the authorized preservation scope. A missing historic record is not evidence of a solved issue or permission to restart held work.
+
+Completed work follows the [handoff protocol](../AGENTS/Policies/Handoff_Protocol.md), not an accumulating WIP log. Public build and contribution paths must remain self-contained.
+
 ## Maintenance
 
 Use `/doc-guard` before substantial edits and `/docs-update` when links, status or navigation need reconciliation. Preserve open work and operative rules before retiring a document. Retirement and preservation follow the current task's authorized scope; routine maintenance does not create additional history collections or destination catalogs. Rebuild the relevant public index once as the integrator, then inspect its diff.

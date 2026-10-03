@@ -29,7 +29,7 @@ records have an explicit disposition, and the three status documents are up to d
 
 Resolve the assigned status collection using root AGENTS.md before reading or writing its backlog/status records. Missing access does not authorize a replacement public queue. Read relevant sections of these references for the requested WIP scope:
 
-1. `Docs/WIP/README.md` — current public task and preservation guidance
+1. `Docs/DEVELOPMENT/Documentation.md#working-records` — current public task and preservation guidance
 2. the assigned backlog — current backlog items
 3. the assigned current-status record — live system status and recent changes
 4. `Docs/DEVELOPMENT/Documentation.md` — preservation and maintenance boundaries
@@ -54,10 +54,12 @@ The base procedure gives the underlying classification mechanics. This skill ext
 ## Step 1 — Snapshot the WIP directory
 
 ```bash
-find Docs/WIP -maxdepth 1 -name "*.md" ! -name "README.md" | sort
+if [ -d Docs/WIP ]; then
+  find Docs/WIP -maxdepth 1 -name "*.md" ! -name "README.md" | sort
+fi
 ```
 
-This is your work-list. Do not process `README.md`.
+This is your work-list. An absent directory has no public WIP records to process; still consult the assigned collection. If a README exists as a record index, reconcile its links rather than classifying it as a work item.
 
 ---
 
@@ -176,8 +178,8 @@ Routine consolidation does not create additional history collections, destinatio
 
 ### STILL ACTIVE → Keep as-is
 
-Confirm the file is listed correctly in `Docs/WIP/README.md`. If it is missing from README,
-add it to the appropriate section.
+Confirm the file is listed correctly in the assigned WIP registry or backlog. Repair missing
+entries there; do not create a separate public index when the assigned collection already provides discovery.
 
 ### STALE → Flag, do not archive
 
@@ -195,7 +197,7 @@ Update the sections that already exist in the assigned maintained documents:
 
 - the assigned backlog: preserve every open item, decision gate and unresolved limitation; remove an item only when its disposition is evidenced in the task's authorized record.
 - the assigned current-status record: update current implementation and operating statements. A completed local check does not prove production deployment or general quality.
-- `Docs/WIP/README.md`: keep its current-work guidance and links accurate for the remaining public-safe records.
+- the assigned WIP registry, if present: keep its links accurate for the remaining records. Public working-record guidance lives in `Docs/DEVELOPMENT/Documentation.md#working-records`.
 
 Do not add public cleanup histories, completed-work collections or investigation logs. Full completion evidence uses the task's authorized output location under the handoff protocol.
 
