@@ -1,7 +1,6 @@
 # AGENTS.md
 
-How AI coding agents should operate in the FactHarbor repository.
-Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/AGENTS.md`).
+Agent guidance for all FactHarbor paths; closer `AGENTS.md` specializes it.
 
 ---
 
@@ -37,7 +36,7 @@ All clients must read target-path instructions, even from the root: `apps/web/AG
 
 ## Task authority and review
 
-Use one accountable implementer and proportionate verification. Trivial fixes need no role choreography, mandatory preflight, broad suite or completion file. Independently review material risk, cross-stage or prompt/config changes, security/public surfaces, unclear root cause, repeated failed validation and requested reviews. Resolve findings on evidence, not unanimity or model count.
+Use one accountable implementer and proportionate verification. Trivial fixes need no role ceremony, preflight, broad suite or completion file. Independently review material risk, cross-stage or prompt/config changes, security/public surfaces, unclear root cause, repeated failed validation and requested reviews. Resolve findings on evidence, not unanimity or model count.
 
 **Cross-client model calls:** Codex calling Claude and Claude calling Codex must use the user's explicit current-task model selection. Ask if absent; prior reviews, CLI/config defaults, Fable 5.x and `gpt-6-astra` supply no selection. Never silently substitute on quota/availability changes or switch to an API key. Follow the [Claude subscription procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-claude-code-from-codex) or [Codex subscription procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-codex-from-claude-code) for authentication, bounded access and actual-result verification.
 
@@ -286,14 +285,14 @@ After skill edits, run read-only `node scripts/agents/check-skill-mirrors.mjs`. 
 
 ## Tool Strengths Reference
 
-Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
+Tool choice: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
 
 ---
 
 ## Current implementation
 
-Use current code/configuration for implementation, runtime defaults and model selection. Resolve the task's assigned current-status, backlog and known-issues records through explicit scope or the verified adopted profile, then read that repository's root guidance for their maintained locations. Role and skill references to the **assigned status collection** mean these resolved records, including their current holds. Read them before status-dependent work; if unavailable, report the gap and do not infer that a hold is lifted or recreate the records publicly.
+Use current code/configuration for implementation, defaults and models; UCM controls analysis, environment variables infrastructure. Resolve the **assigned status collection** (current status, backlog, known issues and holds) through task scope or the verified profile, then read its repository guidance before status-dependent work. If unavailable, report the gap; never lift holds or recreate records publicly.
 
-Codex, Claude Code and Gemini share this routing through root guidance. Existing sessions must reload it before their next status-dependent write; a fresh session avoids stale loaded paths. Public-only contributions use [project state and change authority](CONTRIBUTING.md#project-state-and-change-authority), public quality contracts and the current task scope. Do not treat an adapter snapshot or historical handoff as current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.
+Codex, Claude Code and Gemini use this routing. Reload it before continuing status-dependent writes; fresh sessions avoid stale paths. Adapter snapshots and historical handoffs are not current implementation. Public-only work uses [project state and change authority](CONTRIBUTING.md#project-state-and-change-authority), public quality contracts and task scope.
 
-Contributors without an assigned private home may use the public record paths for intentionally public, public-safe work; uncertain or non-public material stays in the authorized task/chat scope.
+Without a private home, record only intentionally public-safe work in public paths; keep uncertain/non-public material in authorized task/chat scope.
