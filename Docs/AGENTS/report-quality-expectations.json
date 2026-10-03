@@ -122,7 +122,7 @@
       "name": "Evidence language matches intent",
       "category": "evidence-quality",
       "severity": "MEDIUM",
-      "source": "Skill-internal + Docs/ARCHITECTURE/Multilingual_Language_Handling.md",
+      "source": "AGENTS.md#multilingual-robustness-mandatory (principle); operational threshold defined here",
       "description": "Evidence language matches languageIntent.retrievalLanguages. Foreign-jurisdiction evidence on a jurisdiction-specific claim is a known contamination pattern.",
       "structuralCheck": "Let primaryLanguage = languageIntent.retrievalLanguages[] where lane == 'primary' (take first). Let foreignEvidenceCount = count of evidenceItems where sourceLanguage is set AND sourceLanguage != primaryLanguage. Flag iff foreignEvidenceCount / evidenceBalance.total > 0.25 (more than a quarter of evidence from a non-primary lane).",
       "onFail": "Flag MEDIUM in 3c. Cross-reference family.knownOpenIssues for foreign-contamination history.",
