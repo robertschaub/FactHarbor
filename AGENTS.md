@@ -1,94 +1,70 @@
 # AGENTS.md
 
-How AI coding agents should operate in the FactHarbor repository.
-Applies to all paths unless a closer `AGENTS.md` overrides it (e.g., `apps/api/AGENTS.md`).
+Agent guidance for all FactHarbor paths; closer `AGENTS.md` specializes it.
 
 ---
 
 ## Instruction Precedence
 
-Repository instructions remain subordinate to system/developer instructions and the current user task. Within repository guidance, apply this order (highest first):
+System/developer instructions and the current user task govern. Within repository guidance, highest first:
 1. Closest path-specific `AGENTS.md` (e.g., `apps/api/AGENTS.md`)
 2. Repository root `/AGENTS.md`
 3. Active role file in `Docs/AGENTS/Roles/`
 4. `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and other collaboration docs
-5. Tool-specific config wrappers (`GEMINI.md`, `CLAUDE.md`, Copilot/Cursor/Cline rules)
+5. Explicitly task-bound supplementary procedures
+6. Tool-specific config wrappers (`GEMINI.md`, `CLAUDE.md`, Copilot/Cursor/Cline rules)
 
-Nested guidance specializes its area; it does not silently waive root safety or domain invariants. Resolve routine choices within existing task authority; ask the active user only if a material conflict remains.
+Nested guidance and supplementary procedures cannot waive root safety or domain invariants. Resolve routine choices within task authority; ask only for a material unresolved conflict. Instructions for another target repository still govern writes there.
 
 ---
 
 ## Program Constellation
 
-FactHarbor is the public technical infrastructure in a broader research program:
+FactHarbor supplies evidence modelling, contested-claim analysis, reasoning transparency and verifiable reports within [Our AI Charter's research program](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance): a fair, stable, sustainable society using technology responsibly.
 
-> Researching how we can build a fair, stable, and sustainable society that uses new technologies responsibly.
-
-The public project context is described in [Our AI Charter: stewardship and governance](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance). FactHarbor's role is the technical layer: evidence modelling, contested-claim analysis, reasoning transparency, and verifiable reports.
-
-Boundary rules for agents:
-
-- Use the task's authorized repositories and read/write scope. If another is needed, ask once for its name, purpose and read/write access; continue independent work while waiting. Approval persists through task handoffs until changed; do not ask again for the same scope.
-- Approved reads may include private material; access is not disclosure permission. Keep private names/paths, operational records, secrets, personal data and finance/legal/partner records out of this public repository and public artifacts.
-- Public links and dependencies must use public URLs or files, never private repositories, local paths or unpublished operational context.
-- Use MCP only for its identified source; availability grants no authority. If unavailable or unqualified, use authorized direct reads. Ask only for missing scope or disclosure authority.
+- Use authorized repositories and read/write scope. Ask once for any missing repository, purpose and access; continue independent work. Approval persists through handoffs until changed.
+- Access is not disclosure permission. Keep private names/paths, operational records, secrets, personal data and finance/legal/partner records out of public files and artifacts. Public links/dependencies must resolve to public sources.
+- MCP availability supplies no authority. Compare its source checkout/revision with the task; use authorized direct reads if unavailable, stale, mismatched or unqualified.
 
 ---
 
 ## Reading and task routing
 
-Read enough source and surrounding context to understand behavior before editing. Full-file reading is required when the change depends on the whole file, not for every task. For prompt files over 100KB in `apps/web/prompts/`, locate section boundaries and read the target section plus 20 surrounding lines; keep the working set focused even with a large context window.
+Understand source and surrounding behavior before editing; read whole files when the change depends on them. For prompts over 100KB, locate the target section and read it plus 20 surrounding lines.
 
-Before working on any target path, all clients must read the applicable nested AGENTS.md, even when launched from the root: `apps/web/AGENTS.md` for web work and `apps/api/AGENTS.md` for API work. Check for closer instructions along the target path. These supplement the root invariants. Reference architecture/status documents are loaded only when relevant.
+All clients must read target-path instructions, even from the root: `apps/web/AGENTS.md`, `apps/api/AGENTS.md` and any closer AGENTS.md. Load architecture/status references only when relevant.
 
 ## Task authority and review
 
-Use one accountable implementer with proportionate verification. Trivial fixes need no role choreography, mandatory preflight, broad test suite or completion file. Add independent review for materially risky, cross-stage, prompt/config, security or public-surface decisions, unclear root cause, repeated failed validation, or when requested. Resolve findings on evidence; unanimity and model count are not correctness tests.
+Use one accountable implementer and proportionate verification. Trivial fixes need no role ceremony, preflight, broad suite or completion file. Independently review material risk, cross-stage or prompt/config changes, security/public surfaces, unclear root cause, repeated failed validation and requested reviews. Resolve findings on evidence, not unanimity or model count.
 
-**Codex calling Claude:** use the Claude model explicitly specified by the user for the current task. If none is specified, ask before calling; Fable 5.x is not a default, and neither prior reviews nor CLI defaults select a model. Do not silently substitute a model when quota or availability changes. Follow the [Claude Code invocation procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-claude-code-from-codex) for subscription authentication, bounded review access and result verification.
+**Cross-client model calls:** Codex calling Claude and Claude calling Codex must use the user's explicit current-task model selection. Ask if absent; prior reviews, CLI/config defaults, Fable 5.x and `gpt-6-astra` supply no selection. Never silently substitute on quota/availability changes or switch to an API key. Follow the [Claude subscription procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-claude-code-from-codex) or [Codex subscription procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-codex-from-claude-code) for authentication, bounded access and actual-result verification.
 
-**Claude calling Codex:** use the Codex model explicitly specified by the user for the current task. If none is specified, ask before calling; `gpt-6-astra` is not a default, and neither prior reviews nor the `~/.codex/config.toml` model select a model. Do not silently substitute a model or switch to the API key when quota or availability changes. Follow the [Codex invocation procedure](Docs/AGENTS/Policies/Tool_Strengths.md#calling-codex-from-claude-code) for subscription authentication, bounded review access and result verification.
+Push, deployment, live analysis and provider spending require current action/scope authorization; existing authorization persists, but preparation/review supplies none. Ask only for a missing decision or scope.
 
-Pushes, deployments, live analyses, and provider-spending operations require current authorization covering the specific action and scope. Authorization already given in the task remains valid; preparation or review alone does not grant it. Preserve existing authority for reversible work; ask only for a missing decision or scope expansion.
-
-Strict read-only diagnosis uses existing failure output and source reads. If reproduction is needed and authorized, assign diagnosis and reproduction together with explicit writable output/cache/temp paths. Read-only sessions do not run builds, tests, bootstrap/refresh operations or recovery log writers. They return findings and recovery choices in chat for the integrator; writing/validation sessions retain their assigned recovery behavior.
+Strict read-only diagnosis uses existing output/source reads: no builds, tests, bootstrap/refresh or recovery-log writers. Return findings/recovery choices in chat. Authorized reproduction needs an assigned writer with explicit output/cache/temp paths; writing/validation sessions retain their recovery duties.
 
 ---
 
 ## Fundamental Rules
 
 ### Generic by Design
-- **No domain-specific hardcoding.** Code, prompts, and logic must work for ANY topic.
-- **No hardcoded keywords.** No lists like `['bolsonaro', 'trump', 'vaccine']`.
-- **Parameterize, don't specialize.** Use configuration over conditionals.
-- **No new code for removed/replaced things.** If something has been removed, replaced, or renamed (e.g., Monolithic Canonical pipeline [removed], `ExtractedFact` → `EvidenceItem`, `fact` → `statement`), do not extend, reference, or build on it. Use only the current version.
+
+Code, prompts and logic must work for any topic: no domain-specific hardcoding or keyword lists. Parameterize through configuration. Do not extend, reference or build on removed/replaced names or features (e.g. Monolithic Canonical, `ExtractedFact`, `fact`); use current `EvidenceItem`/`statement` and current features.
 
 ### LLM Intelligence (MANDATORY)
 
-All semantic decisions in the analysis codebase must use LLM intelligence: understanding, classifying, scoring, comparing, routing by meaning, entity extraction and semantic matching. Never create deterministic keyword/regex, similarity-heuristic or rule-based NLP substitutes. When existing semantic decision logic is encountered, flag it for LLM replacement; do not extend or optimize it.
+Use LLM intelligence for **all semantic analysis decisions**: understanding, classification, scoring, comparison, meaning-based routing, entity extraction and matching. Never substitute deterministic keywords/regex, similarity heuristics or rule-based NLP. Flag existing semantic heuristics for LLM replacement; do not extend or optimize them.
 
-Keep deterministic structural plumbing: null/empty/format/length checks, schemas/type guards, IDs/hashing/normalization/formatting, retry/timeout/concurrency and routing that does not interpret meaning.
-
-Use intelligence efficiently: batch structured decisions, cache identical/equivalent inputs, use capable lower-cost tiers for simple work, bound prompts/outputs and avoid redundant context/reasoning. Pre-filter trivial validation deterministically.
+Deterministic structural plumbing is allowed: null/empty/format/length checks, schemas/type guards, IDs/hashing/normalization/formatting, retries/timeouts/concurrency and non-semantic routing. Batch structured decisions, cache equivalent inputs, use capable lower-cost tiers for simple work, bound prompts/outputs and avoid redundant reasoning. Pre-filter trivial validation deterministically.
 
 ### Multilingual Robustness (MANDATORY)
-Analysis behavior must be robust across languages (e.g., English, French, German, and others), not just English.
 
-- **No English-only semantic assumptions.** Do not rely on English-specific regex/keywords/word-order rules for analytical decisions.
-- **Meaning over wording, in any language.** Semantic interpretation, equivalence, relevance, and classification must go through LLM intelligence.
-- **Preserve original language.** Do not force translation as a prerequisite for analysis unless explicitly required by the feature.
-- **Test beyond English.** For analysis-affecting changes, include multilingual validation scenarios to confirm input neutrality and stable outcomes across languages.
+Analysis must work across languages, not only English. Semantic interpretation, equivalence, relevance and classification use LLMs, never language-specific regex, keywords or word-order assumptions. Preserve original language; require translation only when the feature explicitly needs it. Include multilingual validation for analysis-affecting changes to verify neutrality and stable behavior.
 
 ### String Usage Boundary (MANDATORY)
-Strings that influence analysis are only allowed in:
-- LLM prompt text
-- Web search text (query construction / provider-facing search strings)
 
-Outside of those two areas, do not use language-dependent strings, keyword lists, or regex phrase matching to make analysis decisions.
-
-All text that goes into LLM prompts or Web search must be managed in UCM (Admin-configurable), not hardcoded inline in code.
-
-Exception: Structural constants are allowed in code (e.g., enum-like labels, schema literals, status/type keys) when they define data contracts rather than analysis meaning.
+Analysis-influencing strings belong only in LLM prompt text or provider-facing web-search text. Outside these, no language-dependent strings, keyword lists or phrase regex may decide analysis meaning. All prompt/search text is UCM-managed and Admin-configurable, never hardcoded inline. Structural constants (enum/schema/status/type keys) are allowed when they define contracts, not analytical meaning.
 
 ### Change Approval Boundary
 This approval rule applies to code, prompts, UCM/configuration, tests, validation plans, and other analysis-affecting changes:
@@ -96,10 +72,11 @@ This approval rule applies to code, prompts, UCM/configuration, tests, validatio
 - **Requires explicit Captain approval:** speculative, trial-and-error, teaching-to-test, or exploratory changes.
 
 ### Analysis Prompt Rules
-These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Prompt edits follow the same approval boundary as code and UCM/configuration changes.
-- **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
-- **Diagnosis is not wording license.** Concrete failing analyses may be used to identify the abstract failure mechanism, but landed prompt changes must be phrased in topic-neutral terms and must not reuse trigger vocabulary merely because it appeared in the analysis that exposed the issue.
-- **Do not enforce** finding ClaimAssessmentBoundaries or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
+
+Pipeline prompts (`apps/web/prompts/`) follow the Change Approval Boundary.
+- Use abstract examples; no test-case terms or teaching-to-test.
+- Diagnosis establishes abstract failure mechanisms, not wording permission: keep fixes topic-neutral; never reuse trigger vocabulary merely because it appeared in a failing analysis.
+- ClaimAssessmentBoundaries and EvidenceScopes must emerge from evidence; never force them with domain terms, dates or regions.
 
 ### Terminology — NEVER Confuse These
 
@@ -143,76 +120,67 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 
 ### Failed-Attempt Recovery
 
-A fix has **failed** when, after your change, a focused test/build fails, a live job regresses on a previously-passing input, **or you or the user judge the result worse than before** — not only red tests.
+A fix **fails** when its focused test/build fails, a live job regresses on a passing input, or you/the user judge it worse—not only on red tests.
 
-**Before your next edit, record and log one line:**
+**Before the next edit**, record:
 `ATTEMPT <n> · symptom: … · last-known-good: <commit/ref> · choice: keep | amend | revert | quarantine | add — because …`
-then persist it in an assigned writing session: `node scripts/hooks/revert-classify.cjs --choice <choice> --symptom "<symptom>" --baseline <ref>`. A read-only reviewer returns the line in chat for the integrator instead of writing recovery state.
 
-- **Name the last-known-good** (state before this fix chain began). Revert = restore those hunks with `Edit`; never `git reset`/`checkout` (blocked by the safety hook).
-- **Revert and amend are first-class options, not fallbacks.** Undoing recent work is not a failure; it is often the lowest-net-complexity correction. State why the rejected options are worse.
-- **Do not stack a new mechanism on a change that just failed** unless you state why amending or reverting it cannot carry the behavior.
-- **Broaden scope only with a verifier-backed reason** — state what the failed validation showed and why the wider scope is required.
-- **If ownership is unclear, ask Captain before reverting** another agent's or the user's work.
+An assigned writer persists it with `node scripts/hooks/revert-classify.cjs --choice <choice> --symptom "<symptom>" --baseline <ref>`; read-only reviewers return it in chat for the integrator.
 
-This is **bounded backtracking** — weigh undoing as seriously as adding. It is *not* blanket rollback-first.
+Name the baseline before the fix chain. Restore hunks with Edit, never `git reset`/`checkout` (safety-hook blocked). Weigh revert/amend as first-class options alongside adding; explain rejected options. Do not stack mechanisms on a failed change without showing why amend/revert cannot carry the behavior. Scope expansion needs verifier-backed evidence. Ask Captain before reverting work with unclear ownership. This is bounded backtracking, not blanket rollback-first.
 
-The **`/debt-guard` skill** (`.claude/skills/debt-guard/SKILL.md`) is the activation wrapper for this rule and §Bugfix Complexity Heuristic: it fires automatically on bugfix/recovery tasks and requires a written `DEBT-GUARD` block before each edit attempt. (Restored 2026-06-12 — slim version — after pile-up recurrence; rehome carve-out exercised with Captain approval.)
+`/debt-guard` (`.claude/skills/debt-guard/SKILL.md`) activates this rule and Bugfix Complexity Heuristic automatically for bugfix/recovery; emit its DEBT-GUARD block before **each** edit attempt.
 
 ### Bugfix Complexity Heuristic
 
-For bugfixes, regressions, failing tests/builds, runtime defects, review findings, and failed-validation recovery, keep the repair path explicit but lightweight before editing:
+Before bugfix/regression, test/build, runtime, review-finding or recovery edits:
 - Identify the existing mechanism that should carry the behavior.
-- Prefer amending, deleting, or quarantining obsolete or contradicted code before adding a parallel path.
-- If adding a mechanism, state why existing mechanisms cannot carry it and what removes or merges it later.
-- State the verifier and expected net mechanism impact.
+- Prefer amend/delete/quarantine of obsolete or contradicted code before a parallel path.
+- A new mechanism requires why existing ones cannot suffice and its removal/merge trigger.
+- Every repair states its verifier and expected net mechanism impact.
 
-Trivial single-site fixes can satisfy this as a short note. Unclear root cause, cross-stage behavior, prompt/config changes, or repeated failed validation need a written comparison and reviewer/debate only when that could change the implementation path.
+A trivial single-site fix needs only a short note. Unclear causes, cross-stage or prompt/config changes and repeated failure need a written comparison; use reviewer/debate when it could change the repair path.
 
 ### Pipeline Integrity
-- **No stage skipping:** Understand → Research → Verdict (all required)
-- **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
-- **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
-- **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
+
+- **Required stages:** Understand → Research → Verdict; no skipping.
+- Every verdict cites supporting/opposing evidence; Gate 1 (claim validation) and Gate 4 (confidence) are mandatory.
+- Only documented counter-evidence makes a challenge "contested" and may alter truth/confidence. Unsupported opinion, criticism or denial is "doubted" and MUST NOT reduce either. Applies to challenger outputs, aggregation and future contestation logic. Current implementation: `aggregation.ts` `contestationWeights` (opinion=1.0, disputed=0.7, established=0.5) and verdict-prompt `factualBasis` classification.
 
 ### Report Quality Baseline Comparison
 
-When judging analysis report quality — including `/report-review`, manual job review, regression diagnosis, "best report" selection, or release readiness — compare the target report against:
-- `Docs/AGENTS/Captain_Quality_Expectations.md` for Captain intent and best comparator report IDs.
-- `Docs/AGENTS/benchmark-expectations.json` for canonical inputs, accepted verdict/truth/confidence bands, latest verified observations, and rerun priority.
-- `Docs/AGENTS/report-quality-expectations.json` for Q-code structural checks.
-- The best usable exact/family comparator reports listed in `Captain_Quality_Expectations.md`, when available.
+For report reviews, regression diagnosis, best-report selection and release readiness, compare against:
+- `Docs/AGENTS/Captain_Quality_Expectations.md`: Captain intent and best usable exact/family comparator IDs/reports.
+- `Docs/AGENTS/benchmark-expectations.json`: canonical inputs, accepted verdict/truth/confidence bands, latest observations and rerun priority.
+- `Docs/AGENTS/report-quality-expectations.json`: Q-code structural checks.
 
-State whether each comparator is exact vs. variant, local vs. deployed, and current-stack vs. historical. Do not judge a report in isolation when a Captain expectation or comparator exists. If no best comparator exists, state that explicitly and do not invent one from nearby jobs.
+Label comparators exact/variant, local/deployed and current-stack/historical. Never judge in isolation when expectations/comparators exist. Explicitly report a missing best comparator; do not invent one from nearby jobs.
 
 ### Report Quality & Event Communication
 
-Before emitting/displaying a warning, ask: **Would the verdict be materially different without this event?** No: silent/info (admin only); maybe: warning at most; yes: error/severe. Severity measures verdict impact, not internal event type. Register every warning in `warning-display.ts`; do not classify inline in UI components.
+Severity measures verdict impact, not internal event type. Before warning, ask whether the verdict would materially differ without the event: no → silent/info (admin only); maybe → warning at most; yes → error/severe. Register warnings in `warning-display.ts`, never classify inline in UI components.
 
 | Severity | Impact and visibility |
 |---|---|
-| silent | None; recovered; emit no warning |
-| info | None, but worth administrator tuning; admin only |
-| warning | Noticeable, same verdict direction/confidence tier; user sees a low-emphasis caveat |
-| error | Verdict direction or confidence tier may change; prominently visible to users |
-| severe | No trustworthy report; error plus `report_damaged`, blocking user notice |
+| silent | None/recovered; no warning |
+| info | No verdict impact; useful administrator tuning only |
+| warning | Noticeable; same verdict direction/confidence tier; low-emphasis user caveat |
+| error | Direction/confidence tier may change; prominent user warning |
+| severe | Untrustworthy report; error plus `report_damaged` and blocking notice |
 
-- Routine retries, fallbacks, cache misses and defaults are silent/info. Fully recovered fallbacks are silent, not even info. Only surface aggregated degradation that affects quality.
-- System failures we could fix (source-provider collapse, verdict crash, budget exhaustion) must surface at warning/error/severe according to impact. Do not hide a real quality signal.
-- Analytical reality (sparse/inaccessible evidence, paywalls, 404s) is info/warning, never error/severe merely because evidence is scarce. `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation` follow that distinction.
-- Internal post-hoc diagnostics and heuristic consistency disagreements are info/admin-only; they do not establish a wrong verdict.
-- Escalate to warning when degradation exceeds ordinary run variance and a reasonable user needs to know; to error when direction/confidence tier could change; to severe when no trustworthy report remains.
-- Degradation that genuinely reduces report quality, including inadequate evidence, failed verdict generation, source-acquisition collapse or budget exhaustion, must remain visible at its appropriate level. Do not suppress it or hide it as admin-only. Frequent irrelevant warnings and missing material warnings both erode trust.
+Routine retries, fallbacks, cache misses and defaults are silent/info; **fully recovered fallbacks are silent**, never info. Surface aggregated quality degradation. Internal post-hoc diagnostics/heuristic disagreement are admin info, not proof of wrong verdict.
+
+Sparse/inaccessible evidence, paywalls/404s are analytical reality: info/warning, never error/severe merely for scarcity. This applies to `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation`. Fixable failures (provider collapse, verdict crash, budget exhaustion) must surface at warning/error/severe according to impact.
+
+Warn when degradation exceeds ordinary variance and users need to know; error when direction/confidence tier could change; severe when trust is lost. Keep genuine quality loss—including inadequate evidence, verdict failure, source-acquisition collapse or exhausted budget—visible at its appropriate level, never suppress it as admin-only. Avoid both irrelevant warnings and missing material ones.
 
 ### Configuration Placement
 
-- **UCM:** analysis behavior/quality tunables that may need adjustment without redeployment: thresholds, weights, limits, model selection, prompts, search and source-reliability settings. Default to UCM when unsure.
-- **Environment:** infrastructure, secrets, paths and startup concurrency (`FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, database paths).
-- **Code:** structural constants and fixed data contracts, such as status/type keys, API paths, field names, the fixed seven-band scale and mathematical constants.
+- **UCM:** redeployment-independent analysis/quality tunables—thresholds, weights, limits, models, prompts, search and source reliability. Default here when unsure.
+- **Environment:** infrastructure/secrets/paths/startup concurrency (`FH_ADMIN_KEY`, `FH_API_BASE_URL`, `FH_RUNNER_MAX_CONCURRENCY`, database paths).
+- **Code:** structural/fixed contracts—status/type keys, API paths, fields, seven-band scale, mathematical constants.
 
-File-backed `apps/web/configs/*.default.json` defaults are authoritative. Keep `config-schemas.ts` defaults synchronized; `apps/web/test/unit/lib/config-drift.test.ts` checks drift. All tunables must appear in JSON for Admin comparison/editing. UCM implementation: `apps/web/src/lib/config-storage.ts`; relevant manuals are mapped in Collaboration Rules §1.2.
-
----
+`apps/web/configs/*.default.json` is authoritative; synchronize `config-schemas.ts` defaults (checked by `apps/web/test/unit/lib/config-drift.test.ts`). Every tunable must appear in JSON for Admin comparison/editing. UCM: `apps/web/src/lib/config-storage.ts`; manuals: Collaboration Rules §1.2.
 
 ## Architecture references
 
@@ -222,120 +190,109 @@ The web UI/runner is under `apps/web/`; the ASP.NET API and SQLite persistence a
 
 ## Commands
 
-Run from repository root unless noted; these commands remain subject to task/state authorization.
+Run from the repository root, within task/state authority.
 
 | Action | Command |
 |---|---|
 | Quick start | `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1` |
 | Restart / stop local services | `./scripts/restart-clean.ps1` / `./scripts/stop-services.ps1` |
 | Web build | `npm -w apps/web run build` |
-| Default tests | `npm test` — excludes designated real-LLM suites; inspect focused tests' state/service needs |
+| Default tests | `npm test` (excludes designated real-LLM suites) |
 | Full index rebuild (integrator) | `npm run index` |
 | Validation batch / compare | `npm run validate:run -- <batchLabel>` / `npm run validate:compare -- <oldDir> <newDir>` |
 
-Dev/API commands are in their nested AGENTS.md. Lint is currently a placeholder, not verification evidence. Validation writes summaries under `test-output/validation/` and may submit live jobs.
+Nested AGENTS.md lists web/API commands. Lint is a placeholder, not verification. Validation writes `test-output/validation/` and may submit live jobs. Quick start installs dependencies/starts services; web `postbuild` can reseed UCM. Index builders, knowledge bootstrap/refresh and Git hooks may write generated files/caches. Inspect effects and assign disposable state before restricted checks. Service stop/restart requires verified ownership; investigate incomplete shutdown before restarting.
 
-Quick start installs dependencies and starts services. The web build's `postbuild` can reseed UCM state. Index builders, knowledge bootstrap/refresh and installed Git hooks can write generated files or caches. Inspect their current effects and assign disposable output/state before restricted checks; a build or refresh is not read-only. Service stop/restart refuses unverified ownership; inspect an incomplete shutdown before starting another service.
-
-Documentation publication is triggered by pushing `main`; CI owns `gh-pages`. Never push to `gh-pages` directly. An authorized docs redeploy can use `gh workflow run "Deploy Docs to GitHub Pages" --ref main`. A local commit is not deployment authority.
+Pushing `main` publishes documentation; CI owns `gh-pages`, never push there directly. Authorized redeploy: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`. Local commit is not deployment authority.
 
 ### Test Cost Warning
 
-Select focused offline checks for the actual change. `npm test` excludes the designated real-LLM suites, but individual local tests can still contact services or write state: inspect the selected commands for restricted assignments. Broad suites/builds are not prerequisites for documentation edits.
-
-Calibration lanes, promptfoo evaluations and live validation can call real providers. Run them only under the current action/scope authorization above; being a quality-affecting change or loading a skill does not supply that authority.
+Use focused offline checks. Tests may still contact services/write state; inspect them for restricted assignments. Docs edits need no broad suite/build. Calibration, promptfoo and live validation can call providers: require current action/scope authority, never infer it from a quality change or skill.
 
 ### Live Job Submission Discipline
 
-When submitting **live analysis jobs or validation batches** after changing source code, prompts, or config behavior:
-- **Commit first** before submitting a batch of jobs so each job records an associated git revision/hash that maps to the actual source under test.
-- **Refresh the runtime before submission.** If the change requires a process reload to take effect, restart the affected services first. If the change is prompt/config-only and reseeding is sufficient, reseed before submitting jobs.
-- **Do not submit live jobs against stale processes or stale prompt/config state.** Verification runs must use the updated source/prompt/config actually intended for evaluation.
-- **Fail-fast on clear regression (cost rule).** When validating a change, if the first **3 jobs** already show a *clear* regression (a previously-passing guard input now fails, or the target metric is unambiguously worse), **stop the batch** — do not spend further jobs to confirm what is already clear. Revert/quarantine the change and classify the attempt (see *Failed-Attempt Recovery*). This does NOT apply to inconclusive or variance-dominated results, where more samples may be needed for signal.
+After source/prompt/config changes, **commit before submitting live jobs/batches** so recorded Git identity maps to tested source. Restart affected processes or reseed prompt/config when sufficient before submission; never validate stale runtime/state.
+
+If the first **3 jobs** clearly regress (a passing guard fails or the target metric unambiguously worsens), stop the batch, revert/quarantine and classify the attempt under Failed-Attempt Recovery. Do not spend to reconfirm a clear regression. Inconclusive or variance-dominated results may need more samples.
 
 ---
 
 ## Documentation sources
 
-Read [Documentation guidance](Docs/DEVELOPMENT/Documentation.md) for Markdown authoring and diagram verification. Website pages live in `Docs/site/`; contributor and agent references retain their documented repository paths.
+Read [Documentation guidance](Docs/DEVELOPMENT/Documentation.md); website pages use `Docs/site/`. Each edition has one editable authority. Public method, interfaces, current issues and contribution contracts remain self-contained, with source/tests/operative configuration here.
 
-Keep public documentation focused on the method, supported interfaces, current issues and contribution contracts. Use the current task or a verified, human-adopted workspace profile for cross-repository scope. Durable working notes, detailed investigations, handoffs and unpublished prototypes use their assigned non-public record home unless clearly authorized as public. Existing public source, tests, operative configuration and contribution contracts stay here. A public cwd or a missing confidentiality marker does not select a public destination. If an assigned record home is unavailable, preserve permitted pending work outside this checkout and report the persistence gap; never recreate a private collection here.
+Cross-repository scope comes from the task or verified human-adopted profile. Durable notes, investigations, handoffs and unpublished prototypes use the assigned non-public home unless clearly authorized as public. Public cwd or absent confidentiality labels never select disclosure. If that home is unavailable, preserve permitted pending work outside this checkout and report the gap; never recreate private collections here. Public task records may retain concise public-safe implementation/review evidence. Missing history is not closure or permission to restart held work.
 
-Select the primary checkout for the main deliverable. Explicitly read root and nested instructions for every target repository, run commands with an explicit working directory, and verify each tool's served source/revision. Additional-directory access does not load all instructions, hooks or skills; if required write controls cannot be verified, continue that write in a fresh target-primary session. A code worktree does not isolate a paired documentation checkout. Keep separate revisions and one owner per shared record. Use a task-supplied authorized record for full research, experimental histories and non-public work; do not recreate those collections here by default. Public task records may contain the concise evidence needed to implement and review a public change. Missing historical context is a gap, never evidence of closure or permission to restart held work.
+Choose primary checkout for the main deliverable; read every target's root/nested instructions, use explicit command cwd and verify tool source/revision. Additional-directory access does not activate all instructions/hooks/skills. Unverified required write controls require a fresh qualified target-primary session. A code worktree does not isolate paired docs: record separate revisions and one shared-record owner. Use only authorized task references; access grants no disclosure permission.
 
-Each edition has one authoritative editable source. Use this checkout's public contracts for implementation, and only task-specific material explicitly supplied within the current access scope. Access never grants disclosure permission.
 ---
 
 ## Documentation Discipline
 
-Use `/doc-guard` before adding or substantially rewriting Markdown, explanatory sections, FAQs/templates, or reviewing documentation clutter. Write its DOC-GUARD block: reader, need, existing home, chosen option, rejected path, lean test, readability and whether `/docs-update` is needed. Prefer tightening, merging, moving or deleting before adding; preserve semantics, sources and normative controls. Use `/docs-update` when status, indexes, links, backlog/changelog or handoff references need reconciliation.
+Use `/doc-guard` before adding or substantially rewriting Markdown, explanatory sections, FAQs/templates or clutter reviews. Its DOC-GUARD block names reader, need, existing home, choice, rejected path, lean/readability checks and `/docs-update` need. Prefer tighten/merge/move/delete; preserve semantics, sources and controls. Use `/docs-update` to reconcile status, indexes, links, backlog/changelog or handoffs.
 
 ---
 
 ## Safety
 
-- Do not access production systems or real customer data
-- Do not change secrets/credentials or commit them
-- Do not modify generated files or dependencies (e.g., `node_modules`) unless requested
-- Avoid destructive git commands unless explicitly asked
-- Do not overwrite `apps/api/factharbor.db` unless asked
-- Platform is Windows. Use PowerShell-compatible commands.
-- Claude hook coverage is client/version-dependent. A repository note dated 2026-05-30 reported main-session-only coverage; this is not a verified claim about every installed version. Inspect the effective supported controls for each assigned session and record unknowns. Prompt instructions, model strength, role names and task worktrees are not filesystem isolation. See `CLAUDE.md` for client-specific guidance.
-- **Destructive or irreversible operations are main-session-only and MUST NEVER be delegated to a subagent or Workflow agent** — specifically `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes, and expensive test runs (the exact set the hook guards). Read-only fan-out (e.g., the Explore agent) is inherently safe.
+- No production-system or real-customer-data access.
+- Do not change or commit secrets/credentials.
+- Do not modify generated files/dependencies (e.g. `node_modules`) unless requested.
+- Destructive Git commands and overwriting `apps/api/factharbor.db` require explicit authorization.
+- Windows: use PowerShell-compatible commands.
+- Verify each session's supported controls; record unknowns. The 2026-05-30 note about Claude main-session-only hooks is historical, not proof for the current client/version. Instructions, models, roles and worktrees are not filesystem isolation; see `CLAUDE.md`.
+- **Main-session only; never delegate** destructive/irreversible operations: `git reset --hard`, `git push --force`, `git clean -f`, `git checkout -- .`, `factharbor.db` writes and expensive tests (the guarded set). Read-only fan-out is allowed.
 
 ### Scoped Task Worktrees
 
-Ordinary solo work retains the direct-to-`main` norm. During concurrent writing, use scoped task branches/worktrees with explicit file ownership and one designated integrator for shared writes and integration; follow [Collaboration Rules §4.3](Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing). Restricted reviewers return findings in chat. For the adopted instruction-system rollout, every concurrent writer uses the restricted-writer return-edits definition in Collaboration Rules §4.3; the integrator alone performs Git mutations and shared writes. The designation is a handoff model, not evidence of verified restrictions. Ordinary authorized worker-commit modes outside that rollout remain available. Documentation deployment remains triggered from `main` as described in §Commands.
+Solo work normally uses `main`. Concurrent writers use scoped branches/worktrees, explicit file ownership and one integrator under [Collaboration Rules §4.3](Docs/AGENTS/Multi_Agent_Collaboration_Rules.md#43-concurrent-editing). Restricted reviewers return findings in chat. During the adopted instruction-system rollout, concurrent writers return edits; only the integrator mutates Git/shared files. That designation does not prove restrictions. Other authorized worker-commit modes remain available. Deployment follows §Commands.
 
 ---
 
 ## Agent Handoff & Exchange Protocol (MANDATORY)
 
-Use `Docs/AGENTS/Policies/Handoff_Protocol.md` when transferring work or preserving significant completion evidence. It owns role activation, output tiers and the incoming-role checklist.
+Use `Docs/AGENTS/Policies/Handoff_Protocol.md` for transfers and significant completion evidence; it owns role activation, output tiers and incoming-role checks. Read the assigned role and relevant learnings only.
 
-- For relevant non-trivial tasks, query the handoff index or the read-only knowledge preflight to locate useful prior work; skip it when history adds no value. Suggestions are advisory, and historical matches may be superseded by current decisions. Bootstrap/refresh are explicit cache mutations, reserved for an assigned writer/integrator.
-- For an assigned role, read its role file and relevant learnings; do not load unrelated reference collections.
-- Trivial work closes in chat. Reuse an existing task record when it preserves needed evidence; create a handoff only when continuity needs it. Restricted reviewers return findings, warnings, learnings and reviewed-content evidence in chat for the integrator to record.
-- Append to `Agent_Outputs.md` when an output entry is needed; do not overwrite prior entries. `Docs/WIP/` is not a completion-output home.
+For non-trivial work where history helps, query the relevant handoff index/read-only knowledge preflight. Matches are advisory and may be superseded; empty public results do not establish absence of authorized task records. Only an assigned writer/integrator may bootstrap/refresh caches.
+
+Trivial work closes in chat; reuse existing task records, creating a handoff only for continuity. Restricted reviewers return findings, warnings, learnings and reviewed-content evidence in chat. Append any needed `Agent_Outputs.md` entry; never overwrite history or use `Docs/WIP/` for completion outputs.
+
+---
 
 ## Generated indexes (do not edit manually)
 
-The integrator owns index writes. Automatic PostToolUse Write/Edit rebuilding is removed; existing index builders and Git hooks remain. Inspect effective installed hooks and their worktree-local outputs before integration, and review generated changes.
+The integrator serializes index writes. Automatic PostToolUse Write/Edit rebuilds are removed; builders/Git hooks remain. Inspect effective hooks and checkout-local outputs before integration; review generated diffs. Workers report update needs without running builders or changing shared settings.
 
-During concurrent writing, the designated integrator serializes shared-index rebuilds and updates (§Scoped Task Worktrees); workers report needed updates instead of running them.
+| Index | File | Use |
+|---|---|---|
+| Handoffs by role/topic | `Docs/AGENTS/index/handoff-index.json` | Task history only; NEVER code locations (use source search) |
+| Stage → file → function | `Docs/AGENTS/index/stage-map.json` | Stage implementation |
+| LLM task → model tier | `Docs/AGENTS/index/stage-manifest.json` | Model tier lookup |
 
-| Index | File | Use for |
-|-------|------|---------|
-| All handoffs — searchable by role + topic | `Docs/AGENTS/index/handoff-index.json` | Finding relevant prior work without manually scanning available task records. **Agent task history ONLY — NEVER query for source code locations; use grep for that.** |
-| Pipeline stage → file → function | `Docs/AGENTS/index/stage-map.json` | Locating which file implements a given stage |
-| LLM task → model tier | `Docs/AGENTS/index/stage-manifest.json` | Model tier lookups without grepping code |
-
-If these files are absent or stale, read-only sessions report that limitation and use source reads. The authorized integrator may run `npm run index` when a rebuild is needed.
-
-After relevant file changes, the integrator checks whether existing Git hooks already rebuilt the required index; avoid duplicate rebuilds. Workers report needed updates instead of running builders or changing shared settings.
+For absent/stale indexes, report limits and read source. The authorized integrator runs `npm run index` only when needed, first checking whether Git hooks already rebuilt it.
 
 ---
 
 ## Named Workflows
 
-Use a workflow only when it fits the current task. Shared bodies are authoritative in `.claude/skills/<name>/SKILL.md`; `.agents/skills` holds the declared Codex/Gemini discovery copies. The fourteen names are: audit, debt-guard, debate, debug, doc-guard, docs-update, explain-code, handoff, pipeline, prompt-audit, prompt-diagnosis, report-review, validate, wip-update. Binding comes from the authorized task and any explicit invocation arguments, not an assumed editor selection.
+Use workflows suited to the authorized task/explicit arguments, never assumed editor selection. Canonical public bodies: `.claude/skills/<name>/SKILL.md`; declared Codex/Gemini copies: `.agents/skills`. Names: audit, debt-guard, debate, debug, doc-guard, docs-update, explain-code, handoff, pipeline, prompt-audit, prompt-diagnosis, report-review, validate, wip-update.
 
-`validate` and `report-review` require explicit selection. Client invocation controls differ: see the client adapter and record actual session support; reading a skill never grants operational authority. Use independent review for material risk, not a standing committee. Failed reviews need evidence-based disposition, not a vote or unanimous quorum.
+`validate` and `report-review` require explicit selection. Verify client-specific controls in the adapter and actual session; loading grants no operational authority. Material-risk reviews need evidence-based disposition, not votes or a standing committee.
 
-When skills change, run the read-only `node scripts/agents/check-skill-mirrors.mjs`. Bodies match with normalized line endings. For validate/report-review, equivalent flat shared headers and folded descriptions are accepted; only their `.agents` copies may add `disabled: true`. Other pairs remain identical. Claude/Codex invocation controls are checked; Gemini/Cline session state is not attested.
+After skill edits, run read-only `node scripts/agents/check-skill-mirrors.mjs`. Bodies match after line-ending normalization; validate/report-review allow equivalent flat headers/folded descriptions and `.agents`-only `disabled: true`. Other pairs are identical. The checker verifies Claude/Codex metadata, not Gemini/Cline session state.
 
 ---
 
 ## Tool Strengths Reference
 
-Which AI tool for which task: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
+Tool choice: `Docs/AGENTS/Policies/Tool_Strengths.md`. Model-tier guidance (Opus / Sonnet / Haiku capability per task): `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` §6.
 
 ---
 
 ## Current implementation
 
-Use current code/configuration for implementation, runtime defaults and model selection. Resolve the task's assigned current-status, backlog and known-issues records through explicit scope or the verified adopted profile, then read that repository's root guidance for their maintained locations. Role and skill references to the **assigned status collection** mean these resolved records, including their current holds. Read them before status-dependent work; if unavailable, report the gap and do not infer that a hold is lifted or recreate the records publicly.
+Use current code/configuration for implementation, defaults and models; UCM controls analysis, environment variables infrastructure. Resolve the **assigned status collection** (current status, backlog, known issues and holds) through task scope or the verified profile, then read its repository guidance before status-dependent work. If unavailable, report the gap; never lift holds or recreate records publicly.
 
-Codex, Claude Code and Gemini share this routing through root guidance. Existing sessions must reload it before their next status-dependent write; a fresh session avoids stale loaded paths. Public-only contributions use [project state and change authority](CONTRIBUTING.md#project-state-and-change-authority), public quality contracts and the current task scope. Do not treat an adapter snapshot or historical handoff as current implementation. Analysis configuration belongs in UCM; environment variables are for infrastructure/runtime settings.
+Codex, Claude Code and Gemini use this routing. Reload it before continuing status-dependent writes; fresh sessions avoid stale paths. Adapter snapshots and historical handoffs are not current implementation. Public-only work uses [project state and change authority](CONTRIBUTING.md#project-state-and-change-authority), public quality contracts and task scope.
 
-Contributors without an assigned private home may use the public record paths for intentionally public, public-safe work; uncertain or non-public material stays in the authorized task/chat scope.
+Without a private home, record only intentionally public-safe work in public paths; keep uncertain/non-public material in authorized task/chat scope.
