@@ -79,6 +79,6 @@ The first three rows form the **quality-expectations triad** consumed by `/repor
 | [Captain_Quality_Expectations.md](Captain_Quality_Expectations.md) | Human-readable summary of current Captain benchmark and generic quality expectations |
 | [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 scored benchmark families |
 | [report-quality-expectations.json](report-quality-expectations.json) | Machine-readable cross-input Q-code quality criteria used by `/report-review` |
-| [Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md) | Syntax reference for Mermaid diagrams in documentation |
+| [Mermaid ERD syntax](../DEVELOPMENT/Documentation.md#mermaid-erd-syntax) | Syntax reference for Mermaid diagrams in documentation |
 
 Shared FactHarbor skills are authoritative under `.claude/skills`, with fourteen declared `.agents/skills` copies. Run `node scripts/agents/check-skill-mirrors.mjs` after changes. Invocation metadata is client-specific; Gemini workspace disabled-skill settings and Cline visible skill toggles require separate session verification. A clone does not contain ignored local settings.

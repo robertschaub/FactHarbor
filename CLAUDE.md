@@ -16,7 +16,7 @@ Agent definitions omit `tools` for ordinary documented tool inheritance and may 
 
 ## Model and advisor use
 
-Choose the configured model/effort for the task; confirm supported settings in the installed client. Existing legacy thinking environment values are retained for compatible clients; their effect varies by model. Do not infer the live model or effective effort from an old repository snapshot, and do not modify user-level settings as part of routine work.
+For delegated calls, follow root model-selection rules: honor explicit user choices; otherwise choose a suitable model/effort and confirm support in the installed client. Existing legacy thinking environment values are retained for compatible clients; their effect varies by model. Do not infer the live model or effective effort from an old repository snapshot, and do not modify user-level settings as part of routine work.
 
 If an advisor is available, use it for a material uncertainty or an independent reasoning check required by root policy. It is an optional client route, not a standing review committee or an empirical regression test. Respect current provider-spend authority and use a compatible available reviewer when that tool is absent. Do not assume Claude model aliases, prices or effort settings apply to another client.
 
