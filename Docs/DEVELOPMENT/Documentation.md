@@ -28,7 +28,7 @@ The output is `site/`. The [documentation workflow](../../.github/workflows/depl
 - Keep public essentials, including licensing and effective privacy terms, authoritative. Review changes to obligations separately from formatting.
 - For new website pages, update `mkdocs.yml` navigation and stage the intended publication files before verifying the site. The build and agent index use tracked public inputs; untracked local notes are not publication inputs.
 - Review links when renaming a page. The page-key and directory aliases in `Docs/site/assets/legacy-routes.json` are the source of truth for stable destinations. Query and root-hash page keys resolve through that explicit map; unknown destinations show the not-found page. Retain useful destinations without exposing unrelated records.
-- HTML reports in `Docs/TESTREPORTS/` are copied unchanged by the build and retain their published URL paths.
+- HTML reports in `Docs/TESTREPORTS/` are copied unchanged by the build and retain their published URL paths. The video page, MP4 and captions in `Docs/prototype-fund-pitch/` are also copied to preserve the submitted application URL at `/prototype-fund-pitch/`.
 
 ## Mermaid diagrams
 
