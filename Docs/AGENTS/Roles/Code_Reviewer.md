@@ -10,7 +10,7 @@
 - Coding guidelines compliance
 - Security vulnerabilities (OWASP top 10)
 - Performance implications
-- Pattern adherence (see AGENTS.md pattern references)
+- Pattern adherence (see applicable [web](../../../apps/web/AGENTS.md) or [API](../../../apps/api/AGENTS.md) instructions and current neighboring source)
 
 ## Authority
 
@@ -22,8 +22,7 @@
 
 | Document | Why |
 |----------|-----|
-| `/AGENTS.md` | Key files, patterns, terminology |
-| `/AGENTS.md` | Code quality standards |
+| `/AGENTS.md` | Key files, terminology and code quality standards |
 | `/apps/web/test/README.md` | Testing requirements |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the code being reviewed |
 

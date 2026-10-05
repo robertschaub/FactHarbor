@@ -94,9 +94,36 @@ Each item has a concrete next step, owner expectation, and whether it blocks rel
 | `bolsonaro-en` current accepted/watch | Captain accepted current exact canary `aedb3a05046441aba3eb2f6047ca0e22` as OK. It gives AC_02/AC_03 true-side, verifiable verdicts after the Stage-4 direction-summary and repair-band fixes. Next work is review/simplification, not another immediate prompt patch: compare against `91bf6083` / `85812d61` if release-readiness asks for comparator-level confidence. | No — Captain accepted current report as OK; low confidence remains watch debt and not a best-comparator promotion |
 | Q-S1.3 / Q-S1.1 / Q-V6 / Q-ST5 annotations | Use the existing per-family annotations and their documented limits. QCODE-ANNOT remains open for conflicting multi-branch requirements; changes need Captain decision. | No automatic annotation or band change |
 
+## Report Quality Baseline Comparison
+
+For report reviews, regression diagnosis, best-report selection and release readiness, compare against:
+- `Docs/AGENTS/Captain_Quality_Expectations.md`: Captain intent and best usable exact/family comparator IDs/reports.
+- `Docs/AGENTS/benchmark-expectations.json`: canonical inputs, accepted verdict/truth/confidence bands, latest observations and rerun priority.
+- `Docs/AGENTS/report-quality-expectations.json`: Q-code structural checks.
+
+Label comparators exact/variant, local/deployed and current-stack/historical. Never judge in isolation when expectations/comparators exist. Explicitly report a missing best comparator; do not invent one from nearby jobs.
+
+## Report Quality & Event Communication
+
+Severity measures verdict impact, not internal event type. Before warning, ask whether the verdict would materially differ without the event: no → silent/info (admin only); maybe → warning at most; yes → error/severe. Register warnings in `warning-display.ts`, never classify inline in UI components.
+
+| Severity | Impact and visibility |
+|---|---|
+| silent | None/recovered; no warning |
+| info | No verdict impact; useful administrator tuning only |
+| warning | Noticeable; same verdict direction/confidence tier; low-emphasis user caveat |
+| error | Direction/confidence tier may change; prominent user warning |
+| severe | Untrustworthy report; error plus `report_damaged` and blocking notice |
+
+Routine retries, fallbacks, cache misses and defaults are silent/info; **fully recovered fallbacks are silent**, never info. Surface aggregated quality degradation. Internal post-hoc diagnostics/heuristic disagreement are admin info, not proof of wrong verdict.
+
+Sparse/inaccessible evidence, paywalls/404s are analytical reality: info/warning, never error/severe merely for scarcity. This applies to `insufficient_evidence`, `low_evidence_count`, `low_source_count`, `source_fetch_degradation`. Fixable failures (provider collapse, verdict crash, budget exhaustion) must surface at warning/error/severe according to impact.
+
+Warn when degradation exceeds ordinary variance and users need to know; error when direction/confidence tier could change; severe when trust is lost. Keep genuine quality loss—including inadequate evidence, verdict failure, source-acquisition collapse or exhausted budget—visible at its appropriate level, never suppress it as admin-only. Avoid both irrelevant warnings and missing material ones.
+
 ## Reading Order
 
 1. **This doc** — quality intent, comparator distinctions and open items.
 2. `Docs/AGENTS/benchmark-expectations.json` — exact per-family bands and latest verified job IDs.
 3. `Docs/AGENTS/report-quality-expectations.json` — Q-code check catalog consumed by `/report-review`.
-4. `AGENTS.md` — the non-negotiable project rules (generic by design, input neutrality, pipeline integrity, warning severity).
+4. `AGENTS.md` — the non-negotiable project rules (generic by design, input neutrality, pipeline integrity); report baseline and warning rules are above.

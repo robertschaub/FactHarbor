@@ -21,14 +21,13 @@
 
 | Document | Why |
 |----------|-----|
-| `/AGENTS.md` | Fundamental rules, key files, commands |
-| `/AGENTS.md` | Code quality standards |
+| `/AGENTS.md` | Fundamental rules, key files, commands and code quality standards |
 | `/Docs/site/akel-pipeline.md` | ClaimBoundary pipeline (5-stage workflow) |
 | Area-specific docs from `Multi_Agent_Collaboration_Rules.md` §1.2 | Based on the task's area |
 
 ## Key Source Files
 
-- Study the pattern reference files listed in AGENTS.md before writing new code
+- Read the applicable [web](../../../apps/web/AGENTS.md) or [API](../../../apps/api/AGENTS.md) patterns and current neighboring source before writing new code; the examples below are starting points.
 - `apps/web/src/lib/analyzer/evidence-filter.ts` — Pattern for deterministic modules
 - `apps/web/src/lib/analyzer/aggregation.ts` — Pattern for calculation modules
 - `apps/api/Controllers/JobsController.cs` — Pattern for API controllers

@@ -6,7 +6,7 @@
 
 ## Roles
 
-Per-role definition files. Each contains mission, focus areas, authority, required reading, key source files, deliverables, and anti-patterns. Read during role activation (see `/AGENTS.md` Role Activation Protocol).
+Per-role definition files. Each contains mission, focus areas, authority, required reading, key source files, deliverables, and anti-patterns. Read during role activation (see [Handoff Protocol — role activation](Policies/Handoff_Protocol.md#role-activation-protocol)).
 
 | Role | File |
 |------|------|

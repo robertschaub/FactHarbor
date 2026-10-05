@@ -87,9 +87,9 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 
 ## 2. Role Registry
 
-> **Activation:** When the user says "As \<Role\>", look up the role alias in `AGENTS.md` → Role Activation Protocol, then read your role's file from `Docs/AGENTS/Roles/`.
+> **Activation:** When the user says "As \<Role\>", look up the role alias in [Handoff Protocol — role activation](Policies/Handoff_Protocol.md#role-activation-protocol), then read your role's file from `Docs/AGENTS/Roles/`.
 >
-> **Lite mode:** Lightweight models with limited context — see §6.3 for a graduated loading strategy that defers non-essential reads.
+> **Context loading:** See [§6.3](#63-lightweight-models) for the shared loading rule: root and applicable nested instructions are required; load relevant references as needed.
 
 | # | Role | Aliases | File |
 |---|------|---------|------|
