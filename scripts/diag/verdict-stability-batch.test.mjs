@@ -36,9 +36,8 @@ function json(file, value) {
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function preflightFixture({ singleArm = false } = {}) {
+function preflightFixture({ singleArm = false, inputValue = 'Entity A did X' } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'verdict-preflight-repo-'));
-  const inputValue = 'Entity A did X';
   const inputRel = 'pilot/input.json';
   const artifactRel = 'pilot/runner.cjs';
   const templateRel = 'pilot/preflight.template.json';
@@ -394,18 +393,39 @@ async function startFakeApi(t, { submit = () => ({}), poll }) {
   return { url: `http://127.0.0.1:${server.address().port}`, submissions };
 }
 
-function runControlledFailure(t, apiUrl, { n, populateOutput = false, singleArm = false }) {
-  const { root, manifest } = preflightFixture({ singleArm });
+function runControlledBatch(t, apiUrl, {
+  n, populateOutput = false, singleArm = false, fixture,
+  apiDbPath = dbPath, configDbPath, timeoutMs = 200,
+}) {
+  const f = fixture || preflightFixture({ singleArm });
+  const { root } = f;
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const manifestFile = join(root, 'test-output/execution.json');
-  json(manifestFile, manifest);
+  const { manifest } = freezeExecutionManifest(f.templateRel, manifestFile,
+    f.manifest.runPolicy.armMode === 'single' ? undefined : '6'.repeat(64), { root });
   const output = join(root, manifest.arms.A.outputPath);
   if (populateOutput) {
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, 'existing\n');
   }
-  const env = { ...process.env, FH_API_URL: apiUrl, FH_JOB_TIMEOUT_MS: '200', FH_DB_PATH: dbPath };
+  const networkGuard = join(root, 'test-output/fixture-network-only.cjs');
+  writeFileSync(networkGuard, `
+    const fixtureFetch = globalThis.fetch;
+    globalThis.fetch = (input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (new URL(url).origin !== ${JSON.stringify(apiUrl)}) throw new Error('Non-fixture network request denied');
+      return fixtureFetch(input, { ...init, redirect: 'error' });
+    };
+  `);
+  // Only executable/OS/temp paths enter the child: no inherited credentials or Node preload options.
+  const environmentKeys = new Set(['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'TEMP', 'TMP', 'HOME', 'USERPROFILE']);
+  const env = {
+    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => environmentKeys.has(key.toUpperCase()))),
+    FH_API_URL: apiUrl, FH_INVITE_CODE: 'OFFLINE', FH_JOB_TIMEOUT_MS: String(timeoutMs),
+    FH_DB_PATH: apiDbPath, FH_CONFIG_DB_PATH: configDbPath || join(root, 'test-output/no-config.db'),
+  };
   const args = [
+    '--require', networkGuard,
     join(root, 'scripts/diag/verdict-stability-batch.cjs'),
     '--inputs', join(root, manifest.input.path),
     '--n', String(n),
@@ -415,19 +435,22 @@ function runControlledFailure(t, apiUrl, { n, populateOutput = false, singleArm 
     '--out', manifest.arms.A.outputPath,
   ];
   return new Promise((resolveRun, reject) => {
-    const child = spawn(process.execPath, args, { cwd: root, env, timeout: 20_000 });
+    const child = spawn(process.execPath, args, { cwd: root, env, timeout: 30_000 });
     let outputText = '';
     child.stdout.on('data', (chunk) => { outputText += chunk; });
     child.stderr.on('data', (chunk) => { outputText += chunk; });
     child.on('error', reject);
-    child.on('close', (code) => resolveRun({ code, output: outputText }));
+    child.on('close', (code) => {
+      const lines = existsSync(output) ? readFileSync(output, 'utf8').trim().split(/\r?\n/).filter(Boolean) : [];
+      resolveRun({ code, output: outputText, records: populateOutput ? [] : lines.map(line => JSON.parse(line)) });
+    });
   });
 }
 
 for (const singleArm of [false, true]) {
 test(`controlled preflight rejects repeated counts before any submission (${singleArm ? 'single' : 'paired'})`, async (t) => {
   const api = await startFakeApi(t, { poll: () => ({ status: 'SUCCEEDED', progress: 100 }) });
-  const result = await runControlledFailure(t, api.url, { n: 2, singleArm });
+  const result = await runControlledBatch(t, api.url, { n: 2, singleArm });
   assert.notEqual(result.code, 0, result.output);
   assert.match(result.output, /authorizes exactly 1 run/);
   assert.equal(api.submissions.length, 0);
@@ -435,10 +458,86 @@ test(`controlled preflight rejects repeated counts before any submission (${sing
 
 test(`controlled preflight rejects a populated arm output before any submission (${singleArm ? 'single' : 'paired'})`, async (t) => {
   const api = await startFakeApi(t, { poll: () => ({ status: 'SUCCEEDED', progress: 100 }) });
-  const result = await runControlledFailure(t, api.url, { n: 1, populateOutput: true, singleArm });
+  const result = await runControlledBatch(t, api.url, { n: 1, populateOutput: true, singleArm });
   assert.notEqual(result.code, 0, result.output);
   assert.match(result.output, /output already exists/);
   assert.equal(api.submissions.length, 0);
+});
+}
+
+for (const mismatch of [false, true]) {
+test(`single-arm guarded CLI ${mismatch ? 'retains a postflight mismatch and stops' : 'submits, polls and saves a verified result'}`, async (t) => {
+  const benchmarks = JSON.parse(readFileSync(join(here, '../../Docs/AGENTS/benchmark-expectations.json'), 'utf8'));
+  const approvedInput = benchmarks.families.find(family => family.slug === 'bolsonaro-pt').inputValue;
+  const fixture = preflightFixture({ singleArm: true, inputValue: approvedInput });
+  const { root, manifest } = fixture;
+  const apiDb = join(root, 'test-output/api.db');
+  const configDb = join(root, 'test-output/config.db');
+  mkdirSync(dirname(apiDb), { recursive: true });
+  execFileSync('sqlite3', [apiDb], { input: [
+    'CREATE TABLE Jobs (JobId TEXT, Status TEXT, ExecutedWebGitCommitHash TEXT, PromptContentHash TEXT);',
+    'CREATE TABLE AnalysisMetrics (JobId TEXT, CreatedUtc TEXT, MetricsJson TEXT);',
+  ].join('\n') });
+  execFileSync('sqlite3', [configDb], { input: [
+    'CREATE TABLE config_active (config_type TEXT, profile_key TEXT, active_hash TEXT);',
+    'CREATE TABLE config_usage (job_id TEXT, config_type TEXT, profile_key TEXT, content_hash TEXT);',
+    ...Object.entries(CONFIG_HASHES).map(([key, hash]) => {
+      const [type, profile] = key.split('/');
+      return `INSERT INTO config_active VALUES ('${type}','${profile}','${hash}');`;
+    }),
+  ].join('\n') });
+  const polledStatuses = [];
+  const api = await startFakeApi(t, {
+    submit: () => {
+      execFileSync('sqlite3', [apiDb], { input:
+        `INSERT INTO Jobs VALUES ('job-1','QUEUED','${manifest.approvedCommit}','${CONFIG_HASHES['prompt/claimboundary']}');` });
+      return {};
+    },
+    poll: () => {
+      const status = polledStatuses.length === 0 ? 'RUNNING' : 'SUCCEEDED';
+      polledStatuses.push(status);
+      execFileSync('sqlite3', [apiDb], { input: `UPDATE Jobs SET Status='${status}' WHERE JobId='job-1';` });
+      if (status === 'SUCCEEDED') {
+        const metrics = { telemetryContext: {
+          pipelineCommitId: mismatch ? '0'.repeat(40) : manifest.approvedCommit,
+          pipelineCommitShort: manifest.approvedCommit.slice(0, 7),
+        } };
+        execFileSync('sqlite3', [apiDb], { input:
+          `INSERT INTO AnalysisMetrics VALUES ('job-1','2026-01-01','${JSON.stringify(metrics)}');` });
+        execFileSync('sqlite3', [configDb], { input: Object.entries(CONFIG_HASHES).map(([key, hash]) => {
+          const [type, profile] = key.split('/');
+          return `INSERT INTO config_usage VALUES ('job-1','${type}','${profile}','${hash}');`;
+        }).join('\n') });
+      }
+      return { status, progress: status === 'SUCCEEDED' ? 100 : 40, resultJson: { sources: [] } };
+    },
+  });
+  const result = await runControlledBatch(t, api.url, {
+    n: 1, fixture, apiDbPath: apiDb, configDbPath: configDb, timeoutMs: 15_000,
+  });
+  assert.deepEqual(api.submissions, [approvedInput]);
+  assert.deepEqual(polledStatuses, ['RUNNING', 'SUCCEEDED']);
+  assert.equal(result.records.length, 1, result.output);
+  assert.equal(result.records[0].jobId, 'job-1');
+  assert.equal(result.records[0].runIdx, 1);
+  if (mismatch) {
+    assert.equal(result.code, 2, result.output);
+    assert.equal(result.records[0].status, 'ERROR');
+    assert.match(result.records[0].error, /postflight completion commit mismatch/);
+    assert.match(result.output, /STOPPED: postflight failed for terminal job job-1/);
+  } else {
+    assert.equal(result.code, 0, result.output);
+    assert.equal(result.records[0].status, 'SUCCEEDED');
+    assert.equal(result.records[0].pipelineCommitId, manifest.approvedCommit);
+    assert.equal(result.records[0].pipelineCommitShort, manifest.approvedCommit.slice(0, 7));
+    assert.match(result.output, /Collected 1\/1 runs/);
+    assert.doesNotMatch(result.output, /STOPPED/);
+  }
+  assert.equal(existsSync(join(root, 'test-output/b.jsonl')), false);
+  assert.equal(sha256File(fixture.inputPath), manifest.input.sha256);
+  for (const [file, hash] of Object.entries(manifest.artifacts)) assert.equal(sha256File(join(root, file)), hash, file);
+  assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), manifest.approvedCommit);
+  assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim(), '');
 });
 }
 
