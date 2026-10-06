@@ -65,6 +65,45 @@ try {
     Assert-Refused { Get-ServicePorts 'http://localhost:49301' 49301 } 'port collision'
     Assert-Refused { Get-ServicePorts 'http://localhost:49301' 0 } 'invalid Web port'
     Assert-True (((Get-ServicePorts 'http://localhost:49301;https://localhost:49303' 49302) -join ',') -eq '49301,49303,49302') 'valid configured ports'
+    # Execute only the parsed reseed branch, with local command mocks. Never start services or seed a database.
+    $restartTokens = $null; $restartErrors = $null
+    $restartAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'restart-clean.ps1'), [ref]$restartTokens, [ref]$restartErrors)
+    Assert-True ($restartErrors.Count -eq 0) 'restart script parses'
+    $skipParameter = @($restartAst.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'SkipReseed' })
+    Assert-True ($skipParameter.Count -eq 1 -and $skipParameter[0].StaticType -eq [Management.Automation.SwitchParameter] -and $null -eq $skipParameter[0].DefaultValue) 'reseed skip is an opt-in switch'
+    $reseedBranches = @($restartAst.FindAll({ param($node)
+        $node -is [Management.Automation.Language.IfStatementAst] -and
+        $node.Clauses.Count -eq 1 -and $node.Clauses[0].Item1.Extent.Text -eq '$SkipReseed' -and
+        $node.Extent.Text.Contains('reseed-all-prompts.ts')
+    }, $true))
+    Assert-True ($reseedBranches.Count -eq 1) 'exactly one isolated reseed branch'
+    $reseedBranch = [scriptblock]::Create($reseedBranches[0].Extent.Text)
+    foreach ($case in @(
+        @{ Skip=$false; ExitCode=0; ExpectedCalls=3; Throws=$false },
+        @{ Skip=$true; ExitCode=0; ExpectedCalls=0; Throws=$false },
+        @{ Skip=$false; ExitCode=7; ExpectedCalls=3; Throws=$true }
+    )) {
+        $observed = & {
+            param($Branch, [bool]$SkipReseed, [int]$MockExit)
+            $operations = [Collections.Generic.List[string]]::new()
+            function Push-Location { param([string]$Path) $operations.Add('push') }
+            function Pop-Location { $operations.Add('pop') }
+            function npx {
+                $operations.Add('npx:' + ($args -join '|'))
+                Set-Variable -Name LASTEXITCODE -Value $MockExit -Scope 1
+            }
+            function Write-Host { param($Object, $ForegroundColor) }
+            $failure = $null
+            try { & $Branch } catch { $failure = $_.Exception.Message }
+            [pscustomobject]@{ Calls=@($operations.ToArray()); Failure=$failure }
+        } $reseedBranch $case.Skip $case.ExitCode
+        Assert-True ($observed.Calls.Count -eq $case.ExpectedCalls) "reseed command/directory count for skip=$($case.Skip), exit=$($case.ExitCode)"
+        if (-not $case.Skip) {
+            Assert-True (($observed.Calls -join ',') -eq 'push,npx:tsx|scripts/reseed-all-prompts.ts|--quiet,pop') 'exact reseed command and balanced directories'
+        }
+        Assert-True (($null -ne $observed.Failure) -eq $case.Throws) 'reseed failure handling retained'
+        if ($case.Throws) { Assert-True ($observed.Failure -like 'Reseed failed; Web was not started.*') 'reseed failure still prevents web startup' }
+    }
     Write-Output "PASS: $checks pure service ownership checks"
 } finally {
     $resolved = [IO.Path]::GetFullPath($fixture)

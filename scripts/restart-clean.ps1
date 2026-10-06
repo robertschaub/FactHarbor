@@ -4,7 +4,9 @@ param(
     [ValidateRange(1, 65535)][int]$WebPort = 3000,
     [string]$ApiDbPath = "",
     [string]$RunnerBaseUrl = "",
-    [string]$ApiBaseUrl = ""
+    [string]$ApiBaseUrl = "",
+    # Skips only the explicit reseed command; application config loading can still refresh defaults.
+    [switch]$SkipReseed
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,10 +20,11 @@ $ports = @(Get-ServicePorts $ApiUrls $WebPort)
 $apiPorts = @($ports | Where-Object { $_ -ne $WebPort })
 if ($WhatIfPreference) {
     Stop-CheckoutServices -Root $repoRoot -Ports $ports -WhatIf
-    Write-Host 'WhatIf: configuration validation, reseeding and startup were not run.'
+    Write-Host "WhatIf: configuration validation and startup were not run; skip explicit reseed: $([bool]$SkipReseed)."
     return
 }
-if (-not $PSCmdlet.ShouldProcess($repoRoot, 'Validate, stop verified services, reseed and restart')) { return }
+$restartAction = if ($SkipReseed) { 'Validate, stop verified services and restart; skip explicit reseed' } else { 'Validate, stop verified services, reseed and restart' }
+if (-not $PSCmdlet.ShouldProcess($repoRoot, $restartAction)) { return }
 & powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
 if ($LASTEXITCODE -ne 0) { throw 'Configuration validation failed; services were not stopped.' }
 Stop-CheckoutServices -Root $repoRoot -Ports $ports -Confirm:$false
@@ -137,17 +140,21 @@ if (-not $ApiBaseUrl) {
 $ApiBaseUrl = $ApiBaseUrl.TrimEnd('/')
 $webEnvPrefix += "`$env:FH_API_BASE_URL=$(ConvertTo-ServiceLiteral $ApiBaseUrl); `$env:PORT='$WebPort'; "
 
-# Reseed prompts and configs into config.db so the dev server picks up file changes
-Write-Host "Reseeding prompts and configs..."
-try {
-    Push-Location "$PSScriptRoot\..\apps\web"
-    & npx tsx scripts/reseed-all-prompts.ts --quiet 2>&1 | ForEach-Object { Write-Host "  $_" }
-    if ($LASTEXITCODE -ne 0) { throw "Prompt/configuration reseed failed." }
-    Pop-Location
-    Write-Host "Reseed complete." -ForegroundColor Green
-} catch {
-    Pop-Location
-    throw "Reseed failed; Web was not started. API may already be running: $($_.Exception.Message)"
+# Application config loading can still refresh system defaults/prompts in either mode.
+if ($SkipReseed) {
+    Write-Host 'Skipping explicit prompt/configuration reseed. Verify active hashes after application warmup.'
+} else {
+    Write-Host "Reseeding prompts and configs..."
+    try {
+        Push-Location "$PSScriptRoot\..\apps\web"
+        & npx tsx scripts/reseed-all-prompts.ts --quiet 2>&1 | ForEach-Object { Write-Host "  $_" }
+        if ($LASTEXITCODE -ne 0) { throw "Prompt/configuration reseed failed." }
+        Pop-Location
+        Write-Host "Reseed complete." -ForegroundColor Green
+    } catch {
+        Pop-Location
+        throw "Reseed failed; Web was not started. API may already be running: $($_.Exception.Message)"
+    }
 }
 Write-Host ""
 
