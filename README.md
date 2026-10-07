@@ -20,7 +20,7 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 
 **[One-Pager](ONEPAGER.md)** — Vision, mission, and why FactHarbor exists in one page.
 
-**[Evidence-Gated Agents](https://github.com/robertschaub/our-ai-charter/blob/main/docs/Assurance/Concepts/evidence-gated-agents.md)** — selected prototype design in which a separate gate asks FactHarbor to examine whether current evidence sufficiently supports an AI agent’s exact proposed decision. The integration is not yet implemented and remains subject to funding.
+**[Evidence-Gated Agents](https://github.com/robertschaub/our-ai-charter/blob/main/docs/Assurance/Concepts/evidence-gated-agents.md)** — a repeated check pattern with transition-specific requirements and evidence retrieval available to any check, including authority and permission checks. The selected prototype examines an agent’s exact proposed decision and controls its release, with planned reuse of FactHarbor retrieval and analytical capabilities. EGA retains analysis and gate decisions; retrieved evidence does not itself grant authority. The integration is not yet implemented and remains subject to funding.
 
 **[Project context and stewardship](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance)** — how FactHarbor and Our AI Charter relate and are stewarded.
 
