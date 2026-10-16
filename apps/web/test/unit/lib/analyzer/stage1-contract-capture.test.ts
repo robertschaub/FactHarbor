@@ -101,6 +101,38 @@ afterEach(() => {
 });
 
 describe("Stage 1 bounded contract capture", () => {
+
+  it.each([PT, DE])("keeps every approved claim above the short-input cap for %s", async input => {
+    const s = await scenario({}, false, input);
+    const candidates = Array.from({ length: 4 }, (_, index) => ({
+      ...claims[index % claims.length], id: "AC_0" + (index + 1),
+      statement: input === DE ? DE : claims[index % claims.length].statement,
+      centrality: index === 3 ? "low" : "high",
+    } as AtomicClaim));
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates)];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    expect(result.atomicClaims.map(c => c.id)).toEqual(candidates.map(c => c.id));
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: true, stageAttribution: "initial" });
+    expect(mocks.generate).toHaveBeenCalledTimes(4);
+    expect(result.contractValidationSummary?.adminCapture?.steps[0].candidates).toHaveLength(4);
+  });
+
+  it("tags the whole approved ambiguous set, including claims beyond the former cap", async () => {
+    const s = await scenario({}, false, DE);
+    const candidates = Array.from({ length: 4 }, (_, index) => ({
+      ...claims[0], id: "AC_0" + (index + 1), statement: DE, centrality: index === 3 ? "low" : "high",
+    } as AtomicClaim));
+    s.queues.CLAIM_EXTRACTION_PASS2 = [{ ...pass2(candidates), inputClassification: "ambiguous_single_claim" }];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates)];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    expect(result.atomicClaims).toHaveLength(4);
+    expect(result.atomicClaims.every(c => c.isDimensionDecomposition === true)).toBe(true);
+    expect(mocks.generate).toHaveBeenCalledTimes(4);
+  });
+
   it.each([PT, DE])("persists clean first-pass multi-claim approval for %s", async input => {
     const s = await scenario({}, false, input);
     const candidates = input === PT ? claims : claims.map(claim => ({ ...claim, statement: DE }));
@@ -164,6 +196,26 @@ describe("Stage 1 bounded contract capture", () => {
       { step: "final_contract", candidateCount: 1, candidates: [{ id: "AC_01", statement: claims[0].statement }], validator: { claims: [{ claimId: "AC_01" }] } },
     ]);
     expect(mocks.generate).toHaveBeenCalledTimes(5);
+  });
+
+  it.each(["contract_violated", "validator_unavailable"] as const)("keeps final validation fail-closed after genuine pruning: %s", async failureMode => {
+    const s = await scenario();
+    const candidates = [claims[0], { ...claims[1], thesisRelevance: "tangential" as const }];
+    const prunedGate = gate(candidates);
+    prunedGate.validatedClaims[1].passedOpinion = false;
+    prunedGate.validatedClaims[1].passedSpecificity = false;
+    // No protected carriers: unavailable validation cannot carry prior approval forward.
+    s.queues.CLAIM_EXTRACTION_PASS2 = [{ ...pass2(candidates), inputClassification: "single_atomic_claim" }];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [critique(candidates),
+      ...(failureMode === "validator_unavailable" ? [undefined, undefined] : [critique([claims[0]], true)])];
+    s.queues.CLAIM_VALIDATION = [prunedGate];
+    const result = await s.run();
+    expect(result.atomicClaims.map(claim => claim.id)).toEqual(["AC_01"]);
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: false, failureMode, stageAttribution: "initial" });
+    const final = result.contractValidationSummary?.adminCapture?.steps.find(step => step.step === "final_contract");
+    expect(final).toMatchObject({ candidateCount: 1, candidates: [{ id: "AC_01", statement: claims[0].statement }] });
+    expect(final?.validator).toEqual(failureMode === "validator_unavailable" ? null : expect.objectContaining({ rePromptRequired: true }));
+    expect(mocks.generate).toHaveBeenCalledTimes(failureMode === "validator_unavailable" ? 6 : 5);
   });
 
   it("records an unavailable initial assessment without inventing typed flags", async () => {

@@ -64,6 +64,8 @@ import {
   assessEvidenceApplicability,
   selectTopSources,
   buildClaimBoundaryResultJson,
+  describeContractStageAttribution,
+  describeContractFailureHeadline,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -838,6 +840,54 @@ describe("selectClaimsForGate1", () => {
     ]);
   });
 
+  it("preserves a clean contract-approved set for a single_atomic_claim input even when it exceeds the cap", () => {
+    // Regression (hotfix 2026-10-16): the approved-set bypass applied to
+    // "article" inputs only. A four-claim approved set from a short single-claim
+    // input was cut to three (the lower-centrality claim dropped), the post-Gate-1
+    // revalidation found the dropped meaning missing, and the run ended as
+    // report_damaged.
+    const claims = makeClaims(["medium", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "medium",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean initial output",
+        stageAttribution: "initial",
+      },
+      "single_atomic_claim",
+    );
+
+    expect(result).toHaveLength(4);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03", "AC_04"]);
+  });
+
+  it("preserves a clean contract-approved set regardless of input classification", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    for (const inputClassification of ["ambiguous_single_claim", "question", "multi_assertion_input", undefined]) {
+      const result = selectClaimsForGate1(
+        claims,
+        "high",
+        3,
+        {
+          ran: true,
+          preservesContract: true,
+          rePromptRequired: false,
+          summary: "clean output",
+          stageAttribution: "retry",
+        },
+        inputClassification,
+      );
+
+      expect(result).toHaveLength(5);
+    }
+  });
+
   it("preserves explicit multi-assertion contract carriers through the centrality cap", () => {
     const claims = makeClaims(["high", "high", "high", "low", "low"]);
     const summary = {
@@ -869,7 +919,30 @@ describe("selectClaimsForGate1", () => {
     ]);
   });
 
-  it("still applies centrality filtering for clean single-claim outputs without explicit carriers", () => {
+
+  it("still applies centrality filtering when the contract is not approved", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        failureMode: "contract_violated",
+        summary: "material drift detected",
+        stageAttribution: "initial",
+      },
+      "single_atomic_claim",
+    );
+
+    expect(result).toHaveLength(3);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
+  it("still applies centrality filtering when the validator approved the set but required a re-prompt", () => {
     const claims = makeClaims(["high", "high", "high", "high", "high"]);
 
     const result = selectClaimsForGate1(
@@ -879,15 +952,55 @@ describe("selectClaimsForGate1", () => {
       {
         ran: true,
         preservesContract: true,
-        rePromptRequired: false,
-        summary: "clean claim-mode output",
-        stageAttribution: "retry",
+        rePromptRequired: true,
+        summary: "approved but re-prompt required",
+        stageAttribution: "initial",
       },
-      "single_atomic_claim",
+      "article",
     );
 
     expect(result).toHaveLength(3);
-    expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+});
+
+describe("describeContractStageAttribution", () => {
+  it("states that no corrective retry was adopted for an initial-stage set", () => {
+    expect(describeContractStageAttribution("initial")).toContain("no corrective retry was adopted");
+  });
+
+  it("names the retry and repair stages", () => {
+    expect(describeContractStageAttribution("retry")).toContain("retry");
+    expect(describeContractStageAttribution("repair")).toContain("repair");
+  });
+
+  it.each([
+    ["surgical_repair", "surgical"], ["completion", "completion"],
+    ["count_floor_reprompt", "count-floor"], ["multi_event_reprompt", "multi-event"],
+  ] as const)("names the current %s stage", (stage, label) => {
+    expect(describeContractStageAttribution(stage)).toContain(label);
+    expect(describeContractStageAttribution(stage)).not.toContain("unrecorded");
+  });
+
+  it("never claims multiple attempts when the stage is unknown", () => {
+    const text = describeContractStageAttribution(undefined);
+    expect(text).not.toContain("multiple");
+    expect(text.length).toBeGreaterThan(0);
+  });
+});
+
+describe("describeContractFailureHeadline", () => {
+  it("words a confirmed contract violation as a failure", () => {
+    expect(describeContractFailureHeadline("contract_violated")).toContain("did not preserve");
+  });
+
+  it("words an unavailable validator as unverified, never as a proven failure", () => {
+    const text = describeContractFailureHeadline("validator_unavailable");
+    expect(text).toContain("could not verify");
+    expect(text).not.toContain("did not preserve");
+  });
+
+  it("treats a missing failure mode as a violation (summaries written before failureMode existed)", () => {
+    expect(describeContractFailureHeadline(undefined)).toContain("did not preserve");
   });
 });
 
@@ -9332,32 +9445,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             validatedClaims: [
               { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
               { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_03", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
               { claimId: "AC_04", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "anchor carrier is narrower but still required" },
             ],
-          };
-        case 7:
-          return {
-            inputAssessment: {
-              preservesOriginalClaimContract: true,
-              rePromptRequired: false,
-              summary: "final accepted claims still preserve the retried anchor",
-            },
-            claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor preserved" },
-            ],
-            truthConditionAnchor: {
-              presentInInput: true,
-              anchorText: "rechtskräftig",
-              preservedInClaimIds: ["AC_04"],
-              preservedByQuotes: ["rechtskräftig"],
-            },
-            antiInferenceCheck: {
-              normativeClaimInjected: false,
-              injectedClaimIds: [],
-              reasoning: "",
-            },
           };
         default:
           throw new Error(`Unexpected LLM call #${llmCallIndex}`);
@@ -9383,15 +9473,18 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     };
 
     const result = await extractClaims(state);
-    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_04"]);
+    // Hotfix 2026-10-16: a clean contract-approved set is preserved whole; the
+    // centrality cap no longer truncates it, so Gate 1 sees all four claims and
+    // the final set equals the validated set (no post-Gate-1 refresh call).
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03", "AC_04"]);
     expect(result.atomicClaims.find((claim) => claim.id === "AC_04")?.statement).toContain("rechtskräftig");
-    expect(llmCallIndex).toBe(7);
+    expect(llmCallIndex).toBe(6);
     expect(result.contractValidationSummary).toMatchObject({
       ran: true,
       preservesContract: true,
       rePromptRequired: false,
       stageAttribution: "retry",
-      summary: "final accepted claims still preserve the retried anchor",
+      summary: "retry preserved contract",
       truthConditionAnchor: {
         presentInInput: true,
         anchorText: "rechtskräftig",
@@ -10030,32 +10123,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             validatedClaims: [
               { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
               { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_03", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
               { claimId: "AC_04", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "anchor carrier is narrower but still required" },
             ],
-          };
-        case 7:
-          return {
-            inputAssessment: {
-              preservesOriginalClaimContract: true,
-              rePromptRequired: false,
-              summary: "final accepted claims still preserve the repaired anchor",
-            },
-            claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor preserved" },
-            ],
-            truthConditionAnchor: {
-              presentInInput: true,
-              anchorText: "rechtskräftig",
-              preservedInClaimIds: ["AC_04"],
-              preservedByQuotes: ["rechtskräftig"],
-            },
-            antiInferenceCheck: {
-              normativeClaimInjected: false,
-              injectedClaimIds: [],
-              reasoning: "",
-            },
           };
         default:
           throw new Error(`Unexpected LLM call #${llmCallIndex}`);
@@ -10082,14 +10152,17 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const result = await extractClaims(state);
 
-    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_04"]);
+    // Hotfix 2026-10-16: a clean contract-approved set is preserved whole; the
+    // centrality cap no longer truncates it, so Gate 1 sees all four claims and
+    // the final set equals the validated set (no post-Gate-1 refresh call).
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03", "AC_04"]);
     expect(result.atomicClaims.find((claim) => claim.id === "AC_04")?.statement).toContain("rechtskräftig");
     expect(result.contractValidationSummary).toMatchObject({
       ran: true,
       preservesContract: true,
       rePromptRequired: false,
       stageAttribution: "repair",
-      summary: "final accepted claims still preserve the repaired anchor",
+      summary: "repair preserved contract",
       truthConditionAnchor: {
         presentInInput: true,
         anchorText: "rechtskräftig",
@@ -10230,7 +10303,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(llmCallIndex).toBe(4);
   });
 
-  it("should not protect every thesis-direct claim for single-claim validation without carrier IDs", async () => {
+  it("still prunes a grounded low-specificity claim and revalidates the changed set", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
 
@@ -10267,6 +10340,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       statement: "Entity A action complied with Framework C.",
       category: "evaluative",
       centrality: "low",
+      specificityScore: 0.1,
       thesisRelevance: "direct",
     });
 
@@ -10302,7 +10376,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
           return {
             validatedClaims: [
               { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "central" },
-              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "would only appear if over-protected" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "below specificity minimum" },
             ],
           };
         case 5:
