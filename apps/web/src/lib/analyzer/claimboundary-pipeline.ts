@@ -536,10 +536,16 @@ export async function runClaimBoundaryAnalysis(
     // and analysis terminates early to avoid wasting budget on incorrect claims.
     if (understanding.contractValidationSummary?.preservesContract === false) {
       console.warn(`[Pipeline] Claim contract preservation failed. Terminating early with damaged report.`);
+      const stageDescription = describeContractStageAttribution(
+        understanding.contractValidationSummary?.stageAttribution,
+      );
+      const failureHeadline = describeContractFailureHeadline(
+        understanding.contractValidationSummary?.failureMode,
+      );
       state.warnings.push({
         type: "report_damaged",
         severity: "error",
-        message: "The analysis engine could not faithfully extract the original claim's meaning after multiple attempts. The resulting report may be inaccurate or misleading. Research and verdict stages have been aborted to prevent further drift.",
+        message: `${failureHeadline} (the set came from ${stageDescription}). The resulting report may be inaccurate or misleading. Research and verdict stages were aborted to prevent further drift.`,
         details: {
           contractValidationSummary: understanding.contractValidationSummary,
         },
@@ -598,9 +604,8 @@ export async function runClaimBoundaryAnalysis(
       const anchorText = cvs?.truthConditionAnchor?.anchorText;
       const reportMarkdown =
         "# ClaimAssessmentBoundary Analysis Report (Damaged)\n\n" +
-        "The analysis engine could not faithfully preserve the meaning of your input " +
-        "after multiple extraction attempts. Research and verdict stages were skipped " +
-        "to prevent a misleading report.\n\n" +
+        failureHeadline + " (the set came from " + stageDescription + "). Research and " +
+        "verdict stages were skipped to prevent a misleading report.\n\n" +
         "**Reason:** " + summaryLine + "\n\n" +
         (anchorText ? "**Truth-condition anchor in input:** `" + anchorText + "`\n\n" : "") +
         (anchorReason ? "**Diagnostic:** " + anchorReason + "\n\n" : "") +
@@ -1253,3 +1258,40 @@ export async function runVerdictStageWithPreflight({
 // assessScopeQuality and assessEvidenceBalance extracted to research-extraction-stage.ts
 
 // Stage 4 (verdict generation + debate config checks) extracted to verdict-generation-stage.ts
+
+/**
+ * Human-readable attribution of which Stage 1 pass produced the final accepted
+ * claim set, for damaged-report wording. A structural mapping of a typed enum,
+ * not an analysis decision. "initial" means the adopted set is the first Pass 2
+ * output: a corrective retry may have run and been rejected, but none was adopted.
+ */
+export function describeContractStageAttribution(
+  stageAttribution: NonNullable<CBClaimUnderstanding["contractValidationSummary"]>["stageAttribution"],
+): string {
+  switch (stageAttribution) {
+    case "initial":
+      return "the first extraction pass; no corrective retry was adopted";
+    case "retry":
+      return "a corrective extraction retry";
+    case "repair":
+      return "an anchor repair pass";
+    default:
+      return "an unrecorded extraction stage";
+  }
+}
+
+/**
+ * Headline for the damaged report. The Wave 1A guard fires on
+ * preservesContract === false, which covers two different states: the
+ * validator found a violation ("contract_violated"), or the validator call
+ * returned nothing usable ("validator_unavailable") and the state is unknown.
+ * Only the first may be worded as a proven failure.
+ */
+export function describeContractFailureHeadline(
+  failureMode: NonNullable<CBClaimUnderstanding["contractValidationSummary"]>["failureMode"],
+): string {
+  if (failureMode === "validator_unavailable") {
+    return "The analysis engine could not verify that the final accepted claim set preserved the original claim's meaning";
+  }
+  return "The final accepted claim set did not preserve the original claim's meaning";
+}

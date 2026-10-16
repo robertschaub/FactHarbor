@@ -726,19 +726,18 @@ export async function extractClaims(
   }
 
   // ------------------------------------------------------------------
-  // Dimension decomposition tagging (structural routing on LLM outputs)
-  // This checks LLM-assigned fields (centrality, claimDirection) to route claims —
-  // it does NOT interpret text meaning, so it's deterministic plumbing, not analysis.
-  // When multiple claims all have high centrality and supports_thesis direction,
-  // they are dimension decompositions from an ambiguous_single_claim input.
-  // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
-  // inherent interpretations of the input's semantic range, not evidence imports.
+  // Dimension decomposition tagging (structural routing on an LLM output)
+  // Driven solely by the LLM-assigned inputClassification: when Pass 2 labels
+  // the input ambiguous_single_claim, every claim that reaches Gate 1 is a
+  // dimension decomposition of that input. The tag exempts those claims from
+  // Gate 1 fidelity filtering — they are inherent interpretations of the
+  // input's semantic range, not evidence imports. No text is interpreted here.
   // ------------------------------------------------------------------
-  // Trust the LLM's explicit inputClassification. Only ambiguous_single_claim
-  // outputs are dimension decompositions.
   const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim";
   if (isDimensionInput) {
-    for (const c of filteredClaims) {
+    // Tag the set that actually reaches Gate 1 (a contract-approved set may be
+    // larger than the centrality-truncated one).
+    for (const c of gate1InputClaims) {
       (c as AtomicClaim).isDimensionDecomposition = true;
     }
   }
@@ -2532,12 +2531,16 @@ export function selectClaimsForGate1(
   threshold: "high" | "medium",
   maxClaims: number,
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
-  inputClassification?: string,
+  _inputClassification?: string, // kept for call-site compatibility; approval alone decides
   requiredClaimIds: string[] = [],
 ): AtomicClaim[] {
+  // A clean contract-approved set is the set the validator certified as
+  // preserving the input's meaning. Truncating it to the count cap removes
+  // claims the validator relied on; the post-Gate-1 revalidation then fails on
+  // exactly that omission and the run ends as report_damaged. Approval, not
+  // input classification, decides whether the cap applies (hotfix 2026-10-16;
+  // previously only "article" inputs were exempt).
   if (
-    inputClassification === "article"
-    &&
     contractValidationSummary?.preservesContract === true
     && contractValidationSummary.rePromptRequired === false
   ) {
