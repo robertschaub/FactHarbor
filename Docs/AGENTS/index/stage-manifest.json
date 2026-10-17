@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-02T09:01:11.018Z",
+  "generatedAt": "2026-10-17T09:55:59.028Z",
   "tasks": {
     "understand": {
       "tier": "budget",
@@ -28,7 +28,7 @@
     "verdict": {
       "tier": "premium",
       "models": {
-        "anthropic": "claude-sonnet-4-5-20250929",
+        "anthropic": "claude-sonnet-4-6",
         "openai": "gpt-4.1",
         "google": "gemini-2.5-pro"
       }
