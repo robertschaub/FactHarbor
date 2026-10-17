@@ -78,6 +78,10 @@ sudo sed -i "s|^FH_API_BASE_URL=.*|FH_API_BASE_URL=http://localhost:5001|" "$ENV
 sudo sed -i "s|^FH_CORS_ORIGIN=.*|FH_CORS_ORIGIN=https://test.factharbor.ch|" "$ENV_TEST"
 sudo sed -i "s|^FH_CONFIG_DB_PATH=.*|FH_CONFIG_DB_PATH=$DATA_TEST_DIR/config.db|" "$ENV_TEST"
 sudo sed -i "s|^FH_SR_CACHE_PATH=.*|FH_SR_CACHE_PATH=$DATA_TEST_DIR/source-reliability.db|" "$ENV_TEST"
+# Set the test search cache even when the production template omits the variable.
+sudo sed -i '/^FH_SEARCH_CACHE_PATH=/d' "$ENV_TEST"
+printf '\nFH_SEARCH_CACHE_PATH=%s\n' "$DATA_TEST_DIR/search-cache.db" | sudo tee -a "$ENV_TEST" > /dev/null
+
 sudo sed -i "s|^FH_RUNNER_MAX_CONCURRENCY=.*|FH_RUNNER_MAX_CONCURRENCY=1|" "$ENV_TEST"
 sudo sed -i "s|^PORT=.*|PORT=3001|" "$ENV_TEST"
 

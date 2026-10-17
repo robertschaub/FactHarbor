@@ -6,6 +6,7 @@ import {
   type ConfigType,
 } from "@/lib/config-storage";
 import { DEFAULT_PIPELINE_CONFIG, getDefaultConfig } from "@/lib/config-schemas";
+import { getSearchCacheHealth } from "@/lib/search-cache";
 
 export const runtime = "nodejs";
 
@@ -109,7 +110,16 @@ export async function GET() {
 
   const configValidation = await validateAllConfigs();
   const hasInvalidConfigs = Object.values(configValidation).some((v) => !v.valid);
-  const status = ok ? (hasInvalidConfigs ? "degraded" : "healthy") : "unhealthy";
+  let searchCache: { ok: boolean | null; status: "ready" | "unavailable" | "disabled" | "not_checked" } = {
+    ok: null, status: "not_checked",
+  };
+  try {
+    const search = await getConfig("search", "default");
+    searchCache = await getSearchCacheHealth(search.config.cache?.enabled);
+  } catch {
+    // Do not expose configuration errors or filesystem paths on public health.
+  }
+  const status = ok ? (hasInvalidConfigs || searchCache.ok !== true ? "degraded" : "healthy") : "unhealthy";
 
   return NextResponse.json(
     {
@@ -118,6 +128,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       checks,
       configValidation,
+      searchCache,
       api: { reachable: apiReachable, health_status: apiHealthStatus, error: apiError },
     },
     { status: ok ? 200 : 503 }

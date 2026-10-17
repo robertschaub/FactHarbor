@@ -20,8 +20,15 @@ import type { WebSearchOptions, WebSearchResult } from "./web-search";
 // CONFIGURATION
 // ============================================================================
 
+export function resolveSearchCachePath(env: NodeJS.ProcessEnv = process.env): string {
+  const siblingDb = env.FH_SR_CACHE_PATH || env.FH_CONFIG_DB_PATH;
+  return path.resolve(env.FH_SEARCH_CACHE_PATH || (
+    siblingDb ? path.join(path.dirname(siblingDb), "search-cache.db") : "./search-cache.db"
+  ));
+}
+
 const SEARCH_CACHE_CONFIG = {
-  dbPath: process.env.FH_SEARCH_CACHE_PATH || "./search-cache.db",
+  dbPath: resolveSearchCachePath(),
   cacheTtlDays: parseInt(process.env.FH_SEARCH_CACHE_TTL_DAYS || "7", 10),
   enabled: process.env.FH_SEARCH_CACHE_ENABLED !== "false", // Enabled by default
 };
@@ -71,49 +78,67 @@ interface SearchCacheRow {
 // ============================================================================
 
 let db: Database | null = null;
-let dbPromise: Promise<Database> | null = null;
+let dbPromise: Promise<Database | null> | null = null;
 
-async function getDb(): Promise<Database> {
+async function getDb(): Promise<Database | null> {
   if (db) return db;
   if (!dbPromise) {
     dbPromise = (async () => {
       const dbPath = path.resolve(SEARCH_CACHE_CONFIG.dbPath);
       console.log(`[Search-Cache] Opening database at ${dbPath}`);
 
-      const instance = await open({
-        filename: dbPath,
-        driver: sqlite3.Database,
-      });
+      let instance: Database | undefined;
+      try {
+        instance = await open({
+          filename: dbPath,
+          driver: sqlite3.Database,
+        });
 
-      // Enable WAL mode for better concurrent access
-      await instance.exec("PRAGMA journal_mode=WAL");
+        // Enable WAL mode for better concurrent access
+        await instance.exec("PRAGMA journal_mode=WAL");
 
-      // Create table if not exists
-      await instance.exec(`
-        CREATE TABLE IF NOT EXISTS search_cache (
-          cache_key TEXT PRIMARY KEY,
-          query_text TEXT NOT NULL,
-          max_results INTEGER NOT NULL,
-          date_restrict TEXT,
-          domain_whitelist TEXT,
-          domain_blacklist TEXT,
-          results_json TEXT NOT NULL,
-          provider TEXT NOT NULL,
-          cached_at TEXT NOT NULL,
-          expires_at TEXT NOT NULL
-        );
+        // Create table if not exists
+        await instance.exec(`
+          CREATE TABLE IF NOT EXISTS search_cache (
+            cache_key TEXT PRIMARY KEY,
+            query_text TEXT NOT NULL,
+            max_results INTEGER NOT NULL,
+            date_restrict TEXT,
+            domain_whitelist TEXT,
+            domain_blacklist TEXT,
+            results_json TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            cached_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL
+          );
 
-        CREATE INDEX IF NOT EXISTS idx_search_cache_expires ON search_cache(expires_at);
-        CREATE INDEX IF NOT EXISTS idx_search_cache_query ON search_cache(query_text);
-        CREATE INDEX IF NOT EXISTS idx_search_cache_cached_at ON search_cache(cached_at);
-      `);
+          CREATE INDEX IF NOT EXISTS idx_search_cache_expires ON search_cache(expires_at);
+          CREATE INDEX IF NOT EXISTS idx_search_cache_query ON search_cache(query_text);
+          CREATE INDEX IF NOT EXISTS idx_search_cache_cached_at ON search_cache(cached_at);
+        `);
 
-      console.log("[Search-Cache] Database initialized");
-      db = instance;
-      return instance;
+        console.log("[Search-Cache] Database initialized");
+        db = instance;
+        return instance;
+      } catch (err) {
+        // Retain the settled null promise: one attempt/log per module lifetime.
+        console.error(`[Search-Cache] Initialization failed at ${dbPath}; cache unavailable until restart:`, err);
+        try { await instance?.close(); } catch { /* Preserve the initialization failure. */ }
+        return null;
+      }
     })();
   }
   return dbPromise;
+}
+
+/** Initialization availability only; an enabled health check may create the cache. */
+export async function getSearchCacheHealth(enabled = SEARCH_CACHE_CONFIG.enabled): Promise<{
+  ok: boolean;
+  status: "ready" | "unavailable" | "disabled";
+}> {
+  if (!enabled) return { ok: true, status: "disabled" };
+  const database = await getDb();
+  return database ? { ok: true, status: "ready" } : { ok: false, status: "unavailable" };
 }
 
 // ============================================================================
@@ -176,6 +201,7 @@ export async function getCachedSearchResults(
 
   try {
     const database = await getDb();
+    if (!database) return null;
     const cacheKey = generateCacheKey(options);
     const now = new Date().toISOString();
 
@@ -255,6 +281,7 @@ export async function cacheSearchResults(
 
   try {
     const database = await getDb();
+    if (!database) return;
     const cacheKey = generateCacheKey(options);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000);
@@ -301,6 +328,7 @@ export async function cacheSearchResults(
 export async function cleanupExpiredCache(): Promise<number> {
   try {
     const database = await getDb();
+    if (!database) return 0;
     const now = new Date().toISOString();
 
     const result = await database.run(
@@ -325,6 +353,7 @@ export async function cleanupExpiredCache(): Promise<number> {
 export async function clearAllCache(): Promise<number> {
   try {
     const database = await getDb();
+    if (!database) return 0;
     const result = await database.run("DELETE FROM search_cache");
     const deleted = result.changes ?? 0;
     console.log(`[Search-Cache] Cleared ${deleted} cache entries`);
@@ -356,6 +385,7 @@ export interface SearchCacheStats {
 export async function getCacheStats(): Promise<SearchCacheStats> {
   try {
     const database = await getDb();
+    if (!database) return emptyCacheStats();
     const now = new Date().toISOString();
 
     // Total entries
@@ -422,17 +452,21 @@ export async function getCacheStats(): Promise<SearchCacheStats> {
     };
   } catch (err) {
     console.error("[Search-Cache] Error getting stats:", err);
-    return {
-      totalEntries: 0,
-      validEntries: 0,
-      expiredEntries: 0,
-      totalQueries: 0,
-      providerBreakdown: {},
-      oldestEntry: null,
-      newestEntry: null,
-      dbSizeBytes: null,
-    };
+    return emptyCacheStats();
   }
+}
+
+function emptyCacheStats(): SearchCacheStats {
+  return {
+    totalEntries: 0,
+    validEntries: 0,
+    expiredEntries: 0,
+    totalQueries: 0,
+    providerBreakdown: {},
+    oldestEntry: null,
+    newestEntry: null,
+    dbSizeBytes: null,
+  };
 }
 
 /**

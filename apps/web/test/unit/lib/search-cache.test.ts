@@ -3,7 +3,15 @@
  *
  * Validates cache hit/miss, TTL expiration, and key generation.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
+// The suite clears its database: choose a disposable path before module import.
+const isolatedCache = await vi.hoisted(async () => {
+  const fs = await import("node:fs"), os = await import("node:os"), path = await import("node:path");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fh-search-cache-test-"));
+  const previous = process.env.FH_SEARCH_CACHE_PATH;
+  process.env.FH_SEARCH_CACHE_PATH = path.join(directory, "cache.db");
+  return { directory, previous };
+});
 import {
   getCachedSearchResults,
   cacheSearchResults,
@@ -15,6 +23,16 @@ import { DEFAULT_SEARCH_CONFIG } from "@/lib/config-schemas";
 import type { WebSearchOptions, WebSearchResult } from "@/lib/web-search";
 
 const TEST_CACHE_CONFIG = { enabled: true, ttlDays: 7 };
+
+afterAll(async () => {
+  await closeSearchCacheDb();
+  if (isolatedCache.previous === undefined) delete process.env.FH_SEARCH_CACHE_PATH;
+  else process.env.FH_SEARCH_CACHE_PATH = isolatedCache.previous;
+  const fs = await import("node:fs"), os = await import("node:os"), path = await import("node:path");
+  expect(path.dirname(isolatedCache.directory)).toBe(path.resolve(os.tmpdir()));
+  expect(path.basename(isolatedCache.directory)).toMatch(/^fh-search-cache-test-/);
+  fs.rmSync(isolatedCache.directory, { recursive: true, force: true });
+});
 
 describe("Search Cache", () => {
   beforeEach(async () => {
