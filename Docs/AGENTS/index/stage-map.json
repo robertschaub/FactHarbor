@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-17T09:55:59.028Z",
+  "generatedAt": "2026-10-17T21:16:09.575Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -84,6 +84,7 @@
         "createEvidenceApplicabilityCapture",
         "classifyRelevance",
         "extractResearchEvidence",
+        "serializeApplicabilityRequest",
         "assessEvidenceApplicability",
         "assessScopeQuality",
         "assessEvidenceBalance",
