@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { resolveEvidenceQualityAssessmentModel } from "@/lib/source-reliability/sr-eval-enrichment";
+import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
+import { DEFAULT_SR_CONFIG } from "@/lib/config-schemas";
 import {
   assessEvidenceQuality,
   filterByRelevance,
@@ -26,6 +29,18 @@ const baseItems: EvidencePackItemForQuality[] = [
     provider: "serper",
   },
 ];
+
+describe("SR model aliases", () => {
+  it("replaces only the optional Sonnet alias and preserves the Haiku default", () => {
+    expect(resolveEvidenceQualityAssessmentModel("sonnet")).toEqual({ provider: "anthropic", modelName: "claude-sonnet-4-6" });
+    expect(resolveEvidenceQualityAssessmentModel("haiku").modelName).toBe("claude-haiku-4-5-20251001");
+    expect(ANTHROPIC_MODELS.budget.modelId).toBe("claude-haiku-4-5-20251001");
+    expect(ANTHROPIC_MODELS.standard.modelId).toBe("claude-haiku-4-5-20251001");
+    expect(DEFAULT_SR_CONFIG.evidenceQualityAssessment).toMatchObject({ model: "haiku", timeoutMs: 8000, minRemainingBudgetMs: 20000 });
+    // Explicit persisted IDs need their own reviewed migration, not relabelling.
+    expect(resolveEvidenceQualityAssessmentModel("claude-sonnet-4-5-20250929").modelName).toBe("claude-sonnet-4-5-20250929");
+  });
+});
 
 describe("parseEvidenceQualityAssessmentResponse", () => {
   it("parses object payload with classifications and normalizes values", () => {

@@ -646,7 +646,7 @@ export class MetricsCollector {
     let unpricedCalls = 0;
 
     for (const call of this.metrics.llmCalls!) {
-      const costPer1M = this.getCostPer1MTokens(call.provider, call.servedModelName ?? call.modelName);
+      const costPer1M = this.getCostPer1MTokens(call.provider, call.servedModelName ?? call.modelName, call.promptTokens);
       if (!costPer1M || call.usageAvailable === false) {
         unpricedCalls++;
         continue;
@@ -676,7 +676,7 @@ export class MetricsCollector {
     const searchCost = (this.metrics.searchQueries!.filter((query) => !query.cached).length / 1000) * 5;
     totalCost += searchCost;
     this.metrics.costEstimate = {
-      knownSubtotalUSD: totalCost, unpricedCalls, pricingCheckedAt: "2026-09-22", searchCostIsEstimate: true,
+      knownSubtotalUSD: totalCost, unpricedCalls, pricingCheckedAt: "2026-10-17", searchCostIsEstimate: true,
     };
     return unpricedCalls ? null : totalCost;
   }
@@ -684,8 +684,8 @@ export class MetricsCollector {
   /**
    * Get cost per 1M tokens for a model
    */
-  private getCostPer1MTokens(provider: string, modelName: string): { input: number; output: number; cacheRead?: number; cacheWrite?: number } | undefined {
-    // Candidate + active Anthropic rates checked 2026-09-22:
+  private getCostPer1MTokens(provider: string, modelName: string, inputTokens: number): { input: number; output: number; cacheRead?: number; cacheWrite?: number } | undefined {
+    // Haiku 5.5 checked 2026-10-17; existing rates retain their earlier checks:
     // https://platform.claude.com/docs/en/about-claude/pricing
     // Other entries retain their historical estimates; this is not invoice data.
     const pricing: Record<string, { input: number; output: number }> = {
@@ -735,7 +735,11 @@ export class MetricsCollector {
       'mistral-small-latest': { input: 0.2, output: 0.6 },
     };
 
-    const rate = pricing[modelName];
+    // AI SDK inputTokens includes cache reads/writes. Crossing the threshold
+    // reprices the whole request, including output and every cache category.
+    const rate = modelName === "claude-haiku-5-5"
+      ? (inputTokens > 100_000 ? { input: 0.5, output: 2.5 } : { input: 0.1, output: 0.5 })
+      : pricing[modelName];
     if (!rate) return undefined;
     if (provider === "anthropic" || provider === "claude") {
       return { ...rate, cacheRead: rate.input * (modelName === "claude-fable-5-1" ? 0.025 : 0.1), cacheWrite: rate.input * 1.25 };

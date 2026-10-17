@@ -276,15 +276,15 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 
 const CONTEXT_PATTERN_ID_REGEX = /^CTX_[A-Z_]+$/;
 
-// Request stages, not semantic classifications. Keep this inventory aligned with
-// the explicit stage arguments at the Sonnet-routed getModelForTask call sites.
+// Established Sonnet request stages and Admin cap controls. New isolated model
+// routes must not expand this inventory or existing Sonnet policy requirements.
 export const MODEL_POLICY_STAGES = [
   "verdict", "boundaryClustering", "claimContractRepair", "claimContractCompletion",
   "claimContractSurgicalRepair", "claimAtomicity", "claimContractValidation",
   "claimExtractionPass2", "claimSelection", "articleAdjudication", "verdictNarrative",
   "sourceReliabilityCalibration",
 ] as const;
-export type ModelPolicyStage = typeof MODEL_POLICY_STAGES[number];
+export type ModelPolicyStage = typeof MODEL_POLICY_STAGES[number] | "researchExtraction";
 
 const ModelThinkingSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("disabled") }).strict(),
@@ -293,15 +293,15 @@ const ModelThinkingSchema = z.discriminatedUnion("type", [
 const ContractValidationModelSchema = z.literal("claude-sonnet-5").nullable().optional();
 export const ModelPolicySchema = z.object({
   thinking: ModelThinkingSchema,
-  outputTokenCaps: z.record(z.enum(MODEL_POLICY_STAGES), z.number().int().min(1).max(128000)),
+  outputTokenCaps: z.record(z.enum([...MODEL_POLICY_STAGES, "researchExtraction"]), z.number().int().min(1).max(128000)),
   structuredOutputModes: z.object({
     claimContractValidation: z.literal("outputFormat").optional(),
   }).strict().optional(),
 }).strict();
 
-/** Only this candidate family has a reviewed policy in this rollout. */
+/** Candidate families must use exact reviewed IDs and route-specific policies. */
 export function requiresExplicitModelPolicy(modelName: string): boolean {
-  return /^claude-sonnet-5(?:$|-)/.test(modelName);
+  return /^claude-(?:sonnet-5|haiku-5-5)(?:$|-)/.test(modelName);
 }
 
 export class ModelPolicyError extends Error {
@@ -314,7 +314,7 @@ export class ModelPolicyError extends Error {
 /** Shared by schema/save, stored-version activation, Admin advice and requests. */
 export function getModelPolicyErrors(
   config: Record<string, unknown>,
-  request?: { modelName: string; stage?: string },
+  request?: { modelName: string; stage?: string; task?: string },
 ): string[] {
   const errors: string[] = [];
   const selector = ContractValidationModelSchema.safeParse(config.modelClaimContractValidation);
@@ -333,7 +333,19 @@ export function getModelPolicyErrors(
     return [...errors, ...checked.error.issues.map(i => `modelPolicies.${i.path.join(".")}: ${i.message}`)];
   }
   for (const name of Object.keys(checked.data)) {
-    if (name !== "claude-sonnet-5") errors.push(`modelPolicies.${name}: no reviewed policy support for this model ID`);
+    if (name !== "claude-sonnet-5" && name !== "claude-haiku-5-5") {
+      errors.push(`modelPolicies.${name}: no reviewed policy support for this model ID`);
+    }
+    if (name === "claude-haiku-5-5") {
+      const policy = checked.data[name];
+      if (policy.thinking.type !== "disabled") errors.push(`modelPolicies.${name}: disabled thinking is required`);
+      if (policy.outputTokenCaps.researchExtraction !== 16384) {
+        errors.push(`modelPolicies.${name}.outputTokenCaps.researchExtraction: the reviewed output cap is 16384`);
+      }
+      if (Object.keys(policy.outputTokenCaps).some(stage => stage !== "researchExtraction") || policy.structuredOutputModes) {
+        errors.push(`modelPolicies.${name}: only the researchExtraction jsonTool route is supported`);
+      }
+    }
     if (checked.data[name].structuredOutputModes?.claimContractValidation
       && (config.llmTiering !== true || !anthropicProvider || (contractModel ?? config.modelVerdict) !== name)) {
       errors.push(`modelPolicies.${name}.structuredOutputModes.claimContractValidation: contract validation must resolve to this model with Anthropic tiering enabled`);
@@ -349,33 +361,47 @@ export function getModelPolicyErrors(
   if (request) {
     if (requiresExplicitModelPolicy(request.modelName)) {
       requireStages(request.modelName, request.stage ? [request.stage] : []);
-      if (!request.stage || !MODEL_POLICY_STAGES.includes(request.stage as ModelPolicyStage)) {
+      const stages: readonly string[] = request.modelName === "claude-haiku-5-5"
+        ? ["researchExtraction"] : MODEL_POLICY_STAGES;
+      if (!request.stage || !stages.includes(request.stage)) {
         errors.push(`${request.modelName}: a reviewed request stage is required`);
       }
-    }
-  } else if (config.llmTiering !== false) {
-    // Phase B covers the existing reasoning route. Other task migrations need
-    // their own stage inventory before they can select this candidate.
-    for (const field of ["modelUnderstand", "modelExtractEvidence"] as const) {
-      if (typeof config[field] === "string" && requiresExplicitModelPolicy(config[field])) {
-        errors.push(`${field}: Sonnet 5 is supported only on reviewed reasoning routes`);
+      if (request.modelName === "claude-haiku-5-5"
+        && (request.task !== "extract_evidence" || config.llmTiering !== true || !anthropicProvider)) {
+        errors.push(`${request.modelName}: isolated extract_evidence with Anthropic tiering is required`);
       }
     }
-    if (typeof config.modelOpus === "string" && requiresExplicitModelPolicy(config.modelOpus)) {
-      requireStages(config.modelOpus, ["verdict"]);
+  } else {
+    // modelExtractEvidence is shared by Stage 1 and Stage 2. This candidate is
+    // callable through an isolated stage request, never a stored pipeline opt-in.
+    for (const field of ["modelUnderstand", "modelExtractEvidence", "modelVerdict", "modelOpus"] as const) {
+      if (typeof config[field] === "string" && /^claude-haiku-5-5(?:$|-)/.test(config[field])) {
+        errors.push(`${field}: Haiku 5.5 is supported only by isolated researchExtraction requests, not stored pipeline activation`);
+      }
     }
-    if (typeof config.modelVerdict === "string" && requiresExplicitModelPolicy(config.modelVerdict)) {
-      const stages = MODEL_POLICY_STAGES.filter(stage => stage !== "sourceReliabilityCalibration"
-        || (config.sourceReliabilityCalibrationEnabled === true
-          && (config.sourceReliabilityCalibrationMode ?? "off") !== "off"
-          && ["standard", "premium"].includes(String(config.sourceReliabilityCalibrationStrength))));
-      requireStages(config.modelVerdict, stages);
+    if (config.llmTiering !== false) {
+      // Sonnet's established reasoning routes retain their original inventory.
+      for (const field of ["modelUnderstand", "modelExtractEvidence"] as const) {
+        if (typeof config[field] === "string" && /^claude-sonnet-5(?:$|-)/.test(config[field])) {
+          errors.push(`${field}: Sonnet 5 is supported only on reviewed reasoning routes`);
+        }
+      }
+      if (typeof config.modelOpus === "string" && requiresExplicitModelPolicy(config.modelOpus)) {
+        requireStages(config.modelOpus, ["verdict"]);
+      }
+      if (typeof config.modelVerdict === "string" && requiresExplicitModelPolicy(config.modelVerdict)) {
+        const stages = MODEL_POLICY_STAGES.filter(stage => stage !== "sourceReliabilityCalibration"
+          || (config.sourceReliabilityCalibrationEnabled === true
+            && (config.sourceReliabilityCalibrationMode ?? "off") !== "off"
+            && ["standard", "premium"].includes(String(config.sourceReliabilityCalibrationStrength))));
+        requireStages(config.modelVerdict, stages);
+      }
+      if (contractModel) requireStages(contractModel, ["claimContractValidation"]);
     }
-    if (contractModel) requireStages(contractModel, ["claimContractValidation"]);
   }
   for (const [name, stages] of required) {
-    if (name !== "claude-sonnet-5") {
-      errors.push(`${name}: use the reviewed exact model ID claude-sonnet-5`);
+    if (name !== "claude-sonnet-5" && name !== "claude-haiku-5-5") {
+      errors.push(`${name}: use a reviewed exact model ID (claude-sonnet-5 or claude-haiku-5-5)`);
       continue;
     }
     const policy = checked.data[name];

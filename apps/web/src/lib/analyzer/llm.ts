@@ -169,12 +169,19 @@ export function getModelForTask(
   if (hasContractPolicy && contractStage && provider !== "anthropic") {
     throw new ModelPolicyError(["claimContractValidation: Anthropic provider is required"]);
   }
+  const overrideName = (contractStage ? config?.modelClaimContractValidation : null)
+    ?? modelOverrideForTask(task, config);
+  if (overrideName && /^claude-haiku-5-5(?:$|-)/.test(overrideName)) {
+    // Reject unsupported candidate routing before the legacy tier/provider
+    // fallbacks can silently choose a different model.
+    const errors = getModelPolicyErrors(config ?? {}, { modelName: overrideName, stage, task });
+    if (provider !== "anthropic") errors.push(`${overrideName}: Anthropic provider is required`);
+    if (errors.length) throw new ModelPolicyError(errors);
+  }
   if (!isTieringEnabled(config)) {
     return getModel(providerOverride, config);
   }
 
-  const overrideName = (contractStage ? config?.modelClaimContractValidation : null)
-    ?? modelOverrideForTask(task, config);
   let modelName: string | null = null;
 
   if (overrideName) {
@@ -208,12 +215,13 @@ export function getModelForTask(
       specificationVersion: "v3",
       transformParams: async ({ params }) => {
         lastCall = {};
-        const errors = getModelPolicyErrors(config ?? {}, { modelName, stage });
+        const errors = getModelPolicyErrors(config ?? {}, { modelName, stage, task });
         if (provider !== "anthropic") errors.push(`${modelName}: Anthropic provider is required`);
         if (errors.length) throw new ModelPolicyError(errors);
         const policy = config!.modelPolicies![modelName];
         const maxOutputTokens = policy.outputTokenCaps[stage!]!;
         const anthropicOptions = { ...params.providerOptions?.anthropic };
+        if (modelName === "claude-haiku-5-5") anthropicOptions.structuredOutputMode = "jsonTool";
         if (stage === "claimContractValidation" && policy.structuredOutputModes?.claimContractValidation) {
           anthropicOptions.structuredOutputMode = policy.structuredOutputModes.claimContractValidation;
         }
@@ -225,6 +233,7 @@ export function getModelForTask(
         delete anthropicOptions.effort;
         return {
           ...params,
+          ...(modelName === "claude-haiku-5-5" ? { temperature: undefined, topP: undefined, topK: undefined } : {}),
           maxOutputTokens,
           providerOptions: {
             ...params.providerOptions,

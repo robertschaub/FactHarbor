@@ -68,6 +68,34 @@ function finalizeMetricsForSingleCall(overrides: Partial<LLMCallMetric> = {}) {
 }
 
 describe("MetricsCollector cost estimation", () => {
+  it.each([99_999, 100_000, 100_001])("prices the complete Haiku 5.5 request at the %s-token boundary", promptTokens => {
+    const rate = promptTokens > 100_000 ? 0.5 : 0.1;
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-haiku-5-5", promptTokens, completionTokens: 1000 });
+    expect(metrics.estimatedCostUSD).toBeCloseTo((promptTokens * rate + 1000 * rate * 5) / 1e6, 12);
+  });
+
+  it.each([100_000, 100_001])("counts cached tokens in Haiku's tier and reprices both TTLs at %s", promptTokens => {
+    const rate = promptTokens > 100_000 ? 0.5 : 0.1;
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-haiku-5-5", promptTokens, completionTokens: 1000,
+      cacheReadInputTokens: 60_000, cacheCreationInputTokens: 30_000, cacheCreation1hInputTokens: 10_000 });
+    expect(metrics.estimatedCostUSD).toBeCloseTo(((promptTokens - 90_000) * rate + 60_000 * rate * 0.1
+      + 20_000 * rate * 1.25 + 10_000 * rate * 2 + 1000 * rate * 5) / 1e6, 12);
+  });
+
+  it.each([
+    { usageAvailable: false }, { cacheCreationInputTokens: 10 },
+    { servedModelName: "claude-haiku-5-5-unknown" },
+  ])("does not invent Haiku prices for missing accounting evidence: %j", override => {
+    const metrics = finalizeMetricsForSingleCall({ modelName: "claude-haiku-5-5", ...override });
+    expect(metrics.estimatedCostUSD).toBeNull();
+    expect(metrics.costEstimate?.unpricedCalls).toBe(1);
+  });
+
+  it("retains historical Sonnet 4.5 pricing and prices known served models", () => {
+    expect(finalizeMetricsForSingleCall({ modelName: "claude-sonnet-4-5-20250929" }).estimatedCostUSD).toBe(18);
+    expect(finalizeMetricsForSingleCall({ modelName: "claude-haiku-5-5", servedModelName: "claude-haiku-4-5-20251001" }).estimatedCostUSD).toBe(6);
+  });
+
   it("prices the known served GPT-4.1 snapshot and keeps unknown served models unavailable", () => {
     const base = { provider: "openai", modelName: "gpt-4.1", completionTokens: 0,
       promptTokens: 1_000_000, cacheReadInputTokens: 200_000 };

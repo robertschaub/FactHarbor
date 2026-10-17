@@ -484,7 +484,7 @@ export async function extractResearchEvidence(
     return [];
   }
 
-  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  const model = getModelForTask("extract_evidence", undefined, pipelineConfig, "researchExtraction");
   const userContent = `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`;
   observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_request", () => ({ links: {
     section: "EXTRACT_EVIDENCE", promptContentHash: rendered.contentHash ?? null, rendererWarnings: rendered.warnings,
@@ -536,7 +536,7 @@ export async function extractResearchEvidence(
         retries: 0,
         errorMessage: "Stage 2 evidence extraction returned no structured output",
         timestamp: new Date(),
-      });
+      }, { model, result, maxOutputTokens: 16384 });
       observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: {
         outcome: "no_structured_output", usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId,
       } }), captureCallId));
@@ -664,7 +664,7 @@ export async function extractResearchEvidence(
       schemaCompliant: true,
       retries: 0,
       timestamp: new Date(),
-    });
+    }, { model, result, maxOutputTokens: 16384 });
 
     observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_result", () => ({ links: {
       outcome: "success", usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId,
@@ -690,7 +690,7 @@ export async function extractResearchEvidence(
       retries: 0,
       errorMessage,
       timestamp: new Date(),
-    });
+    }, { model, result, error: err, maxOutputTokens: 16384 });
     debugLogFileOnly("[Stage2] Evidence extraction failed", {
       claimId: targetClaim.id,
       errorMessage,

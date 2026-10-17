@@ -29,6 +29,27 @@ const context = () => ({ params: Promise.resolve({ type: "pipeline", profile: "p
 afterAll(async () => { await (await getDb()).close(); });
 
 describe("real UCM save/activation against isolated memory DB", () => {
+  it("rejects stored Haiku extraction selection even with a valid policy or tiering disabled", async () => {
+    await historicalBlob("haiku-baseline", { modelExtractEvidence: "budget", llmTiering: true });
+    await activateConfig("pipeline", "policy-test", "haiku-baseline");
+    for (const enabled of [true, false]) {
+      for (const field of ["modelExtractEvidence", "modelUnderstand", "modelVerdict", "modelOpus"]) {
+        const config = { ...DEFAULT_PIPELINE_CONFIG, llmTiering: enabled, [field]: "claude-haiku-5-5",
+          modelPolicies: { "claude-haiku-5-5": { thinking: { type: "disabled" }, outputTokenCaps: { researchExtraction: 16384 } } } };
+        const content = JSON.stringify(config);
+        await expect(saveConfigBlob("pipeline", "policy-test", content, "unsupported-haiku")).rejects.toThrow("not stored pipeline activation");
+        expect((await saveRoute(request({ content, versionLabel: "unsupported" }), context())).status).toBe(400);
+        const hash = `haiku-${enabled}-${field}`;
+        await historicalBlob(hash, config);
+        await expect(activateConfig("pipeline", "policy-test", hash)).rejects.toThrow("not stored pipeline activation");
+        await expect(rollbackConfig("pipeline", "policy-test", hash)).rejects.toThrow("not stored pipeline activation");
+        for (const route of [activateRoute, rollbackRoute]) {
+          expect((await route(request({ contentHash: hash }), context())).status).toBe(400);
+        }
+        expect(await getActiveConfigHash("pipeline", "policy-test")).toBe("haiku-baseline");
+      }
+    }
+  });
   it("rejects incompatible stored contract routes at every save/activation seam", async () => {
     const native = { ...DEFAULT_PIPELINE_CONFIG, modelClaimContractValidation: "claude-sonnet-5",
       modelPolicies: { "claude-sonnet-5": { thinking: { type: "adaptive", effort: "medium" },

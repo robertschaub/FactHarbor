@@ -69,7 +69,7 @@ export const ANTHROPIC_MODELS: Record<ModelTier, ModelConfig> = {
   },
   premium: {
     provider: 'anthropic',
-    modelId: 'claude-sonnet-4-5-20250929',
+    modelId: 'claude-sonnet-4-6',
     tier: 'premium',
     costPer1MTokens: { input: 3, output: 15 },
     maxTokens: 200000,
@@ -315,7 +315,7 @@ export function estimateTaskCost(
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * // Instead of:
- * const model = anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929');
+ * const model = anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6');
  *
  * // Use:
  * const modelConfig = getModelForTask('understand', 'anthropic');

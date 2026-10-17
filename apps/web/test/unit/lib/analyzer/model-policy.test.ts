@@ -8,8 +8,30 @@ import {
   getModelPolicyErrors, type PipelineConfig,
 } from "@/lib/config-schemas";
 import { getModelForTask, getStructuredOutputProviderOptions } from "@/lib/analyzer/llm";
-import { measuredLLMCall } from "@/lib/analyzer/metrics-integration";
+import { captureMetrics, measuredLLMCall } from "@/lib/analyzer/metrics-integration";
 import { MetricsCollector, type LLMCallMetric } from "@/lib/analyzer/metrics";
+import { extractResearchEvidence } from "@/lib/analyzer/research-extraction-stage";
+import type { AtomicClaim } from "@/lib/analyzer/types";
+
+// The real stage and provider SDK run against a fetch stub. Do not load UCM,
+// write debug logs, or retry even the deliberately injected transport failures.
+vi.mock("@/lib/analyzer/prompt-loader", () => ({
+  loadAndRenderSection: vi.fn(async (_pipeline, _section, variables) => ({
+    content: JSON.stringify(variables), contentHash: "offline-prompt", warnings: [],
+  })),
+}));
+vi.mock("@/lib/analyzer/debug", () => ({ debugLog: vi.fn(), debugLogFileOnly: vi.fn() }));
+vi.mock("ai", async importOriginal => {
+  const sdk = await importOriginal<typeof import("ai")>();
+  return { ...sdk, generateText: (options: Parameters<typeof sdk.generateText>[0]) => sdk.generateText({ ...options, maxRetries: 0 }) };
+});
+
+function extractionCandidate(): PipelineConfig {
+  return { ...serializedBaseline(), modelExtractEvidence: "claude-haiku-5-5",
+    modelPolicies: { "claude-haiku-5-5": {
+      thinking: { type: "disabled" }, outputTokenCaps: { researchExtraction: 16384 },
+    } } };
+}
 
 function candidate(): PipelineConfig {
   return JSON.parse(readFileSync(
@@ -33,6 +55,38 @@ const metric: LLMCallMetric = {
 };
 
 describe("candidate policy validation", () => {
+  it("allows only the isolated Haiku extraction request, not stored activation", () => {
+    const config = extractionCandidate();
+    expect(getModelPolicyErrors(config, { modelName: "claude-haiku-5-5", stage: "researchExtraction", task: "extract_evidence" })).toEqual([]);
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(false);
+    expect(getModelPolicyErrors({ ...config, llmTiering: false }).join()).toContain("not stored pipeline activation");
+    // An unused policy does not select a model or change baseline wire bodies.
+    expect(PipelineConfigSchema.safeParse({ ...config, modelExtractEvidence: "budget" }).success).toBe(true);
+    expect(MODEL_POLICY_STAGES).not.toContain("researchExtraction");
+    expect(getModelPolicyErrors(candidate())).toEqual([]);
+    expect(candidate().modelPolicies!["claude-sonnet-5"].outputTokenCaps.researchExtraction).toBeUndefined();
+  });
+
+  it.each([
+    { modelPolicies: {} }, { llmProvider: "openai" }, { llmTiering: false },
+    { modelExtractEvidence: "claude-haiku-5-5-latest" },
+    { modelPolicies: { "claude-haiku-5-5": { thinking: { type: "adaptive", effort: "low" }, outputTokenCaps: { researchExtraction: 16384 } } } },
+    { modelPolicies: { "claude-haiku-5-5": { thinking: { type: "disabled" }, outputTokenCaps: {} } } },
+    { modelPolicies: { "claude-haiku-5-5": { thinking: { type: "disabled" }, outputTokenCaps: { researchExtraction: 32768 } } } },
+  ])("rejects unsupported Haiku policy before fallback or sending: %j", change => {
+    expect(() => getModelForTask("extract_evidence", undefined,
+      { ...extractionCandidate(), ...change } as PipelineConfig, "researchExtraction")).toThrow("Invalid model policy");
+  });
+
+  it("rejects Stage 1, wrong tasks and provider overrides for the extraction candidate", () => {
+    const config = extractionCandidate();
+    expect(() => getModelForTask("extract_evidence", undefined, config)).toThrow("reviewed request stage");
+    expect(() => getModelForTask("extract_evidence", undefined, config, "claimExtractionPass2")).toThrow("reviewed request stage");
+    expect(() => getModelForTask("extract_evidence", "google", config, "researchExtraction")).toThrow("Anthropic provider");
+    expect(() => getModelForTask("verdict", undefined,
+      { ...config, modelVerdict: "claude-haiku-5-5" }, "researchExtraction")).toThrow("isolated extract_evidence");
+  });
+
   it("keeps every baseline setting except the declared Sonnet 5 policy", () => {
     const config = candidate();
     const baseline = serializedBaseline();
@@ -300,6 +354,86 @@ describe("offline SDK requests (fetch stub only; no paid calls)", () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).toMatchObject({ model: "claude-sonnet-5", max_tokens: expectedCap, thinking: { type: "adaptive" }, output_config: { effort: "medium" } });
     expect(model.getLastCall?.().maxOutputTokens).toBe(expectedCap);
+  });
+
+  const extractionSources = [
+    { url: "https://example.test/a", title: "Source A", text: "Source A — ação, Überprüfung" },
+    { url: "https://example.test/b", title: "Source B", text: "Source B — investigação, Prüfung" },
+  ];
+  const extractionClaim = (statement = "Plastic recycling is pointless") => ({ id: "AC_01", statement }) as AtomicClaim;
+  const extract = (config = extractionCandidate(), statement?: string) => captureMetrics(() =>
+    extractResearchEvidence(extractionClaim(statement), extractionSources, config, "2026-10-17"));
+  const extractionResponse = () => {
+    response.model = "claude-haiku-5-5";
+    response.stop_reason = "tool_use";
+    response.content = [{ type: "tool_use", id: "offline_tool", name: "json", input: { evidenceItems: [{
+      statement: "Plastic recycling is pointless", sourceUrl: extractionSources[0].url, category: "evidence",
+      claimDirection: "supports", evidenceScope: {}, probativeValue: "high", sourceType: "news_primary", relevantClaimIds: ["AC_01"],
+    }] } }];
+  };
+
+  it.each([
+    "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+  ])("serializes the real isolated extraction stage without changing source/claim/schema: %s", async statement => {
+    extractionResponse();
+    const baseline = await extract(serializedBaseline(), statement);
+    const candidateResult = await extract(extractionCandidate(), statement);
+    expect(baseline.ok && baseline.value).toEqual(candidateResult.ok && candidateResult.value);
+    expect(candidateResult.ok && candidateResult.value).toHaveLength(1);
+    expect(bodies).toHaveLength(2);
+    const { model: _baselineModel, temperature: _baselineTemperature, ...baselineBody } = bodies[0];
+    const { model: _candidateModel, thinking: _thinking, ...candidateBody } = bodies[1];
+    expect(candidateBody).toEqual(baselineBody);
+    expect(bodies[1]).toMatchObject({ model: "claude-haiku-5-5", max_tokens: 16384,
+      thinking: { type: "disabled" }, tool_choice: { type: "any" } });
+    expect(JSON.stringify(bodies[1])).not.toContain("cache_control");
+    expect(bodies[1].temperature).toBeUndefined();
+    expect(bodies[1].top_p).toBeUndefined();
+    expect(bodies[1].top_k).toBeUndefined();
+    expect(bodies[1].output_config?.effort).toBeUndefined();
+    expect(JSON.stringify(bodies[1].messages)).toContain(statement);
+    expect(JSON.stringify(bodies[1].system)).toContain(extractionSources[1].text);
+    expect(candidateResult.captured.llmCalls).toHaveLength(1);
+    expect(candidateResult.captured.llmCalls[0]).toMatchObject({ success: true, modelPolicyStage: "researchExtraction",
+      configuredStructuredOutputMode: "jsonTool", maxOutputTokens: 16384, servedModelName: "claude-haiku-5-5", usageAvailable: true });
+  });
+
+  it.each([["refusal", "refusal"], ["max_tokens", "truncation"], ["tool_use", "schema"]])(
+    "records one failed extraction with billed usage on %s", async (stop, kind) => {
+      extractionResponse();
+      response.stop_reason = stop;
+      response.content[0].input = { invalid: true };
+      const captured = await extract();
+      expect(captured.ok && captured.value).toEqual([]);
+      expect(captured.captured.llmCalls).toHaveLength(1);
+      expect(captured.captured.llmCalls[0]).toMatchObject({ success: false, schemaCompliant: false,
+        failureKind: kind, promptTokens: 100, completionTokens: 30, usageAvailable: true,
+        modelPolicyStage: "researchExtraction", servedModelName: "claude-haiku-5-5" });
+      expect(bodies).toHaveLength(1);
+    });
+
+  it("records a headers timeout without fabricating usage or retrying", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("Headers Timeout"));
+    const captured = await extract();
+    expect(captured.ok && captured.value).toEqual([]);
+    expect(captured.captured.llmCalls).toHaveLength(1);
+    expect(captured.captured.llmCalls[0]).toMatchObject({ success: false, failureKind: "transport",
+      usageAvailable: false, modelPolicyStage: "researchExtraction", maxOutputTokens: 16384 });
+    const collector = new MetricsCollector("offline-timeout", "claimboundary");
+    collector.recordLLMCall(captured.captured.llmCalls[0]);
+    expect(collector.finalize().estimatedCostUSD).toBeNull();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["claude-haiku-4-5-20251001", undefined])("preserves returned identity %s for the experiment's STOP gate", async modelId => {
+    extractionResponse();
+    response.model = modelId;
+    const captured = await extract();
+    expect(captured.captured.llmCalls).toHaveLength(1);
+    expect(captured.captured.llmCalls[0].servedModelName).toBe(modelId);
+    expect(captured.captured.llmCalls[0].modelName).toBe("claude-haiku-5-5");
+    expect(bodies).toHaveLength(1);
   });
 
   it.each([
