@@ -25,14 +25,16 @@ public sealed class InternalJobsController : ControllerBase
         if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
         var status = (req.status ?? "RUNNING").Trim().ToUpperInvariant();
-        await _jobs.UpdateStatusAsync(
+        // 200 even when refused (applied=false): the runner sends progress fire-and-forget, and a
+        // terminal job is an expected outcome, not a client error.
+        var applied = await _jobs.UpdateStatusAsync(
             jobId,
             status,
             req.progress,
             req.level ?? "info",
             req.message ?? "",
             req.executedWebGitCommitHash);
-        return Ok(new { ok = true });
+        return Ok(new { ok = true, applied });
     }
 
     [HttpPut("{jobId}/result")]
@@ -40,8 +42,8 @@ public sealed class InternalJobsController : ControllerBase
     {
         if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
-        await _jobs.StoreResultAsync(jobId, req.resultJson, req.reportMarkdown);
-        return Ok(new { ok = true });
+        var applied = await _jobs.StoreResultAsync(jobId, req.resultJson, req.reportMarkdown);
+        return Ok(new { ok = true, applied });
     }
 
     [HttpDelete("{jobId}")]

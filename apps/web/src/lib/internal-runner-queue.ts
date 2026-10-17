@@ -381,8 +381,11 @@ export async function drainRunnerQueue() {
     // runningJobIds is process-local — after a restart it's empty. Any job that the DB says
     // is RUNNING but isn't in our local set was orphaned by the restart. These are immediately
     // re-queued (not failed) so they run again from scratch. Jobs that ARE locally tracked but
-    // haven't updated in 15 minutes are genuinely stale and get failed.
-    const STALE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+    // haven't updated in 30 minutes are genuinely stale and get failed. The threshold must exceed
+    // the longest silence of a live pipeline: a single clustering or verdict LLM call has run
+    // 15.3 minutes without a progress event, and FAILED is final at the API (a late completion
+    // is refused), so the former 15-minute value turned such jobs into lost results.
+    const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
     try {
       // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
       const runningJobs: Array<{ jobId: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
@@ -465,7 +468,7 @@ export async function drainRunnerQueue() {
 
           // Job is still RUNNING in DB with the same updatedUtc but is not tracked by this
           // process. Treat it as orphaned by a restart and re-queue it immediately instead
-          // of waiting for the 15-minute stale threshold.
+          // of waiting for the stale threshold.
           console.warn(`[Runner] Re-queuing orphaned job ${jobId} (was RUNNING but not tracked by this process)`);
           await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
             status: "QUEUED",

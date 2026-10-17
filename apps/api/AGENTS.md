@@ -50,12 +50,14 @@ Applies to all files under `apps/api/`. For project-wide rules, see `/AGENTS.md`
 |--------|---------|
 | Run (hot reload) | `cd apps/api && dotnet watch run` |
 | Build | `cd apps/api && dotnet build` |
+| Test | `cd apps/api.Tests && dotnet test` (offline, in-memory SQLite) |
 | Swagger | http://localhost:5000/swagger |
 | Reset DB | Delete `factharbor.db`, restart (auto-recreated) |
 
 ## Status Values
 
-`JobEntity.Status`: `QUEUED` -> `RUNNING` -> `SUCCEEDED` | `FAILED`
+`JobEntity.Status`: `QUEUED` -> `RUNNING` -> `SUCCEEDED` | `FAILED` | `CANCELLED`; `INTERRUPTED` (RUNNING at API startup) is re-queued by the runner.
+`SUCCEEDED`, `FAILED` and `CANCELLED` are final: `JobService` applies status, result and cancel writes as conditional UPDATEs that only match non-terminal jobs, and records a refused status or result write as a job event; cancelling a terminal job is a no-op.
 `Progress`: 0-100 integer.
 
 ## Safety
