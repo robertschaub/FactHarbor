@@ -471,6 +471,29 @@ export interface ResearchIteration {
  *
  * @since v2.8 (Phase 2 of terminology migration)
  */
+export interface EvidenceSourceView {
+  ref: string;
+  url: string;
+  sha256: string;
+  /** Bounds in the retained FetchedSource.fullText, in UTF-16 code units. */
+  start: number;
+  end: number;
+  utf16Length: number;
+  utf8Length: number;
+}
+
+export type EvidenceSourceBinding =
+  | { status: "bound"; view: EvidenceSourceView }
+  | { status: "unresolved"; reason: string };
+
+export type ClaimApplicability = {
+  /** True only when a provider invocation was actually attempted for this pair. */
+  assessed: boolean;
+} & (
+  | { status: "assessed"; classification: "direct" | "contextual" | "foreign_reaction" }
+  | { status: "unresolved"; reason: string }
+);
+
 export interface EvidenceItem {
   id: string;
   /**
@@ -488,6 +511,12 @@ export interface EvidenceItem {
     | "criticism";
   specificity: "high" | "medium";
   sourceId: string;
+  /** Request-local source identity. Display URL/ID backfills never create this authority. */
+  sourceBinding?: EvidenceSourceBinding;
+  /** Request target is provenance, not a claim link. */
+  extractionTargetClaimId?: string;
+  /** Present for every item in new enabled applicability operations, including failures. */
+  applicabilityByClaim?: Record<string, ClaimApplicability>;
   sourceUrl: string;
   sourceTitle: string;
   sourceExcerpt: string;
@@ -535,7 +564,7 @@ export interface EvidenceItem {
   scopeQuality?: "complete" | "partial" | "incomplete";
   // True if this evidence was seeded from preliminary search
   isSeeded?: boolean;
-  // CB pipeline Fix 3: Post-extraction applicability classification
+  // Legacy scalar classification: read compatibility only; new enabled operations use the pair map.
   applicability?: "direct" | "contextual" | "foreign_reaction";
   /**
    * True when the applicability classifier was invoked for this evidence item.
@@ -1258,6 +1287,8 @@ export interface CBClaimUnderstanding {
   /** ISO 3166-1 alpha-2 country code inferred from claim content (e.g., "CH", "US"), or null if not geographically specific */
   inferredGeography?: string | null;
   preliminaryEvidence: Array<{
+    sourceId?: string;
+    sourceBinding?: EvidenceSourceBinding;
     sourceUrl: string;
     sourceTitle?: string;
     snippet: string;

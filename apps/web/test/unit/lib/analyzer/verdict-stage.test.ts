@@ -5617,3 +5617,39 @@ describe("claim-local direction validation (cross-claim contamination prevention
     expect(result[0].claimId).toBe("AC_01");
   });
 });
+
+
+describe("per-claim applicability contract", () => {
+  const pairMap: NonNullable<EvidenceItem["applicabilityByClaim"]> = {
+    AC_01: { status: "assessed", assessed: true, classification: "direct" },
+    AC_02: { status: "assessed", assessed: true, classification: "contextual" },
+  };
+  it("accepts a citation for A without granting the same item's authority to B", () => {
+    const evidence=[createEvidenceItem({id:"E",relevantClaimIds:["AC_01","AC_02"],applicabilityByClaim:pairMap})];
+    for(const claimId of ["AC_01","AC_02"]){
+      const verdict=createCBVerdict({claimId,truthPercentage:70,supportingEvidenceIds:["E"],contradictingEvidenceIds:[]});
+      expect(isVerdictDirectionPlausible(verdict,evidence)).toBe(claimId==="AC_01");
+    }
+  });
+  it("projects both decisions into the multi-claim advocate and challenger inputs",async()=>{
+    const claims=[createAtomicClaim(),createAtomicClaim({id:"AC_02"})];
+    const evidence=[createEvidenceItem({id:"E",relevantClaimIds:["AC_01","AC_02"],applicabilityByClaim:pairMap})];
+    const boundaries=[createClaimBoundary()],matrix=buildCoverageMatrix(claims,boundaries,evidence);
+    const llm=createMockLLM({VERDICT_ADVOCATE:advocateResponse(),VERDICT_CHALLENGER:{challenges:[]}});
+    await advocateVerdict(claims,evidence,boundaries,matrix,llm);
+    const advocateInput=vi.mocked(llm).mock.calls[0][1];
+    expect((advocateInput.evidenceItems as any[])[0].applicabilityByClaim).toEqual(pairMap);
+    await adversarialChallenge([createCBVerdict()],evidence,boundaries,llm);
+    const challengerInput=vi.mocked(llm).mock.calls.at(-1)![1];
+    expect((challengerInput.evidenceItems as any[])[0].applicabilityByClaim).toEqual(pairMap);
+    expect(JSON.stringify(advocateInput)).not.toContain(evidence[0].sourceExcerpt!);
+  });
+  it("new enabled verdict entry cannot inherit legacy scalar directness on a missing map",async()=>{
+    const claims=[createAtomicClaim()],evidence=[createEvidenceItem()],boundaries=[createClaimBoundary()];
+    const llm=createMockLLM({VERDICT_ADVOCATE:advocateResponse(),VERDICT_CHALLENGER:{challenges:[]},VERDICT_RECONCILIATION:advocateResponse(),VERDICT_GROUNDING_VALIDATION:{},VERDICT_DIRECTION_VALIDATION:{}});
+    await runVerdictStage(claims,evidence,boundaries,buildCoverageMatrix(claims,boundaries,evidence),llm,
+      {...DEFAULT_VERDICT_STAGE_CONFIG,requirePairApplicability:true,selfConsistencyMode:"disabled",evidencePartitioningEnabled:false});
+    const input=vi.mocked(llm).mock.calls.find(([key])=>key==="VERDICT_ADVOCATE")![1];
+    expect((input.evidenceItems as any[])[0].applicabilityByClaim).toEqual({});
+  });
+});

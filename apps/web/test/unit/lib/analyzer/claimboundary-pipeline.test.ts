@@ -2440,6 +2440,16 @@ describe("Shared evidence extraction prompt — real rendering, offline callers"
             expect(result).toMatchObject({ statement: input, sourceUrl: sources[1].url, sourceTitle: sources[1].title,
               evidenceScope: item.evidenceScope, probativeValue: "medium", sourceType: "other", relevantClaimIds: ["AC_01"] });
           }
+          expect(preliminary[0].sourceBinding).toEqual(research[0].sourceBinding);
+          expect(preliminary[0].sourceBinding).toMatchObject({ status: "bound", view: {
+            url: sources[1].url, start: 0, end: sources[1].text.length,
+            utf8Length: Buffer.byteLength(sources[1].text, "utf8") } });
+          const seededState = { understanding: { atomicClaims: [{ id: "AC_01" }], preliminaryEvidence: [{
+            ...preliminary[0], snippet: preliminary[0].statement, claimId: "AC_01",
+          }] }, evidenceItems: [] } as any;
+          seedEvidenceFromPreliminarySearch(seededState);
+          expect(seededState.evidenceItems[0].sourceBinding).toEqual(preliminary[0].sourceBinding);
+          expect(seededState.evidenceItems[0].sourceId).toBe(preliminary[0].sourceId);
           expect(preliminary[0].claimDirection).toBe("contextual");
           expect(research[0].claimDirection).toBe("neutral");
         } else {
@@ -2545,7 +2555,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     });
   });
 
-  it("should remap wrong-format LLM claim IDs in preliminary evidence to known atomic claim", () => {
+  it("does not promote wrong-format IDs to the sole final claim", () => {
     const state = {
       understanding: {
         atomicClaims: [{ id: "AC_01" }],
@@ -2561,9 +2571,9 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     seedEvidenceFromPreliminarySearch(state);
 
     expect(state.evidenceItems).toHaveLength(3);
-    // Wrong IDs remapped to the single known claim
-    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01"]);
-    expect(state.evidenceItems[1].relevantClaimIds).toEqual(["AC_01"]);
+    // Invalid IDs are retained for diagnostics, never promoted.
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["claim_01"]);
+    expect(state.evidenceItems[1].relevantClaimIds).toEqual(["claim_iran_deaths"]);
     // Correct ID preserved
     expect(state.evidenceItems[2].relevantClaimIds).toEqual(["AC_01"]);
   });
@@ -2651,7 +2661,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
   });
 
-  it("should filter relevantClaimIds to known atomic claims only", () => {
+  it("retains unknown link IDs so applicability can report ambiguity", () => {
     const state = {
       understanding: {
         atomicClaims: [{ id: "AC_01" }, { id: "AC_03" }],
@@ -2671,7 +2681,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     seedEvidenceFromPreliminarySearch(state);
 
     expect(state.evidenceItems).toHaveLength(1);
-    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_03"]);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02", "AC_03", "AC_99"]);
   });
 
   it("should fall back to legacy claimId when relevantClaimIds is empty", () => {
@@ -2750,7 +2760,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     seedEvidenceFromPreliminarySearch(state);
 
     expect(state.evidenceItems).toHaveLength(1);
-    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["claim_01", "claim_02"]);
   });
 
   it("should produce stub evidenceScope when pe.evidenceScope is undefined", () => {
@@ -3516,12 +3526,12 @@ describe("D5-aligned evidence sufficiency", () => {
     const evidence = [
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.example/1", claimDirection: "supports", applicability: "contextual", applicabilityAssessed: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.example/1", claimDirection: "supports", applicabilityAssessed: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "supports", applicability: "direct", applicabilityAssessed: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "organization_report", sourceUrl: "https://c.example/1", claimDirection: "supports", applicabilityByClaim: { AC_01: { status: "assessed", assessed: true, classification: "direct" } }, applicabilityAssessed: true },
     ] as any[];
 
     const sufficiency = evaluateEvidenceSufficiency(evidence, {
       ...d5Config,
-      requireDirectApplicability: true,
+      claimId: "AC_01", requireDirectApplicability: true,
     });
 
     expect(sufficiency.totalDirectionalCount).toBe(3);
@@ -3535,7 +3545,7 @@ describe("D5-aligned evidence sufficiency", () => {
       1,
       1,
       0,
-      { ...d5Config, requireDirectApplicability: true },
+      { ...d5Config, claimId: "AC_01", requireDirectApplicability: true },
     )).toBe(true);
   });
 

@@ -1699,7 +1699,43 @@ function PipelineConfigForm({
           />
           Enable Applicability Filter
         </label>
-        <div className={styles.formHelp}>Post-extraction filter that removes foreign-jurisdiction evidence. Disable to diagnose evidence pool reduction.</div>
+        <div className={styles.formHelp}>Requires source-bound applicability for each claim. Execution remains unavailable until token and cost admission is qualified; limits alone do not enable calls.</div>
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Source UTF-8 bytes per applicability request</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxSourceBytes ?? 65536}
+          min={1} step={1}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxSourceBytes", value); }} />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Complete SDK request-body bytes per applicability request</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxRequestBytes ?? 131072}
+          min={1} step={1}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxRequestBytes", value); }} />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Logical requests per complete applicability operation</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxRequests ?? 4}
+          min={1} step={1}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxRequests", value); }} />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Total SDK request-body bytes per applicability operation</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxOperationRequestBytes ?? 524288}
+          min={1} step={1}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxOperationRequestBytes", value); }} />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Output tokens per applicability call</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxOutputTokens ?? 8192}
+          min={1} step={1}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxOutputTokens", value); }} />
+      </div>
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Reserved USD limit for all applicability attempts, including SDK retries</label>
+        <input type="number" className={styles.formInput} value={config.applicabilityMaxOperationCostUSD ?? 1}
+          min={0.01} step={0.01}
+          onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value > 0) updateField("applicabilityMaxOperationCostUSD", value); }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div className={styles.formGroup}>

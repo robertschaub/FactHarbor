@@ -1,3 +1,4 @@
+import { isDirectForClaim } from "./evidence-applicability";
 import {
   AtomicClaim,
   CBResearchState,
@@ -895,8 +896,8 @@ const RemapOutputSchema = z.object({
 });
 
 /**
- * Check if a preliminary evidence item would be resolved by the existing
- * deterministic remap heuristics in seedEvidenceFromPreliminarySearch.
+ * Legacy eligibility check for the existing optional semantic remap call.
+ * This check grants no claim-link authority; seeding preserves the returned IDs.
  *
  * Replicates the logic of steps 1-4 without mutating state.
  * Single-claim fallback (step 3) is handled by the caller — this function
@@ -1070,13 +1071,6 @@ export async function remapUnresolvedSeededEvidence(
  */
 export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void {
   const preliminary = state.understanding?.preliminaryEvidence ?? [];
-  const knownClaimIds = new Set(
-    (state.understanding?.atomicClaims ?? []).map((c) => c.id),
-  );
-  // Default to first claim if only one exists (common case for single-claim inputs)
-  const fallbackClaimId = knownClaimIds.size === 1
-    ? [...knownClaimIds][0]
-    : undefined;
   // Mint preliminary evidence IDs from the per-analysis counter on state so
   // they share a single monotonic sequence with main-research extraction IDs.
   // See types.ts CBResearchState.nextEvidenceId for the rationale.
@@ -1087,51 +1081,21 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   if (typeof state.nextEvidenceId !== "number" || !Number.isFinite(state.nextEvidenceId)) {
     state.nextEvidenceId = state.evidenceItems.length + 1;
   }
-  let remappedCount = 0;
   const seededItems: EvidenceItem[] = [];
 
   for (const pe of preliminary) {
-    // Normalize claim IDs: prefer full relevantClaimIds array, fall back to legacy single claimId.
-    // LLM preliminary evidence often uses wrong formats (e.g. "claim_01" instead of "AC_01").
-    let claimIds: string[] = [];
-
-    // 1. Prefer relevantClaimIds[] when present (multi-claim attribution)
-    if (pe.relevantClaimIds && pe.relevantClaimIds.length > 0) {
-      claimIds = pe.relevantClaimIds.filter((id) => knownClaimIds.has(id));
-    }
-
-    // 2. Fall back to legacy single claimId
-    if (claimIds.length === 0 && pe.claimId && knownClaimIds.has(pe.claimId)) {
-      claimIds = [pe.claimId];
-    }
-
-    // 3. Single-claim input fallback: all evidence belongs to the sole claim
-    if (claimIds.length === 0 && fallbackClaimId) {
-      claimIds = [fallbackClaimId];
-      if (pe.claimId || (pe.relevantClaimIds && pe.relevantClaimIds.length > 0)) remappedCount++;
-    }
-
-    // 4. Heuristic remap: "claim_01" → "AC_01", etc.
-    if (claimIds.length === 0) {
-      const rawIds = pe.relevantClaimIds ?? (pe.claimId ? [pe.claimId] : []);
-      for (const rawId of rawIds) {
-        if (rawId.startsWith("claim_")) {
-          const num = rawId.replace("claim_", "");
-          const mappedId = `AC_${num.padStart(2, "0")}`;
-          if (knownClaimIds.has(mappedId)) {
-            claimIds.push(mappedId);
-            remappedCount++;
-          }
-        }
-      }
-    }
+    // Preserve returned IDs, including invalid ones for diagnostics. Neither a sole
+    // final claim nor a similarly formatted ID establishes a semantic link.
+    const claimIds = pe.relevantClaimIds?.length
+      ? [...new Set(pe.relevantClaimIds)] : pe.claimId ? [pe.claimId] : [];
 
     const seededItem: EvidenceItem = {
       id: `EV_${String(state.nextEvidenceId++).padStart(3, "0")}`,
       statement: pe.snippet,
       category: "evidence",
       specificity: "medium",
-      sourceId: "",
+      sourceId: pe.sourceId ?? "",
+      sourceBinding: pe.sourceBinding ?? { status: "unresolved", reason: "missing_binding" },
       sourceUrl: pe.sourceUrl,
       sourceTitle: pe.sourceTitle ?? "",
       sourceExcerpt: pe.snippet,
@@ -1169,10 +1133,6 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
     recordSeededEvidenceTelemetry(state, seededItems);
   }
 
-  if (remappedCount > 0) {
-    const target = fallbackClaimId ?? "matched AC IDs";
-    debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${target}`);
-  }
 }
 
 /**
@@ -2003,7 +1963,7 @@ export function findLeastResearchedClaim(
     // loop targets the actual sufficiency gap instead of chasing artificial
     // diversity for authoritative-directional evidence.
     if (diversityConfig && effectiveThreshold && count >= effectiveThreshold) {
-      const sufficiency = evaluateEvidenceSufficiency(claimEvidence, diversityConfig);
+      const sufficiency = evaluateEvidenceSufficiency(claimEvidence, { ...diversityConfig, claimId: claim.id });
       if (!sufficiency.sufficient) {
         // Prioritize structurally insufficient claims over count-starved claims.
         score = count - 10000;
@@ -2063,6 +2023,7 @@ export function findLeastContradictedClaim(
  * D5 penalize claims post-hoc.
  */
 export interface DiversitySufficiencyConfig {
+  claimId?: string;
   /** Minimum distinct source types (e.g., 2). Pass via CalcConfig.evidenceSufficiencyMinSourceTypes. */
   minSourceTypes: number;
   /** Minimum distinct normalized domains (e.g., 3). Pass via CalcConfig.evidenceSufficiencyMinDistinctDomains. */
@@ -2112,53 +2073,24 @@ function isDirectionalEvidence(item: EvidenceItem): boolean {
 function isPublishableDirectionalEvidence(
   item: EvidenceItem,
   requireDirectApplicability: boolean,
+  claimId: string,
 ): boolean {
   if (!isDirectionalEvidence(item)) return false;
   if (!requireDirectApplicability) return true;
-  return item.applicability === "direct";
+  return isDirectForClaim(item, claimId, true);
 }
 
-/**
- * Direct-applicability is required for D5 sufficiency only when the applicability
- * classifier actually RAN. It marks every surviving evidence item
- * `applicabilityAssessed` when it ran; on infra degradation (LLM error /
- * prompt-missing) it leaves items unmarked and emits
- * `evidence_applicability_assessment_degraded`. With no directness signal,
- * direct-applicability must NOT be required — failing the job on an infra failure
- * would be a fail-closed regression. Strict directness applies only when it ran.
- */
+/** New enabled analyses never turn an unavailable assessment into direct evidence.
+ * The legacy arguments remain source-compatible but cannot relax the requirement. */
 export function resolveDirectApplicabilityRequirement(
   baseRequired: boolean,
-  evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
-): boolean {
-  if (!baseRequired) return false;
-  return evidenceItems.some((item) => item.applicabilityAssessed === true);
-}
+  _evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
+): boolean { return baseRequired; }
 
-/**
- * Per-claim variant of {@link resolveDirectApplicabilityRequirement}. A single
- * claim requires direct-applicability evidence for D5 only when ALL hold:
- *  (a) the applicability filter is enabled,
- *  (b) the claim has evidence to evaluate (`claimEvidenceCount > 0`),
- *  (c) the claim has its OWN relevant geography, and
- *  (d) the applicability classifier actually ran (degraded → fail-open).
- *
- * The geography test (c) is PER CLAIM by design: a non-geo claim sharing a job
- * with a jurisdiction-scoped sibling must NOT inherit the sibling's requirement,
- * otherwise it can spuriously fail to `insufficient_direct_evidence`. The
- * classifier-ran check (d) stays job-wide (the classifier runs once over the whole
- * pool) and is delegated to {@link resolveDirectApplicabilityRequirement}.
- */
 export function claimRequiresDirectApplicability(
-  filterEnabled: boolean,
-  claimEvidenceCount: number,
-  claimRelevantGeographies: string[],
-  evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
-): boolean {
-  const baseRequired =
-    filterEnabled && claimEvidenceCount > 0 && claimRelevantGeographies.length > 0;
-  return resolveDirectApplicabilityRequirement(baseRequired, evidenceItems);
-}
+  filterEnabled: boolean, claimEvidenceCount: number,
+  _claimRelevantGeographies: string[], _evidenceItems: Pick<EvidenceItem, "applicabilityAssessed">[],
+): boolean { return filterEnabled && claimEvidenceCount > 0; }
 
 export function evaluateEvidenceSufficiency(
   claimEvidence: EvidenceItem[],
@@ -2178,7 +2110,7 @@ export function evaluateEvidenceSufficiency(
   );
   const allDirectionalEvidence = claimEvidence.filter(isDirectionalEvidence);
   const directionalEvidence = allDirectionalEvidence.filter((item) =>
-    isPublishableDirectionalEvidence(item, requireDirectApplicability),
+    isPublishableDirectionalEvidence(item, requireDirectApplicability, config.claimId ?? ""),
   );
   const hasSufficientItems = claimEvidence.length >= config.minItems;
   const hasMinimumDirectionalEvidence = directionalEvidence.length >= minDirectionalItems;
@@ -2235,7 +2167,7 @@ export function claimNeedsMoreResearchForSufficiency(
   if (claimEvidence.length < effectiveThreshold) return true;
 
   if (diversityConfig) {
-    return !evaluateEvidenceSufficiency(claimEvidence, diversityConfig).sufficient;
+    return !evaluateEvidenceSufficiency(claimEvidence, { ...diversityConfig, claimId: claim.id }).sufficient;
   }
 
   return false;

@@ -7,10 +7,10 @@
  * @version 2.8.0 - Added structured output retry support
  */
 
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
+import { openai, createOpenAI } from "@ai-sdk/openai";
+import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
+import { mistral, createMistral } from "@ai-sdk/mistral";
 import { AISDKError, wrapLanguageModel } from "ai";
 import {
   getStructuredOutputGuidance,
@@ -122,10 +122,20 @@ function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | 
   return resolveModel(tier, provider).modelName;
 }
 
+/** Request-scoped transport; never changes global fetch or reads a credential when supplied. */
+export interface ModelTransport { apiKey: string; fetch: typeof globalThis.fetch }
+
 function buildProviderModel(
   provider: "anthropic" | "google" | "mistral" | "openai",
   modelName: string,
+  transport?: ModelTransport,
 ): ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral> {
+  if (transport) {
+    if (provider === "anthropic") return createAnthropic(transport)(modelName);
+    if (provider === "google") return createGoogleGenerativeAI(transport)(modelName);
+    if (provider === "mistral") return createMistral(transport)(modelName);
+    return createOpenAI(transport)(modelName);
+  }
   if (provider === "anthropic") return anthropic(modelName);
   if (provider === "google") return google(modelName);
   if (provider === "mistral") return mistral(modelName);
@@ -135,11 +145,11 @@ function buildProviderModel(
 /**
  * Get the LLM model based on configuration
  */
-export function getModel(providerOverride?: string, config?: PipelineConfig): ModelInfo {
+export function getModel(providerOverride?: string, config?: PipelineConfig, transport?: ModelTransport): ModelInfo {
   const provider = resolveProvider(providerOverride, config);
   // Legacy single-model defaults: standard model for all tasks when tiering is off.
   const { modelName } = resolveModel("standard", provider);
-  const model = buildProviderModel(provider, modelName);
+  const model = buildProviderModel(provider, modelName, transport);
   return { provider, modelName, model };
 }
 
@@ -156,6 +166,7 @@ export function getModelForTask(
   providerOverride?: string,
   config?: PipelineConfig,
   stage?: ModelPolicyStage,
+  transport?: ModelTransport,
 ): ModelInfo {
   const contractStage = task === "context_refinement" && stage === "claimContractValidation";
   const hasContractPolicy = config?.modelClaimContractValidation != null
@@ -179,7 +190,7 @@ export function getModelForTask(
     if (errors.length) throw new ModelPolicyError(errors);
   }
   if (!isTieringEnabled(config)) {
-    return getModel(providerOverride, config);
+    return getModel(providerOverride, config, transport);
   }
 
   let modelName: string | null = null;
@@ -203,7 +214,7 @@ export function getModelForTask(
     modelName = defaultModelNameForTask(provider, task);
   }
 
-  const model = buildProviderModel(provider, modelName);
+  const model = buildProviderModel(provider, modelName, transport);
   if (!requiresExplicitModelPolicy(modelName)) return { provider, modelName, model };
 
   // Enforce at the SDK boundary, not at name-only preview/log lookups. A caller

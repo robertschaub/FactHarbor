@@ -210,6 +210,7 @@ export function buildVerdictStageConfig(
   const canonicalRoles = pipelineConfig.debateRoles ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles;
 
   return {
+    requirePairApplicability: pipelineConfig.applicabilityFilterEnabled ?? true,
     selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "full",
     selfConsistencyTemperature:
       pipelineConfig.selfConsistencyTemperature ?? 0.4,

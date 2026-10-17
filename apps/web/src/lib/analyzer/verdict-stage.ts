@@ -1,3 +1,4 @@
+import { isDirectForClaim } from "./evidence-applicability";
 /**
  * ClaimBoundary Pipeline — Verdict Stage Module (§8.4)
  *
@@ -86,6 +87,7 @@ type VerdictPromptEvidenceItem = Pick<
   | "claimDirection"
   | "applicability"
   | "applicabilityAssessed"
+  | "applicabilityByClaim"
   | "sourceId"
   | "sourceUrl"
   | "sourceTitle"
@@ -117,6 +119,7 @@ function toVerdictPromptEvidenceItems(
     claimDirection: item.claimDirection,
     applicability: item.applicability,
     applicabilityAssessed: item.applicabilityAssessed,
+    applicabilityByClaim: item.applicabilityByClaim,
     sourceId: item.sourceId,
     sourceUrl: item.sourceUrl,
     sourceTitle: item.sourceTitle,
@@ -140,6 +143,7 @@ type DirectionValidationEvidencePoolItem = {
   claimDirection?: EvidenceItem["claimDirection"];
   applicability?: EvidenceItem["applicability"];
   applicabilityAssessed?: boolean;
+  applicabilityByClaim?: EvidenceItem["applicabilityByClaim"];
   relevantClaimIds?: string[];
 };
 
@@ -152,6 +156,7 @@ function toDirectionValidationEvidencePool(
     claimDirection: item.claimDirection,
     applicability: item.applicability,
     applicabilityAssessed: item.applicabilityAssessed,
+    applicabilityByClaim: item.applicabilityByClaim,
     relevantClaimIds: item.relevantClaimIds,
   }));
 }
@@ -267,6 +272,8 @@ export function buildSourcePortfolioByClaim(
  * Verdict stage configuration. All thresholds are UCM-configurable.
  */
 export interface VerdictStageConfig {
+  /** Derived from the existing applicability filter; not a separate rollout switch. */
+  requirePairApplicability?: boolean;
   /** Self-consistency mode: "full" | "disabled" (mirrors UCM PipelineConfigSchema) */
   selfConsistencyMode: "full" | "disabled";
   /** Temperature for self-consistency re-runs (default 0.3, floor 0.1, ceiling 0.7) */
@@ -444,6 +451,9 @@ export async function runVerdictStage(
   sources?: FetchedSource[],
   reportLanguage?: string,
 ): Promise<CBClaimVerdict[]> {
+  if (config.requirePairApplicability) {
+    evidence = evidence.map(item => ({ ...item, applicabilityByClaim: item.applicabilityByClaim ?? {} }));
+  }
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
   let challengerEvidence = evidence;
@@ -1930,15 +1940,12 @@ function isMappedToDifferentClaim(item: EvidenceItem | undefined, claimId: strin
     && !item.relevantClaimIds.includes(claimId);
 }
 
-function isDirectForCitation(item: EvidenceItem | DirectionValidationEvidencePoolItem | undefined): boolean {
-  if (!item) return false;
-  if (item.applicability === "direct") return true;
-  if (item.applicability) return false;
-  return item.applicabilityAssessed !== true;
+function isDirectForCitation(item: EvidenceItem | DirectionValidationEvidencePoolItem | undefined, claimId: string): boolean {
+  return isDirectForClaim(item, claimId);
 }
 
-function isNonDirectForCitation(item: EvidenceItem | undefined): boolean {
-  return Boolean(item) && !isDirectForCitation(item);
+function isNonDirectForCitation(item: EvidenceItem | undefined, claimId: string): boolean {
+  return Boolean(item) && !isDirectForCitation(item, claimId);
 }
 
 function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: EvidenceItem[]): string[] {
@@ -1974,7 +1981,7 @@ function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: Evide
       continue;
     }
     if (isMappedToDifferentClaim(item, verdict.claimId)) siblingSupportingIds.push(id);
-    if (isNonDirectForCitation(item)) nonDirectSupportingIds.push(id);
+    if (isNonDirectForCitation(item, verdict.claimId)) nonDirectSupportingIds.push(id);
     if (item.claimDirection === "contradicts") misbucketedSupportingIds.push(id);
     else if (item.claimDirection !== "supports") nonDirectionalSupportingIds.push(id);
   }
@@ -1986,7 +1993,7 @@ function getHardCitationIntegrityIssues(verdict: CBClaimVerdict, evidence: Evide
       continue;
     }
     if (isMappedToDifferentClaim(item, verdict.claimId)) siblingContradictingIds.push(id);
-    if (isNonDirectForCitation(item)) nonDirectContradictingIds.push(id);
+    if (isNonDirectForCitation(item, verdict.claimId)) nonDirectContradictingIds.push(id);
     if (item.claimDirection === "supports") misbucketedContradictingIds.push(id);
     else if (item.claimDirection !== "contradicts") nonDirectionalContradictingIds.push(id);
   }
@@ -2105,14 +2112,14 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of supportIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    if (isDirectForCitation(item)) {
+    if (isDirectForCitation(item, verdict.claimId)) {
       weightedSupports += weight;
       directSupportingCount += 1;
     }
     if (item?.claimDirection === "contradicts") {
       misbucketedSupportingIds.push(id);
     }
-    if (isNonDirectForCitation(item)) {
+    if (isNonDirectForCitation(item, verdict.claimId)) {
       nonDirectSupportingIds.push(id);
     }
   }
@@ -2120,14 +2127,14 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of contradictIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    if (isDirectForCitation(item)) {
+    if (isDirectForCitation(item, verdict.claimId)) {
       weightedContradicts += weight;
       directContradictingCount += 1;
     }
     if (item?.claimDirection === "supports") {
       misbucketedContradictingIds.push(id);
     }
-    if (isNonDirectForCitation(item)) {
+    if (isNonDirectForCitation(item, verdict.claimId)) {
       nonDirectContradictingIds.push(id);
     }
   }
@@ -2204,7 +2211,7 @@ function normalizeVerdictCitationDirections(
     if (isMappedToDifferentClaim(item, verdict.claimId)) {
       continue;
     }
-    if (!isDirectForCitation(item)) {
+    if (!isDirectForCitation(item, verdict.claimId)) {
       continue;
     }
     const direction = item.claimDirection;
@@ -2483,7 +2490,7 @@ function refreshBoundaryFindingsAfterRepair(
   calcConfig?: CalcConfig,
 ): BoundaryFinding[] {
   const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence)
-    .filter((item) => isDirectForCitation(item));
+    .filter((item) => isDirectForCitation(item, verdict.claimId));
   const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
   const boundaryById = new Map(boundaries.map((boundary) => [boundary.id, boundary]));
 
@@ -2519,12 +2526,13 @@ function refreshBoundaryFindingsAfterRepair(
 
 function deriveDirectionalCitationsFromEvidencePool(
   evidencePool: DirectionValidationEvidencePoolItem[],
+  claimId: string,
 ): { supportingEvidenceIds: string[]; contradictingEvidenceIds: string[] } | null {
   const supportingEvidenceIds: string[] = [];
   const contradictingEvidenceIds: string[] = [];
 
   for (const item of evidencePool) {
-    if (!isDirectForCitation(item)) continue;
+    if (!isDirectForCitation(item, claimId)) continue;
     if (item.claimDirection === "supports") supportingEvidenceIds.push(item.id);
     if (item.claimDirection === "contradicts") contradictingEvidenceIds.push(item.id);
   }
@@ -2597,7 +2605,7 @@ async function defaultRepairExecutor(
     evidenceById,
     request.verdict.claimId,
   );
-  const derivedDirectionalCitations = deriveDirectionalCitationsFromEvidencePool(request.evidencePool);
+  const derivedDirectionalCitations = deriveDirectionalCitationsFromEvidencePool(request.evidencePool, request.verdict.claimId);
   return {
     ...request.verdict,
     truthPercentage: repairedTruth,
@@ -2640,7 +2648,7 @@ async function attemptDirectionRepair(
   if (hasZeroDirectionalCitations(verdict)) {
     const hasMappedDirectDirectionalEvidence = evidence.some((item) =>
       item.relevantClaimIds?.includes(verdict.claimId)
-      && isDirectForCitation(item)
+      && isDirectForCitation(item, verdict.claimId)
       && (item.claimDirection === "supports" || item.claimDirection === "contradicts")
     );
     if (!hasMappedDirectDirectionalEvidence) {

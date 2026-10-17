@@ -596,6 +596,12 @@ export const PipelineConfigSchema = z.object({
     .describe("Max sources fetched per search iteration after relevance classification (default: 5)"),
   applicabilityFilterEnabled: z.boolean().optional()
     .describe("Enable post-extraction applicability assessment to filter foreign-jurisdiction evidence (default: true)"),
+  applicabilityMaxSourceBytes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Source UTF-8 bytes per applicability request"),
+  applicabilityMaxRequestBytes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Complete SDK request-body bytes per applicability request"),
+  applicabilityMaxRequests: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Logical requests per complete applicability operation"),
+  applicabilityMaxOperationRequestBytes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Total SDK request-body bytes per applicability operation"),
+  applicabilityMaxOutputTokens: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Output tokens per applicability call"),
+  applicabilityMaxOperationCostUSD: z.number().positive().finite().optional().describe("Reserved USD limit for all applicability attempts, including SDK retries"),
   evidenceWeightingEnabled: z.boolean().optional()
     .describe("Enable legacy SR-based evidence weighting that adjusts truth% and confidence based on source track-record scores (default: false — replaced by Stage 4.5 SR calibration)"),
   sourceReliabilityCalibrationEnabled: z.boolean().optional()
@@ -1281,6 +1287,13 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   foreignJurisdictionRelevanceCap: 0.35,
   relevanceTopNFetch: 5,
   applicabilityFilterEnabled: true,
+  applicabilityMaxSourceBytes: 65536,
+  applicabilityMaxRequestBytes: 131072,
+  applicabilityMaxRequests: 4,
+  applicabilityMaxOperationRequestBytes: 524288,
+  applicabilityMaxOutputTokens: 8192,
+  applicabilityMaxOperationCostUSD: 1,
+
   evidenceWeightingEnabled: false,
   sourceReliabilityCalibrationEnabled: false,
   sourceReliabilityCalibrationMode: "off",

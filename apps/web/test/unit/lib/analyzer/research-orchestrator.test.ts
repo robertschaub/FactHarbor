@@ -5,6 +5,7 @@ import {
   recordSeededEvidenceTelemetry,
   resolveDirectApplicabilityRequirement,
   claimRequiresDirectApplicability,
+  evaluateEvidenceSufficiency,
 } from "@/lib/analyzer/research-orchestrator";
 import type { CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
 
@@ -34,69 +35,16 @@ function createState(claimIds = ["AC_01", "AC_02", "AC_03"]): CBResearchState {
   };
 }
 
-describe("resolveDirectApplicabilityRequirement (degraded applicability fails open)", () => {
-  const assessed = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}`, applicabilityAssessed: true })) as any;
-  const unmarked = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}` })) as any;
-
-  it("keeps direct-applicability required when the classifier ran (items assessed)", () => {
-    expect(resolveDirectApplicabilityRequirement(true, assessed(3))).toBe(true);
+describe("enabled applicability requirements", () => {
+  it.each([[], [{applicabilityAssessed:true}], [{applicabilityAssessed:false}]])("does not fail open based on invocation history: %j", evidence => {
+    expect(resolveDirectApplicabilityRequirement(true,evidence as any)).toBe(true);
+    expect(resolveDirectApplicabilityRequirement(false,evidence as any)).toBe(false);
+    expect(claimRequiresDirectApplicability(true,3,[],evidence as any)).toBe(true);
+    expect(claimRequiresDirectApplicability(true,3,["CH"],evidence as any)).toBe(true);
   });
-
-  it("drops the requirement when the classifier did NOT run (degraded → no item assessed)", () => {
-    // Infra degradation: assessEvidenceApplicability returns items UNMARKED. Requiring
-    // direct applicability here would collapse the job to UNVERIFIED on an infra failure
-    // (the fail-closed inversion this fixes).
-    expect(resolveDirectApplicabilityRequirement(true, unmarked(3))).toBe(false);
-  });
-
-  it("drops the requirement on a pool with no assessed item", () => {
-    expect(resolveDirectApplicabilityRequirement(true, [])).toBe(false);
-    expect(
-      resolveDirectApplicabilityRequirement(true, [{ id: "EV_0" }, { id: "EV_1", applicability: "contextual" }] as any),
-    ).toBe(false);
-  });
-
-  it("never requires when the base requirement is false (filter disabled / no geography)", () => {
-    expect(resolveDirectApplicabilityRequirement(false, assessed(5))).toBe(false);
-  });
-
-  it("requires when at least one surviving item is assessed (classifier ran)", () => {
-    expect(
-      resolveDirectApplicabilityRequirement(true, [{ id: "EV_0" }, { id: "EV_1", applicabilityAssessed: true }] as any),
-    ).toBe(true);
-  });
-});
-
-describe("claimRequiresDirectApplicability (per-claim geography gate)", () => {
-  const assessed = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}`, applicabilityAssessed: true })) as any;
-  const unmarked = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `EV_${i}` })) as any;
-
-  // The core bug this fixes: a non-geo claim must NOT inherit a sibling claim's
-  // jurisdiction requirement in a mixed-jurisdiction job.
-  it("does NOT require direct evidence for a claim with NO relevant geography", () => {
-    // filter on, evidence present, classifier ran — but the claim itself is non-geo.
-    expect(claimRequiresDirectApplicability(true, 5, [], assessed(5))).toBe(false);
-  });
-
-  it("requires direct evidence for a geo-scoped claim when the classifier ran", () => {
-    expect(claimRequiresDirectApplicability(true, 5, ["CH"], assessed(5))).toBe(true);
-    expect(claimRequiresDirectApplicability(true, 3, ["CH", "DE"], assessed(3))).toBe(true);
-  });
-
-  it("fails open for a geo-scoped claim when the classifier degraded (no item assessed)", () => {
-    expect(claimRequiresDirectApplicability(true, 5, ["CH"], unmarked(5))).toBe(false);
-  });
-
-  it("never requires when the applicability filter is disabled", () => {
-    expect(claimRequiresDirectApplicability(false, 5, ["CH"], assessed(5))).toBe(false);
-  });
-
-  it("never requires when the claim has no evidence to evaluate", () => {
-    expect(claimRequiresDirectApplicability(true, 0, ["CH"], assessed(5))).toBe(false);
+  it("retains disabled and empty-claim cases", () => {
+    expect(claimRequiresDirectApplicability(false,3,["CH"],[])).toBe(false);
+    expect(claimRequiresDirectApplicability(true,0,["CH"],[])).toBe(false);
   });
 });
 
@@ -194,5 +142,20 @@ describe("research-orchestrator telemetry helpers", () => {
         neutral: 0,
       },
     });
+  });
+});
+
+
+describe("claim-specific sufficiency", () => {
+  it("direct-to-A cannot satisfy B or its authoritative shortcut", () => {
+    const evidence=[{id:"E",relevantClaimIds:["A","B"],sourceUrl:"https://example.test/",sourceType:"legal_document",
+      claimDirection:"supports",probativeValue:"high",applicabilityByClaim:{
+        A:{status:"assessed",assessed:true,classification:"direct"},
+        B:{status:"assessed",assessed:true,classification:"contextual"},
+      }}] as EvidenceItem[];
+    const config={minItems:1,minSourceTypes:2,minDistinctDomains:2,minDirectionalItems:1,
+      authoritativeDirectionalMinItems:1,authoritativeDirectionalSourceTypes:["legal_document"],includeSeeded:true,requireDirectApplicability:true};
+    expect(evaluateEvidenceSufficiency(evidence,{...config,claimId:"A"})).toMatchObject({sufficient:true,directionalCount:1,hasAuthoritativeDirectionalSufficiency:true});
+    expect(evaluateEvidenceSufficiency(evidence,{...config,claimId:"B"})).toMatchObject({sufficient:false,directionalCount:0,hasAuthoritativeDirectionalSufficiency:false});
   });
 });
