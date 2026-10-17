@@ -1,8 +1,8 @@
 ---
-version: "1.0.13"
+version: "1.0.14"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-09-23T00:00:00Z"
+lastModified: "2026-10-17T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -1211,10 +1211,10 @@ Given a claim and source content, extract evidence items with full metadata incl
 - For approximate comparison claims, when two source-native umbrella totals are the closest authoritative measures for the broad public-language populations being compared, extract both as usable comparison evidence and preserve any scope caveats in `evidenceScope` rather than converting label mismatch alone into contradiction.
 - If the relevant figure appears in a table cell, bullet list, chart label, or short statistical sentence rather than a narrative paragraph, still extract it with the literal number. Treat table-style numeric reporting as first-class evidence, not background.
 - Do NOT treat flow or process metrics (counts of events occurring during a period) as contradiction to a claim about a current stock or standing total at a point in time unless the source explicitly states that the flow metric is the same quantity the claim is about. For stock claims, such flow metrics are usually contextual.
-- **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
+- **Factual selection:** Extract only factual evidence; exclude opinions, predictions, and meta-commentary. Identify distinct observations material to the claim within each supplied source, including observations that qualify the author's conclusion. Preserve those observations without replacing them with the author's conclusion. Do not force items from irrelevant sources or balance item counts between sources or directions.
+- **Source attribution and fidelity:** Set `sourceUrl` to the exact URL in the header of the source supporting the item. In `statement`, preserve the evaluated object and who asserts, reports, or quotes the observation, including nested attribution where material. Put essential actor, object, speaker, and status distinctions early in the statement; use `evidenceScope` for supplementary detail, not as their only location. Preserve the source's status, time, and certainty: an individual position or proposal is not an established institutional outcome. Do not import details from another source or attribute your own qualifications to the source.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
-- Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
-- `claimDirection`:
+- **`claimDirection`:** First determine the observation's evaluated object and its source-supported relationship to the claim's target; then apply the direction definitions and target/comparator rules below. Before returning, check each statement against its cited source and check that material, distinct observations identified there were not lost through summarization. Preserve source limitations and the original-language requirement; do not fill gaps with unsupported details.
   - "supports": Evidence affirms the claim
   - "contradicts": Evidence refutes the claim
   - "contextual": Evidence provides relevant context but doesn't affirm/refute

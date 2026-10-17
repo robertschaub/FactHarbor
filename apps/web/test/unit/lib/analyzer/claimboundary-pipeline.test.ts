@@ -10,6 +10,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import {
   buildCoverageMatrix,
   filterByCentrality,
@@ -2356,6 +2358,103 @@ describe("Stage 1: runPreliminarySearch", () => {
     expect(state.llmCalls).toBe(1);
     expect(mockFetchUrl).not.toHaveBeenCalled();
   });
+});
+
+describe("Shared evidence extraction prompt — real rendering, offline callers", () => {
+  const promptContent = readFileSync(path.resolve(__dirname, "../../../../prompts/claimboundary.prompt.md"), "utf8");
+  const { families } = JSON.parse(readFileSync(
+    path.resolve(__dirname, "../../../../../../Docs/AGENTS/benchmark-expectations.json"), "utf8",
+  )) as { families: Array<{ slug: string; inputValue: string }> };
+  const inputs = ["bolsonaro-pt", "bundesrat-rechtskraftig"].map(slug => {
+    const family = families.find(candidate => candidate.slug === slug);
+    if (!family) throw new Error(`Missing approved input: ${slug}`);
+    return { slug, input: family.inputValue };
+  });
+
+  // Exact approved inputs are opaque multilingual payloads here. Mock responses
+  // verify caller contracts, not evidence quality, truth, or model compliance.
+  for (const { slug, input } of inputs) {
+    it.each(["valid", "empty", "invalid"] as const)(`${slug}: both callers render and consume %s output`, async outcome => {
+      const actualLoader = await vi.importActual<typeof import("@/lib/analyzer/prompt-loader")>("@/lib/analyzer/prompt-loader");
+      const priorLoadSection = mockLoadSection.getMockImplementation()!;
+      const priorLoadPromptConfig = mockLoadPromptConfig.getMockImplementation()!;
+      const network = vi.fn(() => { throw new Error("Network is forbidden in this offline caller test"); });
+      vi.stubGlobal("fetch", network);
+      vi.clearAllMocks();
+      actualLoader.clearPromptCache();
+      try {
+        mockLoadPromptConfig.mockResolvedValue({ content: promptContent, contentHash: "offline-file-backed-extraction", fromCache: false, seededFromFile: false });
+        mockLoadSection.mockImplementation((pipeline, section, variables) =>
+          section === "EXTRACT_EVIDENCE"
+            ? actualLoader.loadAndRenderSection(pipeline, section, variables)
+            : Promise.resolve({ content: "mock relevance prompt", contentHash: "offline-relevance", loadedAt: "2026-10-17", warnings: [] }));
+        const sources = [1, 2].map(index => ({
+          url: `https://example.com/source-${index}`,
+          title: `Fixture ${index}`,
+          text: `${input}\n${"éä".repeat(60)}`,
+        }));
+        const item = {
+          statement: input,
+          sourceUrl: sources[1].url,
+          category: "evidence",
+          claimDirection: outcome === "invalid" ? "unrecognized" : "contextual",
+          evidenceScope: { methodology: "fixture", temporal: "fixture", boundaries: "fixture", analyticalDimension: "fixture" },
+          probativeValue: "medium",
+          sourceType: "other",
+          relevantClaimIds: ["AC_01"],
+        };
+        const output = { evidenceItems: outcome === "empty" ? [] : [item] };
+        mockSearch.mockResolvedValue({ results: sources.map(source => ({ ...source, snippet: source.text })), providersUsed: ["google"] } as any);
+        mockFetchUrl.mockImplementation(async url => ({ ...sources.find(source => source.url === url)!, contentType: "text/html" }));
+        mockGenerateText.mockResolvedValue({ text: "", usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 } } as any);
+        mockExtractOutput
+          .mockReturnValueOnce({ relevantSources: sources.map(source => ({ url: source.url, relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "fixture" })) })
+          .mockReturnValueOnce(output)
+          .mockReturnValueOnce(output);
+        const preliminary = await runPreliminarySearch(
+          [{ statement: input, searchHint: input }], {} as any,
+          { preliminarySearchQueriesPerClaim: 1, preliminaryMaxSources: 2 } as any,
+          "2026-10-17", { sources: [], searchQueries: [], warnings: [], llmCalls: 0 } as any,
+        );
+        const research = await extractResearchEvidence(
+          { id: "AC_01", statement: input } as any, sources, {} as any, "2026-10-17",
+        );
+        expect(mockGenerateText).toHaveBeenCalledTimes(3); // relevance + two extraction callers, no retry
+        const extractionRequests = mockGenerateText.mock.calls.slice(1).map(([request]) => request);
+        const rendered = extractionRequests.map(request => (request.messages![0] as { content: string }).content);
+        expect(rendered[0]).toBe(rendered[1]);
+        expect(rendered[0]).toContain("**Factual selection:**");
+        expect(rendered[0]).toContain("including nested attribution where material");
+        expect(rendered[0]).toContain("First determine the observation's evaluated object");
+        expect(rendered[0]).toContain(input);
+        expect(rendered[0]).toContain(sources[1].url);
+        expect(rendered[0]).toContain(sources[1].text);
+        expect(rendered[0]).not.toMatch(/\$\{\w+\}|\[object Object\]/);
+        expect(mockLoadSection.mock.calls.filter(([, section]) => section === "EXTRACT_EVIDENCE")).toHaveLength(2);
+        expect(extractionRequests[0].maxOutputTokens).toBeUndefined(); // preserve existing Stage 1 contract
+        expect(extractionRequests[1].maxOutputTokens).toBe(16384);
+        if (outcome === "valid") {
+          expect(preliminary).toHaveLength(1);
+          expect(research).toHaveLength(1);
+          for (const result of [preliminary[0], research[0]]) {
+            expect(result).toMatchObject({ statement: input, sourceUrl: sources[1].url, sourceTitle: sources[1].title,
+              evidenceScope: item.evidenceScope, probativeValue: "medium", sourceType: "other", relevantClaimIds: ["AC_01"] });
+          }
+          expect(preliminary[0].claimDirection).toBe("contextual");
+          expect(research[0].claimDirection).toBe("neutral");
+        } else {
+          expect(preliminary).toEqual([]);
+          expect(research).toEqual([]);
+        }
+        expect(network).not.toHaveBeenCalled();
+      } finally {
+        actualLoader.clearPromptCache();
+        mockLoadSection.mockImplementation(priorLoadSection);
+        mockLoadPromptConfig.mockImplementation(priorLoadPromptConfig);
+        vi.unstubAllGlobals();
+      }
+    });
+  }
 });
 
 // ============================================================================

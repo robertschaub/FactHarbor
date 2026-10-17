@@ -669,6 +669,26 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("comparator");
     });
 
+    it("orders source-grounded selection and attribution before direction without quotas", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE")!;
+      const selection = section.indexOf("**Factual selection:**");
+      const attribution = section.indexOf("**Source attribution and fidelity:**");
+      const direction = section.indexOf("**`claimDirection`:**");
+      expect(selection).toBeGreaterThanOrEqual(0);
+      expect(attribution).toBeGreaterThan(selection);
+      expect(direction).toBeGreaterThan(attribution);
+      expect(section).toContain("exclude opinions, predictions, and meta-commentary");
+      expect(section).toContain("without replacing them with the author's conclusion");
+      expect(section).toContain("Do not force items from irrelevant sources or balance item counts");
+      expect(section).toContain("including nested attribution where material");
+      expect(section).toContain("Put essential actor, object, speaker, and status distinctions early in the statement");
+      expect(section).toContain("an individual position or proposal is not an established institutional outcome");
+      expect(section).toContain("Do not import details from another source or attribute your own qualifications to the source");
+      expect(section).toContain("check each statement against its cited source");
+      expect(section).toContain("do not fill gaps with unsupported details");
+      expect(section).toContain("Extract evidence in the source's original language");
+    });
+
     it("comparator guidance classifies historical precedent as contextual by default", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       // Core policy: comparator evidence about different proceedings is contextual
