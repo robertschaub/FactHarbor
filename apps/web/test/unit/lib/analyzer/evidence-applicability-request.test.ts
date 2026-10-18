@@ -17,7 +17,7 @@ vi.mock("@/lib/analyzer/prompt-loader", async importOriginal => ({ ...await impo
 vi.mock("@/lib/analyzer/metrics-integration", () => ({recordLLMCall:vi.fn()}));
 import { loadPromptConfig } from "@/lib/config-loader";
 import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
-import { assessEvidenceApplicability, serializeApplicabilityRequest } from "@/lib/analyzer/research-extraction-stage";
+import { assessEvidenceApplicability, serializeApplicabilityRequest, type PreparedApplicabilityCall } from "@/lib/analyzer/research-extraction-stage";
 import { planApplicability } from "@/lib/analyzer/evidence-applicability";
 import { bindEvidenceSource } from "@/lib/analyzer/evidence-source-binding";
 import { DEFAULT_PIPELINE_CONFIG } from "@/lib/config-schemas";
@@ -39,6 +39,29 @@ beforeEach(async ()=>{
 });
 afterEach(()=>vi.unstubAllGlobals());
 describe("real SDK offline applicability preparation",()=>{
+  it.each([true,false])("replays immutable options and observes provider identity before SDK fallback: tiering=%s",async llmTiering=>{
+    const plan=planApplicability(claims,evidence,[source]), mutable={...config,llmTiering};
+    let call:PreparedApplicabilityCall|undefined;
+    await serializeApplicabilityRequest(plan,null,mutable,{},value=>{call=value;});
+    expect(call).toBeDefined();
+    mutable.modelUnderstand="premium";mutable.llmTiering=!llmTiering;
+    vi.mocked(loadAndRenderSection).mockRejectedValue(new Error("Prompt reread forbidden"));
+    const events:any[]=[];
+    const result:any=await call!.generate({apiKey:"fake-test-key",observeAttempt:event=>{events.push(event);},
+      fetch:async (_url,init)=>{
+        expect(init?.body).toBe(call!.body);
+        return Response.json({id:"msg_offline",type:"message",role:"assistant",
+          content:[{type:"tool_use",id:"tool_offline",name:"json",input:{assessments:plan.rows.map(r=>({rowId:r.rowId,applicability:"direct"}))}}],
+          stop_reason:"tool_use",stop_sequence:null,usage:{input_tokens:10,output_tokens:20}});
+      }},new AbortController().signal);
+    expect(result.output.assessments).toHaveLength(1);
+    expect(events.map(e=>e.type)).toEqual(["start","result"]);
+    expect(events[1].modelId).toBeUndefined();
+    expect(events[1].usage.inputTokens.total).toBe(10);
+    expect(JSON.stringify(events)).not.toContain(source.fullText);
+    expect(JSON.stringify(events)).not.toContain("assessments");
+    expect(nativeFetch).not.toHaveBeenCalled();
+  });
   it.each([true,false])("keeps routing/policy and denies sends with tiering=%s",async llmTiering=>{
     const plan=planApplicability(claims,evidence,[source]);
     const request=await serializeApplicabilityRequest(plan,{inferredGeography:null,relevantGeographies:[]},{...config,llmTiering});

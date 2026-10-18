@@ -123,7 +123,18 @@ function defaultModelNameForTask(provider: "anthropic" | "google" | "mistral" | 
 }
 
 /** Request-scoped transport; never changes global fetch or reads a credential when supplied. */
-export interface ModelTransport { apiKey: string; fetch: typeof globalThis.fetch }
+export type ModelAttemptObservation =
+  | { type: "start" }
+  | { type: "result"; durationMs: number; modelId?: string; messageId?: string;
+      finishReason: string; rawFinishReason?: string; usage: unknown }
+  | { type: "error"; durationMs: number; errorName?: string; errorCode?: string };
+export interface ModelTransport {
+  apiKey: string;
+  fetch: typeof globalThis.fetch;
+  /** Internal per-doGenerate observer, before core model fallbacks or output parsing.
+   * No response bodies/headers or error objects cross this boundary. */
+  observeAttempt?: (event: ModelAttemptObservation) => void | Promise<void>;
+}
 
 function buildProviderModel(
   provider: "anthropic" | "google" | "mistral" | "openai",
@@ -131,10 +142,39 @@ function buildProviderModel(
   transport?: ModelTransport,
 ): ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google> | ReturnType<typeof mistral> {
   if (transport) {
-    if (provider === "anthropic") return createAnthropic(transport)(modelName);
-    if (provider === "google") return createGoogleGenerativeAI(transport)(modelName);
-    if (provider === "mistral") return createMistral(transport)(modelName);
-    return createOpenAI(transport)(modelName);
+    const options = { apiKey: transport.apiKey, fetch: transport.fetch };
+    const model = provider === "anthropic" ? createAnthropic(options)(modelName)
+      : provider === "google" ? createGoogleGenerativeAI(options)(modelName)
+      : provider === "mistral" ? createMistral(options)(modelName) : createOpenAI(options)(modelName);
+    if (!transport.observeAttempt) return model;
+    const observe = transport.observeAttempt;
+    return wrapLanguageModel({ model, middleware: {
+      specificationVersion: "v3",
+      wrapGenerate: async ({ doGenerate }) => {
+        await observe({ type: "start" });
+        const start = performance.now();
+        let response;
+        try { response = await doGenerate(); }
+        catch (error) {
+          const typed = error as { name?: unknown; code?: unknown; cause?: unknown };
+          let code: unknown, cause: unknown = error;
+          for (let depth = 0; depth < 4 && cause && typeof cause === "object"; depth++) {
+            const node = cause as { code?: unknown; cause?: unknown };
+            if (typeof node.code === "string") { code = node.code; break; }
+            cause = node.cause;
+          }
+          await observe({ type: "error", durationMs: performance.now() - start,
+            errorName: typeof typed?.name === "string" ? typed.name.slice(0, 80) : undefined,
+            errorCode: typeof code === "string" ? code.slice(0, 80) : undefined });
+          throw error;
+        }
+        await observe({ type: "result", durationMs: performance.now() - start,
+          modelId: response.response?.modelId, messageId: response.response?.id,
+          finishReason: response.finishReason.unified, rawFinishReason: response.finishReason.raw,
+          usage: response.usage });
+        return response;
+      },
+    } });
   }
   if (provider === "anthropic") return anthropic(modelName);
   if (provider === "google") return google(modelName);

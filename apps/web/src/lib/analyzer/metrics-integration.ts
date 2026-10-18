@@ -92,6 +92,7 @@ export interface LLMCallMeasurement {
   result?: unknown;
   error?: unknown;
   maxOutputTokens?: number;
+  attemptAccounting?: LLMCallMetric["attemptAccounting"];
 }
 
 /** Normalize SDK evidence; retain bounded response excerpts only for schema failures, never prompts or full errors. */
@@ -132,6 +133,7 @@ export function measuredLLMCall(call: LLMCallMetric, measurement?: LLMCallMeasur
   }
   return {
     ...call,
+    ...(measurement.attemptAccounting ? { attemptAccounting: measurement.attemptAccounting } : {}),
     ...(hasUsage ? {
       promptTokens: usage.inputTokens,
       completionTokens: usage.outputTokens,

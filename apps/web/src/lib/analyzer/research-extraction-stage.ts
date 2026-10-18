@@ -697,10 +697,23 @@ export async function extractResearchEvidence(
   }
 }
 
+export interface PreparedApplicabilityCall {
+  /** Source-bearing envelope: memory only, never include in diagnostics. */
+  body: string;
+  url: string;
+  headers: Record<string, string>;
+  /** Binds settlement rows/items to the input used to prepare this request. */
+  planSha256: string;
+  generate: (transport: import("./llm").ModelTransport, signal: AbortSignal) => Promise<unknown>;
+}
+
 /** Serialize the real SDK request with a request-local denying transport and placeholder key.
  * Raw source-bearing bodies remain in memory. This performs no network or credential access. */
 export async function serializeApplicabilityRequest(part: ApplicabilityPlan, geography: unknown, config: PipelineConfig,
-  promptIdentity: { contentHash?: string } = {}) {
+  promptIdentity: { contentHash?: string } = {},
+  onPrepared?: (call: PreparedApplicabilityCall) => void) {
+  const frozenConfig = structuredClone(config);
+  const planSha256 = evidenceCaptureFingerprint(JSON.stringify(part)).sha256;
   const variables = { applicabilityPayload: JSON.stringify(applicabilityPayload(part, geography)) };
   const system = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", variables);
   const user = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT_USER", variables);
@@ -708,30 +721,48 @@ export async function serializeApplicabilityRequest(part: ApplicabilityPlan, geo
     (promptIdentity.contentHash && promptIdentity.contentHash !== system.contentHash)) throw new Error("Applicability prompt unavailable or changed");
   promptIdentity.contentHash = system.contentHash;
   const sentinel = new Error("Applicability request prepared");
-  let body: string | undefined, intercepted = 0;
-  const model = getModelForTask("understand", undefined, config, undefined, {
+  let body: string | undefined, url: string | undefined, headers: Record<string, string> | undefined, intercepted = 0;
+  const options = {
+    messages: [{ role: "system" as const, content: system.content }, { role: "user" as const, content: user.content }],
+    temperature: frozenConfig.relevanceClassificationTemperature ?? DEFAULT_PIPELINE_CONFIG.relevanceClassificationTemperature,
+    maxOutputTokens: frozenConfig.applicabilityMaxOutputTokens ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOutputTokens,
+    maxRetries: 2,
+    output: Output.object({ schema: ApplicabilityAssessmentOutputSchema.extend({
+      assessments: ApplicabilityAssessmentOutputSchema.shape.assessments.max(part.rows.length),
+    }) }),
+  };
+  const generate = (transport: import("./llm").ModelTransport, signal?: AbortSignal) => {
+    if (!transport || typeof transport.fetch !== "function" || typeof transport.apiKey !== "string") {
+      throw new Error("Explicit applicability transport required");
+    }
+    const selected = getModelForTask("understand", undefined, frozenConfig, undefined, transport);
+    return generateText({ ...options, model: selected.model, abortSignal: signal,
+      messages: options.messages.map(message => ({ ...message,
+        ...(message.role === "system" ? { providerOptions: getPromptCachingOptions(selected.provider) } : {}) })),
+      providerOptions: getStructuredOutputProviderOptions(selected.provider) });
+  };
+  const model = getModelForTask("understand", undefined, frozenConfig, undefined, {
     apiKey: "offline-placeholder-not-a-credential",
-    fetch: async (_url, init) => {
+    fetch: async (requestUrl, init) => {
       intercepted++;
       if (intercepted !== 1 || init?.method !== "POST" || typeof init.body !== "string") throw new Error("Unexpected applicability serialization");
       body = init.body;
+      url = String(requestUrl);
+      headers = Object.fromEntries(new Headers(init.headers).entries());
+      delete headers["x-api-key"];
+      delete headers.authorization;
       throw sentinel;
     },
   });
   try {
-    await generateText({ model: model.model,
-      messages: [{ role: "system", content: system.content, providerOptions: getPromptCachingOptions(model.provider) },
-        { role: "user", content: user.content }],
-      temperature: config.relevanceClassificationTemperature ?? DEFAULT_PIPELINE_CONFIG.relevanceClassificationTemperature,
-      maxOutputTokens: config.applicabilityMaxOutputTokens ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOutputTokens,
-      maxRetries: 2, // Existing SDK retry budget; the non-retryable sentinel never delegates a send.
-      output: Output.object({ schema: ApplicabilityAssessmentOutputSchema.extend({
-        assessments: ApplicabilityAssessmentOutputSchema.shape.assessments.max(part.rows.length),
-      }) }), providerOptions: getStructuredOutputProviderOptions(model.provider),
-    });
+    await generateText({ ...options, model: model.model,
+      messages: options.messages.map(message => ({ ...message,
+        ...(message.role === "system" ? { providerOptions: getPromptCachingOptions(model.provider) } : {}) })),
+      providerOptions: getStructuredOutputProviderOptions(model.provider) });
     throw new Error("Applicability serialization unexpectedly completed");
   } catch (error) { if (error !== sentinel) throw new Error("Applicability serialization unavailable"); }
-  if (intercepted !== 1 || body === undefined) throw new Error("Applicability request not captured");
+  if (intercepted !== 1 || body === undefined || !url || !headers) throw new Error("Applicability request not captured");
+  onPrepared?.(Object.freeze({ body, url, headers: Object.freeze(headers), planSha256, generate }));
   return { model: model.modelName, provider: model.provider,
     bodySha256: evidenceCaptureFingerprint(body).sha256, requestBytes: Buffer.byteLength(body,"utf8") };
 }

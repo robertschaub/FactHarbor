@@ -65,6 +65,15 @@ export interface LLMCallMetric {
   debateRole?: string;
   /** Admin-only diagnostic artifact captured on parse failures (schemaCompliant=false). */
   parseFailureArtifact?: ParseFailureArtifact;
+  /** Physical-attempt accounting replaces, never supplements, final-call pricing.
+   * This summary is not the durable journal or an invoice ceiling. */
+  attemptAccounting?: {
+    operationId: string;
+    knownSubtotalNanoUSD: number;
+    retainedUnknownNanoUSD: number;
+    unknownAttempts: number;
+    physicalAttempts: number;
+  };
 }
 
 /**
@@ -646,29 +655,32 @@ export class MetricsCollector {
     let unpricedCalls = 0;
 
     for (const call of this.metrics.llmCalls!) {
-      const costPer1M = this.getCostPer1MTokens(call.provider, call.servedModelName ?? call.modelName, call.promptTokens);
+      if (call.attemptAccounting) {
+        const a = call.attemptAccounting;
+        if (![a.knownSubtotalNanoUSD, a.retainedUnknownNanoUSD, a.unknownAttempts, a.physicalAttempts]
+          .every(n => Number.isSafeInteger(n) && n >= 0) || a.unknownAttempts > a.physicalAttempts) {
+          unpricedCalls++;
+        } else {
+          totalCost += a.knownSubtotalNanoUSD / 1_000_000_000;
+          if (a.unknownAttempts || a.retainedUnknownNanoUSD) unpricedCalls++;
+        }
+        continue;
+      }
+      const costPer1M = getCostPer1MTokens(call.provider, call.servedModelName ?? call.modelName, call.promptTokens);
       if (!costPer1M || call.usageAvailable === false) {
         unpricedCalls++;
         continue;
       }
-      const reads = call.cacheReadInputTokens ?? 0;
-      const writes = call.cacheCreationInputTokens ?? 0;
-      const hourWrites = call.cacheCreation1hInputTokens ?? 0;
-      // AI SDK inputTokens includes cache reads/writes; subtract before repricing.
-      // Cache writes without TTL evidence cannot be billed accurately.
-      if (reads + writes > call.promptTokens || hourWrites > writes
-        || (writes > 0 && call.cacheCreation1hInputTokens === undefined)
-        || ((reads > 0 || writes > 0) && costPer1M.cacheRead === undefined)
-        || (writes > 0 && costPer1M.cacheWrite === undefined)) {
+      const cost = priceTokenUsageNanoUSD(costPer1M, {
+        input: call.promptTokens, output: call.completionTokens,
+        cacheRead: call.cacheReadInputTokens, cacheWrite: call.cacheCreationInputTokens,
+        cacheWrite1h: call.cacheCreation1hInputTokens,
+      });
+      if (cost === undefined) {
         unpricedCalls++;
         continue;
       }
-      const promptCost = ((call.promptTokens - reads - writes) * costPer1M.input
-        + reads * (costPer1M.cacheRead ?? 0)
-        + (writes - hourWrites) * (costPer1M.cacheWrite ?? 0)
-        + hourWrites * costPer1M.input * 2) / 1_000_000;
-      const completionCost = (call.completionTokens / 1_000_000) * costPer1M.output;
-      totalCost += promptCost + completionCost;
+      totalCost += cost / 1_000_000_000;
     }
 
     // Add search costs (rough estimate: $5 per 1000 queries for most providers).
@@ -681,77 +693,6 @@ export class MetricsCollector {
     return unpricedCalls ? null : totalCost;
   }
 
-  /**
-   * Get cost per 1M tokens for a model
-   */
-  private getCostPer1MTokens(provider: string, modelName: string, inputTokens: number): { input: number; output: number; cacheRead?: number; cacheWrite?: number } | undefined {
-    // Haiku 5.5 checked 2026-10-17; existing rates retain their earlier checks:
-    // https://platform.claude.com/docs/en/about-claude/pricing
-    // Other entries retain their historical estimates; this is not invoice data.
-    const pricing: Record<string, { input: number; output: number }> = {
-      'claude-sonnet-5': { input: 2, output: 10 },
-      'claude-opus-5': { input: 5, output: 25 },
-      'claude-fable-5-1': { input: 10, output: 50 },
-      // Anthropic (May 2026 — Opus family $5/$25; Sonnet $3/$15; Haiku $1/$5)
-      'claude-opus-4-7': { input: 5, output: 25 },
-      'claude-opus-4-6': { input: 5, output: 25 },
-      'claude-opus-4-5': { input: 5, output: 25 },
-      'claude-opus-4-5-20251101': { input: 5, output: 25 },
-      'claude-opus-4-1': { input: 15, output: 75 },
-      'claude-opus-4-1-20250805': { input: 15, output: 75 },
-      'claude-opus-4-20250514': { input: 15, output: 75 },
-      'claude-sonnet-4-6': { input: 3, output: 15 },
-      'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
-      'claude-sonnet-4-20250514': { input: 3, output: 15 },
-      'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
-      'claude-haiku-4-5-20251001': { input: 1, output: 5 },
-      'claude-haiku-4-5': { input: 1, output: 5 },
-      'claude-3-5-haiku-20241022': { input: 0.8, output: 4 },
-      'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
-      
-      // OpenAI
-      'gpt-5.4': { input: 2.50, output: 15 },
-      'gpt-5.4-mini': { input: 0.75, output: 4.50 },
-      'gpt-5.4-nano': { input: 0.20, output: 1.25 },
-      'gpt-5.2': { input: 1.75, output: 14 },
-      'gpt-5.1': { input: 1.25, output: 10 },
-      'gpt-4.1': { input: 2, output: 8 },
-      'gpt-4.1-2025-04-14': { input: 2, output: 8 },
-      'gpt-4.1-mini': { input: 0.4, output: 1.6 },
-      'gpt-4.1-mini-2025-04-14': { input: 0.4, output: 1.6 },
-      'gpt-4.1-nano': { input: 0.1, output: 0.4 },
-      'gpt-4o': { input: 2.5, output: 10 },
-      'gpt-4o-mini': { input: 0.15, output: 0.6 },
-      'gpt-4-turbo': { input: 10, output: 30 },
-
-      // Google
-      'gemini-2.5-pro': { input: 1.25, output: 10 },
-      'gemini-2.5-flash': { input: 0.15, output: 0.6 },
-      'gemini-1.5-pro': { input: 1.25, output: 5 },
-      'gemini-1.5-flash': { input: 0.075, output: 0.3 },
-      
-      // Mistral
-      'mistral-large-latest': { input: 3, output: 9 },
-      'mistral-small-latest': { input: 0.2, output: 0.6 },
-    };
-
-    // AI SDK inputTokens includes cache reads/writes. Crossing the threshold
-    // reprices the whole request, including output and every cache category.
-    const rate = modelName === "claude-haiku-5-5"
-      ? (inputTokens > 100_000 ? { input: 0.5, output: 2.5 } : { input: 0.1, output: 0.5 })
-      : pricing[modelName];
-    if (!rate) return undefined;
-    if (provider === "anthropic" || provider === "claude") {
-      return { ...rate, cacheRead: rate.input * (modelName === "claude-fable-5-1" ? 0.025 : 0.1), cacheWrite: rate.input * 1.25 };
-    }
-    // Dated OpenAI baseline cache rates; other unknown cache pricing stays unavailable.
-    const openAiCache: Record<string, number> = {
-      "gpt-4.1": 0.5, "gpt-4.1-2025-04-14": 0.5,
-      "gpt-4.1-mini": 0.1, "gpt-4.1-mini-2025-04-14": 0.1,
-      "gpt-4.1-nano": 0.025,
-    };
-    return { ...rate, cacheRead: provider === "openai" ? openAiCache[modelName] : undefined };
-  }
 
   /**
    * Export metrics to JSON string
@@ -765,9 +706,102 @@ export class MetricsCollector {
 // HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * Create a metrics collector for an analysis job
- */
+/** Rates per million tokens, shared with controlled operation accounting. */
+export interface TokenRates { input: number; output: number; cacheRead?: number; cacheWrite?: number }
+
+/** Shared category accounting. Rates have at most six decimal places; round the
+ * total upward to integer nanodollars, including admission/unknown allocations. */
+export function priceTokenUsageNanoUSD(rates: TokenRates, usage: {
+  input: number; output: number; cacheRead?: number; cacheWrite?: number; cacheWrite1h?: number;
+}): number | undefined {
+  const reads = usage.cacheRead ?? 0, writes = usage.cacheWrite ?? 0, hours = usage.cacheWrite1h ?? 0;
+  if (![usage.input, usage.output, reads, writes, hours].every(n => Number.isSafeInteger(n) && n >= 0)
+    || reads + writes > usage.input || hours > writes || (writes > 0 && usage.cacheWrite1h === undefined)
+    || ((reads > 0 || writes > 0) && rates.cacheRead === undefined)
+    || (writes > 0 && rates.cacheWrite === undefined)) return undefined;
+  const terms = [[usage.input - reads - writes, rates.input], [usage.output, rates.output],
+    [reads, rates.cacheRead ?? 0], [writes - hours, rates.cacheWrite ?? 0], [hours, rates.input * 2]];
+  let total = 0n;
+  for (const [tokens, rate] of terms) {
+    const scaled = Math.round(rate * 1_000_000);
+    if (!Number.isFinite(rate) || rate < 0 || !Number.isSafeInteger(scaled)
+      || Math.abs(rate - scaled / 1_000_000) > 1e-10) return undefined;
+    total += BigInt(tokens) * BigInt(scaled);
+  }
+  const nano = (total + 999n) / 1000n;
+  return nano <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(nano) : undefined;
+}
+
+export function getCostPer1MTokens(provider: string, modelName: string, inputTokens: number): TokenRates | undefined {
+  // Haiku 5.5 checked 2026-10-17; existing rates retain their earlier checks:
+  // https://platform.claude.com/docs/en/about-claude/pricing
+  // Other entries retain their historical estimates; this is not invoice data.
+  const pricing: Record<string, { input: number; output: number }> = {
+    'claude-sonnet-5': { input: 2, output: 10 },
+    'claude-opus-5': { input: 5, output: 25 },
+    'claude-fable-5-1': { input: 10, output: 50 },
+    // Anthropic (May 2026 — Opus family $5/$25; Sonnet $3/$15; Haiku $1/$5)
+    'claude-opus-4-7': { input: 5, output: 25 },
+    'claude-opus-4-6': { input: 5, output: 25 },
+    'claude-opus-4-5': { input: 5, output: 25 },
+    'claude-opus-4-5-20251101': { input: 5, output: 25 },
+    'claude-opus-4-1': { input: 15, output: 75 },
+    'claude-opus-4-1-20250805': { input: 15, output: 75 },
+    'claude-opus-4-20250514': { input: 15, output: 75 },
+    'claude-sonnet-4-6': { input: 3, output: 15 },
+    'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
+    'claude-sonnet-4-20250514': { input: 3, output: 15 },
+    'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
+    'claude-haiku-4-5-20251001': { input: 1, output: 5 },
+    'claude-haiku-4-5': { input: 1, output: 5 },
+    'claude-3-5-haiku-20241022': { input: 0.8, output: 4 },
+    'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
+
+    // OpenAI
+    'gpt-5.4': { input: 2.50, output: 15 },
+    'gpt-5.4-mini': { input: 0.75, output: 4.50 },
+    'gpt-5.4-nano': { input: 0.20, output: 1.25 },
+    'gpt-5.2': { input: 1.75, output: 14 },
+    'gpt-5.1': { input: 1.25, output: 10 },
+    'gpt-4.1': { input: 2, output: 8 },
+    'gpt-4.1-2025-04-14': { input: 2, output: 8 },
+    'gpt-4.1-mini': { input: 0.4, output: 1.6 },
+    'gpt-4.1-mini-2025-04-14': { input: 0.4, output: 1.6 },
+    'gpt-4.1-nano': { input: 0.1, output: 0.4 },
+    'gpt-4o': { input: 2.5, output: 10 },
+    'gpt-4o-mini': { input: 0.15, output: 0.6 },
+    'gpt-4-turbo': { input: 10, output: 30 },
+
+    // Google
+    'gemini-2.5-pro': { input: 1.25, output: 10 },
+    'gemini-2.5-flash': { input: 0.15, output: 0.6 },
+    'gemini-1.5-pro': { input: 1.25, output: 5 },
+    'gemini-1.5-flash': { input: 0.075, output: 0.3 },
+
+    // Mistral
+    'mistral-large-latest': { input: 3, output: 9 },
+    'mistral-small-latest': { input: 0.2, output: 0.6 },
+  };
+
+  // AI SDK inputTokens includes cache reads/writes. Crossing the threshold
+  // reprices the whole request, including output and every cache category.
+  const rate = modelName === "claude-haiku-5-5"
+    ? (inputTokens > 100_000 ? { input: 0.5, output: 2.5 } : { input: 0.1, output: 0.5 })
+    : pricing[modelName];
+  if (!rate) return undefined;
+  if (provider === "anthropic" || provider === "claude") {
+    return { ...rate, cacheRead: rate.input * (modelName === "claude-fable-5-1" ? 0.025 : 0.1), cacheWrite: rate.input * 1.25 };
+  }
+  // Dated OpenAI baseline cache rates; other unknown cache pricing stays unavailable.
+  const openAiCache: Record<string, number> = {
+    "gpt-4.1": 0.5, "gpt-4.1-2025-04-14": 0.5,
+    "gpt-4.1-mini": 0.1, "gpt-4.1-mini-2025-04-14": 0.1,
+    "gpt-4.1-nano": 0.025,
+  };
+  return { ...rate, cacheRead: provider === "openai" ? openAiCache[modelName] : undefined };
+}
+
+/** Create a metrics collector for an analysis job. */
 export function createMetricsCollector(
   jobId: string,
   pipelineVariant: AnalysisMetrics['pipelineVariant']

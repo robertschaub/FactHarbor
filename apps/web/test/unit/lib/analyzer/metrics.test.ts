@@ -68,6 +68,22 @@ function finalizeMetricsForSingleCall(overrides: Partial<LLMCallMetric> = {}) {
 }
 
 describe("MetricsCollector cost estimation", () => {
+  it("uses observed physical-attempt subtotal instead of final-call token pricing", () => {
+    const metrics=finalizeMetricsForSingleCall({attemptAccounting:{operationId:"offline",knownSubtotalNanoUSD:600000,
+      retainedUnknownNanoUSD:0,unknownAttempts:0,physicalAttempts:3}});
+    expect(metrics.estimatedCostUSD).toBe(0.0006);
+  });
+  it("preserves the known subtotal without claiming a complete cost when an attempt is unknown", () => {
+    const metrics=finalizeMetricsForSingleCall({attemptAccounting:{operationId:"offline",knownSubtotalNanoUSD:200000,
+      retainedUnknownNanoUSD:240960000,unknownAttempts:1,physicalAttempts:2}});
+    expect(metrics.estimatedCostUSD).toBeNull();
+    expect(metrics.costEstimate).toMatchObject({knownSubtotalUSD:0.0002,unpricedCalls:1});
+  });
+  it("rejects malformed attempt totals instead of falling back to success-only pricing", () => {
+    const metrics=finalizeMetricsForSingleCall({attemptAccounting:{operationId:"offline",knownSubtotalNanoUSD:NaN,
+      retainedUnknownNanoUSD:0,unknownAttempts:2,physicalAttempts:1}});
+    expect(metrics.estimatedCostUSD).toBeNull();
+  });
   it.each([99_999, 100_000, 100_001])("prices the complete Haiku 5.5 request at the %s-token boundary", promptTokens => {
     const rate = promptTokens > 100_000 ? 0.5 : 0.1;
     const metrics = finalizeMetricsForSingleCall({ modelName: "claude-haiku-5-5", promptTokens, completionTokens: 1000 });
