@@ -2756,7 +2756,7 @@ type SurgicalContractRepairResult =
 export function selectFlaggedContractAssessments(
   critique: ClaimContractValidationResult | undefined,
   claims: AtomicClaim[],
-): Array<z.infer<typeof ClaimContractClaimSchema>> {
+): ClaimContractValidationResult["claims"] {
   if (!critique) return [];
   const currentIds = new Set(claims.map((claim) => claim.id));
   return (critique.claims ?? []).filter((assessment) =>
@@ -2781,7 +2781,7 @@ export function selectFlaggedContractAssessments(
 export function synthesizeAtomicityFlaggedAssessments(
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
   claims: AtomicClaim[],
-): Array<z.infer<typeof ClaimContractClaimSchema>> {
+): ClaimContractValidationResult["claims"] {
   const reason = contractValidationSummary?.atomicityRetryReason?.trim();
   if (!reason || claims.length !== 1 || !claims[0]?.id) {
     return [];
@@ -2951,7 +2951,7 @@ export function normalizeSurgicalContractRepairSet(
  */
 async function runSurgicalContractRepair(
   claims: AtomicClaim[],
-  flaggedAssessments: Array<z.infer<typeof ClaimContractClaimSchema>>,
+  flaggedAssessments: ClaimContractValidationResult["claims"],
   validatorSummary: string,
   inputText: string,
   impliedClaim: string,
@@ -2971,6 +2971,7 @@ async function runSurgicalContractRepair(
     proxyDriftSeverity: assessment.proxyDriftSeverity,
     preservesEvaluativeMeaning: assessment.preservesEvaluativeMeaning,
     recommendedAction: assessment.recommendedAction,
+    ...(assessment.isInputDerived !== undefined ? { isInputDerived: assessment.isInputDerived } : {}),
   }));
 
   const llmCallStartedAt = Date.now();
@@ -3588,9 +3589,15 @@ const ClaimContractClaimSchema = z.object({
   reasoning: z.string().catch(""),
 });
 
+// New provider responses must supply origin; synthetic/internal assessments
+// have no origin judgment and must not manufacture one.
+const ClaimContractRawClaimSchema = ClaimContractClaimSchema.extend({
+  isInputDerived: z.boolean(),
+});
+
 export const ClaimContractOutputSchema = z.object({
   inputAssessment: ClaimContractInputAssessmentSchema,
-  claims: z.array(ClaimContractClaimSchema),
+  claims: z.array(ClaimContractRawClaimSchema),
   // Structured anchor preservation check (added for proposition anchoring hardening).
   // The validator prompt identifies truth-condition-bearing modifiers and reports
   // whether they are preserved in the extracted claims with traceable citations.
@@ -3620,7 +3627,7 @@ const SingleClaimAtomicityOutputSchema = z.object({
 
 export interface ClaimContractValidationResult {
   inputAssessment: z.infer<typeof ClaimContractInputAssessmentSchema>;
-  claims: Array<z.infer<typeof ClaimContractClaimSchema>>;
+  claims: Array<z.infer<typeof ClaimContractClaimSchema> & { isInputDerived?: boolean }>;
   truthConditionAnchor?: z.infer<typeof ClaimContractTruthConditionAnchorSchema>;
   antiInferenceCheck?: z.infer<typeof ClaimContractAntiInferenceSchema>;
 }
@@ -3673,6 +3680,7 @@ export function createContractDiagnosticCapture() {
               preservesEvaluativeMeaning: claim.preservesEvaluativeMeaning,
               proxyDriftSeverity: claim.proxyDriftSeverity,
               recommendedAction: claim.recommendedAction,
+              ...(claim.isInputDerived !== undefined ? { isInputDerived: claim.isInputDerived } : {}),
             })),
             injectedClaimIdCount: injectedIds.length,
             injectedClaimIds: items(injectedIds).map((id) => text(id, 80)),
@@ -3866,6 +3874,7 @@ export function getProtectedContractCarrierIds(
 function normalizeClaimContractValidationResult(
   raw: ClaimContractRawOutput,
 ): ClaimContractValidationResult {
+  const hasOriginFailure = raw.claims.some((claim) => claim.isInputDerived === false);
   const truthConditionAnchor = raw.truthConditionAnchor ?? raw.inputAssessment.truthConditionAnchor;
   const antiInferenceCheck = raw.antiInferenceCheck ?? (raw.inputAssessment.antiInferenceCheck
     ? {
@@ -3877,13 +3886,15 @@ function normalizeClaimContractValidationResult(
 
   return {
     inputAssessment: {
-      preservesOriginalClaimContract: raw.inputAssessment.preservesOriginalClaimContract,
-      rePromptRequired: raw.inputAssessment.rePromptRequired,
+      preservesOriginalClaimContract: raw.inputAssessment.preservesOriginalClaimContract && !hasOriginFailure,
+      rePromptRequired: raw.inputAssessment.rePromptRequired || hasOriginFailure,
       summary: raw.inputAssessment.summary ?? "",
       ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
       ...(raw.inputAssessment.antiInferenceCheck ? { antiInferenceCheck: raw.inputAssessment.antiInferenceCheck } : {}),
     },
-    claims: raw.claims,
+    claims: raw.claims.map((claim) => claim.isInputDerived === false
+      ? { ...claim, proxyDriftSeverity: "material", recommendedAction: "retry" }
+      : claim),
     ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
     ...(antiInferenceCheck ? { antiInferenceCheck } : {}),
   };
@@ -4440,8 +4451,9 @@ export async function renderClaimContractRetryGuidance(
       validationAvailable: evaluatedContract !== undefined,
       summary: evaluatedContract?.summary.summary ?? null,
       carrierFidelityGuidance: evaluatedContract?.carrierFidelityGuidance ?? null,
-      flaggedAssessments: failingClaims.map(({ claimId, preservesEvaluativeMeaning, usesNeutralDimensionQualifier, reasoning }) => ({
+      flaggedAssessments: failingClaims.map(({ claimId, preservesEvaluativeMeaning, usesNeutralDimensionQualifier, reasoning, isInputDerived }) => ({
         claimId, preservesEvaluativeMeaning, usesNeutralDimensionQualifier, reasoning,
+        ...(isInputDerived !== undefined ? { isInputDerived } : {}),
       })),
       antiInferenceCheck: evaluatedContract?.assessment?.antiInferenceCheck ?? null,
     }),

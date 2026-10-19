@@ -45,6 +45,20 @@ function renderWithVars(
 
 describe("Stage-1 prompt contract", () => {
   describe("input-origin admission", () => {
+    it("defines the separate origin judgment without changing the existing question and dimension rules", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION")!;
+      const outputSection = section.slice(section.indexOf("Return a JSON object:"));
+      const output = JSON.parse(outputSection.match(/```json\s*([\s\S]*?)```/)![1]);
+      expect(Object.keys(output.claims[0])).toEqual([
+        "claimId", "preservesEvaluativeMeaning", "usesNeutralDimensionQualifier",
+        "proxyDriftSeverity", "recommendedAction", "reasoning", "isInputDerived",
+      ]);
+      expect(section).toContain("true only if the claim's whole proposition is derivable from the original input alone under rule 1");
+      expect(section).toContain("allowing only neutral dimension qualification under rule 2");
+      expect(section).toContain("If false, `reasoning` must name the component with no input basis");
+      expect(section).toContain("If true, `reasoning` must quote the licensing span");
+      expect(section).toContain('If `isInputDerived` is false, set that claim\'s `proxyDriftSeverity` to `"material"`');
+    });
     it("places the existing counter-narrative prohibition at the general Rules level", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2")!;
       const clause = section.split("\n").filter((line) => line.includes("**No counter-narrative claims (CRITICAL):**"));

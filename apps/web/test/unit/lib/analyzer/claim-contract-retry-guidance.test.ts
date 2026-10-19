@@ -73,8 +73,9 @@ function assessment(overrides: Partial<ClaimContractValidationResult> = {}): Cla
       preservedInClaimIds: ["AC_01"], preservedByQuotes: ["rechtskräftig"],
     },
     claims: [{ claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true,
-      proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "primary assessment" }],
+      proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "primary assessment", isInputDerived: true }],
     ...overrides,
+    ...(overrides.claims ? { claims: overrides.claims.map(item => ({ isInputDerived: true, ...item })) } : {}),
   });
 }
 
@@ -156,7 +157,10 @@ describe("input-origin assessment plumbing", () => {
 
   it.each(savedContractCases.fixtures)("forwards a typed finding and its reason through existing retry guidance for $name", async fixture => {
     const candidates = fixture.claims.map(c => ({ ...claim(c.statement), ...c })) as AtomicClaim[];
-    const raw = ClaimContractOutputSchema.parse(fixture.assessment);
+    // Synthetic copy for the new raw schema; the archived response is immutable.
+    const raw = ClaimContractOutputSchema.parse({ ...fixture.assessment,
+      claims: fixture.assessment.claims.map(item => ({ ...item, isInputDerived: true })),
+    });
     // Synthetic plumbing flags on saved IDs, not a semantic judgment about
     // these statements. Existing saved assessments remain unchanged.
     raw.inputAssessment.preservesOriginalClaimContract = false;
@@ -180,6 +184,7 @@ describe("input-origin assessment plumbing", () => {
       preservesEvaluativeMeaning: target.preservesEvaluativeMeaning,
       usesNeutralDimensionQualifier: target.usesNeutralDimensionQualifier,
       reasoning: target.reasoning,
+      isInputDerived: true,
     }]);
     expect(offline.generate).not.toHaveBeenCalled();
   });
@@ -188,7 +193,10 @@ describe("input-origin assessment plumbing", () => {
 describe("carrier presence and fidelity", () => {
   it.each(savedContractCases.fixtures)("replays the saved $name assessment without changing carrier fidelity", fixture => {
     const candidates = fixture.claims.map(c => ({ ...claim(c.statement), ...c })) as AtomicClaim[];
-    const raw = ClaimContractOutputSchema.parse(fixture.assessment);
+    // Historical consumer replay, not a new provider response: keep the
+    // saved assessment and its absent origin judgment byte-for-byte intact.
+    expect(ClaimContractOutputSchema.safeParse(fixture.assessment).success).toBe(false);
+    const raw = structuredClone(fixture.assessment) as ClaimContractValidationResult;
     expect(raw).toEqual(fixture.assessment);
     expect([german, portuguese]).toContain(fixture.input);
     const result = evaluateClaimContractValidation(raw, candidates, fixture.inputClassification);
@@ -282,7 +290,7 @@ describe("UCM retry guidance", () => {
     const loaded = await loadPromptFile("claimboundary");
     expect(loaded.success).toBe(true);
     expect(loaded.warnings.filter(w => w.type === "missing_section")).toEqual([]);
-    expect(loaded.prompt?.frontmatter.version).toBe("1.0.20");
+    expect(loaded.prompt?.frontmatter.version).toBe("1.0.21");
     expect(loaded.prompt?.frontmatter.requiredSections).toEqual(expect.arrayContaining([
       "CLAIM_CONTRACT_RETRY_GUIDANCE", "CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE", "CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE",
       "CLAIM_CONTRACT_CARRIER_FIDELITY_REASON",
@@ -372,6 +380,7 @@ describe("UCM retry guidance", () => {
     expect(context(result.content).flaggedAssessments).toEqual([{
       claimId: "AC_01", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: true,
       reasoning: "structural finding; recommendedAction:retry",
+      isInputDerived: true,
     }]);
   });
 

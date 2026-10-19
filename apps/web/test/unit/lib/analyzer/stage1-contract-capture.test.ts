@@ -36,7 +36,7 @@ const claims = ["O processo respeitou o direito processual brasileiro.", "As sen
 function critique(candidates = claims, violated = false): ClaimContractValidationResult {
   return {
     inputAssessment: { preservesOriginalClaimContract: !violated, rePromptRequired: violated, summary: "offline assessment" },
-    claims: candidates.map(({ id }) => ({ claimId: id, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "not captured" })),
+    claims: candidates.map(({ id }) => ({ claimId: id, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "not captured", isInputDerived: true })),
     antiInferenceCheck: { normativeClaimInjected: false, injectedClaimIds: [], reasoning: "not captured" },
   };
 }
@@ -101,6 +101,91 @@ afterEach(() => {
 });
 
 describe("Stage 1 bounded contract capture", () => {
+  it.each([PT, DE])("projects an origin failure into existing gates without losing meaning or carrier inventory: %s", async input => {
+    const s = await scenario({ completionEnabled: true }, false, input);
+    const candidates = claims.map(claim => ({ ...claim, statement: input }));
+    const raw = critique(candidates);
+    raw.claims[0].isInputDerived = false; // Synthetic judgment, not a semantic score.
+    const anchor = { presentInInput: true, anchorText: input, preservedInClaimIds: ["AC_01"], preservedByQuotes: [input] };
+    // Exercise both supported anchor layouts through the actual caller.
+    if (input === DE) raw.inputAssessment.truthConditionAnchor = anchor;
+    else raw.truthConditionAnchor = anchor;
+    raw.inputAssessment.antiInferenceCheck = { normativeInferenceDetected: false, inferredClaimIds: [], reasoning: "legacy" };
+    const original = structuredClone(raw);
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(candidates)];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [raw];
+    s.queues.CLAIM_VALIDATION = [gate(candidates)];
+    const result = await s.run();
+    expect(raw).toEqual(original);
+    expect(result.contractValidationSummary).toMatchObject({
+      preservesContract: false, rePromptRequired: true, failureMode: "contract_violated",
+      truthConditionAnchor: { preservedInClaimIds: ["AC_01"], validPreservedIds: ["AC_01"] },
+    });
+    expect(result.contractValidationSummary?.contractCarrierClaimIds).toBeUndefined();
+    const diagnostic = s.capture("contract_completion_diagnostic");
+    expect(diagnostic.outcome).toBe("skipped_existing_claim_defects");
+    expect(diagnostic.adminCapture.steps[0].validator).toMatchObject({
+      preservesOriginalClaimContract: false, rePromptRequired: true, injectedClaimIds: [],
+      claims: [{ claimId: "AC_01", isInputDerived: false, preservesEvaluativeMeaning: true,
+        proxyDriftSeverity: "material", recommendedAction: "retry" }, { isInputDerived: true, proxyDriftSeverity: "none" }],
+    });
+  });
+
+  it("forwards the projected origin finding to whole-set retry", async () => {
+    const s = await scenario({ maxRetries: 1 });
+    const raw = critique();
+    raw.claims[0].isInputDerived = false;
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2(), pass2()];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [raw, critique()];
+    s.queues.CLAIM_VALIDATION = [gate()];
+    const result = await s.run();
+    expect(result.contractValidationSummary?.preservesContract).toBe(true);
+    const rendered = mocks.render.mock.calls.find(call => call[1] === "CLAIM_CONTRACT_RETRY_GUIDANCE")!;
+    expect(JSON.parse(rendered[2].retryValidationContextJson).flaggedAssessments).toEqual([
+      expect.objectContaining({ claimId: "AC_01", isInputDerived: false, preservesEvaluativeMeaning: true, reasoning: "not captured" }),
+    ]);
+  });
+
+  it.each([false, true])("revalidates surgical replacement origin before adoption: %s", async repairedOrigin => {
+    const s = await scenario({ surgicalRepairEnabled: true, completionEnabled: true });
+    const raw = critique();
+    raw.claims[0].isInputDerived = false;
+    const replacement = { ...claims[0], statement: PT };
+    const after = critique([replacement, claims[1]]);
+    after.claims[0].isInputDerived = repairedOrigin;
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2()];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [raw, after];
+    s.queues.CLAIM_CONTRACT_SURGICAL_REPAIR = [{ repairs: [
+      { replacesClaimIds: ["AC_01"], claims: [replacement], reasoning: "synthetic replacement" },
+    ] }];
+    s.queues.CLAIM_VALIDATION = [gate()];
+    const result = await s.run();
+    expect(result.contractValidationSummary?.preservesContract).toBe(repairedOrigin);
+    expect(result.atomicClaims.find(claim => claim.id === "AC_02")).toMatchObject(claims[1]);
+    const diagnostic = s.capture("contract_surgical_repair_diagnostic");
+    expect(diagnostic.outcome).toBe(repairedOrigin ? "adopted" : "not_validated_cleanly");
+    expect(diagnostic.adminCapture.steps[1].validator.claims[0]).toMatchObject({
+      isInputDerived: repairedOrigin, proxyDriftSeverity: repairedOrigin ? "none" : "material",
+    });
+    const rendered = mocks.render.mock.calls.find(call => call[1] === "CLAIM_CONTRACT_SURGICAL_REPAIR")!;
+    expect(JSON.parse(rendered[2].flaggedAssessmentsJson)).toEqual([
+      expect.objectContaining({ claimId: "AC_01", isInputDerived: false, proxyDriftSeverity: "material", critique: "not captured" }),
+    ]);
+  });
+
+  it("treats a missing raw origin field as unavailable, without fabricating an internal judgment", async () => {
+    const s = await scenario();
+    const legacy = critique();
+    delete legacy.claims[0].isInputDerived;
+    s.queues.CLAIM_EXTRACTION_PASS2 = [pass2()];
+    s.queues.CLAIM_CONTRACT_VALIDATION = [legacy, legacy];
+    s.queues.CLAIM_VALIDATION = [gate()];
+    const result = await s.run();
+    expect(result.contractValidationSummary).toMatchObject({ preservesContract: false, failureMode: "validator_unavailable" });
+    const capture = createContractDiagnosticCapture();
+    capture.forClaims("legacy", claims)("contract", legacy);
+    expect((capture.details.steps[0].validator as any).claims[0]).not.toHaveProperty("isInputDerived");
+  });
 
   it.each([PT, DE])("keeps every approved claim above the short-input cap for %s", async input => {
     const s = await scenario({}, false, input);
@@ -312,7 +397,10 @@ describe("Stage 1 bounded contract capture", () => {
     const s = await scenario({ repairPassEnabled: true }, false, DE);
     const fixture = savedContractCases.fixtures.find(f => f.name === "de-stress")!;
     const candidates = fixture.claims.map(c => ({ ...claims[0], ...c })) as AtomicClaim[];
-    const assessment = structuredClone(fixture.assessment);
+    // Synthetic provider response for this routing test; saved raw fixture stays unchanged.
+    const assessment = { ...structuredClone(fixture.assessment),
+      claims: fixture.assessment.claims.map(item => ({ ...item, isInputDerived: true })),
+    };
     assessment.truthConditionAnchor!.anchorText = inflected ? "rechtskräftige" : "rechtskräftig";
     const extracted = { ...pass2(candidates), impliedClaim: DE, articleThesis: DE };
     s.queues.CLAIM_EXTRACTION_PASS2 = [extracted];

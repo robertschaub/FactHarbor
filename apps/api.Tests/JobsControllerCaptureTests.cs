@@ -119,13 +119,13 @@ public sealed class JobsControllerCaptureTests
         var attribution = firstPass ? "initial" : "count_floor_reprompt";
         var summary = new {
             failureMode = firstPass ? null : "contract_violated", stageAttribution = attribution,
-            adminCapture = new { steps = new[] { new { step = firstPass ? "initial_contract" : "final_contract", candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
+            adminCapture = new { steps = new[] { new { step = firstPass ? "initial_contract" : "final_contract", candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } }, validator = new { claims = new[] { new { claimId = "AC_01", isInputDerived = false } } } } } }
         };
         var stored = JsonSerializer.Serialize(new {
             analysisWarnings = firstPass ? Array.Empty<object>() : types.Select(type => (object)new {
                 type, severity = "info", details = new {
                     outcome = "validation_failed",
-                    adminCapture = new { steps = new[] { new { candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } } } } }
+                    adminCapture = new { steps = new[] { new { candidates = new[] { new { id = "AC_01", statement = "Plastik recycling bringt nichts" } }, validator = new { claims = new[] { new { claimId = "AC_01", isInputDerived = false } } } } } }
                 }
             }).Append(new { type = "report_damaged", severity = "error", details = new { contractValidationSummary = summary } }).ToArray(),
             understanding = new { unchanged = true, contractValidationSummary = summary }
@@ -143,6 +143,7 @@ public sealed class JobsControllerCaptureTests
 
         var response = Assert.IsType<OkObjectResult>(await controller.Get(job.JobId));
         var result = JsonSerializer.SerializeToElement(response.Value).GetProperty("resultJson");
+        Assert.Equal(admin, result.GetRawText().Contains("isInputDerived", StringComparison.Ordinal));
         foreach (var warning in result.GetProperty("analysisWarnings").EnumerateArray())
         {
             var details = warning.GetProperty("details");

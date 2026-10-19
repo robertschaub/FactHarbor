@@ -1,3 +1,4 @@
+// Validator origin flags in mocked responses are synthetic plumbing values, not model judgments.
 /**
  * ClaimBoundary Pipeline — Unit Tests
  *
@@ -9151,6 +9152,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9171,6 +9173,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9253,6 +9256,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9339,6 +9343,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9373,6 +9378,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -9485,9 +9491,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "missing rechtskräftig anchor",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
             ],
             truthConditionAnchor: {
               presentInInput: true,
@@ -9519,10 +9525,10 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "retry preserved contract",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "extra detail" },
-              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor restored" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "extra detail" },
+              { claimId: "AC_04", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor restored" },
             ],
             truthConditionAnchor: {
               presentInInput: true,
@@ -9652,6 +9658,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: true,
                 proxyDriftSeverity: "none",
@@ -9660,6 +9667,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               },
               {
                 claimId: "AC_02",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: true,
                 proxyDriftSeverity: "mild",
@@ -9668,6 +9676,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               },
               {
                 claimId: "AC_03",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: true,
                 proxyDriftSeverity: "mild",
@@ -9705,6 +9714,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: true,
                 proxyDriftSeverity: "none",
@@ -9815,6 +9825,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9853,6 +9864,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_03",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -9900,6 +9912,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_02",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -10012,6 +10025,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: false,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "material",
@@ -10050,6 +10064,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -10164,9 +10179,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "missing rechtskräftig anchor",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
             ],
             truthConditionAnchor: {
               presentInInput: true,
@@ -10197,10 +10212,10 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "repair preserved contract",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "extra detail" },
-              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor restored" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "extra detail" },
+              { claimId: "AC_04", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor restored" },
             ],
             truthConditionAnchor: {
               presentInInput: true,
@@ -10331,9 +10346,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "initial set preserves all explicit conjuncts",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "procedural-law conjunct preserved" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "constitutional conjunct preserved" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "sentence-fairness conjunct preserved" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "procedural-law conjunct preserved" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "constitutional conjunct preserved" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "sentence-fairness conjunct preserved" },
             ],
             truthConditionAnchor: {
               presentInInput: true,
@@ -10459,8 +10474,8 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "approved without explicit carrier IDs",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
             ],
             antiInferenceCheck: {
               normativeClaimInjected: false,
@@ -10483,7 +10498,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "final accepted central claim approved without explicit carrier IDs",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
             ],
             antiInferenceCheck: {
               normativeClaimInjected: false,
@@ -10584,8 +10599,8 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "approved multi-assertion carriers",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
             ],
             antiInferenceCheck: {
               normativeClaimInjected: false,
@@ -10708,8 +10723,8 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               summary: "one thesis-direct framework proposition is omitted",
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
             ],
             antiInferenceCheck: {
               normativeClaimInjected: false,
@@ -10747,9 +10762,9 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               preservedByQuotes: [],
             },
             claims: [
-              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
-              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
-              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "completed" },
+              { claimId: "AC_01", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_02", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "kept" },
+              { claimId: "AC_03", isInputDerived: true, preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "completed" },
             ],
             antiInferenceCheck: {
               normativeClaimInjected: false,
@@ -11027,6 +11042,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -11128,6 +11144,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -11253,6 +11270,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -11310,6 +11328,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: false,
                 proxyDriftSeverity: "none",
@@ -11510,6 +11529,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             claims: [
               {
                 claimId: "AC_01",
+                isInputDerived: true,
                 preservesEvaluativeMeaning: true,
                 usesNeutralDimensionQualifier: true,
                 proxyDriftSeverity: "none",
@@ -11955,7 +11975,10 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
     const aggregation = await import("@/lib/analyzer/aggregation-stage");
     const fixture = savedContractCases.fixtures.find(f => f.name === "pt-usable")!;
     const claims = fixture.claims.map(c => createAtomicClaim(c as Partial<AtomicClaim>));
-    const assessment = structuredClone(fixture.assessment);
+    // Synthetic response for the new provider schema, not a rewritten saved judgment.
+    const assessment = { ...structuredClone(fixture.assessment),
+      claims: fixture.assessment.claims.map(item => ({ ...item, isInputDerived: true })),
+    };
     assessment.inputAssessment.preservesOriginalClaimContract = preserves;
     assessment.claims[0].recommendedAction = "retry";
     vi.mocked(loadPipelineConfig).mockResolvedValue({ config: { centralityThreshold: "medium", maxAtomicClaims: 5, claimAutoSelectionEnabled: false } } as any);

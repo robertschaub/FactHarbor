@@ -1,5 +1,5 @@
 ---
-version: "1.0.20"
+version: "1.0.21"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
 lastModified: "2026-10-19T00:00:00Z"
@@ -633,7 +633,8 @@ Return a JSON object:
       "usesNeutralDimensionQualifier": true,
       "proxyDriftSeverity": "none",
       "recommendedAction": "keep",
-      "reasoning": "short explanation"
+      "reasoning": "short explanation",
+      "isInputDerived": true
     }
   ]
 }
@@ -646,6 +647,8 @@ Field constraints:
 - `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` when the claim analyzes a substantially different proposition, including a substantively introduced proposition without an input basis under rule 1. Topical relevance to the input or to the question asked, an opposing or contextual label, or another claim carrying the anchor does not excuse that addition.
 - `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift, including an externally introduced proposition under rule 1, or a structural failure of this claim under rules 16–21 that requires a new extraction attempt. A structural retry does not by itself mean the anchor is absent from the claim or the original meaning is lost.
 - `reasoning`: max 200 characters. Give the required per-claim input-basis assessment above, including any relevant fidelity or structural defect.
+- `isInputDerived`: true only if the claim's whole proposition is derivable from the original input alone under rule 1, allowing only neutral dimension qualification under rule 2. Independent of `thesisRelevance`, `claimDirection`, truth and anchor coverage. If false, `reasoning` must name the component with no input basis. If true, `reasoning` must quote the licensing span.
+- If `isInputDerived` is false, set that claim's `proxyDriftSeverity` to `"material"` and `recommendedAction` to `"retry"`, and set `preservesOriginalClaimContract` to false and `rePromptRequired` to true.
 - `truthConditionAnchor.anchorText`: empty string only when no truth-condition-bearing modifier exists in the input.
 - `truthConditionAnchor.preservedInClaimIds`: list every thesis-direct claim carrying the chosen anchor or its in-scope part, using only IDs that actually exist in the provided claim list. Include carriers that fail another rule; report those failures through `recommendedAction` or `rePromptRequired`, never by omitting the carrier from this inventory.
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.

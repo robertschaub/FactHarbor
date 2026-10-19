@@ -340,6 +340,7 @@ describe("synthesizeAtomicityFlaggedAssessments", () => {
     expect(flagged).toHaveLength(1);
     expect(flagged[0].claimId).toBe("AC_01");
     expect(flagged[0].recommendedAction).toBe("retry");
+    expect(flagged[0]).not.toHaveProperty("isInputDerived");
     expect(flagged[0].reasoning).toContain("coordinated branches");
   });
 

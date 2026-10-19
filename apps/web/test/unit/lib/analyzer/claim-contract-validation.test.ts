@@ -10,6 +10,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateText, Output } from "ai";
+import { getStructuredOutputProviderOptions } from "@/lib/analyzer/llm";
 import {
   ClaimContractOutputSchema,
 } from "@/lib/analyzer/claimboundary-pipeline";
@@ -66,6 +69,43 @@ function extractSection(content: string, sectionName: string): string | null {
 // ============================================================================
 
 describe("ClaimContractOutputSchema", () => {
+  it.each([true, false, undefined, null, "true", 1])("requires a boolean origin judgment: %s", (value) => {
+    const result = ClaimContractOutputSchema.safeParse({
+      inputAssessment: { preservesOriginalClaimContract: true, rePromptRequired: false },
+      claims: [{ claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true,
+        ...(value !== undefined ? { isInputDerived: value } : {}),
+      }],
+    });
+    expect(result.success).toBe(typeof value === "boolean");
+    if (!result.success) expect(result.error.issues[0].path).toEqual(["claims", 0, "isInputDerived"]);
+  });
+
+  it("sends the required origin field through the actual SDK tool schema without reordering base fields", async () => {
+    let body: any;
+    let sends = 0;
+    const provider = createAnthropic({ apiKey: "offline-test-only", fetch: async (_url, init) => {
+      sends++;
+      body = JSON.parse(init!.body as string);
+      throw new Error("offline request captured");
+    } });
+    await expect(generateText({
+      model: provider("claude-sonnet-4-6"),
+      prompt: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      output: Output.object({ schema: ClaimContractOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions("anthropic"),
+      maxRetries: 0,
+    })).rejects.toThrow("offline request captured");
+    expect(sends).toBe(1);
+    expect(body.tool_choice).toMatchObject({ type: "any" });
+    const claimSchema = body.tools[0].input_schema.properties.claims.items;
+    expect(claimSchema.required).toContain("isInputDerived");
+    expect(claimSchema.properties.isInputDerived.type).toBe("boolean");
+    expect(Object.keys(claimSchema.properties)).toEqual([
+      "claimId", "preservesEvaluativeMeaning", "usesNeutralDimensionQualifier",
+      "proxyDriftSeverity", "recommendedAction", "reasoning", "isInputDerived",
+    ]);
+  });
+
   it("parses a valid passing result", () => {
     const input = {
       inputAssessment: {
@@ -75,6 +115,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -102,6 +143,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: false,
           usesNeutralDimensionQualifier: false,
@@ -110,6 +152,7 @@ describe("ClaimContractOutputSchema", () => {
           reasoning: "Replaced 'not useful' with 'not viable'",
         },
         {
+          isInputDerived: true,
           claimId: "AC_02",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -136,6 +179,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -161,6 +205,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -187,6 +232,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -210,6 +256,7 @@ describe("ClaimContractOutputSchema", () => {
       },
       claims: [
         {
+          isInputDerived: true,
           claimId: "AC_01",
           preservesEvaluativeMeaning: false,
           usesNeutralDimensionQualifier: false,
@@ -218,6 +265,7 @@ describe("ClaimContractOutputSchema", () => {
           reasoning: "Replaced predicate with feasibility claim",
         },
         {
+          isInputDerived: true,
           claimId: "AC_02",
           preservesEvaluativeMeaning: true,
           usesNeutralDimensionQualifier: true,
@@ -226,6 +274,7 @@ describe("ClaimContractOutputSchema", () => {
           reasoning: "Clean dimension qualifier",
         },
         {
+          isInputDerived: true,
           claimId: "AC_03",
           preservesEvaluativeMeaning: false,
           usesNeutralDimensionQualifier: true,
