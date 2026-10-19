@@ -1135,6 +1135,23 @@ describe("reconciliation citation carriage", () => {
 // ============================================================================
 
 describe("validateVerdicts (Step 5)", () => {
+  it("preserves the full accepted verdict with integrity policies enabled", async () => {
+    const verdict = createCBVerdict({
+      misleadingness: "potentially_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
+      challengeResponses: [{ challengeType: "assumption", response: "Original challenge handling", verdictAdjusted: false }],
+    });
+    const original = structuredClone(verdict);
+    const warnings: AnalysisWarning[] = [];
+    const result = await validateVerdicts([verdict], [createEvidenceItem()], createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+    }), { ...DEFAULT_VERDICT_STAGE_CONFIG, verdictGroundingPolicy: "safe_downgrade", verdictDirectionPolicy: "retry_once_then_safe_downgrade" }, warnings);
+    expect(result).toStrictEqual([original]);
+    expect(verdict).toStrictEqual(original);
+    expect(warnings).toEqual([]);
+  });
+
   it("should call grounding and direction validation LLMs", async () => {
     const verdicts: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
@@ -1238,14 +1255,18 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((w) => w.type === "direction_validation_degraded" && w.severity === "warning")).toBe(true);
   });
 
-  it("applies safe_downgrade on grounding failure when grounding policy is enabled", async () => {
+  it.each([82, 12])("clears superseded prose on grounding downgrade at confidence %s", async (confidence) => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
       truthPercentage: 78,
-      confidence: 82,
+      confidence,
+      misleadingness: "highly_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
+      challengeResponses: [{ challengeType: "assumption", response: "Original challenge handling", verdictAdjusted: true }],
       supportingEvidenceIds: ["EV_01"],
       contradictingEvidenceIds: [],
     })];
+    const original = structuredClone(verdicts[0]);
     const evidence = [createEvidenceItem({ id: "EV_01" })];
     const warnings: AnalysisWarning[] = [];
 
@@ -1261,7 +1282,29 @@ describe("validateVerdicts (Step 5)", () => {
 
     const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
 
-    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0]).toStrictEqual({
+      ...original,
+      truthPercentage: 50,
+      verdict: "UNVERIFIED",
+      verdictReason: "verdict_integrity_failure",
+      confidence: Math.min(confidence, 24),
+      confidenceTier: "INSUFFICIENT",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+      reasoning: "",
+      misleadingness: undefined,
+      misleadingnessReason: undefined,
+      challengeResponses: [],
+    });
+    expect(verdicts[0]).toStrictEqual(original);
+    expect(warnings.find((w) => w.type === "verdict_integrity_failure")?.details).toStrictEqual({
+      claimId: "AC_01",
+      integrityFailureType: "grounding",
+      triggerPolicy: "grounding",
+      terminalReason: "grounding_validation_unresolved",
+      originalTruthPercentage: 78,
+      downgradedTruthPercentage: 50,
+    });
     expect(result[0].confidenceTier).toBe("INSUFFICIENT");
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_grounding_issue" && w.severity === "info")).toBe(true);
@@ -1271,6 +1314,9 @@ describe("validateVerdicts (Step 5)", () => {
   it("safe-downgrades normal zero-citation verdicts even when direction policy is disabled", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
+      misleadingness: "highly_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
+      challengeResponses: [{ challengeType: "assumption", response: "Original challenge handling", verdictAdjusted: true }],
       truthPercentage: 52,
       confidence: 58,
       confidenceTier: "MEDIUM",
@@ -1301,11 +1347,22 @@ describe("validateVerdicts (Step 5)", () => {
     const result = await validateVerdicts(verdicts, evidence, mockLLM, config, warnings);
 
     expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].reasoning).toBe("");
+    expect(result[0].misleadingness).toBeUndefined();
+    expect(result[0].misleadingnessReason).toBeUndefined();
+    expect(result[0].challengeResponses).toEqual([]);
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
     expect(result[0].confidenceTier).toBe("INSUFFICIENT");
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_direction_issue")).toBe(true);
-    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
+    expect(warnings.find((w) => w.type === "verdict_integrity_failure")?.details).toStrictEqual({
+      claimId: "AC_01", integrityFailureType: "direction", triggerPolicy: "direction",
+      terminalReason: "direction_unresolved_no_repair_candidate",
+      originalTruthPercentage: 52, downgradedTruthPercentage: 50,
+    });
   });
+
 
   it("safe-downgrades neutral directional citations even when direction policy is disabled", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
@@ -1559,6 +1616,8 @@ describe("validateVerdicts (Step 5)", () => {
       claimId: "AC_01",
       truthPercentage: 82,
       confidence: 80,
+      misleadingness: "potentially_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
       supportingEvidenceIds: ["EV_01"],
       contradictingEvidenceIds: ["EV_02"],
       challengeResponses: [{
@@ -1619,6 +1678,9 @@ describe("validateVerdicts (Step 5)", () => {
     );
 
     expect(result[0].truthPercentage).toBe(72);
+    expect(result[0].reasoning).toBe("Repaired direction alignment");
+    expect(result[0].misleadingness).toBe(verdicts[0].misleadingness);
+    expect(result[0].misleadingnessReason).toBe(verdicts[0].misleadingnessReason);
     expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
     expect(result[0].boundaryFindings).toEqual([{
       boundaryId: "CB_01",
@@ -1961,6 +2023,9 @@ describe("validateVerdicts (Step 5)", () => {
       claimId: "AC_02",
       truthPercentage: 55,
       confidence: 80,
+      misleadingness: "potentially_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
+      challengeResponses: [{ challengeType: "assumption", response: "Original challenge handling", verdictAdjusted: true }],
       supportingEvidenceIds: ["EV_01", "EV_02"],
       contradictingEvidenceIds: [],
       consistencyResult: { claimId: "AC_02", percentages: [55, 55, 55], average: 55, spread: 0, stable: true, assessed: true },
@@ -2006,7 +2071,17 @@ describe("validateVerdicts (Step 5)", () => {
       { claims, boundaries, coverageMatrix },
     );
 
-    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0]).toMatchObject({
+      truthPercentage: 50, confidence: 24, confidenceTier: "INSUFFICIENT", verdict: "UNVERIFIED",
+      reasoning: "", supportingEvidenceIds: [], contradictingEvidenceIds: [], challengeResponses: [],
+    });
+    expect(result[0].misleadingness).toBeUndefined();
+    expect(result[0].misleadingnessReason).toBeUndefined();
+    expect(warnings.find((w) => w.type === "verdict_integrity_failure")?.details).toStrictEqual({
+      claimId: "AC_02", integrityFailureType: "direction", triggerPolicy: "direction",
+      terminalReason: "direction_unresolved_repair_implausible",
+      originalTruthPercentage: 65, downgradedTruthPercentage: 50,
+    });
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
   });
@@ -2251,6 +2326,9 @@ describe("validateVerdicts (Step 5)", () => {
   it("Option E: post-repair grounded-acceptance failure attributes downgrade to direction policy, never grounding policy", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
+      misleadingness: "highly_misleading",
+      misleadingnessReason: "Original misleadingness assessment",
+      challengeResponses: [{ challengeType: "assumption", response: "Original challenge handling", verdictAdjusted: true }],
       truthPercentage: 78,
       confidence: 82,
       supportingEvidenceIds: ["EV_01"],
@@ -2314,10 +2392,25 @@ describe("validateVerdicts (Step 5)", () => {
 
     // Downgrade did happen (Option E preserves the outcome).
     expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].reasoning).toBe("");
+    expect(result[0].misleadingness).toBeUndefined();
+    expect(result[0].misleadingnessReason).toBeUndefined();
+    expect(result[0].challengeResponses).toEqual([]);
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
 
     const integrityWarning = warnings.find((w) => w.type === "verdict_integrity_failure");
     expect(integrityWarning).toBeDefined();
+    expect(integrityWarning?.details).toStrictEqual({
+      claimId: "AC_01", integrityFailureType: "direction", triggerPolicy: "direction",
+      terminalReason: "direction_unresolved_post_repair_rejected",
+      originalTruthPercentage: 78, downgradedTruthPercentage: 50,
+      contributingFailures: [{ check: "repair_grounding_acceptance", details: {
+        groundingIssues: ["Supporting evidence ID 'EV_99' cited but not in citedEvidenceRegistry"],
+        rejectedRepairTruth: 25, rejectedRepairConfidence: 82,
+      } }],
+    });
 
     // CRITICAL: triggerPolicy is "direction", not "grounding". This is the
     // assertion that closes the policy leak. If a future refactor reintroduces

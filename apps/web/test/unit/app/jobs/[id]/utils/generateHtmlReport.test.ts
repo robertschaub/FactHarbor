@@ -29,6 +29,18 @@ function makeReportInput(claimVerdicts: any[]): HtmlReportInput {
 }
 
 describe("generateHtmlReport claim verdict display", () => {
+  it("exports an integrity downgrade with empty explanations without stale prose", () => {
+    const html = generateHtmlReport(makeReportInput([{
+      claimId: "AC_01", verdict: "UNVERIFIED", verdictReason: "verdict_integrity_failure",
+      truthPercentage: 50, confidence: 24, reasoning: "", challengeResponses: [],
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      misleadingness: undefined, misleadingnessReason: undefined,
+    }]));
+    expect(html).toContain("Insufficient evidence");
+    expect(html).not.toContain("Misleadingness:");
+    expect(html).not.toContain("Reasoning &amp; Challenge Responses");
+  });
+
   it("does not export an admin evidence capture even when given the admin result", () => {
     const input = makeReportInput([]);
     const baseline = generateHtmlReport(input);

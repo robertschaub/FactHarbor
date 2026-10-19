@@ -2275,6 +2275,10 @@ function safeDowngradeVerdict(
     confidenceTier: "INSUFFICIENT",
     supportingEvidenceIds: [],
     contradictingEvidenceIds: [],
+    reasoning: "",
+    misleadingness: undefined,
+    misleadingnessReason: undefined,
+    challengeResponses: [],
   };
 }
 
