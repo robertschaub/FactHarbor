@@ -36,7 +36,7 @@ function json(file, value) {
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function preflightFixture({ singleArm = false, inputValue = 'Entity A did X' } = {}) {
+function preflightFixture({ singleArm = false, inputValue = 'Entity A did X', unscored = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'verdict-preflight-repo-'));
   const inputRel = 'pilot/input.json';
   const artifactRel = 'pilot/runner.cjs';
@@ -45,7 +45,7 @@ function preflightFixture({ singleArm = false, inputValue = 'Entity A did X' } =
   const inputPath = join(root, inputRel);
   const artifactPath = join(root, artifactRel);
   const templatePath = join(root, templateRel);
-  json(join(root, 'Docs/AGENTS/benchmark-expectations.json'), { families: [{ inputValue }] });
+  json(join(root, 'Docs/AGENTS/benchmark-expectations.json'), { families: [{ inputValue: unscored ? 'Entity B did Y' : inputValue }] });
   json(inputPath, [{ inputType: 'text', inputValue }]);
   mkdirSync(dirname(artifactPath), { recursive: true });
   writeFileSync(artifactPath, 'runner');
@@ -75,6 +75,16 @@ function preflightFixture({ singleArm = false, inputValue = 'Entity A did X' } =
       ...singleArm ? {} : { B: { outputPath: 'test-output/b.jsonl', activeConfigs: { ...CONFIG_HASHES, 'pipeline/default': '__SET_AFTER_UCM_SAVE__' } } },
     },
   };
+  if (unscored) {
+    const approvalPath = 'test-output/approval.json';
+    json(join(root, approvalPath), {
+      schemaVersion: '1.0', planId: template.planId, authority: 'captain-defined-unscored',
+      authorization: 'Offline structural test fixture; not live submission authority.',
+      inputs: [{ inputType: 'text', inputValue }],
+    });
+    template.input.approvalPath = approvalPath;
+    template.artifactPaths.push(approvalPath);
+  }
   json(templatePath, template);
   execFileSync('git', ['init'], { cwd: root });
   execFileSync('git', ['config', 'user.email', 'test@example.invalid'], { cwd: root });
@@ -199,6 +209,78 @@ test('single-arm freeze preserves config/artifact pins and invocation guards wit
     writeFileSync(join(f.root, 'test-output/a.jsonl'), 'existing');
     assert.throws(() => verifyInvocationPreflight(preflight, { n: 1 }, 'test-output/a.jsonl', options), /output already exists/);
     assert.throws(() => freezeExecutionManifest(f.templateRel, 'test-output/execution.json', undefined, options), /EEXIST/);
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('frozen unscored approval accepts exact input without changing benchmark membership', () => {
+  const f = preflightFixture({ singleArm: true, unscored: true, inputValue: 'Ist die Erde rund?' });
+  try {
+    const frozen = freezeExecutionManifest(f.templateRel, 'test-output/execution.json', undefined, { root: f.root });
+    assert.doesNotThrow(() => verifyStaticPreflight({ arm: 'A', manifest: frozen.manifest }, f.inputPath, { root: f.root }));
+    assert.deepEqual(JSON.parse(readFileSync(join(f.root, 'Docs/AGENTS/benchmark-expectations.json'), 'utf8')).families, [{ inputValue: 'Entity B did Y' }]);
+    const approvalFile = join(f.root, f.manifest.input.approvalPath);
+    const approval = JSON.parse(readFileSync(approvalFile, 'utf8'));
+    approval.authorization += ' changed';
+    json(approvalFile, approval);
+    assert.throws(() => verifyStaticPreflight(f.preflight, f.inputPath, { root: f.root }), /approval artifact hash mismatch/);
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('unscored approval rejects malformed authority, score fields, relabels and nonexact inputs', () => {
+  const f = preflightFixture({ singleArm: true, unscored: true, inputValue: 'Ist die Erde rund?' });
+  try {
+    const file = join(f.root, f.manifest.input.approvalPath);
+    const original = JSON.parse(readFileSync(file, 'utf8'));
+    for (const [mutate, error] of [
+      [a => { a.schemaVersion = '2.0'; }, /approval contract/],
+      [a => { a.authority = 'agent-approved'; }, /approval contract/],
+      [a => { a.authorization = ' '; }, /approval contract/],
+      [a => { delete a.authorization; }, /approval contract/],
+      [a => { a.planId = 'another-plan'; }, /approval must match the plan/],
+      [a => { a.inputs.push(a.inputs[0]); }, /exactly one input/],
+      [a => { a.expectedScore = 90; }, /approval contract/],
+      [a => { a.inputs[0].expectedScore = 90; }, /non-benchmark text/],
+      [a => { a.inputs[0].inputType = 'url'; }, /non-benchmark text/],
+      [a => { a.inputs[0].inputValue = 1; }, /non-benchmark text/],
+      [a => { a.inputs[0].inputValue = ' '; }, /non-benchmark text/],
+      [a => { a.inputs[0].inputValue = 'Entity B did Y'; }, /non-benchmark text/],
+      [a => { a.inputs[0].inputValue += '\n'; }, /not byte-identical.*unscored/],
+      [a => { a.inputs[0].inputValue = 'ist die Erde rund?'; }, /not byte-identical.*unscored/],
+      [a => { a.inputs[0].inputValue += '\u200b'; }, /not byte-identical.*unscored/],
+    ]) {
+      const value = structuredClone(original);
+      mutate(value);
+      json(file, value);
+      // Re-pin only to exercise shape/content checks; real mutations also fail hashes.
+      f.manifest.artifacts[f.manifest.input.approvalPath] = sha256File(file);
+      assert.throws(() => verifyStaticPreflight(f.preflight, f.inputPath, { root: f.root }), error);
+    }
+  } finally { rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('unscored input fails without a separate pinned plan-bound approval', () => {
+  const f = preflightFixture({ singleArm: true, unscored: true, inputValue: 'Ist die Erde rund?' });
+  try {
+    const original = JSON.parse(readFileSync(f.templatePath, 'utf8'));
+    for (const [change, error] of [
+      [t => { delete t.input.approvalPath; }, /scored Captain-defined/],
+      [t => { t.artifactPaths = t.artifactPaths.filter(p => p !== t.input.approvalPath); }, /must name a pinned artifact/],
+      [t => { t.input.approvalPath = null; }, /must name a pinned artifact/],
+      [t => { t.input.approvalPath = ''; }, /must name a pinned artifact/],
+      [t => { t.input.approvalPath = '../escape.json'; t.artifactPaths.push('../escape.json'); }, /escapes repository root/],
+      [t => { t.input.approvalPath = t.input.path; t.artifactPaths.push(t.input.path); }, /separate from the plan and input/],
+      [t => { t.input.approvalPath = t.planPath; }, /separate from the plan and input/],
+      [t => { t.input.approvalPath = 'missing.json'; t.artifactPaths.push('missing.json'); }, /ENOENT/],
+    ]) {
+      const template = structuredClone(original);
+      change(template);
+      json(f.templatePath, template);
+      const manifest = structuredClone(f.manifest);
+      manifest.input = template.input;
+      manifest.template.sha256 = sha256File(f.templatePath);
+      manifest.artifacts[f.templateRel] = manifest.template.sha256;
+      assert.throws(() => verifyStaticPreflight({ arm: 'A', manifest }, f.inputPath, { root: f.root }), error);
+    }
   } finally { rmSync(f.root, { recursive: true, force: true }); }
 });
 

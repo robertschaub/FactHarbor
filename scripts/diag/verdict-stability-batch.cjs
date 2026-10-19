@@ -115,6 +115,20 @@ function validateTemplate(template, root = ROOT) {
   const plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
   if (plan.planId !== template.planId) throw new Error('template planId does not match the pinned plan');
   if (plan.input?.file !== template.input.path || plan.input?.runsPerArm !== 1) throw new Error('template input/run contract does not match the pinned plan');
+  if (Object.hasOwn(template.input, 'approvalPath')) {
+    const approvalPath = template.input.approvalPath;
+    if (typeof approvalPath !== 'string' || !approvalPath || !artifactPaths.includes(approvalPath)) {
+      throw new Error('template approvalPath must name a pinned artifact');
+    }
+    const approvalFile = resolveInside(root, approvalPath, 'template approval path');
+    if (approvalFile === planPath || approvalFile === resolveInside(root, template.input.path, 'template input path')) {
+      throw new Error('template approval must be separate from the plan and input');
+    }
+    const approval = JSON.parse(fs.readFileSync(approvalFile, 'utf8'));
+    if (approval?.planId !== template.planId || !Array.isArray(approval.inputs) || approval.inputs.length !== 1) {
+      throw new Error('template approval must match the plan and contain exactly one input');
+    }
+  }
   if (template.runPolicy?.runsPerInvocation !== 1 || template.runPolicy?.requireFreshOutput !== true) {
     throw new Error('template runPolicy must require exactly one run and a fresh output');
   }
@@ -234,9 +248,37 @@ function loadPreflight(file, arm) {
   return { manifest, manifestPath, arm };
 }
 
-function verifyApprovedInputs(inputs, root = ROOT) {
+function verifyApprovedInputs(inputs, root = ROOT, manifest) {
   const benchmark = JSON.parse(fs.readFileSync(path.join(root, 'Docs', 'AGENTS', 'benchmark-expectations.json'), 'utf8'));
   const approved = new Set((benchmark.families || []).map((x) => x.inputValue));
+  if (manifest?.input.approvalPath !== undefined) {
+    const approvalPath = manifest.input.approvalPath;
+    // Read/hash/parse the same bytes. This is an operator's transcription of
+    // Captain authority, not authentication or permission to submit a job.
+    const bytes = fs.readFileSync(resolveInside(root, approvalPath, 'preflight approval path'));
+    if (crypto.createHash('sha256').update(bytes).digest('hex') !== manifest.artifacts[approvalPath]) {
+      throw new Error('preflight approval artifact hash mismatch');
+    }
+    const approval = JSON.parse(bytes.toString('utf8'));
+    const keys = ['schemaVersion', 'planId', 'authority', 'authorization', 'inputs'].sort();
+    if (!approval || JSON.stringify(Object.keys(approval).sort()) !== JSON.stringify(keys)
+      || approval.schemaVersion !== '1.0' || approval.planId !== manifest.planId
+      || approval.authority !== 'captain-defined-unscored'
+      || typeof approval.authorization !== 'string' || !approval.authorization.trim()
+      || !Array.isArray(approval.inputs) || approval.inputs.length !== 1) {
+      throw new Error('preflight unscored approval contract is invalid');
+    }
+    const entry = approval.inputs[0];
+    if (!entry || JSON.stringify(Object.keys(entry).sort()) !== JSON.stringify(['inputType', 'inputValue'])
+      || entry.inputType !== 'text' || typeof entry.inputValue !== 'string' || !entry.inputValue.trim()
+      || approved.has(entry.inputValue)) {
+      throw new Error('preflight unscored approval must contain one non-benchmark text input');
+    }
+    if (inputs.length !== 1 || inputs[0]?.inputType !== 'text' || inputs[0].inputValue !== entry.inputValue) {
+      throw new Error('preflight input is not byte-identical to its Captain-defined unscored approval');
+    }
+    return;
+  }
   for (const input of inputs) {
     if (input?.inputType !== 'text' || typeof input.inputValue !== 'string' || !approved.has(input.inputValue)) {
       throw new Error('preflight input is not byte-identical to a scored Captain-defined benchmark input');
@@ -256,7 +298,7 @@ function verifyStaticPreflight(preflight, inputsPath, options = {}) {
   if (inputHash !== manifest.input.sha256) throw new Error(`input file hash mismatch: expected ${manifest.input.sha256}, got ${inputHash}`);
   const inputs = JSON.parse(fs.readFileSync(actualInputs, 'utf8'));
   if (!Array.isArray(inputs) || inputs.length !== manifest.input.count) throw new Error(`input count mismatch: expected ${manifest.input.count}`);
-  verifyApprovedInputs(inputs, root);
+  verifyApprovedInputs(inputs, root, manifest);
   for (const [file, expected] of Object.entries(manifest.artifacts || {})) {
     const artifact = resolveInside(root, file, 'manifest artifact');
     if (!fs.existsSync(artifact)) throw new Error(`manifest artifact missing: ${file}`);
