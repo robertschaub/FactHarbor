@@ -44,6 +44,31 @@ function renderWithVars(
 }
 
 describe("Stage-1 prompt contract", () => {
+  describe("input-origin admission", () => {
+    it("places the existing counter-narrative prohibition at the general Rules level", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2")!;
+      const clause = section.split("\n").filter((line) => line.includes("**No counter-narrative claims (CRITICAL):**"));
+      expect(clause).toHaveLength(1);
+      expect(clause[0]).toMatch(/^- /);
+      expect(section.indexOf(clause[0])).toBeLessThan(section.indexOf("- First, classify the original input."));
+      expect(clause[0]).toContain("Counter-evidence is gathered by Stage 2 research and weighed in Stage 4 verdicts");
+    });
+
+    it("audits every candidate through the existing typed material-drift channel", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION")!;
+      const meaningRule = section.slice(section.indexOf("1. **Meaning preservation first.**"), section.indexOf("2. **Dimension qualification is allowed.**"));
+      expect(meaningRule).toContain("Audit every candidate claim");
+      expect(meaningRule).toContain("derivable from the input text alone");
+      expect(meaningRule).toContain("question's own scope");
+      expect(meaningRule).toContain("regardless of `thesisRelevance` or `claimDirection`");
+      expect(meaningRule).toContain('`proxyDriftSeverity` to `"material"`');
+      expect(meaningRule).toContain('`recommendedAction` to `"retry"`');
+      expect(meaningRule).toContain("Neutral dimension qualification grounded in the input remains allowed under rule 2");
+      expect(meaningRule).not.toContain("antiInferenceCheck");
+      expect(section).toContain("Do not assume English wording patterns");
+    });
+  });
+
   describe("CLAIM_SALIENCE_COMMITMENT", () => {
     it("locks in priority-anchor emission for truth-condition-bearing modifiers", () => {
       const section = extractSection(promptContent, "CLAIM_SALIENCE_COMMITMENT");
