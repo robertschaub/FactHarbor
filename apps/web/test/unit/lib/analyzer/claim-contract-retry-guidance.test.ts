@@ -42,7 +42,7 @@ import {
   type ClaimContractValidationResult,
   type EvaluatedClaimContractValidation,
 } from "@/lib/analyzer/claim-extraction-stage";
-import { clearPromptCache, loadPromptFile } from "@/lib/analyzer/prompt-loader";
+import { clearPromptCache, loadAndRenderSection, loadPromptFile } from "@/lib/analyzer/prompt-loader";
 import { loadPromptConfig, loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import { DEFAULT_CALC_CONFIG, DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG } from "@/lib/config-schemas";
 import type { AtomicClaim, CBResearchState } from "@/lib/analyzer/types";
@@ -133,6 +133,56 @@ afterEach(() => {
     }
   }
   vi.unstubAllGlobals();
+});
+
+describe("input-origin assessment plumbing", () => {
+  it.each(savedContractCases.fixtures)("renders the current validator with unchanged $name input and metadata", async fixture => {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
+      analysisInput: fixture.input,
+      inputClassification: fixture.inputClassification,
+      impliedClaim: fixture.input,
+      articleThesis: fixture.input,
+      salienceBindingContextJson: "{}",
+      atomicClaimsJson: JSON.stringify(fixture.claims.map(({ id, ...rest }) => ({ claimId: id, ...rest }))),
+    });
+    expect(rendered).not.toBeNull();
+    expect(rendered!.content).toContain(fixture.input);
+    for (const candidate of fixture.claims) expect(rendered!.content).toContain(candidate.statement);
+    expect(rendered!.content).toContain("For EVERY claim, including claims you keep");
+    expect(rendered!.content).toContain("Supporting, opposing and contextual labels are not evidence of input origin");
+    expect(rendered!.content).not.toContain("${");
+    expect(offline.generate).not.toHaveBeenCalled();
+  });
+
+  it.each(savedContractCases.fixtures)("forwards a typed finding and its reason through existing retry guidance for $name", async fixture => {
+    const candidates = fixture.claims.map(c => ({ ...claim(c.statement), ...c })) as AtomicClaim[];
+    const raw = ClaimContractOutputSchema.parse(fixture.assessment);
+    // Synthetic plumbing flags on saved IDs, not a semantic judgment about
+    // these statements. Existing saved assessments remain unchanged.
+    raw.inputAssessment.preservesOriginalClaimContract = false;
+    raw.inputAssessment.rePromptRequired = false; // per-claim retry must suffice
+    for (const item of raw.claims) Object.assign(item, {
+      preservesEvaluativeMeaning: true, proxyDriftSeverity: "none", recommendedAction: "keep",
+    });
+    const target = raw.claims.find(item => item.claimId === candidates[0].id)!;
+    Object.assign(target, {
+      proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: `input-basis:${fixture.name}`,
+    });
+    const evaluated = evaluateClaimContractValidation(raw, candidates, fixture.inputClassification);
+    expect(evaluated.summary).toMatchObject({
+      preservesContract: false, rePromptRequired: true, failureMode: "contract_violated",
+    });
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    const rendered = await render(evaluated, candidates);
+    expect(rendered.failingClaimCount).toBe(1);
+    expect(context(rendered.content).flaggedAssessments).toEqual([{
+      claimId: target.claimId,
+      preservesEvaluativeMeaning: target.preservesEvaluativeMeaning,
+      usesNeutralDimensionQualifier: target.usesNeutralDimensionQualifier,
+      reasoning: target.reasoning,
+    }]);
+    expect(offline.generate).not.toHaveBeenCalled();
+  });
 });
 
 describe("carrier presence and fidelity", () => {
@@ -232,7 +282,7 @@ describe("UCM retry guidance", () => {
     const loaded = await loadPromptFile("claimboundary");
     expect(loaded.success).toBe(true);
     expect(loaded.warnings.filter(w => w.type === "missing_section")).toEqual([]);
-    expect(loaded.prompt?.frontmatter.version).toBe("1.0.13");
+    expect(loaded.prompt?.frontmatter.version).toBe("1.0.20");
     expect(loaded.prompt?.frontmatter.requiredSections).toEqual(expect.arrayContaining([
       "CLAIM_CONTRACT_RETRY_GUIDANCE", "CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE", "CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE",
       "CLAIM_CONTRACT_CARRIER_FIDELITY_REASON",

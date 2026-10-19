@@ -58,14 +58,29 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION")!;
       const meaningRule = section.slice(section.indexOf("1. **Meaning preservation first.**"), section.indexOf("2. **Dimension qualification is allowed.**"));
       expect(meaningRule).toContain("Audit every candidate claim");
-      expect(meaningRule).toContain("derivable from the input text alone");
-      expect(meaningRule).toContain("question's own scope");
+      expect(meaningRule).toContain("derivable from the original input alone");
+      expect(meaningRule).toContain("A question licenses the proposition it asks to assess without asserting that it is true");
       expect(meaningRule).toContain("regardless of `thesisRelevance` or `claimDirection`");
       expect(meaningRule).toContain('`proxyDriftSeverity` to `"material"`');
       expect(meaningRule).toContain('`recommendedAction` to `"retry"`');
       expect(meaningRule).toContain("Neutral dimension qualification grounded in the input remains allowed under rule 2");
       expect(meaningRule).not.toContain("antiInferenceCheck");
       expect(section).toContain("Do not assume English wording patterns");
+    });
+
+    it("requires an input basis for kept claims without treating opposition or retry as lost meaning", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION")!;
+      expect(section).toContain("For EVERY claim, including claims you keep");
+      expect(section).toContain("quote a short licensing input span and explain how it licenses the whole proposition");
+      expect(section).toContain("identify the substantive assertion introduced without an input basis");
+      expect(section).toContain("A shared word or quoted fragment alone is not sufficient");
+      expect(section).toContain("alternatives that the input itself states or asks to assess");
+      expect(section).toContain("disagreement with a thesis is not an origin defect");
+      expect(section).toContain("extractor annotations, the implied claim and the article thesis do not authorize propositions absent from the original input");
+      expect(section).toContain("Topical relevance to the input or to the question asked");
+      expect(section).toContain("A retry-only structural finding does not automatically negate preservation");
+      expect(section).toContain('If any claim contains a material input-origin failure under rule 1, then `preservesOriginalClaimContract` must be false');
+      expect(section).toContain("- `reasoning`: max 200 characters.");
     });
   });
 

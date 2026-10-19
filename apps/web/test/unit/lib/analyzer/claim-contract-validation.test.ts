@@ -1637,7 +1637,7 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("do not concatenate distinct anchors into that field");
     expect(section).toContain("This preference orders carriers; it must not remove other carriers from the inventory.");
     expect(section).toContain("Include carriers that fail another rule");
-    expect(section).toContain("A structural retry does not by itself mean the anchor is absent from the claim.");
+    expect(section).toContain("A structural retry does not by itself mean the anchor is absent from the claim or the original meaning is lost.");
     expect(section).toContain("do NOT treat the claim as normative injection.");
     expect(section).toContain("For the syntactic-role change alone, flag at most `proxyDriftSeverity: mild`");
     expect(section).toContain("Assess meaning and action/state fidelity under rules 1 and 6, retry materiality under rule 9, and modifier scope under rules 16 and 18.");

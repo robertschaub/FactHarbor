@@ -1,5 +1,5 @@
 ---
-version: "1.0.19"
+version: "1.0.20"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
 lastModified: "2026-10-19T00:00:00Z"
@@ -481,7 +481,7 @@ You are a claim-contract validator. Your task is to check whether extracted atom
 
 Assess whether the extracted claims preserve the user's original claim contract.
 
-Focus especially on cases where the input uses a broad evaluative predicate and the extracted claims decompose that predicate into dimensions.
+Apply whole-proposition fidelity to factual, procedural and evaluative inputs alike. When a broad evaluative predicate is decomposed into dimensions, also apply the dimension-qualification rules below.
 
 In addition to proxy drift and representational drift, explicitly audit for:
 - omission of any truth-condition-bearing modifier or predicate component
@@ -496,19 +496,20 @@ In addition to proxy drift and representational drift, explicitly audit for:
 - over-splitting of one shared-standard process/outcome assessment into a standalone resulting-decision/outcome claim without a distinct predicate, standard, or evidence route
 
 For each claim, determine:
-- whether it preserves the original evaluative meaning
+- which input clause, conjunct, or question scope licenses its whole proposition; shared topic, entities, or anchor words alone do not establish this basis
+- whether it preserves the original meaning, including evaluative force where applicable
 - whether any added dimension qualifier is neutral
 - whether the claim drifts into a narrower proxy predicate that was not explicit in the input
 
 Then decide whether the extraction should be accepted as-is or whether Pass 2 should be retried.
 
-Your judgment must be traceable. If you approve preservation of a modifier-bearing proposition, you must identify the modifier-bearing component from the input, name the exact claim IDs that preserve it, and quote the relevant text from those claims.
+Your judgment must be traceable. For EVERY claim, including claims you keep, use its existing `reasoning` field to give a concise input-basis assessment: quote a short licensing input span and explain how it licenses the whole proposition, or identify the substantive assertion introduced without an input basis. A shared word or quoted fragment alone is not sufficient. Include any relevant fidelity or structural defect in the same concise assessment. If you approve preservation of a modifier-bearing proposition, you must identify the modifier-bearing component from the input, name the exact claim IDs that preserve it, and quote the relevant text from those claims.
 
 ### Rules
 
 1. **Meaning preservation first.**
    The extracted claims must still answer the same real-world proposition as the original input.
-   Audit every candidate claim for whether its proposition is derivable from the input text alone; for questions, use the question's own scope. Apply this audit regardless of `thesisRelevance` or `claimDirection`. A proposition introduced only by research, external background, or an opposing account is material drift even when relevant to the topic: set that claim's `proxyDriftSeverity` to `"material"` and `recommendedAction` to `"retry"`. Neutral dimension qualification grounded in the input remains allowed under rule 2.
+   Audit every candidate claim for whether its whole proposition is derivable from the original input alone, regardless of `thesisRelevance` or `claimDirection`. A question licenses the proposition it asks to assess without asserting that it is true. Independently stated conjuncts remain eligible, as do opposing propositions, attributed statements and alternatives that the input itself states or asks to assess; disagreement with a thesis is not an origin defect. A proposition introduced only by research, external background, or an opposing account is material drift even when relevant to the topic: set that claim's `proxyDriftSeverity` to `"material"` and `recommendedAction` to `"retry"`. Neutral dimension qualification grounded in the input remains allowed under rule 2; all existing fidelity and structural rules still apply.
 
 2. **Dimension qualification is allowed.**
    A claim may narrow a broad evaluative predicate by adding a neutral dimension qualifier such as "in terms of [dimension]" when that dimension is a natural reading of the input.
@@ -532,7 +533,7 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
     For factual or procedural inputs, preserve the operative action/state threshold expressed by the user. A claim materially drifts if it replaces a decisive or final act/state with a preparatory, advisory, consultative, or merely deliberative one, or if it upgrades a preparatory step into a decisive/final one.
 
 7. **Whole-set coherence matters.**
-   Even if each claim is individually plausible, require a retry if the set as a whole no longer preserves the user's original claim contract.
+   Even if each claim is individually plausible, require a retry if the set as a whole no longer preserves the user's original claim contract. Apply rule 1 to every candidate: coverage of the original proposition by one claim does not approve additional propositions in other claims.
 
 8. **Multilingual semantics.**
    Preserve meaning regardless of language. Do not assume English wording patterns.
@@ -602,7 +603,7 @@ Article thesis:
 Atomic claims:
 ${atomicClaimsJson}
 
-Each atomic claim object includes a `thesisRelevance` field (`"direct"`, `"tangential"`, or `"irrelevant"`). Some claims may also include `claimDirection` (`"supports_thesis"`, `"contradicts_thesis"`, or `"contextual"`) and `isDimensionDecomposition` (boolean). Use this metadata to apply the directness rules in this prompt — only thesis-direct claims may serve as truth-condition anchor carriers.
+Each atomic claim object includes a `thesisRelevance` field (`"direct"`, `"tangential"`, or `"irrelevant"`). Some claims may also include `claimDirection` (`"supports_thesis"`, `"contradicts_thesis"`, or `"contextual"`) and `isDimensionDecomposition` (boolean). Use this metadata to apply the directness rules in this prompt — only thesis-direct claims may serve as truth-condition anchor carriers. These extractor annotations, the implied claim and the article thesis do not authorize propositions absent from the original input. Supporting, opposing and contextual labels are not evidence of input origin; audit all candidates under rule 1 without changing the anchor-carrier eligibility rules.
 
 ### Output
 
@@ -640,16 +641,18 @@ Return a JSON object:
 
 Field constraints:
 - `claimId`: must match the input claim ID exactly.
-- `preservesEvaluativeMeaning`: does this claim preserve the original evaluative meaning?
+- `preservesEvaluativeMeaning`: does this claim preserve the original meaning, including evaluative force where applicable?
 - `usesNeutralDimensionQualifier`: does any added qualifier stay neutral (not narrowing)?
-- `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
-- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift or a structural failure of this claim under rules 16–21 that requires a new extraction attempt. A structural retry does not by itself mean the anchor is absent from the claim.
-- `reasoning`: max 120 characters. Why this assessment.
+- `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` when the claim analyzes a substantially different proposition, including a substantively introduced proposition without an input basis under rule 1. Topical relevance to the input or to the question asked, an opposing or contextual label, or another claim carrying the anchor does not excuse that addition.
+- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift, including an externally introduced proposition under rule 1, or a structural failure of this claim under rules 16–21 that requires a new extraction attempt. A structural retry does not by itself mean the anchor is absent from the claim or the original meaning is lost.
+- `reasoning`: max 200 characters. Give the required per-claim input-basis assessment above, including any relevant fidelity or structural defect.
 - `truthConditionAnchor.anchorText`: empty string only when no truth-condition-bearing modifier exists in the input.
 - `truthConditionAnchor.preservedInClaimIds`: list every thesis-direct claim carrying the chosen anchor or its in-scope part, using only IDs that actually exist in the provided claim list. Include carriers that fail another rule; report those failures through `recommendedAction` or `rePromptRequired`, never by omitting the carrier from this inventory.
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
 - If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
+- If any claim has `recommendedAction: "retry"`, then `rePromptRequired` must be true. A retry-only structural finding does not automatically negate preservation.
+- If any claim contains a material input-origin failure under rule 1, then `preservesOriginalClaimContract` must be false and `rePromptRequired` must be true.
 
 ---
 
