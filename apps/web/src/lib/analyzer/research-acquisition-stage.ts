@@ -1,4 +1,3 @@
-import { resolveBoundSource } from "./evidence-source-binding";
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { debugLog } from "./debug";
 import { classifySourceFetchFailure, selectTopSources } from "./pipeline-utils";
@@ -558,9 +557,7 @@ export function reconcileEvidenceSourceIds(
 
   let updatedCount = 0;
   for (const item of evidenceItems) {
-    const matchedSource = item.sourceBinding
-      ? resolveBoundSource(item.sourceBinding, sources)?.source
-      : sourceByUrl.get(item.sourceUrl); // Historical display metadata only; never creates a binding.
+    const matchedSource = sourceByUrl.get(item.sourceUrl);
     if (!matchedSource) continue;
 
     let updated = false;

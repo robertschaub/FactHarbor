@@ -596,6 +596,7 @@ export const PipelineConfigSchema = z.object({
     .describe("Max sources fetched per search iteration after relevance classification (default: 5)"),
   applicabilityFilterEnabled: z.boolean().optional()
     .describe("Enable post-extraction applicability assessment to filter foreign-jurisdiction evidence (default: true)"),
+  // Experimental limits retained for stored-config compatibility; unused by the normal scalar classifier.
   applicabilityMaxSourceBytes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Source UTF-8 bytes per applicability request"),
   applicabilityMaxRequestBytes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Complete SDK request-body bytes per applicability request"),
   applicabilityMaxRequests: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional().describe("Logical requests per complete applicability operation"),

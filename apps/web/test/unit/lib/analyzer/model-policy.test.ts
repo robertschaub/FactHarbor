@@ -87,11 +87,22 @@ describe("candidate policy validation", () => {
       { ...config, modelVerdict: "claude-haiku-5-5" }, "researchExtraction")).toThrow("isolated extract_evidence");
   });
 
-  it("keeps every baseline setting except the declared Sonnet 5 policy", () => {
+  it("keeps every operative baseline setting except the declared Sonnet 5 policy", () => {
     const config = candidate();
     const baseline = serializedBaseline();
     const policy = config.modelPolicies!["claude-sonnet-5"];
+    // Preserve the historical arm bytes. Only these later, dormant optional
+    // settings are absent; every operative field still participates in equality.
+    const dormantKeys = ["applicabilityMaxSourceBytes", "applicabilityMaxRequestBytes",
+      "applicabilityMaxRequests", "applicabilityMaxOperationRequestBytes",
+      "applicabilityMaxOutputTokens", "applicabilityMaxOperationCostUSD"] as const;
+    for (const key of dormantKeys) {
+      expect(config).not.toHaveProperty(key);
+    }
+    expect(PipelineConfigSchema.safeParse(config).success).toBe(true);
+    const dormantDefaults = Object.fromEntries(dormantKeys.map(key => [key, baseline[key]]));
     expect({
+      ...dormantDefaults,
       ...config,
       modelClaimContractValidation: config.modelClaimContractValidation ?? null,
       modelVerdict: baseline.modelVerdict,

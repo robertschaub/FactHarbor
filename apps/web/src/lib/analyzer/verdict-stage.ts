@@ -272,8 +272,6 @@ export function buildSourcePortfolioByClaim(
  * Verdict stage configuration. All thresholds are UCM-configurable.
  */
 export interface VerdictStageConfig {
-  /** Derived from the existing applicability filter; not a separate rollout switch. */
-  requirePairApplicability?: boolean;
   /** Self-consistency mode: "full" | "disabled" (mirrors UCM PipelineConfigSchema) */
   selfConsistencyMode: "full" | "disabled";
   /** Temperature for self-consistency re-runs (default 0.3, floor 0.1, ceiling 0.7) */
@@ -451,9 +449,6 @@ export async function runVerdictStage(
   sources?: FetchedSource[],
   reportLanguage?: string,
 ): Promise<CBClaimVerdict[]> {
-  if (config.requirePairApplicability) {
-    evidence = evidence.map(item => ({ ...item, applicabilityByClaim: item.applicabilityByClaim ?? {} }));
-  }
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
   let challengerEvidence = evidence;

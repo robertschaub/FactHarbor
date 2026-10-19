@@ -5644,12 +5644,12 @@ describe("per-claim applicability contract", () => {
     expect((challengerInput.evidenceItems as any[])[0].applicabilityByClaim).toEqual(pairMap);
     expect(JSON.stringify(advocateInput)).not.toContain(evidence[0].sourceExcerpt!);
   });
-  it("new enabled verdict entry cannot inherit legacy scalar directness on a missing map",async()=>{
+  it("normal verdict entry preserves scalar evidence without injecting an empty pair map",async()=>{
     const claims=[createAtomicClaim()],evidence=[createEvidenceItem()],boundaries=[createClaimBoundary()];
     const llm=createMockLLM({VERDICT_ADVOCATE:advocateResponse(),VERDICT_CHALLENGER:{challenges:[]},VERDICT_RECONCILIATION:advocateResponse(),VERDICT_GROUNDING_VALIDATION:{},VERDICT_DIRECTION_VALIDATION:{}});
     await runVerdictStage(claims,evidence,boundaries,buildCoverageMatrix(claims,boundaries,evidence),llm,
-      {...DEFAULT_VERDICT_STAGE_CONFIG,requirePairApplicability:true,selfConsistencyMode:"disabled",evidencePartitioningEnabled:false});
+      {...DEFAULT_VERDICT_STAGE_CONFIG,selfConsistencyMode:"disabled",evidencePartitioningEnabled:false});
     const input=vi.mocked(llm).mock.calls.find(([key])=>key==="VERDICT_ADVOCATE")![1];
-    expect((input.evidenceItems as any[])[0].applicabilityByClaim).toEqual({});
+    expect((input.evidenceItems as any[])[0].applicabilityByClaim).toBeUndefined();
   });
 });

@@ -1,8 +1,3 @@
-import { ApplicabilityAssessmentOutputSchema, planApplicability, applicabilityPayload,
-  prepareApplicabilityOperation, settleApplicabilityPart, initializeClaimApplicability,
-  type ApplicabilityPlan } from "./evidence-applicability";
-export { ApplicabilityAssessmentOutputSchema } from "./evidence-applicability";
-import { bindEvidenceSource } from "./evidence-source-binding";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { generateText, Output } from "ai";
@@ -30,12 +25,11 @@ import {
   AtomicClaim,
   CBResearchState,
   EvidenceItem,
-  FetchedSource,
   EvidenceApplicabilityCapture,
   EvidenceCaptureObserver,
   EvidenceCapturePayload,
 } from "./types";
-import { DEFAULT_PIPELINE_CONFIG, PipelineConfig } from "@/lib/config-schemas";
+import { PipelineConfig } from "@/lib/config-schemas";
 
 /** All diagnostic-only work, including argument construction, belongs in this callback. */
 export function observeEvidenceCapture<T>(
@@ -251,6 +245,15 @@ export const Stage2EvidenceItemSchema = z.object({
 
 export const Stage2ExtractEvidenceOutputSchema = z.object({
   evidenceItems: z.array(Stage2EvidenceItemSchema),
+});
+
+export const ApplicabilityAssessmentOutputSchema = z.object({
+  // Cost (2026-06-01): `reasoning` removed — emitted post-decision but never read
+  // (flow uses only evidenceIndex + applicability). See WIP 2026-06-01 §9.
+  assessments: z.array(z.object({
+    evidenceIndex: z.number(),
+    applicability: z.enum(["direct", "contextual", "foreign_reaction"]).optional().catch(undefined),
+  })),
 });
 
 // ============================================================================
@@ -597,8 +600,6 @@ export async function extractResearchEvidence(
         category: mappedCategory,
         specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,
         sourceId: "",
-        sourceBinding: bindEvidenceSource(ei.sourceUrl, sources),
-        extractionTargetClaimId: targetClaim.id,
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
         sourceExcerpt: ei.statement,
@@ -614,8 +615,9 @@ export async function extractResearchEvidence(
         },
         probativeValue: ei.probativeValue,
         sourceType: mapSourceType(ei.sourceType),
-        // A request target cannot authorize missing or invalid model-returned links.
-        relevantClaimIds: ei.relevantClaimIds ?? [],
+        // Always use targetClaim.id — extraction targets a single claim,
+        // and LLM often returns wrong ID formats (e.g. "claim_01" vs "AC_01")
+        relevantClaimIds: [targetClaim.id],
         isDerivative: ei.isDerivative ?? false,
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
       } satisfies EvidenceItem;
@@ -697,80 +699,29 @@ export async function extractResearchEvidence(
   }
 }
 
-export interface PreparedApplicabilityCall {
-  /** Source-bearing envelope: memory only, never include in diagnostics. */
-  body: string;
-  url: string;
-  headers: Record<string, string>;
-  /** Binds settlement rows/items to the input used to prepare this request. */
-  planSha256: string;
-  generate: (transport: import("./llm").ModelTransport, signal: AbortSignal) => Promise<unknown>;
-}
-
-/** Serialize the real SDK request with a request-local denying transport and placeholder key.
- * Raw source-bearing bodies remain in memory. This performs no network or credential access. */
-export async function serializeApplicabilityRequest(part: ApplicabilityPlan, geography: unknown, config: PipelineConfig,
-  promptIdentity: { contentHash?: string } = {},
-  onPrepared?: (call: PreparedApplicabilityCall) => void) {
-  const frozenConfig = structuredClone(config);
-  const planSha256 = evidenceCaptureFingerprint(JSON.stringify(part)).sha256;
-  const variables = { applicabilityPayload: JSON.stringify(applicabilityPayload(part, geography)) };
-  const system = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", variables);
-  const user = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT_USER", variables);
-  if (!system || !user || !system.contentHash || system.contentHash !== user.contentHash ||
-    (promptIdentity.contentHash && promptIdentity.contentHash !== system.contentHash)) throw new Error("Applicability prompt unavailable or changed");
-  promptIdentity.contentHash = system.contentHash;
-  const sentinel = new Error("Applicability request prepared");
-  let body: string | undefined, url: string | undefined, headers: Record<string, string> | undefined, intercepted = 0;
-  const options = {
-    messages: [{ role: "system" as const, content: system.content }, { role: "user" as const, content: user.content }],
-    temperature: frozenConfig.relevanceClassificationTemperature ?? DEFAULT_PIPELINE_CONFIG.relevanceClassificationTemperature,
-    maxOutputTokens: frozenConfig.applicabilityMaxOutputTokens ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOutputTokens,
-    maxRetries: 2,
-    output: Output.object({ schema: ApplicabilityAssessmentOutputSchema.extend({
-      assessments: ApplicabilityAssessmentOutputSchema.shape.assessments.max(part.rows.length),
-    }) }),
-  };
-  const generate = (transport: import("./llm").ModelTransport, signal?: AbortSignal) => {
-    if (!transport || typeof transport.fetch !== "function" || typeof transport.apiKey !== "string") {
-      throw new Error("Explicit applicability transport required");
-    }
-    const selected = getModelForTask("understand", undefined, frozenConfig, undefined, transport);
-    return generateText({ ...options, model: selected.model, abortSignal: signal,
-      messages: options.messages.map(message => ({ ...message,
-        ...(message.role === "system" ? { providerOptions: getPromptCachingOptions(selected.provider) } : {}) })),
-      providerOptions: getStructuredOutputProviderOptions(selected.provider) });
-  };
-  const model = getModelForTask("understand", undefined, frozenConfig, undefined, {
-    apiKey: "offline-placeholder-not-a-credential",
-    fetch: async (requestUrl, init) => {
-      intercepted++;
-      if (intercepted !== 1 || init?.method !== "POST" || typeof init.body !== "string") throw new Error("Unexpected applicability serialization");
-      body = init.body;
-      url = String(requestUrl);
-      headers = Object.fromEntries(new Headers(init.headers).entries());
-      delete headers["x-api-key"];
-      delete headers.authorization;
-      throw sentinel;
-    },
-  });
-  try {
-    await generateText({ ...options, model: model.model,
-      messages: options.messages.map(message => ({ ...message,
-        ...(message.role === "system" ? { providerOptions: getPromptCachingOptions(model.provider) } : {}) })),
-      providerOptions: getStructuredOutputProviderOptions(model.provider) });
-    throw new Error("Applicability serialization unexpectedly completed");
-  } catch (error) { if (error !== sentinel) throw new Error("Applicability serialization unavailable"); }
-  if (intercepted !== 1 || body === undefined || !url || !headers) throw new Error("Applicability request not captured");
-  onPrepared?.(Object.freeze({ body, url, headers: Object.freeze(headers), planSha256, generate }));
-  return { model: model.modelName, provider: model.provider,
-    bodySha256: evidenceCaptureFingerprint(body).sha256, requestBytes: Buffer.byteLength(body,"utf8") };
-}
-
+/**
+ * Fix 3: Post-extraction applicability assessment — safety net for jurisdiction contamination.
+ *
+ * Batches all evidence items into a single Haiku-tier LLM call to classify each item
+ * as "direct", "contextual", or "foreign_reaction". Items classified as "foreign_reaction"
+ * are filtered out by the caller.
+ *
+ * Called between research completion and clusterBoundaries() in the main pipeline.
+ *
+ * @param claims - The atomic claims being analyzed
+ * @param evidenceItems - All gathered evidence items
+ * @param inferredGeography - The claim's inferred jurisdiction (null = no filtering)
+ * @param pipelineConfig - Pipeline configuration
+ * @returns Evidence items with `applicability` field populated
+ */
 export async function assessEvidenceApplicability(
-  claims: AtomicClaim[], evidenceItems: EvidenceItem[], inferredGeography: string | null,
-  pipelineConfig: PipelineConfig, relevantGeographies?: string[] | null,
-  warnings?: AnalysisWarning[], capture?: EvidenceCaptureObserver, sources: FetchedSource[] = [],
+  claims: AtomicClaim[],
+  evidenceItems: EvidenceItem[],
+  inferredGeography: string | null,
+  pipelineConfig: PipelineConfig,
+  relevantGeographies?: string[] | null,
+  warnings?: AnalysisWarning[],
+  capture?: EvidenceCaptureObserver,
 ): Promise<EvidenceItem[]> {
   observeEvidenceCapture(capture, c => c.record("applicability_input", () => {
     const sourceTable: unknown[][] = [];
@@ -788,59 +739,188 @@ export async function assessEvidenceApplicability(
       scope: item.evidenceScope, claimIds: item.relevantClaimIds })) },
     };
   }));
-  if (!(pipelineConfig.applicabilityFilterEnabled ?? true)) {
-    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "disabled" } })));
+  const normalizedRelevantGeographies = normalizeRelevantGeographies(
+    relevantGeographies,
+    inferredGeography,
+  );
+  // Skip if no geography or disabled
+  if (normalizedRelevantGeographies.length === 0 || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: {
+      outcome: "skipped", reason: !(pipelineConfig.applicabilityFilterEnabled ?? true) ? "disabled" : "no_geography",
+    } })));
     return evidenceItems;
   }
-  // Set the contract before all error paths; missing maps never inherit legacy directness.
-  let items = initializeClaimApplicability(evidenceItems, claims);
-  if (!items.length) {
+
+  // Skip if no evidence
+  if (evidenceItems.length === 0) {
     observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "no_evidence" } })));
     return evidenceItems;
   }
-  const config = structuredClone(pipelineConfig);
-  const limits = {
-    sourceBytes: config.applicabilityMaxSourceBytes ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxSourceBytes!,
-    requestBytes: config.applicabilityMaxRequestBytes ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxRequestBytes!,
-    maxRequests: config.applicabilityMaxRequests ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxRequests!,
-    totalRequestBytes: config.applicabilityMaxOperationRequestBytes ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOperationRequestBytes!,
-    outputTokens: config.applicabilityMaxOutputTokens ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOutputTokens!,
-    reservationUSD: config.applicabilityMaxOperationCostUSD ?? DEFAULT_PIPELINE_CONFIG.applicabilityMaxOperationCostUSD!,
+
+  // Prepare compact evidence summaries for LLM (minimize tokens)
+  const evidenceSummaries = evidenceItems.map((item, index) => ({
+    index,
+    statement: item.statement.slice(0, 200),
+    sourceUrl: item.sourceUrl ?? "unknown",
+    sourceTitle: item.sourceTitle ?? "unknown",
+    category: item.category,
+  }));
+
+  const promptVariables = {
+    claims: JSON.stringify(claims.map(c => ({ id: c.id, statement: c.statement })), null, 2),
+    inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
+    relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
+    evidenceItems: JSON.stringify(evidenceSummaries, null, 2),
   };
-  const geography = { inferredGeography, relevantGeographies: normalizeRelevantGeographies(relevantGeographies, inferredGeography) };
-  let details: Record<string, unknown>;
-  try {
-    const plan = planApplicability(claims, evidenceItems, sources);
-    items = plan.items;
-    const promptIdentity: { contentHash?: string } = {};
-    const operation = await prepareApplicabilityOperation(plan, limits,
-      part => serializeApplicabilityRequest(part, geography, config, promptIdentity));
-    settleApplicabilityPart(items, operation.oversized, { invoked: false, outcome: "unavailable", reason: "oversized_source_group" });
-    const parts = operation.parts.map(part => {
-      const outcome = settleApplicabilityPart(items, part.plan.rows,
-        { invoked: false, outcome: "unavailable", reason: "token_rate_proof_unavailable" });
-      return { ...part.request, rowCount: part.plan.rows.length, outcome };
+  observeEvidenceCapture(capture, c => c.record("applicability_request", () => ({ links: { phase: "render_variables" }, bodies: { promptVariables } })));
+  const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", promptVariables);
+
+  if (!rendered) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "skipped", reason: "missing_prompt" } })));
+    debugLogFileOnly("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter", {
+      claimIds: claims.map((claim) => claim.id),
     });
-    details = { reason: "token_rate_proof_unavailable", admission: operation.admission,
-      configSha256: evidenceCaptureFingerprint(JSON.stringify(config)).sha256,
-      promptContentHash: promptIdentity.contentHash, limits, parts, issues: plan.issues,
-      oversizedPairs: operation.oversized.length };
-  } catch {
-    // Do not retain provider/prompt exceptions that could embed source text or credentials.
-    for (const item of items) for (const pair of Object.values(item.applicabilityByClaim ?? {})) {
-      if (pair.status === "unresolved" && pair.reason === "unattempted") pair.reason = "preparation_failed";
-    }
-    details = { reason: "preparation_failed", actualInvocations: 0 };
+    warnings?.push({
+      type: "evidence_applicability_assessment_degraded",
+      severity: "warning",
+      message: "Evidence applicability assessment could not run because the APPLICABILITY_ASSESSMENT prompt section was unavailable. Direct citation eligibility may be under-assessed.",
+      details: { claimIds: claims.map((claim) => claim.id), reason: "prompt_section_missing" },
+    });
+    // Fail-open on infra failure: the classifier could not RUN, so there is no
+    // directness signal. Return items UNMARKED so legacy "missing = direct"
+    // applies downstream — an unavailable classifier must not collapse the job.
+    return evidenceItems;
   }
-  details.claims = claims.map(claim => {
-    const pairs = items.flatMap(item => Object.entries(item.applicabilityByClaim ?? {}).filter(([id]) => id === claim.id).map(([,pair]) => pair));
-    return { claimId: claim.id, pairs: pairs.length, assessed: pairs.filter(p => p.assessed).length,
-      unresolvedReasons: pairs.reduce<Record<string,number>>((out,p) => { if(p.status === "unresolved") out[p.reason]=(out[p.reason]??0)+1; return out; }, {}) };
-  });
-  observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: { outcome: "unavailable", ...details } })));
-  warnings?.push({ type: "evidence_applicability_assessment_degraded", severity: "warning",
-    message: "Source-to-claim applicability is unresolved: verified request token and cost admission is unavailable. No applicability calls were sent; unresolved pairs cannot supply directional evidence.", details });
-  return items;
+
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+  const userContent = "Classify each evidence item by applicability.";
+  observeEvidenceCapture(capture, c => c.record("applicability_request", () => ({ links: {
+    phase: "model_request", section: "APPLICABILITY_ASSESSMENT", promptContentHash: rendered.contentHash ?? null, rendererWarnings: rendered.warnings,
+    system: evidenceCaptureFingerprint(rendered.content), user: evidenceCaptureFingerprint(userContent),
+    model: model.modelName, provider: model.provider, providerOptionsProvider: model.provider,
+    temperature: pipelineConfig.relevanceClassificationTemperature ?? 0.1, maxOutputTokens: 8192,
+  } })));
+  const llmCallStartedAt = Date.now();
+  let result: any;
+
+  try {
+    result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(model.provider),
+        },
+        { role: "user", content: userContent },
+      ],
+      temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
+      maxOutputTokens: 8192, // Cost: runaway guard. See WIP 2026-06-01 §9.
+      output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        model.provider,
+      ),
+    });
+
+    const validated = extractStructuredOutput(result) as z.infer<typeof ApplicabilityAssessmentOutputSchema>;
+
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    // Apply classifications to evidence items
+    const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
+    for (const assessment of validated.assessments) {
+      if (assessment.applicability) {
+        classificationMap.set(assessment.evidenceIndex, assessment.applicability);
+      }
+    }
+
+    // Debug: count by category
+    const counts = { direct: 0, contextual: 0, foreign_reaction: 0, unclassified: 0 };
+    const foreignDomains: string[] = [];
+
+    const assessed = evidenceItems.map((item, index) => {
+      const applicability = classificationMap.get(index);
+      if (applicability) {
+        counts[applicability]++;
+      }
+      if (applicability === "foreign_reaction") {
+        const domain = item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown";
+        foreignDomains.push(domain);
+      }
+      return { ...item, applicability, applicabilityAssessed: true };
+    });
+
+    // Count unclassified items not returned by the LLM. They remain usable as
+    // contextual material, but they are not explicit direct evidence.
+    counts.unclassified = evidenceItems.length - classificationMap.size;
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({
+      links: { outcome: "success", classificationMap: [...classificationMap], counts,
+        usage: result.usage, finishReason: result.finishReason, responseModel: result.response?.modelId },
+      bodies: { assessments: validated.assessments },
+    })));
+
+    debugLogFileOnly(
+      `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
+      `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified. ` +
+      `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
+    );
+    debugLogFileOnly(
+      `[Fix3] Applicability: ${counts.direct}D/${counts.contextual}C/${counts.foreign_reaction}F ` +
+      `(${evidenceItems.length} total, geography: ${normalizedRelevantGeographies.join(",")})`
+    );
+
+    return assessed;
+  } catch (err) {
+    observeEvidenceCapture(capture, c => c.record("applicability_result", () => ({ links: {
+      outcome: "failed", error: err instanceof Error ? { name: err.name, message: err.message.slice(0, 512) } : { name: "unknown" },
+      usage: result?.usage, finishReason: result?.finishReason, responseModel: result?.response?.modelId,
+    } })));
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
+    // Fail-open on infra failure: keep all evidence and do NOT mark directness as
+    // assessed. A failed classifier call carries no directness signal, so legacy
+    // "missing = direct" treatment applies downstream — an infra failure must not
+    // collapse citations/sufficiency job-wide.
+    debugLogFileOnly("[Fix3] Applicability assessment failed, keeping all evidence", {
+      claimIds: claims.map((claim) => claim.id),
+      errorMessage,
+    });
+    warnings?.push({
+      type: "evidence_applicability_assessment_degraded",
+      severity: "warning",
+      message: "Evidence applicability assessment failed. Evidence remains available as context, but direct citation eligibility could not be fully verified.",
+      details: {
+        claimIds: claims.map((claim) => claim.id),
+        errorMessage,
+      },
+    });
+    return evidenceItems;
+  }
 }
 
 /**

@@ -164,7 +164,7 @@ export function isDirectForClaim(item: ApplicabilityItem | undefined, claimId: s
     const pair = item.applicabilityByClaim && own(item.applicabilityByClaim,claimId) ? item.applicabilityByClaim[claimId] : undefined;
     return pair?.assessed === true && pair.status === "assessed" && pair.classification === "direct";
   }
-  // Read compatibility for historical reports / explicitly filter-disabled consumers.
+  // Normal scalar analyses and historical reports without an explicit pair map.
   return item.applicability === "direct" || (!item.applicability && item.applicabilityAssessed !== true);
 }
 

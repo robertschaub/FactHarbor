@@ -19,7 +19,6 @@
  * @module analyzer/claim-extraction-stage
  */
 
-import { bindEvidenceSource, mergeExtractionSources, resolveBoundSource } from "./evidence-source-binding";
 import type {
   EvidenceSourceBinding,
   AnalysisWarning,
@@ -1570,8 +1569,6 @@ export async function extractClaims(
     detectedLanguage: pass1.detectedLanguage,
     inferredGeography: pass1.inferredGeography,
     preliminaryEvidence: preliminaryEvidence.map((pe) => ({
-      sourceId: pe.sourceId,
-      sourceBinding: pe.sourceBinding,
       sourceUrl: pe.sourceUrl,
       sourceTitle: pe.sourceTitle,
       snippet: pe.statement,
@@ -2108,6 +2105,7 @@ export async function runPreliminarySearch(
   );
 
   // Merge local results into shared state deterministically (single-threaded, no races).
+  const seenUrls = new Set(state.sources.map((s) => s.url));
   for (const local of claimResults) {
     state.searchQueries.push(...local.searchQueries);
     state.warnings.push(...local.warnings);
@@ -2127,12 +2125,15 @@ export async function runPreliminarySearch(
       });
     }
 
-    mergeExtractionSources(state.sources, local.sources);
+    for (const src of local.sources) {
+      if (!seenUrls.has(src.url)) {
+        seenUrls.add(src.url);
+        src.id = `S_${String(state.sources.length + 1).padStart(3, "0")}`;
+        state.sources.push(src);
+      }
+    }
   }
 
-  for (const item of allEvidence) {
-    item.sourceId = resolveBoundSource(item.sourceBinding, state.sources)?.source.id;
-  }
   return allEvidence;
 }
 
@@ -2320,7 +2321,6 @@ async function extractPreliminaryEvidence(
       const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
       return {
         statement: ei.statement,
-        sourceBinding: bindEvidenceSource(ei.sourceUrl, sources),
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
         evidenceScope: ei.evidenceScope ? {

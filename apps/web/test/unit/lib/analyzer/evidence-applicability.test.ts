@@ -25,12 +25,19 @@ describe("exact source binding", () => {
     expect(resolveBoundSource(item(source("other")).sourceBinding,sources)?.source.id).toBe("S_002");
     expect(bindEvidenceSource(source().url,sources.map(s=>({url:s.url,text:s.fullText})))).toMatchObject({status:"unresolved",reason:"ambiguous_source_view"});
   });
-  it("reconciliation cannot upgrade an unresolved binding or select a wrong version", () => {
+  it("URL display reconciliation does not upgrade an unresolved source binding", () => {
     const e=item();e.sourceId="";e.sourceBinding={status:"unresolved",reason:"missing_returned_url"};
-    reconcileEvidenceSourceIds([e],[source()]);expect(e.sourceId).toBe("");
+    reconcileEvidenceSourceIds([e],[source()]);expect(e.sourceId).toBe("S1");
     expect(e.sourceBinding).toEqual({status:"unresolved",reason:"missing_returned_url"});
+    expect(resolveBoundSource(e.sourceBinding,[source()])).toBeUndefined();
+    const plan=planApplicability(claims,[e],[source()]);
+    expect(plan.items[0].applicabilityByClaim?.A.status).toBe("unresolved");
+    expect(isDirectForClaim(plan.items[0],"A")).toBe(false);
+  });
+  it("bound-version resolution remains independent of URL-only display reconciliation", () => {
     const correct=source("version2","S2"),bound=item(correct);bound.sourceId="";
-    reconcileEvidenceSourceIds([bound],[source(),correct]);expect(bound.sourceId).toBe("S2");
+    reconcileEvidenceSourceIds([bound],[correct,source()]);expect(bound.sourceId).toBe("S1");
+    expect(resolveBoundSource(bound.sourceBinding,[correct,source()])?.source.id).toBe("S2");
   });
   it("validates Unicode, retained bytes and bounds without normalization", () => {
     const s=source(), binding=item(s).sourceBinding!;

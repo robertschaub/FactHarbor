@@ -97,7 +97,7 @@ describe("opt-in evidence diagnostics", () => {
       const mapping = steps.extraction_mapped.links;
       expect(Object.fromEntries(mapping.columns.map((key: string, i: number) => [key, mapping.items[0][i]]))).toMatchObject({
         id: result[0].id, returnedUrlIndex: mapping.urls.indexOf(item().sourceUrl), resolvedUrlIndex: mapping.urls.indexOf(source.url),
-        matchedSourceId: "S1", assignedSourceId: "", returnedClaimIds: ["WRONG_ID"], assignedClaimIds: ["WRONG_ID"] });
+        matchedSourceId: "S1", assignedSourceId: "", returnedClaimIds: ["WRONG_ID"], assignedClaimIds: ["AC_01"] });
       expect(steps.extraction_result.links).toMatchObject({ outcome: "success", responseModel: "served-model", finishReason: "stop" });
       expect(JSON.stringify(request)).not.toContain("extraction_mapped");
     });
@@ -138,29 +138,48 @@ describe("opt-in evidence diagnostics", () => {
     const warnings: any[] = [];
     mockExtractOutput.mockReturnValue({ assessments: [{ evidenceIndex: 0, applicability: "direct" }] });
     const result = await assessEvidenceApplicability([], expected, "CH", {} as any, [], warnings, broken);
-    expect(result[0].applicabilityByClaim).toEqual({});
-    expect(warnings[0].type).toBe("evidence_applicability_assessment_degraded");
+    expect(result[0].applicability).toBe("direct");
+    expect(warnings).toEqual([]);
     const healthy = createEvidenceApplicabilityCapture("direct");
     observeEvidenceCapture(healthy, c => c.record("pipeline", builder));
     expect(healthy.finish().faults).toBe(1);
   });
 
-  it("retains applicability input identities and reports zero-call degradation", async () => {
-    const capture=createEvidenceApplicabilityCapture("direct");
-    const evidence=[createEvidence({statement:"ä".repeat(240)})];
-    const result=await assessEvidenceApplicability([createClaim()],evidence,null,{} as any,[],[],capture);
-    const events=capture.finish().stages as any[];
-    expect(events.find(e=>e.step==="applicability_input").links.items[0][0]).toBe(evidence[0].id);
-    expect(result[0].applicabilityByClaim.AC_01).toMatchObject({status:"unresolved",reason:"missing_binding",assessed:false});
-    expect(events.find(e=>e.step==="applicability_result").links.admission.actualInvocations).toBe(0);
-    expect(mockGenerateText).not.toHaveBeenCalled();
+  it("retains exact applicability inputs, pre-mutation scope and consumed duplicate/out-of-range classifications", async () => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const evidence = [createEvidence({ statement: "ä".repeat(240) }), createEvidence({ id: "EV_02" })];
+    const claims = [createClaim({ statement: "Plastik recycling bringt nichts" })];
+    mockExtractOutput.mockReturnValue({ assessments: [
+      { evidenceIndex: 0, applicability: "direct" }, { evidenceIndex: 0, applicability: "contextual" },
+      { evidenceIndex: 99, applicability: "foreign_reaction" }, { evidenceIndex: 1 },
+    ] });
+    capture.record("seeded", () => ({ links: { ids: evidence.map(e => e.id) } }));
+    const baseline = await assessEvidenceApplicability(claims, evidence, "CH", {} as any);
+    const captured = await assessEvidenceApplicability(claims, evidence, "CH", {} as any, undefined, [], capture);
+    expect(captured).toEqual(baseline);
+    expect(mockGenerateText.mock.calls[1][0]).toEqual(mockGenerateText.mock.calls[0][0]);
+    evidence[0].evidenceScope.methodology = "mutated";
+    const events = capture.finish().stages as any[];
+    const input = events.find(e => e.step === "applicability_input");
+    expect(input.links.identityAccounting).toEqual({ unexplainedAddedIds: [], unexplainedRemovedIds: [] });
+    expect(JSON.parse(input.bodies.items.content)[0].scope.methodology).toBe("standard analysis");
+    const request = events.find(e => e.step === "applicability_request" && e.bodies);
+    expect(JSON.parse(request.bodies.promptVariables.content)).toEqual(mockLoadSection.mock.calls[1][2]);
+    const result = events.find(e => e.step === "applicability_result");
+    expect(result.links.classificationMap).toEqual([[0, "contextual"], [99, "foreign_reaction"]]);
+    expect(result.links.counts.unclassified).toBe(0); // preserve the existing map-size arithmetic
   });
 
-  it.each(["disabled","no_evidence"])("records %s without provider calls",async reason=>{
-    const capture=createEvidenceApplicabilityCapture("direct"), evidence=reason==="no_evidence"?[]:[createEvidence()];
-    expect(await assessEvidenceApplicability([],evidence,null,{applicabilityFilterEnabled:reason!=="disabled"} as any,[],[],capture)).toBe(evidence);
-    expect((capture.finish().stages.find(e=>e.step==="applicability_result") as any).links).toMatchObject({outcome:"skipped",reason});
-    expect(mockGenerateText).not.toHaveBeenCalled();
+  it.each(["disabled", "no_geography", "no_evidence", "missing_prompt", "provider_failure"])("records %s without changing fallback behavior", async reason => {
+    const capture = createEvidenceApplicabilityCapture("direct");
+    const evidence = reason === "no_evidence" ? [] : [createEvidence()];
+    if (reason === "missing_prompt") mockLoadSection.mockResolvedValue(null as any);
+    if (reason === "provider_failure") mockGenerateText.mockRejectedValue(Error("offline failure"));
+    const result = await assessEvidenceApplicability([], evidence, reason === "no_geography" ? null : "CH",
+      { applicabilityFilterEnabled: reason !== "disabled" } as any, undefined, [], capture);
+    expect(result).toBe(evidence);
+    const observation = capture.finish().stages.find(e => e.step === "applicability_result") as any;
+    expect(observation.links).toMatchObject(reason === "provider_failure" ? { outcome: "failed" } : { outcome: "skipped", reason });
   });
 
   it("retains complete joins and the result for five realistic sources/25 items after body exhaustion", async () => {
@@ -636,7 +655,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].probativeValue).toBe("high");
     });
 
-    it("does not invent links from the request target", async () => {
+    it("should always use targetClaim.id for relevantClaimIds regardless of LLM output", async () => {
       const claim = createClaim({ id: "AC_02" });
       const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
 
@@ -657,11 +676,10 @@ describe("Research Extraction Stage", () => {
 
       const result = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
 
-      expect(result[0].relevantClaimIds).toEqual([]);
-      expect(result[0].extractionTargetClaimId).toBe("AC_02");
+      expect(result[0].relevantClaimIds).toEqual(["AC_02"]);
     });
 
-    it("retains wrong-format returned IDs without promotion", async () => {
+    it("should override wrong-format LLM claim IDs with targetClaim.id", async () => {
       const claim = createClaim({ id: "AC_01" });
       const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
 
@@ -691,8 +709,8 @@ describe("Research Extraction Stage", () => {
       const result = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
 
       expect(result).toHaveLength(2);
-      expect(result[0].relevantClaimIds).toEqual(["claim_01"]);
-      expect(result[1].relevantClaimIds).toEqual(["claim_001"]);
+      expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+      expect(result[1].relevantClaimIds).toEqual(["AC_01"]);
     });
 
     it("should return empty array when prompt is missing", async () => {
@@ -927,12 +945,184 @@ describe("Research Extraction Stage", () => {
   // ============================================================================
 
   describe("assessEvidenceApplicability", () => {
-    it.each([null,"CH"])("keeps unbound pairs unresolved regardless of geography: %s",async geography=>{
-      const warnings:any[]=[];
-      const result=await assessEvidenceApplicability([createClaim()],[createEvidence({applicability:"direct"})],geography,{} as any,[],warnings);
-      expect(result[0].applicabilityByClaim.AC_01).toEqual({status:"unresolved",reason:"missing_binding",assessed:false});
+    const mockConfig = {} as any;
+
+    it("should classify evidence and populate applicability field", async () => {
+      const claims = [createClaim({ statement: "Country A courts followed due process" })];
+      const evidence = [
+        createEvidence({ id: "EV_01", statement: "Domestic ruling", sourceUrl: "https://example.com/domestic", sourceTitle: "Domestic Court" }),
+        createEvidence({ id: "EV_02", statement: "Foreign sanctions", sourceUrl: "https://example.com/sanctions", sourceTitle: "Treasury" }),
+        createEvidence({ id: "EV_03", statement: "NGO report", sourceUrl: "https://example.com/ngo", sourceTitle: "NGO" }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          { evidenceIndex: 0, applicability: "direct", reasoning: "domestic court ruling" },
+          { evidenceIndex: 1, applicability: "foreign_reaction", reasoning: "foreign sanctions" },
+          { evidenceIndex: 2, applicability: "contextual", reasoning: "international NGO" },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(3);
+      expect(result[0].applicability).toBe("direct");
+      expect(result[1].applicability).toBe("foreign_reaction");
+      expect(result[2].applicability).toBe("contextual");
+      expect(result.every((item) => item.applicabilityAssessed === true)).toBe(true);
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
+      );
+      expect(mockDebugLog).not.toHaveBeenCalledWith(
+        "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
+      );
+    });
+
+    it("should skip assessment when inferredGeography is null", async () => {
+      const claims = [createClaim({ statement: "Generic claim" })];
+      const evidence = [createEvidence({ id: "EV_01" })];
+
+      const result = await assessEvidenceApplicability(claims, evidence, null, mockConfig);
+
+      expect(result).toHaveLength(1);
       expect(result[0].applicability).toBeUndefined();
-      expect(warnings[0].details.admission.actualInvocations).toBe(0);
+      expect(mockGenerateText).not.toHaveBeenCalled();
+    });
+
+    it("should skip assessment when applicabilityFilterEnabled is false", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+      const evidence = [createEvidence({ id: "EV_01" })];
+      const disabledConfig = { applicabilityFilterEnabled: false } as any;
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", disabledConfig);
+
+      expect(result).toHaveLength(1);
+      expect(mockGenerateText).not.toHaveBeenCalled();
+    });
+
+    it("should leave unclassified items without direct applicability", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+      const evidence = [
+        createEvidence({ id: "EV_01" }),
+        createEvidence({ id: "EV_02" }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      // LLM only returns assessment for index 0
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          { evidenceIndex: 0, applicability: "contextual", reasoning: "external observer" },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].applicability).toBe("contextual");
+      expect(result[1].applicability).toBeUndefined();
+      expect(result[1].applicabilityAssessed).toBe(true);
+    });
+
+    it("should fail-open on LLM error — keeps all evidence without applicability", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+      const evidence = [createEvidence({ id: "EV_01" })];
+      const warnings: any[] = [];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockRejectedValue(new Error("LLM timeout"));
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig, undefined, warnings);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].applicability).toBeUndefined();
+      // Fail-open: an infra failure leaves the item UNMARKED (not applicabilityAssessed),
+      // so downstream legacy "missing = direct" treatment applies and the job is NOT
+      // collapsed to non-direct/UNVERIFIED. Marking it assessed-but-unclassified was the
+      // fail-closed inversion this fixes (a transient classifier failure must not
+      // poison citations/sufficiency job-wide).
+      expect(result[0].applicabilityAssessed).toBeUndefined();
+      expect(warnings).toContainEqual(expect.objectContaining({
+        type: "evidence_applicability_assessment_degraded",
+        severity: "warning",
+      }));
+    });
+
+    it("should emit a degrading warning when the applicability prompt section is unavailable", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+      const evidence = [createEvidence({ id: "EV_01" })];
+      const warnings: any[] = [];
+
+      mockLoadSection.mockResolvedValue(null as any);
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig, undefined, warnings);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].applicability).toBeUndefined();
+      // Fail-open on infra failure: item left UNMARKED → legacy "missing = direct"
+      // downstream (no job-wide collapse when the prompt section is unavailable).
+      expect(result[0].applicabilityAssessed).toBeUndefined();
+      expect(warnings).toContainEqual(expect.objectContaining({
+        type: "evidence_applicability_assessment_degraded",
+        severity: "warning",
+      }));
+    });
+
+    it("should pass inferredGeography and claims to the prompt template", async () => {
+      const claims = [createClaim({ id: "AC_01", statement: "Country A courts" })];
+      const evidence = [createEvidence({ id: "EV_01", sourceUrl: "https://example.com/source" })];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [{ evidenceIndex: 0, applicability: "direct", reasoning: "ok" }],
+      });
+
+      await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "APPLICABILITY_ASSESSMENT"
+      );
+      expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({ inferredGeography: "BR" });
+      const claimsArg = renderCall![2].claims;
+      expect(claimsArg).toContain("AC_01");
+      expect(claimsArg).toContain("Country A courts");
+    });
+
+    it("should pass the union of relevant geographies to the applicability prompt", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Country A courts", relevantGeographies: ["CH"] }),
+        createClaim({ id: "AC_02", statement: "Country B institutions", relevantGeographies: ["DE"] }),
+      ];
+      const evidence = [createEvidence({ id: "EV_01", sourceUrl: "https://example.com/source" })];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [{ evidenceIndex: 0, applicability: "contextual", reasoning: "comparative evidence" }],
+      });
+
+      await assessEvidenceApplicability(claims, evidence, "CH", mockConfig, ["CH", "DE"]);
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "APPLICABILITY_ASSESSMENT"
+      );
+      expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({
+        inferredGeography: "null",
+        relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+      });
+    });
+
+    it("should handle empty evidence array", async () => {
+      const claims = [createClaim({ statement: "Test" })];
+
+      const result = await assessEvidenceApplicability(claims, [], "BR", mockConfig);
+
+      expect(result).toHaveLength(0);
       expect(mockGenerateText).not.toHaveBeenCalled();
     });
   });

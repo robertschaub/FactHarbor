@@ -1,4 +1,3 @@
-import { isForeignForAllClaims } from "./evidence-applicability";
 /**
  * ClaimAssessmentBoundary Pipeline — Main Entry Point
  *
@@ -1215,6 +1214,7 @@ export async function runClaimBoundaryAnalysis(
     if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
       checkAbortSignal(input.jobId);
       onEvent("Assessing evidence applicability...", 58);
+      onEvent(`LLM call: evidence applicability — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
       const beforeApplicability = state.evidenceItems.length;
       const assessed = await assessEvidenceApplicability(
         researchUnderstanding.atomicClaims,
@@ -1224,17 +1224,16 @@ export async function runClaimBoundaryAnalysis(
         applicabilityRelevantGeographies,
         state.warnings,
         evidenceCapture,
-        state.sources,
       );
       const removedItems = assessed.filter(
-        (item) => isForeignForAllClaims(item, researchUnderstanding.atomicClaims)
+        (item) => item.applicability === "foreign_reaction"
       );
       recordApplicabilityRemovalTelemetry(state, removedItems);
       observeEvidenceCapture(evidenceCapture, c => c.record("applicability_removed", () => ({ links: {
         removedIds: removedItems.map(item => item.id),
       } })));
       state.evidenceItems = assessed.filter(
-        (item) => !isForeignForAllClaims(item, researchUnderstanding.atomicClaims)
+        (item) => item.applicability !== "foreign_reaction"
       );
       const removedCount = beforeApplicability - state.evidenceItems.length;
       if (removedCount > 0) {
@@ -1277,7 +1276,10 @@ export async function runClaimBoundaryAnalysis(
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
-      // Enabled operations require this claim's assessed-direct pair even on degradation.
+      // Per-claim direct-applicability: require direct evidence only when THIS claim
+      // has its own relevant geography (not the merged job-wide set) and the
+      // classifier ran (degraded → fail-open). The classifier-ran check is job-wide
+      // (state.evidenceItems) because the classifier runs once over the whole pool.
       const requireDirectApplicabilityForClaim = claimRequiresDirectApplicability(
         initialPipelineConfig.applicabilityFilterEnabled ?? true,
         claimEvidence.length,
@@ -1293,7 +1295,6 @@ export async function runClaimBoundaryAnalysis(
         authoritativeDirectionalSourceTypes,
         includeSeeded: true,
         requireDirectApplicability: requireDirectApplicabilityForClaim,
-        claimId: claim.id,
       });
 
       if (!sufficiency.sufficient) {

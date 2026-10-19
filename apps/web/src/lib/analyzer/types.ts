@@ -515,7 +515,7 @@ export interface EvidenceItem {
   sourceBinding?: EvidenceSourceBinding;
   /** Request target is provenance, not a claim link. */
   extractionTargetClaimId?: string;
-  /** Present for every item in new enabled applicability operations, including failures. */
+  /** Optional experimental pair assessments; explicit unresolved pairs remain non-direct when read. */
   applicabilityByClaim?: Record<string, ClaimApplicability>;
   sourceUrl: string;
   sourceTitle: string;
@@ -564,7 +564,7 @@ export interface EvidenceItem {
   scopeQuality?: "complete" | "partial" | "incomplete";
   // True if this evidence was seeded from preliminary search
   isSeeded?: boolean;
-  // Legacy scalar classification: read compatibility only; new enabled operations use the pair map.
+  // Normal scalar classifier output. Explicit pair maps, when present, govern pair-aware readers.
   applicability?: "direct" | "contextual" | "foreign_reaction";
   /**
    * True when the applicability classifier was invoked for this evidence item.

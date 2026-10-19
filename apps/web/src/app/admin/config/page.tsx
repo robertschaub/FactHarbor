@@ -1699,8 +1699,9 @@ function PipelineConfigForm({
           />
           Enable Applicability Filter
         </label>
-        <div className={styles.formHelp}>Requires source-bound applicability for each claim. Execution remains unavailable until token and cost admission is qualified; limits alone do not enable calls.</div>
+        <div className={styles.formHelp}>Classifies evidence as direct, contextual or foreign reaction when the analysis has relevant geography.</div>
       </div>
+      <div className={styles.formHelp}>Experimental applicability settings — retained for compatibility; unused by the normal scalar classifier. These limits do not cap normal analysis spending.</div>
       <div className={styles.formGroup}>
         <label className={styles.formLabel}>Source UTF-8 bytes per applicability request</label>
         <input type="number" className={styles.formInput} value={config.applicabilityMaxSourceBytes ?? 65536}
