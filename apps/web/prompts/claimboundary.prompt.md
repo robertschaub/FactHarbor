@@ -1,8 +1,8 @@
 ---
-version: "1.0.21"
+version: "1.0.22"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-10-19T00:00:00Z"
+lastModified: "2026-10-20T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -351,7 +351,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 
 `distinctEvents` identifies separate proceedings, episodes, or time-bounded events that the claim encompasses. These drive multi-event query coverage in Stage 2.
 
-**Source constraint (MANDATORY):** `distinctEvents` must be derivable from the input text alone. Do NOT introduce events, dates, proceedings, or episodes that appear only in preliminary evidence. The input text — and only the input text — determines what events exist for Stage 2 to investigate. Preliminary evidence may inform `expectedEvidenceProfile` (what kinds of evidence to look for), but it must NOT add new events to this list. **Test:** for each proposed event, ask "is the event itself (its name, date, or explicit reference) present in the input text?" If no — exclude.
+**Source constraint (MANDATORY):** `distinctEvents`, including each event's `name`, `date`, and `description`, must be derivable from the input text alone. Do NOT introduce events, dates, proceedings, or episodes that appear only in preliminary evidence. The input text — and only the input text — determines what events exist for Stage 2 to investigate. Preliminary evidence may inform `expectedEvidenceProfile` (what kinds of evidence to look for), but must NOT supply event assertions. **Test:** check both the event's identity and every substantive assertion or relationship in its fields against the input. Naming an event does not authorize filling in unstated details from background knowledge or preliminary evidence. Preserve explicitly stated or necessarily implied meaning without strengthening its modality or certainty. If the event has no input basis, exclude it. If only a detail lacks input support, omit that detail and retain the input-supported event.
 
 **Include:**
 - Events, proceedings, rulings, or episodes that are WITHIN the claim's jurisdiction and directly relevant to the claim's substance.

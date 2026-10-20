@@ -429,11 +429,36 @@ describe("Stage-1 prompt contract", () => {
       expect(section).not.toBeNull();
       expect(section).toContain("Distinct Events Rules");
       expect(section).toContain("The input text — and only the input text — determines what events exist for Stage 2 to investigate");
+      expect(section).toContain("including each event's `name`, `date`, and `description`");
+      expect(section).toContain("every substantive assertion or relationship in its fields");
+      expect(section).toContain("must NOT supply event assertions");
+      expect(section).toContain("Naming an event does not authorize filling in unstated details from background knowledge or preliminary evidence");
+      expect(section).toContain("Preserve explicitly stated or necessarily implied meaning without strengthening its modality or certainty");
+      expect(section).toContain("If the event has no input basis, exclude it");
+      expect(section).toContain("If only a detail lacks input support, omit that detail and retain the input-supported event");
       expect(section).toContain("direct milestones of that same proceeding or verdict");
       expect(section).toContain("Use the narrowest same-matter path interpretation");
       expect(section).toContain("overlapping institutional dispute involving the same actors or institutions");
       expect(section).toContain("Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts");
       expect(section).toContain("do NOT explode that process into every earlier conflict, investigation, institutional dispute, or actor confrontation");
+    });
+
+    it.each([
+      ["German", "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben"],
+      ["Portuguese", "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"],
+    ])("renders the event constraint while preserving the approved %s input exactly", (_language, analysisInput) => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2")!;
+      const { rendered, unresolved } = renderWithVars(section, {
+        analysisInput,
+        preliminaryEvidence: "[]",
+        inferredGeography: "<UNKNOWN>",
+        atomicityGuidance: "",
+      });
+
+      expect(unresolved).toEqual([]);
+      expect(rendered).toContain(analysisInput);
+      expect(rendered).toContain("every substantive assertion or relationship in its fields");
+      expect(rendered).toContain("retain the input-supported event");
     });
   });
 
