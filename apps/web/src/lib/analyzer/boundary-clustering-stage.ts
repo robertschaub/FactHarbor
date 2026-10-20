@@ -22,7 +22,7 @@ import type { PipelineConfig } from "@/lib/config-schemas";
 
 import { getModelForTask, extractStructuredOutput, getStructuredOutputProviderOptions, getPromptCachingOptions } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
-import { normalizeScopeEquivalence, repointEvidenceScopes } from "./scope-normalization";
+import { normalizeScopeEquivalence } from "./scope-normalization";
 import { recordLLMCall } from "./metrics-integration";
 import { loadPipelineConfig } from "@/lib/config-loader";
 import { observeEvidenceCapture, evidenceCaptureFingerprint } from "./research-extraction-stage";
@@ -108,7 +108,6 @@ export async function clusterBoundaries(
     try {
       const normResult = await normalizeScopeEquivalence(uniqueScopes, pipelineConfig);
       if (normResult.mergedCount > 0) {
-        repointEvidenceScopes(state.evidenceItems, normResult);
         effectiveScopes = normResult.normalizedScopes;
         state.llmCalls++;
       }
@@ -332,6 +331,11 @@ export async function runLLMClustering(
   pipelineConfig: PipelineConfig,
   currentDate: string,
 ): Promise<ClaimAssessmentBoundary[]> {
+  // Normalized representatives are grouping keys, never replacements for an
+  // item's source-specific scope. originalIndices retains the membership.
+  const representativeByItem = new Map(
+    uniqueScopes.flatMap(us => us.originalIndices.map(index => [index, us.scope] as const)),
+  );
   const rendered = await loadAndRenderSection("claimboundary", "BOUNDARY_CLUSTERING", {
     currentDate,
     evidenceScopes: JSON.stringify(
@@ -347,7 +351,9 @@ export async function runLLMClustering(
         index: idx,
         statement: ei.statement.slice(0, 100),
         claimDirection: ei.claimDirection,
-        scopeFingerprint: ei.evidenceScope ? scopeFingerprint(ei.evidenceScope) : null,
+        scopeFingerprint: representativeByItem.has(idx)
+          ? scopeFingerprint(representativeByItem.get(idx)!)
+          : null,
         relevantClaimIds: ei.relevantClaimIds,
       })),
       null,
@@ -426,9 +432,12 @@ export async function runLLMClustering(
       boundaries: cb.boundaries,
       geographic: cb.geographic,
       temporal: cb.temporal,
-      constituentScopes: cb.constituentScopeIndices
-        .filter((idx) => idx >= 0 && idx < uniqueScopes.length)
-        .map((idx) => uniqueScopes[idx].scope),
+      // Expand selected groups back to their original source scopes so both
+      // orphan detection and evidence assignment retain every member.
+      constituentScopes: [...new Set(cb.constituentScopeIndices
+        .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < uniqueScopes.length)
+        .flatMap((idx) => uniqueScopes[idx].originalIndices
+          .flatMap(itemIndex => evidenceItems[itemIndex]?.evidenceScope ?? [])))],
       internalCoherence: Math.max(0, Math.min(1, cb.internalCoherence)),
       evidenceCount: 0,
     }));

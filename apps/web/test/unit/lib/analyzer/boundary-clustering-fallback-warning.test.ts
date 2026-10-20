@@ -3,6 +3,9 @@ import { loadPipelineConfig } from "@/lib/config-loader";
 import { normalizeScopeEquivalence } from "@/lib/analyzer/scope-normalization";
 import { assessEvidenceApplicability, createEvidenceApplicabilityCapture } from "@/lib/analyzer/research-extraction-stage";
 import type { CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
+import { generateText } from "ai";
+import { extractStructuredOutput } from "@/lib/analyzer/llm";
+import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
 
 // Stage 3 must surface its fallback: when LLM clustering fails, all evidence lands in a
 // single CB_GENERAL boundary and per-boundary findings disappear. Before this warning
@@ -61,10 +64,54 @@ function evidence(id: string, methodology: string): EvidenceItem {
 
 describe("clusterBoundaries — fallback warning", () => {
   beforeEach(() => {
+    vi.mocked(generateText).mockReset().mockRejectedValue(new Error("No output generated."));
+    vi.mocked(extractStructuredOutput).mockReset().mockReturnValue(null);
     vi.mocked(loadPipelineConfig).mockResolvedValue({ config: { scopeNormalizationEnabled: false }, contentHash: "test-hash" } as any);
     vi.mocked(normalizeScopeEquivalence).mockReset();
   });
   afterEach(() => vi.restoreAllMocks());
+  it.each([false, true])("keeps original source scopes and group assignments (omitted group: %s)", async omitted => {
+    const { clusterBoundaries, buildCoverageMatrix, scopeFingerprint } = await import("@/lib/analyzer/boundary-clustering-stage");
+    const items = [
+      evidence("EV_001", "Methode A"),
+      evidence("EV_002", "Método A"),
+      evidence("EV_003", "Method B"),
+      evidence("EV_004", "Methode A"),
+    ];
+    items[0].evidenceScope = { ...items[0].evidenceScope!, temporal: "2022", boundaries: "Grenze A", analyticalDimension: "dimensão A", additionalDimensions: { período: "原文 A" } };
+    items[1].evidenceScope = { ...items[1].evidenceScope!, temporal: "2025", geographic: "BR", boundaries: "Limite B", additionalDimensions: { período: "原文 B" } };
+    // Same fingerprint, distinct additional metadata: neither item may lose it.
+    items[3].evidenceScope = { ...items[0].evidenceScope, additionalDimensions: { período: "原文 C" } };
+    const originalScopes = items.map(item => item.evidenceScope);
+    const snapshot = structuredClone(originalScopes);
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: { scopeNormalizationEnabled: true, scopeNormalizationMinScopes: 2 }, contentHash: "fixture" } as any);
+    vi.mocked(normalizeScopeEquivalence).mockImplementation(async scopes => ({
+      normalizedScopes: [
+        { ...scopes[2], index: 0 },
+        { ...scopes[1], index: 1, originalIndices: [1, 0, 3] },
+      ], mergeMap: { 0: 1, 1: 1, 2: 0 }, mergedCount: 1,
+    }));
+    vi.mocked(generateText).mockResolvedValue({ usage: {} } as any);
+    const boundary = (id: string, indices: number[]) => ({ id, name: id, shortName: id, description: id, constituentScopeIndices: indices, internalCoherence: 0.9 });
+    vi.mocked(extractStructuredOutput).mockReturnValue({
+      claimBoundaries: [boundary("CB_A", [1]), ...(omitted ? [] : [boundary("CB_B", [0])])],
+      scopeToBoundaryMapping: [], congruenceDecisions: [],
+    });
+    const state = { evidenceItems: items, warnings: [], llmCalls: 0, understanding: { atomicClaims: [{ id: "AC_01", statement: "Plastik recycling bringt nichts" }] } } as any;
+    const boundaries = await clusterBoundaries(state);
+    expect(items.map(item => item.evidenceScope)).toEqual(snapshot);
+    items.forEach((item, index) => expect(item.evidenceScope).toBe(originalScopes[index]));
+    expect(items.map(item => item.claimBoundaryId)).toEqual(["CB_A", "CB_A", omitted ? "CB_GENERAL" : "CB_B", "CB_A"]);
+    expect(boundaries.map(boundary => [boundary.id, boundary.evidenceCount])).toEqual([["CB_A", 3], [omitted ? "CB_GENERAL" : "CB_B", 1]]);
+    expect(boundaries[0].constituentScopes).toHaveLength(3);
+    const coverage = buildCoverageMatrix(state.understanding.atomicClaims, boundaries, items);
+    expect(coverage.counts).toEqual([[3, 1]]);
+    const call = vi.mocked(loadAndRenderSection).mock.calls.findLast(call => call[1] === "BOUNDARY_CLUSTERING")!;
+    const sentItems = JSON.parse(call[2].evidenceItems);
+    expect(sentItems[0].scopeFingerprint).toBe(scopeFingerprint(originalScopes[1]!));
+    expect(sentItems[3].scopeFingerprint).toBe(sentItems[0].scopeFingerprint);
+    expect(state.warnings.some((warning: any) => warning.type === "boundary_clustering_failed")).toBe(false);
+  });
   it("retains the late scope links for a 300-item pool after stage-body exhaustion", async () => {
     const { clusterBoundaries } = await import("@/lib/analyzer/boundary-clustering-stage");
     const capture = createEvidenceApplicabilityCapture("direct");
@@ -89,7 +136,7 @@ describe("clusterBoundaries — fallback warning", () => {
     const after = saved.stages.find(s => s.step === "scope_after")!.links as any;
     expect(before.items).toHaveLength(300);
     expect(before.identityAccounting).toEqual({ unexplainedAddedIds: [], unexplainedRemovedIds: [] });
-    expect(after.changedScopeHashes).toHaveLength(299);
+    expect(after.changedScopeHashes).toHaveLength(0);
     expect(Object.keys(after.mergeMap)).toHaveLength(300);
     expect(after.truncated).toBeUndefined();
     expect(saved.linkCoverage).toBe("complete");
@@ -130,7 +177,7 @@ describe("clusterBoundaries — fallback warning", () => {
       if (outcome === "applied") {
         expect(capture.stages.find(s => s.step === "scope_before")!.bodies).toBeDefined();
         expect(after.bodies).toBeDefined();
-        expect(captured.items[1].evidenceScope).toEqual(captured.items[0].evidenceScope);
+        expect(captured.items[1].evidenceScope).toEqual(evidence("EV_002", "Method B").evidenceScope);
       }
       const { capture: broken, ...faultyResult } = await run(true, true);
       expect(faultyResult).toEqual(expected);

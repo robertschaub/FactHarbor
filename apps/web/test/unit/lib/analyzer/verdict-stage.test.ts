@@ -1364,7 +1364,7 @@ describe("validateVerdicts (Step 5)", () => {
   });
 
 
-  it("safe-downgrades neutral directional citations even when direction policy is disabled", async () => {
+  it.each(["neutral", undefined] as const)("safe-downgrades %s directional citations even when direction policy is disabled", async claimDirection => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
       truthPercentage: 65,
@@ -1374,7 +1374,7 @@ describe("validateVerdicts (Step 5)", () => {
       contradictingEvidenceIds: [],
     })];
     const evidence = [
-      createEvidenceItem({ id: "EV_NEUTRAL", relevantClaimIds: ["AC_01"], claimDirection: "neutral" }),
+      createEvidenceItem({ id: "EV_NEUTRAL", relevantClaimIds: ["AC_01"], claimDirection }),
     ];
     const warnings: AnalysisWarning[] = [];
 

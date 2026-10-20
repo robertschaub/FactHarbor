@@ -222,7 +222,6 @@ export {
   runResearchIteration,
   seedEvidenceFromPreliminarySearch,
   remapUnresolvedSeededEvidence,
-  wouldResolveExistingRemap,
   allClaimsSufficient,
   consumeClaimQueryBudget,
   claimNeedsMoreResearchForSufficiency,

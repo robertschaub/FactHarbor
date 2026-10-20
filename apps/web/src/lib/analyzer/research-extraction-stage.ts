@@ -559,10 +559,22 @@ export async function extractResearchEvidence(
     let categoryNormalizationCount = 0;
     let categoryFallbackToEvidenceCount = 0;
     let missingSourceUrlAssignmentCount = 0;
-    let unmatchedSourceUrlFallbackCount = 0;
+    let rejectedSourceCount = 0;
+    const acceptedIndices: number[] = [];
+    const rejectedIndices: number[] = [];
     let contextualMappedToNeutralCount = 0;
 
-    const evidenceItems = validated.evidenceItems.map((ei) => {
+    const evidenceItems = validated.evidenceItems.flatMap((ei, index) => {
+      // A sole source can bind an omitted URL; a conflicting URL or an
+      // ambiguous multi-source omission cannot be repaired by guessing.
+      const matchedSource = sources.find((s) => s.url === ei.sourceUrl)
+        ?? (!ei.sourceUrl && sources.length === 1 ? sources[0] : undefined);
+      if (!matchedSource) {
+        rejectedSourceCount++;
+        rejectedIndices.push(index);
+        return [];
+      }
+      acceptedIndices.push(index);
       // Log when LLM returns mismatched claim IDs (admin diagnostic)
       if (ei.relevantClaimIds.length > 0 && !ei.relevantClaimIds.includes(targetClaim.id)) {
         claimIdMismatchCount++;
@@ -581,20 +593,15 @@ export async function extractResearchEvidence(
         categoryFallbackToEvidenceCount++;
       }
       
-      // Use LLM-attributed sourceUrl when available; fall back to first source.
-      let matchedSource = sources.find((s) => s.url === ei.sourceUrl);
       if (!ei.sourceUrl) {
         missingSourceUrlAssignmentCount++;
-      } else if (!matchedSource) {
-        unmatchedSourceUrlFallbackCount++;
       }
-      matchedSource = matchedSource ?? sources[0];
 
       if (ei.claimDirection === "contextual") {
         contextualMappedToNeutralCount++;
       }
 
-      return {
+      return [{
         id: `EV_${String(idScope.nextEvidenceId++).padStart(3, "0")}`,
         statement: ei.statement,
         category: mappedCategory,
@@ -620,18 +627,29 @@ export async function extractResearchEvidence(
         relevantClaimIds: [targetClaim.id],
         isDerivative: ei.isDerivative ?? false,
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
-      } satisfies EvidenceItem;
+      } satisfies EvidenceItem];
     });
+    if (rejectedSourceCount > 0) {
+      state?.warnings?.push({
+        type: "evidence_attribution_failed", severity: "warning",
+        message: `Excluded ${rejectedSourceCount} extracted evidence item(s) without an unambiguous supplied source.`,
+        details: { stage: "research_extraction", reason: "unbound_source", excludedCount: rejectedSourceCount, totalCount: validated.evidenceItems.length },
+      });
+    }
 
     observeEvidenceCapture(state?.evidenceCapture, c => c.record("extraction_mapped", () => {
-      const urls = [...new Set(evidenceItems.flatMap((item, index) => [validated.evidenceItems[index].sourceUrl ?? null, item.sourceUrl]))];
+      const urls = [...new Set([
+        ...validated.evidenceItems.map(item => item.sourceUrl ?? null),
+        ...evidenceItems.map(item => item.sourceUrl),
+      ])];
       return { links: {
         columns: ["index", "id", "returnedUrlIndex", "resolvedUrlIndex", "assignedSourceId", "matchedSourceId", "returnedClaimIds", "assignedClaimIds"],
         urls,
-        items: evidenceItems.map((item, index) => [index, item.id,
-          urls.indexOf(validated.evidenceItems[index].sourceUrl ?? null), urls.indexOf(item.sourceUrl), item.sourceId,
+        rejectedIndices,
+        items: evidenceItems.map((item, index) => [acceptedIndices[index], item.id,
+          urls.indexOf(validated.evidenceItems[acceptedIndices[index]].sourceUrl ?? null), urls.indexOf(item.sourceUrl), item.sourceId,
           state?.sources.find(source => source.url === item.sourceUrl)?.id ?? null,
-          validated.evidenceItems[index].relevantClaimIds, item.relevantClaimIds]),
+          validated.evidenceItems[acceptedIndices[index]].relevantClaimIds, item.relevantClaimIds]),
       } };
     }, captureCallId));
     if (
@@ -639,7 +657,7 @@ export async function extractResearchEvidence(
       || categoryNormalizationCount > 0
       || categoryFallbackToEvidenceCount > 0
       || missingSourceUrlAssignmentCount > 0
-      || unmatchedSourceUrlFallbackCount > 0
+      || rejectedSourceCount > 0
       || contextualMappedToNeutralCount > 0
     ) {
       debugLogFileOnly(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
@@ -647,7 +665,7 @@ export async function extractResearchEvidence(
         categoryNormalizations: categoryNormalizationCount,
         categoryFallbackToEvidence: categoryFallbackToEvidenceCount,
         missingSourceUrlAssignments: missingSourceUrlAssignmentCount,
-        unmatchedSourceUrlFallbacks: unmatchedSourceUrlFallbackCount,
+        rejectedSourceAttributions: rejectedSourceCount,
         contextualMappedToNeutral: contextualMappedToNeutralCount,
       });
     }

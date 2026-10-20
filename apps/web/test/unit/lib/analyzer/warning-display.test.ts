@@ -70,9 +70,9 @@ describe("warning-display classification", () => {
     expect(result.displaySeverity).toBe("warning");
   });
 
-  it("treats applicability assessment failures as degrading analysis warnings", () => {
+  it.each(["evidence_applicability_assessment_degraded", "evidence_attribution_failed"] as const)("treats %s as degrading analysis warnings", type => {
     const result = classifyWarningForDisplay(warning({
-      type: "evidence_applicability_assessment_degraded",
+      type,
       severity: "info",
     }));
 

@@ -26,7 +26,6 @@ import {
   seedEvidenceFromPreliminarySearch,
   shouldProtectValidatedAnchorCarriers,
   getProtectedContractCarrierIds,
-  wouldResolveExistingRemap,
   remapUnresolvedSeededEvidence,
   reconcileEvidenceSourceIds,
   findLeastResearchedClaim,
@@ -2225,6 +2224,28 @@ describe("Stage 1: runPreliminarySearch", () => {
     sourceFetchTimeoutMs: 23456,
   } as any;
 
+  it.each([1, 2])("binds preliminary source attribution without first-source guessing (%s sources)", async sourceCount => {
+    const sources = [
+      { url: "https://example.test/a", title: "A", snippet: "ä ação 東京" },
+      { url: "https://example.test/b", title: "B", snippet: "B" },
+    ].slice(0, sourceCount);
+    mockSearch.mockResolvedValue({ results: sources, providersUsed: ["google"] } as any);
+    mockFetchUrl.mockImplementation(async url => ({ text: "ä ação 東京".repeat(30), title: url, contentType: "text/html" }));
+    mockLoadSection.mockResolvedValue({ content: "fixture", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ usage: {} } as any);
+    const item = (sourceUrl?: string) => ({ statement: "ä ação 東京", sourceUrl, relevantClaimIds: ["AC_01"] });
+    mockExtractOutput.mockReturnValueOnce({ relevantSources: sources.map(source => ({ ...source, relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "fixture" })) })
+      .mockReturnValueOnce({ evidenceItems: [item("https://unmatched.test/"), item(), item(sources.at(-1)!.url)] });
+    const state = { searchQueries: [], sources: [], warnings: [], llmCalls: 0 } as any;
+    const result = await runPreliminarySearch([{ statement: "Plastik recycling bringt nichts", searchHint: "Plastik recycling bringt nichts" }],
+      mockSearchConfig, mockPipelineConfig, "2026-10-20", state);
+    expect(result).toHaveLength(sourceCount === 1 ? 2 : 1);
+    expect(result.at(-1)!.sourceUrl).toBe(sources.at(-1)!.url);
+    expect(result.at(-1)!.statement).toBe("ä ação 東京");
+    expect(state.warnings).toEqual([expect.objectContaining({ type: "evidence_attribution_failed",
+      details: expect.objectContaining({ stage: "preliminary_extraction", excludedCount: sourceCount }) })]);
+  });
+
   it("should return evidence from search + fetch + extraction pipeline", async () => {
     const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
     const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
@@ -2474,7 +2495,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
       evidenceItems: [],
     } as any;
 
-    seedEvidenceFromPreliminarySearch(state);
+    seedEvidenceFromPreliminarySearch(state, new Map([[0, ["AC_01"]], [1, ["AC_02"]]]));
 
     expect(state.evidenceItems).toHaveLength(2);
     expect(state.evidenceItems[0].id).toBe("EV_001");
@@ -2585,6 +2606,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
   it("should start IDs after existing evidence items", () => {
     const state = {
       understanding: {
+        atomicClaims: [{ id: "AC_01" }],
         preliminaryEvidence: [
           { sourceUrl: "https://example.com/1", snippet: "New evidence", claimId: "AC_01" },
         ],
@@ -2643,7 +2665,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
       evidenceItems: [],
     } as any;
 
-    seedEvidenceFromPreliminarySearch(state);
+    seedEvidenceFromPreliminarySearch(state, new Map([[0, ["AC_01", "AC_02", "AC_03"]]]));
 
     expect(state.evidenceItems).toHaveLength(1);
     expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
@@ -2666,13 +2688,13 @@ describe("seedEvidenceFromPreliminarySearch", () => {
       evidenceItems: [],
     } as any;
 
-    seedEvidenceFromPreliminarySearch(state);
+    seedEvidenceFromPreliminarySearch(state, new Map([[0, ["AC_01", "AC_02", "AC_03", "AC_99"]]]));
 
     expect(state.evidenceItems).toHaveLength(1);
     expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_03"]);
   });
 
-  it("should fall back to legacy claimId when relevantClaimIds is empty", () => {
+  it("does not trust a legacy provisional claimId", () => {
     const state = {
       understanding: {
         atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
@@ -2691,8 +2713,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
 
     seedEvidenceFromPreliminarySearch(state);
 
-    expect(state.evidenceItems).toHaveLength(1);
-    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_02"]);
+    expect(state.evidenceItems).toHaveLength(0);
   });
 
   it("should not orphan seeded evidence when relevantClaimIds contains valid IDs", () => {
@@ -2719,7 +2740,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
       evidenceItems: [],
     } as any;
 
-    seedEvidenceFromPreliminarySearch(state);
+    seedEvidenceFromPreliminarySearch(state, new Map([[0, ["AC_01", "AC_02"]], [1, ["AC_02"]]]));
 
     expect(state.evidenceItems).toHaveLength(2);
     // No orphaned evidence — all items have non-empty relevantClaimIds
@@ -2728,7 +2749,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[1].relevantClaimIds).toEqual(["AC_02"]);
   });
 
-  it("should apply heuristic remap to relevantClaimIds entries", () => {
+  it("does not infer final claims from numeric provisional aliases", () => {
     const state = {
       understanding: {
         atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
@@ -2747,8 +2768,7 @@ describe("seedEvidenceFromPreliminarySearch", () => {
 
     seedEvidenceFromPreliminarySearch(state);
 
-    expect(state.evidenceItems).toHaveLength(1);
-    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+    expect(state.evidenceItems).toHaveLength(0);
   });
 
   it("should produce stub evidenceScope when pe.evidenceScope is undefined", () => {
@@ -2782,282 +2802,87 @@ describe("seedEvidenceFromPreliminarySearch", () => {
   });
 });
 
-// ============================================================================
-// wouldResolveExistingRemap — Unit Tests
-// ============================================================================
-
-describe("wouldResolveExistingRemap", () => {
-  const knownIds = new Set(["AC_01", "AC_02"]);
-
-  it("returns true when relevantClaimIds contains a known AC_* ID", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: ["AC_01"] },
-      knownIds,
-    )).toBe(true);
-  });
-
-  it("returns true when legacy claimId matches a known ID", () => {
-    expect(wouldResolveExistingRemap(
-      { claimId: "AC_02" },
-      knownIds,
-    )).toBe(true);
-  });
-
-  it("returns true when numeric heuristic claim_01 -> AC_01 resolves", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: ["claim_01"] },
-      knownIds,
-    )).toBe(true);
-  });
-
-  it("returns true for claim_02 -> AC_02 via numeric heuristic", () => {
-    expect(wouldResolveExistingRemap(
-      { claimId: "claim_02" },
-      knownIds,
-    )).toBe(true);
-  });
-
-  it("returns false for semantic slug that has no numeric mapping", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: ["claim_bolsonaro_proceedings"] },
-      knownIds,
-    )).toBe(false);
-  });
-
-  it("returns false for semantic slug in claimId field", () => {
-    expect(wouldResolveExistingRemap(
-      { claimId: "claim_hydrogen_efficiency" },
-      knownIds,
-    )).toBe(false);
-  });
-
-  it("returns false for empty relevantClaimIds and empty claimId", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: [], claimId: "" },
-      knownIds,
-    )).toBe(false);
-  });
-
-  it("returns false for undefined fields", () => {
-    expect(wouldResolveExistingRemap({}, knownIds)).toBe(false);
-  });
-
-  it("returns true when at least one of multiple relevantClaimIds resolves", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: ["claim_unknown", "AC_01"] },
-      knownIds,
-    )).toBe(true);
-  });
-
-  it("returns false when claim_99 has no matching AC_99", () => {
-    expect(wouldResolveExistingRemap(
-      { relevantClaimIds: ["claim_99"] },
-      knownIds,
-    )).toBe(false);
-  });
-});
-
-// ============================================================================
-// remapUnresolvedSeededEvidence — Unit Tests
-// ============================================================================
 
 describe("remapUnresolvedSeededEvidence", () => {
+  const makeState = () => ({
+    understanding: {
+      atomicClaims: [
+        { id: "AC_01", statement: "Plastik recycling bringt nichts" },
+        { id: "AC_02", statement: "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas" },
+      ],
+      preliminaryEvidence: [
+        { sourceUrl: "https://example.test/1", snippet: "ä ação 東京", relevantClaimIds: ["AC_01"], claimDirection: "supports" },
+        { sourceUrl: "https://example.test/2", snippet: "B", claimId: "claim_02", claimDirection: "contradicts" },
+        { sourceUrl: "https://example.test/3", snippet: "C", claimId: "AC_01" },
+      ],
+    }, evidenceItems: [], warnings: [], llmCalls: 0, nextEvidenceId: 1,
+  }) as any;
+  const config = { preliminaryEvidenceLlmRemapEnabled: true, llmProvider: "anthropic" } as any;
   beforeEach(() => {
     vi.clearAllMocks();
-    // Restore default mock behavior for prompt loader (returns valid prompt)
-    mockLoadSection.mockResolvedValue({ content: "mock prompt", variables: {} } as any);
+    mockExtractOutput.mockReset();
+    mockGenerateText.mockReset();
+    mockLoadSection.mockReset();
+    mockLoadSection.mockResolvedValue({ content: "fixture", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ usage: {} } as any);
   });
-
-  it("should return immediately when flag is disabled", async () => {
-    const state = {
-      understanding: {
-        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
-        preliminaryEvidence: [
-          { snippet: "Evidence A", sourceTitle: "BBC", claimId: "", relevantClaimIds: ["claim_semantic_slug"] },
-        ],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: false } as any;
-
+  it("remaps exact-looking and numeric provisional IDs without mutating provenance or transferring direction", async () => {
+    const state = makeState(); const before = structuredClone(state.understanding.preliminaryEvidence);
+    mockExtractOutput.mockReturnValueOnce({ mappings: [
+      { index: 0, relevantClaimIds: ["AC_02"] },
+      { index: 1, relevantClaimIds: ["AC_01", "AC_02"] },
+      { index: 2, relevantClaimIds: [] },
+    ] });
     const result = await remapUnresolvedSeededEvidence(state, config);
-
-    expect(result.remappedCount).toBe(0);
-    expect(result.totalUnresolved).toBe(0);
-    // LLM should not be called
-    expect(state.llmCalls).toBe(0);
-  });
-
-  it("should return immediately when only 1 claim exists", async () => {
-    const state = {
-      understanding: {
-        atomicClaims: [{ id: "AC_01" }],
-        preliminaryEvidence: [
-          { snippet: "Evidence A", sourceTitle: "BBC", claimId: "", relevantClaimIds: ["claim_slug"] },
-        ],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true } as any;
-
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    expect(result.remappedCount).toBe(0);
-    expect(result.totalUnresolved).toBe(0);
-  });
-
-  it("should return immediately when all items resolve via existing heuristics", async () => {
-    const state = {
-      understanding: {
-        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
-        preliminaryEvidence: [
-          { snippet: "A", sourceTitle: "BBC", claimId: "AC_01", relevantClaimIds: ["AC_01"] },
-          { snippet: "B", sourceTitle: "CNN", claimId: "", relevantClaimIds: ["claim_01"] },
-        ],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true } as any;
-
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    expect(result.remappedCount).toBe(0);
-    expect(result.totalUnresolved).toBe(0);
-  });
-
-  it("should return 0 remapped when no preliminary evidence exists", async () => {
-    const state = {
-      understanding: {
-        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
-        preliminaryEvidence: [],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true } as any;
-
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    expect(result.remappedCount).toBe(0);
-    expect(result.totalUnresolved).toBe(0);
-  });
-
-  it("should return 0 remapped when understanding is null", async () => {
-    const state = {
-      understanding: null,
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true } as any;
-
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    expect(result.remappedCount).toBe(0);
-    expect(result.totalUnresolved).toBe(0);
-  });
-
-  it("should only route unresolved items (not already-resolved) to remap", async () => {
-    // This test verifies that items with known AC_* IDs or numeric heuristic matches
-    // are NOT sent to the LLM remap. We can test this by checking that the function
-    // correctly identifies unresolved count.
-    const state = {
-      understanding: {
-        atomicClaims: [
-          { id: "AC_01", statement: "Claim one" },
-          { id: "AC_02", statement: "Claim two" },
-        ],
-        preliminaryEvidence: [
-          // Resolved: exact match
-          { snippet: "Resolved A", sourceTitle: "BBC", claimId: "AC_01", relevantClaimIds: ["AC_01"] },
-          // Resolved: numeric heuristic
-          { snippet: "Resolved B", sourceTitle: "CNN", claimId: "", relevantClaimIds: ["claim_02"] },
-          // Unresolved: semantic slug
-          { snippet: "Unresolved C", sourceTitle: "NPR", claimId: "", relevantClaimIds: ["claim_semantic_slug"] },
-          // Unresolved: another semantic slug
-          { snippet: "Unresolved D", sourceTitle: "PBS", claimId: "", relevantClaimIds: ["claim_another_slug"] },
-        ],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true, llmProvider: "anthropic" } as any;
-
-    // The function will fail on LLM call (no mock), which is fine — it will fail-open
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    // Should have identified exactly 2 unresolved items
-    expect(result.totalUnresolved).toBe(2);
-    // Fail-open: 0 remapped because LLM call fails without mocks
-    expect(result.remappedCount).toBe(0);
-  });
-
-  it("should apply mocked LLM remap: claim-local mapping, invalid ID filtering, in-place mutation", async () => {
-    // Full successful-path test with mocked LLM output.
-    // Verifies: unresolved routing, valid-ID filtering, in-place mutation,
-    // no blanket all-claims attribution, resolved items untouched.
-    const state = {
-      understanding: {
-        atomicClaims: [
-          { id: "AC_01", statement: "The proceedings complied with procedural law." },
-          { id: "AC_02", statement: "The resulting verdicts were fair." },
-        ],
-        preliminaryEvidence: [
-          // Already resolved — must NOT be touched by remap
-          { snippet: "Already mapped evidence", sourceTitle: "Reuters", claimId: "AC_01", relevantClaimIds: ["AC_01"] },
-          // Unresolved semantic slug — should be remapped to AC_01
-          { snippet: "STF upheld constitutional procedures in the trial", sourceTitle: "BBC", claimId: "", relevantClaimIds: ["claim_bolsonaro_proceedings"] },
-          // Unresolved semantic slug — should be remapped to AC_02
-          { snippet: "Defense argued the verdict was politically motivated", sourceTitle: "NPR", claimId: "", relevantClaimIds: ["claim_fair_verdict"] },
-        ],
-      },
-      llmCalls: 0,
-    } as any;
-    const config = { preliminaryEvidenceLlmRemapEnabled: true, llmProvider: "anthropic" } as any;
-
-    // Mock extractStructuredOutput to return a remap response.
-    // The remap function builds its prompt-index from only the 2 unresolved items,
-    // so index 0 = "STF upheld..." and index 1 = "Defense argued...".
-    // Include an invalid ID ("AC_99") to prove filtering works.
-    mockExtractOutput.mockReturnValueOnce({
-      mappings: [
-        { index: 0, relevantClaimIds: ["AC_01", "AC_99"] },  // AC_99 should be filtered out
-        { index: 1, relevantClaimIds: ["AC_02"] },
-      ],
-    });
-
-    const result = await remapUnresolvedSeededEvidence(state, config);
-
-    // 2 unresolved items found, both successfully remapped
-    expect(result.totalUnresolved).toBe(2);
-    expect(result.remappedCount).toBe(2);
-
-    // LLM call was counted
-    expect(state.llmCalls).toBe(1);
-
-    // Verify in-place mutation on the preliminary evidence array
-    const prelim = state.understanding.preliminaryEvidence;
-
-    // Item 0 (already resolved) — must be untouched
-    expect(prelim[0].relevantClaimIds).toEqual(["AC_01"]);
-
-    // Item 1 (was "claim_bolsonaro_proceedings") — remapped to AC_01 only, AC_99 filtered
-    expect(prelim[1].relevantClaimIds).toEqual(["AC_01"]);
-
-    // Item 2 (was "claim_fair_verdict") — remapped to AC_02
-    expect(prelim[2].relevantClaimIds).toEqual(["AC_02"]);
-
-    // Anti-blanket check: no item was mapped to both claims simultaneously
-    // (unless the mock explicitly said so, which it did not)
-    expect(prelim[1].relevantClaimIds).not.toEqual(["AC_01", "AC_02"]);
-    expect(prelim[2].relevantClaimIds).not.toEqual(["AC_01", "AC_02"]);
-
-    // Verify the LLM was called (prompt loader + generateText)
-    expect(mockLoadSection).toHaveBeenCalledWith(
-      "claimboundary",
-      "REMAP_SEEDED_EVIDENCE",
-      expect.objectContaining({
-        atomicClaimsJson: expect.any(String),
-        unmappedEvidenceJson: expect.any(String),
-      }),
-    );
+    seedEvidenceFromPreliminarySearch(state, result.mappings);
+    expect(result.remappedCount).toBe(2); expect(result.totalUnresolved).toBe(3);
+    expect(state.understanding.preliminaryEvidence).toEqual(before);
+    expect(state.evidenceItems.map((item: any) => item.relevantClaimIds)).toEqual([["AC_02"], ["AC_01", "AC_02"]]);
+    expect(state.evidenceItems.every((item: any) => item.claimDirection === undefined)).toBe(true);
+    expect(state.evidenceItems[0].statement).toBe(before[0].snippet);
+    expect(state.warnings).toEqual([]);
     expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse(mockLoadSection.mock.calls[0][2].unmappedEvidenceJson);
+    expect(sent.map((item: any) => item.index)).toEqual([0, 1, 2]);
+  });
+  it.each(["disabled", "single", "empty", "null"])("does not invoke remapper for %s", async kind => {
+    const state = makeState();
+    if (kind === "single") state.understanding.atomicClaims = [state.understanding.atomicClaims[0]];
+    if (kind === "empty") state.understanding.preliminaryEvidence = [];
+    if (kind === "null") state.understanding = null;
+    const result = await remapUnresolvedSeededEvidence(state, { ...config, preliminaryEvidenceLlmRemapEnabled: kind !== "disabled" });
+    seedEvidenceFromPreliminarySearch(state, result.mappings);
+    expect(mockGenerateText).not.toHaveBeenCalled();
+    expect(state.evidenceItems).toHaveLength(kind === "single" ? 3 : 0);
+    if (kind === "single") expect(state.evidenceItems[0].claimDirection).toBe("supports");
+    expect(state.warnings).toEqual(kind === "disabled" ? [expect.objectContaining({
+      type: "evidence_attribution_failed", details: expect.objectContaining({ reason: "final_mapping_unavailable", excludedCount: 3 }),
+    })] : []);
+  });
+  it.each(["error", "no_prompt", "no_output", "schema", "fractional", "duplicate", "unknown_claim", "out_of_range"])("cannot seed provisional IDs after %s", async kind => {
+    const state = makeState();
+    const rows: Record<string, unknown> = {
+      fractional: [{ index: 0.5, relevantClaimIds: ["AC_01"] }],
+      duplicate: [{ index: 0, relevantClaimIds: ["AC_01"] }, { index: 0, relevantClaimIds: ["AC_02"] }],
+      unknown_claim: [{ index: 0, relevantClaimIds: ["AC_99"] }],
+      out_of_range: [{ index: 9, relevantClaimIds: ["AC_01"] }],
+    };
+    if (kind === "error") mockGenerateText.mockRejectedValueOnce(new Error("fixture"));
+    if (kind === "no_prompt") mockLoadSection.mockResolvedValueOnce(null);
+    mockExtractOutput.mockReturnValueOnce(kind === "no_output" ? null : { mappings: rows[kind] ?? "invalid" });
+    const result = await remapUnresolvedSeededEvidence(state, config);
+    seedEvidenceFromPreliminarySearch(state, result.mappings);
+    expect(state.evidenceItems).toEqual([]);
+    expect(state.warnings).toEqual([expect.objectContaining({ type: "evidence_attribution_failed", details: expect.objectContaining({ excludedCount: 3 }) })]);
+    expect(mockGenerateText.mock.calls.length).toBeLessThanOrEqual(1);
+  });
+  it("distinguishes an explicitly irrelevant item from omitted mappings", async () => {
+    const state = makeState();
+    mockExtractOutput.mockReturnValueOnce({ mappings: [{ index: 0, relevantClaimIds: [] }, { index: 1, relevantClaimIds: ["AC_02"] }] });
+    const result = await remapUnresolvedSeededEvidence(state, config);
+    seedEvidenceFromPreliminarySearch(state, result.mappings);
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.warnings[0].details.excludedCount).toBe(1);
   });
 });
 

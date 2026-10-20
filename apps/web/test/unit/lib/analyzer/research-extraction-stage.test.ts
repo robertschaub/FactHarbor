@@ -64,7 +64,7 @@ const mockMapCategory = vi.mocked(mapCategory);
 describe("opt-in evidence diagnostics", () => {
   const source = { url: "https://example.test/a", title: "Source A", text: "A source record: ä, ação, 東京 😀" };
   const item = () => ({ statement: "Entity A recorded an observation", category: "evidence",
-    sourceUrl: "https://unmatched.test/", claimDirection: "supports", evidenceScope: { methodology: "Method A" },
+    sourceUrl: source.url, claimDirection: "supports", evidenceScope: { methodology: "Method A" },
     probativeValue: "high", sourceType: "news_primary", relevantClaimIds: ["WRONG_ID"] });
   const stateFor = (capture?: ReturnType<typeof createEvidenceApplicabilityCapture>) => ({
     nextEvidenceId: 1, evidenceCapture: capture,
@@ -79,7 +79,7 @@ describe("opt-in evidence diagnostics", () => {
   });
 
   it.each(["Plastik recycling bringt nichts", "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"])(
-    "preserves requests and outputs while recording exact extraction and source fallback: %s", async statement => {
+    "preserves requests and outputs while recording exact extraction and source binding: %s", async statement => {
       const claim = createClaim({ statement });
       const baseline = await extractResearchEvidence(claim, [source], {} as any, "2026-10-02", stateFor());
       const request = mockGenerateText.mock.calls[0][0];
@@ -196,9 +196,11 @@ describe("opt-in evidence diagnostics", () => {
     const steps = saved.extractions[4].steps as any;
     expect(saved.linkCoverage).toBe("complete");
     expect(steps.extraction_input.links.sources).toHaveLength(5);
-    expect(steps.extraction_mapped.links.items).toHaveLength(25);
+    expect(steps.extraction_mapped.links.items).toHaveLength(20);
+    expect(steps.extraction_mapped.links.rejectedIndices).toEqual([0, 1, 2, 3, 4]);
+    expect(steps.extraction_mapped.links.items[0][0]).toBe(5);
     expect(steps.extraction_result.links.outcome).toBe("success");
-    expect(steps.extraction_admission.links.keptIds).toHaveLength(25);
+    expect(steps.extraction_admission.links.keptIds).toHaveLength(20);
     expect(steps.extraction_result.links.usage.outputTokens).toBe(12000);
     expect(Buffer.byteLength(JSON.stringify(saved))).toBeLessThanOrEqual(2_097_152);
   });
@@ -586,6 +588,33 @@ describe("Research Extraction Stage", () => {
   describe("extractResearchEvidence", () => {
     const mockConfig = {} as any;
 
+    it.each([1, 2])("rejects conflicting source URLs and binds omissions only for a sole source (%s)", async sourceCount => {
+      const sources = [
+        { url: "https://example.test/a", title: "A", text: "ä ação 東京" },
+        { url: "https://example.test/b", title: "B", text: "B" },
+      ].slice(0, sourceCount);
+      const returned = (sourceUrl?: string) => ({ statement: "ä ação 東京", sourceUrl, category: "evidence",
+        claimDirection: "supports", evidenceScope: { methodology: "Methode A", temporal: "2022" },
+        probativeValue: "high", relevantClaimIds: ["WRONG_ID"] });
+      mockLoadSection.mockResolvedValue({ content: "fixture", variables: {} });
+      mockGenerateText.mockResolvedValue({ usage: {} } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [returned("https://unmatched.test/"), returned(), returned(sources.at(-1)!.url)] });
+      const capture = createEvidenceApplicabilityCapture("direct");
+      const state = { nextEvidenceId: 7, warnings: [], sources: [], evidenceCapture: capture } as any;
+      const result = await extractResearchEvidence(createClaim({ statement: "Plastik recycling bringt nichts" }), sources, mockConfig, "2026-10-20", state, capture.beginExtraction());
+      expect(result).toHaveLength(sourceCount === 1 ? 2 : 1);
+      expect(result[0].id).toBe("EV_007");
+      expect(result.at(-1)!.sourceUrl).toBe(sources.at(-1)!.url);
+      expect(result.at(-1)!.sourceTitle).toBe(sources.at(-1)!.title);
+      expect(result.at(-1)!.statement).toBe("ä ação 東京");
+      expect(result.at(-1)!.relevantClaimIds).toEqual(["AC_01"]);
+      expect(state.warnings).toEqual([expect.objectContaining({ type: "evidence_attribution_failed",
+        details: expect.objectContaining({ excludedCount: sourceCount, totalCount: 3 }) })]);
+      const mapping = (capture.finish().extractions[0].steps as any).extraction_mapped.links;
+      expect(mapping.rejectedIndices).toEqual(sourceCount === 1 ? [0] : [0, 1]);
+      expect(mapping.items.at(-1)[0]).toBe(2);
+    });
+
     it("should extract evidence items from sources", async () => {
       const claim = createClaim({ id: "AC_01", statement: "Test claim" });
       const sources = [{ url: "https://example.com/1", title: "Source 1", text: "text" }];
@@ -805,6 +834,7 @@ describe("Research Extraction Stage", () => {
         evidenceItems: [
           {
             statement: "Alias category with missing source and contextual direction",
+            sourceUrl: sources[1].url,
             category: "expert_testimony",
             claimDirection: "contextual",
             evidenceScope: { methodology: "Analysis", temporal: "2025" },
@@ -822,6 +852,7 @@ describe("Research Extraction Stage", () => {
           },
           {
             statement: "Known alias to evidence with missing source",
+            sourceUrl: sources[0].url,
             category: "case_study",
             claimDirection: "supports",
             evidenceScope: { methodology: "Analysis", temporal: "2025" },
@@ -833,19 +864,19 @@ describe("Research Extraction Stage", () => {
 
       const result = await extractResearchEvidence(claim, sources as any, mockConfig, "2026-03-23");
 
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(2);
       expect(result[0].claimDirection).toBe("neutral");
-      expect(result[0].sourceUrl).toBe("https://example.com/1");
+      expect(result[0].sourceUrl).toBe("https://example.com/2");
       expect(result[1].sourceUrl).toBe("https://example.com/1");
-      expect(result[2].category).toBe("evidence");
+      expect(result[1].category).toBe("evidence");
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         "[Stage2] Extraction normalizations for AC_01",
         {
           claimIdMismatches: 1,
-          categoryNormalizations: 3,
-          categoryFallbackToEvidence: 1,
-          missingSourceUrlAssignments: 2,
-          unmatchedSourceUrlFallbacks: 1,
+          categoryNormalizations: 2,
+          categoryFallbackToEvidence: 0,
+          missingSourceUrlAssignments: 0,
+          rejectedSourceAttributions: 1,
           contextualMappedToNeutral: 1,
         },
       );

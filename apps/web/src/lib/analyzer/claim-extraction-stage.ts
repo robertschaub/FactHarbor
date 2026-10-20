@@ -2083,6 +2083,7 @@ export async function runPreliminarySearch(
               fetchedSources,
               pipelineConfig,
               currentDate,
+              local.warnings,
             );
             local.llmCalls++;
             local.evidence.push(...evidence);
@@ -2246,6 +2247,7 @@ async function extractPreliminaryEvidence(
   sources: Array<{ url: string; title: string; text: string }>,
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  warnings: CBResearchState["warnings"],
 ): Promise<PreliminaryEvidenceItem[]> {
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
@@ -2315,11 +2317,12 @@ async function extractPreliminaryEvidence(
       timestamp: new Date(),
     }, { model: model, result: result });
 
-    // Map to PreliminaryEvidenceItem, assigning source URLs.
-    // Use LLM-attributed sourceUrl when available; fall back to first source.
-    return validated.evidenceItems.map((ei) => {
-      const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
-      return {
+    // Bind only an exact returned URL or an omitted URL with one supplied source.
+    const evidence = validated.evidenceItems.flatMap((ei) => {
+      const matchedSource = sources.find((s) => s.url === ei.sourceUrl)
+        ?? (!ei.sourceUrl && sources.length === 1 ? sources[0] : undefined);
+      if (!matchedSource) return [];
+      return [{
         statement: ei.statement,
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
@@ -2334,8 +2337,17 @@ async function extractPreliminaryEvidence(
         claimDirection: ei.claimDirection,
         sourceType: ei.sourceType,
         relevantClaimIds: ei.relevantClaimIds,
-      };
+      }];
     });
+    const excludedCount = validated.evidenceItems.length - evidence.length;
+    if (excludedCount > 0) {
+      warnings.push({
+        type: "evidence_attribution_failed", severity: "warning",
+        message: `Excluded ${excludedCount} preliminary evidence item(s) without an unambiguous supplied source.`,
+        details: { stage: "preliminary_extraction", reason: "unbound_source", excludedCount, totalCount: validated.evidenceItems.length },
+      });
+    }
+    return evidence;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     recordLLMCall({

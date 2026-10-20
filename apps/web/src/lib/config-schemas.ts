@@ -767,7 +767,7 @@ export const PipelineConfigSchema = z.object({
   diversityAwareSufficiency: z.boolean().optional()
     .describe("When true, Stage 2 sufficiency also requires source-type/domain diversity (matching D5 thresholds from CalcConfig). Claims with enough items but insufficient diversity will trigger additional research iterations. Default: false (experimental)."),
   preliminaryEvidenceLlmRemapEnabled: z.boolean().optional()
-    .describe("When true, unresolved seeded preliminary evidence items (those with semantic slug claim IDs that failed numeric remap) are sent to a single batched Haiku call to determine correct AC_* claim mappings before Stage 2 seeding. Only fires when >1 final claims exist. Fail-open. Default: false."),
+    .describe("When true, all preliminary evidence for multi-claim inputs is mapped to final claims in one batched understand-tier call. Only verified mappings enter the evidence pool, without provisional direction; targeted research supplies directional evidence. If disabled or mapping fails, unverified multi-claim seeds are excluded with an attribution warning. Single-claim task binding is unchanged. Default: true."),
   primarySourceRefinementEnabled: z.boolean().optional()
     .describe("Enable a one-time bounded first-iteration refinement pass for claims that expect metric-bearing primary evidence but only secondary/contextual coverage is found. Default: true."),
   primarySourceRefinementMaxQueries: z.number().int().min(0).max(3).optional()

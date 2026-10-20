@@ -13,7 +13,7 @@
 
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import type { EvidenceItem, EvidenceScope } from "./types";
+import type { EvidenceScope } from "./types";
 import {
   getModelForTask,
   extractStructuredOutput,
@@ -138,6 +138,7 @@ export async function normalizeScopeEquivalence(
           temporal: us.scope.temporal ?? "",
           geographic: us.scope.geographic ?? "",
           boundaries: us.scope.boundaries ?? "",
+          analyticalDimension: us.scope.analyticalDimension ?? "",
           additionalDimensions: us.scope.additionalDimensions ?? {},
         })),
         null,
@@ -233,26 +234,4 @@ export async function normalizeScopeEquivalence(
   );
 
   return { normalizedScopes, mergeMap, mergedCount };
-}
-
-/**
- * Re-point evidence items to use canonical scope objects after normalization.
- *
- * For each evidence item whose scope was merged into a canonical representative,
- * replace the item's evidenceScope with the canonical scope object.
- * This ensures scopeFingerprint() matches the canonical entry downstream.
- */
-export function repointEvidenceScopes(
-  evidenceItems: EvidenceItem[],
-  result: ScopeNormalizationResult,
-): void {
-  if (result.mergedCount === 0) return;
-
-  for (const normalizedScope of result.normalizedScopes) {
-    for (const itemIdx of normalizedScope.originalIndices) {
-      if (itemIdx >= 0 && itemIdx < evidenceItems.length) {
-        evidenceItems[itemIdx].evidenceScope = normalizedScope.scope;
-      }
-    }
-  }
 }

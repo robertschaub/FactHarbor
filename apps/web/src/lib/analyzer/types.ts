@@ -809,6 +809,7 @@ export type AnalysisWarningType =
   | "search_provider_error"         // Search provider returned fatal error (429, quota exhaustion)
   | "source_reliability_error"      // Source-reliability evaluation infra/API errors during prefetch
   | "source_fetch_failure"          // Individual source fetch/extraction failures during research
+  | "evidence_attribution_failed"  // Extracted evidence excluded: source or final-claim binding unavailable
   | "source_fetch_degradation"      // High source-fetch failure ratio; evidence acquisition degraded
   | "budget_exceeded"               // Analysis terminated early due to budget
   | "query_budget_exhausted"        // Stage 2 query budget exhausted for all claims before sufficiency
@@ -1293,7 +1294,7 @@ export interface CBClaimUnderstanding {
     sourceTitle?: string;
     snippet: string;
     claimId: string;
-    /** Full claim mapping (preferred over single claimId when present) */
+    /** Provisional Stage 1 IDs; not verified mappings to the final claim set. */
     relevantClaimIds?: string[];
     probativeValue?: "high" | "medium" | "low";
     claimDirection?: "supports" | "contradicts" | "contextual";

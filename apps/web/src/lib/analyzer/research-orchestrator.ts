@@ -486,8 +486,8 @@ export async function researchEvidence(
   if (claims.length === 0) return;
 
   // ------------------------------------------------------------------
-  // Step 0: LLM remap for unresolved seeded preliminary evidence (Option C)
-  // Runs before seeding so that updated relevantClaimIds are picked up.
+  // Step 0: Resolve provisional evidence against the final claim set.
+  // Pass mappings explicitly; Stage 1 identifiers are not final-claim provenance.
   // ------------------------------------------------------------------
   const remapResult = await remapUnresolvedSeededEvidence(state, pipelineConfig);
   if (remapResult.remappedCount > 0) {
@@ -500,7 +500,7 @@ export async function researchEvidence(
   // ------------------------------------------------------------------
   // Step 1: Seed evidence pool from Stage 1 preliminary search
   // ------------------------------------------------------------------
-  seedEvidenceFromPreliminarySearch(state);
+  seedEvidenceFromPreliminarySearch(state, remapResult.mappings);
 
   // ------------------------------------------------------------------
   // Step 2: Claim-driven main iteration loop
@@ -895,62 +895,18 @@ const RemapOutputSchema = z.object({
 });
 
 /**
- * Check if a preliminary evidence item would be resolved by the existing
- * deterministic remap heuristics in seedEvidenceFromPreliminarySearch.
+ * Resolve all multi-claim preliminary items against the final claims using the
+ * existing batched LLM remapper. Preliminary IDs were emitted before this set
+ * existed, even when their spelling happens to match a final ID.
  *
- * Replicates the logic of steps 1-4 without mutating state.
- * Single-claim fallback (step 3) is handled by the caller — this function
- * is only called when knownClaimIds.size > 1.
- */
-export function wouldResolveExistingRemap(
-  pe: { claimId?: string; relevantClaimIds?: string[] },
-  knownClaimIds: Set<string>,
-): boolean {
-  // Step 1: relevantClaimIds contain a known AC_* ID
-  if (pe.relevantClaimIds && pe.relevantClaimIds.length > 0) {
-    if (pe.relevantClaimIds.some((id) => knownClaimIds.has(id))) return true;
-  }
-
-  // Step 2: legacy single claimId matches
-  if (pe.claimId && knownClaimIds.has(pe.claimId)) return true;
-
-  // Step 3: single-claim fallback — not applicable (>1 claims)
-
-  // Step 4: numeric heuristic  claim_01 → AC_01
-  const rawIds = pe.relevantClaimIds ?? (pe.claimId ? [pe.claimId] : []);
-  for (const rawId of rawIds) {
-    if (rawId.startsWith("claim_")) {
-      const num = rawId.replace("claim_", "");
-      const mappedId = `AC_${num.padStart(2, "0")}`;
-      if (knownClaimIds.has(mappedId)) return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * LLM remap for unresolved seeded preliminary evidence (Option C).
- *
- * After Pass 2 has produced final AC_* claims, some preliminary evidence
- * items have semantic slug IDs (e.g., "claim_bolsonaro_proceedings") that
- * don't match any final claim. This function sends those unresolved items
- * to a single batched Haiku call to determine their correct claim mappings.
- *
- * Only fires when:
- * - preliminaryEvidenceLlmRemapEnabled is true in pipeline config
- * - There are >1 final claims (single-claim inputs use the existing fallback)
- * - There are unresolved items after the existing heuristic check
- *
- * Fail-open: if the LLM call fails or returns invalid output, items remain
- * unmapped (same as current baseline behavior).
- *
- * Mutates: state.understanding.preliminaryEvidence[].relevantClaimIds
+ * No provisional records are mutated. Missing or failed mappings cannot seed
+ * the verdict pool; explicit empty mappings are ordinary relevance exclusions.
+ * Single-claim inputs retain their existing task binding without this call.
  */
 export async function remapUnresolvedSeededEvidence(
   state: CBResearchState,
   pipelineConfig: PipelineConfig,
-): Promise<{ remappedCount: number; totalUnresolved: number }> {
+): Promise<{ remappedCount: number; totalUnresolved: number; mappings?: ReadonlyMap<number, readonly string[]> }> {
   const preliminary = state.understanding?.preliminaryEvidence ?? [];
   const claims = state.understanding?.atomicClaims ?? [];
   const knownClaimIds = new Set(claims.map((c) => c.id));
@@ -963,17 +919,8 @@ export async function remapUnresolvedSeededEvidence(
     return { remappedCount: 0, totalUnresolved: 0 };
   }
 
-  // Identify items that would fail all existing remap heuristics
-  const unresolvedIndices: number[] = [];
-  for (let i = 0; i < preliminary.length; i++) {
-    if (!wouldResolveExistingRemap(preliminary[i], knownClaimIds)) {
-      unresolvedIndices.push(i);
-    }
-  }
-
-  if (unresolvedIndices.length === 0) {
-    return { remappedCount: 0, totalUnresolved: 0 };
-  }
+  const unresolvedIndices = preliminary.map((_, index) => index);
+  const mappings = new Map<number, readonly string[]>();
 
   debugLog(
     `[Stage2] LLM remap: ${unresolvedIndices.length}/${preliminary.length} ` +
@@ -995,7 +942,7 @@ export async function remapUnresolvedSeededEvidence(
     });
     if (!rendered) {
       console.warn("[Stage2] Failed to load REMAP_SEEDED_EVIDENCE prompt — skipping remap.");
-      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length, mappings };
     }
 
     const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -1026,25 +973,33 @@ export async function remapUnresolvedSeededEvidence(
     const raw = extractStructuredOutput(result);
     if (!raw) {
       console.warn("[Stage2] LLM remap returned empty or unparseable result — skipping.");
-      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length, mappings };
     }
     const parseResult = RemapOutputSchema.safeParse(raw);
     if (!parseResult.success) {
       console.warn("[Stage2] LLM remap output failed schema validation — skipping.", parseResult.error.message);
-      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length, mappings };
     }
     const parsed = parseResult.data;
 
-    // Apply mappings — filter to known claim IDs only
+    // Reject malformed index contracts rather than let duplicate/invalid rows
+    // overwrite an earlier decision. An omitted row stays unverified.
+    const seenIndices = new Set<number>();
+    if (parsed.mappings.some(mapping => {
+      if (!Number.isInteger(mapping.index) || mapping.index < 0 ||
+          mapping.index >= preliminary.length || seenIndices.has(mapping.index) ||
+          mapping.relevantClaimIds.some(id => !knownClaimIds.has(id))) return true;
+      seenIndices.add(mapping.index);
+      return false;
+    })) {
+      console.warn("[Stage2] LLM remap returned invalid indices or claim IDs — excluding provisional mappings.");
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length, mappings };
+    }
     let remappedCount = 0;
     for (const mapping of parsed.mappings) {
-      if (mapping.index < 0 || mapping.index >= unresolvedIndices.length) continue;
-      const originalIdx = unresolvedIndices[mapping.index];
-      const validIds = mapping.relevantClaimIds.filter((id) => knownClaimIds.has(id));
-      if (validIds.length > 0) {
-        preliminary[originalIdx].relevantClaimIds = validIds;
-        remappedCount++;
-      }
+      const validIds = [...new Set(mapping.relevantClaimIds)];
+      mappings.set(mapping.index, validIds);
+      if (validIds.length > 0) remappedCount++;
     }
 
     if (remappedCount > 0) {
@@ -1057,10 +1012,10 @@ export async function remapUnresolvedSeededEvidence(
       );
     }
 
-    return { remappedCount, totalUnresolved: unresolvedIndices.length };
+    return { remappedCount, totalUnresolved: unresolvedIndices.length, mappings };
   } catch (err) {
-    console.warn("[Stage2] LLM remap failed (fail-open):", err);
-    return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+    console.warn("[Stage2] LLM remap failed; provisional evidence will not be seeded:", err);
+    return { remappedCount: 0, totalUnresolved: unresolvedIndices.length, mappings };
   }
 }
 
@@ -1068,7 +1023,10 @@ export async function remapUnresolvedSeededEvidence(
  * Seed the evidence pool from Stage 1 preliminary evidence.
  * Converts lightweight PreliminaryEvidenceItem to full EvidenceItem format.
  */
-export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void {
+export function seedEvidenceFromPreliminarySearch(
+  state: CBResearchState,
+  finalClaimMappings?: ReadonlyMap<number, readonly string[]>,
+): void {
   const preliminary = state.understanding?.preliminaryEvidence ?? [];
   const knownClaimIds = new Set(
     (state.understanding?.atomicClaims ?? []).map((c) => c.id),
@@ -1087,43 +1045,18 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   if (typeof state.nextEvidenceId !== "number" || !Number.isFinite(state.nextEvidenceId)) {
     state.nextEvidenceId = state.evidenceItems.length + 1;
   }
-  let remappedCount = 0;
+  let unverifiedCount = 0;
+  let irrelevantCount = 0;
   const seededItems: EvidenceItem[] = [];
 
-  for (const pe of preliminary) {
-    // Normalize claim IDs: prefer full relevantClaimIds array, fall back to legacy single claimId.
-    // LLM preliminary evidence often uses wrong formats (e.g. "claim_01" instead of "AC_01").
-    let claimIds: string[] = [];
-
-    // 1. Prefer relevantClaimIds[] when present (multi-claim attribution)
-    if (pe.relevantClaimIds && pe.relevantClaimIds.length > 0) {
-      claimIds = pe.relevantClaimIds.filter((id) => knownClaimIds.has(id));
-    }
-
-    // 2. Fall back to legacy single claimId
-    if (claimIds.length === 0 && pe.claimId && knownClaimIds.has(pe.claimId)) {
-      claimIds = [pe.claimId];
-    }
-
-    // 3. Single-claim input fallback: all evidence belongs to the sole claim
-    if (claimIds.length === 0 && fallbackClaimId) {
-      claimIds = [fallbackClaimId];
-      if (pe.claimId || (pe.relevantClaimIds && pe.relevantClaimIds.length > 0)) remappedCount++;
-    }
-
-    // 4. Heuristic remap: "claim_01" → "AC_01", etc.
+  for (const [index, pe] of preliminary.entries()) {
+    const mappedIds = finalClaimMappings?.get(index);
+    const claimIds = fallbackClaimId ? [fallbackClaimId]
+      : [...new Set(mappedIds ?? [])].filter(id => knownClaimIds.has(id));
     if (claimIds.length === 0) {
-      const rawIds = pe.relevantClaimIds ?? (pe.claimId ? [pe.claimId] : []);
-      for (const rawId of rawIds) {
-        if (rawId.startsWith("claim_")) {
-          const num = rawId.replace("claim_", "");
-          const mappedId = `AC_${num.padStart(2, "0")}`;
-          if (knownClaimIds.has(mappedId)) {
-            claimIds.push(mappedId);
-            remappedCount++;
-          }
-        }
-      }
+      if (mappedIds?.length === 0) irrelevantCount++;
+      else unverifiedCount++;
+      continue;
     }
 
     const seededItem: EvidenceItem = {
@@ -1141,7 +1074,11 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       // Fix 1.1: Enrich seeded items with metadata from Pass 1 extraction (Option 1A)
       // Without these fields, seeded items (28-70% of all evidence) are invisible to
       // clustering, balance checks, and source-type routing.
-      claimDirection: pe.claimDirection === "supports" ? "supports" : pe.claimDirection === "contradicts" ? "contradicts" : "neutral",
+      // The remapper assesses relevance only. Preserve provisional direction in
+      // understanding, not as a direction against a different final claim set.
+      claimDirection: fallbackClaimId
+        ? (pe.claimDirection === "supports" ? "supports" : pe.claimDirection === "contradicts" ? "contradicts" : "neutral")
+        : undefined,
       sourceType: mapSourceType(pe.sourceType),
       evidenceScope: pe.evidenceScope ? {
         name: pe.evidenceScope.methodology ?? "Preliminary search result",
@@ -1162,16 +1099,23 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
     seededItems.push(seededItem);
   }
 
-  if (seededItems.length > 0) {
-    observeEvidenceCapture(state.evidenceCapture, c => c.record("seeded", () => ({ links: {
-      ids: seededItems.map(item => item.id),
-    }, bodies: { items: seededItems.map(item => ({ id: item.id, isSeeded: item.isSeeded, scope: item.evidenceScope })) } })));
-    recordSeededEvidenceTelemetry(state, seededItems);
+  observeEvidenceCapture(state.evidenceCapture, c => c.record("seeded", () => ({ links: {
+    ids: seededItems.map(item => item.id), unverifiedCount, irrelevantCount,
+    finalMappingAvailable: finalClaimMappings !== undefined,
+  }, bodies: { items: seededItems.map(item => ({ id: item.id, isSeeded: item.isSeeded, scope: item.evidenceScope })) } })));
+  recordSeededEvidenceTelemetry(state, seededItems);
+  if (unverifiedCount > 0) {
+    state.warnings?.push({
+      type: "evidence_attribution_failed", severity: "warning",
+      message: "Excluded " + unverifiedCount + " preliminary evidence item(s) without verified final-claim attribution.",
+      details: { stage: "seeded_remap", reason: finalClaimMappings === undefined ? "final_mapping_unavailable" : "incomplete_claim_mapping",
+        excludedCount: unverifiedCount, totalCount: preliminary.length },
+    });
   }
-
-  if (remappedCount > 0) {
-    const target = fallbackClaimId ?? "matched AC IDs";
-    debugLog(`[Stage2] Remapped ${remappedCount}/${preliminary.length} preliminary evidence claim IDs to ${target}`);
+  if (unverifiedCount > 0 || irrelevantCount > 0) {
+    debugLog("[Stage2] Preliminary evidence excluded from seeding", {
+      unverifiedCount, irrelevantCount, finalMappingAvailable: finalClaimMappings !== undefined,
+    });
   }
 }
 
