@@ -11,6 +11,10 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+vi.mock("@/lib/config-storage", async () => {
+  const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
+  return { getConfig: vi.fn(async () => ({ config: DEFAULT_SR_CONFIG })) };
+});
 import {
   prefetchSourceReliability,
   getTrackRecordScore,

@@ -37,7 +37,9 @@ import {
   recordLLMCall,
   recordSearchQuery,
 } from "@/lib/analyzer/metrics-integration";
-import { clearPrefetchedScores, prefetchSourceReliability } from "@/lib/analyzer/source-reliability";
+import { clearPrefetchedScores, prefetchSourceReliability, setSourceReliabilityConfig, SR_CONFIG } from "@/lib/analyzer/source-reliability";
+import { DEFAULT_SR_CONFIG, SourceReliabilityConfigSchema } from "@/lib/config-schemas";
+import { getRemainingBudgetMs } from "@/lib/source-reliability/sr-eval-enrichment";
 import { generateTextWithTimeout } from "@/lib/source-reliability/sr-eval-types";
 import { POST } from "@/app/api/internal/evaluate-source/route";
 
@@ -378,6 +380,7 @@ describe("evaluate-source route accounting", () => {
 
 describe("prefetchSourceReliability accounting", () => {
   beforeEach(() => {
+    mockGetConfig.mockReset().mockResolvedValue({ config: DEFAULT_SR_CONFIG });
     clearPrefetchedScores();
     mockBatchGetCachedData.mockReset().mockResolvedValue(new Map());
     mockSetCachedScore.mockReset().mockResolvedValue(undefined);
@@ -413,7 +416,7 @@ describe("prefetchSourceReliability accounting", () => {
     } }), { headers: { "content-type": "application/json" } })));
     try {
       const pending = captureMetrics(() => prefetchSourceReliability(["https://body-stall.test/story"]));
-      await vi.advanceTimersByTimeAsync(90_000);
+      await vi.advanceTimersByTimeAsync(95_000);
       const job = await pending;
       expect(job.captured.llmCalls).toHaveLength(1);
       expect(job.captured.llmCalls[0]).toMatchObject({ usageAvailable: false, success: false });
@@ -510,5 +513,413 @@ describe("prefetchSourceReliability accounting", () => {
 
     expect(second.captured.llmCalls.map((call) => call.modelName)).toEqual(["model-outlet-second.com"]);
     expect(firstDone.captured.llmCalls.map((call) => call.modelName)).toEqual(["model-outlet-first.com"]);
+  });
+});
+
+describe("SR caller/route deadline and accounting contract", () => {
+  const workMs = 10_000;
+  const graceMs = 5000;
+  const evaluation = { score: 0.7, confidence: 0.9, modelPrimary: "m", modelSecondary: null, consensusAchieved: true };
+  const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+  let serial = 0;
+  let errorLog: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-21T12:00:00Z"));
+    clearPrefetchedScores();
+    setSourceReliabilityConfig({ ...DEFAULT_SR_CONFIG, evalTimeoutMs: workMs, evalAccountingGraceMs: graceMs, filterEnabled: false });
+    mockBatchGetCachedData.mockReset().mockResolvedValue(new Map());
+    mockSetCachedScore.mockReset().mockResolvedValue(undefined);
+    mockEvaluate.mockReset();
+    mockGetConfig.mockReset().mockResolvedValue({ config: { ...DEFAULT_SR_CONFIG, rateLimitPerIp: 100, domainCooldownSec: 0 } });
+    errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal("fetch", () => { throw new Error("Network forbidden"); });
+  });
+  afterEach(() => {
+    setSourceReliabilityConfig();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  // Compose the real caller and POST, but enforce fetch disconnection: once its
+  // signal aborts, a later route Response cannot reach the caller or its collector.
+  function bridge(transform?: (req: Request) => Promise<Response>) {
+    const send = vi.fn((_url: unknown, init: RequestInit) => {
+      expect(String(_url)).toBe("http://localhost:3000/api/internal/evaluate-source");
+      const signal = init.signal!;
+      signal.throwIfAborted();
+      const req = new Request(String(_url), init);
+      req.headers.set("x-forwarded-for", `offline-${++serial}`);
+      return new Promise<Response>((resolve, reject) => {
+        const aborted = () => reject(signal.reason);
+        signal.addEventListener("abort", aborted, { once: true });
+        void (transform ? transform(req) : POST(req)).then(resolve, reject).finally(() => signal.removeEventListener("abort", aborted));
+      });
+    });
+    vi.stubGlobal("fetch", send);
+    return send;
+  }
+  function run(domain = `receipt-${++serial}.test`, fallback = false) {
+    return captureMetrics(() => prefetchSourceReliability([`https://${domain}/story`], { fallback }));
+  }
+  function holdUntilAbort(config: any) {
+    return new Promise<void>(resolve => config.abortSignal.addEventListener("abort", () => resolve(), { once: true }));
+  }
+  function assertTimeout(job: Awaited<ReturnType<typeof run>>) {
+    expect(job.ok && job.value.errorByType.timeout).toBe(1);
+    expect(job.ok && job.value.errorCount).toBe(1);
+    expect(mockSetCachedScore).not.toHaveBeenCalled();
+  }
+
+  it.each(["cancelled", "ignores cancellation", "unknown LLM usage"])("receives accounting during grace after %s, without accepting the score", async (mode) => {
+    let config: any;
+    mockEvaluate.mockImplementation(async (_domain, _multi, _confidence, cfg) => {
+      config = cfg;
+      recordLLMCall(srCall({ usageAvailable: mode !== "unknown LLM usage" }));
+      recordSearchQuery(srSearch());
+      await holdUntilAbort(cfg);
+      await delay(100);
+      if (mode !== "ignores cancellation") cfg.abortSignal.throwIfAborted();
+      return { success: true, data: evaluation };
+    });
+    const send = bridge();
+    const pending = run("receipt.test");
+    await vi.advanceTimersByTimeAsync(workMs - 1);
+    expect(config.abortSignal.aborted).toBe(false);
+    expect(getRemainingBudgetMs(config.requestStartedAtMs, config.requestBudgetMs)).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(config.abortSignal.aborted).toBe(true);
+    expect(getRemainingBudgetMs(config.requestStartedAtMs, config.requestBudgetMs)).toBe(0);
+    await vi.advanceTimersByTimeAsync(100);
+    const job = await pending;
+    assertTimeout(job);
+    expect(job.captured.llmCalls).toHaveLength(1);
+    expect(job.captured.llmCalls[0].provider).toBe("anthropic");
+    expect(job.captured.llmCalls[0].usageAvailable).toBe(mode !== "unknown LLM usage");
+    expect(job.captured.searchQueries).toHaveLength(1);
+    expect(errorLog).toHaveBeenCalledWith("[SR] Evaluation timeout for receipt.test after 10000ms");
+    expect(errorLog.mock.calls.filter(args => args[0] === "[SR] Evaluation timeout for receipt.test after 10000ms")).toHaveLength(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(send.mock.calls[0][1].body)).budgetMs).toBe(workMs);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each(["json", "config"])("charges delayed %s setup against the shared deadline", async (phase) => {
+    mockEvaluate.mockImplementation(async (_domain, _multi, _confidence, config) => {
+      expect(config.requestBudgetMs).toBe(7000);
+      expect(getRemainingBudgetMs(config.requestStartedAtMs, config.requestBudgetMs)).toBe(7000);
+      await holdUntilAbort(config);
+      config.abortSignal.throwIfAborted();
+    });
+    if (phase === "config") mockGetConfig.mockResolvedValueOnce({ config: DEFAULT_SR_CONFIG })
+      .mockImplementationOnce(async () => { await delay(3000); return { config: DEFAULT_SR_CONFIG }; });
+    bridge(async req => {
+      if (phase === "json") {
+        const json = req.json.bind(req);
+        req.json = async () => { await delay(3000); return json(); };
+      }
+      return POST(req);
+    });
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs);
+    const job = await pending;
+    assertTimeout(job);
+    expect(job.captured.llmCalls).toEqual([]);
+  });
+
+  it("starts no work after setup exhausts the caller deadline", async () => {
+    mockGetConfig.mockResolvedValueOnce({ config: DEFAULT_SR_CONFIG })
+      .mockImplementationOnce(async () => { await delay(workMs + 1); return { config: DEFAULT_SR_CONFIG }; });
+    bridge();
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs + 1);
+    const job = await pending;
+    assertTimeout(job);
+    expect(mockEvaluate).not.toHaveBeenCalled();
+    expect(job.captured.llmCalls).toEqual([]);
+  });
+
+  it.each([0, 10_000])("bounds receipt waiting with grace %i and never merges a disconnected late response", async grace => {
+    // Deliberately differs from SR_CONFIG: the timer must use the UCM value.
+    mockGetConfig.mockResolvedValueOnce({ config: { ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: grace } });
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => {
+      await holdUntilAbort(config);
+      await delay(grace + 100);
+      recordLLMCall(srCall());
+      config.abortSignal.throwIfAborted();
+    });
+    bridge();
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs + grace);
+    const job = await pending;
+    assertTimeout(job);
+    expect(job.captured.llmCalls).toHaveLength(1);
+    expect(job.captured.llmCalls[0].provider).toBe("unknown");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(job.captured.llmCalls).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each(["absent", "malformed", "partial merge", "disconnect", "body stall"])("keeps %s accounting unknown exactly once", async mode => {
+    bridge(async req => {
+      if (mode === "disconnect") throw new TypeError("offline connection lost");
+      if (mode === "body stall") return new Response(new ReadableStream({ start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"accounting":'));
+        req.signal.addEventListener("abort", () => controller.error(req.signal.reason), { once: true });
+      } }));
+      const accounting = mode === "absent" ? undefined : mode === "malformed" ? { llmCalls: "invalid", searchQueries: [] }
+        : { llmCalls: [srCall(), null], searchQueries: [] };
+      return Response.json({ ...evaluation, accounting });
+    });
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs + graceMs);
+    const job = await pending;
+    expect(job.captured.llmCalls.filter(call => call.provider === "unknown")).toHaveLength(1);
+    expect(job.captured.llmCalls.filter(call => call.provider === "anthropic")).toHaveLength(mode === "partial merge" ? 1 : 0);
+    expect(mockSetCachedScore).not.toHaveBeenCalled();
+  });
+
+  it.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1, "later", null])("rejects invalid deadline %s before work", async deadlineAtMs => {
+    const response = await POST(new Request("http://localhost/api/internal/evaluate-source", {
+      method: "POST", body: JSON.stringify({ domain: "invalid.test", budgetMs: workMs, deadlineAtMs }),
+    }));
+    expect(response.status).toBe(400);
+    expect(mockEvaluate).not.toHaveBeenCalled();
+    expect(mockGetConfig).not.toHaveBeenCalled();
+  });
+  it("requires a budget with the deadline and rejects non-finite JSON", async () => {
+    for (const body of [JSON.stringify({ domain: "pair.test", deadlineAtMs: Date.now() }), '{"domain":"finite.test","budgetMs":10000,"deadlineAtMs":1e999}']) {
+      expect((await POST(new Request("http://localhost/api/internal/evaluate-source", { method: "POST", body }))).status).toBe(400);
+    }
+    expect(mockEvaluate).not.toHaveBeenCalled();
+  });
+
+  it.each(["future", "legacy", "past"])("clamps %s deadlines without changing legacy post-setup budgeting", async mode => {
+    const now = Date.now();
+    mockGetConfig.mockImplementationOnce(async () => { await delay(3000); return { config: DEFAULT_SR_CONFIG }; });
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => {
+      expect(config.requestStartedAtMs).toBe(now + 3000);
+      expect(config.requestBudgetMs).toBe(workMs);
+      return { success: true, data: evaluation };
+    });
+    const body = { domain: `deadline-${mode}.test`, budgetMs: workMs, ...(mode === "legacy" ? {} : { deadlineAtMs: now + (mode === "past" ? -1 : 1_000_000) }) };
+    const pending = POST(new Request("http://localhost/api/internal/evaluate-source", { method: "POST", body: JSON.stringify(body) }));
+    await vi.advanceTimersByTimeAsync(3000);
+    const response = await pending;
+    expect(response.status).toBe(mode === "past" ? 500 : 200);
+    if (mode === "past") {
+      expect(mockEvaluate).not.toHaveBeenCalled();
+      expect(await response.json()).toMatchObject({ code: "evaluation_deadline_exceeded", accounting: { llmCalls: [], searchQueries: [] } });
+    }
+  });
+
+  it("does not label a generic disconnect as the route's deadline", async () => {
+    const res = await POST(evaluateRequest("generic-disconnect.test", AbortSignal.abort(), workMs));
+    expect((await res.json()).code).toBeUndefined();
+  });
+
+  it("rejects a late parsed score after a forward clock step and keeps its records", async () => {
+    bridge(async () => {
+      vi.setSystemTime(Date.now() + workMs);
+      return Response.json({ ...evaluation, accounting: { llmCalls: [srCall()], searchQueries: [] } });
+    });
+    const job = await run();
+    assertTimeout(job);
+    expect(job.captured.llmCalls).toHaveLength(1);
+    expect(job.captured.llmCalls[0].provider).toBe("anthropic");
+  });
+
+  it("uses the typed route deadline after a backward clock step", async () => {
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => {
+      recordLLMCall(srCall());
+      vi.setSystemTime(Date.now() - 1000);
+      await holdUntilAbort(config);
+      config.abortSignal.throwIfAborted();
+    });
+    bridge();
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs);
+    const job = await pending;
+    assertTimeout(job);
+    expect(job.captured.llmCalls).toHaveLength(1);
+    expect(job.captured.llmCalls[0].provider).toBe("anthropic");
+  });
+
+  it("demonstrates the unsupported old-route setup skew loses its receipt", async () => {
+    bridge(async req => {
+      const body = await req.json();
+      delete body.deadlineAtMs;
+      await delay(graceMs + 1);
+      return POST(new Request(req.url, { method: "POST", headers: req.headers, body: JSON.stringify(body), signal: req.signal }));
+    });
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => { await holdUntilAbort(config); recordLLMCall(srCall()); config.abortSignal.throwIfAborted(); });
+    const pending = run();
+    await vi.advanceTimersByTimeAsync(workMs + graceMs);
+    const job = await pending;
+    assertTimeout(job);
+    expect(job.captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    await vi.advanceTimersByTimeAsync(1);
+  });
+
+  it("keeps concurrent jobs and domains separate through the real route capture", async () => {
+    mockEvaluate.mockImplementation(async (domain, _m, _c, config) => {
+      recordLLMCall(srCall({ modelName: domain }));
+      await holdUntilAbort(config);
+      await delay(domain.startsWith("first") ? 100 : 10);
+      config.abortSignal.throwIfAborted();
+    });
+    bridge();
+    const first = run("first.test");
+    const second = captureMetrics(() => prefetchSourceReliability(["https://second.test", "https://third.test"], { fallback: false }));
+    await vi.advanceTimersByTimeAsync(workMs + 100);
+    expect((await first).captured.llmCalls.map(call => call.modelName)).toEqual(["first.test"]);
+    expect((await second).captured.llmCalls.map(call => call.modelName).sort()).toEqual(["second.test", "third.test"]);
+  });
+
+  it("retains the existing different-root fallback after a subdomain timeout", async () => {
+    mockEvaluate.mockImplementation(async (domain, _m, _c, config) => {
+      if (domain === "sub.receipt.test") { await holdUntilAbort(config); config.abortSignal.throwIfAborted(); }
+      return { success: true, data: evaluation };
+    });
+    bridge();
+    const pending = run("sub.receipt.test", true);
+    await vi.advanceTimersByTimeAsync(workMs);
+    const job = await pending;
+    expect(mockEvaluate.mock.calls.map(call => call[0])).toEqual(["sub.receipt.test", "receipt.test"]);
+    expect(job.ok && job.value.errorByType.timeout).toBe(1);
+    expect(mockSetCachedScore).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not transfer shared translation billing when its owner outlasts grace", async () => {
+    delete (globalThis as typeof globalThis & { __fhSrTranslationCache?: unknown }).__fhSrTranslationCache;
+    const { getTranslatedSearchTerms } = await import("@/lib/source-reliability/sr-eval-evidence-pack");
+    let translationSignal: AbortSignal;
+    mockGenerateText.mockReset().mockImplementation(async ({ prompt, abortSignal }) => {
+      translationSignal = abortSignal;
+      await delay(workMs + graceMs + 100);
+      return {
+        text: JSON.stringify(Object.fromEntries([...prompt.matchAll(/^- "([^"]+)"$/gm)].map((match: RegExpMatchArray) => [match[1], `translated: ${match[1]}`]))),
+        finishReason: "stop", usage: { inputTokens: 120, outputTokens: 30 },
+        response: { modelId: "claude-haiku-4-5-20251001" },
+      };
+    });
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => {
+      await getTranslatedSearchTerms("German", config.abortSignal);
+      return { success: true, data: evaluation };
+    });
+    bridge();
+    const owner = run();
+    await vi.advanceTimersByTimeAsync(0);
+    const survivor = captureMetrics(() => getTranslatedSearchTerms("German"));
+    await vi.advanceTimersByTimeAsync(workMs + graceMs);
+    const job = await owner;
+    assertTimeout(job);
+    expect(job.captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    expect(translationSignal!.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(100);
+    const survived = await survivor;
+    expect(survived.ok).toBe(true);
+    expect(survived.captured.llmCalls).toEqual([]);
+    expect(job.captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    delete (globalThis as typeof globalThis & { __fhSrTranslationCache?: unknown }).__fhSrTranslationCache;
+  });
+
+  it.each(["empty", "disabled", "cache hit"])("does not load grace or dispatch for %s prefetch", async mode => {
+    if (mode === "disabled") setSourceReliabilityConfig({ ...DEFAULT_SR_CONFIG, enabled: false });
+    if (mode === "cache hit") mockBatchGetCachedData.mockResolvedValue(new Map([["cached.test", { score: 0.7, confidence: 0.9, consensusAchieved: true }]]));
+    const send = bridge();
+    await prefetchSourceReliability(mode === "empty" ? [] : ["https://cached.test"]);
+    expect(mockGetConfig).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("loads grace before dispatch, uses its existing default when absent, and reads once for multiple domains", async () => {
+    const { evalAccountingGraceMs: _grace, ...legacyConfig } = DEFAULT_SR_CONFIG;
+    mockGetConfig.mockImplementationOnce(async () => { await delay(100); return { config: legacyConfig }; });
+    const send = bridge(async req => {
+      expect(mockGetConfig).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(String(await req.text())).budgetMs).toBe(workMs);
+      return new Promise((_resolve, reject) => req.signal.addEventListener("abort", () => reject(req.signal.reason), { once: true }));
+    });
+    const pending = captureMetrics(() => prefetchSourceReliability(["https://one.test", "https://two.test"], { fallback: false }));
+    await vi.advanceTimersByTimeAsync(99);
+    expect(send).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(send).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(workMs + graceMs);
+    expect((await pending).captured.llmCalls.map(call => call.provider)).toEqual(["unknown", "unknown"]);
+    expect(mockGetConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a failed configuration load before dispatch without inventing unknown spend", async () => {
+    const failure = new Error("offline UCM read/parse failure");
+    mockGetConfig.mockRejectedValueOnce(failure);
+    const send = bridge();
+    const job = await run();
+    expect(job.ok).toBe(false);
+    expect(!job.ok && job.error).toBe(failure);
+    expect(job.captured.llmCalls).toEqual([]);
+    expect(send).not.toHaveBeenCalled();
+    expect(mockEvaluate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the original grace snapshot for root fallback after UCM changes", async () => {
+    mockGetConfig.mockResolvedValueOnce({ config: { ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: 250 } });
+    mockEvaluate.mockImplementation(async (domain, _m, _c, config) => {
+      await holdUntilAbort(config);
+      if (domain === "snapshot.test") await delay(1000);
+      config.abortSignal.throwIfAborted();
+    });
+    const send = bridge();
+    const pending = run("sub.snapshot.test", true);
+    await vi.advanceTimersByTimeAsync(0);
+    mockGetConfig.mockResolvedValue({ config: { ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: 0 } });
+    await vi.advanceTimersByTimeAsync(2 * workMs);
+    expect(send.mock.calls[1][1].signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(250);
+    const job = await pending;
+    expect(job.ok && job.value.errorByType.timeout).toBe(2);
+    expect(job.captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    expect(mockGetConfig).toHaveBeenCalledTimes(3); // One snapshot, two route reads.
+    expect(send.mock.calls.map(call => JSON.parse(String(call[1].body)).budgetMs)).toEqual([workMs, workMs]);
+    await vi.advanceTimersByTimeAsync(750);
+  });
+
+  it("keeps different UCM grace snapshots isolated between concurrent jobs", async () => {
+    mockEvaluate.mockImplementation(async (_d, _m, _c, config) => {
+      await holdUntilAbort(config); await delay(1000); config.abortSignal.throwIfAborted();
+    });
+    const send = bridge();
+    mockGetConfig.mockResolvedValueOnce({ config: { ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: 100 } });
+    const first = run("first-grace.test");
+    await vi.advanceTimersByTimeAsync(0);
+    mockGetConfig.mockResolvedValueOnce({ config: { ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: 500 } });
+    const second = run("second-grace.test");
+    await vi.advanceTimersByTimeAsync(workMs + 100);
+    expect(send.mock.calls.map(call => call[1].signal?.aborted)).toEqual([true, false]);
+    expect((await first).captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    await vi.advanceTimersByTimeAsync(400);
+    expect(send.mock.calls.map(call => call[1].signal?.aborted)).toEqual([true, true]);
+    expect((await second).captured.llmCalls.map(call => call.provider)).toEqual(["unknown"]);
+    expect(SR_CONFIG.evalAccountingGraceMs).toBe(graceMs);
+    expect(mockGetConfig).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(500);
+  });
+
+  it("bounds the UCM schema and the non-production setter's fallback", () => {
+    for (const value of [0, 10_000]) {
+      const config = SourceReliabilityConfigSchema.parse({ ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: value });
+      setSourceReliabilityConfig(config);
+      expect(SR_CONFIG.evalAccountingGraceMs).toBe(value);
+    }
+    for (const value of [-1, 10_001, 1.5, Infinity]) {
+      expect(SourceReliabilityConfigSchema.safeParse({ ...DEFAULT_SR_CONFIG, evalAccountingGraceMs: value }).success).toBe(false);
+    }
+    setSourceReliabilityConfig();
+    expect(SR_CONFIG.evalAccountingGraceMs).toBe(5000);
   });
 });

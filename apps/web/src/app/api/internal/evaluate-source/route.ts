@@ -134,6 +134,10 @@ const RequestSchema = z.object({
   confidenceThreshold: z.number().min(0).max(1).default(DEFAULT_CONFIDENCE_THRESHOLD),
   consensusThreshold: z.number().min(0).max(1).default(DEFAULT_CONSENSUS_THRESHOLD),
   budgetMs: z.number().int().min(10000).max(300000).optional(),
+  deadlineAtMs: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+}).refine((body) => body.deadlineAtMs === undefined || body.budgetMs !== undefined, {
+  message: "deadlineAtMs requires budgetMs",
+  path: ["deadlineAtMs"],
 });
 
 // ============================================================================
@@ -229,6 +233,12 @@ export async function POST(req: Request) {
   const requestBudgetMs = raw.budgetMs !== undefined
     ? body.budgetMs ?? (srConfig.evalTimeoutMs ?? DEFAULT_SR_CONFIG.evalTimeoutMs ?? 90000)
     : (srConfig.evalTimeoutMs ?? DEFAULT_SR_CONFIG.evalTimeoutMs ?? 90000);
+  // Analyzer callers provide a same-host absolute deadline that includes setup.
+  // Legacy/Admin callers retain their post-setup budget. Never enlarge either cap.
+  const effectiveDeadlineAtMs = Math.min(
+    body.deadlineAtMs ?? Number.POSITIVE_INFINITY,
+    requestStartedAtMs + requestBudgetMs,
+  );
 
   // Build request-scoped config (replaces 8 mutable module-level lets)
   const config: SrEvalConfig = {
@@ -242,7 +252,7 @@ export async function POST(req: Request) {
     domainCooldownSec,
     evidenceQualityAssessment: evidenceQualityAssessmentConfig,
     requestStartedAtMs,
-    requestBudgetMs,
+    requestBudgetMs: Math.max(0, effectiveDeadlineAtMs - requestStartedAtMs),
   };
 
   // Rate limiting
@@ -257,7 +267,7 @@ export async function POST(req: Request) {
 
   const deadline = new AbortController();
   const deadlineReason = new DOMException("Source reliability evaluation deadline exceeded", "TimeoutError");
-  const remainingMs = requestBudgetMs - (Date.now() - requestStartedAtMs);
+  const remainingMs = effectiveDeadlineAtMs - Date.now();
   let timeout: ReturnType<typeof setTimeout> | undefined;
   if (remainingMs > 0) timeout = setTimeout(() => deadline.abort(deadlineReason), remainingMs);
   else deadline.abort(deadlineReason);
@@ -279,7 +289,11 @@ export async function POST(req: Request) {
     if (!evaluation.ok) {
       console.error(`[SR-Eval] Evaluation error for ${body.domain}:`, evaluation.error);
       return NextResponse.json(
-        { error: "Evaluation error", details: String(evaluation.error), accounting },
+        {
+          error: "Evaluation error", details: String(evaluation.error), accounting,
+          ...(config.abortSignal?.reason === deadlineReason
+            ? { code: "evaluation_deadline_exceeded" } : {}),
+        },
         { status: 500 }
       );
     }

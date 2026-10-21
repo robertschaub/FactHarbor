@@ -34,5 +34,6 @@
   },
   "evalConcurrency": 5,
   "evalTimeoutMs": 90000,
+  "evalAccountingGraceMs": 5000,
   "defaultConfidence": 0.8
 }

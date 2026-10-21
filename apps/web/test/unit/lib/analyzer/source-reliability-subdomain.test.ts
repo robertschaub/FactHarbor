@@ -1,5 +1,10 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/config-storage", async () => {
+  const { DEFAULT_SR_CONFIG } = await import("@/lib/config-schemas");
+  return { getConfig: vi.fn(async () => ({ config: DEFAULT_SR_CONFIG })) };
+});
+
 vi.mock("@/lib/source-reliability-cache", async () => {
   const actual = await vi.importActual<typeof import("@/lib/source-reliability-cache")>(
     "@/lib/source-reliability-cache",
@@ -25,6 +30,7 @@ const mockedBatchGetCachedData = vi.mocked(batchGetCachedData);
 const mockedSetCachedScore = vi.mocked(setCachedScore);
 
 const NULL_EVAL_RESPONSE = {
+  accounting: { llmCalls: [], searchQueries: [] },
   score: null,
   confidence: 0.5,
   consensusAchieved: false,
@@ -40,6 +46,7 @@ const NULL_EVAL_RESPONSE = {
 };
 
 const makeEvalResponse = (score: number) => ({
+  accounting: { llmCalls: [], searchQueries: [] },
   score,
   confidence: 0.9,
   consensusAchieved: true,

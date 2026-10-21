@@ -16,6 +16,7 @@ import { assertValidTruthPercentage } from "./types";
 import { batchGetCachedData, setCachedScore, setCacheTtlDays, type CachedReliabilityDataFromCache } from "../source-reliability-cache";
 import { getSRConfig, scoreToFactualRating, setSRConfig } from "../source-reliability-config";
 import type { SourceReliabilityConfig } from "../config-schemas";
+import { getConfig } from "../config-storage";
 import { extractNormalizedHostname, getDomainLookupChain, getFamilyDomain } from "../domain-utils";
 import { recordCapturedMetrics, recordLLMCall } from "./metrics-integration";
 
@@ -39,6 +40,7 @@ export const SR_CONFIG = {
   skipTlds: sharedConfig.skipTlds,
   evalConcurrency: sharedConfig.evalConcurrency ?? 5,
   evalTimeoutMs: sharedConfig.evalTimeoutMs ?? 90000,
+  evalAccountingGraceMs: sharedConfig.evalAccountingGraceMs ?? 5000, // Fallback; prefetch snapshots this field from UCM.
   defaultConfidence: sharedConfig.defaultConfidence ?? 0.8,
 };
 
@@ -64,6 +66,8 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.skipTlds = next.skipTlds;
   SR_CONFIG.evalConcurrency = next.evalConcurrency ?? 5;
   SR_CONFIG.evalTimeoutMs = next.evalTimeoutMs ?? 90000;
+  // This setter has no production caller; do not use it to activate other legacy SR fields.
+  SR_CONFIG.evalAccountingGraceMs = next.evalAccountingGraceMs ?? 5000;
   SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
   setCacheTtlDays(next.cacheTtlDays);
 }
@@ -251,6 +255,12 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
 
   // Find cache misses that need evaluation
   const misses = newDomains.filter((d) => !prefetchedData.has(d));
+  // Snapshot only the receipt setting, once for both passes. Loading the entire
+  // config into module state would activate unrelated legacy fields across jobs.
+  // Like the cache lookup above, a failed load rejects before any evaluation dispatch.
+  const accountingGraceMs = misses.length > 0
+    ? (await getConfig("sr", "default")).config.evalAccountingGraceMs ?? SR_CONFIG.evalAccountingGraceMs
+    : SR_CONFIG.evalAccountingGraceMs;
 
   // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
   // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
@@ -268,7 +278,7 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
 
     try {
       let hadEvalError = false;
-      const evalResult = await evaluateSourceInternal(domain, (errInfo) => {
+      const evalResult = await evaluateSourceInternal(domain, accountingGraceMs, (errInfo) => {
         hadEvalError = true;
         result.errorCount++;
         result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
@@ -507,15 +517,19 @@ interface EvaluationResult {
  */
 async function evaluateSourceInternal(
   domain: string,
+  accountingGraceMs: number,
   onError?: (event: SourceReliabilityErrorEvent) => void,
 ): Promise<EvaluationResult | null> {
   const baseUrl = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
   const runnerKey = process.env.FH_INTERNAL_RUNNER_KEY || "";
 
-  // **P0 FIX**: Add timeout to prevent indefinite hangs (90 sec max per domain)
+  // The paired same-host route stops work at this deadline. Keep transport open
+  // briefly to receive accounting from cancellation/drain, never to accept a late score.
   const EVAL_TIMEOUT_MS = SR_CONFIG.evalTimeoutMs;
+  const workDeadlineAtMs = Date.now() + EVAL_TIMEOUT_MS;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS + accountingGraceMs);
+  let accountingMerged = false;
 
   try {
     const response = await fetch(`${baseUrl}/api/internal/evaluate-source`, {
@@ -530,17 +544,22 @@ async function evaluateSourceInternal(
         confidenceThreshold: SR_CONFIG.confidenceThreshold,
         consensusThreshold: SR_CONFIG.consensusThreshold,
         budgetMs: EVAL_TIMEOUT_MS,
+        deadlineAtMs: workDeadlineAtMs,
       }),
       signal: controller.signal,
     });
-
+    const data = response.ok ? await response.json() : await response.json().catch(() => null);
+    // Merge once before rejecting a late result. A partial merge remains unknown;
+    // replaying it would double-count the records already accepted by the collector.
+    accountingMerged = recordCapturedMetrics(data?.accounting);
+    if (Date.now() >= workDeadlineAtMs || data?.code === "evaluation_deadline_exceeded") {
+      throw new DOMException("Source reliability evaluation deadline exceeded", "AbortError");
+    }
+    controller.signal.throwIfAborted();
 
     if (!response.ok) {
-      // A failed evaluation can still have made paid calls; its body carries their records.
-      // 422 and 5xx come after the evaluation started; 400, 401 and 429 are refused before any work.
-      const failureBody = await response.json().catch(() => null);
-      controller.signal.throwIfAborted();
-      if (!recordCapturedMetrics(failureBody?.accounting) && (response.status === 422 || response.status >= 500)) {
+      // 422 and 5xx may follow paid work; 400, 401 and 429 refuse it before dispatch.
+      if (!accountingMerged && (response.status === 422 || response.status >= 500)) {
         recordUnaccountedEvaluation(domain, `HTTP ${response.status}`);
       }
       const errorType = classifySourceReliabilityHttpError(response.status);
@@ -557,17 +576,15 @@ async function evaluateSourceInternal(
       return null;
     }
 
-    const data = await response.json();
-    controller.signal.throwIfAborted();
-    if (!recordCapturedMetrics(data?.accounting)) {
-      recordUnaccountedEvaluation(domain, "response without accounting");
+    if (!accountingMerged) {
+      throw new Error("Source reliability response without complete accounting");
     }
     return data as EvaluationResult;
   } catch (err: any) {
-    const errorType = classifySourceReliabilityTransportError(err);
+    const errorType = Date.now() >= workDeadlineAtMs ? "timeout" : classifySourceReliabilityTransportError(err);
     // Unless the request never reached the route, the evaluation may have run (a timed-out
     // one may still incur remote charges), but its records never arrive.
-    if (!evaluationNeverStarted(err)) {
+    if (!accountingMerged && !evaluationNeverStarted(err)) {
       recordUnaccountedEvaluation(domain, errorType === "timeout" ? `timeout after ${EVAL_TIMEOUT_MS}ms` : errorType);
     }
     const message = err instanceof Error ? err.message : String(err);
@@ -576,7 +593,7 @@ async function evaluateSourceInternal(
       type: errorType,
       message,
     });
-    if (err?.name === 'AbortError') {
+    if (errorType === "timeout") {
       console.error(`[SR] Evaluation timeout for ${domain} after ${EVAL_TIMEOUT_MS}ms`);
     } else {
       console.error(`[SR] Evaluation API call failed for ${domain}:`, err);

@@ -197,6 +197,7 @@ interface SRConfig {
   skipTlds: string[];
   rateLimitPerIp?: number;
   domainCooldownSec?: number;
+  evalAccountingGraceMs?: number;
   evaluationSearch?: {
     provider: "auto" | "google-cse" | "serpapi" | "brave" | "serper";
     maxResultsPerQuery: number;
@@ -2362,6 +2363,23 @@ function SRConfigForm({
           />
           <div className={styles.formHelp}>Cooldown before re-evaluating same domain</div>
         </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>Accounting Receipt Grace (ms)</label>
+        <input
+          type="number"
+          className={styles.formInput}
+          value={config.evalAccountingGraceMs ?? DEFAULT_SR_CONFIG.evalAccountingGraceMs}
+          min={0}
+          max={10000}
+          step={1}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            updateField("evalAccountingGraceMs", isNaN(v) ? DEFAULT_SR_CONFIG.evalAccountingGraceMs : Math.max(0, Math.min(10000, v)));
+          }}
+        />
+        <div className={styles.formHelp}>Wait for cost records after evaluation stops. Allows no extra evaluation time or late scores.</div>
       </div>
 
       {/* Evaluation Search */}
