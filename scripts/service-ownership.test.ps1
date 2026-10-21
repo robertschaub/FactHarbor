@@ -104,7 +104,79 @@ try {
         Assert-True (($null -ne $observed.Failure) -eq $case.Throws) 'reseed failure handling retained'
         if ($case.Throws) { Assert-True ($observed.Failure -like 'Reseed failed; Web was not started.*') 'reseed failure still prevents web startup' }
     }
-    Write-Output "PASS: $checks pure service ownership checks"
+    # Exercise the real routing cleanup/finally around an offline child, without running startup.
+    $routingTry = @($restartAst.EndBlock.Statements | Where-Object {
+        $_ -is [Management.Automation.Language.TryStatementAst] -and
+        $_.Finally.Extent.Text.Contains('$savedProviderRouting')
+    })
+    Assert-True ($routingTry.Count -eq 1) 'one routing cleanup/restoration boundary'
+    $routingClear = $routingTry[0].Body.Statements[0]
+    Assert-True ($routingClear -is [Management.Automation.Language.ForEachStatementAst] -and $routingClear.Extent.Text.Contains('$savedProviderRouting')) 'routing cleanup precedes all startup work'
+    $launches = @($routingTry[0].Body.FindAll({ param($node)
+        $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Start-Process'
+    }, $true))
+    Assert-True ($launches.Count -eq 2) 'both service launches remain inside the restoration boundary'
+    $routingBoundary = [scriptblock]::Create('param($Action) $savedProviderRouting = @{}; try { ' + $routingClear.Extent.Text + '; & $Action } finally ' + $routingTry[0].Finally.Extent.Text)
+    $nodePath = (Get-Command node -CommandType Application | Select-Object -First 1).Source
+    $sdkPath = Join-Path $PSScriptRoot '..\node_modules\@ai-sdk\anthropic'
+    $probePath = Join-Path $fixture 'routing-probe.cjs'
+    [IO.File]::WriteAllText($probePath, @'
+const assert = require('node:assert/strict');
+const { createAnthropic } = require(process.argv[2]);
+globalThis.fetch = async () => { throw new Error('Unexpected network path'); };
+let observed;
+const stopped = new Error('Offline fetch intercepted');
+const model = createAnthropic({ apiKey: 'offline-test-key', fetch: async (url, init) => {
+  observed = new Request(url, init).url;
+  throw stopped;
+}})('claude-haiku-4-5-20251001');
+(async () => {
+  await assert.rejects(model.doGenerate({ prompt: [], maxOutputTokens: 1 }), error => error === stopped);
+  assert.equal(observed, 'https://api.anthropic.com/v1/messages');
+  for (const key of ['ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL']) {
+    assert.equal(Object.hasOwn(process.env, key), false, `${key} must be absent, not empty`);
+  }
+  console.log(JSON.stringify({ url: observed, routingAbsent: true, networkSends: 0 }));
+})().catch(error => { console.error(error); process.exitCode = 1; });
+'@)
+    $originalRouting = @{}
+    foreach ($key in @('ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL')) { $originalRouting[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
+    try {
+        foreach ($state in @('absent', 'configured', 'empty')) {
+            foreach ($key in $originalRouting.Keys) {
+                if (Test-Path -LiteralPath "Env:$key") { Remove-Item -LiteralPath "Env:$key" }
+                if ($state -eq 'configured') { [Environment]::SetEnvironmentVariable($key, 'https://routing.invalid/v1', 'Process') }
+                if ($state -eq 'empty') { [Environment]::SetEnvironmentVariable($key, '', 'Process') }
+            }
+            # Windows PowerShell 5.1 cannot retain an empty variable; its empty setter means absent.
+            $expectedRouting = @{}
+            foreach ($key in $originalRouting.Keys) { $expectedRouting[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
+            foreach ($failStartup in @($false, $true)) {
+                $action = {
+                    $command = "& '" + $nodePath.Replace("'", "''") + "' '" + $probePath.Replace("'", "''") + "' '" + $sdkPath.Replace("'", "''") + "'; exit `$LASTEXITCODE"
+                    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+                    $probeOutput = & powershell.exe -NoProfile -EncodedCommand $encoded
+                    $probeExit = $LASTEXITCODE
+                    Assert-True ($probeExit -eq 0) "SDK child probe exited successfully: $state"
+                    $result = $probeOutput | ConvertFrom-Json
+                    Assert-True ($result.routingAbsent -and $result.networkSends -eq 0 -and $result.url -eq 'https://api.anthropic.com/v1/messages') "default SDK endpoint in child: $state"
+                    if ($failStartup) { throw 'Simulated startup failure' }
+                }
+                $failure = $null
+                try { & $routingBoundary $action } catch { $failure = $_.Exception.Message }
+                Assert-True (($null -eq $failure -and -not $failStartup) -or ($failStartup -and $failure -eq 'Simulated startup failure')) "startup result: $state, failure=$failStartup ($failure)"
+                foreach ($key in $originalRouting.Keys) {
+                    Assert-True ([object]::Equals($expectedRouting[$key], [Environment]::GetEnvironmentVariable($key, 'Process'))) "parent routing restored: $key, $state, failure=$failStartup"
+                }
+            }
+        }
+    } finally {
+        foreach ($key in $originalRouting.Keys) {
+            if (Test-Path -LiteralPath "Env:$key") { Remove-Item -LiteralPath "Env:$key" }
+            if ($null -ne $originalRouting[$key]) { [Environment]::SetEnvironmentVariable($key, $originalRouting[$key], 'Process') }
+        }
+    }
+    Write-Output "PASS: $checks offline service ownership/startup checks"
 } finally {
     $resolved = [IO.Path]::GetFullPath($fixture)
     $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'

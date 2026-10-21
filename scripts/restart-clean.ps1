@@ -75,11 +75,13 @@ Write-Host "Starting API and Web services..."
 
 # Do not pass harness provider routing into product services.
 $savedProviderRouting = @{}
+try {
 foreach ($key in @('ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL')) {
     $savedProviderRouting[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
-    [Environment]::SetEnvironmentVariable($key, $null, 'Process')
+    # PowerShell 7 can turn a null .NET setter argument into an empty value.
+    # The SDK treats an empty base URL as an override, so remove the variable.
+    if (Test-Path -LiteralPath "Env:$key") { Remove-Item -LiteralPath "Env:$key" }
 }
-try {
 # Start API with retained logs (creates DB on startup if missing)
 Write-Host "Starting API..."
 $apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS=$(ConvertTo-ServiceLiteral $ApiUrls); "
@@ -185,5 +187,11 @@ Write-Host ""
 Write-Host "Note: Make sure apps/web/.env.local exists with required environment variables."
 
 } finally {
-    foreach ($key in $savedProviderRouting.Keys) { [Environment]::SetEnvironmentVariable($key, $savedProviderRouting[$key], 'Process') }
+    foreach ($key in $savedProviderRouting.Keys) {
+        if ($null -eq $savedProviderRouting[$key]) {
+            if (Test-Path -LiteralPath "Env:$key") { Remove-Item -LiteralPath "Env:$key" }
+        } else {
+            [Environment]::SetEnvironmentVariable($key, $savedProviderRouting[$key], 'Process')
+        }
+    }
 }
