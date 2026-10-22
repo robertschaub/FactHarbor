@@ -1,8 +1,8 @@
 ---
-version: "1.0.22"
+version: "1.0.23"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-10-20T00:00:00Z"
+lastModified: "2026-10-22T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -31,6 +31,8 @@ variables:
   - anchorGuidance
   - contractRetryAtomicityGuidance
   - carrierClaimIds
+  - citationMembershipIssues
+  - membershipOnly
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_SALIENCE_COMMITMENT"
@@ -1831,6 +1833,7 @@ For each claim verdict provided, verify:
 2. All cited contradicting evidence IDs exist in the cited evidence registry.
 3. Any evidence, source, boundary, or challenge reference used in the reasoning exists somewhere in the claim-local context (`evidencePool`, `sourcePortfolio`, `boundaryIds`, or `challengeContext`) even when it is not listed in the directional citation arrays.
 4. Flag grounding failure only when a cited evidence ID is missing from the cited evidence registry or when the reasoning positively relies on material that is absent from both the cited evidence registry and the claim-local context.
+5. Separately check explicit assertions in `reasoning` and `challengeResponses[].response` about which evidence is retained in, removed from, or assigned to a directional citation array. Compare those assertions with the supplied final `supportingEvidenceIds` and `contradictingEvidenceIds`; return `citationMembershipValid` and `citationMembershipIssues` independently of `groundingValid` and `issues`.
 
 This is a lightweight validation check. Flag issues but do NOT re-analyze the verdicts.
 
@@ -1859,12 +1862,14 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 - **Do NOT enforce citation-array completeness.** If an evidence ID exists in the claim-local evidence pool or cited evidence registry, do not flag it solely because the reasoning mentions it while the directional citation arrays omit it.
 - **Do NOT treat source reliability sufficiency as grounding.** A source with `trackRecordScore: null`, weak reliability, or low confidence is still structurally grounded if that source appears in the claim-local source portfolio. Missing or weak reliability metadata is not itself a grounding failure.
 - **Do NOT turn analytical criticism into grounding failure.** Reasoning may criticize source concentration, limited validation, null reliability scores, or weak methodology. These concerns are analytically valid context when tied to claim-local evidence or claim-local sources.
+- **Membership is a separate consistency check, not citation completeness.** Merely discussing uncited claim-local context, its limitations, or a rejected challenge remains valid. Flag membership only when the explanation explicitly asserts directional-array membership that contradicts the supplied arrays. Check both explanation fields in their original language. Do not infer membership merely from positive or negative discussion of a source. A membership-only inconsistency must not set `groundingValid` to false; put it only in `citationMembershipIssues`. Return an explicit boolean for `citationMembershipValid` even when no such assertion is present (true).
 
 ### Input
 
 Each verdict contains:
 - `claimId`
 - `reasoning`
+- `challengeResponses` (check the response text for explicit directional-membership assertions)
 - `supportingEvidenceIds`
 - `contradictingEvidenceIds`
 - `boundaryIds`
@@ -1886,12 +1891,16 @@ Return a JSON array:
   {
     "claimId": "AC_01",
     "groundingValid": true,
-    "issues": []
+    "issues": [],
+    "citationMembershipValid": true,
+    "citationMembershipIssues": []
   },
   {
     "claimId": "AC_02",
     "groundingValid": false,
-    "issues": ["Supporting evidence ID 'EV_999' not found in evidence pool"]
+    "issues": ["Supporting evidence ID 'EV_999' not found in evidence pool"],
+    "citationMembershipValid": true,
+    "citationMembershipIssues": []
   }
 ]
 ```
@@ -1962,7 +1971,8 @@ You are a verdict direction repair validator. Your task is to correct a single v
 Given one verdict plus direction-validation issues, produce a repaired verdict update for the same claim:
 1. Keep the same `claimId`.
 2. Keep the same cited evidence set context (do not invent new evidence IDs or new evidence items).
-3. Adjust only what is necessary to restore directional consistency (primarily `truthPercentage`, optionally concise `reasoning`, and when needed corrected citation arrays that use only the provided evidence IDs).
+3. Adjust only what is necessary to restore directional consistency (primarily `truthPercentage`, optionally concise `reasoning` and `challengeResponses`, and when needed corrected citation arrays that use only the provided evidence IDs).
+4. Resolve supplied `citationMembershipIssues` in both explanation fields. Explicit statements about retained, removed, supporting or contradicting citations must agree with the final arrays. Valid uncited contextual discussion may remain; do not add citations simply to justify old prose.
 
 ### Rules
 
@@ -1970,6 +1980,8 @@ Given one verdict plus direction-validation issues, produce a repaired verdict u
 - Do not hardcode keywords, entities, political terms, regions, or test-case wording.
 - Do not output any new evidence IDs.
 - Do not change the claim identity.
+- When `membershipOnly` is true, the scores and citation arrays are already independently valid. Keep them unchanged and update only `reasoning` and the response text in `challengeResponses`. Preserve attribution, uncertainty and substantive limitations; do not introduce new analytical conclusions.
+- Return `challengeResponses` in the same order and count as the current verdict, with one `response` string per entry. Do not add or delete responses or change their challenge identity, adjustment decision or provenance. If no responses exist, return an empty array. Update both explanation fields together, retaining text that is already consistent.
 - Keep `reasoning` natural-language only. Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in prose.
 - When `evidencePool` includes `applicability`, keep only `direct` evidence IDs in `supportingEvidenceIds` and `contradictingEvidenceIds`. Remove `contextual` or `foreign_reaction` IDs from directional arrays; they may be discussed only as background or confidence-limiting context.
 - Return exactly one JSON object.
@@ -1996,6 +2008,16 @@ ${boundaryContext}
 ${directionIssues}
 ```
 
+**Citation Membership Issues:**
+```
+${citationMembershipIssues}
+```
+
+**Membership-only repair:**
+```
+${membershipOnly}
+```
+
 **Current Verdict:**
 ```
 ${verdict}
@@ -2019,6 +2041,7 @@ Return a single JSON object:
   "claimId": "AC_01",
   "truthPercentage": 46,
   "reasoning": "Adjusted truth percentage to align with the corrected evidence direction.",
+  "challengeResponses": [{ "response": "The response reflects the final citation arrays while preserving the substantive limitation." }],
   "supportingEvidenceIds": ["EV_001"],
   "contradictingEvidenceIds": ["EV_002"]
 }

@@ -101,6 +101,7 @@ type VerdictPromptEvidenceItem = Pick<
   | "fromOppositeClaimSearch"
   | "isDerivative"
   | "derivedFromSourceUrl"
+  | "derivativeClaimUnverified"
   | "scopeQuality"
 >;
 
@@ -133,6 +134,7 @@ function toVerdictPromptEvidenceItems(
     fromOppositeClaimSearch: item.fromOppositeClaimSearch,
     isDerivative: item.isDerivative,
     derivedFromSourceUrl: item.derivedFromSourceUrl,
+    derivativeClaimUnverified: item.derivativeClaimUnverified,
     scopeQuality: item.scopeQuality,
   }));
 }
@@ -396,7 +398,8 @@ export const DEFAULT_VERDICT_STAGE_CONFIG: VerdictStageConfig = {
 
 /**
  * LLM call function signature. Injected for testability.
- * In production, this wraps AI SDK generateText with UCM prompt + Zod schema.
+ * In production, this wraps AI SDK generateText with a UCM prompt and JSON
+ * root-shape parsing; the production adapter does not strip object fields.
  *
  * @param promptKey - UCM prompt registry key (e.g., "VERDICT_ADVOCATE")
  * @param input - Structured input data for the prompt
@@ -1093,6 +1096,8 @@ export interface VerdictValidation {
 export interface VerdictRepairRequest {
   verdict: CBClaimVerdict;
   directionIssues: string[];
+  citationMembershipIssues?: string[];
+  membershipOnly?: boolean;
   claim?: AtomicClaim;
   boundaryContext: Array<{ boundaryId: string; boundaryName: string }>;
   evidenceDirectionSummary: { supports: number; contradicts: number; mixed: number; neutral: number };
@@ -1286,6 +1291,9 @@ export async function validateVerdicts(
           return {
             claimId: v.claimId,
             reasoning: aliasReasoningText(v.reasoning, groundingAliasMap),
+            challengeResponses: v.challengeResponses.map(response => ({
+              ...response, response: aliasReasoningText(response.response, groundingAliasMap),
+            })),
             supportingEvidenceIds: aliasIds(v.supportingEvidenceIds, groundingAliasMap),
             contradictingEvidenceIds: aliasIds(v.contradictingEvidenceIds, groundingAliasMap),
             boundaryIds,
@@ -1361,11 +1369,31 @@ export async function validateVerdicts(
     {
       ...r,
       issues: r.issues ? dealiasGroundingIssues(r.issues, groundingAliasMap) : r.issues,
+      citationMembershipIssues: r.citationMembershipIssues
+        ? dealiasGroundingIssues(r.citationMembershipIssues, groundingAliasMap) : undefined,
     },
   ]));
   const directionByClaim = new Map(directionResults.map((r) => [r.claimId, r]));
 
   const validated: CBClaimVerdict[] = [];
+  const warnUnresolvedMembership = (
+    candidate: CBClaimVerdict,
+    check: NormalizedValidationEntry | undefined,
+  ) => {
+    if (candidate.verdictReason === "verdict_integrity_failure"
+      || check?.citationMembershipValid === true) return;
+    warnings?.push({
+      type: "verdict_grounding_issue",
+      severity: "warning",
+      message: `Claim ${candidate.claimId}: consistency between the explanation and final citations remains unresolved.`,
+      details: {
+        claimId: candidate.claimId,
+        check: "citation_membership",
+        outcome: check?.citationMembershipValid === false ? "inconsistent" : "unavailable",
+        issues: check?.citationMembershipIssues ?? [],
+      },
+    });
+  };
   for (const verdict of verdicts) {
     let current = verdict;
     const grounding = groundingByClaim.get(verdict.claimId);
@@ -1451,6 +1479,8 @@ export async function validateVerdicts(
 
         if (shouldEnforceDirectionIntegrity) {
           const preRepairVerdict = current;
+          let membershipOnly = false;
+          let normalizedGrounding: NormalizedValidationEntry | undefined;
           const finalizeAcceptedRepair = (candidate: CBClaimVerdict): CBClaimVerdict => {
             if (!repairContext) return candidate;
             return {
@@ -1467,6 +1497,7 @@ export async function validateVerdicts(
           const acceptGroundedCandidate = async (
             candidate: CBClaimVerdict,
             unavailableMessage?: string,
+            seedCheck = false,
           ): Promise<{ accepted: CBClaimVerdict | null; grounding: NormalizedValidationEntry }> => {
             const grounding = await validateGroundingOnly(
               candidate,
@@ -1477,10 +1508,17 @@ export async function validateVerdicts(
               repairContext,
               warnings,
             );
-            if (grounding.valid) {
+            // Only the normalized seed can initiate a prose repair. A genuine
+            // direction repair keeps its existing grounded-acceptance policy;
+            // unresolved membership is a warning, never a new score downgrade.
+            const membershipAcceptable = membershipOnly
+              ? grounding.citationMembershipValid === true
+              : !seedCheck || grounding.citationMembershipValid !== false;
+            if (grounding.valid && membershipAcceptable) {
+              warnUnresolvedMembership(candidate, grounding);
               return { accepted: finalizeAcceptedRepair(candidate), grounding };
             }
-            if (grounding.unavailable) {
+            if (grounding.unavailable && !membershipOnly) {
               if (unavailableMessage) {
                 warnings?.push({
                   type: "verdict_grounding_issue",
@@ -1488,6 +1526,7 @@ export async function validateVerdicts(
                   message: unavailableMessage,
                 });
               }
+              warnUnresolvedMembership(candidate, grounding);
               return { accepted: finalizeAcceptedRepair(candidate), grounding };
             }
             return { accepted: null, grounding };
@@ -1531,13 +1570,17 @@ export async function validateVerdicts(
             const normalizedAccepted = await acceptGroundedCandidate(
               repairSeedVerdict,
               `Claim ${verdict.claimId}: post-normalization grounding check unavailable; accepted structurally normalized citations.`,
+              true,
             );
+            normalizedGrounding = normalizedAccepted.grounding;
+            membershipOnly = normalizedGrounding.valid
+              && normalizedGrounding.citationMembershipValid === false;
             if (normalizedAccepted.accepted) {
               current = normalizedAccepted.accepted;
               validated.push(current);
               continue;
             }
-            warnings?.push({
+            if (!membershipOnly) warnings?.push({
               type: "verdict_grounding_issue",
               severity: "info",
               message: `Claim ${verdict.claimId}: normalized verdict failed grounding check: ${joinIssues(normalizedAccepted.grounding.issues)}`,
@@ -1566,6 +1609,8 @@ export async function validateVerdicts(
               fromLLMValidator: direction?.valid === false ? direction.issues : [],
               fromDeterministicCheck: deterministicDirectionIssues,
             },
+            membershipOnly,
+            citationMembershipIssues: normalizedGrounding?.citationMembershipIssues ?? [],
             seedAfterNormalization: {
               supportingEvidenceIds: repairSeedVerdict.supportingEvidenceIds,
               contradictingEvidenceIds: repairSeedVerdict.contradictingEvidenceIds,
@@ -1580,16 +1625,29 @@ export async function validateVerdicts(
             },
           });
 
-          const repaired = await attemptDirectionRepair(
+          const repairResult = await attemptDirectionRepair(
             repairSeedVerdict,
-            mergedDirectionIssues,
+            membershipOnly ? [] : mergedDirectionIssues,
             evidence,
             llmCall,
             config,
             repairContext,
+            normalizedGrounding?.citationMembershipIssues,
+            membershipOnly,
           );
+          // A prose-only repair may update text, never retcon valid scores/citations.
+          const repaired = repairResult && membershipOnly ? {
+            ...repairSeedVerdict,
+            reasoning: repairResult.reasoning,
+            challengeResponses: repairResult.challengeResponses,
+          } : repairResult;
 
           if (!repaired) {
+            if (membershipOnly) {
+              warnUnresolvedMembership(repairSeedVerdict, normalizedGrounding);
+              validated.push(finalizeAcceptedRepair(repairSeedVerdict));
+              continue;
+            }
             current = safeDowngradeVerdict(
               current,
               "direction",
@@ -1638,7 +1696,16 @@ export async function validateVerdicts(
             continue;
           }
 
-          warnings?.push({
+          // In a prose-only repair, restoring the original text reproduces the
+          // already-rejected seed. Preserve its known warning instead of asking
+          // the same semantic question again and potentially masking that loss.
+          if (membershipOnly) {
+            warnUnresolvedMembership(repairSeedVerdict, normalizedGrounding);
+            validated.push(finalizeAcceptedRepair(repairSeedVerdict));
+            continue;
+          }
+
+          if (!repairedAccepted.grounding.valid && !repairedAccepted.grounding.unavailable) warnings?.push({
             type: "verdict_grounding_issue",
             severity: "info",
             message: `Claim ${verdict.claimId}: repaired verdict failed grounding check: ${joinIssues(repairedAccepted.grounding.issues)}`,
@@ -1646,6 +1713,7 @@ export async function validateVerdicts(
           const fallbackReasoningVerdict: CBClaimVerdict = {
             ...normalizedRepaired,
             reasoning: preRepairVerdict.reasoning,
+            challengeResponses: preRepairVerdict.challengeResponses,
           };
           const fallbackAccepted = await acceptGroundedCandidate(
             fallbackReasoningVerdict,
@@ -1700,6 +1768,7 @@ export async function validateVerdicts(
       }
     }
 
+    warnUnresolvedMembership(current, grounding);
     validated.push(current);
   }
 
@@ -1711,6 +1780,8 @@ type NormalizedValidationEntry = {
   valid: boolean;
   issues: string[];
   unavailable?: boolean;
+  citationMembershipValid?: boolean;
+  citationMembershipIssues?: string[];
 };
 
 function normalizeValidationEntries(
@@ -1724,6 +1795,12 @@ function normalizeValidationEntries(
       claimId: String(item.claimId ?? ""),
       valid: item[validField] !== false,
       issues: Array.isArray(item.issues) ? item.issues.map(String) : [],
+      ...(validField === "groundingValid" ? {
+        citationMembershipValid: typeof item.citationMembershipValid === "boolean"
+          ? item.citationMembershipValid : undefined,
+        citationMembershipIssues: Array.isArray(item.citationMembershipIssues)
+          ? item.citationMembershipIssues.filter((issue): issue is string => typeof issue === "string") : [],
+      } : {}),
     }))
     .filter((item) => item.claimId.length > 0);
 }
@@ -1840,6 +1917,9 @@ async function validateGroundingOnly(
       verdicts: [{
         claimId: verdict.claimId,
         reasoning: aliasReasoningText(verdict.reasoning, groundingAliasMap),
+        challengeResponses: verdict.challengeResponses.map(response => ({
+          ...response, response: aliasReasoningText(response.response, groundingAliasMap),
+        })),
         supportingEvidenceIds: aliasIds(verdict.supportingEvidenceIds, groundingAliasMap),
         contradictingEvidenceIds: aliasIds(verdict.contradictingEvidenceIds, groundingAliasMap),
         boundaryIds,
@@ -1897,6 +1977,8 @@ async function validateGroundingOnly(
   return {
     ...normalized[0],
     issues: dealiasGroundingIssues(normalized[0].issues, groundingAliasMap),
+    citationMembershipIssues: normalized[0].citationMembershipIssues
+      ? dealiasGroundingIssues(normalized[0].citationMembershipIssues, groundingAliasMap) : undefined,
   };
 }
 
@@ -2550,7 +2632,7 @@ async function defaultRepairExecutor(
   request: VerdictRepairRequest,
   llmCall: LLMCallFn,
   config: VerdictStageConfig,
-): Promise<CBClaimVerdict | null> {
+): Promise<(Omit<CBClaimVerdict, "challengeResponses"> & { challengeResponses: unknown }) | null> {
   const validationTier = config.debateRoles.validation.strength;
   const validationProvider = config.debateRoles.validation.provider;
   const repairTemperature = Math.min(config.selfConsistencyTemperature + 0.1, 0.7);
@@ -2561,11 +2643,14 @@ async function defaultRepairExecutor(
       claimText: request.claim?.statement ?? "",
       boundaryContext: request.boundaryContext,
       directionIssues: request.directionIssues,
+      citationMembershipIssues: request.citationMembershipIssues ?? [],
+      membershipOnly: request.membershipOnly ?? false,
       verdict: {
         claimId: request.verdict.claimId,
         truthPercentage: request.verdict.truthPercentage,
         confidence: request.verdict.confidence,
         reasoning: request.verdict.reasoning,
+        challengeResponses: request.verdict.challengeResponses,
         supportingEvidenceIds: request.verdict.supportingEvidenceIds,
         contradictingEvidenceIds: request.verdict.contradictingEvidenceIds,
       },
@@ -2615,6 +2700,7 @@ async function defaultRepairExecutor(
       config.mixedConfidenceThreshold,
     ),
     reasoning: repairedReasoning,
+    challengeResponses: parsed.challengeResponses,
     supportingEvidenceIds: repairedSupportingEvidenceIds
       ?? derivedDirectionalCitations?.supportingEvidenceIds
       ?? request.verdict.supportingEvidenceIds,
@@ -2632,6 +2718,8 @@ async function attemptDirectionRepair(
   llmCall: LLMCallFn,
   config: VerdictStageConfig,
   repairContext?: VerdictValidationRepairContext,
+  citationMembershipIssues?: string[],
+  membershipOnly = false,
 ): Promise<CBClaimVerdict | null> {
   if (!repairContext) return null;
 
@@ -2673,6 +2761,8 @@ async function attemptDirectionRepair(
   const request: VerdictRepairRequest = {
     verdict,
     directionIssues,
+    citationMembershipIssues,
+    membershipOnly,
     claim,
     boundaryContext,
     evidenceDirectionSummary: summary,
@@ -2680,7 +2770,20 @@ async function attemptDirectionRepair(
   };
 
   const repairExecutor = repairContext.repairExecutor ?? defaultRepairExecutor;
-  return repairExecutor(request, llmCall, config);
+  const result = await repairExecutor(request, llmCall, config);
+  if (!result) return null;
+  // One boundary for the default and injected executors: keep provenance and
+  // order, accepting only a complete text-only update to existing responses.
+  const responseUpdates = result.challengeResponses;
+  const challengeResponses = Array.isArray(responseUpdates)
+    && responseUpdates.length === verdict.challengeResponses.length
+    && responseUpdates.every((entry) => entry && typeof entry === "object"
+      && typeof entry.response === "string" && entry.response.trim().length > 0)
+    ? verdict.challengeResponses.map((response, index) => ({
+      ...response, response: responseUpdates[index].response.trim(),
+    }))
+    : verdict.challengeResponses;
+  return { ...result, challengeResponses };
 }
 
 async function validateDirectionOnly(

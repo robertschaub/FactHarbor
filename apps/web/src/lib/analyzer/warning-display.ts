@@ -17,6 +17,9 @@ type WarningClassification = {
 
 // Canonical registry: every AnalysisWarningType must be classified here.
 // `satisfies` enforces full coverage when the union changes.
+// Type-only exports describe the default. Citation-membership failures reuse
+// verdict_grounding_issue with a details-based override in classifyWarningForDisplay;
+// consumers assessing an actual warning must use that function (or splitWarningsForDisplay).
 const WARNING_CLASSIFICATION = {
   report_damaged: { bucket: "analysis", impact: "degrading" },
   llm_provider_error: { bucket: "provider", impact: "degrading" },
@@ -135,7 +138,9 @@ export function classifyWarningForDisplay(warning: AnalysisWarning): {
 } {
   const classification = getClassification(warning.type);
   const normalizedSeverity = normalizeSeverity(warning.severity);
-  const isReportDegrading = classification.impact === "degrading";
+  const isReportDegrading = classification.impact === "degrading"
+    || (warning.type === "verdict_grounding_issue"
+      && warning.details?.check === "citation_membership");
   const displaySeverity: AnalysisWarningSeverity = isReportDegrading
     ? (normalizedSeverity === "info" ? "warning" : normalizedSeverity)
     : "info";

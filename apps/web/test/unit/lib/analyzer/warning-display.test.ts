@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyWarningForDisplay,
   splitWarningsForDisplay,
+  isReportDegradingAnalysisWarningType,
 } from "@/lib/analyzer/warning-display";
 import type { AnalysisWarning, AnalysisWarningType } from "@/lib/analyzer/types";
 
@@ -15,6 +16,19 @@ function warning(overrides: Partial<AnalysisWarning>): AnalysisWarning {
 }
 
 describe("warning-display classification", () => {
+  it("shows unresolved citation membership without promoting ordinary grounding telemetry", () => {
+    const unresolved = warning({ type: "verdict_grounding_issue", severity: "warning",
+      details: { check: "citation_membership", outcome: "inconsistent" } });
+    const ordinary = warning({ type: "verdict_grounding_issue", severity: "warning" });
+    expect(classifyWarningForDisplay(unresolved)).toMatchObject({
+      isReportDegrading: true, isProviderIssue: false, displaySeverity: "warning",
+    });
+    expect(classifyWarningForDisplay(ordinary)).toMatchObject({
+      isReportDegrading: false, displaySeverity: "info",
+    });
+    expect(splitWarningsForDisplay([unresolved, ordinary]).analysisDegrading).toHaveLength(1);
+    expect(isReportDegradingAnalysisWarningType("verdict_grounding_issue")).toBe(false);
+  });
   it("forces non-degrading analysis warnings to info", () => {
     const result = classifyWarningForDisplay(warning({
       type: "evidence_pool_imbalance",

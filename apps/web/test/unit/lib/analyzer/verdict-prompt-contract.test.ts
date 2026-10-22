@@ -126,6 +126,8 @@ const DIRECTION_REPAIR_VARS: Record<string, string> = {
   claimText: "Test claim statement",
   boundaryContext: '[{"boundaryId":"CB_01"}]',
   directionIssues: '["supporting evidence counted as contradicting"]',
+  citationMembershipIssues: '[]',
+  membershipOnly: 'false',
   verdict: '{"claimId":"AC_01","truthPercentage":72}',
   evidenceDirectionSummary: '{"supporting":3,"contradicting":1}',
   evidencePool: '[{"id":"EV_01","claimDirection":"supports","applicability":"direct"}]',
@@ -283,6 +285,18 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("`citedEvidenceRegistry` is the authoritative check for the verdict's directional citation arrays only");
       expect(section).toContain("Validate in this order");
       expect(section).toContain("Do NOT flag an evidence ID solely because it appears in reasoning but not in `citedEvidenceRegistry`");
+    });
+
+    it("separates membership from grounding and bounds repair to both explanation fields", () => {
+      const grounding = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
+      expect(grounding).toContain("`challengeResponses[].response`");
+      expect(grounding).toContain("A membership-only inconsistency must not set `groundingValid` to false");
+      expect(grounding).toContain('"citationMembershipValid": true');
+      expect(grounding).toContain('"citationMembershipIssues": []');
+      const repair = extractSection(promptContent, "VERDICT_DIRECTION_REPAIR");
+      expect(repair).toContain("scores and citation arrays are already independently valid");
+      expect(repair).toContain("same order and count");
+      expect(repair).toContain("do not add citations simply to justify old prose");
     });
 
     it("advocate contains scope-of-truth rule preventing semantic drift", () => {

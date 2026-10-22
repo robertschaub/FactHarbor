@@ -1144,7 +1144,7 @@ describe("validateVerdicts (Step 5)", () => {
     const original = structuredClone(verdict);
     const warnings: AnalysisWarning[] = [];
     const result = await validateVerdicts([verdict], [createEvidenceItem()], createMockLLM({
-      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [] }],
+      VERDICT_GROUNDING_VALIDATION: [{ claimId: "AC_01", groundingValid: true, issues: [], citationMembershipValid: true, citationMembershipIssues: [] }],
       VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
     }), { ...DEFAULT_VERDICT_STAGE_CONFIG, verdictGroundingPolicy: "safe_downgrade", verdictDirectionPolicy: "retry_once_then_safe_downgrade" }, warnings);
     expect(result).toStrictEqual([original]);
@@ -2478,6 +2478,254 @@ describe("validateVerdicts (Step 5)", () => {
 // ============================================================================
 // STRUCTURAL CONSISTENCY CHECK (deterministic)
 // ============================================================================
+
+describe("citation-membership consistency in the existing direction repair", () => {
+  // Opaque text sentinels test plumbing, not semantic classification. Only the
+  // mocked validator assigns meaning; these are not new analysis inputs.
+  function fixture(statement = "Poor data quality and fragmented information systems are major barriers to successful AI implementation in SMEs.") {
+    const claims = [createAtomicClaim({ statement })];
+    const boundaries = [createClaimBoundary()];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", applicability: "contextual" }),
+    ];
+    const verdict = createCBVerdict({ truthPercentage: 48, reasoning: "reasoning:before",
+      supportingEvidenceIds: ["EV_01", "EV_02"], contradictingEvidenceIds: [],
+      challengeResponses: [{ challengeType: "assumption", response: "response:before",
+        verdictAdjusted: false, adjustmentBasedOnChallengeIds: ["CP_01"] }],
+    });
+    return { evidence, verdict, context: {
+      claims, boundaries, coverageMatrix: buildCoverageMatrix(claims, boundaries, evidence),
+    } };
+  }
+  const config: VerdictStageConfig = { ...DEFAULT_VERDICT_STAGE_CONFIG,
+    verdictGroundingPolicy: "safe_downgrade", verdictDirectionPolicy: "retry_once_then_safe_downgrade" };
+  const membership = (value: unknown) => ({ claimId: "AC_01", groundingValid: true, issues: [],
+    citationMembershipValid: value, citationMembershipIssues: value === false ? ["membership:mismatch"] : [] });
+  const membershipWarnings = (warnings: AnalysisWarning[]) => warnings.filter(w => w.details?.check === "citation_membership");
+
+  it("aliases response references with the same registry and restores issue IDs", async () => {
+    const { evidence, verdict, context } = fixture();
+    verdict.reasoning = "EV_02";
+    verdict.challengeResponses[0].response = "EV_02";
+    const warnings: AnalysisWarning[] = [];
+    const llm = createMockLLM({
+      VERDICT_GROUNDING_VALIDATION: [{ ...membership(false), citationMembershipIssues: ["EVG_002"] }],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }],
+      VERDICT_DIRECTION_REPAIR: null,
+    });
+    await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+    const inputs = vi.mocked(llm).mock.calls.filter(([key]) => key === "VERDICT_GROUNDING_VALIDATION");
+    expect(inputs).toHaveLength(2);
+    for (const [, input] of inputs) expect((input.verdicts as CBClaimVerdict[])[0]).toMatchObject({
+      reasoning: "EVG_002", challengeResponses: [{ response: "EVG_002" }],
+    });
+    const repairInput = vi.mocked(llm).mock.calls.find(([key]) => key === "VERDICT_DIRECTION_REPAIR")![1];
+    expect(repairInput.citationMembershipIssues).toEqual(["EV_02"]);
+    expect(membershipWarnings(warnings)[0].details?.issues).toEqual(["EV_02"]);
+  });
+
+  it.each([false, undefined, "true"])("keeps valid scores with a warning outside the repair chain (%s)", async value => {
+    const verdict = createCBVerdict();
+    const warnings: AnalysisWarning[] = [];
+    const llm = createMockLLM({ VERDICT_GROUNDING_VALIDATION: [membership(value)],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: true, issues: [] }] });
+    const result = await validateVerdicts([verdict], [createEvidenceItem()], llm, config, warnings);
+    expect(result).toEqual([verdict]);
+    expect(membershipWarnings(warnings)).toHaveLength(1);
+    expect(membershipWarnings(warnings)[0].details?.outcome).toBe(value === false ? "inconsistent" : "unavailable");
+    expect(llm).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([true, undefined, "true"])("retains the normalized fast path for passing or unavailable membership (%s)", async value => {
+    const { evidence, verdict, context } = fixture();
+    const warnings: AnalysisWarning[] = [];
+    const llm = createMockLLM({ VERDICT_GROUNDING_VALIDATION: [membership(value)],
+      VERDICT_DIRECTION_VALIDATION: [{ claimId: "AC_01", directionValid: false, issues: ["direction:mismatch"] }] });
+    const [result] = await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+    expect(result).toMatchObject({ truthPercentage: 48, confidence: 80, reasoning: verdict.reasoning,
+      challengeResponses: verdict.challengeResponses, supportingEvidenceIds: [], contradictingEvidenceIds: ["EV_01"] });
+    expect(llm).toHaveBeenCalledTimes(4);
+    expect(membershipWarnings(warnings)).toHaveLength(value === true ? 0 : 1);
+  });
+
+  it.each([
+    "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+    "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+  ])("repairs both explanation fields without changing valid scores or provenance: %s", async statement => {
+    const { evidence, verdict, context } = fixture(statement);
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+    const llm = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls++;
+        return [membership(groundingCalls >= 3)];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        // Even an instruction-violating repair cannot move valid scores/arrays.
+        return { claimId: "AC_01", truthPercentage: 99, reasoning: "reasoning:after",
+          supportingEvidenceIds: ["EV_02"], contradictingEvidenceIds: [],
+          challengeResponses: [{ response: "response:after", verdictAdjusted: true,
+            challengeType: "counter_evidence", adjustmentBasedOnChallengeIds: ["CP_99"] }] };
+      }
+      throw Error(key);
+    });
+    const [result] = await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+    expect(result).toMatchObject({ truthPercentage: 48, confidence: 80, reasoning: "reasoning:after",
+      supportingEvidenceIds: [], contradictingEvidenceIds: ["EV_01"],
+      challengeResponses: [{ ...verdict.challengeResponses[0], response: "response:after" }] });
+    expect(membershipWarnings(warnings)).toHaveLength(0);
+    const repairInput = llm.mock.calls.find(([key]) => key === "VERDICT_DIRECTION_REPAIR")![1];
+    expect(repairInput).toMatchObject({ membershipOnly: true, citationMembershipIssues: ["membership:mismatch"], claimText: statement });
+    expect((repairInput.verdict as CBClaimVerdict).challengeResponses).toEqual(verdict.challengeResponses);
+    const finalGrounding = llm.mock.calls.filter(([key]) => key === "VERDICT_GROUNDING_VALIDATION").at(-1)![1];
+    expect((finalGrounding.verdicts as CBClaimVerdict[])[0]).toMatchObject({
+      reasoning: "reasoning:after", supportingEvidenceIds: [], contradictingEvidenceIds: ["EVG_001"],
+      challengeResponses: [{ response: "response:after" }],
+    });
+    expect(llm.mock.calls.filter(([key]) => key === "VERDICT_DIRECTION_REPAIR")).toHaveLength(1);
+    expect(llm).toHaveBeenCalledTimes(7);
+  });
+
+  it.each(["no-candidate", "rejected", "unavailable", "grounding-rejected"])("retains the normalized seed when a prose repair is %s", async mode => {
+    const { evidence, verdict, context } = fixture();
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+    const llm = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      if (key === "VERDICT_DIRECTION_REPAIR") return mode === "no-candidate" ? null : {
+        claimId: "AC_01", truthPercentage: 48, reasoning: "reasoning:rejected",
+        challengeResponses: [{ response: "response:rejected" }],
+      };
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls++;
+        if (groundingCalls > 2 && mode === "unavailable") throw Error("offline unavailable");
+        if (groundingCalls > 2 && mode === "grounding-rejected") return [{ ...membership(true), groundingValid: false, issues: ["grounding:mismatch"] }];
+        return [membership(false)];
+      }
+      throw Error(key);
+    });
+    const [result] = await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+    expect(result).toMatchObject({ truthPercentage: 48, confidence: 80, reasoning: verdict.reasoning,
+      challengeResponses: verdict.challengeResponses, supportingEvidenceIds: [], contradictingEvidenceIds: ["EV_01"] });
+    expect(result.verdictReason).not.toBe("verdict_integrity_failure");
+    expect(membershipWarnings(warnings)).toHaveLength(1);
+    expect(llm.mock.calls.filter(([key]) => key === "VERDICT_DIRECTION_REPAIR")).toHaveLength(1);
+    expect(groundingCalls).toBe(mode === "no-candidate" ? 2 : mode === "unavailable" ? 4 : 3);
+    expect(warnings.some(w => w.message.includes("failed grounding check"))).toBe(false);
+  });
+
+  it.each([false, true])("does not undo a genuine direction repair for membership-only failure (fallback=%s)", async fallback => {
+    const { evidence, verdict, context } = fixture();
+    verdict.truthPercentage = 82; // Still implausible after the seed's array normalization.
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+    const llm = vi.fn(async (key: string) => {
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      if (key === "VERDICT_DIRECTION_REPAIR") return { claimId: "AC_01", truthPercentage: 30,
+        supportingEvidenceIds: [], contradictingEvidenceIds: ["EV_01"], reasoning: "reasoning:direction-repair",
+        challengeResponses: [{ response: "response:direction-repair" }] };
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls++;
+        if (fallback && groundingCalls === 2) return [{ ...membership(true), groundingValid: false, issues: ["grounding:mismatch"] }];
+        return [membership(groundingCalls === 1)];
+      }
+      throw Error(key);
+    });
+    const [result] = await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+    expect(result).toMatchObject({ truthPercentage: 30, confidence: 80,
+      supportingEvidenceIds: [], contradictingEvidenceIds: ["EV_01"],
+      reasoning: fallback ? verdict.reasoning : "reasoning:direction-repair" });
+    expect(result.verdictReason).not.toBe("verdict_integrity_failure");
+    expect(result.challengeResponses).toEqual(fallback ? verdict.challengeResponses :
+      [{ ...verdict.challengeResponses[0], response: "response:direction-repair" }]);
+    expect(membershipWarnings(warnings)).toHaveLength(1);
+    expect(groundingCalls).toBe(fallback ? 3 : 2);
+    expect(llm.mock.calls.filter(([key]) => key === "VERDICT_DIRECTION_REPAIR")).toHaveLength(1);
+  });
+
+  it("preserves challenge provenance for an injected repair executor too", async () => {
+    const { evidence, verdict, context } = fixture();
+    let groundingCalls = 0;
+    const llm = vi.fn(async (key: string) => {
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      if (key === "VERDICT_GROUNDING_VALIDATION") return [membership(++groundingCalls > 2)];
+      throw Error(key);
+    });
+    const repairExecutor = vi.fn(async (request: VerdictRepairRequest) => ({ ...request.verdict,
+      truthPercentage: 99, reasoning: "reasoning:custom-repair",
+      challengeResponses: [{ challengeType: "missing_evidence" as const, response: "response:custom-repair",
+        verdictAdjusted: true, adjustmentBasedOnChallengeIds: ["CP_99"] }],
+    }));
+    const [result] = await validateVerdicts([verdict], evidence, llm, config, [], { ...context, repairExecutor });
+    expect(result.truthPercentage).toBe(48);
+    expect(result.challengeResponses).toEqual([{ ...verdict.challengeResponses[0], response: "response:custom-repair" }]);
+    expect(repairExecutor.mock.calls[0][0]).toMatchObject({ membershipOnly: true, directionIssues: [] });
+  });
+
+  it.each([undefined, [], [{ response: "" }], [{ response: 7 }], [{ response: "one" }, { response: "extra" }]])(
+    "does not erase responses on a partial or malformed repair (%j)", async updates => {
+      const { evidence, verdict, context } = fixture();
+      const warnings: AnalysisWarning[] = [];
+      let groundingCalls = 0;
+      const llm = vi.fn(async (key: string, input: Record<string, unknown>) => {
+        if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+        if (key === "VERDICT_DIRECTION_REPAIR") return { claimId: "AC_01", truthPercentage: 48,
+          reasoning: "reasoning:after", challengeResponses: updates };
+        if (key === "VERDICT_GROUNDING_VALIDATION") {
+          groundingCalls++;
+          expect((input.verdicts as CBClaimVerdict[])[0].challengeResponses).toEqual(verdict.challengeResponses);
+          return [membership(groundingCalls > 2)];
+        }
+        throw Error(key);
+      });
+      const [result] = await validateVerdicts([verdict], evidence, llm, config, warnings, context);
+      expect(result.challengeResponses).toEqual(verdict.challengeResponses);
+      expect(result.reasoning).toBe("reasoning:after");
+    });
+
+  it("checks phantom-stripped arrays and valid uncited context without an extra repair", async () => {
+    const evidence = [createEvidenceItem(), createEvidenceItem({ id: "EV_02", applicability: "contextual" })];
+    const verdict = createCBVerdict({ supportingEvidenceIds: ["EV_01", "EV_missing"] });
+    const warnings: AnalysisWarning[] = [];
+    const stripped = stripPhantomEvidenceIds([verdict], evidence, warnings);
+    const llm = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [membership(true)];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      throw Error(key);
+    });
+    const result = await validateVerdicts(stripped, evidence, llm, config, warnings);
+    expect(result).toEqual(stripped);
+    expect(membershipWarnings(warnings)).toEqual([]);
+    expect(llm).toHaveBeenCalledTimes(2);
+    const groundingInput = llm.mock.calls.find(([key]) => key === "VERDICT_GROUNDING_VALIDATION")![1];
+    const candidate = (groundingInput.verdicts as Record<string, unknown>[])[0];
+    expect(candidate.supportingEvidenceIds).toEqual(["EVG_001"]);
+    expect((candidate.evidencePool as EvidenceItem[]).map(e => e.id)).toContain("EVG_002");
+  });
+
+  it.each([true, false, undefined])("carries derivativeClaimUnverified=%s to every verdict consumer", async marker => {
+    const claims = [createAtomicClaim()], boundaries = [createClaimBoundary()];
+    const evidence = [createEvidenceItem({ derivativeClaimUnverified: marker })];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const llm = createMockLLM({ VERDICT_ADVOCATE: advocateResponse(), VERDICT_CHALLENGER: { challenges: [] },
+      VERDICT_RECONCILIATION: reconciliationResponse() });
+    const advocate = await advocateVerdict(claims, evidence, boundaries, matrix, llm);
+    const consistency = await selfConsistencyCheck(claims, evidence, boundaries, matrix, advocate, llm,
+      { ...DEFAULT_VERDICT_STAGE_CONFIG, selfConsistencyMode: "full" });
+    const challenges = await adversarialChallenge(advocate, evidence, boundaries, llm);
+    await reconcileVerdicts(advocate, challenges, consistency, evidence, llm);
+    expect(vi.mocked(llm).mock.calls).toHaveLength(5);
+    for (const [, input] of vi.mocked(llm).mock.calls) {
+      const serialized = JSON.parse(JSON.stringify(input));
+      if (marker === undefined) expect(serialized.evidenceItems[0]).not.toHaveProperty("derivativeClaimUnverified");
+      else expect(serialized.evidenceItems[0].derivativeClaimUnverified).toBe(marker);
+    }
+  });
+});
 
 describe("runStructuralConsistencyCheck", () => {
   it("should return empty warnings when all checks pass", () => {

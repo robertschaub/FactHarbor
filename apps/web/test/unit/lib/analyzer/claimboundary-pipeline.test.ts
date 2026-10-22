@@ -5696,6 +5696,20 @@ describe("Stage 4: createProductionLLMCall", () => {
     vi.clearAllMocks();
   });
 
+  it.each([
+    ["VERDICT_GROUNDING_VALIDATION", [{ claimId: "AC_01", groundingValid: true, issues: [],
+      citationMembershipValid: false, citationMembershipIssues: ["membership:mismatch"] }]],
+    ["VERDICT_DIRECTION_REPAIR", { claimId: "AC_01", truthPercentage: 48, reasoning: "reasoning:after",
+      challengeResponses: [{ response: "response:after" }] }],
+  ])("passes the membership output contract through the production adapter: %s", async (key, output) => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(output) } as any);
+    const result = await createProductionLLMCall({} as any)(key as string, {}, { tier: "budget" });
+    expect(result).toEqual(output);
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockGenerateText.mock.calls[0][0]).not.toHaveProperty("output");
+  });
+
   it("should load prompt section and call AI SDK with correct parameters", async () => {
     mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
     mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
