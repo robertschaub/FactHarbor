@@ -83,3 +83,34 @@ The established route is a local `codex exec` process using the ChatGPT subscrip
 5. Require exit code 0 and a non-empty last message, then read the banner block Codex prints first on stderr, between the first two `--------` lines: require `model:`, `sandbox: read-only`, `provider: openai`, `approval: never` and `reasoning effort:` equal to the requested values. Everything after that block is the echoed packet and the response; do not treat text there as control evidence. The banner echoes the client's request, and `codex exec` prints no server-side model echo; in the observed runs an unsupported model produced an HTTP 400 error and a non-zero exit instead of a substitution. `tokens used` is a usage count, not a charge. Subscription usage windows are separate from FactHarbor's paid API ledger. A usage-limit error fails that invocation and holds further calls through the affected route for the user; do not change models, accounts or providers to bypass it. Login status says nothing about extra-usage billing.
 
 This profile reviews the supplied packet with the tools above disabled by flags and by instruction. It cannot inspect the checkout, recompute hashes or run tests, and its findings should say so. A review needing repository access is the wrapper's `--repo` profile: shell tool enabled for reading, read-only sandbox, checkout as working directory, and a separately scoped authorization with the sandbox caveat above. None of these instructions grants authority to send private material, exceed disclosure scope or implement the review's recommendations; check outbound content for private material before the packet leaves the machine.
+
+## Calling Gemini from Claude Code or Codex
+
+Apply the model-selection rule above and pass the chosen model explicitly (for example `gemini-4-argon-high` for deep architecture, code or workflow review, or `gemini-4-argon-low` for bounded checks).
+
+The established route is a local Antigravity CLI (`agy`) process using the Google subscription OAuth login, with a supplied review packet. It never uses `GEMINI_API_KEY`, `GOOGLE_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`. [`scripts/agents/invoke-gemini.cjs`](../../../scripts/agents/invoke-gemini.cjs) implements the steps below: pass `--model <slug>`, `--effort <low|medium|high|xhigh|max>` and the packet on stdin, `--packet <file>` or `--prompt <text>`. `FH_INVOKE_GEMINI_DRY_RUN=1` resolves the executable (it runs `--version` and `--help`, nothing else) and prints the plan.
+
+1. Locate a current `agy` executable (`~/.gemini/bin/agy.exe` or `%LOCALAPPDATA%\agy\bin\agy.exe` on Windows) that supports `--input-format`, `--output-format`, `--mode`, `--model`, `--effort` and `--print-timeout` in `--help`. An explicit `FH_AGY_BIN` (or `FH_GEMINI_BIN`) must be usable or the run stops. Do not install or update the CLI as a side effect.
+2. Copy the environment for the child process only and remove inherited `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, `GOOGLE_GENAI_USE_VERTEXAI`, `GOOGLE_GENAI_USE_GCA`, `CLOUD_ML_REGION` and `GOOGLE_CLOUD_PROJECT` values so the subscription OAuth login is the only credential route. Leave global environment and credential stores unchanged. If Google OAuth sign-in is missing or expired, stop the invocation for the user to complete browser sign-in in `agy`; never fall back to an API key.
+3. For a packet-only review, use a fresh empty temporary directory outside any checkout and spawn with an argument array:
+
+   ```js
+   const args = [
+     '--input-format', 'stream-json',
+     '--output-format', 'stream-json',
+     '--mode', 'plan',
+     '--model', selectedModel,
+     '--effort', reviewEffort,
+     '--print-timeout', '15m'
+   ];
+   // spawn(executable, args, { cwd: temporaryDirectory, env: childEnv,
+   //   windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+   // Write one NDJSON user message line on stdin and close stdin:
+   // JSON.stringify({ event: 'user', message: { content: packetWithReviewOnlyPreamble } }) + '\n'
+   ```
+
+   `selectedModel` is an explicit caller choice; the wrapper requires `--model`. Do not pass `--disable-slash-commands` alongside `--mode plan` (which disables plan mode in `agy` 1.4.6), and do not send an `{"event":"end"}` frame before closing stdin. Do not add `--dangerously-skip-permissions` or `--add-dir` in packet mode. Because `agy` still advertises native tools in its `init` event, the isolated temporary working directory, the review-only preamble and post-run event inspection carry the packet-only boundary.
+4. Allow a long-lived invocation (at least a 15-minute process budget for a deep review) and poll or run in the background rather than imposing a short shell timeout. Every run gets a fresh evidence directory under `--evidence-dir` (default `<temp>/gemini-reviews`; if inside a checkout, it must be gitignored). It stores `packet.md`, `packet.sha256`, `request.json`, `stdout.ndjson`, `stderr.txt`, `last-message.md` and `result.json`. Do not log secrets.
+5. Require exit code 0, a non-empty response, an `init` event whose `init.model` matches `selectedModel`, a final `result` event with `status: "SUCCESS"`, zero `denied_actions`, and (for packet mode) zero tool-call `step_update` events. Extract the review text from `result.response`. Token counts in `usage` report subscription turn usage, not paid API invoice charges; on authentication or quota/rate-limit failure, stop and hold the route for the user without switching models, accounts or providers.
+
+A review needing read-only repository access uses the wrapper's `--repo` profile (with optional `--add-dir <dir>` for task-authorized peer checkouts), which runs in `--mode plan` from the repository root and verifies that no mutating or command tool steps occurred. None of these instructions grants authority to send private material, exceed disclosure scope or implement the review's recommendations.
