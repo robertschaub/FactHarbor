@@ -19,7 +19,14 @@
  *   Profile "packet" (default): fresh empty temporary working directory, user config ignored,
  *   shell, file, patch and image tools disabled by feature flags, read-only sandbox.
  *   --repo selects profile "repo-read-only": repository root as working directory, shell tool
- *   enabled for reading, read-only sandbox (its enforcement is not verified by this wrapper).
+ *   enabled for reading (code_mode_host stays enabled: the 0.164 shell tool runs through it),
+ *   execpolicy rules ignored, windows.sandbox="elevated" restored by -c override because user
+ *   config is still ignored, read-only sandbox (its enforcement is not verified by this wrapper).
+ *   Inside that sandbox commands run as the sandbox's own local user: git needs
+ *   -c safe.directory=<repo> on every command and rg is not on its PATH; the preamble says so.
+ *   The working directory is the nearest ancestor with AGENTS.md and .claude/settings.json;
+ *   name other authorized checkouts by absolute path in the packet.
+ *   Qualified 2026-10-26 on codex-cli 0.164.0-alpha.11.1: git log and Get-Content ran through it.
  *   --account stops the run unless the login's email matches (FH_CODEX_ACCOUNT sets the default).
  *   Every run creates a fresh directory under --evidence-dir (default <temp>/codex-reviews);
  *   a location inside a checkout must be gitignored.
@@ -46,7 +53,7 @@ const LOGIN_OK = /Logged in using ChatGPT/i;
 const REQUIRED_EXEC_FLAGS = ['--sandbox', '--ephemeral', '--color', '--skip-git-repo-check', '--model', '--ignore-user-config', '--strict-config', '--disable', '--output-last-message'];
 const DISABLED_FEATURES = {
   packet: ['memories', 'shell_tool', 'unified_exec', 'code_mode_host', 'skill_search', 'tool_suggest', 'apps', 'multi_agent'],
-  'repo-read-only': ['memories', 'code_mode_host', 'skill_search', 'tool_suggest', 'apps', 'multi_agent'],
+  'repo-read-only': ['memories', 'skill_search', 'tool_suggest', 'apps', 'multi_agent'],
 };
 const BANNER_FIELDS = ['model', 'provider', 'approval', 'sandbox', 'reasoning effort', 'session id'];
 const MAX_CAPTURE_BYTES = 64 * 1024 * 1024;
@@ -57,6 +64,8 @@ const PACKET_PREAMBLE =
   'do not run commands, read files, or fetch anything. Distinguish inspected evidence from attributed claims.\n\n';
 const REPO_PREAMBLE =
   'Read-only review of this working directory. Do not modify files, run builds or tests, or use the network. ' +
+  'Commands run inside a read-only sandbox as a separate local user: prefix every git command with ' +
+  '`-c safe.directory=<repository path>`, and use Get-Content or Select-String because rg is not available there. ' +
   'Distinguish inspected evidence from attributed claims.\n\n';
 
 class UsageError extends Error {}
@@ -333,6 +342,7 @@ function buildCodexArgs(args, profile, workdir, lastMessagePath) {
   const list = ['exec', '--sandbox', 'read-only', '--ephemeral', '--color', 'never', '--skip-git-repo-check', '-C', workdir,
     '--model', args.model, '--ignore-user-config', '--strict-config'];
   for (const feature of DISABLED_FEATURES[profile]) list.push('--disable', feature);
+  if (profile === 'repo-read-only') list.push('--ignore-rules', '-c', 'windows.sandbox="elevated"');
   list.push('-c', 'web_search="disabled"');
   if (args.effort) list.push('-c', `model_reasoning_effort="${args.effort}"`);
   list.push('--output-last-message', lastMessagePath, '-');
