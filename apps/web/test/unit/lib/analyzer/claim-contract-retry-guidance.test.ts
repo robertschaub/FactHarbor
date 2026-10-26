@@ -290,7 +290,7 @@ describe("UCM retry guidance", () => {
     const loaded = await loadPromptFile("claimboundary");
     expect(loaded.success).toBe(true);
     expect(loaded.warnings.filter(w => w.type === "missing_section")).toEqual([]);
-    expect(loaded.prompt?.frontmatter.version).toBe("1.0.21");
+    expect(loaded.prompt?.frontmatter.version).toBe("1.0.23");
     expect(loaded.prompt?.frontmatter.requiredSections).toEqual(expect.arrayContaining([
       "CLAIM_CONTRACT_RETRY_GUIDANCE", "CLAIM_CONTRACT_RETRY_ANCHOR_GUIDANCE", "CLAIM_CONTRACT_RETRY_ATOMICITY_GUIDANCE",
       "CLAIM_CONTRACT_CARRIER_FIDELITY_REASON",

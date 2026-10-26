@@ -47,6 +47,12 @@
     "@apidevtools/json-schema-ref-parser": {
       "undici": "^8.10.2"
     },
+    "@azure/identity": {
+      "@azure/msal-node": "^7.1.1"
+    },
+    "get-uri": {
+      "basic-ftp": "^6.2.3"
+    },
     "hono": "^4.13.11",
     "simple-git": ">=3.32.3",
     "postcss": "^8.5.18",

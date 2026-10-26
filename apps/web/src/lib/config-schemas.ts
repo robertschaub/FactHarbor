@@ -293,7 +293,7 @@ const ModelThinkingSchema = z.discriminatedUnion("type", [
 const ContractValidationModelSchema = z.literal("claude-sonnet-5").nullable().optional();
 export const ModelPolicySchema = z.object({
   thinking: ModelThinkingSchema,
-  outputTokenCaps: z.record(z.enum([...MODEL_POLICY_STAGES, "researchExtraction"]), z.number().int().min(1).max(128000)),
+  outputTokenCaps: z.partialRecord(z.enum([...MODEL_POLICY_STAGES, "researchExtraction"]), z.number().int().min(1).max(128000)),
   structuredOutputModes: z.object({
     claimContractValidation: z.literal("outputFormat").optional(),
   }).strict().optional(),
@@ -328,7 +328,7 @@ export function getModelPolicyErrors(
     if (!anthropicProvider) errors.push("modelClaimContractValidation: Anthropic provider is required");
   }
   const policies = (config.modelPolicies ?? {}) as Record<string, unknown>;
-  const checked = z.record(ModelPolicySchema).safeParse(policies);
+  const checked = z.record(z.string(), ModelPolicySchema).safeParse(policies);
   if (!checked.success) {
     return [...errors, ...checked.error.issues.map(i => `modelPolicies.${i.path.join(".")}: ${i.message}`)];
   }
@@ -446,7 +446,7 @@ export const PipelineConfigSchema = z.object({
   modelVerdict: z.string().min(1).describe("Reasoning model: contract checks/repairs, claim selection, clustering, verdict debate, adjudication and narrative"),
   modelClaimContractValidation: ContractValidationModelSchema.describe("Optional contract-validator-only model. Missing/null inherits the reasoning model; requires Anthropic tiering and an explicit candidate policy."),
   modelOpus: z.string().min(1).optional().describe("Model for OPUS debate tier (B-5b). Used when a debate role is set to 'opus'. Falls back to modelVerdict if not set."),
-  modelPolicies: z.record(ModelPolicySchema).optional().describe("Explicit candidate thinking and per-stage output caps. Empty preserves baseline requests; no candidate policy is supplied implicitly."),
+  modelPolicies: z.record(z.string(), ModelPolicySchema).optional().describe("Explicit candidate thinking and per-stage output caps. Empty preserves baseline requests; no candidate policy is supplied implicitly."),
 
   // === LLM Text Analysis Feature Flags ===
   llmInputClassification: z.boolean().describe("Use LLM for input classification (replaces heuristics)"),
@@ -524,7 +524,7 @@ export const PipelineConfigSchema = z.object({
       minConfidenceBase: z.number().int().min(5).max(30).default(15),
       minConfidenceMax: z.number().int().min(30).max(85).default(75),
       sourceCountThreshold: z.number().int().min(1).max(10).default(3),
-    }).default({}),
+    }).prefault({}),
     bandSnapping: z.object({
       enabled: z.boolean().default(true),
       strength: z.number().min(0).max(1).default(0.5),
@@ -533,18 +533,18 @@ export const PipelineConfigSchema = z.object({
         max: z.number().int(),
         snapTo: z.number().int(),
       })).optional(),
-    }).default({}),
+    }).prefault({}),
     verdictCoupling: z.object({
       enabled: z.boolean().default(true),
       strongVerdictThreshold: z.number().int().min(60).max(80).default(70),
       minConfidenceStrong: z.number().int().min(30).max(70).default(50),
       minConfidenceNeutral: z.number().int().min(10).max(40).default(25),
-    }).default({}),
+    }).prefault({}),
     contextConsistency: z.object({
       enabled: z.boolean().default(true),
       maxConfidenceSpread: z.number().int().min(10).max(50).default(25),
       reductionFactor: z.number().min(0).max(1).default(0.5),
-    }).default({}),
+    }).prefault({}),
   }).optional()
     .describe("Confidence calibration system: multi-layer deterministic post-processing to reduce confidence instability"),
   minConfidenceFloor: z.number().int().min(0).max(50).optional()
@@ -1453,7 +1453,7 @@ export const SourceReliabilityConfigSchema = z.object({
       serper: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 1, dailyQuotaLimit: 0 }),
       serpapi: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 3, dailyQuotaLimit: 0 }),
       brave: z.object({ enabled: z.boolean(), priority: z.number().int(), dailyQuotaLimit: z.number().int().optional() }).default({ enabled: true, priority: 4, dailyQuotaLimit: 0 }),
-    }).default({}),
+    }).prefault({}),
   }).optional().describe("SR-owned search settings for evaluation evidence collection"),
 
   // === Evidence Quality Assessment (SR-owned enrichment step) ===

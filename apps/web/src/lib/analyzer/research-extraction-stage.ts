@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { withFallback, withOptionalFallback } from "./schema-fallback";
 import { createHash } from "node:crypto";
 import { generateText, Output } from "ai";
 import { loadAndRenderSection } from "./prompt-loader";
@@ -216,7 +217,7 @@ export const RelevanceClassificationOutputSchema = z.object({
   relevantSources: z.array(z.object({
     url: z.string(),
     relevanceScore: z.number(),
-    jurisdictionMatch: z.enum(["direct", "contextual", "foreign_reaction"]).catch("contextual"),
+    jurisdictionMatch: withFallback(z.enum(["direct", "contextual", "foreign_reaction"]), "contextual"),
     reasoning: z.string(),
   })),
 });
@@ -232,8 +233,8 @@ export const Stage2EvidenceItemSchema = z.object({
     temporal: z.string().optional(),
     geographic: z.string().optional(),
     boundaries: z.string().optional(),
-    analyticalDimension: z.string().optional().catch(undefined),
-    additionalDimensions: z.record(z.string()).optional(),
+    analyticalDimension: withOptionalFallback(z.string().optional(), undefined),
+    additionalDimensions: z.record(z.string(), z.string()).meta({ propertyNames: undefined }).optional(),
   }),
   probativeValue: z.enum(["high", "medium", "low"]),
   sourceType: z.string().optional()
@@ -252,7 +253,7 @@ export const ApplicabilityAssessmentOutputSchema = z.object({
   // (flow uses only evidenceIndex + applicability). See WIP 2026-06-01 §9.
   assessments: z.array(z.object({
     evidenceIndex: z.number(),
-    applicability: z.enum(["direct", "contextual", "foreign_reaction"]).optional().catch(undefined),
+    applicability: withOptionalFallback(z.enum(["direct", "contextual", "foreign_reaction"]).optional(), undefined),
   })),
 });
 

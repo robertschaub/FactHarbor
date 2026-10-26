@@ -2,21 +2,25 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { build } from 'esbuild';
 import { chromium } from 'playwright';
 
 const here=dirname(fileURLToPath(import.meta.url));
-const require=createRequire(import.meta.url);
 const directory=resolve(here,'../../Docs/site/diagrams');
-const runtime=resolve(dirname(require.resolve('mermaid/package.json')),'dist/mermaid.min.js');
+// Bundle the ESM entry so rendering uses the patched dependencies in our lockfile.
+// Mermaid's prebuilt browser bundle embeds its own older dependency copies.
+const runtime=await build({
+  stdin:{contents:'import mermaid from "mermaid"; globalThis.mermaid=mermaid;',resolveDir:here},
+  bundle:true,format:'iife',platform:'browser',write:false,
+});
 const channel=process.argv.includes('--edge') ? 'msedge' : undefined;
 const browser=await chromium.launch({headless:true,channel});
 try {
   const page=await browser.newPage({viewport:{width:2000,height:1200}});
   await page.route('**/*',route=>route.abort());
   await page.setContent('<html><body style="margin:0;background:white"></body></html>');
-  await page.addScriptTag({path:runtime});
-  await page.evaluate(()=>mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'default',fontFamily:'Arial',htmlLabels:false,flowchart:{curve:'linear'},sequence:{useMaxWidth:false},themeVariables:{fontFamily:'Arial',fontSize:'18px'},deterministicIds:true}));
+  await page.addScriptTag({content:runtime.outputFiles[0].text});
+  await page.evaluate(()=>mermaid.initialize({startOnLoad:false,securityLevel:'strict',layout:'dagre',look:'classic',theme:'default',fontFamily:'Arial',htmlLabels:false,flowchart:{curve:'linear',wrappingWidth:200,minNodeWidth:0},sequence:{useMaxWidth:false},themeVariables:{fontFamily:'Arial',fontSize:'18px'},deterministicIds:true}));
   let count=0;
   for (const name of readdirSync(directory).filter(name=>name.endsWith('.mmd')).sort()) {
     const source=readFileSync(resolve(directory,name),'utf8');

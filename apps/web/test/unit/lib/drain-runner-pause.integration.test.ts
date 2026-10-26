@@ -19,6 +19,12 @@ import {
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { isJobAborted } from "@/lib/job-abort";
 
+// Queue behavior does not depend on Git metadata; avoid synchronous Git calls
+// and their real-time deadlines while these tests use fake timers.
+vi.mock("@/lib/build-info", () => ({
+  getWebGitCommitHash: vi.fn(() => "0123456789abcdef0123456789abcdef01234567"),
+}));
+
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(async () => ({ resultJson: { meta: {} } })),
 }));

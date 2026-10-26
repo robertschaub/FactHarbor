@@ -2,6 +2,7 @@ import type { CalcConfig, PipelineConfig } from "../config-schemas";
 import { extractNormalizedHostname } from "../domain-utils";
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { withFallback } from "./schema-fallback";
 import {
   getModelForTask,
   extractStructuredOutput,
@@ -274,8 +275,8 @@ const SRCalibrationOutputSchema = z.object({
   claims: z.array(z.object({
     claimId: z.string(),
     confidenceDelta: z.number().int(),
-    concerns: z.array(z.string()).catch([]),
-    reasoning: z.string().catch(""),
+    concerns: withFallback(z.array(z.string()), []),
+    reasoning: withFallback(z.string(), ""),
   })),
 });
 

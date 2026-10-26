@@ -1,11 +1,13 @@
 {
   "name": "factharbor-documentation-tools",
   "private": true,
+  "engines": { "node": ">=22.12.0" },
   "scripts": {
     "render": "node render-diagrams.mjs"
   },
   "devDependencies": {
-    "mermaid": "11.17.2",
+    "esbuild": "0.28.2",
+    "mermaid": "12.2.0",
     "playwright": "1.63.0"
   }
 }

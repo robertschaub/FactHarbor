@@ -34,6 +34,48 @@ import {
 // CONFIG TYPE VALIDATION
 // ============================================================================
 
+describe("Schema safety and nested defaults", () => {
+  it("rejects an oversized domain list before validating its entries", () => {
+    const result = SearchConfigSchema.safeParse({
+      ...DEFAULT_SEARCH_CONFIG,
+      domainWhitelist: Array(51).fill(42),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toEqual([
+        expect.objectContaining({ code: "too_big", path: ["domainWhitelist"] }),
+      ]);
+    }
+  });
+
+  it("fills all nested calibration defaults even when calibration is disabled", () => {
+    const parsed = PipelineConfigSchema.parse({
+      ...DEFAULT_PIPELINE_CONFIG,
+      confidenceCalibration: { enabled: false },
+    });
+    expect(parsed.confidenceCalibration).toEqual({
+      enabled: false,
+      densityAnchor: { enabled: true, minConfidenceBase: 15, minConfidenceMax: 75, sourceCountThreshold: 3 },
+      bandSnapping: { enabled: true, strength: 0.5 },
+      verdictCoupling: { enabled: true, strongVerdictThreshold: 70, minConfidenceStrong: 50, minConfidenceNeutral: 25 },
+      contextConsistency: { enabled: true, maxConfidenceSpread: 25, reductionFactor: 0.5 },
+    });
+  });
+
+  it("fills provider defaults when evaluation search is empty", () => {
+    const parsed = SourceReliabilityConfigSchema.parse({ ...DEFAULT_SR_CONFIG, evaluationSearch: {} });
+    expect(parsed.evaluationSearch).toEqual({
+      provider: "auto", maxResultsPerQuery: 3, maxEvidenceItems: 30, dateRestrict: null, timeoutMs: 15000,
+      providers: {
+        googleCse: { enabled: true, priority: 2, dailyQuotaLimit: 100 },
+        serper: { enabled: true, priority: 1, dailyQuotaLimit: 0 },
+        serpapi: { enabled: true, priority: 3, dailyQuotaLimit: 0 },
+        brave: { enabled: true, priority: 4, dailyQuotaLimit: 0 },
+      },
+    });
+  });
+});
+
 describe("Config Type Validation", () => {
   it("VALID_CONFIG_TYPES includes all 5 types", () => {
     expect(VALID_CONFIG_TYPES).toContain("prompt");

@@ -30,6 +30,7 @@ import type {
 
 import { generateText, Output, APICallError } from "ai";
 import { z } from "zod";
+import { withFallback, withOptionalFallback } from "./schema-fallback";
 import {
   getModelForTask,
   extractStructuredOutput,
@@ -59,9 +60,9 @@ const Pass1OutputSchema = z.object({
     searchHint: z.string(),
   })),
   /** BCP-47 language code detected from input text (e.g., "de", "en", "fr") */
-  detectedLanguage: z.string().catch("en"),
+  detectedLanguage: withFallback(z.string(), "en"),
   /** ISO 3166-1 alpha-2 country inferred from claim content, or null if not geographically specific */
-  inferredGeography: z.string().nullable().catch(null),
+  inferredGeography: withFallback(z.string().nullable(), null),
 });
 
 // Pass2AtomicClaimSchema: Most non-essential fields use .catch(default) to prevent
@@ -73,56 +74,55 @@ const Pass1OutputSchema = z.object({
 // claim-level freshness contract remains auditable.
 // See: Docs/WIP/LLM_Expert_Review_Schema_Validation.md
 export const Pass2AtomicClaimSchema = z.object({
-  id: z.string().catch(""),
-  statement: z.string().catch(""),
-  category: z.enum(["factual", "evaluative", "procedural"]).catch("factual"),
-  verifiability: z.enum(["high", "medium", "low", "none"]).optional().catch(undefined),
+  id: withFallback(z.string(), ""),
+  statement: withFallback(z.string(), ""),
+  category: withFallback(z.enum(["factual", "evaluative", "procedural"]), "factual"),
+  verifiability: withOptionalFallback(z.enum(["high", "medium", "low", "none"]).optional(), undefined),
   freshnessRequirement: z.enum(["none", "recent", "current_snapshot"]).optional(),
-  centrality: z.enum(["high", "medium", "low"]).catch("low"),
-  harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
-  isCentral: z.boolean().catch(false),
-  claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]).catch("contextual"),
-  thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional().catch(undefined),
-  keyEntities: z.array(z.string()).catch([]),
-  relevantGeographies: z.array(z.string()).optional().catch([]),
-  checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
-  specificityScore: z.number().catch(0.5),
-  groundingQuality: z.enum(["strong", "moderate", "weak", "none"]).catch("moderate"),
-  expectedEvidenceProfile: z.object({
-    methodologies: z.array(z.string()).catch([]),
-    expectedMetrics: z.array(z.string()).catch([]),
-    expectedSourceTypes: z.array(z.string())
+  centrality: withFallback(z.enum(["high", "medium", "low"]), "low"),
+  harmPotential: withFallback(z.enum(["critical", "high", "medium", "low"]), "low"),
+  isCentral: withFallback(z.boolean(), false),
+  claimDirection: withFallback(z.enum(["supports_thesis", "contradicts_thesis", "contextual"]), "contextual"),
+  thesisRelevance: withOptionalFallback(z.enum(["direct", "tangential", "irrelevant"]).optional(), undefined),
+  keyEntities: withFallback(z.array(z.string()), []),
+  relevantGeographies: withOptionalFallback(z.array(z.string()).optional(), []),
+  checkWorthiness: withFallback(z.enum(["high", "medium", "low"]), "medium"),
+  specificityScore: withFallback(z.number(), 0.5),
+  groundingQuality: withFallback(z.enum(["strong", "moderate", "weak", "none"]), "moderate"),
+  expectedEvidenceProfile: withFallback(z.object({
+    methodologies: withFallback(z.array(z.string()), []),
+    expectedMetrics: withFallback(z.array(z.string()), []),
+    expectedSourceTypes: withFallback(z.array(z.string())
       .transform((values) =>
         values
           .map((value) => normalizeExtractedSourceType(value))
           .filter((value): value is SourceType => typeof value === "string"),
-      )
-      .catch([]),
+      ), []),
     primaryMetric: z.string().optional(),
-    componentMetrics: z.array(z.string()).optional().catch([]),
-  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [], componentMetrics: [] }),
+    componentMetrics: withOptionalFallback(z.array(z.string()).optional(), []),
+  }), { methodologies: [], expectedMetrics: [], expectedSourceTypes: [], componentMetrics: [] }),
 });
 
-// Pass2OutputSchema: All fields use .catch() defaults to prevent AI SDK NoObjectGeneratedError.
-// The JSON Schema sent to the LLM is unaffected (.catch() only acts during safeParse).
+// Pass2OutputSchema: Runtime fallbacks prevent AI SDK NoObjectGeneratedError.
+// withFallback preserves the prior JSON Schema sent to the LLM.
 // Quality-critical fields (.catch("") / .catch([])) are checked explicitly after parsing
 // in the quality gate below — empty defaults trigger Zod-aware retry with specific feedback.
 const Pass2OutputSchema = z.object({
   // Quality-critical fields — .catch("") prevents SDK throw; quality gate validates content.
-  impliedClaim: z.string().catch(""),
-  backgroundDetails: z.string().catch(""),
-  articleThesis: z.string().catch(""),
-  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+  impliedClaim: withFallback(z.string(), ""),
+  backgroundDetails: withFallback(z.string(), ""),
+  articleThesis: withFallback(z.string(), ""),
+  atomicClaims: withFallback(z.array(Pass2AtomicClaimSchema), []),
   // LLM-classified input type: replaces the char-count heuristic in detectInputType().
   // "claim" = short assertion, "question" = interrogative, "article" = long-form text.
   // Falls back to "claim" if LLM omits (backward-compat with pre-2.2 prompts).
-  inputClassification: z.enum([
+  inputClassification: withFallback(z.enum([
     "single_atomic_claim",
     "ambiguous_single_claim",
     "multi_assertion_input",
     "question",
     "article",
-  ]).catch("single_atomic_claim"),
+  ]), "single_atomic_claim"),
   // Metadata/structural fields — calling code already nullchecks with ?? fallbacks.
   distinctEvents: z.array(z.object({
     name: z.string(),
@@ -137,38 +137,38 @@ const Pass2OutputSchema = z.object({
 // with the anchor fused into an existing thesis-direct claim. Top-level Pass 2
 // metadata stays on the pre-repair envelope already held in memory.
 const ContractRepairOutputSchema = z.object({
-  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+  atomicClaims: withFallback(z.array(Pass2AtomicClaimSchema), []),
 });
 
 // F2: surgical per-claim contract repair. The LLM returns ONLY replacement
 // groups for validator-flagged claims; unflagged claims never round-trip
 // through the model, so they are preserved by construction.
 const SurgicalContractRepairGroupSchema = z.object({
-  replacesClaimIds: z.array(z.string()).catch([]),
-  reasoning: z.string().catch(""),
-  claims: z.array(Pass2AtomicClaimSchema).catch([]),
+  replacesClaimIds: withFallback(z.array(z.string()), []),
+  reasoning: withFallback(z.string(), ""),
+  claims: withFallback(z.array(Pass2AtomicClaimSchema), []),
 });
 
 const SurgicalContractRepairOutputSchema = z.object({
-  repairs: z.array(SurgicalContractRepairGroupSchema).catch([]),
+  repairs: withFallback(z.array(SurgicalContractRepairGroupSchema), []),
 });
 
 const ContractCompletionOmittedPropositionSchema = z.object({
-  id: z.string().catch(""),
-  description: z.string().catch(""),
-  whyInScope: z.string().catch(""),
+  id: withFallback(z.string(), ""),
+  description: withFallback(z.string(), ""),
+  whyInScope: withFallback(z.string(), ""),
 });
 
 const ContractCompletionOutputSchema = z.object({
-  completionEligible: z.boolean().catch(false),
-  failureKind: z.enum([
+  completionEligible: withFallback(z.boolean(), false),
+  failureKind: withFallback(z.enum([
     "omitted_thesis_direct_proposition",
     "not_eligible",
     "unclear",
-  ]).catch("unclear"),
-  omittedPropositions: z.array(ContractCompletionOmittedPropositionSchema).catch([]),
-  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
-  rationale: z.string().catch(""),
+  ]), "unclear"),
+  omittedPropositions: withFallback(z.array(ContractCompletionOmittedPropositionSchema), []),
+  atomicClaims: withFallback(z.array(Pass2AtomicClaimSchema), []),
+  rationale: withFallback(z.string(), ""),
 });
 
 // Phase 7 E2: salience commitment stage output schema. Runs between Pass 1 and
@@ -176,9 +176,9 @@ const ContractCompletionOutputSchema = z.object({
 // stage emits a list of distinguishing-meaning-aspect anchors for auditability
 // and measurement.
 const SalienceAnchorSchema = z.object({
-  text: z.string().catch(""),
-  inputSpan: z.string().catch(""),
-  type: z.enum([
+  text: withFallback(z.string(), ""),
+  inputSpan: withFallback(z.string(), ""),
+  type: withFallback(z.enum([
     "agent",
     "action_predicate",
     "temporal",
@@ -188,13 +188,13 @@ const SalienceAnchorSchema = z.object({
     "modal_illocutionary",
     "attribution",
     "other",
-  ]).catch("other"),
-  rationale: z.string().catch(""),
-  truthConditionShiftIfRemoved: z.string().catch(""),
+  ]), "other"),
+  rationale: withFallback(z.string(), ""),
+  truthConditionShiftIfRemoved: withFallback(z.string(), ""),
 });
 
 const SalienceOutputSchema = z.object({
-  anchors: z.array(SalienceAnchorSchema).catch([]),
+  anchors: withFallback(z.array(SalienceAnchorSchema), []),
 });
 
 const Gate1OutputSchema = z.object({
@@ -202,7 +202,7 @@ const Gate1OutputSchema = z.object({
     claimId: z.string(),
     passedOpinion: z.boolean(),
     passedSpecificity: z.boolean(),
-    passedFidelity: z.boolean().catch(true),
+    passedFidelity: withFallback(z.boolean(), true),
     reasoning: z.string(),
   })),
 });
@@ -217,7 +217,7 @@ const PreliminaryEvidenceItemSchema = z.object({
     temporal: z.string().optional(),
     geographic: z.string().optional(),
     boundaries: z.string().optional(),
-    analyticalDimension: z.string().optional().catch(undefined),
+    analyticalDimension: withOptionalFallback(z.string().optional(), undefined),
   }).optional(),
   probativeValue: z.enum(["high", "medium", "low"]).optional(),
   sourceType: z.string().optional()
@@ -3567,27 +3567,27 @@ export function selectClaimsForGate1(
 
 const ClaimContractTruthConditionAnchorSchema = z.object({
   presentInInput: z.boolean(),
-  anchorText: z.string().catch(""),
-  preservedInClaimIds: z.array(z.string()).catch([]),
-  preservedByQuotes: z.array(z.string()).catch([]),
+  anchorText: withFallback(z.string(), ""),
+  preservedInClaimIds: withFallback(z.array(z.string()), []),
+  preservedByQuotes: withFallback(z.array(z.string()), []),
 });
 
 const ClaimContractLegacyAntiInferenceSchema = z.object({
   normativeInferenceDetected: z.boolean(),
-  inferredClaimIds: z.array(z.string()).catch([]),
-  reasoning: z.string().catch(""),
+  inferredClaimIds: withFallback(z.array(z.string()), []),
+  reasoning: withFallback(z.string(), ""),
 });
 
 const ClaimContractAntiInferenceSchema = z.object({
   normativeClaimInjected: z.boolean(),
-  injectedClaimIds: z.array(z.string()).catch([]),
-  reasoning: z.string().catch(""),
+  injectedClaimIds: withFallback(z.array(z.string()), []),
+  reasoning: withFallback(z.string(), ""),
 });
 
 const ClaimContractInputAssessmentSchema = z.object({
   preservesOriginalClaimContract: z.boolean(),
   rePromptRequired: z.boolean(),
-  summary: z.string().catch(""),
+  summary: withFallback(z.string(), ""),
   truthConditionAnchor: ClaimContractTruthConditionAnchorSchema.optional(),
   antiInferenceCheck: ClaimContractLegacyAntiInferenceSchema.optional(),
 });
@@ -3596,9 +3596,9 @@ const ClaimContractClaimSchema = z.object({
   claimId: z.string(),
   preservesEvaluativeMeaning: z.boolean(),
   usesNeutralDimensionQualifier: z.boolean(),
-  proxyDriftSeverity: z.enum(["none", "mild", "material"]).catch("none"),
-  recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
-  reasoning: z.string().catch(""),
+  proxyDriftSeverity: withFallback(z.enum(["none", "mild", "material"]), "none"),
+  recommendedAction: withFallback(z.enum(["keep", "retry"]), "keep"),
+  reasoning: withFallback(z.string(), ""),
 });
 
 // New provider responses must supply origin; synthetic/internal assessments
@@ -3622,14 +3622,14 @@ type ClaimContractRawOutput = z.infer<typeof ClaimContractOutputSchema>;
 const SingleClaimAtomicityAssessmentSchema = z.object({
   isAtomic: z.boolean(),
   rePromptRequired: z.boolean(),
-  summary: z.string().catch(""),
+  summary: withFallback(z.string(), ""),
 });
 
 const SingleClaimCoordinatedBranchFindingSchema = z.object({
   presentInInput: z.boolean(),
   bundledInSingleClaim: z.boolean(),
-  branchLabels: z.array(z.string()).catch([]),
-  reasoning: z.string().catch(""),
+  branchLabels: withFallback(z.array(z.string()), []),
+  reasoning: withFallback(z.string(), ""),
 });
 
 const SingleClaimAtomicityOutputSchema = z.object({

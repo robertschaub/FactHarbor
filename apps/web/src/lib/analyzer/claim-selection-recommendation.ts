@@ -1,5 +1,6 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
+import { withOptionalFallback } from "./schema-fallback";
 import type { PipelineConfig } from "../config-schemas";
 import type {
   AtomicClaim,
@@ -34,20 +35,20 @@ const TRIAGE_LABELS = [
 
 const LEVEL_LABELS = ["high", "medium", "low"] as const satisfies readonly ClaimSelectionLevelLabel[];
 
-const OptionalStringSchema = z.preprocess(
+const OptionalStringSchema = withOptionalFallback(z.preprocess(
   (value) => value ?? undefined,
   z.string().optional(),
-).catch(undefined);
+), undefined);
 
-const OptionalStringArraySchema = z.preprocess(
+const OptionalStringArraySchema = withOptionalFallback(z.preprocess(
   (value) => value ?? undefined,
   z.array(z.string()).optional(),
-).catch(undefined);
+), undefined);
 
-const RedundancyArraySchema = z.preprocess(
+const RedundancyArraySchema = withOptionalFallback(z.preprocess(
   (value) => value ?? [],
   z.array(z.string()).default([]),
-).catch([]);
+), []);
 
 const ClaimSelectionAssessmentWireSchema = z.object({
   claimId: OptionalStringSchema,
@@ -62,10 +63,10 @@ const ClaimSelectionAssessmentWireSchema = z.object({
 const ClaimSelectionRecommendationWireSchema = z.object({
   rankedClaimIds: OptionalStringArraySchema,
   recommendedClaimIds: OptionalStringArraySchema,
-  assessments: z.preprocess(
+  assessments: withOptionalFallback(z.preprocess(
     (value) => value ?? undefined,
     z.array(ClaimSelectionAssessmentWireSchema).optional(),
-  ).catch(undefined),
+  ), undefined),
   rationale: OptionalStringSchema,
 }).passthrough();
 
