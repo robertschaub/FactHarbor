@@ -51,7 +51,7 @@
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
     "tldts": "^7.0.25",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
