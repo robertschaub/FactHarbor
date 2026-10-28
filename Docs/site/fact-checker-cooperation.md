@@ -1,6 +1,6 @@
 # FactHarbor for fact-checkers and newsrooms
 
-FactHarbor is a non-profit, open-source project for evidence-based claim analysis. It researches text and articles, separates verifiable assertions, and produces reports with supporting and opposing evidence, reasoning and uncertainty.
+The FactHarbor application is an open-source project for evidence-based claim analysis, supported by the non-profit FactHarbor association. It researches text and articles, separates verifiable assertions, and produces reports with supporting and opposing evidence, reasoning and uncertainty.
 
 ## What a newsroom can inspect
 

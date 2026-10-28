@@ -16,14 +16,14 @@ A world where decisions and public debate are grounded in evidence so people can
 <div class="fh-callout fh-callout--mission" markdown="1">
 
 **Our Mission**
-FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+The FactHarbor application brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
 
 </div>
 
 <div class="fh-callout fh-callout--nonprofit" markdown="1">
 
 **Non-profit and Transparent**
-FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+The **FactHarbor association** is a **Non-Profit Organisation**, and the **FactHarbor application** is a strictly **Open-Source** project.
 We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
 
 </div>
@@ -31,11 +31,11 @@ We serve the public interest with full transparency — no hidden algorithms, an
 
 <div class="admonition info" markdown="1">
 
-<p class="admonition-title">FactHarbor’s next chapter</p>
+<p class="admonition-title">The FactHarbor application’s next chapter</p>
 
-Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor. Building on evidence-based fact-checking, it aims to help people and AI agents compare options and understand the evidence, assumptions and trade-offs behind a recommendation.
+Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to the **FactHarbor application**. The **FactHarbor association** remains the organization behind this work. Building on evidence-based fact-checking, DSS aims to help people and AI agents compare options and understand the evidence, assumptions and trade-offs behind a recommendation.
 
-[FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+[FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — public documentation and planned application home.
 
 **[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
 
@@ -46,16 +46,18 @@ See [project status and contribution guidance](product-development/index.md).
 ## What we do for you
 
 
-**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
+**The FactHarbor application analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
 
 It evaluates evidence quality and source reliability, then compares, challenges, and reconciles findings through a structured multi-agent AI debate.
 
 **The result: a transparent verdict where every conclusion links to cited evidence — so you can judge for yourself.**
 
-## Where FactHarbor stands out
+<a id="where-factharbor-stands-out"></a>
+
+## Where the application stands out
 
 
-Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; model allocation depends on the active configuration.
+Unlike single-model AI tools, the FactHarbor application uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; model allocation depends on the active configuration.
 
 Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
 

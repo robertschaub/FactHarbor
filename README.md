@@ -3,17 +3,19 @@
 **[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. Access to new analyses is by invitation.
 
 > [!NOTE]
-> **FactHarbor’s next chapter**
+> **The FactHarbor application’s next chapter**
 >
-> Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor. Building on evidence-based fact-checking, it aims to help people and AI agents compare options and understand the evidence, assumptions and trade-offs behind a recommendation.
+> Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to the **FactHarbor application**. The **FactHarbor association** remains the organization behind this work. Building on evidence-based fact-checking, DSS aims to help people and AI agents compare options and understand the evidence, assumptions and trade-offs behind a recommendation.
 >
-> [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted. The current FactHarbor application remains an invite-gated Alpha.
+> [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — public documentation and planned application home. The current FactHarbor application remains an invite-gated Alpha.
 
 See [project status and contribution guidance](CONTRIBUTING.md#project-state-and-change-authority).
 
-## What is FactHarbor?
+<a id="what-is-factharbor"></a>
 
-FactHarbor is an AI-powered platform that turns complex, contested information into structured breakdowns that make reasoning visible and verifiable.
+## What is the FactHarbor application?
+
+The FactHarbor application is an AI-powered platform that turns complex, contested information into structured breakdowns that make reasoning visible and verifiable.
 
 An Evidence Model contains:
 

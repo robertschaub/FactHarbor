@@ -2,11 +2,11 @@
 
 <div class="admonition info" markdown="1">
 
-<p class="admonition-title">FactHarbor’s next chapter</p>
+<p class="admonition-title">The FactHarbor application’s next chapter</p>
 
-Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to the **FactHarbor application**, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — public documentation and planned application home.
 
-The current FactHarbor application remains an invite-gated Alpha. Read the [contribution scope and operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).
+The **FactHarbor association** remains the organization behind this work. The current FactHarbor application remains an invite-gated Alpha. Read the [contribution scope and operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).
 
 </div>
 

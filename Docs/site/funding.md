@@ -1,6 +1,6 @@
 # Support FactHarbor — Why and How?
 
-> Status, 1 October 2026: FactHarbor is an invite-gated Alpha. Development is paused pending funding; the roadmap below describes intended future work, without a committed delivery schedule.
+> Status, 1 October 2026: The FactHarbor application is an invite-gated Alpha. Development is paused pending funding; the roadmap below describes intended future work, without a committed delivery schedule.
 
 
 
@@ -24,10 +24,10 @@
 
 Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
 **Mission:**
-FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+The FactHarbor application brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
 
 **Non-profit and Transparent**
-FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+The **FactHarbor association** is a **Non-Profit Organisation**, and the **FactHarbor application** is a strictly **Open-Source** project.
 We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
 
 The FactHarbor **[Verein](https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md)** is a Swiss non-profit association, founded on April 23, 2026 and registered in the Commercial Register of the Canton of Zürich (UID CHE-448.446.098).

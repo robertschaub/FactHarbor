@@ -9,7 +9,7 @@
 ## Purpose and Organisation
 
 
-FactHarbor is a **non-profit, open-source project**. Its mission is to bring clarity to unclear, contested and misleading information by making the evidence, assumptions and uncertainty behind claim assessments easier to inspect. The project is supported by the [FactHarbor Verein](https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md).
+The FactHarbor application is an **open-source project**. Its mission is to bring clarity to unclear, contested and misleading information by making the evidence, assumptions and uncertainty behind claim assessments easier to inspect. The project is supported by the non-profit [FactHarbor association (Verein)](https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md).
 
 This overview invites discussion about academic cooperation: which research questions matter, what each participant could contribute, and whether a student project, feasibility study or jointly funded project would be a useful starting point.
 
