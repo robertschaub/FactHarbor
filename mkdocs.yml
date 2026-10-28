@@ -37,7 +37,7 @@
     "scripts/docs/site_hooks.py"
   ],
   "extra_css": [
-    "assets/reader.css?v=20261028-2"
+    "assets/reader.css?v=20261028-3"
   ],
   "extra_javascript": [
     "assets/diagrams.js",
