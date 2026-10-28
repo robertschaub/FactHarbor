@@ -1,5 +1,7 @@
 # FactHarbor
 
+**[Read the documentation](https://robertschaub.github.io/FactHarbor/)**
+
 **[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. Access to new analyses is by invitation.
 
 > [!NOTE]
@@ -36,8 +38,6 @@ The result is not a single verdict, but an **evidence landscape** — showing wh
 **[Evidence-Gated Agents](https://github.com/robertschaub/our-ai-charter/blob/main/docs/Assurance/Concepts/evidence-gated-agents.md)** — a repeated check pattern with transition-specific requirements and evidence retrieval available to any check, including authority and permission checks. The selected prototype examines an agent’s exact proposed decision and controls its release, with planned reuse of FactHarbor retrieval and analytical capabilities. EGA retains analysis and gate decisions; retrieved evidence does not itself grant authority. The integration is not yet implemented and remains subject to funding.
 
 **[Project context and stewardship](https://github.com/robertschaub/our-ai-charter/blob/main/docs/About.md#stewardship-and-governance)** — how FactHarbor and Our AI Charter relate and are stewarded.
-
-**[Browse full documentation online](https://robertschaub.github.io/FactHarbor/)** — vision, architecture, methodology, and the complete project roadmap.
 
 **[Privacy Policy](Docs/site/privacy-policy.md)** — effective from 18 September 2026 for the current restricted alpha; wider access remains subject to documented expansion gates.
 
