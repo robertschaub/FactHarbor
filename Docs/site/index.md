@@ -29,17 +29,17 @@ We serve the public interest with full transparency — no hidden algorithms, an
 </div>
 
 
+<div class="fh-explore" markdown="1">
+
+**[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
+
+</div>
+
 <div class="admonition info" markdown="1">
 
 <p class="admonition-title">The FactHarbor application’s next chapter</p>
 
-Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to the **FactHarbor application**. The **FactHarbor association** remains the organization behind this work. Building on evidence-based fact-checking, DSS aims to help people and AI agents compare options and understand the evidence, assumptions and trade-offs behind a recommendation.
-
-[FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — public documentation and planned application home.
-
-**[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
-
-See [project status and contribution guidance](product-development/index.md).
+**FactHarborDSS** — planned fact-checking and decision support. [View repository](https://github.com/robertschaub/FactHarborDSS).
 
 </div>
 
