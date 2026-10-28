@@ -39,7 +39,7 @@ We serve the public interest with full transparency — no hidden algorithms, an
 
 <p class="admonition-title">The FactHarbor application’s next chapter</p>
 
-**FactHarborDSS** — planned fact-checking and decision support. [View repository](https://github.com/robertschaub/FactHarborDSS).
+**FactHarborDSS** — planned fact-checking and decision support. [Read the documentation](https://robertschaub.github.io/FactHarborDSS/).
 
 </div>
 
