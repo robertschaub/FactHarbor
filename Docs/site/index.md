@@ -29,6 +29,8 @@ We serve the public interest with full transparency — no hidden algorithms, an
 </div>
 
 
+## FactHarbor — now and next
+
 <div class="fh-explore" markdown="1">
 
 **[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
