@@ -1,5 +1,13 @@
 # FactHarbor
 
+**[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. Access to new analyses is by invitation.
+
+**Development paused — status as of 28 October 2026.** FactHarbor remains an invite-gated Alpha. Development is paused.
+
+**FactHarborDSS (Decision Support System)** is the planned successor, building on FactHarbor’s evidence-based approach. The aim is to bring fact-checking and decision support together for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+
+See [project status and contribution guidance](CONTRIBUTING.md#project-state-and-change-authority).
+
 ## What is FactHarbor?
 
 FactHarbor is an AI-powered platform that turns complex, contested information into structured breakdowns that make reasoning visible and verifiable.
