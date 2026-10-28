@@ -2,9 +2,9 @@
 
 ## Project state and change authority
 
-**Development paused — status as of 28 October 2026.** FactHarbor remains an invite-gated Alpha. Development, model-configuration comparisons and the historical-pipeline investigation are paused; a bounded approved task does not reopen the full development plan. Use current source and effective UCM versions for implementation claims. A commit, successful build or service version alone does not establish deployed behavior or active prompt/configuration versions.
+**FactHarbor’s next chapter.** Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
 
-**FactHarborDSS (Decision Support System)** is the planned successor, building on FactHarbor’s evidence-based approach. The aim is to bring fact-checking and decision support together for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted. Work on DSS does not resume FactHarbor or transfer its prior execution approvals.
+**Current application and research boundaries — as of 28 October 2026.** FactHarbor remains an invite-gated Alpha. Development of this application, model-configuration comparisons and the historical-pipeline investigation remain on hold; a bounded approved task does not reopen the full development plan. Work on DSS does not lift these holds or transfer prior execution approvals. Use current source and effective UCM versions for implementation claims. A commit, successful build or service version alone does not establish deployed behavior or active prompt/configuration versions.
 
 Read the task's assigned status and backlog before status-dependent work, following [agent routing](AGENTS.md#current-implementation). Public contributors can use this checkout's source, quality contracts and setup instructions independently. Missing task context is a gap to report; it is not evidence that an issue is closed or a held action is allowed.
 

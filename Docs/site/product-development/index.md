@@ -1,8 +1,14 @@
 # Product development
 
-**Development paused — status as of 28 October 2026.** FactHarbor provides evidence-based claim analysis with inspectable reports. The application remains an invite-gated Alpha; development is paused. Read the [contribution scope and operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).
+<div class="admonition info" markdown="1">
 
-**FactHarborDSS (Decision Support System)** is the planned successor, building on FactHarbor’s evidence-based approach. The aim is to bring fact-checking and decision support together for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+<p class="admonition-title">FactHarbor’s next chapter</p>
+
+Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+
+The current FactHarbor application remains an invite-gated Alpha. Read the [contribution scope and operating constraints](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).
+
+</div>
 
 | Reader need | Start here |
 |---|---|
