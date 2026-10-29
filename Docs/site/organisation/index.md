@@ -15,4 +15,4 @@ The diagram is an organisational model. It does not establish that every operati
 - [Legal and compliance](legal-and-compliance/index.md): effective policies, licensing and contribution terms.
 - [About FactHarbor](../about-factharbor/index.md), [cooperation](../product-development/presentations/index.md) and [support](../funding.md).
 
-FactHarbor remains an Alpha. The project aims to make reports and the reasoning behind them inspectable, while respecting privacy and access restrictions. Non-profit status alone does not guarantee analytical neutrality or quality.
+The FactHarbor application remains an Alpha. The project aims to make reports and the reasoning behind them inspectable, while respecting privacy and access restrictions. Non-profit status alone does not guarantee analytical neutrality or quality.
