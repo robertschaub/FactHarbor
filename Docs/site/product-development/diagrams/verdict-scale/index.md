@@ -10,4 +10,4 @@ The seven bands describe how strongly the evidence supports or contradicts a cla
 
 **MIXED** represents a substantive combination of supporting and opposing findings. **UNVERIFIED** means the evidence or analysis cannot support a trustworthy judgment; it is not simply another name for the middle band. Read the report's reasoning, citations, confidence and publishability qualification together.
 
-Individual claims may differ from the overall assessment. Differences in time, method or geography should remain visible in the evidence and boundary findings. See [quality and trust](../../specification/architecture/quality-and-trust/index.md) and [terminology](../../specification/reference/terminology/index.md).
+Individual claims may differ from the overall assessment. Differences in time, method or geography should remain visible in the evidence and boundary findings. See [understanding a FactHarbor report](../../specification/architecture/quality-and-trust/index.md) and [terminology](../../specification/reference/terminology/index.md).

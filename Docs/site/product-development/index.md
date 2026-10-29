@@ -14,7 +14,7 @@ The **FactHarbor association** remains the organization behind this work. The cu
 |---|---|
 | Explore the application | [Open FactHarbor](https://app.factharbor.ch/) — evidence-based fact-checking; new analyses by invitation |
 | Understand the method | [Architecture](specification/architecture/index.md), [analysis pipeline](../akel-pipeline.md) |
-| Interpret a report | [Quality and trust](specification/architecture/quality-and-trust/index.md), [verdict scale](diagrams/verdict-scale/index.md), [report examples](specification/fh-analysis-reports/index.md) |
+| Interpret a report | [Understanding a FactHarbor report](specification/architecture/quality-and-trust/index.md), [verdict scale](diagrams/verdict-scale/index.md), [report examples](specification/fh-analysis-reports/index.md) |
 | Run or contribute to the application | [Getting started](devops/guidelines/getting-started/index.md), [contributing](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md) |
 | Configure a local instance and integrations | [Local configuration](devops/guidelines/getting-started/index.md#analysis-configuration), [API source](https://github.com/robertschaub/FactHarbor/tree/main/apps/api) |
 | Discuss cooperation | [Presentations](presentations/index.md) |

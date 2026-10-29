@@ -26,7 +26,7 @@ Current implementation, schemas, prompts and default settings are part of the [p
 ## Read and contribute
 
 - [Analysis responsibilities](../../../akel-pipeline.md) and [stage contracts](../../../akel-stage-details.md).
-- [Quality and trust](quality-and-trust/index.md): evidence, uncertainty and report interpretation.
+- [Understanding a FactHarbor report](quality-and-trust/index.md): evidence, uncertainty and report interpretation.
 - [Security and operations](security-and-operations/index.md): access boundaries and operational limits.
 - [Getting started](../../devops/guidelines/getting-started/index.md), [API source](https://github.com/robertschaub/FactHarbor/tree/main/apps/api) and [terminology](../reference/terminology/index.md).
 

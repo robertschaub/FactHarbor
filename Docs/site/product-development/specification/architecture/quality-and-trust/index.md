@@ -1,31 +1,39 @@
-# Quality and trust
+<a id="quality-and-trust"></a>
 
-FactHarbor makes an assessment inspectable by connecting claims, sources, reasoning and uncertainty. These controls support scrutiny; they do not guarantee that a result is complete, unbiased or correct.
+# Understanding a FactHarbor report
 
-## Claims and evidence
+A FactHarbor report is an assessment to examine. Read its conclusion alongside the supporting evidence, confidence and limitations—and use the original sources to form your own judgment.
 
-Claim validation should preserve the user's meaning and distinguish assessable assertions from opinion or underspecified wording. Research should seek relevant supporting and opposing evidence. An **EvidenceItem** is information extracted from a source, not an automatically verified fact.
+<a id="truth-confidence-and-publication"></a>
 
-Sources may use different methods, time periods or geographic coverage. **EvidenceScope** records those conditions; **ClaimAssessmentBoundaries** keep compatible evidence together. A result can differ across boundaries without either source being intrinsically unreliable. Readers should inspect which evidence applies to the actual claim.
+## Read the assessment and confidence together
 
-## Challenging an assessment
+**Truth percentage** expresses the report's assessment of a claim; **confidence** describes how well that assessment is supported. A strong verdict can still have low confidence. Neither number is a guarantee or an independently calibrated probability of correctness.
 
-The [debate stage](../../../../akel-stage-details.md#4-generate-challenge-and-validate-verdicts) separates an initial assessment, evidence-backed challenge, reconciliation and validation. Documented counter-evidence or a supported coverage problem can change a conclusion. Opinion and unsupported doubt alone must not reduce truth or confidence. Model agreement can still reflect shared gaps.
+**Mixed** reflects a substantive combination of supporting and opposing findings. **Unverified** means the evidence or analysis cannot support a trustworthy judgment. Check individual claims as well as the overall result, and respect any warning that a result is unsuitable for publication. See the [verdict scale](../../../diagrams/verdict-scale/index.md).
 
-## Truth, confidence and publication
+<a id="claims-and-evidence"></a>
+<a id="source-reliability"></a>
 
-**Truth percentage** describes the assessment of the claim. **Confidence** describes how well that assessment is supported. A strongly directional result may still be uncertain; neither number is a guarantee or an independently calibrated probability of correctness.
+## Check what the evidence actually covers
 
-The [verdict scale](../../../diagrams/verdict-scale/index.md) distinguishes **MIXED**, where the evidence supports a mixed assessment, from **UNVERIFIED**, where evidence is insufficient for a trustworthy judgment. Claim-validation and confidence gates are required. A retained directional signal can be marked unsuitable for publication; clients must respect the result's publishability and limitation fields.
+- **The claim:** Does the report assess the intended factual assertion, with its qualifications intact?
+- **The sources:** Do the cited passages support the reasoning? Extracted information is not automatically a verified fact. Look for opposing evidence and gaps too.
+- **The scope:** Do dates, locations and methods apply? Findings can differ across these conditions without either source being unreliable.
+- **The independence:** Several articles may repeat one underlying source. Reputation is not proof, political alignment is not reliability, and each piece of evidence needs examination on its merits.
 
-## Source reliability
+<a id="challenging-an-assessment"></a>
 
-Source reliability supplies information about the source's track record and editorial practices. It is distinct from political alignment and from the probative value of an individual item. A reputable publisher does not make every statement true, and a weak reputation does not by itself refute primary evidence. Several articles can also repeat the same underlying source.
+## Understand what agent debate contributes
 
-## Warnings and limitations
+The [debate stage](../../../../akel-stage-details.md#4-generate-challenge-and-validate-verdicts) challenges an initial assessment, reconciles objections and validates the result. Supported objections can expose missing evidence or reasoning defects. Unsupported doubt should not reduce truth or confidence; agreement between models does not establish correctness.
 
-Material retrieval, interpretation or verdict failures must remain visible in the report. Sparse or inaccessible evidence can limit confidence; missing evidence does not establish falsity. Recovered technical events with no material analytical impact should not distract readers with warnings.
+<a id="warnings-and-limitations"></a>
 
-FactHarbor remains an Alpha. Repeated runs, different phrasings and languages can produce different results, and citations can be misread. Use the linked sources and claim-level explanations to assess a report rather than relying only on its headline.
+## Know the Alpha's limits
 
-Contributors must preserve the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md), [documented limitations](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#known-limits), multilingual robustness and approved exact-input controls. New paid evaluations require their own authorization.
+FactHarbor can miss evidence or misread citations. Repeated runs, different wording and different languages can produce different results. Missing or inaccessible evidence does not establish that a claim is false.
+
+Read warnings about material research or assessment failures before relying on a conclusion. An absence of warnings does not guarantee a complete, unbiased or correct result.
+
+[See the report walkthrough](../../../../index.md#read-a-report). For implementation requirements and evaluation rules, see the [quality expectations](https://github.com/robertschaub/FactHarbor/blob/main/Docs/AGENTS/Captain_Quality_Expectations.md) and [contribution guidance](https://github.com/robertschaub/FactHarbor/blob/main/CONTRIBUTING.md#project-state-and-change-authority).

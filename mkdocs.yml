@@ -89,7 +89,7 @@
                   "AKEL Pipeline Detail": "akel-stage-details.md"
                 },
                 {
-                  "Quality and Trust": "product-development/specification/architecture/quality-and-trust/index.md"
+                  "Understanding a FactHarbor report": "product-development/specification/architecture/quality-and-trust/index.md"
                 },
                 {
                   "Security and Operations": "product-development/specification/architecture/security-and-operations/index.md"

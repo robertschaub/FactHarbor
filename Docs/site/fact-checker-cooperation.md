@@ -32,4 +32,4 @@ A report may miss relevant sources, misinterpret evidence or express too much co
 
 A useful first discussion would identify one workflow problem, what evidence would demonstrate improvement, and a manageable evaluation scope. Newsrooms could contribute workflow knowledge and assessment of report usefulness; FactHarbor can offer an Alpha application and inspectable outputs. Access, data handling, resources and publication arrangements must be agreed before a study or pilot starts.
 
-Contact Robert Schaub at **info@factharbor.ch**. See [academic cooperation](academic-cooperation.md), [support](funding.md) and [quality and trust](product-development/specification/architecture/quality-and-trust/index.md).
+Contact Robert Schaub at **info@factharbor.ch**. See [academic cooperation](academic-cooperation.md), [support](funding.md) and [understanding a FactHarbor report](product-development/specification/architecture/quality-and-trust/index.md).

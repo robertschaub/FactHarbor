@@ -21,13 +21,13 @@ The **FactHarbor association**, a Swiss non-profit, is the organization behind t
 
 <div class="fh-explore" markdown="1">
 
-**[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
+[Open the application](https://app.factharbor.ch/) to explore reports. FactHarbor is an Alpha; access to new analyses is by invitation.
 
 </div>
 
-### Read the result
+<a id="read-the-result"></a>
 
-A report presents a **truth assessment** and separate **confidence**: what the evidence suggests about a claim, and how well it supports that judgment. Neither label guarantees correctness.
+A report presents a **truth assessment** and separate **confidence**. Neither guarantees correctness. [Learn how to interpret a FactHarbor report](product-development/specification/architecture/quality-and-trust/index.md).
 
 In the presentation example below, the first entry in the reports list is labelled **Mixed**, with **Medium confidence**. It concerns generative AI and the preparation needed for small-business automation. These are the Alpha report's assessments, not independently validated conclusions or DSS output.
 
@@ -64,7 +64,7 @@ The Alpha can miss evidence or misread citations, and repeated runs can differ. 
 
 ## Explore further
 
-- [Quality and trust](product-development/specification/architecture/quality-and-trust/index.md) — interpreting evidence, verdicts and uncertainty.
+- [Understanding a FactHarbor report](product-development/specification/architecture/quality-and-trust/index.md) — interpreting evidence, verdicts and uncertainty.
 - [Product development](product-development/index.md) — architecture, setup and contribution guidance.
 - [Association and governance](organisation/index.md) · [About and contact](about-factharbor/index.md).
 - [Cooperation](product-development/presentations/index.md) — research, newsroom and funding discussions.
