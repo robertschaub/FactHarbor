@@ -1,33 +1,12 @@
-# FactHarbor
+<a id="factharbor"></a>
+<a id="our-vision-and-mission"></a>
+<a id="why-factharbor-exists"></a>
 
-Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+# FactHarbor application
 
+FactHarbor is an open-source Alpha application for checking factual claims and articles. It brings sources, supporting and opposing evidence, reasoning and uncertainty together so people can inspect an assessment and form their own judgment.
 
-## Our Vision and Mission
-
-
-<div class="fh-callout fh-callout--vision" markdown="1">
-
-**Our Vision**
-A world where decisions and public debate are grounded in evidence so people can move forward with clarity and confidence.
-
-</div>
-
-<div class="fh-callout fh-callout--mission" markdown="1">
-
-**Our Mission**
-The FactHarbor application brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
-
-</div>
-
-<div class="fh-callout fh-callout--nonprofit" markdown="1">
-
-**Non-profit and Transparent**
-The **FactHarbor association** is a **Non-Profit Organisation**, and the **FactHarbor application** is a strictly **Open-Source** project.
-We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
-
-</div>
-
+The **FactHarbor association**, a Swiss non-profit, is the organization behind the work. Its aim is to help people make well-grounded decisions and use technology responsibly.
 
 ## FactHarbor — now and next
 
@@ -45,100 +24,52 @@ We serve the public interest with full transparency — no hidden algorithms, an
 
 </div>
 
-## What we do for you
+<a id="what-we-do-for-you"></a>
+<a id="from-claim-to-conclusion-reasoning-you-can-trust-because-you-can-inspect"></a>
 
+## Read a report
 
-**The FactHarbor application analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
+### Read the result
 
-It evaluates evidence quality and source reliability, then compares, challenges, and reconciles findings through a structured multi-agent AI debate.
+A report presents a **truth assessment** and separate **confidence**: what the evidence suggests about a claim, and how well it supports that judgment. Neither label guarantees correctness.
 
-**The result: a transparent verdict where every conclusion links to cited evidence — so you can judge for yourself.**
+In the presentation example below, the first entry in the reports list is labelled **Mixed**, with **Medium confidence**. It concerns generative AI and the preparation needed for small-business automation. These are the Alpha report's assessments, not independently validated conclusions or DSS output.
+
+[![FactHarbor Alpha reports list, captured on 24 October 2026](assets/images/alpha-result.jpg)](assets/images/alpha-result.jpg)
+
+*Reports list captured 24 October 2026. Open the image for a larger view.*
+
+### Inspect the evidence
+
+The evidence matrix separates parts of the broader claim and groups evidence within assessment boundaries. Follow an item to its source and ask: Does it support the point? Does it apply here? What contradicts the conclusion, and what is missing?
+
+[![Evidence matrix from the selected Alpha report, with separate subclaims and evidence counts](assets/images/alpha-evidence.png)](assets/images/alpha-evidence.png)
+
+*From the same example. Colours summarize the report's assessments; counts are evidence items, not votes or measures of evidence quality. Both screenshots are reproduced unchanged from the project presentation of 26 October 2026. Attribution: FactHarbor and its contributors.*
+
+[Open the selected Alpha report](https://app.factharbor.ch/jobs/812e3d1c1c5d423ba27b4bb18dee2ff9). Availability and access depend on the application; these dated images illustrate the interface at that time.
 
 <a id="where-factharbor-stands-out"></a>
+<a id="where-the-application-stands-out"></a>
+<a id="how-it-works-the-core-concepts"></a>
+<a id="the-lifecycle-from-input-to-verdict"></a>
 
-## Where the application stands out
+## How it works
 
+The application identifies factual claims, researches supporting and opposing evidence, and assesses the findings. A structured agent debate challenges the assessment before reconciliation and validation; model roles depend on the active configuration. Evidence-backed challenges can change a conclusion; agreement alone does not establish correctness.
 
-Unlike single-model AI tools, the FactHarbor application uses a **structured multi-agent debate** — in the current default configuration, a Claude-led analysis is independently challenged by a model from a second AI provider (OpenAI). Only evidence-backed objections can change the verdict; model allocation depends on the active configuration.
+![FactHarbor application analysis: understand the claim, research evidence, assess and challenge findings, then produce a report](diagrams/homepage-method.svg)
 
-Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
+[Full-size diagram](diagrams/homepage-method.svg) · [Analysis pipeline](akel-pipeline.md)
 
+The Alpha can miss evidence or misread citations, and repeated runs can differ. Inspect the underlying sources and [quality limitations](product-development/specification/architecture/quality-and-trust/index.md), rather than relying on the headline verdict alone.
 
-![index diagram](diagrams/homepage-method.svg)
+<a id="quick-start"></a>
 
-[Full-size diagram](diagrams/homepage-method.svg) · [Mermaid source](diagrams/homepage-method.mmd)
+## Explore further
 
-
-
-## Quick Start
-
-
-
-*   **[About FactHarbor](about-factharbor/index.md)** — Who we are.
-*   **[Organisation](organisation/index.md)** — Governance, culture, and legal frameworks.
-*   **[Product Development](product-development/index.md)** — Requirements, architecture, and developer guides.
-*   **[Analysis Test Reports](test-reports.md)** — Claim analysis reports from test runs.
-*   **[Quality and trust](product-development/specification/architecture/quality-and-trust/index.md)** — How evidence, source reliability and uncertainty inform a report.
-*   **[LinkedIn: Facts are the foundation of democracy and journalism](linkedin.md)** — Published 1 April 2026.
-*   **[FactHarbor for Newsrooms](fact-checker-cooperation.md)** — How FactHarbor supports fact-checking in newsrooms.
-*   **[Support FactHarbor](funding.md)** — Funding and contribution options.
-*   **[FactHarbor on GitHub](https://github.com/robertschaub/FactHarbor)** — Project Repository
-*   **[License & Disclaimer](license-and-disclaimer/index.md)** — Usage terms and open-source licenses.
-
-----
-
-
-## Why FactHarbor Exists
-
-
-**The Problem**
-We live in an environment where information conflicts, misleading content spreads fast, and many people lack the time or tools to verify complex claims. Headlines, soundbites, and viral posts often win over careful reasoning, and “fact-checks” frequently reduce everything to a simple verdict without explaining the _why_ behind it. The result is frustration, confusion, and growing distrust — not just in institutions, but in the very idea that complex questions can be assessed fairly.
-
-**Our Response**
-FactHarbor acts as a navigation system for complex claims. We don’t just say “true” or “false” — we make assumptions, evidence, and context visible so you can form your own judgement. Instead of asking you to trust an authority, we show you how different conclusions are reached, where the evidence is strong or weak, and where reasonable people might still disagree.
-
-
-## From Claim to Conclusion – Reasoning You Can Trust Because You Can Inspect
-
-
-**What FactHarbor Does**
-FactHarbor helps people make sense of contested questions without stripping away nuance. Instead of chasing quick binary verdicts, we break topics into clear, interconnected claims. For each claim, we highlight the context and assumptions it depends on and link directly to the evidence that supports or challenges it.
-
-**Where It Helps**
-Whether you’re analyzing public policy, science, or everyday decisions, FactHarbor provides a transparent way to compare perspectives. Our underlying model creates reusable “claim maps” that journalists, educators, and researchers can build on, while remaining accessible to anyone seeking a clear, honest overview.
-
-**Why It’s Trustworthy**
-At our core is a simple principle: reasoning must be as transparent as the result. Our rules for structuring claims and weighing evidence are documented in the open — designed to be reviewed, challenged, and improved by you. Trust comes not from authority, but from a process anyone can inspect.
-
-**AI as a Tool, Not a Judge**
-AI does the heavy lifting: searching the web for evidence, extracting testable claims, assessing sources by track record, actively seeking contradicting evidence, and assembling structured results with confidence scores. It works fast, at scale, and consistently — but it does not make decisions. It follows human-defined rules and policies, and every step of its reasoning is documented and auditable. The output is always a transparent evidence landscape, not a hidden verdict.
-
-**Humans Define the Rules, Users Form Their Own Judgement**
-Humans design and refine the methodology — the rules, prompts, and policies that govern how AI searches, evaluates, and presents evidence. When results fall short, humans improve the system itself, not individual outputs. Fix the process, not the data. This keeps the platform scalable, unbiased, and accountable. Ultimately, FactHarbor presents evidence and reasoning — the judgement is yours.
-
-
-## How It Works: The Core Concepts
-
-
-FactHarbor structures reasoning into transparent, inspectable steps:
-
-
-*   **Claims** – The system extracts the key assertions from your input and identifies what actually needs to be verified. Related statements are grouped together to avoid duplication and keep the analysis focused.
-*   **Assessment boundaries** – Evidence can address different methods, periods or definitions. FactHarbor groups compatible evidence scopes into [ClaimAssessmentBoundaries](product-development/specification/reference/terminology/index.md) so these distinctions remain visible in the assessment.
-*   **Evidence** – AI searches across fact-checkers, academic studies, reports, and the open web. Each piece of evidence is assessed for quality, relevance, and linked to the specific context it applies to — not just to the claim in general.
-*   **Source Reliability** – Every source is scored for credibility using multi-model AI evaluation. Track record matters: a peer-reviewed study carries different weight than a social media post.
-*   **Verdicts** – For each claim and assessment boundary, FactHarbor produces an evidence-based rating using the [seven-band verdict scale](product-development/diagrams/verdict-scale/index.md) with explicit confidence levels and full reasoning.
-*   **Evidence Landscape** – The result is not a single label, but a multi-perspective view showing where a claim is well-supported, where it's contradicted, and where reasonable people may still disagree — with every conclusion traceable back to its sources.
-
-
-## The Lifecycle: From Input to Verdict
-
-
-Data in FactHarbor flows through a structured, auditable process:
-
-
-*   **Submission:** Invited users submit text or URLs; the system normalises the input.
-*   **Evidence Research:** AI extracts AtomicClaims and iteratively researches evidence per claim.
-*   **Evidence Handling:** Evidence is retrieved, assessed for quality, and linked.
-*   **Verdict Creation:** Generating per-boundary, per-claim verdicts via structured debate.
-*   **Public Presentation:** The evidence landscape — multi-perspective results with full provenance — is published for users to explore.
+- [Quality and trust](product-development/specification/architecture/quality-and-trust/index.md) — interpreting evidence, verdicts and uncertainty.
+- [Product development](product-development/index.md) — architecture, setup and contribution guidance.
+- [Association and governance](organisation/index.md) · [About and contact](about-factharbor/index.md).
+- [Cooperation](product-development/presentations/index.md) — research, newsroom and funding discussions.
+- [Licence and disclaimer](license-and-disclaimer/index.md).
