@@ -1,0 +1,38 @@
+graph TD
+    GA["General Assembly / Members"] -->|"Elects"| GT["Governing Team / Board"]
+    GA -. "May Appoint" .-> AUD["Auditor (Optional)"]
+    
+    AUD -. "Financial Oversight" .-> GT
+    
+    GS["Governance Steward"] -. "Procedural Oversight" .-> GT
+    GS -. "Procedural Oversight" .-> DL["Domain Leads: R&D, Ops, Community, Finance"]
+    
+    GT -->|"Oversees"| DL
+    
+    subgraph SC ["Team & Community"]
+        DEV["Developers / Core Ops"]
+        UA["Administrators"]
+        MOD["Moderators"]
+    end
+    
+    DL -->|"Manage"| SC
+    
+    subgraph AS ["Application & Services"]
+        AKEL["Core Logic & Infrastructure"]
+    end
+    
+    DEV -->|"Implement"| AKEL
+    MOD -->|"Moderate"| CNT["Reports (Claims & Evidence)"]
+    UA -->|"Adminster"| AS
+    AS -->|"Generates"| CNT
+    
+    USR["Registered Users"] -->|"Submit/Flag"| CNT
+    RED["Readers / Guests"] -->|"Browse/View"| CNT
+
+    style GA fill:#e1f5ff,stroke:#005cbf
+    style GT fill:#ffe1f5,stroke:#b0003a
+    style GS fill:#fff9c4,stroke:#fbc02d
+    style DL fill:#fff5e1,stroke:#f57c00
+    style AUD fill:#f8f9fa,stroke:#343a40
+    style SC fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style AS fill:#fff3e0,stroke:#f57c00,stroke-width:2px

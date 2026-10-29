@@ -1,0 +1,13 @@
+flowchart TB
+    E["Evidence handling<br/>Sources and scope"] --> P["ClaimAssessmentBoundary<br/>analysis pipeline"]
+    Q["Quality assessment<br/>Relevance and probative value"] --> P
+    S["Source reliability"] --> P
+    G["Claim validation and<br/>confidence assessment"] --> P
+    C["Configuration and<br/>resource limits"] --> P
+    P --> R["Verdict interpretation<br/>Traceable report"]
+    classDef support fill:#e0f2f1,stroke:#00695c,color:#12332d
+    classDef pipeline fill:#e3f2fd,stroke:#1565c0,color:#0d305c
+    classDef output fill:#e8f5e9,stroke:#2e7d32,color:#173e1d
+    class E,Q,S,G,C support
+    class P pipeline
+    class R output

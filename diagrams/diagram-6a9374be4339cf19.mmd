@@ -1,0 +1,26 @@
+flowchart LR
+    subgraph Input["What goes in"]
+        URL["URL"]
+        TEXT["Text or Claim"]
+    end
+
+    subgraph AKEL["AKEL Analysis Engine"]
+        direction TB
+        U["Extract<br/>AtomicClaims"]
+        R["Research<br/>evidence from web"]
+        V["Cluster Boundaries<br/>& Evaluate Verdicts"]
+        S["Report<br/>transparent output"]
+        U --> R --> V --> S
+    end
+
+    subgraph Output["What comes out"]
+        VERDICT["Structured Verdict<br/>per claim + overall"]
+        EVIDENCE["Evidence Trail<br/>sources & excerpts"]
+        REPORT["Analysis Report<br/>human-readable"]
+    end
+
+    Input --> AKEL --> Output
+
+    style AKEL fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style Input fill:#e3f2fd,stroke:#1565c0,color:#000
+    style Output fill:#fff9c4,stroke:#f9a825,color:#000
