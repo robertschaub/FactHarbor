@@ -25,7 +25,7 @@ An Evidence Model contains:
 - **Assessment boundaries** — The frames and conditions under which claims may hold or fail
 - **Evidence** — Supporting and opposing sources with quality ratings and reliability scores
 - **Verdicts** — Conclusions with explicit confidence levels and cited evidence
-- **Full Transparency** — Every assumption, algorithm, and data source is exposed
+- **Inspectable reasoning** — Sources, evidence and reasoning are shown so they can be checked
 
 The result is not a single verdict, but an **evidence landscape** — showing where a claim holds up, where it fails, and where reasonable disagreement exists.
 

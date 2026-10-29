@@ -2,7 +2,7 @@
 
 ## Project state and change authority
 
-**FactHarbor’s next chapter.** Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to FactHarbor, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — currently private; access is restricted.
+**The FactHarbor application’s next chapter.** Our work continues with **FactHarborDSS (Decision Support System)**, the planned successor to the **FactHarbor application**, extending evidence-based fact-checking into decision support for people and AI agents. [FactHarborDSS repository](https://github.com/robertschaub/FactHarborDSS) — public documentation and planned application home.
 
 **Current application and research boundaries — as of 28 October 2026.** FactHarbor remains an invite-gated Alpha. Development of this application, model-configuration comparisons and the historical-pipeline investigation remain on hold; a bounded approved task does not reopen the full development plan. Work on DSS does not lift these holds or transfer prior execution approvals. Use current source and effective UCM versions for implementation claims. A commit, successful build or service version alone does not establish deployed behavior or active prompt/configuration versions.
 

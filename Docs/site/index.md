@@ -1,12 +1,37 @@
-<a id="factharbor"></a>
-<a id="our-vision-and-mission"></a>
+<a id="factharbor-application"></a>
 <a id="why-factharbor-exists"></a>
 
-# FactHarbor application
+# FactHarbor
 
-FactHarbor is an open-source Alpha application for checking factual claims and articles. It brings sources, supporting and opposing evidence, reasoning and uncertainty together so people can inspect an assessment and form their own judgment.
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
 
-The **FactHarbor association**, a Swiss non-profit, is the organization behind the work. Its aim is to help people make well-grounded decisions and use technology responsibly.
+
+## Our Vision and Mission
+
+
+<div class="fh-callout fh-callout--vision" markdown="1">
+
+**Our Vision**
+A world where decisions and public debate are grounded in evidence so people can move forward with clarity and confidence.
+
+</div>
+
+<div class="fh-callout fh-callout--mission" markdown="1">
+
+**Our Mission**
+The FactHarbor application brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+
+</div>
+
+<div class="fh-callout fh-callout--nonprofit" markdown="1">
+
+**Non-profit. Open source.**
+
+- **FactHarbor association (Verein):** The Swiss non-profit organization behind the work. It serves the public interest with transparency and no profit motive.
+- **FactHarbor application:** The open-source fact-checking software developed within the association. Its sources, evidence and reasoning can be inspected.
+
+</div>
+
 
 <a id="factharbor-now-and-next"></a>
 
@@ -39,7 +64,7 @@ In the presentation example below, the first entry in the reports list is labell
 
 ### Inspect the evidence
 
-The evidence matrix separates parts of the broader claim and groups evidence within assessment boundaries. Follow an item to its source and ask: Does it support the point? Does it apply here? What contradicts the conclusion, and what is missing?
+The evidence matrix separates parts of the broader claim and groups evidence with compatible conditions—such as dates, locations and methods—into [assessment boundaries](product-development/specification/reference/terminology/index.md#core-concepts). Follow an item to its source and ask: Does it support the point? Does it apply here? What contradicts the conclusion, and what is missing?
 
 [![Evidence matrix from the selected Alpha report, with separate subclaims and evidence counts](assets/images/alpha-evidence.png)](assets/images/alpha-evidence.png)
 
@@ -59,8 +84,6 @@ The application identifies factual claims, researches supporting and opposing ev
 ![FactHarbor application analysis: understand the claim, research evidence, assess and challenge findings, then produce a report](diagrams/homepage-method.svg)
 
 [Full-size diagram](diagrams/homepage-method.svg) · [Analysis pipeline](akel-pipeline.md)
-
-The Alpha can miss evidence or misread citations, and repeated runs can differ. Inspect the underlying sources and [quality limitations](product-development/specification/architecture/quality-and-trust/index.md), rather than relying on the headline verdict alone.
 
 <a id="quick-start"></a>
 

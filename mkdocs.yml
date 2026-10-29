@@ -52,6 +52,9 @@
       "Home": "index.md"
     },
     {
+      "Understanding a FactHarbor report": "product-development/specification/architecture/quality-and-trust/index.md"
+    },
+    {
       "About FactHarbor": "about-factharbor/index.md"
     },
     {
@@ -87,9 +90,6 @@
                 },
                 {
                   "AKEL Pipeline Detail": "akel-stage-details.md"
-                },
-                {
-                  "Understanding a FactHarbor report": "product-development/specification/architecture/quality-and-trust/index.md"
                 },
                 {
                   "Security and Operations": "product-development/specification/architecture/security-and-operations/index.md"
