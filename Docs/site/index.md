@@ -17,17 +17,19 @@ The **FactHarbor association**, a Swiss non-profit, is the organization behind t
 <a id="what-we-do-for-you"></a>
 <a id="from-claim-to-conclusion-reasoning-you-can-trust-because-you-can-inspect"></a>
 
-## Read a report
+<a id="read-a-report"></a>
+
+## Read a FactHarbor report
 
 <div class="fh-explore" markdown="1">
 
-[Open the application](https://app.factharbor.ch/) to explore reports. FactHarbor is an Alpha; access to new analyses is by invitation.
+[Open FactHarbor application](https://app.factharbor.ch/) to explore reports. FactHarbor is an Alpha; access to new analyses is by invitation.
 
 </div>
 
 <a id="read-the-result"></a>
 
-A report presents a **truth assessment** and separate **confidence**. Neither guarantees correctness. [Learn how to interpret a FactHarbor report](product-development/specification/architecture/quality-and-trust/index.md).
+[Learn how to interpret a FactHarbor report](product-development/specification/architecture/quality-and-trust/index.md).
 
 In the presentation example below, the first entry in the reports list is labelled **Mixed**, with **Medium confidence**. It concerns generative AI and the preparation needed for small-business automation. These are the Alpha report's assessments, not independently validated conclusions or DSS output.
 
