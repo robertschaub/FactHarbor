@@ -22,5 +22,3 @@
 .diagram-viewport{overflow:auto;max-height:70vh;padding:14px}.md-typeset .diagram-viewport img{display:block;width:auto;max-width:100%;margin:auto}
 .md-typeset a{overflow-wrap:anywhere}.md-typeset pre{overflow:auto}
 @media(max-width:600px){.md-typeset h1{font-size:1.5em}.fh-callout{padding:.85em 1em}}
-
-.fh-explore{margin-top:2.5rem}

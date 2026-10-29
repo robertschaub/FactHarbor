@@ -8,26 +8,22 @@ FactHarbor is an open-source Alpha application for checking factual claims and a
 
 The **FactHarbor association**, a Swiss non-profit, is the organization behind the work. Its aim is to help people make well-grounded decisions and use technology responsibly.
 
-## FactHarbor — now and next
+<a id="factharbor-now-and-next"></a>
+
+## FactHarbor application’s next chapter
+
+[**FactHarborDSS**](https://robertschaub.github.io/FactHarborDSS/) is the planned successor application, extending fact-checking to decision support.
+
+<a id="what-we-do-for-you"></a>
+<a id="from-claim-to-conclusion-reasoning-you-can-trust-because-you-can-inspect"></a>
+
+## Read a report
 
 <div class="fh-explore" markdown="1">
 
 **[Explore FactHarbor](https://app.factharbor.ch/)** — Follow claims to their sources, examine the reasoning, and form your own judgment. The current application is an Alpha; access to new analyses is by invitation.
 
 </div>
-
-<div class="admonition info" markdown="1">
-
-<p class="admonition-title">The FactHarbor application’s next chapter</p>
-
-**FactHarborDSS** — planned fact-checking and decision support. [Read the documentation](https://robertschaub.github.io/FactHarborDSS/).
-
-</div>
-
-<a id="what-we-do-for-you"></a>
-<a id="from-claim-to-conclusion-reasoning-you-can-trust-because-you-can-inspect"></a>
-
-## Read a report
 
 ### Read the result
 
